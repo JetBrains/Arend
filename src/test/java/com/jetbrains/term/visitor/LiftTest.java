@@ -61,5 +61,26 @@ public class LiftTest {
         assertEquals(new AppExpression(expr1, expr3), (new AppExpression(expr1, expr2)).liftIndex(1, 2));
     }
 
-    // TODO: Add tests for pi
+    @Test
+    public void liftPiClosed() throws Exception {
+        // lift ( (x : N) -> N x, 0, 1) = (x : N) -> N x
+        Expression expr = new PiExpression("x", new NatExpression(), new AppExpression(new NatExpression(), new IndexExpression(0)));
+        assertEquals(expr, expr.liftIndex(0, 1));
+    }
+
+    @Test
+    public void liftPiOpen() throws Exception {
+        // lift ( (x : N) -> N (var(0)), 0, 1) = (x : N) -> N (var(1))
+        Expression expr1 = new PiExpression("x", new NatExpression(), new AppExpression(new NatExpression(), new IndexExpression(1)));
+        Expression expr2 = new PiExpression("y", new NatExpression(), new AppExpression(new NatExpression(), new IndexExpression(2)));
+        assertEquals(expr2, expr1.liftIndex(0, 1));
+    }
+
+    @Test
+    public void liftArr() throws Exception {
+        // lift ( N -> N (var(0)), 0, 1) = N -> N (var(1))
+        Expression expr1 = new PiExpression(new NatExpression(), new AppExpression(new NatExpression(), new IndexExpression(0)));
+        Expression expr2 = new PiExpression(new NatExpression(), new AppExpression(new NatExpression(), new IndexExpression(1)));
+        assertEquals(expr2, expr1.liftIndex(0, 1));
+    }
 }

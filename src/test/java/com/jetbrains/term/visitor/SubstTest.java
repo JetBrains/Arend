@@ -94,5 +94,26 @@ public class SubstTest {
         assertEquals(result, expr.subst(substExpr, 0));
     }
 
-    // TODO: Add tests for pi
+    @Test
+    public void substPiClosed() {
+        // (x : N) -> N x [0 := zero] = (x : N) -> N x
+        Expression expr = new PiExpression("x", new NatExpression(), new AppExpression(new NatExpression(), new IndexExpression(0)));
+        assertEquals(expr, expr.subst(zero, 0));
+    }
+
+    @Test
+    public void substPiOpen() {
+        // (x : N) -> N (var(0)) [0 := zero] = (y : N) -> N zero
+        Expression expr1 = new PiExpression("x", new NatExpression(), new AppExpression(new NatExpression(), new IndexExpression(1)));
+        Expression expr2 = new PiExpression("y", new NatExpression(), new AppExpression(new NatExpression(), zero));
+        assertEquals(expr2, expr1.subst(zero, 0));
+    }
+
+    @Test
+    public void substArr() {
+        // N -> N (var(0)) [0 := zero] = N -> N zero
+        Expression expr1 = new PiExpression(new NatExpression(), new AppExpression(new NatExpression(), new IndexExpression(0)));
+        Expression expr2 = new PiExpression(new NatExpression(), new AppExpression(new NatExpression(), zero));
+        assertEquals(expr2, expr1.subst(zero, 0));
+    }
 }
