@@ -1,14 +1,13 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.NotInScopeException;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
 import main.java.com.jetbrains.term.typechecking.TypeMismatchException;
+import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
 import java.util.List;
-import java.util.Map;
 
 public class PiExpression extends Expression {
     private final String variable;
@@ -23,6 +22,10 @@ public class PiExpression extends Expression {
         this.variable = variable;
         this.left = left;
         this.right = right;
+    }
+
+    public String getVariable() {
+        return variable;
     }
 
     public Expression getLeft() {
@@ -56,29 +59,6 @@ public class PiExpression extends Expression {
     }
 
     @Override
-    public Expression fixVariables(List<String> names, Map<String, Definition> signature) throws NotInScopeException {
-        if (variable != null) names.add(variable);
-        Expression right1 = right.fixVariables(names, signature);
-        if (variable != null) names.remove(names.size() - 1);
-        return new PiExpression(left.fixVariables(names, signature), right1);
-    }
-
-    @Override
-    public Expression normalize() {
-        return new PiExpression(variable, left.normalize(), right.normalize());
-    }
-
-    @Override
-    public Expression subst(Expression expr, int from) {
-        return new PiExpression(variable, left.subst(expr, from), right.subst(expr, variable == null ? from : from + 1));
-    }
-
-    @Override
-    public Expression liftIndex(int from, int on) {
-        return new PiExpression(variable, left.liftIndex(from, on), right.liftIndex(variable == null ? from : from + 1, on));
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (o == this) return true;
         if (!(o instanceof PiExpression)) return false;
@@ -102,5 +82,10 @@ public class PiExpression extends Expression {
         boolean rightOK = rightType.equals(typeType);
         if (leftOK && rightOK) return typeType;
         else throw new TypeMismatchException(typeType, leftOK ? rightType : leftType, leftOK ? right : left);
+    }
+
+    @Override
+    public <T> T accept(ExpressionVisitor<? extends T> visitor) {
+        return visitor.visitPi(this);
     }
 }

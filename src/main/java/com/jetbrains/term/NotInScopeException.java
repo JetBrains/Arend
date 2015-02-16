@@ -1,6 +1,6 @@
 package main.java.com.jetbrains.term;
 
-public class NotInScopeException extends Exception {
+public class NotInScopeException extends RuntimeException {
     private final String name;
 
     public NotInScopeException(String name) {

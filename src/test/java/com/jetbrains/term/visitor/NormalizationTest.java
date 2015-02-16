@@ -1,4 +1,4 @@
-package test.java.com.jetbrains.term.expr;
+package test.java.com.jetbrains.term.visitor;
 
 import main.java.com.jetbrains.term.expr.*;
 import org.junit.Test;

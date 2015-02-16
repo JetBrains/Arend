@@ -1,13 +1,12 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.NotInScopeException;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
 import main.java.com.jetbrains.term.typechecking.TypeMismatchException;
+import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
 import java.util.List;
-import java.util.Map;
 
 public class AppExpression extends Expression {
     private final Expression function;
@@ -41,51 +40,6 @@ public class AppExpression extends Expression {
     }
 
     @Override
-    public Expression fixVariables(List<String> names, Map<String, Definition> signature) throws NotInScopeException {
-        return new AppExpression(function.fixVariables(names, signature), argument.fixVariables(names, signature));
-    }
-
-    @Override
-    public Expression normalize() {
-        Expression function1 = function.normalize();
-        if (function1 instanceof LamExpression) {
-            Expression body = ((LamExpression)function1).getBody();
-            return body.subst(argument, 0).normalize();
-        }
-        if (function1 instanceof AppExpression) {
-            AppExpression appExpr1 = (AppExpression)function1;
-            if (appExpr1.function instanceof AppExpression) {
-                AppExpression appExpr2 = (AppExpression)appExpr1.function;
-                if (appExpr2.function instanceof NelimExpression) {
-                    Expression zeroClause = appExpr2.argument;
-                    Expression sucClause = appExpr1.argument;
-                    Expression caseExpr = argument.normalize();
-                    if (caseExpr instanceof ZeroExpression) return zeroClause;
-                    if (caseExpr instanceof AppExpression) {
-                        AppExpression appExpr3 = (AppExpression)caseExpr;
-                        if (appExpr3.function instanceof SucExpression) {
-                            Expression recursiveCall = new AppExpression(appExpr1, appExpr3.argument);
-                            Expression result = new AppExpression(new AppExpression(sucClause, appExpr3.argument), recursiveCall);
-                            return result.normalize();
-                        }
-                    }
-                }
-            }
-        }
-        return new AppExpression(function1, argument.normalize());
-    }
-
-    @Override
-    public Expression subst(Expression expr, int from) {
-        return new AppExpression(function.subst(expr, from), argument.subst(expr, from));
-    }
-
-    @Override
-    public Expression liftIndex(int from, int on) {
-        return new AppExpression(function.liftIndex(from, on), argument.liftIndex(from, on));
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (o == this) return true;
         if (!(o instanceof AppExpression)) return false;
@@ -111,6 +65,11 @@ public class AppExpression extends Expression {
         } else {
             throw new TypeMismatchException(new PiExpression(new VarExpression("_"), new VarExpression("_")), functionType, function);
         }
+    }
+
+    @Override
+    public <T> T accept(ExpressionVisitor<? extends T> visitor) {
+        return visitor.visitApp(this);
     }
 
     private Expression checkNelim(List<Definition> context) throws TypeCheckingException {

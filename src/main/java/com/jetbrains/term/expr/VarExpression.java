@@ -1,12 +1,11 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.NotInScopeException;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
+import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
 import java.util.List;
-import java.util.Map;
 
 public class VarExpression extends Expression {
     private final String name;
@@ -30,36 +29,6 @@ public class VarExpression extends Expression {
     }
 
     @Override
-    public Expression fixVariables(List<String> names, Map<String, Definition> signature) throws NotInScopeException {
-        int index = names.lastIndexOf(name);
-        if (index == -1) {
-            Definition def = signature.get(name);
-            if (def == null) {
-                throw new NotInScopeException(name);
-            } else {
-                return new DefCallExpression(def);
-            }
-        } else {
-            return new IndexExpression(names.size() - 1 - index);
-        }
-    }
-
-    @Override
-    public Expression normalize() {
-        return this;
-    }
-
-    @Override
-    public Expression subst(Expression expr, int from) {
-        return this;
-    }
-
-    @Override
-    public Expression liftIndex(int from, int on) {
-        return this;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (o == this) return true;
         if (!(o instanceof VarExpression)) return false;
@@ -75,5 +44,10 @@ public class VarExpression extends Expression {
     @Override
     public Expression inferType(List<Definition> context) throws TypeCheckingException {
         throw new TypeCheckingException(this);
+    }
+
+    @Override
+    public <T> T accept(ExpressionVisitor<? extends T> visitor) {
+        return visitor.visitVar(this);
     }
 }

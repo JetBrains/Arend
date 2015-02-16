@@ -1,4 +1,4 @@
-package test.java.com.jetbrains.term.expr;
+package test.java.com.jetbrains.term.visitor;
 
 import main.java.com.jetbrains.term.expr.*;
 import org.junit.Test;
@@ -93,4 +93,6 @@ public class SubstTest {
         Expression result = new LamExpression("x", new LamExpression("y", new AppExpression(new AppExpression(new IndexExpression(1), new IndexExpression(2)), new LamExpression("z", new AppExpression(new AppExpression(new LamExpression("w", new LamExpression("t", new AppExpression(new AppExpression(new IndexExpression(0), new IndexExpression(5)), new AppExpression(new IndexExpression(1),new IndexExpression(6))))), new IndexExpression(0)), new IndexExpression(1))))));
         assertEquals(result, expr.subst(substExpr, 0));
     }
+
+    // TODO: Add tests for pi
 }

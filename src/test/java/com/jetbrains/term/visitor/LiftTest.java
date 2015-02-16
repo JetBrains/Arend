@@ -1,4 +1,4 @@
-package test.java.com.jetbrains.term.expr;
+package test.java.com.jetbrains.term.visitor;
 
 import main.java.com.jetbrains.term.expr.*;
 import org.junit.Test;
@@ -60,4 +60,6 @@ public class LiftTest {
         Expression expr3 = new LamExpression("x", new LamExpression("y", new AppExpression(new AppExpression(new AppExpression(new IndexExpression(1), new IndexExpression(5)), new IndexExpression(2)), new LamExpression("z", new AppExpression(new AppExpression(new IndexExpression(0), new IndexExpression(3)), new IndexExpression(7))))));
         assertEquals(new AppExpression(expr1, expr3), (new AppExpression(expr1, expr2)).liftIndex(1, 2));
     }
+
+    // TODO: Add tests for pi
 }
