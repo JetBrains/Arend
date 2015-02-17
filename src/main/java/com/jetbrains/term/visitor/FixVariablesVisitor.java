@@ -51,9 +51,9 @@ public class FixVariablesVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitPi(PiExpression expr) {
-        if (expr.getVariable() != null) names.add(expr.getVariable());
+        names.add(expr.getVariable());
         Expression right1 = expr.getRight().fixVariables(names, signature);
-        if (expr.getVariable() != null) names.remove(names.size() - 1);
+        names.remove(names.size() - 1);
         return new PiExpression(expr.getVariable(), expr.getLeft().fixVariables(names, signature), right1);
     }
 

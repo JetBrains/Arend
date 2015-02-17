@@ -25,9 +25,9 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
 
         Expression functionType = expr.getFunction().inferType(context).normalize();
         if (functionType instanceof PiExpression) {
-            PiExpression arrType = (PiExpression)functionType;
-            expr.getArgument().checkType(context, arrType.getLeft());
-            return arrType.getRight();
+            PiExpression piType = (PiExpression)functionType;
+            expr.getArgument().checkType(context, piType.getLeft());
+            return piType.getRight().subst(expr.getArgument(), 0);
         } else {
             throw new TypeMismatchException(new PiExpression(new VarExpression("_"), new VarExpression("_")), functionType, expr.getFunction());
         }
@@ -41,7 +41,7 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
     @Override
     public Expression visitIndex(IndexExpression expr) {
         assert expr.getIndex() < context.size();
-        return context.get(context.size() - 1 - expr.getIndex()).getType();
+        return context.get(context.size() - 1 - expr.getIndex()).getType().liftIndex(0, expr.getIndex() + 1);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitUniverse(UniverseExpression expr) {
-        return expr;
+        return new UniverseExpression(expr.getLevel() == -1 ? -1 : expr.getLevel() + 1);
     }
 
     @Override

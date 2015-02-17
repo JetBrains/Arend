@@ -46,7 +46,7 @@ public class AppExpression extends Expression {
 
     @Override
     public String toString() {
-        return function.toString() + " (" + argument.toString() + ")";
+        return "(" + function.toString() + ") (" + argument.toString() + ")";
     }
 
     @Override

@@ -104,10 +104,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
             }
         }
         Expression expr = (Expression) visit(ctx.expr1());
-        for (int i = 0; i < telescopeSize; ++i) {
+        for (int i = telescopeSize - 1; i >= 0; --i) {
             ListIterator<TerminalNode> it = ctx.tele(i).ID().listIterator(ctx.tele(i).ID().size());
             while (it.hasPrevious()) {
-                expr = new PiExpression(it.previous().getText(), lefts[telescopeSize - 1 - i], expr);
+                expr = new PiExpression(it.previous().getText(), lefts[i], expr);
                 names.remove(names.size() - 1);
             }
         }

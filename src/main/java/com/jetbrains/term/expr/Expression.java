@@ -35,9 +35,10 @@ public abstract class Expression implements PrettyPrintable {
     }
 
     public void checkType(List<Definition> context, Expression expected) throws TypeCheckingException {
-        Expression actual = inferType(context);
-        if (!expected.equals(actual)) {
-            throw new TypeMismatchException(expected, actual, this);
+        Expression actualNorm = inferType(context).normalize();
+        Expression expectedNorm = expected.normalize();
+        if (!expectedNorm.equals(actualNorm)) {
+            throw new TypeMismatchException(expectedNorm, actualNorm, this);
         }
     }
 }
