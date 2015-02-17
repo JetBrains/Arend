@@ -6,6 +6,20 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class UniverseExpression extends Expression {
+    private final int level;
+
+    public UniverseExpression() {
+        level = -1;
+    }
+
+    public UniverseExpression(int level) {
+        this.level = level;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
     @Override
     public int precedence() {
         return 11;
@@ -24,7 +38,7 @@ public class UniverseExpression extends Expression {
 
     @Override
     public String toString() {
-        return "Type";
+        return "Type" + (level < 0 ? "" : level);
     }
 
     @Override

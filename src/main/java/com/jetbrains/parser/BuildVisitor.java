@@ -2,9 +2,11 @@ package main.java.com.jetbrains.parser;
 
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.expr.*;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
     private List<String> names = new ArrayList<String>();
@@ -67,15 +69,48 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     @Override
     public Object visitLam(VcgrammarParser.LamContext ctx) {
-        String var = ctx.ID().getText();
-        names.add(var);
+        for (TerminalNode var : ctx.ID()) {
+            names.add(var.getText());
+        }
         Expression expr = (Expression) visit(ctx.expr());
-        names.remove(names.size() - 1);
-        return new LamExpression(var, expr);
+        for (TerminalNode ignored : ctx.ID()) {
+            names.remove(names.size() - 1);
+        }
+        ListIterator<TerminalNode> it = ctx.ID().listIterator(ctx.ID().size());
+        while (it.hasPrevious()) {
+            expr = new LamExpression(it.previous().getText(), expr);
+        }
+        return expr;
     }
 
     @Override
     public Object visitId(VcgrammarParser.IdContext ctx) {
         return new VarExpression(ctx.ID().getText());
+    }
+
+    @Override
+    public Object visitUniverse(VcgrammarParser.UniverseContext ctx) {
+        return new UniverseExpression(Integer.valueOf(ctx.UNIVERSE().getText().substring("Type".length())));
+    }
+
+    @Override
+    public Object visitPi(VcgrammarParser.PiContext ctx) {
+        int telescopeSize = ctx.tele().size();
+        Expression[] lefts = new Expression[telescopeSize];
+        for (int i = 0; i < telescopeSize; ++i) {
+            lefts[i] = (Expression) visit(ctx.tele(i).expr1());
+            for (TerminalNode var : ctx.tele(i).ID()) {
+                names.add(var.getText());
+            }
+        }
+        Expression expr = (Expression) visit(ctx.expr1());
+        for (int i = 0; i < telescopeSize; ++i) {
+            ListIterator<TerminalNode> it = ctx.tele(i).ID().listIterator(ctx.tele(i).ID().size());
+            while (it.hasPrevious()) {
+                expr = new PiExpression(it.previous().getText(), lefts[telescopeSize - 1 - i], expr);
+                names.remove(names.size() - 1);
+            }
+        }
+        return expr;
     }
 }

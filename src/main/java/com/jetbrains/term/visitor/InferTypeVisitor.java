@@ -51,7 +51,7 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitNat(NatExpression expr) {
-        return new UniverseExpression();
+        return new UniverseExpression(0);
     }
 
     @Override
@@ -61,15 +61,17 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitPi(PiExpression expr) {
-        Expression typeType = new UniverseExpression();
         Expression leftType = expr.getLeft().inferType(context).normalize();
         context.add(new FunctionDefinition(expr.getVariable(), leftType, new VarExpression(expr.getVariable())));
         Expression rightType = expr.getRight().inferType(context).normalize();
         context.remove(context.size() - 1);
-        boolean leftOK = leftType.equals(typeType);
-        boolean rightOK = rightType.equals(typeType);
-        if (leftOK && rightOK) return typeType;
-        else throw new TypeMismatchException(typeType, leftOK ? rightType : leftType, leftOK ? expr.getRight() : expr.getLeft());
+        boolean leftOK = leftType instanceof UniverseExpression;
+        boolean rightOK = rightType instanceof UniverseExpression;
+        if (leftOK && rightOK) {
+            return new UniverseExpression(Integer.max(((UniverseExpression) leftType).getLevel(), ((UniverseExpression) rightType).getLevel()));
+        } else {
+            throw new TypeMismatchException(new UniverseExpression(), leftOK ? rightType : leftType, leftOK ? expr.getRight() : expr.getLeft());
+        }
     }
 
     @Override
