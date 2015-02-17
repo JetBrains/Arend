@@ -1,4 +1,4 @@
-package test.java.com.jetbrains.term.visitor;
+package test.java.com.jetbrains.parser;
 
 import main.java.com.jetbrains.parser.BuildVisitor;
 import main.java.com.jetbrains.parser.VcgrammarLexer;
