@@ -4,6 +4,7 @@ import main.java.com.jetbrains.term.NotInScopeException;
 import main.java.com.jetbrains.term.PrettyPrintable;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
+import main.java.com.jetbrains.term.typechecking.TypeMismatchException;
 import main.java.com.jetbrains.term.visitor.*;
 
 import java.util.List;
@@ -29,11 +30,14 @@ public abstract class Expression implements PrettyPrintable {
         return accept(new FixVariablesVisitor(names, signature));
     }
 
-    public final void checkType(List<Definition> context, Expression expected) throws TypeCheckingException {
-        accept(new CheckTypeVisitor(context, expected));
-    }
-
     public final Expression inferType(List<Definition> context) throws TypeCheckingException {
         return accept(new InferTypeVisitor(context));
+    }
+
+    public void checkType(List<Definition> context, Expression expected) throws TypeCheckingException {
+        Expression actual = inferType(context);
+        if (!expected.equals(actual)) {
+            throw new TypeMismatchException(expected, actual, this);
+        }
     }
 }
