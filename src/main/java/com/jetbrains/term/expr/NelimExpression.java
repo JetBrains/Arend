@@ -1,8 +1,5 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.definition.Definition;
-import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
-import main.java.com.jetbrains.term.typechecking.TypeInferenceException;
 import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
@@ -28,11 +25,6 @@ public class NelimExpression extends Expression {
     @Override
     public String toString() {
         return "N-elim";
-    }
-
-    @Override
-    public Expression inferType(List<Definition> context) throws TypeCheckingException {
-        throw new TypeInferenceException(this);
     }
 
     @Override

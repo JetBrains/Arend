@@ -1,8 +1,5 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.definition.Definition;
-import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
-import main.java.com.jetbrains.term.typechecking.TypeMismatchException;
 import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
@@ -53,28 +50,7 @@ public class AppExpression extends Expression {
     }
 
     @Override
-    public Expression inferType(List<Definition> context) throws TypeCheckingException {
-        Expression nelimResult = checkNelim(context);
-        if (nelimResult != null) return nelimResult;
-
-        Expression functionType = function.inferType(context).normalize();
-        if (functionType instanceof PiExpression) {
-            PiExpression arrType = (PiExpression)functionType;
-            argument.checkType(context, arrType.getLeft());
-            return arrType.getRight();
-        } else {
-            throw new TypeMismatchException(new PiExpression(new VarExpression("_"), new VarExpression("_")), functionType, function);
-        }
-    }
-
-    @Override
     public <T> T accept(ExpressionVisitor<? extends T> visitor) {
         return visitor.visitApp(this);
-    }
-
-    private Expression checkNelim(List<Definition> context) throws TypeCheckingException {
-        if (!(function instanceof NelimExpression)) return null;
-        Expression type = argument.inferType(context);
-        return new PiExpression(new PiExpression(new NatExpression(), new PiExpression(type, type)), new PiExpression(new NatExpression(), type));
     }
 }

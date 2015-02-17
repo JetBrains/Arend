@@ -1,7 +1,5 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.definition.Definition;
-import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
 import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
@@ -40,12 +38,6 @@ public class IndexExpression extends Expression {
     @Override
     public String toString() {
         return "<" + index + ">";
-    }
-
-    @Override
-    public Expression inferType(List<Definition> context) throws TypeCheckingException {
-        assert index < context.size();
-        return context.get(context.size() - 1 - index).getType();
     }
 
     @Override

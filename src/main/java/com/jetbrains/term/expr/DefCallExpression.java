@@ -1,7 +1,6 @@
 package main.java.com.jetbrains.term.expr;
 
 import main.java.com.jetbrains.term.definition.Definition;
-import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
 import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
@@ -39,11 +38,6 @@ public class DefCallExpression extends Expression {
     @Override
     public String toString() {
         return definition.getName();
-    }
-
-    @Override
-    public Expression inferType(List<Definition> context) throws TypeCheckingException {
-        return definition.getType();
     }
 
     @Override

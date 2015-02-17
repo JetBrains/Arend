@@ -2,7 +2,7 @@ package main.java.com.jetbrains.term.typechecking;
 
 import main.java.com.jetbrains.term.expr.Expression;
 
-public class TypeCheckingException extends Exception {
+public class TypeCheckingException extends RuntimeException {
     private final Expression expression;
 
     public TypeCheckingException(Expression expression) {

@@ -1,7 +1,5 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.definition.Definition;
-import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
 import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
@@ -27,11 +25,6 @@ public class SucExpression extends Expression {
     @Override
     public String toString() {
         return "S";
-    }
-
-    @Override
-    public Expression inferType(List<Definition> context) throws TypeCheckingException {
-        return new PiExpression(new NatExpression(), new NatExpression());
     }
 
     @Override

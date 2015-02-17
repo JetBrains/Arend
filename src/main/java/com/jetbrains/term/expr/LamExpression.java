@@ -1,10 +1,5 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.definition.Definition;
-import main.java.com.jetbrains.term.definition.FunctionDefinition;
-import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
-import main.java.com.jetbrains.term.typechecking.TypeInferenceException;
-import main.java.com.jetbrains.term.typechecking.TypeMismatchException;
 import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
@@ -55,24 +50,6 @@ public class LamExpression extends Expression {
     @Override
     public String toString() {
         return "\\" + variable + " -> " + body;
-    }
-
-    @Override
-    public void checkType(List<Definition> context, Expression expected) throws TypeCheckingException {
-        Expression expectedNormalized = expected.normalize();
-        if (expectedNormalized instanceof PiExpression) {
-            PiExpression type = (PiExpression)expectedNormalized;
-            context.add(new FunctionDefinition(variable, type.getLeft(), new VarExpression(variable)));
-            body.checkType(context, type.getRight());
-            context.remove(context.size() - 1);
-        } else {
-            throw new TypeMismatchException(expectedNormalized, new PiExpression(new VarExpression("_"), new VarExpression("_")), this);
-        }
-    }
-
-    @Override
-    public Expression inferType(List<Definition> context) throws TypeCheckingException {
-        throw new TypeInferenceException(this);
     }
 
     @Override

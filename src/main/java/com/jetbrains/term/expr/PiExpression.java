@@ -1,9 +1,5 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.definition.Definition;
-import main.java.com.jetbrains.term.definition.FunctionDefinition;
-import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
-import main.java.com.jetbrains.term.typechecking.TypeMismatchException;
 import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
 
 import java.io.PrintStream;
@@ -69,19 +65,6 @@ public class PiExpression extends Expression {
     @Override
     public String toString() {
         return "(" + (variable == null ? "" : variable + " : ") + left.toString() + ") -> " + right.toString();
-    }
-
-    @Override
-    public Expression inferType(List<Definition> context) throws TypeCheckingException {
-        Expression typeType = new UniverseExpression();
-        Expression leftType = left.inferType(context).normalize();
-        context.add(new FunctionDefinition(variable, leftType, new VarExpression(variable)));
-        Expression rightType = right.inferType(context).normalize();
-        context.remove(context.size() - 1);
-        boolean leftOK = leftType.equals(typeType);
-        boolean rightOK = rightType.equals(typeType);
-        if (leftOK && rightOK) return typeType;
-        else throw new TypeMismatchException(typeType, leftOK ? rightType : leftType, leftOK ? right : left);
     }
 
     @Override
