@@ -3,7 +3,7 @@ package test.java.com.jetbrains.term.visitor;
 import main.java.com.jetbrains.term.NotInScopeException;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
-import main.java.com.jetbrains.term.expr.*;
+import main.java.com.jetbrains.term.expr.Expression;
 import org.junit.Test;
 
 import static main.java.com.jetbrains.term.expr.Expression.*;

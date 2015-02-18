@@ -1,7 +1,7 @@
 package test.java.com.jetbrains.term.visitor;
 
 import main.java.com.jetbrains.term.definition.Definition;
-import main.java.com.jetbrains.term.expr.*;
+import main.java.com.jetbrains.term.expr.Expression;
 import main.java.com.jetbrains.term.typechecking.TypeMismatchException;
 import org.junit.Test;
 

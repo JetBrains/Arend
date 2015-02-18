@@ -42,16 +42,15 @@ public class PiExpression extends Expression {
         if (prec > precedence()) stream.print("(");
         if (variable == null) {
             left.prettyPrint(stream, names, precedence() + 1);
-            stream.print(" -> ");
-            right.prettyPrint(stream, names, precedence());
         } else {
             stream.print("(" + variable + " : ");
             left.prettyPrint(stream, names, 0);
-            stream.print(") -> ");
-            names.add(variable);
-            right.prettyPrint(stream, names, precedence());
-            names.remove(names.size() - 1);
+            stream.print(")");
         }
+        stream.print(" -> ");
+        names.add(variable);
+        right.prettyPrint(stream, names, precedence());
+        names.remove(names.size() - 1);
         if (prec > precedence()) stream.print(")");
     }
 
