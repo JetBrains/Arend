@@ -18,7 +18,7 @@ public class FixVariablesVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitApp(AppExpression expr) {
-        return new AppExpression(expr.getFunction().fixVariables(names, signature), expr.getArgument().fixVariables(names, signature));
+        return new AppExpression(expr.getFunction().accept(this), expr.getArgument().accept(this));
     }
 
     @Override
@@ -34,7 +34,7 @@ public class FixVariablesVisitor implements ExpressionVisitor<Expression> {
     @Override
     public Expression visitLam(LamExpression expr) {
         names.add(expr.getVariable());
-        Expression body1 = expr.getBody().fixVariables(names, signature);
+        Expression body1 = expr.getBody().accept(this);
         names.remove(names.size() - 1);
         return new LamExpression(expr.getVariable(), body1);
     }
@@ -52,9 +52,9 @@ public class FixVariablesVisitor implements ExpressionVisitor<Expression> {
     @Override
     public Expression visitPi(PiExpression expr) {
         names.add(expr.getVariable());
-        Expression right1 = expr.getRight().fixVariables(names, signature);
+        Expression right1 = expr.getRight().accept(this);
         names.remove(names.size() - 1);
-        return new PiExpression(expr.getVariable(), expr.getLeft().fixVariables(names, signature), right1);
+        return new PiExpression(expr.getVariable(), expr.getLeft().accept(this), right1);
     }
 
     @Override

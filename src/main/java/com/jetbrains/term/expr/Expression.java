@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Expression implements PrettyPrintable {
+    private static final Expression NAT = new NatExpression();
+    private static final Expression ZERO = new ZeroExpression();
+    private static final Expression SUC = new SucExpression();
+    private static final Expression NELIM = new NelimExpression();
     public abstract int precedence();
     public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
 
@@ -40,5 +44,60 @@ public abstract class Expression implements PrettyPrintable {
         if (!expectedNorm.equals(actualNorm)) {
             throw new TypeMismatchException(expectedNorm, actualNorm, this);
         }
+    }
+
+    public static Expression Apps(Expression expr, Expression... exprs) {
+        for (Expression expr1 : exprs) {
+            expr = new AppExpression(expr, expr1);
+        }
+        return expr;
+    }
+
+    public static Expression DefCall(Definition definition) {
+        return new DefCallExpression(definition);
+    }
+
+    public static Expression Index(int i) {
+        return new IndexExpression(i);
+    }
+
+    public static Expression Lam(String variable, Expression body) {
+        return new LamExpression(variable, body);
+    }
+
+    public static Expression Pi(String variable, Expression left, Expression right) {
+        return new PiExpression(variable, left, right);
+    }
+
+    public static Expression Pi(Expression left, Expression right) {
+        return new PiExpression(left, right);
+    }
+
+    public static Expression Var(String name) {
+        return new VarExpression(name);
+    }
+
+    public static Expression Nat() {
+        return NAT;
+    }
+
+    public static Expression Zero() {
+        return ZERO;
+    }
+
+    public static Expression Suc() {
+        return SUC;
+    }
+
+    public static Expression Suc(Expression expr) {
+        return Apps(SUC, expr);
+    }
+
+    public static Expression Universe(int level) {
+        return new UniverseExpression(level);
+    }
+
+    public static Expression Nelim() {
+        return NELIM;
     }
 }

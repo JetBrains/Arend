@@ -10,7 +10,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         Expression function1 = expr.getFunction().accept(this);
         if (function1 instanceof LamExpression) {
             Expression body = ((LamExpression)function1).getBody();
-            return body.subst(expr.getArgument(), 0).normalize();
+            return body.subst(expr.getArgument(), 0).accept(this);
         }
         if (function1 instanceof AppExpression) {
             AppExpression appExpr1 = (AppExpression)function1;
@@ -19,25 +19,25 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
                 if (appExpr2.getFunction() instanceof NelimExpression) {
                     Expression zeroClause = appExpr2.getArgument();
                     Expression sucClause = appExpr1.getArgument();
-                    Expression caseExpr = expr.getArgument().normalize();
+                    Expression caseExpr = expr.getArgument().accept(this);
                     if (caseExpr instanceof ZeroExpression) return zeroClause;
                     if (caseExpr instanceof AppExpression) {
                         AppExpression appExpr3 = (AppExpression)caseExpr;
                         if (appExpr3.getFunction() instanceof SucExpression) {
                             Expression recursiveCall = new AppExpression(appExpr1, appExpr3.getArgument());
                             Expression result = new AppExpression(new AppExpression(sucClause, appExpr3.getArgument()), recursiveCall);
-                            return result.normalize();
+                            return result.accept(this);
                         }
                     }
                 }
             }
         }
-        return new AppExpression(function1, expr.getArgument().normalize());
+        return new AppExpression(function1, expr.getArgument().accept(this));
     }
 
     @Override
     public Expression visitDefCall(DefCallExpression expr) {
-        return expr.getDefinition().getTerm().normalize();
+        return expr.getDefinition().getTerm().accept(this);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitLam(LamExpression expr) {
-        return new LamExpression(expr.getVariable(), expr.getBody().normalize());
+        return new LamExpression(expr.getVariable(), expr.getBody().accept(this));
     }
 
     @Override
@@ -62,7 +62,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitPi(PiExpression expr) {
-        return new PiExpression(expr.getVariable(), expr.getLeft().normalize(), expr.getRight().normalize());
+        return new PiExpression(expr.getVariable(), expr.getLeft().accept(this), expr.getRight().accept(this));
     }
 
     @Override

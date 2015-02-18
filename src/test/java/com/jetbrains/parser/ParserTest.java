@@ -10,6 +10,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.Test;
 
+import static main.java.com.jetbrains.term.expr.Expression.*;
 import static org.junit.Assert.assertEquals;
 
 public class ParserTest {
@@ -22,7 +23,7 @@ public class ParserTest {
         ParseTree tree = parser.expr();
         BuildVisitor builder = new BuildVisitor();
         Object expr = builder.visit(tree);
-        assertEquals(new LamExpression("x", new LamExpression("y", new LamExpression("z", new VarExpression("y")))), expr);
+        assertEquals(Lam("x", Lam("y", Lam("z", Var("y")))), expr);
     }
 
     @Test
@@ -35,9 +36,8 @@ public class ParserTest {
         BuildVisitor builder = new BuildVisitor();
         Object expr = builder.visit(tree);
 
-        Expression nat = new NatExpression();
-        Expression natNat = new PiExpression(nat, nat);
-        Expression piNat = new PiExpression("c", nat, new AppExpression(nat, new VarExpression("b")));
-        assertEquals(new PiExpression("x", nat, new PiExpression("y", nat, new PiExpression("z", nat, new PiExpression("w", natNat, new PiExpression("t", natNat, new PiExpression("a", piNat, new PiExpression("b", piNat, new AppExpression(new AppExpression(nat, new VarExpression("y")), new VarExpression("w"))))))))), expr);
+        Expression natNat = Pi(Nat(), Nat());
+        Expression piNat = Pi("c", Nat(), Apps(Nat(), Var("b")));
+        assertEquals(Pi("x", Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi("w", natNat, Pi("t", natNat, Pi("a", piNat, Pi("b", piNat, Apps(Nat(), Var("y"), Var("w"))))))))), expr);
     }
 }

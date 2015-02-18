@@ -19,11 +19,11 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
     @Override
     public Expression visitApp(AppExpression expr) {
         if (expr.getFunction() instanceof NelimExpression) {
-            Expression type = expr.getArgument().inferType(context);
+            Expression type = expr.getArgument().accept(this);
             return new PiExpression(new PiExpression(new NatExpression(), new PiExpression(type, type)), new PiExpression(new NatExpression(), type));
         }
 
-        Expression functionType = expr.getFunction().inferType(context).normalize();
+        Expression functionType = expr.getFunction().accept(this).normalize();
         if (functionType instanceof PiExpression) {
             PiExpression piType = (PiExpression)functionType;
             expr.getArgument().checkType(context, piType.getLeft());
@@ -61,9 +61,9 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitPi(PiExpression expr) {
-        Expression leftType = expr.getLeft().inferType(context).normalize();
+        Expression leftType = expr.getLeft().accept(this).normalize();
         context.add(new FunctionDefinition(expr.getVariable(), leftType, new VarExpression(expr.getVariable())));
-        Expression rightType = expr.getRight().inferType(context).normalize();
+        Expression rightType = expr.getRight().accept(this).normalize();
         context.remove(context.size() - 1);
         boolean leftOK = leftType instanceof UniverseExpression;
         boolean rightOK = rightType instanceof UniverseExpression;
