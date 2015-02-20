@@ -6,7 +6,6 @@ import main.java.com.jetbrains.parser.VcgrammarParser;
 import main.java.com.jetbrains.term.NotInScopeException;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
-import main.java.com.jetbrains.term.expr.Expression;
 import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -14,9 +13,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Main {
 
@@ -29,14 +26,14 @@ public class Main {
         ParseTree tree = parser.defs();
         BuildVisitor builder = new BuildVisitor();
         List<FunctionDefinition> defs = (List<FunctionDefinition>) builder.visit(tree);
-        Map<String, Definition> signature = new HashMap<String, Definition>();
+        for (String var : builder.getUnknownVariables()) {
+            System.err.print("Not in scope: " + var);
+        }
         for (FunctionDefinition def : defs) {
-            List<String> names = new ArrayList<String>();
-            def = def.fixVariables(names, signature);
-            Expression type = def.getType().normalize();
-            Expression term = def.getTerm().normalize();
-            term.checkType(new ArrayList<Definition>(), type);
-            signature.put(def.getName(), def);
+            def = new FunctionDefinition(def.getName(), def.getArguments(), def.getResultType().normalize(), def.getTerm().normalize());
+            if (builder.getUnknownVariables().isEmpty()) {
+                def.getTerm().checkType(new ArrayList<Definition>(), def.getType());
+            }
             def.prettyPrint(System.out, new ArrayList<String>(), 0);
             System.out.println();
             System.out.println();

@@ -4,7 +4,6 @@ import main.java.com.jetbrains.term.definition.Argument;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.expr.*;
-import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.*;
@@ -12,6 +11,7 @@ import java.util.*;
 public class BuildVisitor extends VcgrammarBaseVisitor {
     private List<String> names = new ArrayList<String>();
     private Map<String, Definition> signature = new HashMap<String, Definition>();
+    private List<String> unknownVariables = new ArrayList<String>();
 
     @Override
     public Object visitDefs(VcgrammarParser.DefsContext ctx) {
@@ -90,7 +90,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     @Override
     public Object visitId(VcgrammarParser.IdContext ctx) {
-        return new VarExpression(ctx.ID().getText());
+        String name = ctx.ID().getText();
+        int index = names.lastIndexOf(name);
+        if (index == -1) {
+            Definition def = signature.get(name);
+            if (def == null) {
+                unknownVariables.add(name);
+                return new VarExpression(name);
+            } else {
+                return new DefCallExpression(def);
+            }
+        } else {
+            return new IndexExpression(names.size() - 1 - index);
+        }
     }
 
     @Override
@@ -120,7 +132,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     @Override
-    public Object visitTypeTopPi(@NotNull VcgrammarParser.TypeTopPiContext ctx) {
+    public Object visitTypeTopPi(VcgrammarParser.TypeTopPiContext ctx) {
         List<Argument> arguments = new ArrayList<Argument>();
         int telescopeSize = ctx.typeTopTele().size();
         Expression[] argumentTypes = new Expression[telescopeSize];
@@ -148,8 +160,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     @Override
-    public Object visitTypeTopExpr1(@NotNull VcgrammarParser.TypeTopExpr1Context ctx) {
+    public Object visitTypeTopExpr1(VcgrammarParser.TypeTopExpr1Context ctx) {
         return new TypeTopData((Expression) visit(ctx.expr1()), new ArrayList<Argument>());
+    }
+
+    public List<String> getUnknownVariables() {
+        return unknownVariables;
     }
 
     private static class TypeTopData {
