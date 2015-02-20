@@ -1,15 +1,17 @@
 package main.java.com.jetbrains.parser;
 
+import main.java.com.jetbrains.term.definition.Argument;
+import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.expr.*;
+import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
     private List<String> names = new ArrayList<String>();
+    private Map<String, Definition> signature = new HashMap<String, Definition>();
 
     @Override
     public Object visitDefs(VcgrammarParser.DefsContext ctx) {
@@ -23,9 +25,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     @Override
     public Object visitDef(VcgrammarParser.DefContext ctx) {
         String name = ctx.ID().getText();
-        Expression type = (Expression) visit(ctx.expr(0));
-        Expression term = (Expression) visit(ctx.expr(1));
-        return new FunctionDefinition(name, type, term);
+        TypeTopData typeTopData = (TypeTopData) visit(ctx.typeTop());
+        Expression term = (Expression) visit(ctx.expr());
+        Argument[] arguments = typeTopData.arguments.toArray(new Argument[typeTopData.arguments.size()]);
+        Definition def = new FunctionDefinition(name, arguments, typeTopData.resultType, term);
+        signature.put(name, def);
+        return def;
     }
 
     @Override
@@ -113,4 +118,48 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
         return expr;
     }
+
+    @Override
+    public Object visitTypeTopPi(@NotNull VcgrammarParser.TypeTopPiContext ctx) {
+        List<Argument> arguments = new ArrayList<Argument>();
+        int telescopeSize = ctx.typeTopTele().size();
+        Expression[] argumentTypes = new Expression[telescopeSize];
+        for (int i = 0; i < telescopeSize; ++i) {
+            boolean explicit = ctx.typeTopTele(i) instanceof VcgrammarParser.TypeTopExplicitContext;
+            VcgrammarParser.Expr1Context expr1 = explicit
+                    ? ((VcgrammarParser.TypeTopExplicitContext)ctx.typeTopTele(i)).expr1()
+                    : ((VcgrammarParser.TypeTopImplicitContext)ctx.typeTopTele(i)).expr1();
+            List<TerminalNode> ids = explicit
+                    ? ((VcgrammarParser.TypeTopExplicitContext)ctx.typeTopTele(i)).ID()
+                    : ((VcgrammarParser.TypeTopImplicitContext)ctx.typeTopTele(i)).ID();
+            argumentTypes[i] = (Expression) visit(expr1);
+            for (TerminalNode var : ids) {
+                arguments.add(new Argument(explicit, var.getText(), argumentTypes[i]));
+                names.add(var.getText());
+            }
+        }
+        TypeTopData typeTopData = (TypeTopData) visit(ctx.typeTop());
+        for (Argument ignored : arguments) {
+            names.remove(names.size() - 1);
+        }
+        arguments.addAll(typeTopData.arguments);
+        typeTopData.arguments = arguments;
+        return typeTopData;
+    }
+
+    @Override
+    public Object visitTypeTopExpr1(@NotNull VcgrammarParser.TypeTopExpr1Context ctx) {
+        return new TypeTopData((Expression) visit(ctx.expr1()), new ArrayList<Argument>());
+    }
+
+    private static class TypeTopData {
+        Expression resultType;
+        List<Argument> arguments;
+
+        TypeTopData(Expression resultType, List<Argument> arguments) {
+            this.resultType = resultType;
+            this.arguments = arguments;
+        }
+    }
+
 }

@@ -6,6 +6,8 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class VarExpression extends Expression {
+    public final static int PREC = 11;
+
     private final String name;
 
     public VarExpression(String name) {
@@ -14,11 +16,6 @@ public class VarExpression extends Expression {
 
     public String getName() {
         return name;
-    }
-
-    @Override
-    public int precedence() {
-        return 11;
     }
 
     @Override

@@ -6,6 +6,8 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class PiExpression extends Expression {
+    public final static int PREC = 6;
+
     private final String variable;
     private final Expression left;
     private final Expression right;
@@ -33,15 +35,10 @@ public class PiExpression extends Expression {
     }
 
     @Override
-    public int precedence() {
-        return 6;
-    }
-
-    @Override
     public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-        if (prec > precedence()) stream.print("(");
+        if (prec > PREC) stream.print("(");
         if (variable == null) {
-            left.prettyPrint(stream, names, precedence() + 1);
+            left.prettyPrint(stream, names, PREC + 1);
         } else {
             stream.print("(" + variable + " : ");
             left.prettyPrint(stream, names, 0);
@@ -49,9 +46,9 @@ public class PiExpression extends Expression {
         }
         stream.print(" -> ");
         names.add(variable);
-        right.prettyPrint(stream, names, precedence());
+        right.prettyPrint(stream, names, PREC);
         names.remove(names.size() - 1);
-        if (prec > precedence()) stream.print(")");
+        if (prec > PREC) stream.print(")");
     }
 
     @Override

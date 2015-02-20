@@ -6,6 +6,8 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class AppExpression extends Expression {
+    public final static int PREC = 10;
+
     private final Expression function;
     private final Expression argument;
 
@@ -23,17 +25,12 @@ public class AppExpression extends Expression {
     }
 
     @Override
-    public int precedence() {
-        return 10;
-    }
-
-    @Override
     public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-        if (prec > precedence()) stream.print("(");
-        function.prettyPrint(stream, names, precedence());
+        if (prec > PREC) stream.print("(");
+        function.prettyPrint(stream, names, PREC);
         stream.print(" ");
-        argument.prettyPrint(stream, names, precedence() + 1);
-        if (prec > precedence()) stream.print(")");
+        argument.prettyPrint(stream, names, PREC + 1);
+        if (prec > PREC) stream.print(")");
     }
 
     @Override

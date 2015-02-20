@@ -6,10 +6,7 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class ZeroExpression extends Expression {
-    @Override
-    public int precedence() {
-        return 11;
-    }
+    public final static int PREC = 11;
 
     @Override
     public void prettyPrint(PrintStream stream, List<String> names, int prec) {
@@ -18,8 +15,7 @@ public class ZeroExpression extends Expression {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
-        return o instanceof ZeroExpression;
+        return o == this || o instanceof ZeroExpression;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package main.java.com.jetbrains.term.expr;
 
+import main.java.com.jetbrains.term.definition.Argument;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
@@ -10,6 +11,8 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class LamExpression extends Expression {
+    public final static int PREC = 5;
+
     private final String variable;
     private final Expression body;
 
@@ -27,20 +30,15 @@ public class LamExpression extends Expression {
     }
 
     @Override
-    public int precedence() {
-        return 5;
-    }
-
-    @Override
     public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-        if (prec > precedence()) stream.print("(");
+        if (prec > PREC) stream.print("(");
         String var;
         for (var = variable; names.contains(var); var += "'");
         stream.print("\\" + var + " -> ");
         names.add(var);
-        body.prettyPrint(stream, names, precedence());
+        body.prettyPrint(stream, names, PREC);
         names.remove(names.size() - 1);
-        if (prec > precedence()) stream.print(")");
+        if (prec > PREC) stream.print(")");
     }
 
     @Override
@@ -66,7 +64,8 @@ public class LamExpression extends Expression {
         Expression expectedNormalized = expected.normalize();
         if (expectedNormalized instanceof PiExpression) {
             PiExpression type = (PiExpression)expectedNormalized;
-            context.add(new FunctionDefinition(variable, type.getLeft(), new VarExpression(variable)));
+            // TODO: This is ugly. Fix it.
+            context.add(new FunctionDefinition(variable, new Argument[0], type.getLeft(), new VarExpression(variable)));
             body.checkType(context, type.getRight());
             context.remove(context.size() - 1);
         } else

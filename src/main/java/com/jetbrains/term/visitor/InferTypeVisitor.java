@@ -1,5 +1,6 @@
 package main.java.com.jetbrains.term.visitor;
 
+import main.java.com.jetbrains.term.definition.Argument;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.expr.*;
@@ -62,7 +63,7 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
     @Override
     public Expression visitPi(PiExpression expr) {
         Expression leftType = expr.getLeft().accept(this).normalize();
-        context.add(new FunctionDefinition(expr.getVariable(), leftType, new VarExpression(expr.getVariable())));
+        context.add(new FunctionDefinition(expr.getVariable(), new Argument[0], leftType, new VarExpression(expr.getVariable())));
         Expression rightType = expr.getRight().accept(this).normalize();
         context.remove(context.size() - 1);
         boolean leftOK = leftType instanceof UniverseExpression;

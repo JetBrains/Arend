@@ -6,6 +6,8 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class UniverseExpression extends Expression {
+    public final static int PREC = 11;
+
     private final int level;
 
     public UniverseExpression() {
@@ -21,19 +23,13 @@ public class UniverseExpression extends Expression {
     }
 
     @Override
-    public int precedence() {
-        return 11;
-    }
-
-    @Override
     public void prettyPrint(PrintStream stream, List<String> names, int prec) {
         stream.print(toString());
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
-        return o instanceof UniverseExpression;
+        return o == this || o instanceof UniverseExpression;
     }
 
     @Override

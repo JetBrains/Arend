@@ -15,7 +15,7 @@ public abstract class Expression implements PrettyPrintable {
     private static final Expression ZERO = new ZeroExpression();
     private static final Expression SUC = new SucExpression();
     private static final Expression NELIM = new NelimExpression();
-    public abstract int precedence();
+
     public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
 
     public final Expression liftIndex(int from, int on) {

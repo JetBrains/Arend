@@ -1,6 +1,7 @@
 package test.java.com.jetbrains.term.visitor;
 
 import main.java.com.jetbrains.term.NotInScopeException;
+import main.java.com.jetbrains.term.definition.Argument;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.expr.Expression;
@@ -32,7 +33,7 @@ public class FixVariablesTest {
     public void fixVariablesVarGlobal() {
         Expression expr = Var("x");
         Map<String, Definition> defs = new HashMap<String, Definition>();
-        Definition def = new FunctionDefinition("z", Nat(), Zero());
+        Definition def = new FunctionDefinition("z", new Argument[0], Nat(), Zero());
         defs.put("x", def);
         expr = expr.fixVariables(new ArrayList<String>(), defs);
         assertEquals(DefCall(def), expr);

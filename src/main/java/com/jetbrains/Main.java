@@ -32,12 +32,12 @@ public class Main {
         Map<String, Definition> signature = new HashMap<String, Definition>();
         for (FunctionDefinition def : defs) {
             List<String> names = new ArrayList<String>();
-            Expression type = def.getType().fixVariables(names, signature).normalize();
-            Expression term = def.getTerm().fixVariables(names, signature).normalize();
+            def = def.fixVariables(names, signature);
+            Expression type = def.getType().normalize();
+            Expression term = def.getTerm().normalize();
             term.checkType(new ArrayList<Definition>(), type);
-            FunctionDefinition def1 = new FunctionDefinition(def.getName(), type, term);
-            signature.put(def1.getName(), def1);
-            def1.prettyPrint(System.out, new ArrayList<String>(), 0);
+            signature.put(def.getName(), def);
+            def.prettyPrint(System.out, new ArrayList<String>(), 0);
             System.out.println();
             System.out.println();
         }

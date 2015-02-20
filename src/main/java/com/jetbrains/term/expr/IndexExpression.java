@@ -6,6 +6,8 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class IndexExpression extends Expression {
+    public final static int PREC = 11;
+
     private final int index;
 
     public IndexExpression(int index) {
@@ -14,11 +16,6 @@ public class IndexExpression extends Expression {
 
     public int getIndex() {
         return index;
-    }
-
-    @Override
-    public int precedence() {
-        return 11;
     }
 
     @Override

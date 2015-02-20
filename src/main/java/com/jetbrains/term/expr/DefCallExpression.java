@@ -7,6 +7,8 @@ import java.io.PrintStream;
 import java.util.List;
 
 public class DefCallExpression extends Expression {
+    public final static int PREC = 11;
+
     private final Definition definition;
 
     public DefCallExpression(Definition function) {
@@ -15,11 +17,6 @@ public class DefCallExpression extends Expression {
 
     public Definition getDefinition() {
         return definition;
-    }
-
-    @Override
-    public int precedence() {
-        return 11;
     }
 
     @Override
