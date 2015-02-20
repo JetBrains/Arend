@@ -3,14 +3,15 @@ package test.java.com.jetbrains.parser;
 import main.java.com.jetbrains.parser.BuildVisitor;
 import main.java.com.jetbrains.parser.VcgrammarLexer;
 import main.java.com.jetbrains.parser.VcgrammarParser;
+import main.java.com.jetbrains.term.definition.Definition;
+import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.expr.Expression;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Test;
 
 import static main.java.com.jetbrains.term.expr.Expression.*;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class ParserTest {
     @Test
@@ -70,6 +71,31 @@ public class ParserTest {
         assertArrayEquals(new String[0], builder.getUnknownVariables().toArray(new String[builder.getUnknownVariables().size()]));
     }
 
+    @Test
+    public void parserImplicit() {
+        FunctionDefinition def = (FunctionDefinition)parseDef("f : (x y : N) {z w : N} -> (t : N) -> {r : N} -> N x y z w t r = N;");
+        assertEquals(6, def.getArguments().length);
+        assertTrue(def.getArgument(0).isExplicit());
+        assertTrue(def.getArgument(1).isExplicit());
+        assertFalse(def.getArgument(2).isExplicit());
+        assertFalse(def.getArgument(3).isExplicit());
+        assertTrue(def.getArgument(4).isExplicit());
+        assertFalse(def.getArgument(5).isExplicit());
+        assertEquals(Pi("x", Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi("w", Nat(), Pi("t", Nat(), Pi("r", Nat(), Apps(Nat(), Index(5), Index(4), Index(3), Index(2), Index(1), Index(0)))))))), def.getType());
+    }
+
+    @Test
+    public void parserImplicit2() {
+        FunctionDefinition def = (FunctionDefinition)parseDef("f : {x : N} -> N -> {y z : N} -> N x y z -> N = N;");
+        assertEquals(5, def.getArguments().length);
+        assertFalse(def.getArgument(0).isExplicit());
+        assertTrue(def.getArgument(1).isExplicit());
+        assertFalse(def.getArgument(2).isExplicit());
+        assertFalse(def.getArgument(3).isExplicit());
+        assertTrue(def.getArgument(4).isExplicit());
+        assertEquals(Pi("x", Nat(), Pi(Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi(Apps(Nat(), Index(2), Index(1), Index(0)), Nat()))))), def.getType());
+    }
+
     private static VcgrammarParser parse(String text) {
         ANTLRInputStream input = new ANTLRInputStream(text);
         VcgrammarLexer lexer = new VcgrammarLexer(input);
@@ -80,5 +106,10 @@ public class ParserTest {
     private static Expression parseExpr(String text) {
         BuildVisitor builder = new BuildVisitor();
         return (Expression) builder.visit(parse(text).expr());
+    }
+
+    private static Definition parseDef(String text) {
+        BuildVisitor builder = new BuildVisitor();
+        return (Definition) builder.visit(parse(text).def());
     }
 }

@@ -1,5 +1,6 @@
 package main.java.com.jetbrains.term.visitor;
 
+import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.expr.*;
 
 // TODO: Rewrite normalization using thunks
@@ -37,7 +38,11 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitDefCall(DefCallExpression expr) {
-        return expr.getDefinition().getTerm().accept(this);
+        if (expr.getDefinition() instanceof FunctionDefinition) {
+            return ((FunctionDefinition) expr.getDefinition()).getTerm().accept(this);
+        } else {
+            return expr;
+        }
     }
 
     @Override

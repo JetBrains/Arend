@@ -26,8 +26,9 @@ typeTopTele : '(' ID+ ':' expr1 ')'     # typeTopExplicit
             | '{' ID+ ':' expr1 '}'     # typeTopImplicit
             ;
 
-typeTop : expr1                                     # typeTopExpr1
+typeTop : <assoc=right> expr1 '->' typeTop          # typeTopArr
         | <assoc=right> typeTopTele+ '->' typeTop   # typeTopPi
+        | expr1                                     # typeTopExpr1
         ;
 
 UNIVERSE : 'Type' [0-9]+;

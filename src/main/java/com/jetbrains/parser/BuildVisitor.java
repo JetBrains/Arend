@@ -4,9 +4,12 @@ import main.java.com.jetbrains.term.definition.Argument;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.expr.*;
+import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.*;
+
+import static main.java.com.jetbrains.term.expr.Expression.Apps;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
     private List<String> names = new ArrayList<String>();
@@ -15,9 +18,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     @Override
     public Object visitDefs(VcgrammarParser.DefsContext ctx) {
-        List<FunctionDefinition> defs = new ArrayList<FunctionDefinition>();
+        List<Definition> defs = new ArrayList<Definition>();
         for (VcgrammarParser.DefContext def : ctx.def()) {
-            defs.add((FunctionDefinition) visit(def));
+            defs.add((Definition) visit(def));
         }
         return defs;
     }
@@ -59,7 +62,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     public Object visitApp(VcgrammarParser.AppContext ctx) {
         Expression left = (Expression) visit(ctx.expr1(0));
         Expression right = (Expression) visit(ctx.expr1(1));
-        return new AppExpression(left, right);
+        return Apps(left, right);
     }
 
     @Override
@@ -156,6 +159,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
         arguments.addAll(typeTopData.arguments);
         typeTopData.arguments = arguments;
+        return typeTopData;
+    }
+
+    @Override
+    public Object visitTypeTopArr(@NotNull VcgrammarParser.TypeTopArrContext ctx) {
+        names.add("_");
+        TypeTopData typeTopData = (TypeTopData) visit(ctx.typeTop());
+        names.remove(names.size() - 1);
+        typeTopData.arguments.add(0, new Argument(true, null, (Expression) visit(ctx.expr1())));
         return typeTopData;
     }
 
