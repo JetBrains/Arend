@@ -47,7 +47,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitPi(PiExpression expr) {
-        return new PiExpression(expr.getVariable(), expr.getLeft().accept(this), expr.getRight().liftIndex(from + 1, on));
+        return new PiExpression(expr.isExplicit(), expr.getVariable(), expr.getLeft().accept(this), expr.getRight().liftIndex(from + 1, on));
     }
 
     @Override

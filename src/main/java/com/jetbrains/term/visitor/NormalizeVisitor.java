@@ -67,7 +67,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitPi(PiExpression expr) {
-        return new PiExpression(expr.getVariable(), expr.getLeft().accept(this), expr.getRight().accept(this));
+        return new PiExpression(expr.isExplicit(), expr.getVariable(), expr.getLeft().accept(this), expr.getRight().accept(this));
     }
 
     @Override

@@ -6,11 +6,9 @@ import main.java.com.jetbrains.parser.VcgrammarParser;
 import main.java.com.jetbrains.term.NotInScopeException;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
-import main.java.com.jetbrains.term.expr.Expression;
 import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -24,18 +22,17 @@ public class Main {
         VcgrammarLexer lexer = new VcgrammarLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         VcgrammarParser parser = new VcgrammarParser(tokens);
-        ParseTree tree = parser.defs();
+        VcgrammarParser.DefsContext tree = parser.defs();
         BuildVisitor builder = new BuildVisitor();
-        List<Definition> defs = (List<Definition>) builder.visit(tree);
+        List<Definition> defs = builder.visitDefs(tree);
         for (String var : builder.getUnknownVariables()) {
             System.err.print("Not in scope: " + var);
         }
         for (Definition def : defs) {
             if (def instanceof FunctionDefinition) {
-                Expression term = ((FunctionDefinition)def).getTerm();
-                def = new FunctionDefinition(def.getName(), def.getArguments(), def.getResultType().normalize(), term.normalize());
                 if (builder.getUnknownVariables().isEmpty()) {
-                    term.checkType(new ArrayList<Definition>(), def.getType());
+                    def = def.checkTypes();
+                    def = new FunctionDefinition(def.getName(), def.getSignature(), ((FunctionDefinition)def).getTerm().normalize());
                 }
             }
             def.prettyPrint(System.out, new ArrayList<String>(), 0);

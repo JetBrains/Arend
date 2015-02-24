@@ -2,7 +2,7 @@ grammar Vcgrammar;
 
 defs  : def+;
 
-def   : ID ':' typeTop '=' expr ';';
+def   : ID ':' expr1 '=' expr ';';
 
 expr  : expr1                           # exprExpr1
       | '\\' ID+ '->' expr              # lam
@@ -20,16 +20,9 @@ expr1 : expr1 expr1                     # app
       | 'S'                             # suc
       ;
 
-tele : '(' ID+ ':' expr1 ')' ;
-
-typeTopTele : '(' ID+ ':' expr1 ')'     # typeTopExplicit
-            | '{' ID+ ':' expr1 '}'     # typeTopImplicit
-            ;
-
-typeTop : <assoc=right> expr1 '->' typeTop          # typeTopArr
-        | <assoc=right> typeTopTele+ '->' typeTop   # typeTopPi
-        | expr1                                     # typeTopExpr1
-        ;
+tele : '(' ID+ ':' expr1 ')'            # explicit
+     | '{' ID+ ':' expr1 '}'            # implicit
+     ;
 
 UNIVERSE : 'Type' [0-9]+;
 ID : [a-zA-Z_][a-zA-Z0-9_\-\']*;

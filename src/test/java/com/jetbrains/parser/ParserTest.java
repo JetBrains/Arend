@@ -5,6 +5,7 @@ import main.java.com.jetbrains.parser.VcgrammarLexer;
 import main.java.com.jetbrains.parser.VcgrammarParser;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
+import main.java.com.jetbrains.term.definition.Signature;
 import main.java.com.jetbrains.term.expr.Expression;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -74,26 +75,28 @@ public class ParserTest {
     @Test
     public void parserImplicit() {
         FunctionDefinition def = (FunctionDefinition)parseDef("f : (x y : N) {z w : N} -> (t : N) -> {r : N} -> N x y z w t r = N;");
-        assertEquals(6, def.getArguments().length);
-        assertTrue(def.getArgument(0).isExplicit());
-        assertTrue(def.getArgument(1).isExplicit());
-        assertFalse(def.getArgument(2).isExplicit());
-        assertFalse(def.getArgument(3).isExplicit());
-        assertTrue(def.getArgument(4).isExplicit());
-        assertFalse(def.getArgument(5).isExplicit());
-        assertEquals(Pi("x", Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi("w", Nat(), Pi("t", Nat(), Pi("r", Nat(), Apps(Nat(), Index(5), Index(4), Index(3), Index(2), Index(1), Index(0)))))))), def.getType());
+        def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
+        assertEquals(6, def.getSignature().getArguments().length);
+        assertTrue(def.getSignature().getArgument(0).isExplicit());
+        assertTrue(def.getSignature().getArgument(1).isExplicit());
+        assertFalse(def.getSignature().getArgument(2).isExplicit());
+        assertFalse(def.getSignature().getArgument(3).isExplicit());
+        assertTrue(def.getSignature().getArgument(4).isExplicit());
+        assertFalse(def.getSignature().getArgument(5).isExplicit());
+        assertEquals(Pi("x", Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi("w", Nat(), Pi("t", Nat(), Pi("r", Nat(), Apps(Nat(), Index(5), Index(4), Index(3), Index(2), Index(1), Index(0)))))))), def.getSignature().getType());
     }
 
     @Test
     public void parserImplicit2() {
         FunctionDefinition def = (FunctionDefinition)parseDef("f : {x : N} -> N -> {y z : N} -> N x y z -> N = N;");
-        assertEquals(5, def.getArguments().length);
-        assertFalse(def.getArgument(0).isExplicit());
-        assertTrue(def.getArgument(1).isExplicit());
-        assertFalse(def.getArgument(2).isExplicit());
-        assertFalse(def.getArgument(3).isExplicit());
-        assertTrue(def.getArgument(4).isExplicit());
-        assertEquals(Pi("x", Nat(), Pi(Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi(Apps(Nat(), Index(2), Index(1), Index(0)), Nat()))))), def.getType());
+        def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
+        assertEquals(5, def.getSignature().getArguments().length);
+        assertFalse(def.getSignature().getArgument(0).isExplicit());
+        assertTrue(def.getSignature().getArgument(1).isExplicit());
+        assertFalse(def.getSignature().getArgument(2).isExplicit());
+        assertFalse(def.getSignature().getArgument(3).isExplicit());
+        assertTrue(def.getSignature().getArgument(4).isExplicit());
+        assertEquals(Pi("x", Nat(), Pi(Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi(Apps(Nat(), Index(2), Index(1), Index(0)), Nat()))))), def.getSignature().getType());
     }
 
     private static VcgrammarParser parse(String text) {

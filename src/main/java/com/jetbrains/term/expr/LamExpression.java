@@ -1,8 +1,8 @@
 package main.java.com.jetbrains.term.expr;
 
-import main.java.com.jetbrains.term.definition.Argument;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
+import main.java.com.jetbrains.term.definition.Signature;
 import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
 import main.java.com.jetbrains.term.typechecking.TypeMismatchException;
 import main.java.com.jetbrains.term.visitor.ExpressionVisitor;
@@ -65,7 +65,7 @@ public class LamExpression extends Expression {
         if (expectedNormalized instanceof PiExpression) {
             PiExpression type = (PiExpression)expectedNormalized;
             // TODO: This is ugly. Fix it.
-            context.add(new FunctionDefinition(variable, new Argument[0], type.getLeft(), new VarExpression(variable)));
+            context.add(new FunctionDefinition(variable, new Signature(type.getLeft()), new VarExpression(variable)));
             body.checkType(context, type.getRight());
             context.remove(context.size() - 1);
         } else

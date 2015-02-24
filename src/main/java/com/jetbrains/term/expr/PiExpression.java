@@ -8,15 +8,17 @@ import java.util.List;
 public class PiExpression extends Expression {
     public final static int PREC = 6;
 
+    private final boolean explicit;
     private final String variable;
     private final Expression left;
     private final Expression right;
 
     public PiExpression(Expression left, Expression right) {
-        this(null, left, right.liftIndex(0, 1));
+        this(true, null, left, right.liftIndex(0, 1));
     }
 
-    public PiExpression(String variable, Expression left, Expression right) {
+    public PiExpression(boolean explicit, String variable, Expression left, Expression right) {
+        this.explicit = explicit;
         this.variable = variable;
         this.left = left;
         this.right = right;
@@ -32,6 +34,10 @@ public class PiExpression extends Expression {
 
     public Expression getRight() {
         return right;
+    }
+
+    public boolean isExplicit() {
+        return explicit;
     }
 
     @Override

@@ -1,8 +1,8 @@
 package main.java.com.jetbrains.term.visitor;
 
-import main.java.com.jetbrains.term.definition.Argument;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
+import main.java.com.jetbrains.term.definition.Signature;
 import main.java.com.jetbrains.term.expr.*;
 import main.java.com.jetbrains.term.typechecking.TypeCheckingException;
 import main.java.com.jetbrains.term.typechecking.TypeInferenceException;
@@ -36,13 +36,13 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
 
     @Override
     public Expression visitDefCall(DefCallExpression expr) {
-        return expr.getDefinition().getType();
+        return expr.getDefinition().getSignature().getType();
     }
 
     @Override
     public Expression visitIndex(IndexExpression expr) {
         assert expr.getIndex() < context.size();
-        return context.get(context.size() - 1 - expr.getIndex()).getType().liftIndex(0, expr.getIndex() + 1);
+        return context.get(context.size() - 1 - expr.getIndex()).getSignature().getType().liftIndex(0, expr.getIndex() + 1);
     }
 
     @Override
@@ -63,7 +63,8 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
     @Override
     public Expression visitPi(PiExpression expr) {
         Expression leftType = expr.getLeft().accept(this).normalize();
-        context.add(new FunctionDefinition(expr.getVariable(), new Argument[0], leftType, new VarExpression(expr.getVariable())));
+        // TODO: This is ugly. Fix it.
+        context.add(new FunctionDefinition(expr.getVariable(), new Signature(expr.getLeft()), new VarExpression(expr.getVariable())));
         Expression rightType = expr.getRight().accept(this).normalize();
         context.remove(context.size() - 1);
         boolean leftOK = leftType instanceof UniverseExpression;

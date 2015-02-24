@@ -3,84 +3,92 @@ package main.java.com.jetbrains.parser;
 import main.java.com.jetbrains.term.definition.Argument;
 import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
+import main.java.com.jetbrains.term.definition.Signature;
 import main.java.com.jetbrains.term.expr.*;
-import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.*;
 
 import static main.java.com.jetbrains.term.expr.Expression.Apps;
+import static main.java.com.jetbrains.parser.VcgrammarParser.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
     private List<String> names = new ArrayList<String>();
     private Map<String, Definition> signature = new HashMap<String, Definition>();
     private List<String> unknownVariables = new ArrayList<String>();
 
+    public Expression visitExpr(ExprContext expr) {
+        return (Expression) visit(expr);
+    }
+
+    public Expression visitExpr(Expr1Context expr) {
+        return (Expression) visit(expr);
+    }
+
     @Override
-    public Object visitDefs(VcgrammarParser.DefsContext ctx) {
+    public List<Definition> visitDefs(DefsContext ctx) {
         List<Definition> defs = new ArrayList<Definition>();
-        for (VcgrammarParser.DefContext def : ctx.def()) {
-            defs.add((Definition) visit(def));
+        for (DefContext def : ctx.def()) {
+            defs.add(visitDef(def));
         }
         return defs;
     }
 
     @Override
-    public Object visitDef(VcgrammarParser.DefContext ctx) {
+    public Definition visitDef(DefContext ctx) {
         String name = ctx.ID().getText();
-        TypeTopData typeTopData = (TypeTopData) visit(ctx.typeTop());
-        Expression term = (Expression) visit(ctx.expr());
-        Argument[] arguments = typeTopData.arguments.toArray(new Argument[typeTopData.arguments.size()]);
-        Definition def = new FunctionDefinition(name, arguments, typeTopData.resultType, term);
+        Expression type = visitExpr(ctx.expr1());
+        Expression term = visitExpr(ctx.expr());
+        Definition def = new FunctionDefinition(name, new Signature(new Argument[0], type), term);
         signature.put(name, def);
         return def;
     }
 
     @Override
-    public Object visitNat(VcgrammarParser.NatContext ctx) {
+    public NatExpression visitNat(NatContext ctx) {
         return new NatExpression();
     }
 
     @Override
-    public Object visitZero(VcgrammarParser.ZeroContext ctx) {
+    public ZeroExpression visitZero(ZeroContext ctx) {
         return new ZeroExpression();
     }
 
     @Override
-    public Object visitSuc(VcgrammarParser.SucContext ctx) {
+    public SucExpression visitSuc(SucContext ctx) {
         return new SucExpression();
     }
 
     @Override
-    public Object visitArr(VcgrammarParser.ArrContext ctx) {
-        Expression left = (Expression) visit(ctx.expr1(0));
-        Expression right = (Expression) visit(ctx.expr1(1));
+    public PiExpression visitArr(ArrContext ctx) {
+        Expression left = visitExpr(ctx.expr1(0));
+        Expression right = visitExpr(ctx.expr1(1));
         return new PiExpression(left, right);
     }
 
     @Override
-    public Object visitApp(VcgrammarParser.AppContext ctx) {
-        Expression left = (Expression) visit(ctx.expr1(0));
-        Expression right = (Expression) visit(ctx.expr1(1));
+    public Expression visitApp(AppContext ctx) {
+        Expression left = visitExpr(ctx.expr1(0));
+        Expression right = visitExpr(ctx.expr1(1));
         return Apps(left, right);
     }
 
     @Override
-    public Object visitParens(VcgrammarParser.ParensContext ctx) {
-        return visit(ctx.expr());
+    public Expression visitParens(ParensContext ctx) {
+        return visitExpr(ctx.expr());
     }
 
     @Override
-    public Object visitNelim(VcgrammarParser.NelimContext ctx) {
+    public NelimExpression visitNelim(NelimContext ctx) {
         return new NelimExpression();
     }
 
     @Override
-    public Object visitLam(VcgrammarParser.LamContext ctx) {
+    public Expression visitLam(LamContext ctx) {
         for (TerminalNode var : ctx.ID()) {
             names.add(var.getText());
         }
-        Expression expr = (Expression) visit(ctx.expr());
+        Expression expr = visitExpr(ctx.expr());
         for (TerminalNode ignored : ctx.ID()) {
             names.remove(names.size() - 1);
         }
@@ -92,7 +100,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     @Override
-    public Object visitId(VcgrammarParser.IdContext ctx) {
+    public Expression visitId(IdContext ctx) {
         String name = ctx.ID().getText();
         int index = names.lastIndexOf(name);
         if (index == -1) {
@@ -109,85 +117,37 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     @Override
-    public Object visitUniverse(VcgrammarParser.UniverseContext ctx) {
+    public UniverseExpression visitUniverse(UniverseContext ctx) {
         return new UniverseExpression(Integer.valueOf(ctx.UNIVERSE().getText().substring("Type".length())));
     }
 
     @Override
-    public Object visitPi(VcgrammarParser.PiContext ctx) {
+    public Expression visitPi(PiContext ctx) {
         int telescopeSize = ctx.tele().size();
         Expression[] lefts = new Expression[telescopeSize];
         for (int i = 0; i < telescopeSize; ++i) {
-            lefts[i] = (Expression) visit(ctx.tele(i).expr1());
-            for (TerminalNode var : ctx.tele(i).ID()) {
+            boolean explicit = ctx.tele(i) instanceof ExplicitContext;
+            Expr1Context expr1 = explicit ? ((ExplicitContext) ctx.tele(i)).expr1() : ((ImplicitContext) ctx.tele(i)).expr1();
+            List<TerminalNode> ids = explicit ? ((ExplicitContext) ctx.tele(i)).ID() : ((ImplicitContext) ctx.tele(i)).ID();
+            lefts[i] = visitExpr(expr1);
+            for (TerminalNode var : ids) {
                 names.add(var.getText());
             }
         }
-        Expression expr = (Expression) visit(ctx.expr1());
+        Expression expr = visitExpr(ctx.expr1());
         for (int i = telescopeSize - 1; i >= 0; --i) {
-            ListIterator<TerminalNode> it = ctx.tele(i).ID().listIterator(ctx.tele(i).ID().size());
+            boolean explicit = ctx.tele(i) instanceof ExplicitContext;
+            List<TerminalNode> ids = explicit ? ((ExplicitContext) ctx.tele(i)).ID() : ((ImplicitContext) ctx.tele(i)).ID();
+            ListIterator<TerminalNode> it = ids.listIterator(ids.size());
             while (it.hasPrevious()) {
-                expr = new PiExpression(it.previous().getText(), lefts[i], expr);
+                expr = new PiExpression(explicit, it.previous().getText(), lefts[i], expr);
                 names.remove(names.size() - 1);
             }
         }
         return expr;
     }
 
-    @Override
-    public Object visitTypeTopPi(VcgrammarParser.TypeTopPiContext ctx) {
-        List<Argument> arguments = new ArrayList<Argument>();
-        int telescopeSize = ctx.typeTopTele().size();
-        Expression[] argumentTypes = new Expression[telescopeSize];
-        for (int i = 0; i < telescopeSize; ++i) {
-            boolean explicit = ctx.typeTopTele(i) instanceof VcgrammarParser.TypeTopExplicitContext;
-            VcgrammarParser.Expr1Context expr1 = explicit
-                    ? ((VcgrammarParser.TypeTopExplicitContext)ctx.typeTopTele(i)).expr1()
-                    : ((VcgrammarParser.TypeTopImplicitContext)ctx.typeTopTele(i)).expr1();
-            List<TerminalNode> ids = explicit
-                    ? ((VcgrammarParser.TypeTopExplicitContext)ctx.typeTopTele(i)).ID()
-                    : ((VcgrammarParser.TypeTopImplicitContext)ctx.typeTopTele(i)).ID();
-            argumentTypes[i] = (Expression) visit(expr1);
-            for (TerminalNode var : ids) {
-                arguments.add(new Argument(explicit, var.getText(), argumentTypes[i]));
-                names.add(var.getText());
-            }
-        }
-        TypeTopData typeTopData = (TypeTopData) visit(ctx.typeTop());
-        for (Argument ignored : arguments) {
-            names.remove(names.size() - 1);
-        }
-        arguments.addAll(typeTopData.arguments);
-        typeTopData.arguments = arguments;
-        return typeTopData;
-    }
-
-    @Override
-    public Object visitTypeTopArr(@NotNull VcgrammarParser.TypeTopArrContext ctx) {
-        names.add("_");
-        TypeTopData typeTopData = (TypeTopData) visit(ctx.typeTop());
-        names.remove(names.size() - 1);
-        typeTopData.arguments.add(0, new Argument(true, null, (Expression) visit(ctx.expr1())));
-        return typeTopData;
-    }
-
-    @Override
-    public Object visitTypeTopExpr1(VcgrammarParser.TypeTopExpr1Context ctx) {
-        return new TypeTopData((Expression) visit(ctx.expr1()), new ArrayList<Argument>());
-    }
-
     public List<String> getUnknownVariables() {
         return unknownVariables;
     }
-
-    private static class TypeTopData {
-        Expression resultType;
-        List<Argument> arguments;
-
-        TypeTopData(Expression resultType, List<Argument> arguments) {
-            this.resultType = resultType;
-            this.arguments = arguments;
-        }
-    }
-
 }

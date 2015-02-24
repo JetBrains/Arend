@@ -2,19 +2,20 @@ package main.java.com.jetbrains.term.definition;
 
 import main.java.com.jetbrains.term.PrettyPrintable;
 import main.java.com.jetbrains.term.expr.Expression;
-import main.java.com.jetbrains.term.expr.PiExpression;
+import main.java.com.jetbrains.term.expr.UniverseExpression;
+import main.java.com.jetbrains.term.typechecking.TypeMismatchException;
+
+import java.util.ArrayList;
 
 public abstract class Definition implements PrettyPrintable {
     private final String name;
-    private final Argument[] arguments;
-    private final Expression resultType;
+    private final Signature signature;
     private final int id;
     private static int idCounter = 0;
 
-    public Definition(String name, Argument[] arguments, Expression resultType) {
+    public Definition(String name, Signature signature) {
         this.name = name;
-        this.arguments = arguments;
-        this.resultType = resultType;
+        this.signature = signature;
         id = idCounter++;
     }
 
@@ -22,24 +23,8 @@ public abstract class Definition implements PrettyPrintable {
         return name;
     }
 
-    public Expression getResultType() {
-        return resultType;
-    }
-
-    public Argument[] getArguments() {
-        return arguments;
-    }
-
-    public Argument getArgument(int i) {
-        return arguments[i];
-    }
-
-    public Expression getType() {
-        Expression type = resultType;
-        for (int i = arguments.length - 1; i >= 0; --i) {
-            type = new PiExpression(arguments[i].getName(), arguments[i].getType(), type);
-        }
-        return type;
+    public Signature getSignature() {
+        return signature;
     }
 
     @Override
@@ -48,5 +33,14 @@ public abstract class Definition implements PrettyPrintable {
         if (!(o instanceof Definition)) return false;
         Definition other = (Definition)o;
         return other.id == id;
+    }
+
+    public Definition checkTypes() {
+        Expression typeOfType = signature.getType().inferType(new ArrayList<Definition>());
+        if (typeOfType instanceof UniverseExpression) {
+            return this;
+        } else {
+            throw new TypeMismatchException(new UniverseExpression(), typeOfType, signature.getType());
+        }
     }
 }
