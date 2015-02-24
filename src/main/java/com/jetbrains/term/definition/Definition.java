@@ -35,6 +35,11 @@ public abstract class Definition implements PrettyPrintable {
         return other.id == id;
     }
 
+    @Override
+    public String toString() {
+        return name + " : " + signature.toString();
+    }
+
     public Definition checkTypes() {
         Expression typeOfType = signature.getType().inferType(new ArrayList<Definition>());
         if (typeOfType instanceof UniverseExpression) {

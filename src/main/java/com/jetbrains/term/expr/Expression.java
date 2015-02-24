@@ -63,6 +63,10 @@ public abstract class Expression implements PrettyPrintable {
         return new PiExpression(true, variable, left, right);
     }
 
+    public static Expression Pi(boolean explicit, String variable, Expression left, Expression right) {
+        return new PiExpression(explicit, variable, left, right);
+    }
+
     public static Expression Pi(Expression left, Expression right) {
         return new PiExpression(left, right);
     }

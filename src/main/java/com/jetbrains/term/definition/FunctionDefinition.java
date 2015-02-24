@@ -27,6 +27,11 @@ public final class FunctionDefinition extends Definition {
     }
 
     @Override
+    public String toString() {
+        return getName() + " : " + getSignature().toString() + " = " + term.toString() + ";";
+    }
+
+    @Override
     public FunctionDefinition checkTypes() {
         super.checkTypes();
         Expression type = getSignature().getType();

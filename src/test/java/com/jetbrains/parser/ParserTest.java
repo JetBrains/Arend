@@ -1,18 +1,16 @@
 package test.java.com.jetbrains.parser;
 
 import main.java.com.jetbrains.parser.BuildVisitor;
-import main.java.com.jetbrains.parser.VcgrammarLexer;
-import main.java.com.jetbrains.parser.VcgrammarParser;
-import main.java.com.jetbrains.term.definition.Definition;
 import main.java.com.jetbrains.term.definition.FunctionDefinition;
 import main.java.com.jetbrains.term.definition.Signature;
 import main.java.com.jetbrains.term.expr.Expression;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Test;
 
 import static main.java.com.jetbrains.term.expr.Expression.*;
 import static org.junit.Assert.*;
+import static test.java.com.jetbrains.parser.Parser.parse;
+import static test.java.com.jetbrains.parser.Parser.parseDef;
+import static test.java.com.jetbrains.parser.Parser.parseExpr;
 
 public class ParserTest {
     @Test
@@ -97,22 +95,5 @@ public class ParserTest {
         assertFalse(def.getSignature().getArgument(3).isExplicit());
         assertTrue(def.getSignature().getArgument(4).isExplicit());
         assertEquals(Pi("x", Nat(), Pi(Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi(Apps(Nat(), Index(2), Index(1), Index(0)), Nat()))))), def.getSignature().getType());
-    }
-
-    private static VcgrammarParser parse(String text) {
-        ANTLRInputStream input = new ANTLRInputStream(text);
-        VcgrammarLexer lexer = new VcgrammarLexer(input);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        return new VcgrammarParser(tokens);
-    }
-
-    private static Expression parseExpr(String text) {
-        BuildVisitor builder = new BuildVisitor();
-        return (Expression) builder.visit(parse(text).expr());
-    }
-
-    private static Definition parseDef(String text) {
-        BuildVisitor builder = new BuildVisitor();
-        return (Definition) builder.visit(parse(text).def());
     }
 }

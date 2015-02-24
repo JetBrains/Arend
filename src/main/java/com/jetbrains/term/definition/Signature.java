@@ -46,4 +46,9 @@ public class Signature {
         }
         return type;
     }
+
+    @Override
+    public String toString() {
+        return getType().toString();
+    }
 }
