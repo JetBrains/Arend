@@ -70,7 +70,7 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
         boolean leftOK = leftType instanceof UniverseExpression;
         boolean rightOK = rightType instanceof UniverseExpression;
         if (leftOK && rightOK) {
-            return new UniverseExpression(Integer.max(((UniverseExpression) leftType).getLevel(), ((UniverseExpression) rightType).getLevel()));
+            return new UniverseExpression(Math.max(((UniverseExpression) leftType).getLevel(), ((UniverseExpression) rightType).getLevel()));
         } else {
             throw new TypeMismatchException(new UniverseExpression(), leftOK ? rightType : leftType, leftOK ? expr.getRight() : expr.getLeft());
         }
