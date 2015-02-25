@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.expr.Expression;
 
 public class Argument extends Node {
-    public final Property<Boolean> explicit = new ValueProperty<>(true);
-    public final Property<String> name = new ValueProperty<>();
-    public final Property<Expression> type = new ValueProperty<>();
+  public final Property<Boolean> explicit = new ValueProperty<>(true);
+  public final Property<String> name = new ValueProperty<>();
+  public final Property<Expression> type = new ValueProperty<>();
 }

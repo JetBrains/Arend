@@ -19,33 +19,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ModuleMapper extends Mapper<Module, ModuleCell> {
-    public ModuleMapper(Module source) {
-        super(source, new ModuleCell());
-    }
+  public ModuleMapper(Module source) {
+      super(source, new ModuleCell());
+  }
 
-    @Override
-    protected void registerSynchronizers(SynchronizersConfiguration conf) {
-        super.registerSynchronizers(conf);
-        ProjectionalRoleSynchronizer<Module, Definition> result = ProjectionalSynchronizers.forRole(this, getSource().definitions, getTarget().definitions, CellLists.newLineSeparated(getTarget().definitions.children()), new DefinitionMapperFactory());
-        result.setCompletion(new RoleCompletion<Node, Definition>() {
-            @Override
-            public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Definition> target) {
-                List<CompletionItem> result = new ArrayList<>();
-                result.add(new SimpleCompletionItem("fun", "") {
-                    @Override
-                    public Runnable complete(String text) {
-                        return target.set(new FunctionDefinition());
-                    }
-                });
-                return result;
-            }
+  @Override
+  protected void registerSynchronizers(SynchronizersConfiguration conf) {
+    super.registerSynchronizers(conf);
+    ProjectionalRoleSynchronizer<Module, Definition> result = ProjectionalSynchronizers.forRole(this, getSource().definitions, getTarget().definitions, CellLists.newLineSeparated(getTarget().definitions.children()), new DefinitionMapperFactory());
+    result.setCompletion(new RoleCompletion<Node, Definition>() {
+      @Override
+      public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Definition> target) {
+        List<CompletionItem> result = new ArrayList<>();
+        result.add(new SimpleCompletionItem("fun", "") {
+          @Override
+          public Runnable complete(String text) {
+            return target.set(new FunctionDefinition());
+          }
         });
-        result.setItemFactory(new Supplier<Definition>() {
-            @Override
-            public Definition get() {
-                return new FunctionDefinition();
-            }
-        });
-        conf.add(result);
-    }
+        return result;
+      }
+    });
+    result.setItemFactory(new Supplier<Definition>() {
+      @Override
+      public Definition get() {
+        return new FunctionDefinition();
+      }
+    });
+    conf.add(result);
+  }
 }

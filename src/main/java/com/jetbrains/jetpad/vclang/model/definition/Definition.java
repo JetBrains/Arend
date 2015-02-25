@@ -7,6 +7,6 @@ import jetbrains.jetpad.model.property.ValueProperty;
 import com.jetbrains.jetpad.vclang.model.Node;
 
 public abstract class Definition extends Node {
-    public final Property<String> name = new ValueProperty<>();
-    public final ObservableList<Argument> arguments = new ObservableArrayList<>();
+  public final Property<String> name = new ValueProperty<>();
+  public final ObservableList<Argument> arguments = new ObservableArrayList<>();
 }

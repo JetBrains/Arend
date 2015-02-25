@@ -11,27 +11,26 @@ import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 import static jetbrains.jetpad.cell.util.CellFactory.*;
 
 public class FunctionDefinitionCell extends IndentCell {
-    final TextCell name = new TextCell();
-    final Cell type = indent();
-    final Cell term = indent();
+  final TextCell name = new TextCell();
+  final Cell type = indent();
+  final Cell term = indent();
 
-    FunctionDefinitionCell() {
-        to(this,
-                name,
-                placeHolder(name, "<no name>"),
-                space(),
-                text(":"),
-                space(),
-                type,
-                space(),
-                text("="),
-                space(),
-                term);
+  FunctionDefinitionCell() {
+    to(this,
+        name,
+        placeHolder(name, "<no name>"),
+        space(),
+        text(":"),
+        space(),
+        type,
+        space(),
+        text("="),
+        space(),
+        term);
 
-        focusable().set(true);
-        name.addTrait(TextEditing.validTextEditing(Validators.identifier()));
+    focusable().set(true);
+    name.addTrait(TextEditing.validTextEditing(Validators.identifier()));
 
-        set(ProjectionalSynchronizers.ON_CREATE, CellActions.toCell(name));
-    }
+    set(ProjectionalSynchronizers.ON_CREATE, CellActions.toCell(name));
+  }
 }
-

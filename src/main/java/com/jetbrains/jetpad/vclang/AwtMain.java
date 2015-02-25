@@ -12,27 +12,27 @@ import com.jetbrains.jetpad.vclang.model.Module;
 
 public class AwtMain {
 
-    public static void main(String[] args) {
-        CellContainer container = createDemo();
-        ViewContainer viewContainer = new ViewContainer();
-        CellToView.map(container, viewContainer);
-        AwtDemo.show(viewContainer);
-    }
+  public static void main(String[] args) {
+    CellContainer container = createDemo();
+    ViewContainer viewContainer = new ViewContainer();
+    CellToView.map(container, viewContainer);
+    AwtDemo.show(viewContainer);
+  }
 
-    private static CellContainer createDemo() {
-        Module m = createModel();
-        Mapper<Module, ModuleCell> rootMapper = new ModuleMapper(m);
-        rootMapper.attachRoot();
+  private static CellContainer createDemo() {
+    Module m = createModel();
+    Mapper<Module, ModuleCell> rootMapper = new ModuleMapper(m);
+    rootMapper.attachRoot();
 
-        CellContainer cellContainer = new CellContainer();
-        cellContainer.root.children().add(rootMapper.getTarget());
-        RootController.install(cellContainer);
+    CellContainer cellContainer = new CellContainer();
+    cellContainer.root.children().add(rootMapper.getTarget());
+    RootController.install(cellContainer);
 
-        return cellContainer;
-    }
+    return cellContainer;
+  }
 
-    private static Module createModel() {
-        Module result = new Module();
-        return result;
-    }
+  private static Module createModel() {
+    Module result = new Module();
+    return result;
+  }
 }
