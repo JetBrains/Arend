@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
 public class TypeMismatchException extends TypeCheckingException {
-  private final Expression expected;
-  private final Expression actual;
+  private final Abstract.Expression expected;
+  private final Abstract.Expression actual;
 
-  public TypeMismatchException(Expression expected, Expression actual, Expression expression) {
+  public TypeMismatchException(Abstract.Expression expected, Abstract.Expression actual, Abstract.Expression expression) {
     super(expression);
     this.expected = expected;
     this.actual = actual;

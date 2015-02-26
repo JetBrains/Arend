@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
 public class TypeInferenceException extends TypeCheckingException {
-  public TypeInferenceException(Expression expression) {
+  public TypeInferenceException(Abstract.Expression expression) {
       super(expression);
   }
 

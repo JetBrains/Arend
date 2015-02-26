@@ -16,44 +16,52 @@ import static com.jetbrains.jetpad.vclang.parser.Parser.parseDef;
 import static com.jetbrains.jetpad.vclang.parser.Parser.parseExpr;
 
 public class PrettyPrintingParserTest {
-  private void testExpr(Expression expr) throws UnsupportedEncodingException {
+  private void testExpr(Expression expected, Expression expr) throws UnsupportedEncodingException {
     ByteArrayOutputStream os = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(os);
     expr.prettyPrint(ps, new ArrayList<String>(), 0);
     Expression result = parseExpr(os.toString("UTF8"));
-    assertEquals(expr, result);
+    assertEquals(expected, result);
   }
 
-  private void testDef(FunctionDefinition def) throws UnsupportedEncodingException {
+  private void testDef(FunctionDefinition expected, FunctionDefinition def) throws UnsupportedEncodingException {
     ByteArrayOutputStream os = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(os);
     def.prettyPrint(ps, new ArrayList<String>(), 0);
     FunctionDefinition result = (FunctionDefinition) parseDef(os.toString("UTF8"));
-    assertEquals(def.getSignature().getType(), result.getSignature().getType());
-    assertEquals(def.getTerm(), result.getTerm());
+    assertEquals(expected.getSignature().getType(), result.getSignature().getType());
+    assertEquals(expected.getTerm(), result.getTerm());
   }
 
   @Test
   public void prettyPrintingParserLamApp() throws UnsupportedEncodingException {
     // (\x y. x (x y)) (\x y. x) ((\x. x) (\x. x))
-    testExpr(Apps(Lam("x", Lam("y", Apps(Index(1), Apps(Index(1), Index(0))))), Lam("x", Lam("y", Index(1))), Apps(Lam("x", Index(0)), Lam("x", Index(0)))));
+    Expression expected = Apps(Lam("x", Lam("y", Apps(Var("x"), Apps(Var("x"), Var("y"))))), Lam("x", Lam("y", Var("x"))), Apps(Lam("x", Var("x")), Lam("x", Var("x"))));
+    Expression expr = Apps(Lam("x", Lam("y", Apps(Index(1), Apps(Index(1), Index(0))))), Lam("x", Lam("y", Index(1))), Apps(Lam("x", Index(0)), Lam("x", Index(0))));
+    testExpr(expected, expr);
   }
 
   @Test
   public void prettyPrintingParserPi() throws UnsupportedEncodingException {
     // (x y : N) -> N -> N -> (x y -> y x) -> N x y
-    testExpr(Pi("x", Nat(), Pi("y", Nat(), Pi(Nat(), Pi(Nat(), Pi(Pi(Apps(Index(1), Index(0)), Apps(Index(0), Index(1))), Apps(Nat(), Index(1), Index(0))))))));
+    Expression expected = Pi("x", Nat(), Pi("y", Nat(), Pi(Nat(), Pi(Nat(), Pi(Pi(Apps(Var("x"), Var("y")), Apps(Var("y"), Var("x"))), Apps(Nat(), Var("x"), Var("y")))))));
+    Expression expr = Pi("x", Nat(), Pi("y", Nat(), Pi(Nat(), Pi(Nat(), Pi(Pi(Apps(Index(1), Index(0)), Apps(Index(0), Index(1))), Apps(Nat(), Index(1), Index(0)))))));
+    testExpr(expected, expr);
   }
 
   @Test
   public void prettyPrintingParserPiImplicit() throws UnsupportedEncodingException {
     // (x : N) {y z : N} -> N -> (t z : N) {x : N -> N} -> N x y z t
-    testExpr(Pi("x", Nat(), Pi(false, "y", Nat(), Pi(false, "z", Nat(), Pi(Nat(), Pi("t", Nat(), Pi("w", Nat(), Pi(false, "p", Pi(Nat(), Nat()), Apps(Nat(), Index(0), Index(4), Index(1), Index(2))))))))));
+    Expression expected = Pi("x", Nat(), Pi(false, "y", Nat(), Pi(false, "z", Nat(), Pi(Nat(), Pi("t", Nat(), Pi("z", Nat(), Pi(false, "x", Pi(Nat(), Nat()), Apps(Nat(), Var("x"), Var("y"), Var("z"), Var("t")))))))));
+    Expression expr = Pi("x", Nat(), Pi(false, "y", Nat(), Pi(false, "z", Nat(), Pi(Nat(), Pi("t", Nat(), Pi("z", Nat(), Pi(false, "x", Pi(Nat(), Nat()), Apps(Nat(), Index(0), Index(4), Index(1), Index(2)))))))));
+    testExpr(expected, expr);
   }
 
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
     // f : (x : N) -> N x = \y z. y z;
-    testDef(new FunctionDefinition("f", new Signature(Pi("x", Nat(), Apps(Nat(), Index(0)))), Lam("y", Lam("z", Apps(Index(1), Index(0))))));
+    FunctionDefinition expected = new FunctionDefinition("f", new Signature(Pi("x", Nat(), Apps(Nat(), Var("x")))), Lam("y", Lam("z", Apps(Var("y"), Var("z")))));
+    FunctionDefinition def = new FunctionDefinition("f", new Signature(Pi("x", Nat(), Apps(Nat(), Index(0)))), Lam("y", Lam("z", Apps(Index(1), Index(0)))));
+    testDef(expected, def);
   }
 }

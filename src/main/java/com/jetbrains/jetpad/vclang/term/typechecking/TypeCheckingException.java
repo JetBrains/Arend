@@ -1,15 +1,15 @@
 package com.jetbrains.jetpad.vclang.term.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
 public class TypeCheckingException extends RuntimeException {
-  private final Expression expression;
+  private final Abstract.Expression expression;
 
-  public TypeCheckingException(Expression expression) {
+  public TypeCheckingException(Abstract.Expression expression) {
     this.expression = expression;
   }
 
-  public Expression getExpression() {
+  public Abstract.Expression getExpression() {
     return expression;
   }
 

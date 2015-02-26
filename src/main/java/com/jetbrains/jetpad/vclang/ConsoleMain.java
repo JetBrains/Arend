@@ -25,15 +25,10 @@ public class ConsoleMain {
     VcgrammarParser.DefsContext tree = parser.defs();
     BuildVisitor builder = new BuildVisitor();
     List<Definition> defs = builder.visitDefs(tree);
-    for (String var : builder.getUnknownVariables()) {
-      System.err.print("Not in scope: " + var);
-    }
     for (Definition def : defs) {
       if (def instanceof FunctionDefinition) {
-        if (builder.getUnknownVariables().isEmpty()) {
-          def = def.checkTypes();
-          def = new FunctionDefinition(def.getName(), def.getSignature(), ((FunctionDefinition)def).getTerm().normalize());
-        }
+        def = def.checkTypes();
+        def = new FunctionDefinition(def.getName(), def.getSignature(), ((FunctionDefinition)def).getTerm().normalize());
       }
       def.prettyPrint(System.out, new ArrayList<String>(), 0);
       System.out.println();

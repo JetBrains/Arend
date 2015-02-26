@@ -9,14 +9,10 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.Apps;
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
-  private List<String> names = new ArrayList<>();
-  private Map<String, Definition> signature = new HashMap<>();
-  private List<String> unknownVariables = new ArrayList<>();
-
   public Expression visitExpr(ExprContext expr) {
     return (Expression) visit(expr);
   }
@@ -39,31 +35,29 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     String name = ctx.ID().getText();
     Expression type = visitExpr(ctx.expr1());
     Expression term = visitExpr(ctx.expr());
-    Definition def = new FunctionDefinition(name, new Signature(new Argument[0], type), term);
-    signature.put(name, def);
-    return def;
+    return new FunctionDefinition(name, new Signature(new Argument[0], type), term);
   }
 
   @Override
   public NatExpression visitNat(NatContext ctx) {
-    return new NatExpression();
+    return Nat();
   }
 
   @Override
   public ZeroExpression visitZero(ZeroContext ctx) {
-    return new ZeroExpression();
+    return Zero();
   }
 
   @Override
   public SucExpression visitSuc(SucContext ctx) {
-    return new SucExpression();
+    return Suc();
   }
 
   @Override
   public PiExpression visitArr(ArrContext ctx) {
     Expression left = visitExpr(ctx.expr1(0));
     Expression right = visitExpr(ctx.expr1(1));
-    return new PiExpression(left, right);
+    return Pi(left, right);
   }
 
   @Override
@@ -80,45 +74,27 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public NelimExpression visitNelim(NelimContext ctx) {
-    return new NelimExpression();
+    return Nelim();
   }
 
   @Override
   public Expression visitLam(LamContext ctx) {
-    for (TerminalNode var : ctx.ID()) {
-      names.add(var.getText());
-    }
     Expression expr = visitExpr(ctx.expr());
-    for (TerminalNode ignored : ctx.ID()) {
-      names.remove(names.size() - 1);
-    }
     ListIterator<TerminalNode> it = ctx.ID().listIterator(ctx.ID().size());
     while (it.hasPrevious()) {
-      expr = new LamExpression(it.previous().getText(), expr);
+      expr = Lam(it.previous().getText(), expr);
     }
     return expr;
   }
 
   @Override
   public Expression visitId(IdContext ctx) {
-    String name = ctx.ID().getText();
-    int index = names.lastIndexOf(name);
-    if (index == -1) {
-      Definition def = signature.get(name);
-      if (def == null) {
-        unknownVariables.add(name);
-        return new VarExpression(name);
-      } else {
-        return new DefCallExpression(def);
-      }
-    } else {
-      return new IndexExpression(names.size() - 1 - index);
-    }
+    return Var(ctx.ID().getText());
   }
 
   @Override
   public UniverseExpression visitUniverse(UniverseContext ctx) {
-    return new UniverseExpression(Integer.valueOf(ctx.UNIVERSE().getText().substring("Type".length())));
+    return Universe(Integer.valueOf(ctx.UNIVERSE().getText().substring("Type".length())));
   }
 
   @Override
@@ -128,11 +104,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (int i = 0; i < telescopeSize; ++i) {
       boolean explicit = ctx.tele(i) instanceof ExplicitContext;
       Expr1Context expr1 = explicit ? ((ExplicitContext) ctx.tele(i)).expr1() : ((ImplicitContext) ctx.tele(i)).expr1();
-      List<TerminalNode> ids = explicit ? ((ExplicitContext) ctx.tele(i)).ID() : ((ImplicitContext) ctx.tele(i)).ID();
       lefts[i] = visitExpr(expr1);
-      for (TerminalNode var : ids) {
-        names.add(var.getText());
-      }
     }
     Expression expr = visitExpr(ctx.expr1());
     for (int i = telescopeSize - 1; i >= 0; --i) {
@@ -140,14 +112,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       List<TerminalNode> ids = explicit ? ((ExplicitContext) ctx.tele(i)).ID() : ((ImplicitContext) ctx.tele(i)).ID();
       ListIterator<TerminalNode> it = ids.listIterator(ids.size());
       while (it.hasPrevious()) {
-        expr = new PiExpression(explicit, it.previous().getText(), lefts[i], expr);
-        names.remove(names.size() - 1);
+        expr = Pi(explicit, it.previous().getText(), lefts[i], expr);
       }
     }
     return expr;
-  }
-
-  public List<String> getUnknownVariables() {
-    return unknownVariables;
   }
 }

@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 
+import java.util.List;
+
 public class Parser {
   public static VcgrammarParser parse(String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
@@ -15,11 +17,16 @@ public class Parser {
 
   public static Expression parseExpr(String text) {
     BuildVisitor builder = new BuildVisitor();
-    return (Expression) builder.visit(parse(text).expr());
+    return builder.visitExpr(parse(text).expr());
   }
 
   public static Definition parseDef(String text) {
     BuildVisitor builder = new BuildVisitor();
-    return (Definition) builder.visit(parse(text).def());
+    return builder.visitDef(parse(text).def());
+  }
+
+  public static List<Definition> parseDefs(String text) {
+    BuildVisitor builder = new BuildVisitor();
+    return builder.visitDefs(parse(text).defs());
   }
 }

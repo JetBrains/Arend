@@ -10,10 +10,10 @@ import java.io.PrintStream;
 import java.util.List;
 
 public abstract class Expression implements PrettyPrintable, Abstract.Expression {
-  private static final Expression NAT = new NatExpression();
-  private static final Expression ZERO = new ZeroExpression();
-  private static final Expression SUC = new SucExpression();
-  private static final Expression NELIM = new NelimExpression();
+  private static final NatExpression NAT = new NatExpression();
+  private static final ZeroExpression ZERO = new ZeroExpression();
+  private static final SucExpression SUC = new SucExpression();
+  private static final NelimExpression NELIM = new NelimExpression();
 
   public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
 
@@ -52,43 +52,43 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return expr;
   }
 
-  public static Expression DefCall(Definition definition) {
+  public static DefCallExpression DefCall(Definition definition) {
     return new DefCallExpression(definition);
   }
 
-  public static Expression Index(int i) {
+  public static IndexExpression Index(int i) {
     return new IndexExpression(i);
   }
 
-  public static Expression Lam(String variable, Expression body) {
+  public static LamExpression Lam(String variable, Expression body) {
     return new LamExpression(variable, body);
   }
 
-  public static Expression Pi(String variable, Expression left, Expression right) {
+  public static PiExpression Pi(String variable, Expression left, Expression right) {
     return new PiExpression(true, variable, left, right);
   }
 
-  public static Expression Pi(boolean explicit, String variable, Expression left, Expression right) {
+  public static PiExpression Pi(boolean explicit, String variable, Expression left, Expression right) {
     return new PiExpression(explicit, variable, left, right);
   }
 
-  public static Expression Pi(Expression left, Expression right) {
+  public static PiExpression Pi(Expression left, Expression right) {
     return new PiExpression(left, right);
   }
 
-  public static Expression Var(String name) {
+  public static VarExpression Var(String name) {
     return new VarExpression(name);
   }
 
-  public static Expression Nat() {
+  public static NatExpression Nat() {
     return NAT;
   }
 
-  public static Expression Zero() {
+  public static ZeroExpression Zero() {
     return ZERO;
   }
 
-  public static Expression Suc() {
+  public static SucExpression Suc() {
     return SUC;
   }
 
@@ -96,11 +96,11 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return Apps(SUC, expr);
   }
 
-  public static Expression Universe(int level) {
+  public static UniverseExpression Universe(int level) {
     return new UniverseExpression(level);
   }
 
-  public static Expression Nelim() {
+  public static NelimExpression Nelim() {
     return NELIM;
   }
 }
