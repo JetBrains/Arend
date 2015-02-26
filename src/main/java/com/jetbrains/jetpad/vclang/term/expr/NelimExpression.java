@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class NelimExpression extends Expression {
+public class NelimExpression extends Expression implements Abstract.NelimExpression {
   public final static int PREC = 11;
 
   @Override

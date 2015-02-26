@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class SucExpression extends Expression {
+public class SucExpression extends Expression implements Abstract.SucExpression {
   public final static int PREC = 11;
 
   @Override

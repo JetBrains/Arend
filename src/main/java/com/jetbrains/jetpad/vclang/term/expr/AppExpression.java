@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class AppExpression extends Expression {
+public class AppExpression extends Expression implements Abstract.AppExpression {
   public final static int PREC = 10;
 
   private final Expression function;
@@ -16,10 +16,12 @@ public class AppExpression extends Expression {
     this.argument = argument;
   }
 
+  @Override
   public Expression getFunction() {
     return function;
   }
 
+  @Override
   public Expression getArgument() {
     return argument;
   }

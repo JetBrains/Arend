@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+
 // TODO: Rewrite normalization using thunks
 // TODO: Add normalization to whnf
 public class NormalizeVisitor implements ExpressionVisitor<Expression> {
@@ -25,15 +27,15 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
           if (caseExpr instanceof AppExpression) {
             AppExpression appExpr3 = (AppExpression)caseExpr;
             if (appExpr3.getFunction() instanceof SucExpression) {
-              Expression recursiveCall = new AppExpression(appExpr1, appExpr3.getArgument());
-              Expression result = new AppExpression(new AppExpression(sucClause, appExpr3.getArgument()), recursiveCall);
+              Expression recursiveCall = Apps(appExpr1, appExpr3.getArgument());
+              Expression result = Apps(sucClause, appExpr3.getArgument(), recursiveCall);
               return result.accept(this);
             }
           }
         }
       }
     }
-    return new AppExpression(function1, expr.getArgument().accept(this));
+    return Apps(function1, expr.getArgument().accept(this));
   }
 
   @Override
@@ -52,7 +54,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLam(LamExpression expr) {
-    return new LamExpression(expr.getVariable(), expr.getBody().accept(this));
+    return Lam(expr.getVariable(), expr.getBody().accept(this));
   }
 
   @Override
@@ -67,7 +69,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr) {
-    return new PiExpression(expr.isExplicit(), expr.getVariable(), expr.getLeft().accept(this), expr.getRight().accept(this));
+    return Pi(expr.isExplicit(), expr.getVariable(), expr.getLeft().accept(this), expr.getRight().accept(this));
   }
 
   @Override

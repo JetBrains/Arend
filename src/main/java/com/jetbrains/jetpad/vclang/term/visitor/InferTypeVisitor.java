@@ -19,6 +19,15 @@ public class InferTypeVisitor implements ExpressionVisitor<Expression> {
     this.context = context;
   }
 
+  public Expression visitApps(Expression fun, List<Expression> args) {
+    if (fun instanceof NelimExpression) {
+      Expression type = args.get(0).accept(this);
+      return Pi(Pi(Nat(), Pi(type, type)), Pi(Nat(), type));
+    }
+    Expression funType = fun.accept(this).normalize();
+    return null;
+  }
+
   @Override
   public Expression visitApp(AppExpression expr) {
     if (expr.getFunction() instanceof NelimExpression) {

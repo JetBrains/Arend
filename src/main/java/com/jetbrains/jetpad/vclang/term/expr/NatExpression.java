@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class NatExpression extends Expression {
+public class NatExpression extends Expression implements Abstract.NatExpression {
   public final static int PREC = 11;
 
   @Override

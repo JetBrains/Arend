@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class LamExpression extends Expression {
+public class LamExpression extends Expression implements Abstract.LamExpression {
   public final static int PREC = 5;
 
   private final String variable;
@@ -21,10 +21,12 @@ public class LamExpression extends Expression {
     this.body = expression;
   }
 
+  @Override
   public String getVariable() {
     return variable;
   }
 
+  @Override
   public Expression getBody() {
     return body;
   }

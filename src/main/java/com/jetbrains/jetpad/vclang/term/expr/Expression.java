@@ -8,13 +8,11 @@ import com.jetbrains.jetpad.vclang.term.visitor.*;
 
 import java.util.List;
 
-public abstract class Expression implements PrettyPrintable {
+public abstract class Expression implements PrettyPrintable, Abstract.Expression {
   private static final Expression NAT = new NatExpression();
   private static final Expression ZERO = new ZeroExpression();
   private static final Expression SUC = new SucExpression();
   private static final Expression NELIM = new NelimExpression();
-
-  public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
 
   public final Expression liftIndex(int from, int on) {
     return accept(new LiftIndexVisitor(from, on));

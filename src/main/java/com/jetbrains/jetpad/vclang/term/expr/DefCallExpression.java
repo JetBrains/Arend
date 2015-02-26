@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class DefCallExpression extends Expression {
+public class DefCallExpression extends Expression implements Abstract.DefCallExpression {
   public final static int PREC = 11;
 
   private final Definition definition;
@@ -15,6 +15,7 @@ public class DefCallExpression extends Expression {
     this.definition = function;
   }
 
+  @Override
   public Definition getDefinition() {
     return definition;
   }

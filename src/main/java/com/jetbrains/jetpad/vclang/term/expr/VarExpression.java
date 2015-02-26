@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class VarExpression extends Expression {
+public class VarExpression extends Expression implements Abstract.VarExpression {
   public final static int PREC = 11;
 
   private final String name;
@@ -14,6 +14,7 @@ public class VarExpression extends Expression {
     this.name = name;
   }
 
+  @Override
   public String getName() {
     return name;
   }

@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class IndexExpression extends Expression {
+public class IndexExpression extends Expression implements Abstract.IndexExpression {
   public final static int PREC = 11;
 
   private final int index;
@@ -14,6 +14,7 @@ public class IndexExpression extends Expression {
     this.index = index;
   }
 
+  @Override
   public int getIndex() {
     return index;
   }

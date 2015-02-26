@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+
 public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   private final int from;
   private final int on;
@@ -13,7 +15,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitApp(AppExpression expr) {
-    return new AppExpression(expr.getFunction().accept(this), expr.getArgument().accept(this));
+    return Apps(expr.getFunction().accept(this), expr.getArgument().accept(this));
   }
 
   @Override
@@ -26,13 +28,13 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     if (expr.getIndex() < from) {
       return expr;
     } else {
-      return new IndexExpression(expr.getIndex() + on);
+      return Index(expr.getIndex() + on);
     }
   }
 
   @Override
   public Expression visitLam(LamExpression expr) {
-    return new LamExpression(expr.getVariable(), expr.getBody().liftIndex(from + 1, on));
+    return Lam(expr.getVariable(), expr.getBody().liftIndex(from + 1, on));
   }
 
   @Override
@@ -47,7 +49,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr) {
-    return new PiExpression(expr.isExplicit(), expr.getVariable(), expr.getLeft().accept(this), expr.getRight().liftIndex(from + 1, on));
+    return Pi(expr.isExplicit(), expr.getVariable(), expr.getLeft().accept(this), expr.getRight().liftIndex(from + 1, on));
   }
 
   @Override

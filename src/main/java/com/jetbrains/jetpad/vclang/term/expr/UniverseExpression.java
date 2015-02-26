@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class UniverseExpression extends Expression {
+public class UniverseExpression extends Expression implements Abstract.UniverseExpression {
   public final static int PREC = 11;
 
   private final int level;
@@ -18,6 +18,7 @@ public class UniverseExpression extends Expression {
     this.level = level;
   }
 
+  @Override
   public int getLevel() {
     return level;
   }

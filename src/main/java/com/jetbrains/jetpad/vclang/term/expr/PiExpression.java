@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 import java.io.PrintStream;
 import java.util.List;
 
-public class PiExpression extends Expression {
+public class PiExpression extends Expression implements Abstract.PiExpression {
   public final static int PREC = 6;
 
   private final boolean explicit;
@@ -24,18 +24,22 @@ public class PiExpression extends Expression {
     this.right = right;
   }
 
+  @Override
   public String getVariable() {
     return variable;
   }
 
+  @Override
   public Expression getLeft() {
     return left;
   }
 
+  @Override
   public Expression getRight() {
     return right;
   }
 
+  @Override
   public boolean isExplicit() {
     return explicit;
   }

@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+
 public class SubstVisitor implements ExpressionVisitor<Expression> {
   private final Expression substExpr;
   private final int from;
@@ -13,7 +15,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitApp(AppExpression expr) {
-    return new AppExpression(expr.getFunction().accept(this), expr.getArgument().accept(this));
+    return Apps(expr.getFunction().accept(this), expr.getArgument().accept(this));
   }
 
   @Override
@@ -23,14 +25,14 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitIndex(IndexExpression expr) {
-    if (expr.getIndex() < from) return expr;
-    if (expr.getIndex() == from) return substExpr; // .liftIndex(0, from);
-    return new IndexExpression(expr.getIndex() - 1);
+    if (expr.getIndex() < from) return Index(expr.getIndex());
+    if (expr.getIndex() == from) return substExpr;
+    return Index(expr.getIndex() - 1);
   }
 
   @Override
   public Expression visitLam(LamExpression expr) {
-    return new LamExpression(expr.getVariable(), expr.getBody().subst(substExpr.liftIndex(0, 1), from + 1));
+    return Lam(expr.getVariable(), expr.getBody().subst(substExpr.liftIndex(0, 1), from + 1));
   }
 
   @Override
@@ -45,7 +47,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr) {
-    return new PiExpression(expr.isExplicit(), expr.getVariable(), expr.getLeft().accept(this), expr.getRight().subst(substExpr, from + 1));
+    return Pi(expr.isExplicit(), expr.getVariable(), expr.getLeft().accept(this), expr.getRight().subst(substExpr, from + 1));
   }
 
   @Override
