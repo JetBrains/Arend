@@ -5,14 +5,12 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingException;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchException;
+import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
-import java.io.PrintStream;
 import java.util.List;
 
 public class LamExpression extends Expression implements Abstract.LamExpression {
-  public final static int PREC = 5;
-
   private final String variable;
   private final Expression body;
 
@@ -29,18 +27,6 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
   @Override
   public Expression getBody() {
     return body;
-  }
-
-  @Override
-  public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    if (prec > PREC) stream.print("(");
-    String var;
-    for (var = variable; names.contains(var); var += "'");
-    stream.print("\\" + var + " -> ");
-    names.add(var);
-    body.prettyPrint(stream, names, PREC);
-    names.remove(names.size() - 1);
-    if (prec > PREC) stream.print(")");
   }
 
   @Override
@@ -73,5 +59,10 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
     } else {
       throw new TypeMismatchException(expectedNormalized, new PiExpression(new VarExpression("_"), new VarExpression("_")), this);
     }
+  }
+
+  @Override
+  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
+    return visitor.visitLam(this);
   }
 }

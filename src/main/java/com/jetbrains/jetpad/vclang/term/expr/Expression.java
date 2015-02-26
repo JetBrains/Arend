@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingException;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchException;
 import com.jetbrains.jetpad.vclang.term.visitor.*;
 
+import java.io.PrintStream;
 import java.util.List;
 
 public abstract class Expression implements PrettyPrintable, Abstract.Expression {
@@ -13,6 +14,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   private static final Expression ZERO = new ZeroExpression();
   private static final Expression SUC = new SucExpression();
   private static final Expression NELIM = new NelimExpression();
+
+  public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
 
   public final Expression liftIndex(int from, int on) {
     return accept(new LiftIndexVisitor(from, on));
@@ -24,6 +27,10 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   public final Expression normalize() {
     return accept(new NormalizeVisitor());
+  }
+
+  public final void prettyPrint(PrintStream stream, List<String> names, int prec) {
+    accept(new PrettyPrintVisitor(stream, names, prec));
   }
 
   public final Expression inferType(List<Definition> context) throws TypeCheckingException {

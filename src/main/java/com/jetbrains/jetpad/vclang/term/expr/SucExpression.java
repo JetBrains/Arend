@@ -1,18 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
-import java.io.PrintStream;
-import java.util.List;
-
 public class SucExpression extends Expression implements Abstract.SucExpression {
-  public final static int PREC = 11;
-
-  @Override
-  public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    stream.print(toString());
-  }
-
   @Override
   public boolean equals(Object o) {
     return o == this || o instanceof SucExpression;
@@ -25,6 +16,11 @@ public class SucExpression extends Expression implements Abstract.SucExpression 
 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
+    return visitor.visitSuc(this);
+  }
+
+  @Override
+  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
     return visitor.visitSuc(this);
   }
 }

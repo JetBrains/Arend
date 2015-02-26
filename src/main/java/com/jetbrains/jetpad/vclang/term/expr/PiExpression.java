@@ -1,13 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
-import java.io.PrintStream;
-import java.util.List;
-
 public class PiExpression extends Expression implements Abstract.PiExpression {
-  public final static int PREC = 6;
-
   private final boolean explicit;
   private final String variable;
   private final Expression left;
@@ -45,23 +41,6 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
   }
 
   @Override
-  public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    if (prec > PREC) stream.print("(");
-    if (variable == null) {
-      left.prettyPrint(stream, names, PREC + 1);
-    } else {
-      stream.print("(" + variable + " : ");
-      left.prettyPrint(stream, names, 0);
-      stream.print(")");
-    }
-    stream.print(" -> ");
-    names.add(variable);
-    right.prettyPrint(stream, names, PREC);
-    names.remove(names.size() - 1);
-    if (prec > PREC) stream.print(")");
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (o == this) return true;
     if (!(o instanceof PiExpression)) return false;
@@ -76,6 +55,11 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
+    return visitor.visitPi(this);
+  }
+
+  @Override
+  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
     return visitor.visitPi(this);
   }
 }

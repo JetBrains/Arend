@@ -1,13 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
-import java.io.PrintStream;
-import java.util.List;
-
 public class UniverseExpression extends Expression implements Abstract.UniverseExpression {
-  public final static int PREC = 11;
-
   private final int level;
 
   public UniverseExpression() {
@@ -24,11 +20,6 @@ public class UniverseExpression extends Expression implements Abstract.UniverseE
   }
 
   @Override
-  public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    stream.print(toString());
-  }
-
-  @Override
   public boolean equals(Object o) {
     return o == this || o instanceof UniverseExpression;
   }
@@ -40,6 +31,11 @@ public class UniverseExpression extends Expression implements Abstract.UniverseE
 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
+    return visitor.visitUniverse(this);
+  }
+
+  @Override
+  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
     return visitor.visitUniverse(this);
   }
 }

@@ -1,13 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
-import java.io.PrintStream;
-import java.util.List;
-
 public class IndexExpression extends Expression implements Abstract.IndexExpression {
-  public final static int PREC = 11;
-
   private final int index;
 
   public IndexExpression(int index) {
@@ -17,12 +13,6 @@ public class IndexExpression extends Expression implements Abstract.IndexExpress
   @Override
   public int getIndex() {
     return index;
-  }
-
-  @Override
-  public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    assert index < names.size();
-    stream.print(names.get(names.size() - 1 - index));
   }
 
   @Override
@@ -40,6 +30,11 @@ public class IndexExpression extends Expression implements Abstract.IndexExpress
 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
+    return visitor.visitIndex(this);
+  }
+
+  @Override
+  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
     return visitor.visitIndex(this);
   }
 }
