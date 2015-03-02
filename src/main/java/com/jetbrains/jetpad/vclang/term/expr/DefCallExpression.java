@@ -35,7 +35,7 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   }
 
   @Override
-  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
-    return visitor.visitDefCall(this);
+  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitDefCall(this, params);
   }
 }

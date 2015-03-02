@@ -20,8 +20,8 @@ public class Signature {
     type = type.normalize();
     while (type instanceof PiExpression) {
       PiExpression pi = (PiExpression)type;
-      args.add(new Argument(pi.isExplicit(), pi.getVariable(), pi.getLeft()));
-      type = pi.getRight();
+      args.add(new Argument(pi.isExplicit(), pi.getVariable(), pi.getDomain()));
+      type = pi.getCodomain();
     }
     arguments = args.toArray(new Argument[args.size()]);
     resultType = type;

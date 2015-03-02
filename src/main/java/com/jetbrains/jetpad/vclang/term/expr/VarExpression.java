@@ -34,7 +34,7 @@ public class VarExpression extends Expression implements Abstract.VarExpression 
   }
 
   @Override
-  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
-    return visitor.visitVar(this);
+  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitVar(this, params);
   }
 }

@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 
 public class Abstract {
   public static interface Expression {
-    abstract <T> T accept(AbstractExpressionVisitor<? extends T> visitor);
+    abstract <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
   }
 
   public static interface AppExpression extends Expression {
@@ -42,8 +42,8 @@ public class Abstract {
     final static int PREC = 6;
     boolean isExplicit();
     String getVariable();
-    Expression getLeft();
-    Expression getRight();
+    Expression getDomain();
+    Expression getCodomain();
   }
 
   public static interface SucExpression extends Expression {

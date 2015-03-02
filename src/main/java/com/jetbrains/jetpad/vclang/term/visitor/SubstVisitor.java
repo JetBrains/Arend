@@ -47,7 +47,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr) {
-    return Pi(expr.isExplicit(), expr.getVariable(), expr.getLeft().accept(this), expr.getRight().subst(substExpr, from + 1));
+    return Pi(expr.isExplicit(), expr.getVariable(), expr.getDomain().accept(this), expr.getCodomain().subst(substExpr, from + 1));
   }
 
   @Override

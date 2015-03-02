@@ -35,7 +35,7 @@ public class UniverseExpression extends Expression implements Abstract.UniverseE
   }
 
   @Override
-  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
-    return visitor.visitUniverse(this);
+  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitUniverse(this, params);
   }
 }

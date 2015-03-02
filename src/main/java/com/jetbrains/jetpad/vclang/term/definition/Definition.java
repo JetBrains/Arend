@@ -2,10 +2,9 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchException;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 public abstract class Definition implements PrettyPrintable {
   private final String name;
@@ -40,12 +39,8 @@ public abstract class Definition implements PrettyPrintable {
     return name + " : " + signature.toString();
   }
 
-  public Definition checkTypes() {
-    Expression typeOfType = signature.getType().inferType(new ArrayList<Definition>());
-    if (typeOfType instanceof UniverseExpression) {
-      return this;
-    } else {
-      throw new TypeMismatchException(new UniverseExpression(), typeOfType, signature.getType());
-    }
+  public Definition checkTypes(Map<String, Definition> globalContext) {
+    signature.getType().checkType(globalContext, new ArrayList<Definition>(), Expression.Universe(-1));
+    return this;
   }
 }

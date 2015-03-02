@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
 public class TypeInferenceException extends TypeCheckingException {
   public TypeInferenceException(Abstract.Expression expression) {
-      super(expression);
+      super(null, expression);
   }
 
   @Override

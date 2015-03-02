@@ -12,7 +12,9 @@ import org.antlr.v4.runtime.CommonTokenStream;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ConsoleMain {
 
@@ -25,10 +27,12 @@ public class ConsoleMain {
     VcgrammarParser.DefsContext tree = parser.defs();
     BuildVisitor builder = new BuildVisitor();
     List<Definition> defs = builder.visitDefs(tree);
+    Map<String, Definition> context = new HashMap<>();
     for (Definition def : defs) {
       if (def instanceof FunctionDefinition) {
-        def = def.checkTypes();
+        def = def.checkTypes(context);
         def = new FunctionDefinition(def.getName(), def.getSignature(), ((FunctionDefinition)def).getTerm().normalize());
+        context.put(def.getName(), def);
       }
       def.prettyPrint(System.out, new ArrayList<String>(), 0);
       System.out.println();

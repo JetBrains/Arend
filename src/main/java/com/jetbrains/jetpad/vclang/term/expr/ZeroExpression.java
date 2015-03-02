@@ -20,7 +20,7 @@ public class ZeroExpression extends Expression implements Abstract.ZeroExpressio
   }
 
   @Override
-  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
-    return visitor.visitZero(this);
+  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitZero(this, params);
   }
 }

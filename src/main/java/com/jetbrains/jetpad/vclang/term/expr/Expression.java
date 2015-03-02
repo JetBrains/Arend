@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingException;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchException;
 import com.jetbrains.jetpad.vclang.term.visitor.*;
 
 import java.io.PrintStream;
 import java.util.List;
+import java.util.Map;
 
 public abstract class Expression implements PrettyPrintable, Abstract.Expression {
   private static final NatExpression NAT = new NatExpression();
@@ -30,19 +30,11 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public final void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    accept(new PrettyPrintVisitor(stream, names, prec));
+    accept(new PrettyPrintVisitor(stream, names), prec);
   }
 
-  public final Expression inferType(List<Definition> context) throws TypeCheckingException {
-    return accept(new InferTypeVisitor(context));
-  }
-
-  public void checkType(List<Definition> context, Expression expected) throws TypeCheckingException {
-    Expression actualNorm = inferType(context).normalize();
-    Expression expectedNorm = expected.normalize();
-    if (!expectedNorm.equals(actualNorm)) {
-      throw new TypeMismatchException(expectedNorm, actualNorm, this);
-    }
+  public final CheckTypeVisitor.Result checkType(Map<String, Definition> globalContext, List<Definition> localContext, Expression expectedType) throws TypeCheckingException {
+    return accept(new CheckTypeVisitor(globalContext, localContext), expectedType);
   }
 
   public static Expression Apps(Expression expr, Expression... exprs) {

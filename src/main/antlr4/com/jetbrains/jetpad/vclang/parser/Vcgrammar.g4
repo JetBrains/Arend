@@ -9,8 +9,8 @@ expr  : expr1                           # exprExpr1
       ;
 
 expr1 : expr1 expr1                     # app
-      | <assoc=right> expr1 '->' expr1  # arr
-      | <assoc=right> tele+ '->' expr1  # pi
+      | <assoc=codomain> expr1 '->' expr1  # arr
+      | <assoc=codomain> tele+ '->' expr1  # pi
       | '(' expr ')'                    # parens
       | UNIVERSE                        # universe
       | ID                              # id

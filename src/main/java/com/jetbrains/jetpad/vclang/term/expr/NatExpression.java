@@ -20,7 +20,7 @@ public class NatExpression extends Expression implements Abstract.NatExpression 
   }
 
   @Override
-  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
-    return visitor.visitNat(this);
+  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitNat(this, params);
   }
 }

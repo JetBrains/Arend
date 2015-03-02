@@ -7,7 +7,7 @@ public class TypeMismatchException extends TypeCheckingException {
   private final Abstract.Expression actual;
 
   public TypeMismatchException(Abstract.Expression expected, Abstract.Expression actual, Abstract.Expression expression) {
-    super(expression);
+    super(null, expression);
     this.expected = expected;
     this.actual = actual;
   }

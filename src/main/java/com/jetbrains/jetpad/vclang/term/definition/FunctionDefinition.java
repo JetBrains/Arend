@@ -1,10 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public final class FunctionDefinition extends Definition {
   private final Expression term;
@@ -32,10 +34,10 @@ public final class FunctionDefinition extends Definition {
   }
 
   @Override
-  public FunctionDefinition checkTypes() {
-    super.checkTypes();
+  public FunctionDefinition checkTypes(Map<String, Definition> globalContext) {
+    super.checkTypes(globalContext);
     Expression type = getSignature().getType();
-    term.checkType(new ArrayList<Definition>(), type);
-    return new FunctionDefinition(getName(), new Signature(type), term);
+    CheckTypeVisitor.Result result = term.checkType(globalContext, new ArrayList<Definition>(), type);
+    return new FunctionDefinition(getName(), new Signature(result.type), result.expression);
   }
 }

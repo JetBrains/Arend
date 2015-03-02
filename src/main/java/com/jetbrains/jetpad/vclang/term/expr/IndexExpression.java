@@ -34,7 +34,7 @@ public class IndexExpression extends Expression implements Abstract.IndexExpress
   }
 
   @Override
-  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
-    return visitor.visitIndex(this);
+  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitIndex(this, params);
   }
 }

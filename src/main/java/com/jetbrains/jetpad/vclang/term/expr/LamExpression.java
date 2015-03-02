@@ -1,14 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Signature;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingException;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchException;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
-
-import java.util.List;
 
 public class LamExpression extends Expression implements Abstract.LamExpression {
   private final String variable;
@@ -48,21 +41,7 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
   }
 
   @Override
-  public void checkType(List<Definition> context, Expression expected) throws TypeCheckingException {
-    Expression expectedNormalized = expected.normalize();
-    if (expectedNormalized instanceof PiExpression) {
-      PiExpression type = (PiExpression)expectedNormalized;
-      // TODO: This is ugly. Fix it.
-      context.add(new FunctionDefinition(variable, new Signature(type.getLeft()), new VarExpression(variable)));
-      body.checkType(context, type.getRight());
-      context.remove(context.size() - 1);
-    } else {
-      throw new TypeMismatchException(expectedNormalized, new PiExpression(new VarExpression("_"), new VarExpression("_")), this);
-    }
-  }
-
-  @Override
-  public <T> T accept(AbstractExpressionVisitor<? extends T> visitor) {
-    return visitor.visitLam(this);
+  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitLam(this, params);
   }
 }
