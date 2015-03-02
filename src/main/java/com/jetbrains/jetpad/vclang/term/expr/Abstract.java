@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 
 public class Abstract {
   public static interface Expression {
-    abstract <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
+    <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
   }
 
   public static interface AppExpression extends Expression {
