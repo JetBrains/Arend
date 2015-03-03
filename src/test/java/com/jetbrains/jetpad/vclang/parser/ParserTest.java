@@ -54,19 +54,23 @@ public class ParserTest {
 
   @Test
   public void parserDef() {
-    List<Definition> defs = parseDefs("x : N = 0; y : N = x;");
+    List<Definition> defs = parseDefs(
+        "function x : N = 0\n" +
+        "function y : N = x");
     assertEquals(2, defs.size());
   }
 
   @Test
   public void parserDefType() {
-    List<Definition> defs = parseDefs("x : Type0 = N; y : x = 0;");
+    List<Definition> defs = parseDefs(
+        "function x : Type0 = N\n" +
+        "function y : x = 0");
     assertEquals(2, defs.size());
   }
 
   @Test
   public void parserImplicit() {
-    FunctionDefinition def = (FunctionDefinition)parseDef("f : (x y : N) {z w : N} -> (t : N) -> {r : N} -> N x y z w t r = N;");
+    FunctionDefinition def = (FunctionDefinition)parseDef("function f : (x y : N) {z w : N} -> (t : N) -> {r : N} -> N x y z w t r = N");
     def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
     assertEquals(6, def.getSignature().getArguments().length);
     assertTrue(def.getSignature().getArgument(0).isExplicit());
@@ -80,7 +84,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit2() {
-    FunctionDefinition def = (FunctionDefinition)parseDef("f : {x : N} -> N -> {y z : N} -> N x y z -> N = N;");
+    FunctionDefinition def = (FunctionDefinition)parseDef("function f : {x : N} -> N -> {y z : N} -> N x y z -> N = N");
     def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
     assertEquals(5, def.getSignature().getArguments().length);
     assertFalse(def.getSignature().getArgument(0).isExplicit());

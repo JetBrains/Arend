@@ -7,6 +7,7 @@ public class ModuleCell extends IndentCell {
   public final IndentCell definitions = new IndentCell();
 
   public ModuleCell() {
-      CellFactory.to(this, definitions);
+    CellFactory.to(this, definitions);
+    // focusable().set(true);
   }
 }

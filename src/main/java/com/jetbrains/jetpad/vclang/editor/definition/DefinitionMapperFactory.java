@@ -1,5 +1,6 @@
-package com.jetbrains.jetpad.vclang.editor;
+package com.jetbrains.jetpad.vclang.editor.definition;
 
+import com.jetbrains.jetpad.vclang.model.definition.EmptyDefinition;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.mapper.MapperFactory;
@@ -11,6 +12,9 @@ public class DefinitionMapperFactory implements MapperFactory<Definition, Cell> 
   public Mapper<? extends Definition, ? extends Cell> createMapper(Definition source) {
     if (source instanceof FunctionDefinition) {
       return new FunctionDefinitionMapper((FunctionDefinition)source);
+    }
+    if (source instanceof EmptyDefinition) {
+      return new EmptyDefinitionMapper((EmptyDefinition)source);
     }
     return null;
   }

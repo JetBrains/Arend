@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.editor;
+package com.jetbrains.jetpad.vclang.editor.definition;
 
 import jetbrains.jetpad.base.Validators;
 import jetbrains.jetpad.cell.Cell;
@@ -17,6 +17,8 @@ public class FunctionDefinitionCell extends IndentCell {
 
   FunctionDefinitionCell() {
     to(this,
+        keyword("function"),
+        newLine(),
         name,
         placeHolder(name, "<no name>"),
         space(),

@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.editor;
 
 import com.google.common.base.Supplier;
+import com.jetbrains.jetpad.vclang.editor.definition.DefinitionMapperFactory;
+import com.jetbrains.jetpad.vclang.model.definition.EmptyDefinition;
 import jetbrains.jetpad.cell.util.CellLists;
 import jetbrains.jetpad.completion.CompletionItem;
 import jetbrains.jetpad.completion.CompletionParameters;
@@ -20,18 +22,24 @@ import java.util.List;
 
 public class ModuleMapper extends Mapper<Module, ModuleCell> {
   public ModuleMapper(Module source) {
-      super(source, new ModuleCell());
+    super(source, new ModuleCell());
   }
 
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    ProjectionalRoleSynchronizer<Module, Definition> result = ProjectionalSynchronizers.forRole(this, getSource().definitions, getTarget().definitions, CellLists.newLineSeparated(getTarget().definitions.children()), new DefinitionMapperFactory());
-    result.setCompletion(new RoleCompletion<Node, Definition>() {
+    ProjectionalRoleSynchronizer<Module, Definition> synchronizer = ProjectionalSynchronizers.forRole(this, getSource().definitions, getTarget().definitions, CellLists.newLineSeparated(getTarget().definitions.children()), new DefinitionMapperFactory());
+    synchronizer.setCompletion(new RoleCompletion<Node, Definition>() {
       @Override
       public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Definition> target) {
         List<CompletionItem> result = new ArrayList<>();
-        result.add(new SimpleCompletionItem("fun", "") {
+        result.add(new SimpleCompletionItem("function") {
+          @Override
+          public Runnable complete(String text) {
+            return target.set(new FunctionDefinition());
+          }
+        });
+        result.add(new SimpleCompletionItem("fun ") {
           @Override
           public Runnable complete(String text) {
             return target.set(new FunctionDefinition());
@@ -40,12 +48,12 @@ public class ModuleMapper extends Mapper<Module, ModuleCell> {
         return result;
       }
     });
-    result.setItemFactory(new Supplier<Definition>() {
+    synchronizer.setItemFactory(new Supplier<Definition>() {
       @Override
       public Definition get() {
-        return new FunctionDefinition();
+        return new EmptyDefinition();
       }
     });
-    conf.add(result);
+    conf.add(synchronizer);
   }
 }

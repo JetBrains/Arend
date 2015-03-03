@@ -21,16 +21,15 @@ public final class FunctionDefinition extends Definition {
   }
 
   public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    stream.print(getName() + " : ");
+    stream.print("function\n" + getName() + " : ");
     getSignature().getType().prettyPrint(stream, names, 0);
     stream.print("\n    = ");
     term.prettyPrint(stream, names, 0);
-    stream.print(";");
   }
 
   @Override
   public String toString() {
-    return getName() + " : " + getSignature().toString() + " = " + term.toString() + ";";
+    return "function " + getName() + " : " + getSignature().toString() + " = " + term.toString();
   }
 
   @Override

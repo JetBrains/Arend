@@ -2,15 +2,15 @@ grammar Vcgrammar;
 
 defs  : def+;
 
-def   : ID ':' expr1 '=' expr ';';
+def   : 'function' ID ':' expr1 '=' expr;
 
 expr  : expr1                           # exprExpr1
       | '\\' ID+ '->' expr              # lam
       ;
 
 expr1 : expr1 expr1                     # app
-      | <assoc=codomain> expr1 '->' expr1  # arr
-      | <assoc=codomain> tele+ '->' expr1  # pi
+      | <assoc=right> expr1 '->' expr1  # arr
+      | <assoc=right> tele+ '->' expr1  # pi
       | '(' expr ')'                    # parens
       | UNIVERSE                        # universe
       | ID                              # id
