@@ -6,17 +6,17 @@ import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
 
 public class LamExpression extends Expression implements Abstract.LamExpression {
-  private final Property<String> myVariable = new ValueProperty<>();
-  private final Property<Expression> myBody = new ValueProperty<>();
+  public final Property<String> variable = new ValueProperty<>();
+  public final Property<Expression> body = new ValueProperty<>();
 
   @Override
   public String getVariable() {
-    return myVariable.get();
+    return variable.get();
   }
 
   @Override
   public Abstract.Expression getBody() {
-    return myBody.get();
+    return body.get();
   }
 
   @Override

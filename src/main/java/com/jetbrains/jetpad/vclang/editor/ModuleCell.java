@@ -8,6 +8,6 @@ public class ModuleCell extends IndentCell {
 
   public ModuleCell() {
     CellFactory.to(this, definitions);
-    // focusable().set(true);
+    focusable().set(true);
   }
 }
