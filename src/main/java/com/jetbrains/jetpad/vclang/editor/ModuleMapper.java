@@ -33,13 +33,7 @@ public class ModuleMapper extends Mapper<Module, ModuleCell> {
       @Override
       public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Definition> target) {
         List<CompletionItem> result = new ArrayList<>();
-        result.add(new SimpleCompletionItem("function") {
-          @Override
-          public Runnable complete(String text) {
-            return target.set(new FunctionDefinition());
-          }
-        });
-        result.add(new SimpleCompletionItem("fun ") {
+        result.add(new SimpleCompletionItem("fun ", "function") {
           @Override
           public Runnable complete(String text) {
             return target.set(new FunctionDefinition());

@@ -6,19 +6,18 @@ import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
 
 public class AppExpression extends Expression implements Abstract.AppExpression {
-  private final Property<Expression> myFunction = new ValueProperty<>();
-  private final Property<Expression> myArgument = new ValueProperty<>();
+  public final Property<Expression> function = new ValueProperty<>();
+  public final Property<Expression> argument = new ValueProperty<>();
 
   @Override
   public Expression getFunction() {
-    return myFunction.get();
+    return function.get();
   }
 
   @Override
   public Expression getArgument() {
-    return myArgument.get();
+    return argument.get();
   }
-
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitApp(this, params);

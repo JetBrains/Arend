@@ -1,0 +1,61 @@
+package com.jetbrains.jetpad.vclang.editor.expr;
+
+import com.jetbrains.jetpad.vclang.model.Node;
+import com.jetbrains.jetpad.vclang.model.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
+import jetbrains.jetpad.completion.CompletionItem;
+import jetbrains.jetpad.completion.CompletionParameters;
+import jetbrains.jetpad.completion.SimpleCompletionItem;
+import jetbrains.jetpad.mapper.Mapper;
+import jetbrains.jetpad.projectional.generic.Role;
+import jetbrains.jetpad.projectional.generic.RoleCompletion;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
+  private final int myPrec;
+  private static ExpressionCompletion GLOBAL_INSTANCE = new ExpressionCompletion(0);
+  private static ExpressionCompletion APP_FUN_INSTANCE = new ExpressionCompletion(Abstract.AppExpression.PREC);
+  private static ExpressionCompletion APP_ARG_INSTANCE = new ExpressionCompletion(Abstract.AppExpression.PREC + 1);
+
+  private ExpressionCompletion(int prec) {
+    myPrec = prec;
+  }
+
+  @Override
+  public List<CompletionItem> createRoleCompletion(CompletionParameters completionParameters, Mapper<?, ?> mapper, Node node, final Role<Expression> target) {
+    List<CompletionItem> result = new ArrayList<>();
+    result.add(new SimpleCompletionItem("lam ", "lambda") {
+      @Override
+      public Runnable complete(String text) {
+        return target.set(myPrec > Abstract.LamExpression.PREC ? new ParensExpression(new LamExpression()) : new LamExpression());
+      }
+    });
+    result.add(new SimpleCompletionItem("app ", "application") {
+      @Override
+      public Runnable complete(String text) {
+        return target.set(myPrec > Abstract.AppExpression.PREC ? new ParensExpression(new AppExpression()) : new AppExpression());
+      }
+    });
+    result.add(new SimpleCompletionItem("var ", "variable") {
+      @Override
+      public Runnable complete(String text) {
+        return target.set(new VarExpression());
+      }
+    });
+    return result;
+  }
+
+  public static ExpressionCompletion getAppFunInstance() {
+    return APP_FUN_INSTANCE;
+  }
+
+  public static ExpressionCompletion getAppArgInstance() {
+    return APP_ARG_INSTANCE;
+  }
+
+  public static ExpressionCompletion getGlobalInstance() {
+    return GLOBAL_INSTANCE;
+  }
+}

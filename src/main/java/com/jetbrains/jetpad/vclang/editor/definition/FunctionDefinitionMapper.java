@@ -1,27 +1,26 @@
 package com.jetbrains.jetpad.vclang.editor.definition;
 
+import com.jetbrains.jetpad.vclang.editor.expr.ExpressionCompletion;
 import com.jetbrains.jetpad.vclang.editor.expr.ExpressionMapperFactory;
 import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.expr.Expression;
-import com.jetbrains.jetpad.vclang.model.expr.LamExpression;
-import jetbrains.jetpad.completion.CompletionItem;
-import jetbrains.jetpad.completion.CompletionParameters;
-import jetbrains.jetpad.completion.SimpleCompletionItem;
+import jetbrains.jetpad.base.Validators;
+import jetbrains.jetpad.cell.TextCell;
+import jetbrains.jetpad.cell.action.CellActions;
+import jetbrains.jetpad.cell.indent.IndentCell;
+import jetbrains.jetpad.cell.text.TextEditing;
 import jetbrains.jetpad.mapper.Mapper;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import jetbrains.jetpad.projectional.cell.ProjectionalRoleSynchronizer;
 import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
-import jetbrains.jetpad.projectional.generic.Role;
-import jetbrains.jetpad.projectional.generic.RoleCompletion;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import static com.jetbrains.jetpad.vclang.editor.cell.Utils.noDelete;
+import static jetbrains.jetpad.cell.util.CellFactory.*;
 import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
-public class FunctionDefinitionMapper extends Mapper<FunctionDefinition, FunctionDefinitionCell> {
+public class FunctionDefinitionMapper extends Mapper<FunctionDefinition, FunctionDefinitionMapper.Cell> {
   public FunctionDefinitionMapper(FunctionDefinition source) {
-    super(source, new FunctionDefinitionCell());
+    super(source, new FunctionDefinitionMapper.Cell());
   }
 
   @Override
@@ -30,25 +29,40 @@ public class FunctionDefinitionMapper extends Mapper<FunctionDefinition, Functio
 
     conf.add(forPropsTwoWay(getSource().name, getTarget().name.text()));
 
-    ProjectionalRoleSynchronizer<Node, Expression> typeSynchronizer = ProjectionalSynchronizers.<Node, Expression>forSingleRole(this, getSource().resultType, getTarget().type, new ExpressionMapperFactory());
+    ProjectionalRoleSynchronizer<Node, Expression> typeSynchronizer = ProjectionalSynchronizers.<Node, Expression>forSingleRole(this, getSource().resultType, getTarget().type, ExpressionMapperFactory.getInstance());
     typeSynchronizer.setPlaceholderText("<type>");
+    typeSynchronizer.setCompletion(ExpressionCompletion.getGlobalInstance());
     conf.add(typeSynchronizer);
 
-    ProjectionalRoleSynchronizer<Node, Expression> termSynchronizer = ProjectionalSynchronizers.<Node, Expression>forSingleRole(this, getSource().term, getTarget().term, new ExpressionMapperFactory());
+    ProjectionalRoleSynchronizer<Node, Expression> termSynchronizer = ProjectionalSynchronizers.<Node, Expression>forSingleRole(this, getSource().term, getTarget().term, ExpressionMapperFactory.getInstance());
     termSynchronizer.setPlaceholderText("<term>");
-    termSynchronizer.setCompletion(new RoleCompletion<Node, Expression>() {
-      @Override
-      public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Expression> target) {
-        List<CompletionItem> result = new ArrayList<>();
-        result.add(new SimpleCompletionItem("lam ") {
-          @Override
-          public Runnable complete(String text) {
-            return target.set(new LamExpression());
-          }
-        });
-        return result;
-      }
-    });
+    termSynchronizer.setCompletion(ExpressionCompletion.getGlobalInstance());
     conf.add(termSynchronizer);
+  }
+
+  public static class Cell extends IndentCell {
+    final TextCell name = noDelete(new TextCell());
+    final jetbrains.jetpad.cell.Cell type = noDelete(indent());
+    final jetbrains.jetpad.cell.Cell term = noDelete(indent());
+
+    Cell() {
+      to(this,
+          noDelete(keyword("function")),
+          newLine(),
+          name,
+          placeHolder(name, "<no name>"),
+          space(),
+          text(":"),
+          space(),
+          type,
+          space(),
+          text("=>"),
+          space(),
+          term);
+
+      focusable().set(true);
+      name.addTrait(TextEditing.validTextEditing(Validators.identifier()));
+      set(ProjectionalSynchronizers.ON_CREATE, CellActions.toCell(name));
+    }
   }
 }

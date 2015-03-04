@@ -18,7 +18,6 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
   public Abstract.Expression getBody() {
     return body.get();
   }
-
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitLam(this, params);
