@@ -9,7 +9,7 @@ import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.projectional.cell.ProjectionalRoleSynchronizer;
 import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
-import static com.jetbrains.jetpad.vclang.editor.cell.Utils.noDelete;
+import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.indent;
 import static jetbrains.jetpad.cell.util.CellFactory.space;
 import static jetbrains.jetpad.cell.util.CellFactory.text;

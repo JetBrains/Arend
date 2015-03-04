@@ -1,11 +1,11 @@
-package com.jetbrains.jetpad.vclang.editor.cell;
+package com.jetbrains.jetpad.vclang.editor.util;
 
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.trait.CellTrait;
 import jetbrains.jetpad.event.Key;
 import jetbrains.jetpad.event.KeyEvent;
 
-public class Utils {
+public class Cells {
   public static <T extends Cell> T noDelete(T cell) {
     cell.addTrait(new CellTrait() {
       @Override

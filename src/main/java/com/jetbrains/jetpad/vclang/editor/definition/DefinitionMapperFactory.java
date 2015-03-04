@@ -8,6 +8,10 @@ import com.jetbrains.jetpad.vclang.model.definition.Definition;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 
 public class DefinitionMapperFactory implements MapperFactory<Definition, Cell> {
+  private static DefinitionMapperFactory INSTANCE = new DefinitionMapperFactory();
+
+  private DefinitionMapperFactory() {}
+
   @Override
   public Mapper<? extends Definition, ? extends Cell> createMapper(Definition source) {
     if (source instanceof FunctionDefinition) {
@@ -17,5 +21,9 @@ public class DefinitionMapperFactory implements MapperFactory<Definition, Cell> 
       return new EmptyDefinitionMapper((EmptyDefinition)source);
     }
     return null;
+  }
+
+  public static DefinitionMapperFactory getInstance() {
+    return INSTANCE;
   }
 }

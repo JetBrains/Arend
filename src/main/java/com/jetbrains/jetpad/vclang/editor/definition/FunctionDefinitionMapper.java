@@ -14,7 +14,7 @@ import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import jetbrains.jetpad.projectional.cell.ProjectionalRoleSynchronizer;
 import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
-import static com.jetbrains.jetpad.vclang.editor.cell.Utils.noDelete;
+import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.*;
 import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 

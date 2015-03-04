@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
+import com.jetbrains.jetpad.vclang.editor.util.Validators;
 import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
-import jetbrains.jetpad.base.Validators;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.text.TextEditing;
 import jetbrains.jetpad.mapper.Mapper;
 
-import static com.jetbrains.jetpad.vclang.editor.cell.Utils.noDelete;
+import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
 public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {

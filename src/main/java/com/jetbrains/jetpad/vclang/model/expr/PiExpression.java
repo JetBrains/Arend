@@ -6,10 +6,10 @@ import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
 
 public class PiExpression extends ParensExpression implements Abstract.PiExpression {
-  private final Property<Boolean> myExplicit = new ValueProperty<>();
-  private final Property<String> myVariable = new ValueProperty<>();
-  private final Property<Expression> myDomain = new ValueProperty<>();
-  private final Property<Expression> myCodomain = new ValueProperty<>();
+  public final Property<Boolean> isExplicit = new ValueProperty<>();
+  public final Property<String> variable = new ValueProperty<>();
+  public final Property<Expression> domain = new ValueProperty<>();
+  public final Property<Expression> codomain = new ValueProperty<>();
 
   public PiExpression(boolean parens) {
     super(parens);
@@ -17,22 +17,22 @@ public class PiExpression extends ParensExpression implements Abstract.PiExpress
 
   @Override
   public boolean isExplicit() {
-    return myExplicit.get();
+    return isExplicit.get();
   }
 
   @Override
   public String getVariable() {
-    return myVariable.get();
+    return variable.get();
   }
 
   @Override
   public Abstract.Expression getDomain() {
-    return myDomain.get();
+    return domain.get();
   }
 
   @Override
   public Abstract.Expression getCodomain() {
-    return myCodomain.get();
+    return codomain.get();
   }
 
   @Override

@@ -44,6 +44,42 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
         return target.set(new VarExpression());
       }
     });
+    result.add(new SimpleCompletionItem("0") {
+      @Override
+      public Runnable complete(String text) {
+        return target.set(new ZeroExpression());
+      }
+    });
+    result.add(new SimpleCompletionItem("N ", "nat") {
+      @Override
+      public Runnable complete(String s) {
+        return target.set(new NatExpression());
+      }
+    });
+    result.add(new SimpleCompletionItem("N-elim ", "nat-elim") {
+      @Override
+      public Runnable complete(String s) {
+        return target.set(new NelimExpression());
+      }
+    });
+    result.add(new SimpleCompletionItem("S ", "suc") {
+      @Override
+      public Runnable complete(String s) {
+        return target.set(new SucExpression());
+      }
+    });
+    result.add(new SimpleCompletionItem("Type ", "Type") {
+      @Override
+      public Runnable complete(String s) {
+        return target.set(new UniverseExpression());
+      }
+    });
+    result.add(new SimpleCompletionItem("pi ", "pi") {
+      @Override
+      public Runnable complete(String s) {
+        return target.set(new PiExpression(myPrec > Abstract.PiExpression.PREC));
+      }
+    });
     return result;
   }
 

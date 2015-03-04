@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
+import com.jetbrains.jetpad.vclang.editor.util.Validators;
 import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.expr.Expression;
-import com.jetbrains.jetpad.vclang.model.expr.LamExpression;
-import jetbrains.jetpad.base.Validators;
+import com.jetbrains.jetpad.vclang.model.expr.PiExpression;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.indent.IndentCell;
@@ -17,9 +17,9 @@ import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.*;
 import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
-public class LamExpressionMapper extends Mapper<LamExpression, LamExpressionMapper.Cell> {
-  public LamExpressionMapper(LamExpression source) {
-    super(source, new LamExpressionMapper.Cell(source.parens));
+public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.Cell> {
+  public PiExpressionMapper(PiExpression source) {
+    super(source, new PiExpressionMapper.Cell(source.parens));
   }
 
   @Override
@@ -28,26 +28,37 @@ public class LamExpressionMapper extends Mapper<LamExpression, LamExpressionMapp
 
     conf.add(forPropsTwoWay(getSource().variable, getTarget().variable.text()));
 
-    ProjectionalRoleSynchronizer<Node, Expression> bodySynchronizer = ProjectionalSynchronizers.<Node, Expression>forSingleRole(this, getSource().body, getTarget().body, ExpressionMapperFactory.getInstance());
-    bodySynchronizer.setPlaceholderText("<term>");
-    bodySynchronizer.setCompletion(ExpressionCompletion.getGlobalInstance());
-    conf.add(bodySynchronizer);
+    ProjectionalRoleSynchronizer<Node, Expression> domainSynchronizer = ProjectionalSynchronizers.<Node, Expression>forSingleRole(this, getSource().domain, getTarget().domain, ExpressionMapperFactory.getInstance());
+    domainSynchronizer.setPlaceholderText("<dom>");
+    domainSynchronizer.setCompletion(ExpressionCompletion.getGlobalInstance());
+    conf.add(domainSynchronizer);
+
+    ProjectionalRoleSynchronizer<Node, Expression> codomainSynchronizer = ProjectionalSynchronizers.<Node, Expression>forSingleRole(this, getSource().codomain, getTarget().codomain, ExpressionMapperFactory.getInstance());
+    codomainSynchronizer.setPlaceholderText("<cod>");
+    codomainSynchronizer.setCompletion(ExpressionCompletion.getGlobalInstance());
+    conf.add(codomainSynchronizer);
   }
 
   public static class Cell extends IndentCell {
     public final TextCell variable = noDelete(new TextCell());
-    public final jetbrains.jetpad.cell.Cell body = noDelete(indent());
+    public final jetbrains.jetpad.cell.Cell domain = noDelete(indent());
+    public final jetbrains.jetpad.cell.Cell codomain = noDelete(indent());
 
     public Cell(boolean parens) {
       if (parens) children().add(text("("));
       CellFactory.to(this,
-          text("λ"),
+          text("("),
           variable,
           placeHolder(variable, "<no name>"),
           space(),
-          text("=>"),
+          text(":"),
           space(),
-          body);
+          domain,
+          text(")"),
+          space(),
+          text("->"),
+          space(),
+          codomain);
       if (parens) children().add(text(")"));
 
       focusable().set(true);

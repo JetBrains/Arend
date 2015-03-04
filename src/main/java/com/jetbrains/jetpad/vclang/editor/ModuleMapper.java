@@ -28,7 +28,7 @@ public class ModuleMapper extends Mapper<Module, ModuleCell> {
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    ProjectionalRoleSynchronizer<Module, Definition> synchronizer = ProjectionalSynchronizers.forRole(this, getSource().definitions, getTarget().definitions, CellLists.newLineSeparated(getTarget().definitions.children()), new DefinitionMapperFactory());
+    ProjectionalRoleSynchronizer<Module, Definition> synchronizer = ProjectionalSynchronizers.forRole(this, getSource().definitions, getTarget().definitions, CellLists.newLineSeparated(getTarget().definitions.children()), DefinitionMapperFactory.getInstance());
     synchronizer.setCompletion(new RoleCompletion<Node, Definition>() {
       @Override
       public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Definition> target) {
