@@ -9,12 +9,14 @@ import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.projectional.cell.ProjectionalRoleSynchronizer;
 import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
+import static com.jetbrains.jetpad.vclang.editor.cell.Utils.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.indent;
 import static jetbrains.jetpad.cell.util.CellFactory.space;
+import static jetbrains.jetpad.cell.util.CellFactory.text;
 
 public class AppExpressionMapper extends Mapper<AppExpression, AppExpressionMapper.Cell> {
   public AppExpressionMapper(AppExpression source) {
-    super(source, new AppExpressionMapper.Cell());
+    super(source, new AppExpressionMapper.Cell(source.parens));
   }
 
   @Override
@@ -33,14 +35,16 @@ public class AppExpressionMapper extends Mapper<AppExpression, AppExpressionMapp
   }
 
   public static class Cell extends IndentCell {
-    public jetbrains.jetpad.cell.Cell function = indent();
-    public jetbrains.jetpad.cell.Cell argument = indent();
+    public jetbrains.jetpad.cell.Cell function = noDelete(indent());
+    public jetbrains.jetpad.cell.Cell argument = noDelete(indent());
 
-    public Cell() {
+    public Cell(boolean parens) {
+      if (parens) children().add(text("("));
       CellFactory.to(this,
           function,
           space(),
           argument);
+      if (parens) children().add(text(")"));
 
       focusable().set(true);
     }

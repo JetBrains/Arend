@@ -39,10 +39,10 @@ public class AwtMain {
     Module result = new Module();
     FunctionDefinition def = new FunctionDefinition();
     result.definitions.add(def);
-    LamExpression expr1 = new LamExpression();
+    LamExpression expr1 = new LamExpression(false);
     def.term.set(expr1);
     expr1.variable.set("x");
-    AppExpression expr2 = new AppExpression();
+    AppExpression expr2 = new AppExpression(false);
     expr1.body.set(expr2);
     VarExpression expr3 = new VarExpression();
     expr2.function.set(expr3);

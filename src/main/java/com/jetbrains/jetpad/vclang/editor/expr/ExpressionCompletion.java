@@ -29,13 +29,13 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
     result.add(new SimpleCompletionItem("lam ", "lambda") {
       @Override
       public Runnable complete(String text) {
-        return target.set(myPrec > Abstract.LamExpression.PREC ? new ParensExpression(new LamExpression()) : new LamExpression());
+        return target.set(new LamExpression(myPrec > Abstract.LamExpression.PREC));
       }
     });
     result.add(new SimpleCompletionItem("app ", "application") {
       @Override
       public Runnable complete(String text) {
-        return target.set(myPrec > Abstract.AppExpression.PREC ? new ParensExpression(new AppExpression()) : new AppExpression());
+        return target.set(new AppExpression(myPrec > Abstract.AppExpression.PREC));
       }
     });
     result.add(new SimpleCompletionItem("var ", "variable") {

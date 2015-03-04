@@ -21,9 +21,6 @@ public class ExpressionMapperFactory implements MapperFactory<Expression, Cell> 
     if (source instanceof VarExpression) {
       return new VarExpressionMapper((VarExpression)source);
     }
-    if (source instanceof ParensExpression) {
-      return new ParensExpressionMapper((ParensExpression)source);
-    }
     return null;
   }
 
