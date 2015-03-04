@@ -9,7 +9,7 @@ import jetbrains.jetpad.cell.toView.CellToView;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.projectional.util.RootController;
 import jetbrains.jetpad.projectional.view.ViewContainer;
-import jetbrains.jetpad.projectional.view.toAwt.AwtDemo;
+import jetbrains.jetpad.projectional.view.toAwt.AwtViewDemo;
 import com.jetbrains.jetpad.vclang.editor.ModuleCell;
 import com.jetbrains.jetpad.vclang.editor.ModuleMapper;
 import com.jetbrains.jetpad.vclang.model.Module;
@@ -20,7 +20,7 @@ public class AwtMain {
     CellContainer container = createDemo();
     ViewContainer viewContainer = new ViewContainer();
     CellToView.map(container, viewContainer);
-    AwtDemo.show(viewContainer);
+    AwtViewDemo.show(viewContainer);
   }
 
   private static CellContainer createDemo() {
