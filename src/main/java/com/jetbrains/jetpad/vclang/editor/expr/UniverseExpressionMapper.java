@@ -7,9 +7,14 @@ import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.text.TextEditing;
 import jetbrains.jetpad.cell.util.CellFactory;
 import jetbrains.jetpad.mapper.Mapper;
+import jetbrains.jetpad.model.property.Property;
+import jetbrains.jetpad.values.Color;
 
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.text;
+import static jetbrains.jetpad.cell.util.ValueEditors.intProperty;
+import static jetbrains.jetpad.mapper.Synchronizers.forPropsOneWay;
+import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
 public class UniverseExpressionMapper extends Mapper<UniverseExpression, UniverseExpressionMapper.Cell> {
   public UniverseExpressionMapper(UniverseExpression source) {
@@ -19,16 +24,19 @@ public class UniverseExpressionMapper extends Mapper<UniverseExpression, Univers
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-
-    // TODO: Add synchronization for level
+    conf.add(forPropsTwoWay(getSource().level, intProperty(getTarget().level)));
+    conf.add(forPropsOneWay(getTarget().level.textColor(), getTarget().textColor));
   }
 
   public static class Cell extends IndentCell {
     public final TextCell level = noDelete(new TextCell());
+    public final Property<Color> textColor;
 
     public Cell() {
+      TextCell type = text("Type");
+      textColor = type.textColor();
       CellFactory.to(this,
-          text("Type"),
+          type,
           level);
 
       focusable().set(true);

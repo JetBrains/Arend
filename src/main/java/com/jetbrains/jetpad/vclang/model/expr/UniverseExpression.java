@@ -6,11 +6,11 @@ import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
 
 public class UniverseExpression extends Expression implements Abstract.UniverseExpression {
-  private final Property<Integer> myLevel = new ValueProperty<>();
+  public final Property<Integer> level = new ValueProperty<>();
 
   @Override
   public int getLevel() {
-    return myLevel.get();
+    return level.get();
   }
 
   @Override

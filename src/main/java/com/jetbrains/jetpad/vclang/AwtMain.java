@@ -1,26 +1,22 @@
 package com.jetbrains.jetpad.vclang;
 
+import com.jetbrains.jetpad.vclang.editor.ModuleCell;
+import com.jetbrains.jetpad.vclang.editor.ModuleMapper;
+import com.jetbrains.jetpad.vclang.model.Module;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.model.expr.LamExpression;
 import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
 import jetbrains.jetpad.cell.CellContainer;
-import jetbrains.jetpad.cell.toView.CellToView;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.projectional.util.RootController;
-import jetbrains.jetpad.projectional.view.ViewContainer;
-import jetbrains.jetpad.projectional.view.toAwt.AwtDemo;
-import com.jetbrains.jetpad.vclang.editor.ModuleCell;
-import com.jetbrains.jetpad.vclang.editor.ModuleMapper;
-import com.jetbrains.jetpad.vclang.model.Module;
+import jetbrains.jetpad.projectional.util.awt.AwtCellDemo;
 
 public class AwtMain {
 
   public static void main(String[] args) {
     CellContainer container = createDemo();
-    ViewContainer viewContainer = new ViewContainer();
-    CellToView.map(container, viewContainer);
-    AwtDemo.show(viewContainer);
+    AwtCellDemo.show(container);
   }
 
   private static CellContainer createDemo() {
