@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.model.expr;
 
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
-import jetbrains.jetpad.model.property.Property;
-import jetbrains.jetpad.model.property.ValueProperty;
+import jetbrains.jetpad.model.children.ChildProperty;
 
 public class ParensExpression extends Expression {
-  public final Property<Expression> expression = new ValueProperty<>();
+  public final ChildProperty<ParensExpression, Expression> expression = new ChildProperty<>(this);
 
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {

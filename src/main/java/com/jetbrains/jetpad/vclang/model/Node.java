@@ -1,4 +1,6 @@
 package com.jetbrains.jetpad.vclang.model;
 
-public class Node {
+import jetbrains.jetpad.model.children.HasParent;
+
+public class Node extends HasParent<Node, Node> {
 }

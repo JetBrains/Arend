@@ -2,12 +2,11 @@ package com.jetbrains.jetpad.vclang.model.expr;
 
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
-import jetbrains.jetpad.model.property.Property;
-import jetbrains.jetpad.model.property.ValueProperty;
+import jetbrains.jetpad.model.children.ChildProperty;
 
 public class AppExpression extends Expression implements Abstract.AppExpression {
-  public final Property<Expression> function = new ValueProperty<>();
-  public final Property<Expression> argument = new ValueProperty<>();
+  public final ChildProperty<AppExpression, Expression> function = new ChildProperty<>(this);
+  public final ChildProperty<AppExpression, Expression> argument = new ChildProperty<>(this);
 
   @Override
   public Expression getFunction() {

@@ -2,14 +2,15 @@ package com.jetbrains.jetpad.vclang.model.expr;
 
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
+import jetbrains.jetpad.model.children.ChildProperty;
 import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
 
 public class PiExpression extends Expression implements Abstract.PiExpression {
   public final Property<Boolean> isExplicit = new ValueProperty<>();
   public final Property<String> variable = new ValueProperty<>();
-  public final Property<Expression> domain = new ValueProperty<>();
-  public final Property<Expression> codomain = new ValueProperty<>();
+  public final ChildProperty<PiExpression, Expression> domain = new ChildProperty<>(this);
+  public final ChildProperty<PiExpression, Expression> codomain = new ChildProperty<>(this);
 
   @Override
   public boolean isExplicit() {
