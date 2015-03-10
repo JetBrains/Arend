@@ -27,8 +27,11 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
         if (event.getKeyChar() == ' ') {
           if (((TextCell)cell).isEnd()) {
             AppExpression appExpr = new AppExpression();
+            Mapper<?, ?> parent = getParent();
             ((Property<Expression>) getSource().getPosition().getRole()).set(appExpr);
+            AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
             appExpr.function.set(getSource());
+            appExprMapper.getTarget().focus();
             event.consume();
             return;
           }
