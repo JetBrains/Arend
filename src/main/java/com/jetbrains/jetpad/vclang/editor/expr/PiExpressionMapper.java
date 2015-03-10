@@ -17,7 +17,7 @@ import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
 public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.Cell> {
   public PiExpressionMapper(PiExpression source) {
-    super(source, new PiExpressionMapper.Cell(source.parens));
+    super(source, new PiExpressionMapper.Cell());
   }
 
   @Override
@@ -33,8 +33,7 @@ public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.
     public final jetbrains.jetpad.cell.Cell domain = noDelete(indent());
     public final jetbrains.jetpad.cell.Cell codomain = noDelete(indent());
 
-    public Cell(boolean parens) {
-      if (parens) children().add(text("("));
+    public Cell() {
       CellFactory.to(this,
           text("("),
           variable,
@@ -48,7 +47,6 @@ public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.
           text("->"),
           space(),
           codomain);
-      if (parens) children().add(text(")"));
 
       focusable().set(true);
       variable.addTrait(TextEditing.validTextEditing(Validators.identifier()));

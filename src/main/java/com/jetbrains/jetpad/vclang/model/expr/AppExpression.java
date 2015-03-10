@@ -5,13 +5,9 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
 
-public class AppExpression extends ParensExpression implements Abstract.AppExpression {
+public class AppExpression extends Expression implements Abstract.AppExpression {
   public final Property<Expression> function = new ValueProperty<>();
   public final Property<Expression> argument = new ValueProperty<>();
-
-  public AppExpression(boolean parens) {
-    super(parens);
-  }
 
   @Override
   public Expression getFunction() {
@@ -22,6 +18,7 @@ public class AppExpression extends ParensExpression implements Abstract.AppExpre
   public Expression getArgument() {
     return argument.get();
   }
+
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitApp(this, params);

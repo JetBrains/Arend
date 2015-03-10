@@ -5,15 +5,11 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
 
-public class PiExpression extends ParensExpression implements Abstract.PiExpression {
+public class PiExpression extends Expression implements Abstract.PiExpression {
   public final Property<Boolean> isExplicit = new ValueProperty<>();
   public final Property<String> variable = new ValueProperty<>();
   public final Property<Expression> domain = new ValueProperty<>();
   public final Property<Expression> codomain = new ValueProperty<>();
-
-  public PiExpression(boolean parens) {
-    super(parens);
-  }
 
   @Override
   public boolean isExplicit() {

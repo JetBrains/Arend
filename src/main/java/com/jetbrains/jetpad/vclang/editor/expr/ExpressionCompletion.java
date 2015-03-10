@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
+import com.jetbrains.jetpad.vclang.editor.util.IdCompletionItem;
 import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
@@ -13,6 +14,8 @@ import jetbrains.jetpad.projectional.generic.RoleCompletion;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.model.expr.ParensExpression.parens;
+
 public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
   private final int myPrec;
   private static ExpressionCompletion GLOBAL_INSTANCE = new ExpressionCompletion(0);
@@ -24,60 +27,64 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
   }
 
   @Override
-  public List<CompletionItem> createRoleCompletion(CompletionParameters completionParameters, Mapper<?, ?> mapper, Node node, final Role<Expression> target) {
+  public List<CompletionItem> createRoleCompletion(CompletionParameters cp, Mapper<?, ?> mapper, Node node, final Role<Expression> target) {
     List<CompletionItem> result = new ArrayList<>();
-    result.add(new SimpleCompletionItem("lam ", "lambda") {
+    if (!(cp.isMenu())) {
+      result.add(new IdCompletionItem() {
+        @Override
+        public Runnable complete(String text) {
+          VarExpression expr = new VarExpression();
+          expr.name.set(text);
+          return target.set(expr);
+        }
+      });
+    }
+    result.add(new SimpleCompletionItem("\\lam ", "lambda") {
       @Override
       public Runnable complete(String text) {
-        return target.set(new LamExpression(myPrec > Abstract.LamExpression.PREC));
+        return target.set(parens(myPrec > Abstract.LamExpression.PREC, new LamExpression()));
       }
     });
-    result.add(new SimpleCompletionItem("app ", "application") {
+    result.add(new SimpleCompletionItem("\\app ", "application") {
       @Override
       public Runnable complete(String text) {
-        return target.set(new AppExpression(myPrec > Abstract.AppExpression.PREC));
+        return target.set(parens(myPrec > Abstract.AppExpression.PREC, new AppExpression()));
       }
     });
-    result.add(new SimpleCompletionItem("var ", "variable") {
-      @Override
-      public Runnable complete(String text) {
-        return target.set(new VarExpression());
-      }
-    });
-    result.add(new SimpleCompletionItem("0") {
+    result.add(new SimpleCompletionItem("\\zero ", "0") {
       @Override
       public Runnable complete(String text) {
         return target.set(new ZeroExpression());
       }
     });
-    result.add(new SimpleCompletionItem("N ", "nat") {
+    result.add(new SimpleCompletionItem("\\N ", "nat") {
       @Override
       public Runnable complete(String s) {
         return target.set(new NatExpression());
       }
     });
-    result.add(new SimpleCompletionItem("N-elim ", "nat-elim") {
+    result.add(new SimpleCompletionItem("\\N-elim ", "nat-elim") {
       @Override
       public Runnable complete(String s) {
         return target.set(new NelimExpression());
       }
     });
-    result.add(new SimpleCompletionItem("S ", "suc") {
+    result.add(new SimpleCompletionItem("\\S ", "suc") {
       @Override
       public Runnable complete(String s) {
         return target.set(new SucExpression());
       }
     });
-    result.add(new SimpleCompletionItem("Type ", "Type") {
+    result.add(new SimpleCompletionItem("\\Type ", "Type") {
       @Override
       public Runnable complete(String s) {
         return target.set(new UniverseExpression());
       }
     });
-    result.add(new SimpleCompletionItem("pi ", "pi") {
+    result.add(new SimpleCompletionItem("\\pi ", "pi") {
       @Override
       public Runnable complete(String s) {
-        return target.set(new PiExpression(myPrec > Abstract.PiExpression.PREC));
+        return target.set(parens(myPrec > Abstract.PiExpression.PREC, new PiExpression()));
       }
     });
     return result;

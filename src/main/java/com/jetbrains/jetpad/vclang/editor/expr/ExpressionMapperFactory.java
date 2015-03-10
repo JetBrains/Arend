@@ -39,6 +39,9 @@ public class ExpressionMapperFactory implements MapperFactory<Expression, Cell> 
     if (source instanceof PiExpression) {
       return new PiExpressionMapper((PiExpression)source);
     }
+    if (source instanceof ParensExpression) {
+      return new ParensExpressionMapper((ParensExpression)source);
+    }
     return null;
   }
 
