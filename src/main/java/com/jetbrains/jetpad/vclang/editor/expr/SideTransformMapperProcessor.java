@@ -9,6 +9,8 @@ import jetbrains.jetpad.model.composite.Composites;
 public class SideTransformMapperProcessor implements MapperProcessor<Expression, Cell> {
   private static final SideTransformMapperProcessor INSTANCE = new SideTransformMapperProcessor();
 
+  private SideTransformMapperProcessor() {}
+
   @Override
   public void process(final Mapper<? extends Expression, ? extends Cell> mapper) {
     final Cell cell = mapper.getTarget();
@@ -34,7 +36,7 @@ public class SideTransformMapperProcessor implements MapperProcessor<Expression,
                     Mapper<?, ?> parent = mapper.getParent();
                     ((Property<Expression>) expr.getPosition().getRole()).set(appExpr);
                     AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
-                    appExpr.function.set(expr);
+                    appExpr.setFunction(expr);
                     return CellActions.toFirstFocusable(appExprMapper.getTarget().argument);
                   }
                 });
@@ -63,7 +65,7 @@ public class SideTransformMapperProcessor implements MapperProcessor<Expression,
                     Mapper<?, ?> parent = mapper.getParent();
                     ((Property<Expression>) expr.getPosition().getRole()).set(appExpr);
                     AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
-                    appExpr.argument.set(expr);
+                    appExpr.setArgument(expr);
                     return CellActions.toFirstFocusable(appExprMapper.getTarget().function);
                   }
                 });

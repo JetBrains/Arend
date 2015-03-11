@@ -1,8 +1,31 @@
 package com.jetbrains.jetpad.vclang.model.definition;
 
-import jetbrains.jetpad.model.children.ChildProperty;
+import com.jetbrains.jetpad.vclang.model.Position;
 import com.jetbrains.jetpad.vclang.model.expr.Expression;
+import jetbrains.jetpad.model.children.ChildProperty;
+import jetbrains.jetpad.model.property.DelegateProperty;
+import jetbrains.jetpad.model.property.Property;
 
 public class FunctionDefinition extends TypedDefinition {
-  public final ChildProperty<FunctionDefinition, Expression> term = new ChildProperty<>(this);
+  private final ChildProperty<FunctionDefinition, Expression> myTerm = new ChildProperty<>(this);
+
+  public Expression getTerm() {
+    return myTerm.get();
+  }
+
+  public Property<Expression> term() {
+    return new DelegateProperty<Expression>(myTerm) {
+      @Override
+      public void set(Expression term) {
+        FunctionDefinition.this.setTerm(term);
+      }
+    };
+  }
+
+  public void setTerm(Expression term) {
+    if (term != null) {
+      term.position = Position.FUN_CLAUSE;
+    }
+    myTerm.set(term);
+  }
 }

@@ -1,36 +1,38 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.util.CellFactory;
 import jetbrains.jetpad.mapper.Mapper;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
-import static jetbrains.jetpad.cell.util.CellFactory.indent;
-import static jetbrains.jetpad.cell.util.CellFactory.space;
+import static jetbrains.jetpad.cell.util.CellFactory.*;
 
 public class AppExpressionMapper extends Mapper<AppExpression, AppExpressionMapper.Cell> {
   public AppExpressionMapper(AppExpression source) {
-    super(source, new AppExpressionMapper.Cell());
+    super(source, new AppExpressionMapper.Cell(source.position.prec() > Abstract.AppExpression.PREC));
   }
 
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forExpression(this, getSource().function, getTarget().function, "<fun>", ExpressionCompletion.getAppFunInstance()));
-    conf.add(forExpression(this, getSource().argument, getTarget().argument, "<arg>", ExpressionCompletion.getAppArgInstance()));
+    conf.add(forExpression(this, getSource().function(), getTarget().function, "<fun>", ExpressionCompletion.getInstance()));
+    conf.add(forExpression(this, getSource().argument(), getTarget().argument, "<arg>", ExpressionCompletion.getInstance()));
   }
 
   public static class Cell extends IndentCell {
     public jetbrains.jetpad.cell.Cell function = noDelete(indent());
     public jetbrains.jetpad.cell.Cell argument = noDelete(indent());
 
-    public Cell() {
+    public Cell(boolean parens) {
+      if (parens) children().add(label("("));
       CellFactory.to(this,
           function,
           space(),
           argument);
+      if (parens) children().add(label(")"));
 
       focusable().set(true);
     }

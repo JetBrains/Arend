@@ -24,7 +24,7 @@ public class UniverseExpressionMapper extends Mapper<UniverseExpression, Univers
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forPropsTwoWay(getSource().level, intProperty(getTarget().level)));
+    conf.add(forPropsTwoWay(getSource().level(), intProperty(getTarget().level)));
     conf.add(forPropsOneWay(getTarget().level.textColor(), getTarget().textColor));
   }
 

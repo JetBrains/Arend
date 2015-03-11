@@ -1,35 +1,67 @@
 package com.jetbrains.jetpad.vclang.model.expr;
 
+import com.jetbrains.jetpad.vclang.model.Position;
+import com.jetbrains.jetpad.vclang.model.definition.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.children.ChildProperty;
+import jetbrains.jetpad.model.property.DelegateProperty;
 import jetbrains.jetpad.model.property.Property;
-import jetbrains.jetpad.model.property.ValueProperty;
 
 public class PiExpression extends Expression implements Abstract.PiExpression {
-  public final Property<Boolean> isExplicit = new ValueProperty<>();
-  public final Property<String> variable = new ValueProperty<>();
-  public final ChildProperty<PiExpression, Expression> domain = new ChildProperty<>(this);
-  public final ChildProperty<PiExpression, Expression> codomain = new ChildProperty<>(this);
+  private final ChildProperty<PiExpression, Argument> myDomain = new ChildProperty<>(this);
+  private final ChildProperty<PiExpression, Expression> myCodomain = new ChildProperty<>(this);
 
   @Override
   public boolean isExplicit() {
-    return isExplicit.get();
+    return myDomain.get().getExplicit();
   }
 
   @Override
   public String getVariable() {
-    return variable.get();
+    return myDomain.get().getName();
   }
 
   @Override
-  public Abstract.Expression getDomain() {
-    return domain.get();
+  public Expression getDomain() {
+    return myDomain.get().getType();
   }
 
   @Override
-  public Abstract.Expression getCodomain() {
-    return codomain.get();
+  public Expression getCodomain() {
+    return myCodomain.get();
+  }
+
+  public Property<Argument> domain() {
+    return new DelegateProperty<Argument>(myDomain) {
+      @Override
+      public void set(Argument domain) {
+        PiExpression.this.setDomain(domain);
+      }
+    };
+  }
+
+  public Property<Expression> codomain() {
+    return new DelegateProperty<Expression>(myCodomain) {
+      @Override
+      public void set(Expression codomain) {
+        PiExpression.this.setCodomain(codomain);
+      }
+    };
+  }
+
+  public void setDomain(Argument domain) {
+    if (domain != null) {
+      domain.position = Position.ARR_DOM;
+    }
+    myDomain.set(domain);
+  }
+
+  public void setCodomain(Expression codomain) {
+    if (codomain != null) {
+      codomain.position = Position.ARR_COD;
+    }
+    myCodomain.set(codomain);
   }
 
   @Override

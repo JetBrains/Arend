@@ -1,21 +1,56 @@
 package com.jetbrains.jetpad.vclang.model.expr;
 
+import com.jetbrains.jetpad.vclang.model.Position;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.children.ChildProperty;
+import jetbrains.jetpad.model.property.DelegateProperty;
+import jetbrains.jetpad.model.property.Property;
 
 public class AppExpression extends Expression implements Abstract.AppExpression {
-  public final ChildProperty<AppExpression, Expression> function = new ChildProperty<>(this);
-  public final ChildProperty<AppExpression, Expression> argument = new ChildProperty<>(this);
+  private final ChildProperty<AppExpression, Expression> myFunction = new ChildProperty<>(this);
+  private final ChildProperty<AppExpression, Expression> myArgument = new ChildProperty<>(this);
 
   @Override
   public Expression getFunction() {
-    return function.get();
+    return myFunction.get();
   }
 
   @Override
   public Expression getArgument() {
-    return argument.get();
+    return myArgument.get();
+  }
+
+  public Property<Expression> function() {
+    return new DelegateProperty<Expression>(myFunction) {
+      @Override
+      public void set(Expression function) {
+        AppExpression.this.setFunction(function);
+      }
+    };
+  }
+
+  public Property<Expression> argument() {
+    return new DelegateProperty<Expression>(myArgument) {
+      @Override
+      public void set(Expression argument) {
+        AppExpression.this.setArgument(argument);
+      }
+    };
+  }
+
+  public void setFunction(Expression function) {
+    if (function != null) {
+      function.position = Position.APP_FUN;
+    }
+    myFunction.set(function);
+  }
+
+  public void setArgument(Expression argument) {
+    if (argument != null) {
+      argument.position = Position.APP_ARG;
+    }
+    myArgument.set(argument);
   }
 
   @Override

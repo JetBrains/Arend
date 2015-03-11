@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.model.expr.LamExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import jetbrains.jetpad.base.Validators;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.action.CellActions;
@@ -17,21 +18,22 @@ import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
 public class LamExpressionMapper extends Mapper<LamExpression, LamExpressionMapper.Cell> {
   public LamExpressionMapper(LamExpression source) {
-    super(source, new LamExpressionMapper.Cell());
+    super(source, new LamExpressionMapper.Cell(source.position.prec() > Abstract.LamExpression.PREC));
   }
 
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forPropsTwoWay(getSource().variable, getTarget().variable.text()));
-    conf.add(forExpression(this, getSource().body, getTarget().body, "<term>", ExpressionCompletion.getGlobalInstance()));
+    conf.add(forPropsTwoWay(getSource().variable(), getTarget().variable.text()));
+    conf.add(forExpression(this, getSource().body(), getTarget().body, "<term>", ExpressionCompletion.getInstance()));
   }
 
   public static class Cell extends IndentCell {
     public final TextCell variable = noDelete(new TextCell());
     public final jetbrains.jetpad.cell.Cell body = noDelete(indent());
 
-    public Cell() {
+    public Cell(boolean parens) {
+      if (parens) children().add(label("("));
       CellFactory.to(this,
           label("λ"),
           variable,
@@ -40,6 +42,7 @@ public class LamExpressionMapper extends Mapper<LamExpression, LamExpressionMapp
           label("=>"),
           space(),
           body);
+      if (parens) children().add(label(")"));
 
       focusable().set(true);
       variable.addTrait(TextEditing.validTextEditing(Validators.identifier()));

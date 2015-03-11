@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.editor.util.Validators;
 import com.jetbrains.jetpad.vclang.model.expr.PiExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.indent.IndentCell;
@@ -17,15 +18,15 @@ import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
 public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.Cell> {
   public PiExpressionMapper(PiExpression source) {
-    super(source, new PiExpressionMapper.Cell());
+    super(source, new PiExpressionMapper.Cell(source.position.prec() > Abstract.PiExpression.PREC));
   }
 
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forPropsTwoWay(getSource().variable, getTarget().variable.text()));
-    conf.add(forExpression(this, getSource().domain, getTarget().domain, "<dom>", ExpressionCompletion.getGlobalInstance()));
-    conf.add(forExpression(this, getSource().codomain, getTarget().codomain, "<cod>", ExpressionCompletion.getGlobalInstance()));
+    conf.add(forPropsTwoWay(getSource().domain().get().name(), getTarget().variable.text()));
+    conf.add(forExpression(this, getSource().domain().get().type(), getTarget().domain, "<dom>", ExpressionCompletion.getInstance()));
+    conf.add(forExpression(this, getSource().codomain(), getTarget().codomain, "<cod>", ExpressionCompletion.getInstance()));
   }
 
   public static class Cell extends IndentCell {
@@ -33,7 +34,8 @@ public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.
     public final jetbrains.jetpad.cell.Cell domain = noDelete(indent());
     public final jetbrains.jetpad.cell.Cell codomain = noDelete(indent());
 
-    public Cell() {
+    public Cell(boolean parens) {
+      if (parens) children().add(label("("));
       CellFactory.to(this,
           text("("),
           variable,
@@ -47,6 +49,7 @@ public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.
           text("->"),
           space(),
           codomain);
+      if (parens) children().add(label(")"));
 
       focusable().set(true);
       variable.addTrait(TextEditing.validTextEditing(Validators.identifier()));
