@@ -53,7 +53,7 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
                   Mapper<?, ?> parent = getParent();
                   ((Property<Expression>) getSource().getPosition().getRole()).set(appExpr);
                   AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
-                  appExpr.function.set(getSource());
+                  appExpr.function().set(getSource());
 
                   return CellActions.toFirstFocusable(appExprMapper.getTarget().argument);
 
@@ -75,6 +75,6 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
 
-    conf.add(forPropsTwoWay(getSource().name, getTarget().text()));
+    conf.add(forPropsTwoWay(getSource().name(), getTarget().text()));
   }
 }
