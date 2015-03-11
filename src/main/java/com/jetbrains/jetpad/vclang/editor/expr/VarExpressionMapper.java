@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.TextCell;
-import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.trait.CellTrait;
 import jetbrains.jetpad.event.Key;
 import jetbrains.jetpad.event.KeyEvent;
@@ -24,11 +23,15 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
     noDelete(getTarget());
     getTarget().focusable().set(true);
     getTarget().addTrait(validTextEditing(identifier()));
-    /*
+
+
+
+
     getTarget().addTrait(new CellTrait() {
+
       @Override
-      public void onKeyTyped(Cell cell, KeyEvent event) {
-        if (event.getKeyChar() == ' ') {
+      public void onKeyPressed(Cell cell, KeyEvent event) {
+        if (event.is(Key.SPACE)) {
           if (((TextCell)cell).isEnd()) {
             AppExpression appExpr = new AppExpression();
             Mapper<?, ?> parent = getParent();
@@ -56,10 +59,10 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
             return;
           }
         }
-        super.onKeyTyped(cell, event);
+
+        super.onKeyPressed(cell, event);
       }
     });
-    */
   }
 
   @Override
