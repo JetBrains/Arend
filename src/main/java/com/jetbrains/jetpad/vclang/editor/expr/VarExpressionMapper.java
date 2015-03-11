@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
+import com.jetbrains.jetpad.vclang.model.Position;
 import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
@@ -9,7 +10,6 @@ import jetbrains.jetpad.cell.trait.CellTrait;
 import jetbrains.jetpad.event.KeyEvent;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.model.composite.Composites;
-import jetbrains.jetpad.model.property.Property;
 
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static com.jetbrains.jetpad.vclang.editor.util.Validators.identifier;
@@ -28,10 +28,17 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
         if (event.getKeyChar() == ' ') {
           if (((TextCell)cell).isEnd()) {
             AppExpression appExpr = new AppExpression();
-            Mapper<?, ?> parent = getParent();
-            ((Property<Expression>) getSource().getPosition().getRole()).set(appExpr);
-            AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
-            appExpr.setFunction(getSource());
+            Mapper<?, ?> parentMapper = getParent();
+            if (getSource().position == Position.APP_ARG) {
+              AppExpression parentExpr = ((AppExpression) getSource().parent().get());
+              parentMapper = parentMapper.getParent();
+              parentExpr.replaceWith(appExpr);
+              appExpr.setFunction(parentExpr);
+            } else {
+              getSource().replaceWith(appExpr);
+              appExpr.setFunction(getSource());
+            }
+            AppExpressionMapper appExprMapper = (AppExpressionMapper) parentMapper.getDescendantMapper(appExpr);
             Cell firstFocusable = Composites.firstFocusable(appExprMapper.getTarget().argument);
             if (firstFocusable != null) {
               firstFocusable.focus();
@@ -42,10 +49,18 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
           if (((TextCell)cell).isHome()) {
             AppExpression appExpr = new AppExpression();
             Mapper<?, ?> parent = getParent();
-            ((Property<Expression>) getSource().getPosition().getRole()).set(appExpr);
-            AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
-            appExpr.setArgument(getSource());
-            Cell firstFocusable = Composites.firstFocusable(appExprMapper.getTarget().function);
+            boolean inAppArg = getSource().position == Position.APP_ARG;
+            if (inAppArg) {
+              AppExpression parentExpr = ((AppExpression) getSource().parent().get());
+              Expression function = parentExpr.getFunction();
+              parentExpr.setFunction(appExpr);
+              appExpr.setFunction(function);
+            } else {
+              getSource().replaceWith(appExpr);
+              appExpr.setArgument(getSource());
+            }
+            AppExpressionMapper.Cell appExprCell = ((AppExpressionMapper) parent.getDescendantMapper(appExpr)).getTarget();
+            Cell firstFocusable = Composites.firstFocusable(inAppArg ? appExprCell.argument : appExprCell.function);
             if (firstFocusable != null) {
               firstFocusable.focus();
             }

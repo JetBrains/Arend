@@ -40,17 +40,17 @@ public class AppExpression extends Expression implements Abstract.AppExpression 
   }
 
   public void setFunction(Expression function) {
-    myFunction.set(function);
     if (function != null) {
       function.position = Position.APP_FUN;
     }
+    myFunction.set(function);
   }
 
   public void setArgument(Expression argument) {
-    myArgument.set(argument);
     if (argument != null) {
       argument.position = Position.APP_ARG;
     }
+    myArgument.set(argument);
   }
 
   @Override

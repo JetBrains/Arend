@@ -22,6 +22,8 @@ import java.util.List;
 public class SideTransformMapperProcessor implements MapperProcessor<Expression, Cell> {
   private static final SideTransformMapperProcessor INSTANCE = new SideTransformMapperProcessor();
 
+  private SideTransformMapperProcessor() {}
+
   @Override
   public void process(final Mapper<? extends Expression, ? extends Cell> mapper) {
     final Cell cell = mapper.getTarget();

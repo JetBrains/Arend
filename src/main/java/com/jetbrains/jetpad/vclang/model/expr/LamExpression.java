@@ -40,10 +40,10 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
   }
 
   public void setBody(Expression body) {
-    myBody.set(body);
     if (body != null) {
       body.position = Position.LAM;
     }
+    myBody.set(body);
   }
 
   @Override

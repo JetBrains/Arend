@@ -23,9 +23,9 @@ public class FunctionDefinition extends TypedDefinition {
   }
 
   public void setTerm(Expression term) {
-    myTerm.set(term);
     if (term != null) {
       term.position = Position.FUN_CLAUSE;
     }
+    myTerm.set(term);
   }
 }

@@ -51,17 +51,17 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
   }
 
   public void setDomain(Argument domain) {
-    myDomain.set(domain);
     if (domain != null) {
       domain.position = Position.ARR_DOM;
     }
+    myDomain.set(domain);
   }
 
   public void setCodomain(Expression codomain) {
-    myCodomain.set(codomain);
     if (codomain != null) {
       codomain.position = Position.ARR_COD;
     }
+    myCodomain.set(codomain);
   }
 
   @Override

@@ -23,10 +23,10 @@ public class ParensExpression extends Expression {
   }
 
   public void setExpression(Expression expr) {
-    myExpression.set(expr);
     if (expr != null) {
       expr.position = Position.PARENS;
     }
+    myExpression.set(expr);
   }
 
   @Override

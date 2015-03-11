@@ -1,18 +1,18 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.util.CellFactory;
 import jetbrains.jetpad.mapper.Mapper;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
-import static jetbrains.jetpad.cell.util.CellFactory.indent;
-import static jetbrains.jetpad.cell.util.CellFactory.space;
+import static jetbrains.jetpad.cell.util.CellFactory.*;
 
 public class AppExpressionMapper extends Mapper<AppExpression, AppExpressionMapper.Cell> {
   public AppExpressionMapper(AppExpression source) {
-    super(source, new AppExpressionMapper.Cell());
+    super(source, new AppExpressionMapper.Cell(source.position.prec() > Abstract.AppExpression.PREC));
   }
 
   @Override
@@ -26,11 +26,13 @@ public class AppExpressionMapper extends Mapper<AppExpression, AppExpressionMapp
     public jetbrains.jetpad.cell.Cell function = noDelete(indent());
     public jetbrains.jetpad.cell.Cell argument = noDelete(indent());
 
-    public Cell() {
+    public Cell(boolean parens) {
+      if (parens) children().add(label("("));
       CellFactory.to(this,
           function,
           space(),
           argument);
+      if (parens) children().add(label(")"));
 
       focusable().set(true);
     }

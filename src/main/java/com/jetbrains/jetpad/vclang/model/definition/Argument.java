@@ -39,34 +39,37 @@ public class Argument extends Node {
   }
 
   public void setExplicit(Boolean explicit) {
-    myExplicit.set(explicit);
     Expression type = myType.get();
-    if (type == null) return;
-    if (myName.get() == null && explicit) {
-      type.position = position;
-    } else {
-      type.position = Position.ARG;
+    if (type != null) {
+      if (myName.get() == null && explicit) {
+        type.position = position;
+      } else {
+        type.position = Position.ARG;
+      }
     }
+    myExplicit.set(explicit);
   }
 
   public void setName(String name) {
-    myName.set(name);
     Expression type = myType.get();
-    if (type == null) return;
-    if (name == null && myExplicit.get()) {
-      type.position = position;
-    } else {
-      type.position = Position.ARG;
+    if (type != null) {
+      if (name == null && myExplicit.get()) {
+        type.position = position;
+      } else {
+        type.position = Position.ARG;
+      }
     }
+    myName.set(name);
   }
 
   public void setType(Expression type) {
-    myType.set(type);
-    if (type == null) return;
-    if (myName.get() == null && myExplicit.get()) {
-      type.position = position;
-    } else {
-      type.position = Position.ARG;
+    if (type != null) {
+      if (myName.get() == null && myExplicit.get()) {
+        type.position = position;
+      } else {
+        type.position = Position.ARG;
+      }
     }
+    myType.set(type);
   }
 }

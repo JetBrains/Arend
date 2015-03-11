@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.editor.util.Validators;
 import com.jetbrains.jetpad.vclang.model.expr.PiExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.indent.IndentCell;
@@ -17,7 +18,7 @@ import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
 public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.Cell> {
   public PiExpressionMapper(PiExpression source) {
-    super(source, new PiExpressionMapper.Cell());
+    super(source, new PiExpressionMapper.Cell(source.position.prec() > Abstract.PiExpression.PREC));
   }
 
   @Override
@@ -33,7 +34,8 @@ public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.
     public final jetbrains.jetpad.cell.Cell domain = noDelete(indent());
     public final jetbrains.jetpad.cell.Cell codomain = noDelete(indent());
 
-    public Cell() {
+    public Cell(boolean parens) {
+      if (parens) children().add(label("("));
       CellFactory.to(this,
           text("("),
           variable,
@@ -47,6 +49,7 @@ public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.
           text("->"),
           space(),
           codomain);
+      if (parens) children().add(label(")"));
 
       focusable().set(true);
       variable.addTrait(TextEditing.validTextEditing(Validators.identifier()));

@@ -44,9 +44,9 @@ public abstract class TypedDefinition extends Definition {
   }
 
   public void setResultType(Expression resultType) {
-    myResultType.set(resultType);
     if (resultType != null) {
       resultType.position = Position.DEF_RESULT_TYPE;
     }
+    myResultType.set(resultType);
   }
 }

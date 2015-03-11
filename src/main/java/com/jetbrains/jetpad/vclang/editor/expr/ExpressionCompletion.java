@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.editor.expr;
 import com.jetbrains.jetpad.vclang.editor.util.IdCompletionItem;
 import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import jetbrains.jetpad.completion.CompletionItem;
 import jetbrains.jetpad.completion.CompletionParameters;
 import jetbrains.jetpad.completion.SimpleCompletionItem;
@@ -13,8 +12,6 @@ import jetbrains.jetpad.projectional.generic.RoleCompletion;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.model.expr.ParensExpression.parens;
 
 public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
   private static final ExpressionCompletion INSTANCE = new ExpressionCompletion();
@@ -37,13 +34,13 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
     result.add(new SimpleCompletionItem("\\lam ", "lambda") {
       @Override
       public Runnable complete(String text) {
-        return target.set(parens(target.get().position.prec() > Abstract.LamExpression.PREC, new LamExpression()));
+        return target.set(new LamExpression());
       }
     });
     result.add(new SimpleCompletionItem("\\app ", "application") {
       @Override
       public Runnable complete(String text) {
-        return target.set(parens(target.get().position.prec() > Abstract.AppExpression.PREC, new AppExpression()));
+        return target.set(new AppExpression());
       }
     });
     result.add(new SimpleCompletionItem("\\zero ", "0") {
@@ -79,7 +76,7 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
     result.add(new SimpleCompletionItem("\\pi ", "pi") {
       @Override
       public Runnable complete(String s) {
-        return target.set(parens(target.get().position.prec() > Abstract.PiExpression.PREC, new PiExpression()));
+        return target.set(new PiExpression());
       }
     });
     return result;
