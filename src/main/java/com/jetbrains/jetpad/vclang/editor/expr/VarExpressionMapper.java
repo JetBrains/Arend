@@ -5,9 +5,7 @@ import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.TextCell;
-import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.trait.CellTrait;
-import jetbrains.jetpad.event.Key;
 import jetbrains.jetpad.event.KeyEvent;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.model.composite.Composites;
@@ -34,7 +32,7 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
             Mapper<?, ?> parent = getParent();
             ((Property<Expression>) getSource().getPosition().getRole()).set(appExpr);
             AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
-            appExpr.function.set(getSource());
+            appExpr.setFunction(getSource());
             Cell firstFocusable = Composites.firstFocusable(appExprMapper.getTarget().argument);
             if (firstFocusable != null) {
               firstFocusable.focus();
@@ -47,7 +45,7 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
             Mapper<?, ?> parent = getParent();
             ((Property<Expression>) getSource().getPosition().getRole()).set(appExpr);
             AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
-            appExpr.argument.set(getSource());
+            appExpr.setArgument(getSource());
             Cell firstFocusable = Composites.firstFocusable(appExprMapper.getTarget().function);
             if (firstFocusable != null) {
               firstFocusable.focus();
@@ -66,6 +64,6 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
 
-    conf.add(forPropsTwoWay(getSource().name, getTarget().text()));
+    conf.add(forPropsTwoWay(getSource().name(), getTarget().text()));
   }
 }

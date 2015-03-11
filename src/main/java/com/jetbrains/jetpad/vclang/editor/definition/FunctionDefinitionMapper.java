@@ -23,9 +23,9 @@ public class FunctionDefinitionMapper extends Mapper<FunctionDefinition, Functio
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forPropsTwoWay(getSource().name, getTarget().name.text()));
-    conf.add(forExpression(this, getSource().resultType, getTarget().type, "<type>", ExpressionCompletion.getGlobalInstance()));
-    conf.add(forExpression(this, getSource().term, getTarget().term, "<term>", ExpressionCompletion.getGlobalInstance()));
+    conf.add(forPropsTwoWay(getSource().name(), getTarget().name.text()));
+    conf.add(forExpression(this, getSource().resultType(), getTarget().type, "<type>", ExpressionCompletion.getInstance()));
+    conf.add(forExpression(this, getSource().term(), getTarget().term, "<term>", ExpressionCompletion.getInstance()));
   }
 
   public static class Cell extends IndentCell {

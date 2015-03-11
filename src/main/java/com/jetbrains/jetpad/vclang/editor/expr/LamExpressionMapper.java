@@ -23,8 +23,8 @@ public class LamExpressionMapper extends Mapper<LamExpression, LamExpressionMapp
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forPropsTwoWay(getSource().variable, getTarget().variable.text()));
-    conf.add(forExpression(this, getSource().body, getTarget().body, "<term>", ExpressionCompletion.getGlobalInstance()));
+    conf.add(forPropsTwoWay(getSource().variable(), getTarget().variable.text()));
+    conf.add(forExpression(this, getSource().body(), getTarget().body, "<term>", ExpressionCompletion.getInstance()));
   }
 
   public static class Cell extends IndentCell {

@@ -23,9 +23,9 @@ public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forPropsTwoWay(getSource().variable, getTarget().variable.text()));
-    conf.add(forExpression(this, getSource().domain, getTarget().domain, "<dom>", ExpressionCompletion.getGlobalInstance()));
-    conf.add(forExpression(this, getSource().codomain, getTarget().codomain, "<cod>", ExpressionCompletion.getGlobalInstance()));
+    conf.add(forPropsTwoWay(getSource().domain().get().name(), getTarget().variable.text()));
+    conf.add(forExpression(this, getSource().domain().get().type(), getTarget().domain, "<dom>", ExpressionCompletion.getInstance()));
+    conf.add(forExpression(this, getSource().codomain(), getTarget().codomain, "<cod>", ExpressionCompletion.getInstance()));
   }
 
   public static class Cell extends IndentCell {

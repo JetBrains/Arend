@@ -17,14 +17,9 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.model.expr.ParensExpression.parens;
 
 public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
-  private final int myPrec;
-  private static ExpressionCompletion GLOBAL_INSTANCE = new ExpressionCompletion(0);
-  private static ExpressionCompletion APP_FUN_INSTANCE = new ExpressionCompletion(Abstract.AppExpression.PREC);
-  private static ExpressionCompletion APP_ARG_INSTANCE = new ExpressionCompletion(Abstract.AppExpression.PREC + 1);
+  private static final ExpressionCompletion INSTANCE = new ExpressionCompletion();
 
-  private ExpressionCompletion(int prec) {
-    myPrec = prec;
-  }
+  private ExpressionCompletion() {}
 
   @Override
   public List<CompletionItem> createRoleCompletion(CompletionParameters cp, Mapper<?, ?> mapper, Node node, final Role<Expression> target) {
@@ -34,7 +29,7 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
         @Override
         public Runnable complete(String text) {
           VarExpression expr = new VarExpression();
-          expr.name.set(text);
+          expr.setName(text);
           return target.set(expr);
         }
       });
@@ -42,13 +37,13 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
     result.add(new SimpleCompletionItem("\\lam ", "lambda") {
       @Override
       public Runnable complete(String text) {
-        return target.set(parens(myPrec > Abstract.LamExpression.PREC, new LamExpression()));
+        return target.set(parens(target.get().position.prec() > Abstract.LamExpression.PREC, new LamExpression()));
       }
     });
     result.add(new SimpleCompletionItem("\\app ", "application") {
       @Override
       public Runnable complete(String text) {
-        return target.set(parens(myPrec > Abstract.AppExpression.PREC, new AppExpression()));
+        return target.set(parens(target.get().position.prec() > Abstract.AppExpression.PREC, new AppExpression()));
       }
     });
     result.add(new SimpleCompletionItem("\\zero ", "0") {
@@ -84,21 +79,13 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
     result.add(new SimpleCompletionItem("\\pi ", "pi") {
       @Override
       public Runnable complete(String s) {
-        return target.set(parens(myPrec > Abstract.PiExpression.PREC, new PiExpression()));
+        return target.set(parens(target.get().position.prec() > Abstract.PiExpression.PREC, new PiExpression()));
       }
     });
     return result;
   }
 
-  public static ExpressionCompletion getAppFunInstance() {
-    return APP_FUN_INSTANCE;
-  }
-
-  public static ExpressionCompletion getAppArgInstance() {
-    return APP_ARG_INSTANCE;
-  }
-
-  public static ExpressionCompletion getGlobalInstance() {
-    return GLOBAL_INSTANCE;
+  public static ExpressionCompletion getInstance() {
+    return INSTANCE;
   }
 }
