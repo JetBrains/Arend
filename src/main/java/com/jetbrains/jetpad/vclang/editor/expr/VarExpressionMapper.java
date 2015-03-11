@@ -5,9 +5,12 @@ import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.TextCell;
+import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.trait.CellTrait;
+import jetbrains.jetpad.event.Key;
 import jetbrains.jetpad.event.KeyEvent;
 import jetbrains.jetpad.mapper.Mapper;
+import jetbrains.jetpad.model.composite.Composites;
 import jetbrains.jetpad.model.property.Property;
 
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
@@ -21,6 +24,7 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
     noDelete(getTarget());
     getTarget().focusable().set(true);
     getTarget().addTrait(validTextEditing(identifier()));
+    /*
     getTarget().addTrait(new CellTrait() {
       @Override
       public void onKeyTyped(Cell cell, KeyEvent event) {
@@ -31,7 +35,23 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
             ((Property<Expression>) getSource().getPosition().getRole()).set(appExpr);
             AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
             appExpr.function.set(getSource());
-            appExprMapper.getTarget().focus();
+            Cell firstFocusable = Composites.firstFocusable(appExprMapper.getTarget().argument);
+            if (firstFocusable != null) {
+              firstFocusable.focus();
+            }
+            event.consume();
+            return;
+          }
+          if (((TextCell)cell).isHome()) {
+            AppExpression appExpr = new AppExpression();
+            Mapper<?, ?> parent = getParent();
+            ((Property<Expression>) getSource().getPosition().getRole()).set(appExpr);
+            AppExpressionMapper appExprMapper = (AppExpressionMapper) parent.getDescendantMapper(appExpr);
+            appExpr.argument.set(getSource());
+            Cell firstFocusable = Composites.firstFocusable(appExprMapper.getTarget().function);
+            if (firstFocusable != null) {
+              firstFocusable.focus();
+            }
             event.consume();
             return;
           }
@@ -39,6 +59,7 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
         super.onKeyTyped(cell, event);
       }
     });
+    */
   }
 
   @Override

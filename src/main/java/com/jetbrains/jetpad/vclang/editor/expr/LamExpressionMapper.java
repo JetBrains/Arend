@@ -33,11 +33,11 @@ public class LamExpressionMapper extends Mapper<LamExpression, LamExpressionMapp
 
     public Cell() {
       CellFactory.to(this,
-          text("λ"),
+          label("λ"),
           variable,
           placeHolder(variable, "<no name>"),
           space(),
-          text("=>"),
+          label("=>"),
           space(),
           body);
 

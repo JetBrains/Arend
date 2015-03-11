@@ -8,7 +8,7 @@ import jetbrains.jetpad.mapper.Mapper;
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.indent;
-import static jetbrains.jetpad.cell.util.CellFactory.text;
+import static jetbrains.jetpad.cell.util.CellFactory.label;
 
 public class ParensExpressionMapper extends Mapper<ParensExpression, ParensExpressionMapper.Cell> {
   public ParensExpressionMapper(ParensExpression source) {
@@ -26,9 +26,9 @@ public class ParensExpressionMapper extends Mapper<ParensExpression, ParensExpre
 
     public Cell() {
       CellFactory.to(this,
-          text("("),
+          label("("),
           expression,
-          text(")"));
+          label(")"));
 
       focusable().set(true);
     }

@@ -29,7 +29,7 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
   @Override
   public List<CompletionItem> createRoleCompletion(CompletionParameters cp, Mapper<?, ?> mapper, Node node, final Role<Expression> target) {
     List<CompletionItem> result = new ArrayList<>();
-    if (!(cp.isMenu())) {
+    if (!cp.isMenu()) {
       result.add(new IdCompletionItem() {
         @Override
         public Runnable complete(String text) {

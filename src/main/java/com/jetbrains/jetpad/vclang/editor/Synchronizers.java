@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.editor;
 import com.google.common.base.Supplier;
 import com.jetbrains.jetpad.vclang.editor.definition.DefinitionMapperFactory;
 import com.jetbrains.jetpad.vclang.editor.expr.ExpressionMapperFactory;
+import com.jetbrains.jetpad.vclang.editor.expr.SideTransformMapperProcessor;
 import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.definition.Definition;
 import com.jetbrains.jetpad.vclang.model.definition.EmptyDefinition;
@@ -54,6 +55,7 @@ public class Synchronizers {
     ProjectionalRoleSynchronizer<Node, Expression> synchronizer = ProjectionalSynchronizers.forSingleRole(mapper, expression, target, ExpressionMapperFactory.getInstance());
     synchronizer.setPlaceholderText(placeholderText);
     synchronizer.setCompletion(completion);
+    synchronizer.addMapperProcessor(SideTransformMapperProcessor.getInstance());
     return synchronizer;
   }
 }
