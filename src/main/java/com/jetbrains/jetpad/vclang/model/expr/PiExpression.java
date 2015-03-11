@@ -5,8 +5,8 @@ import com.jetbrains.jetpad.vclang.model.definition.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.children.ChildProperty;
+import jetbrains.jetpad.model.property.DelegateProperty;
 import jetbrains.jetpad.model.property.Property;
-import jetbrains.jetpad.model.property.ValueProperty;
 
 public class PiExpression extends Expression implements Abstract.PiExpression {
   private final ChildProperty<PiExpression, Argument> myDomain = new ChildProperty<>(this);
@@ -33,7 +33,7 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
   }
 
   public Property<Argument> domain() {
-    return new ValueProperty<Argument>(myDomain.get()) {
+    return new DelegateProperty<Argument>(myDomain) {
       @Override
       public void set(Argument domain) {
         PiExpression.this.setDomain(domain);
@@ -42,7 +42,7 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
   }
 
   public Property<Expression> codomain() {
-    return new ValueProperty<Expression>(myCodomain.get()) {
+    return new DelegateProperty<Expression>(myCodomain) {
       @Override
       public void set(Expression codomain) {
         PiExpression.this.setCodomain(codomain);

@@ -22,7 +22,6 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
     noDelete(getTarget());
     getTarget().focusable().set(true);
     getTarget().addTrait(validTextEditing(identifier()));
-    /*
     getTarget().addTrait(new CellTrait() {
       @Override
       public void onKeyTyped(Cell cell, KeyEvent event) {
@@ -57,7 +56,6 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
         super.onKeyTyped(cell, event);
       }
     });
-    */
   }
 
   @Override

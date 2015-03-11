@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.model.expr;
 import com.jetbrains.jetpad.vclang.model.Position;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.children.ChildProperty;
+import jetbrains.jetpad.model.property.DelegateProperty;
 import jetbrains.jetpad.model.property.Property;
-import jetbrains.jetpad.model.property.ValueProperty;
 
 public class ParensExpression extends Expression {
   private final ChildProperty<ParensExpression, Expression> myExpression = new ChildProperty<>(this);
@@ -14,7 +14,7 @@ public class ParensExpression extends Expression {
   }
 
   public Property<Expression> expression() {
-    return new ValueProperty<Expression>(myExpression.get()) {
+    return new DelegateProperty<Expression>(myExpression) {
       @Override
       public void set(Expression expr) {
         ParensExpression.this.setExpression(expr);

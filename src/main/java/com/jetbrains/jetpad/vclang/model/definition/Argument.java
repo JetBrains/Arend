@@ -1,10 +1,12 @@
 package com.jetbrains.jetpad.vclang.model.definition;
 
-import com.jetbrains.jetpad.vclang.model.Position;
-import jetbrains.jetpad.model.children.ChildProperty;
-import jetbrains.jetpad.model.property.*;
 import com.jetbrains.jetpad.vclang.model.Node;
+import com.jetbrains.jetpad.vclang.model.Position;
 import com.jetbrains.jetpad.vclang.model.expr.Expression;
+import jetbrains.jetpad.model.children.ChildProperty;
+import jetbrains.jetpad.model.property.DelegateProperty;
+import jetbrains.jetpad.model.property.Property;
+import jetbrains.jetpad.model.property.ValueProperty;
 
 public class Argument extends Node {
   private final Property<Boolean> myExplicit = new ValueProperty<>(true);
@@ -28,7 +30,7 @@ public class Argument extends Node {
   }
 
   public Property<Expression> type() {
-    return new ValueProperty<Expression>(myType.get()) {
+    return new DelegateProperty<Expression>(myType) {
       @Override
       public void set(Expression type) {
         Argument.this.setType(type);

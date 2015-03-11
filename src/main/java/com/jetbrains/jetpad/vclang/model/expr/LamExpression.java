@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.model.Position;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.children.ChildProperty;
+import jetbrains.jetpad.model.property.DelegateProperty;
 import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
 
@@ -26,7 +27,7 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
   }
 
   public Property<Expression> body() {
-    return new ValueProperty<Expression>(myBody.get()) {
+    return new DelegateProperty<Expression>(myBody) {
       @Override
       public void set(Expression body) {
         LamExpression.this.setBody(body);
