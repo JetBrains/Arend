@@ -1,23 +1,10 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
-import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import jetbrains.jetpad.cell.Cell;
-import jetbrains.jetpad.cell.action.CellActions;
-import jetbrains.jetpad.cell.completion.Completion;
-import jetbrains.jetpad.cell.trait.CellTrait;
-import jetbrains.jetpad.cell.trait.CellTraitPropertySpec;
-import jetbrains.jetpad.completion.CompletionItem;
-import jetbrains.jetpad.completion.CompletionParameters;
-import jetbrains.jetpad.completion.CompletionSupplier;
-import jetbrains.jetpad.completion.SimpleCompletionItem;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.mapper.MapperProcessor;
 import jetbrains.jetpad.model.composite.Composites;
-import jetbrains.jetpad.model.property.Property;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class SideTransformMapperProcessor implements MapperProcessor<Expression, Cell> {
   private static final SideTransformMapperProcessor INSTANCE = new SideTransformMapperProcessor();
@@ -30,6 +17,7 @@ public class SideTransformMapperProcessor implements MapperProcessor<Expression,
     Cell firstFocusable = Composites.firstFocusable(cell);
     Cell lastFocusable = Composites.lastFocusable(cell);
 
+    /*
     if (lastFocusable != null) {
       lastFocusable.addTrait(new CellTrait() {
         @Override
@@ -87,6 +75,7 @@ public class SideTransformMapperProcessor implements MapperProcessor<Expression,
         }
       });
     }
+    */
   }
 
   public static SideTransformMapperProcessor getInstance() {
