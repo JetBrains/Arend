@@ -55,7 +55,7 @@ public class Synchronizers {
     ProjectionalRoleSynchronizer<Node, Expression> synchronizer = ProjectionalSynchronizers.forSingleRole(mapper, expression, target, ExpressionMapperFactory.getInstance());
     synchronizer.setPlaceholderText(placeholderText);
     synchronizer.setCompletion(completion);
-    // synchronizer.addMapperProcessor(SideTransformMapperProcessor.getInstance());
+    synchronizer.addMapperProcessor(SideTransformMapperProcessor.getInstance());
     return synchronizer;
   }
 }

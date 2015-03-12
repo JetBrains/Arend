@@ -1,23 +1,8 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
-import com.jetbrains.jetpad.vclang.model.Position;
-import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
-import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.TextCell;
-import jetbrains.jetpad.cell.action.CellActions;
-import jetbrains.jetpad.cell.completion.Completion;
-import jetbrains.jetpad.cell.trait.CellTrait;
-import jetbrains.jetpad.cell.trait.CellTraitPropertySpec;
-import jetbrains.jetpad.completion.CompletionItem;
-import jetbrains.jetpad.completion.CompletionParameters;
-import jetbrains.jetpad.completion.CompletionSupplier;
-import jetbrains.jetpad.completion.SimpleCompletionItem;
 import jetbrains.jetpad.mapper.Mapper;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static com.jetbrains.jetpad.vclang.editor.util.Validators.identifier;
@@ -30,76 +15,6 @@ public class VarExpressionMapper extends Mapper<VarExpression, TextCell> {
     noDelete(getTarget());
     getTarget().focusable().set(true);
     getTarget().addTrait(validTextEditing(identifier()));
-
-    getTarget().addTrait(new CellTrait() {
-      @Override
-      public Object get(Cell cell, CellTraitPropertySpec<?> spec) {
-        if (spec == Completion.RIGHT_TRANSFORM) {
-          return new CompletionSupplier() {
-            @Override
-            public List<CompletionItem> get(CompletionParameters cp) {
-              List<CompletionItem> result = new ArrayList<>();
-
-              result.add(new SimpleCompletionItem("") {
-                @Override
-                public Runnable complete(String text) {
-                  AppExpression appExpr = new AppExpression();
-                  Mapper<?, ?> parentMapper = getParent();
-                  if (getSource().position == Position.APP_ARG) {
-                    AppExpression parentExpr = ((AppExpression) getSource().parent().get());
-                    parentMapper = parentMapper.getParent();
-                    parentExpr.replaceWith(appExpr);
-                    appExpr.setFunction(parentExpr);
-                  } else {
-                    getSource().replaceWith(appExpr);
-                    appExpr.setFunction(getSource());
-                  }
-
-                  AppExpressionMapper appExprMapper = (AppExpressionMapper) parentMapper.getDescendantMapper(appExpr);
-                  return CellActions.toFirstFocusable(appExprMapper.getTarget().argument);
-                }
-              });
-
-              return result;
-            }
-          };
-        }
-
-        if (spec == Completion.LEFT_TRANSFORM) {
-          return new CompletionSupplier() {
-            @Override
-            public List<CompletionItem> get(CompletionParameters cp) {
-              List<CompletionItem> result = new ArrayList<>();
-
-              result.add(new SimpleCompletionItem("") {
-                @Override
-                public Runnable complete(String text) {
-                  AppExpression appExpr = new AppExpression();
-                  Mapper<?, ?> parent = getParent();
-                  boolean inAppArg = getSource().position == Position.APP_ARG;
-                  if (inAppArg) {
-                    AppExpression parentExpr = ((AppExpression) getSource().parent().get());
-                    Expression function = parentExpr.getFunction();
-                    parentExpr.setFunction(appExpr);
-                    appExpr.setFunction(function);
-                  } else {
-                    getSource().replaceWith(appExpr);
-                    appExpr.setArgument(getSource());
-                  }
-
-                  AppExpressionMapper.Cell appExprCell = ((AppExpressionMapper) parent.getDescendantMapper(appExpr)).getTarget();
-                  return CellActions.toFirstFocusable(inAppArg ? appExprCell.argument : appExprCell.function);
-                }
-              });
-
-              return result;
-            }
-          };
-        }
-
-        return super.get(cell, spec);
-      }
-    });
   }
 
   @Override
