@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.model.expr;
 
-import com.jetbrains.jetpad.vclang.model.Position;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.children.ChildProperty;
-import jetbrains.jetpad.model.property.DelegateProperty;
 import jetbrains.jetpad.model.property.Property;
 
 public class ParensExpression extends Expression {
@@ -14,19 +12,7 @@ public class ParensExpression extends Expression {
   }
 
   public Property<Expression> expression() {
-    return new DelegateProperty<Expression>(myExpression) {
-      @Override
-      public void set(Expression expr) {
-        ParensExpression.this.setExpression(expr);
-      }
-    };
-  }
-
-  public void setExpression(Expression expr) {
-    if (expr != null) {
-      expr.position = Position.PARENS;
-    }
-    myExpression.set(expr);
+    return myExpression;
   }
 
   @Override
@@ -37,8 +23,7 @@ public class ParensExpression extends Expression {
   public static Expression parens(boolean p, Expression expr) {
     if (p) {
       ParensExpression pexpr = new ParensExpression();
-      pexpr.position = expr.position;
-      pexpr.setExpression(expr);
+      pexpr.myExpression.set(expr);
       return pexpr;
     } else {
       return expr;

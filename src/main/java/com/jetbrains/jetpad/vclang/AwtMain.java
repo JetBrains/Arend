@@ -65,15 +65,15 @@ public class AwtMain {
     FunctionDefinition def = new FunctionDefinition();
     result.definitions.add(def);
     LamExpression expr1 = new LamExpression();
-    def.setTerm(expr1);
-    expr1.setVariable("x");
+    def.term().set(expr1);
+    expr1.variable().set("x");
     AppExpression expr2 = new AppExpression();
-    expr1.setBody(expr2);
+    expr1.body().set(expr2);
     VarExpression expr3 = new VarExpression();
-    expr2.setFunction(expr3);
+    expr2.function().set(expr3);
     expr3.setName("x");
     VarExpression expr4 = new VarExpression();
-    expr2.setArgument(expr4);
+    expr2.argument().set(expr4);
     expr4.setName("x");
     return result;
   }

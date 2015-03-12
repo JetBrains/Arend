@@ -46,14 +46,14 @@ public class SideTransformMapperProcessor implements MapperProcessor<Expression,
                   public Runnable complete(String text) {
                     AppExpression appExpr = new AppExpression();
                     Mapper<?, ?> parentMapper = mapper.getParent();
-                    if (expr.position == Position.APP_ARG) {
+                    if (expr.position() == Position.APP_ARG) {
                       AppExpression parentExpr = ((AppExpression) expr.parent().get());
                       parentMapper = parentMapper.getParent();
                       parentExpr.replaceWith(appExpr);
-                      appExpr.setFunction(parentExpr);
+                      appExpr.function().set(parentExpr);
                     } else {
                       expr.replaceWith(appExpr);
-                      appExpr.setFunction(expr);
+                      appExpr.function().set(expr);
                     }
 
                     AppExpressionMapper appExprMapper = (AppExpressionMapper) parentMapper.getDescendantMapper(appExpr);
@@ -83,15 +83,15 @@ public class SideTransformMapperProcessor implements MapperProcessor<Expression,
                   public Runnable complete(String text) {
                     AppExpression appExpr = new AppExpression();
                     Mapper<?, ?> parent = mapper.getParent();
-                    boolean inAppArg = expr.position == Position.APP_ARG;
+                    boolean inAppArg = expr.position() == Position.APP_ARG;
                     if (inAppArg) {
                       AppExpression parentExpr = ((AppExpression) expr.parent().get());
                       Expression function = parentExpr.getFunction();
-                      parentExpr.setFunction(appExpr);
-                      appExpr.setFunction(function);
+                      parentExpr.function().set(appExpr);
+                      appExpr.function().set(function);
                     } else {
                       expr.replaceWith(appExpr);
-                      appExpr.setArgument(expr);
+                      appExpr.argument().set(expr);
                     }
 
                     AppExpressionMapper.Cell appExprCell = ((AppExpressionMapper) parent.getDescendantMapper(appExpr)).getTarget();

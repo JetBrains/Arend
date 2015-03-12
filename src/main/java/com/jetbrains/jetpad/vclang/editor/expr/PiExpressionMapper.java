@@ -18,7 +18,7 @@ import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
 public class PiExpressionMapper extends Mapper<PiExpression, PiExpressionMapper.Cell> {
   public PiExpressionMapper(PiExpression source) {
-    super(source, new PiExpressionMapper.Cell(source.position.prec() > Abstract.PiExpression.PREC));
+    super(source, new PiExpressionMapper.Cell(source.position().prec() > Abstract.PiExpression.PREC));
   }
 
   @Override
