@@ -17,8 +17,8 @@ public class AppExpressionMapper extends ExpressionMapper<AppExpression, AppExpr
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forExpression(this, getSource().function(), getTarget().function, "<fun>", ExpressionCompletion.getInstance()));
-    conf.add(forExpression(this, getSource().argument(), getTarget().argument, "<arg>", ExpressionCompletion.getInstance()));
+    conf.add(forExpression(this, getSource().function(), getTarget().function, "<fun>"));
+    conf.add(forExpression(this, getSource().argument(), getTarget().argument, "<arg>"));
   }
 
   public static class Cell extends IndentCell {

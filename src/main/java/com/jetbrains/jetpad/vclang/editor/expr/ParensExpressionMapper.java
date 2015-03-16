@@ -17,7 +17,7 @@ public class ParensExpressionMapper extends ExpressionMapper<ParensExpression, P
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forExpression(this, getSource().expression(), getTarget().expression, "<expr>", ExpressionCompletion.getInstance()));
+    conf.add(forExpression(this, getSource().expression(), getTarget().expression, "<expr>"));
   }
 
   public static class Cell extends IndentCell {

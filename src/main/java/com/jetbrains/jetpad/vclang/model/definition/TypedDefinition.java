@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.model.definition;
 
+import com.jetbrains.jetpad.vclang.model.expr.Argument;
 import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import jetbrains.jetpad.model.children.ChildList;
 import jetbrains.jetpad.model.children.ChildProperty;

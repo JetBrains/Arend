@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.model;
 
-import com.jetbrains.jetpad.vclang.model.definition.Argument;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.model.definition.TypedDefinition;
 import com.jetbrains.jetpad.vclang.model.expr.*;
@@ -15,14 +14,7 @@ public class Node extends HasParent<Node, Node> {
       }
     }
     if (parent instanceof Argument) {
-      Argument argument = (Argument) parent;
-      if (argument.getType() == this) {
-        if (argument.getName() == null /* TODO: argument.getVars().size() == 0 */) {
-          return argument.position();
-        } else {
-          return Position.ARG;
-        }
-      }
+      return Position.ARG;
     }
     if (parent instanceof ParensExpression) {
       return Position.PARENS;

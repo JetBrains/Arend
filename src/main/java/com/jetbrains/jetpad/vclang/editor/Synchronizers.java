@@ -2,12 +2,14 @@ package com.jetbrains.jetpad.vclang.editor;
 
 import com.google.common.base.Supplier;
 import com.jetbrains.jetpad.vclang.editor.definition.DefinitionMapperFactory;
+import com.jetbrains.jetpad.vclang.editor.expr.ExpressionCompletion;
 import com.jetbrains.jetpad.vclang.editor.expr.ExpressionMapperFactory;
 import com.jetbrains.jetpad.vclang.editor.expr.SideTransformMapperProcessor;
 import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.definition.Definition;
 import com.jetbrains.jetpad.vclang.model.definition.EmptyDefinition;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.model.expr.Argument;
 import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.util.CellLists;
@@ -51,11 +53,30 @@ public class Synchronizers {
     return synchronizer;
   }
 
-  public static Synchronizer forExpression(Mapper<? extends Node, ? extends Cell> mapper, Property<Expression> expression, Cell target, String placeholderText, RoleCompletion<Node, Expression> completion) {
+  public static Synchronizer forExpression(Mapper<? extends Node, ? extends Cell> mapper, Property<Expression> expression, Cell target, String placeholderText) {
     ProjectionalRoleSynchronizer<Node, Expression> synchronizer = ProjectionalSynchronizers.forSingleRole(mapper, expression, target, ExpressionMapperFactory.getInstance());
     synchronizer.setPlaceholderText(placeholderText);
-    synchronizer.setCompletion(completion);
+    synchronizer.setCompletion(ExpressionCompletion.getInstance());
     synchronizer.addMapperProcessor(SideTransformMapperProcessor.getInstance());
+    return synchronizer;
+  }
+
+  public static Synchronizer forArgument(Mapper<? extends Node, ? extends Cell> mapper, Property<Expression> argument, Cell target, String placeholderText) {
+    ProjectionalRoleSynchronizer<Node, Expression> synchronizer = ProjectionalSynchronizers.forSingleRole(mapper, argument, target, ExpressionMapperFactory.getInstance());
+    synchronizer.setPlaceholderText(placeholderText);
+    synchronizer.setCompletion(new RoleCompletion<Node, Expression>() {
+      @Override
+      public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Expression> target) {
+        List<CompletionItem> result = ExpressionCompletion.getInstance().createRoleCompletion(ctx, mapper, contextNode, target);
+        result.add(new SimpleCompletionItem("bind ", "binder") {
+          @Override
+          public Runnable complete(String text) {
+            return target.set(new Argument());
+          }
+        });
+        return result;
+      }
+    });
     return synchronizer;
   }
 }

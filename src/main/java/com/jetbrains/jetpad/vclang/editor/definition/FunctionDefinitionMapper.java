@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.editor.definition;
 
-import com.jetbrains.jetpad.vclang.editor.expr.ExpressionCompletion;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import jetbrains.jetpad.base.Validators;
 import jetbrains.jetpad.cell.TextCell;
@@ -24,8 +23,8 @@ public class FunctionDefinitionMapper extends Mapper<FunctionDefinition, Functio
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
     conf.add(forPropsTwoWay(getSource().name(), getTarget().name.text()));
-    conf.add(forExpression(this, getSource().resultType(), getTarget().type, "<type>", ExpressionCompletion.getInstance()));
-    conf.add(forExpression(this, getSource().term(), getTarget().term, "<term>", ExpressionCompletion.getInstance()));
+    conf.add(forExpression(this, getSource().resultType(), getTarget().type, "<type>"));
+    conf.add(forExpression(this, getSource().term(), getTarget().term, "<term>"));
   }
 
   public static class Cell extends IndentCell {

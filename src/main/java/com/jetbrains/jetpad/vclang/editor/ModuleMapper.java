@@ -3,13 +3,17 @@ package com.jetbrains.jetpad.vclang.editor;
 import com.jetbrains.jetpad.vclang.model.Module;
 import com.jetbrains.jetpad.vclang.model.definition.Definition;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.VarExpression;
+import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.trait.CellTrait;
 import jetbrains.jetpad.event.Key;
 import jetbrains.jetpad.event.KeyEvent;
 import jetbrains.jetpad.event.ModifierKey;
 import jetbrains.jetpad.mapper.Mapper;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forDefinitions;
 
@@ -25,7 +29,10 @@ public class ModuleMapper extends Mapper<Module, ModuleCell> {
             if (def instanceof FunctionDefinition) {
               // TODO: Run type checker
               FunctionDefinition funDef = (FunctionDefinition) def;
-              funDef.getTerm().wellTypedExpr().set(new VarExpression("x"));
+              CheckTypeVisitor.Result typeResult = funDef.getResultType().accept(new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<com.jetbrains.jetpad.vclang.term.definition.Definition>()), new UniverseExpression());
+              funDef.getResultType().wellTypedExpr().set(typeResult.expression);
+              CheckTypeVisitor.Result exprResult = funDef.getTerm().accept(new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<com.jetbrains.jetpad.vclang.term.definition.Definition>()), typeResult.expression);
+              funDef.getTerm().wellTypedExpr().set(exprResult.expression);
             }
           }
           event.consume();

@@ -1,28 +1,39 @@
 package com.jetbrains.jetpad.vclang.model.expr;
 
-import com.jetbrains.jetpad.vclang.model.definition.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.children.ChildProperty;
 import jetbrains.jetpad.model.property.Property;
 
 public class PiExpression extends Expression implements Abstract.PiExpression {
-  private final ChildProperty<PiExpression, Argument> myDomain = new ChildProperty<>(this);
+  private final ChildProperty<PiExpression, Expression> myDomain = new ChildProperty<>(this);
   private final ChildProperty<PiExpression, Expression> myCodomain = new ChildProperty<>(this);
 
   @Override
   public boolean isExplicit() {
-    return myDomain.get().getExplicit();
+    if (myDomain.get() instanceof Argument) {
+      return ((Argument) myDomain.get()).getExplicit();
+    } else {
+      return true;
+    }
   }
 
   @Override
   public String getVariable() {
-    return myDomain.get().getName();
+    if (myDomain.get() instanceof Argument) {
+      return ((Argument) myDomain.get()).getName();
+    } else {
+      return null;
+    }
   }
 
   @Override
   public Expression getDomain() {
-    return myDomain.get().getType();
+    if (myDomain.get() instanceof Argument) {
+      return ((Argument) myDomain.get()).getType();
+    } else {
+      return myDomain.get();
+    }
   }
 
   @Override
@@ -30,7 +41,7 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
     return myCodomain.get();
   }
 
-  public Property<Argument> domain() {
+  public Property<Expression> domain() {
     return myDomain;
   }
 

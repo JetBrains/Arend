@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
+import com.jetbrains.jetpad.vclang.editor.definition.ArgumentMapper;
 import com.jetbrains.jetpad.vclang.model.expr.*;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.mapper.Mapper;
@@ -41,6 +42,9 @@ public class ExpressionMapperFactory implements MapperFactory<Expression, Cell> 
     }
     if (source instanceof ParensExpression) {
       return new ParensExpressionMapper((ParensExpression)source);
+    }
+    if (source instanceof Argument) {
+      return new ArgumentMapper((Argument) source);
     }
     return null;
   }
