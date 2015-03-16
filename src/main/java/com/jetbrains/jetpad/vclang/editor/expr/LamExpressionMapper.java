@@ -8,7 +8,6 @@ import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.text.TextEditing;
 import jetbrains.jetpad.cell.util.CellFactory;
-import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
@@ -16,7 +15,7 @@ import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.*;
 import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
-public class LamExpressionMapper extends Mapper<LamExpression, LamExpressionMapper.Cell> {
+public class LamExpressionMapper extends ExpressionMapper<LamExpression, LamExpressionMapper.Cell> {
   public LamExpressionMapper(LamExpression source) {
     super(source, new LamExpressionMapper.Cell(source.position().prec() > Abstract.LamExpression.PREC));
   }

@@ -17,10 +17,6 @@ public class VarExpression extends Expression implements Abstract.VarExpression 
     return myName;
   }
 
-  public void setName(String name) {
-    myName.set(name);
-  }
-
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitVar(this, params);

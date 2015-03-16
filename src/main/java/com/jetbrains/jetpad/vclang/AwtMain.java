@@ -71,10 +71,10 @@ public class AwtMain {
     expr1.body().set(expr2);
     VarExpression expr3 = new VarExpression();
     expr2.function().set(expr3);
-    expr3.setName("x");
+    expr3.name().set("x");
     VarExpression expr4 = new VarExpression();
     expr2.argument().set(expr4);
-    expr4.setName("x");
+    expr4.name().set("x");
     return result;
   }
 }

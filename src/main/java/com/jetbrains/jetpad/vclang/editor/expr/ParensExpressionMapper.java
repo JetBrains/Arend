@@ -3,14 +3,13 @@ package com.jetbrains.jetpad.vclang.editor.expr;
 import com.jetbrains.jetpad.vclang.model.expr.ParensExpression;
 import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.util.CellFactory;
-import jetbrains.jetpad.mapper.Mapper;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.indent;
 import static jetbrains.jetpad.cell.util.CellFactory.label;
 
-public class ParensExpressionMapper extends Mapper<ParensExpression, ParensExpressionMapper.Cell> {
+public class ParensExpressionMapper extends ExpressionMapper<ParensExpression, ParensExpressionMapper.Cell> {
   public ParensExpressionMapper(ParensExpression source) {
     super(source, new ParensExpressionMapper.Cell());
   }

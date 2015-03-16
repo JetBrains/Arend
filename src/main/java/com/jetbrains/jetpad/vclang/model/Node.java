@@ -25,9 +25,7 @@ public class Node extends HasParent<Node, Node> {
       }
     }
     if (parent instanceof ParensExpression) {
-      if (((ParensExpression) parent).getExpression() == this) {
-        return Position.PARENS;
-      }
+      return Position.PARENS;
     }
     if (parent instanceof TypedDefinition) {
       if (((TypedDefinition) parent).getResultType() == this) {

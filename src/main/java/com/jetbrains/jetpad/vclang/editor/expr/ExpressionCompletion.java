@@ -26,7 +26,7 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
         @Override
         public Runnable complete(String text) {
           VarExpression expr = new VarExpression();
-          expr.setName(text);
+          expr.name().set(text);
           return target.set(expr);
         }
       });

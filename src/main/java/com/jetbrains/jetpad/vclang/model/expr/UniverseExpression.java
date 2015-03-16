@@ -17,10 +17,6 @@ public class UniverseExpression extends Expression implements Abstract.UniverseE
     return myLevel;
   }
 
-  public void setLevel(Integer level) {
-    myLevel.set(level);
-  }
-
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitUniverse(this, params);

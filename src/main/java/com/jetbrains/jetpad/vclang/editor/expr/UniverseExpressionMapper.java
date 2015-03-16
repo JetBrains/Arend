@@ -6,17 +6,15 @@ import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.text.TextEditing;
 import jetbrains.jetpad.cell.util.CellFactory;
-import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.values.Color;
 
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.text;
 import static jetbrains.jetpad.cell.util.ValueEditors.intProperty;
-import static jetbrains.jetpad.mapper.Synchronizers.forPropsOneWay;
-import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
+import static jetbrains.jetpad.mapper.Synchronizers.*;
 
-public class UniverseExpressionMapper extends Mapper<UniverseExpression, UniverseExpressionMapper.Cell> {
+public class UniverseExpressionMapper extends ExpressionMapper<UniverseExpression, UniverseExpressionMapper.Cell> {
   public UniverseExpressionMapper(UniverseExpression source) {
     super(source, new Cell());
   }
@@ -26,6 +24,12 @@ public class UniverseExpressionMapper extends Mapper<UniverseExpression, Univers
     super.registerSynchronizers(conf);
     conf.add(forPropsTwoWay(getSource().level(), intProperty(getTarget().level)));
     conf.add(forPropsOneWay(getTarget().level.textColor(), getTarget().textColor));
+    conf.add(forProperty(getSource().level(), new Runnable() {
+      @Override
+      public void run() {
+        getSource().wellTypedExpr().set(null);
+      }
+    }));
   }
 
   public static class Cell extends IndentCell {

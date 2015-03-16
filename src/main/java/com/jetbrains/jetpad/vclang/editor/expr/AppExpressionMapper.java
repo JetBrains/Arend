@@ -4,13 +4,12 @@ import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.util.CellFactory;
-import jetbrains.jetpad.mapper.Mapper;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static jetbrains.jetpad.cell.util.CellFactory.*;
 
-public class AppExpressionMapper extends Mapper<AppExpression, AppExpressionMapper.Cell> {
+public class AppExpressionMapper extends ExpressionMapper<AppExpression, AppExpressionMapper.Cell> {
   public AppExpressionMapper(AppExpression source) {
     super(source, new AppExpressionMapper.Cell(source.position().prec() > Abstract.AppExpression.PREC));
   }
