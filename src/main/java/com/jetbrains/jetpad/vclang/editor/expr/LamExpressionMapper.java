@@ -9,6 +9,7 @@ import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.text.TextEditing;
 import jetbrains.jetpad.cell.util.CellFactory;
 import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
+import jetbrains.jetpad.values.Color;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
@@ -33,12 +34,17 @@ public class LamExpressionMapper extends ExpressionMapper<LamExpression, LamExpr
 
     public Cell(boolean parens) {
       if (parens) children().add(label("("));
+
+      TextCell cell = label("=>");
+      cell.background().set(Color.TRANSPARENT);
+      background().set(Color.LIGHT_BLUE); // Doesn't do anything.
+
       CellFactory.to(this,
           label("λ"),
           variable,
           placeHolder(variable, "<no name>"),
           space(),
-          label("=>"),
+          cell,
           space(),
           body);
       if (parens) children().add(label(")"));

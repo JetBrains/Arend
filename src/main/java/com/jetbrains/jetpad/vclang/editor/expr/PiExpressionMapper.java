@@ -2,8 +2,10 @@ package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.model.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
+import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.util.CellFactory;
+import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forArgument;
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
@@ -37,6 +39,8 @@ public class PiExpressionMapper extends ExpressionMapper<PiExpression, PiExpress
       if (parens) children().add(label(")"));
 
       focusable().set(true);
+      // Why this doesn't work?
+      set(ProjectionalSynchronizers.ON_CREATE, CellActions.toCell(domain));
     }
   }
 }
