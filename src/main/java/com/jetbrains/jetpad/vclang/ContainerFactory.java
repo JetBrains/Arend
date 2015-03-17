@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang;
 
-import com.jetbrains.jetpad.vclang.editor.ModuleCell;
 import com.jetbrains.jetpad.vclang.editor.ModuleMapper;
 import com.jetbrains.jetpad.vclang.model.Module;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
@@ -14,7 +13,7 @@ import jetbrains.jetpad.projectional.util.RootController;
 public class ContainerFactory {
   public static CellContainer getContainer() {
     Module m = createModel();
-    Mapper<Module, ModuleCell> rootMapper = new ModuleMapper(m);
+    Mapper<Module, ModuleMapper.Cell> rootMapper = new ModuleMapper(m);
     rootMapper.attachRoot();
 
     CellContainer cellContainer = new CellContainer();

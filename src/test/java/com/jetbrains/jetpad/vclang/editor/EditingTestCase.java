@@ -12,7 +12,7 @@ public class EditingTestCase {
   protected final CellContainer myCellContainer = new CellContainer();
   protected final ViewContainer myViewContainer = new ViewContainer();
   protected final Module myModule = new Module();
-  protected Mapper<Module, ModuleCell> myRootMapper = new ModuleMapper(myModule);
+  protected Mapper<Module, ModuleMapper.Cell> myRootMapper = new ModuleMapper(myModule);
 
   @Before
   public void initContainers() {

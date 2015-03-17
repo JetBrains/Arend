@@ -5,8 +5,9 @@ import com.jetbrains.jetpad.vclang.model.definition.Definition;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
-import jetbrains.jetpad.cell.Cell;
+import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.trait.CellTrait;
+import jetbrains.jetpad.cell.util.CellFactory;
 import jetbrains.jetpad.event.Key;
 import jetbrains.jetpad.event.KeyEvent;
 import jetbrains.jetpad.event.ModifierKey;
@@ -17,13 +18,13 @@ import java.util.HashMap;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forDefinitions;
 
-public class ModuleMapper extends Mapper<Module, ModuleCell> {
+public class ModuleMapper extends Mapper<Module, ModuleMapper.Cell> {
   public ModuleMapper(Module source) {
-    super(source, new ModuleCell());
+    super(source, new Cell());
 
     getTarget().addTrait(new CellTrait() {
       @Override
-      public void onKeyPressed(Cell cell, KeyEvent event) {
+      public void onKeyPressed(jetbrains.jetpad.cell.Cell cell, KeyEvent event) {
         if (event.is(Key.E, ModifierKey.CONTROL) || event.is(Key.E, ModifierKey.META)) {
           for (Definition def : getSource().definitions) {
             if (def instanceof FunctionDefinition) {
@@ -45,5 +46,14 @@ public class ModuleMapper extends Mapper<Module, ModuleCell> {
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
     conf.add(forDefinitions(this, getSource().definitions, getTarget().definitions));
+  }
+
+  public static class Cell extends IndentCell {
+    public final IndentCell definitions = new IndentCell();
+
+    public Cell() {
+      CellFactory.to(this, definitions);
+      focusable().set(true);
+    }
   }
 }
