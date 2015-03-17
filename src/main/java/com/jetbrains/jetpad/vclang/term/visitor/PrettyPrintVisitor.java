@@ -42,7 +42,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
     if (prec > Abstract.LamExpression.PREC) myStream.print("(");
     String var;
     for (var = expr.getVariable(); myNames.contains(var); var += "'");
-    myStream.print("\\" + var + " -> ");
+    myStream.print("\\" + var + " => ");
     myNames.add(var);
     expr.getBody().accept(this, Abstract.LamExpression.PREC);
     myNames.remove(myNames.size() - 1);

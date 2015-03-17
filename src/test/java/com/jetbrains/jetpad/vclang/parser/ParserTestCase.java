@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 
 import java.util.List;
 
-public class Parser {
+public class ParserTestCase {
   public static VcgrammarParser parse(String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);

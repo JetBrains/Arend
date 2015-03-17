@@ -10,10 +10,10 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
 import static org.junit.Assert.assertEquals;
-import static com.jetbrains.jetpad.vclang.parser.Parser.parseDef;
-import static com.jetbrains.jetpad.vclang.parser.Parser.parseExpr;
 
 public class PrettyPrintingParserTest {
   private void testExpr(Expression expected, Expression expr) throws UnsupportedEncodingException {

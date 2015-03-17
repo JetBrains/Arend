@@ -28,9 +28,9 @@ public class FunctionDefinitionMapper extends Mapper<FunctionDefinition, Functio
   }
 
   public static class Cell extends IndentCell {
-    final TextCell name = noDelete(new TextCell());
-    final jetbrains.jetpad.cell.Cell type = noDelete(indent());
-    final jetbrains.jetpad.cell.Cell term = noDelete(indent());
+    public final TextCell name = noDelete(new TextCell());
+    public final jetbrains.jetpad.cell.Cell type = noDelete(indent());
+    public final jetbrains.jetpad.cell.Cell term = noDelete(indent());
 
     Cell() {
       to(this,

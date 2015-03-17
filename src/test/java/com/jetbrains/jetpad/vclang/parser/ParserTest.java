@@ -8,20 +8,20 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.parser.Parser.*;
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
 import static org.junit.Assert.*;
 
 public class ParserTest {
   @Test
   public void parserLam() {
-    Expression expr = parseExpr("\\x y z -> y");
+    Expression expr = parseExpr("\\x y z => y");
     assertEquals(Lam("x", Lam("y", Lam("z", Var("y")))), expr);
   }
 
   @Test
   public void parserLam2() {
-    Expression expr = parseExpr("\\x y -> (\\z w -> y z) y");
+    Expression expr = parseExpr("\\x y => (\\z w => y z) y");
     assertEquals(Lam("x'", Lam("y'", Apps(Lam("z'", Lam("w'", Apps(Var("y"), Var("z")))), Var("y")))), expr);
   }
 
@@ -41,7 +41,7 @@ public class ParserTest {
 
   @Test
   public void parserLamOpen() {
-    Expression expr = parseExpr("\\x -> ((y : N) -> (\\y -> y)) y");
+    Expression expr = parseExpr("\\x => ((y : N) -> (\\y => y)) y");
     assertEquals(Lam("x", Apps(Pi("y", Nat(), Lam("y", Var("y"))), Var("y"))), expr);
   }
 
