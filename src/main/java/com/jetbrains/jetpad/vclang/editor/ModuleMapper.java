@@ -27,7 +27,6 @@ public class ModuleMapper extends Mapper<Module, ModuleCell> {
         if (event.is(Key.E, ModifierKey.CONTROL) || event.is(Key.E, ModifierKey.META)) {
           for (Definition def : getSource().definitions) {
             if (def instanceof FunctionDefinition) {
-              // TODO: Run type checker
               FunctionDefinition funDef = (FunctionDefinition) def;
               CheckTypeVisitor.Result typeResult = funDef.getResultType().accept(new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<com.jetbrains.jetpad.vclang.term.definition.Definition>()), new UniverseExpression());
               funDef.getResultType().wellTypedExpr().set(typeResult.expression);

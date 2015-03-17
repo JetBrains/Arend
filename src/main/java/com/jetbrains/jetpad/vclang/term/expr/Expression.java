@@ -95,4 +95,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   public static NelimExpression Nelim() {
     return NELIM;
   }
+
+  public static ErrorExpression Error(Expression expr, String message) {
+    return new ErrorExpression(expr, message);
+  }
 }

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.Error;
 
 public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   private final int from;
@@ -70,5 +71,10 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitZero(ZeroExpression expr) {
     return expr;
+  }
+
+  @Override
+  public Expression visitError(ErrorExpression expr) {
+    return Error(expr.expression().accept(this), expr.message());
   }
 }

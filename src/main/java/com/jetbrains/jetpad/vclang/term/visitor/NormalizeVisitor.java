@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.Error;
 
 // TODO: Rewrite normalization using thunks
 // TODO: Add normalization to whnf
@@ -90,5 +91,10 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitZero(ZeroExpression expr) {
     return expr;
+  }
+
+  @Override
+  public Expression visitError(ErrorExpression expr) {
+    return Error(expr.expression().accept(this), expr.message());
   }
 }
