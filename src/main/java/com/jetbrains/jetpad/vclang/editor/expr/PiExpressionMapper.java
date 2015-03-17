@@ -40,7 +40,8 @@ public class PiExpressionMapper extends ExpressionMapper<PiExpression, PiExpress
 
       focusable().set(true);
       // Why this doesn't work?
-      set(ProjectionalSynchronizers.ON_CREATE, CellActions.toCell(domain));
+
+      set(ProjectionalSynchronizers.ON_CREATE, CellActions.toFirstFocusable(domain));
     }
   }
 }
