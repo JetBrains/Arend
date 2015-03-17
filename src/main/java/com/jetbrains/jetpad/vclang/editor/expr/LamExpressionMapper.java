@@ -39,6 +39,10 @@ public class LamExpressionMapper extends ExpressionMapper<LamExpression, LamExpr
       cell.background().set(Color.TRANSPARENT);
       background().set(Color.LIGHT_BLUE); // Doesn't do anything.
 
+      IndentCell indentTest = new IndentCell();
+      CellFactory.to(indentTest, label("A"), space(), label("B"));
+      indentTest.background().set(Color.PINK);
+
       CellFactory.to(this,
           label("λ"),
           variable,
@@ -46,8 +50,13 @@ public class LamExpressionMapper extends ExpressionMapper<LamExpression, LamExpr
           space(),
           cell,
           space(),
-          body);
+          body,
+          indentTest);
+
       if (parens) children().add(label(")"));
+
+
+
 
       focusable().set(true);
       variable.addTrait(TextEditing.validTextEditing(Validators.identifier()));
