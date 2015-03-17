@@ -1,0 +1,27 @@
+<!DOCTYPE module
+    PUBLIC
+    "-//Google Inc.//DTD Google Web Toolkit 2.0//EN"
+    "http://google-web-toolkit.googlecode.com/svn/releases/2.0/distro-source/core/src/gwt-module.dtd"
+    >
+<module>
+  <source path="">
+    <exclude name="ConsoleMain.java" />
+    <exclude name="AwtMain.java" />
+  </source>
+
+  <entry-point class="com.jetbrains.jetpad.vclang.GwtMain" />
+
+  <inherits name="jetbrains.jetpad.model.ModelGwt"/>
+  <inherits name="jetbrains.jetpad.model.Model" />
+  <inherits name="jetbrains.jetpad.mapper.Mapper" />
+  <inherits name="com.google.gwt.query.Query"/>
+  <inherits name="jetbrains.jetpad.projectional.view.View" />
+
+  <inherits name="org.vectomatic.libgwtsvg" />
+
+  <inherits name="jetbrains.jetpad.projectional.Projectional"/>
+
+  <add-linker name="xsiframe"/>
+  <set-configuration-property name="devModeRedirectEnabled" value="true"/>
+  <set-configuration-property name="CssResource.style" value="pretty"/>
+</module>

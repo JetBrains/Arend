@@ -5,7 +5,7 @@ defs  : def+;
 def   : 'function' ID ':' expr1 '=' expr;
 
 expr  : expr1                           # exprExpr1
-      | '\\' ID+ '->' expr              # lam
+      | '\\' ID+ '=>' expr              # lam
       ;
 
 expr1 : expr1 expr1                     # app
