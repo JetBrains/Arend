@@ -33,9 +33,6 @@ public class ExpressionMapper<E extends Expression, C extends Cell> extends Mapp
           }
         }
         getTarget().background().set(setToNull ? null : value instanceof ErrorExpression ? Color.LIGHT_PINK : Color.LIGHT_GREEN);
-
-        getTarget().visible().set(false);
-        getTarget().visible().set(true);
       }
     }));
     conf.add(forProperty((Property<?>) getSource().getPosition().getRole(), new Runnable() {

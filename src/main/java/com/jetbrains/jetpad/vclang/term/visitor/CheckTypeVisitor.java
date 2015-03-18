@@ -55,6 +55,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
+  private Result typeCheck(Abstract.Expression expr, Expression expectedType) {
+    if (expr == null) {
+      return null;
+    } else {
+      return expr.accept(this, expectedType);
+    }
+  }
+
   /*
   public Expression visitApps(Abstract.Expression fun, List<Expression> args) {
     if (fun instanceof Abstract.NelimExpression) {
@@ -70,26 +78,26 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
     Result result;
     if (expr.getFunction() instanceof Abstract.NelimExpression) {
-      Result argument = expr.getArgument().accept(this, null);
+      Result argument = typeCheck(expr.getArgument(), null);
       if (argument == null) return null;
       result = new Result(Apps(Nelim(), argument.expression), Pi(Pi(Nat(), Pi(argument.type, argument.type)), Pi(Nat(), argument.type)));
     } else {
-      Result function = expr.getFunction().accept(this, null);
+      Result function = typeCheck(expr.getFunction(), null);
       if (function == null) {
-        expr.getArgument().accept(this, null);
+        typeCheck(expr.getArgument(), null);
         return null;
       }
       Expression functionType = function.type.normalize();
       if (functionType instanceof PiExpression) {
         PiExpression piType = (PiExpression) functionType;
-        Result argument = expr.getArgument().accept(this, piType.getDomain());
+        Result argument = typeCheck(expr.getArgument(), piType.getDomain());
         if (argument == null) return null;
         result = new Result(Apps(function.expression, argument.expression), piType.getCodomain().subst(argument.expression, 0));
       } else {
         TypeCheckingError error = new TypeMismatchError(Pi(Var("_"), Var("_")), functionType, expr.getFunction());
         expr.getFunction().setWellTyped(Error(function.expression, error));
         myErrors.add(error);
-        expr.getArgument().accept(this, null);
+        typeCheck(expr.getArgument(), null);
         return null;
       }
     }
@@ -121,7 +129,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       PiExpression type = (PiExpression)expectedNorm;
       // TODO: This is ugly. Fix it.
       myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(type.getDomain()), new VarExpression(expr.getVariable())));
-      Result body = expr.getBody().accept(this, type.getCodomain());
+      Result body = typeCheck(expr.getBody(), type.getCodomain());
       myLocalContext.remove(myLocalContext.size() - 1);
       if (body == null) return null;
       Result result = new Result(Lam(expr.getVariable(), body.expression), Pi(type.isExplicit(), type.getVariable(), type.getDomain(), body.type));
@@ -150,11 +158,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitPi(Abstract.PiExpression expr, Expression expectedType) {
-    Result domainResult = expr.getDomain().accept(this, Universe(-1));
+    Result domainResult = typeCheck(expr.getDomain(), Universe(-1));
     if (domainResult == null) return null;
     // TODO: This is ugly. Fix it.
     myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(domainResult.expression), Var(expr.getVariable())));
-    Result codomainResult = expr.getCodomain().accept(this, Universe(-1));
+    Result codomainResult = typeCheck(expr.getCodomain(), Universe(-1));
     myLocalContext.remove(myLocalContext.size() - 1);
     if (codomainResult == null) return null;
     Expression actualType = Universe(Math.max(((UniverseExpression) domainResult.type).getLevel(), ((UniverseExpression) codomainResult.type).getLevel()));
