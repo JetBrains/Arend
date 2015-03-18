@@ -24,10 +24,18 @@ public class ExpressionMapper<E extends Expression, C extends Cell> extends Mapp
       @Override
       public void set(com.jetbrains.jetpad.vclang.term.expr.Expression value) {
         Node parent = getSource().parent().get();
-        if (value == null && parent instanceof Expression) {
-          ((Expression) parent).wellTypedExpr().set(null);
+        boolean setToNull = value == null;
+        if (parent instanceof Expression) {
+          if (value == null) {
+            ((Expression) parent).wellTypedExpr().set(null);
+          } else {
+            setToNull = ((Expression) parent).wellTypedExpr().get() != null;
+          }
         }
-        getTarget().background().set(value == null ? Color.WHITE : value instanceof ErrorExpression ? Color.LIGHT_PINK : Color.LIGHT_GREEN);
+        getTarget().background().set(setToNull ? null : value instanceof ErrorExpression ? Color.LIGHT_PINK : Color.LIGHT_GREEN);
+
+        getTarget().visible().set(false);
+        getTarget().visible().set(true);
       }
     }));
     conf.add(forProperty((Property<?>) getSource().getPosition().getRole(), new Runnable() {

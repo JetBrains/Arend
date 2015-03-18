@@ -3,8 +3,9 @@ package com.jetbrains.jetpad.vclang;
 import com.jetbrains.jetpad.vclang.editor.ModuleMapper;
 import com.jetbrains.jetpad.vclang.model.Module;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.model.expr.LamExpression;
+import com.jetbrains.jetpad.vclang.model.expr.NatExpression;
+import com.jetbrains.jetpad.vclang.model.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
 import jetbrains.jetpad.cell.CellContainer;
 import jetbrains.jetpad.mapper.Mapper;
@@ -30,14 +31,13 @@ public class ContainerFactory {
     LamExpression expr1 = new LamExpression();
     def.term().set(expr1);
     expr1.variable().set("x");
-    AppExpression expr2 = new AppExpression();
+    VarExpression expr2 = new VarExpression();
     expr1.body().set(expr2);
-    VarExpression expr3 = new VarExpression();
-    expr2.function().set(expr3);
-    expr3.name().set("x");
-    VarExpression expr4 = new VarExpression();
-    expr2.argument().set(expr4);
-    expr4.name().set("x");
+    expr2.name().set("x");
+    PiExpression expr3 = new PiExpression();
+    def.resultType().set(expr3);
+    expr3.domain().set(new NatExpression());
+    expr3.codomain().set(new NatExpression());
     return result;
   }
 }
