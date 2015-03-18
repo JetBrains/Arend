@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
-import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.trait.CellTrait;
@@ -9,6 +8,7 @@ import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static com.jetbrains.jetpad.vclang.editor.util.Validators.identifier;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.VarExpression;
 import static jetbrains.jetpad.cell.text.TextEditing.validTextEditing;
 import static jetbrains.jetpad.mapper.Synchronizers.forProperty;
 import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;

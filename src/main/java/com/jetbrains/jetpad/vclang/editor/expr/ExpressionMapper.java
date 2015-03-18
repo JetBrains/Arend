@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.model.Node;
-import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ErrorExpression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.mapper.Mapper;
@@ -9,6 +8,7 @@ import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.WritableProperty;
 import jetbrains.jetpad.values.Color;
 
+import static com.jetbrains.jetpad.vclang.model.expr.Model.Expression;
 import static jetbrains.jetpad.mapper.Synchronizers.forProperty;
 import static jetbrains.jetpad.mapper.Synchronizers.forPropsOneWay;
 
@@ -23,7 +23,7 @@ public class ExpressionMapper<E extends Expression, C extends Cell> extends Mapp
     conf.add(forPropsOneWay(getSource().wellTypedExpr(), new WritableProperty<com.jetbrains.jetpad.vclang.term.expr.Expression>() {
       @Override
       public void set(com.jetbrains.jetpad.vclang.term.expr.Expression value) {
-        Node parent = getSource().parent().get();
+        Node parent = (Node) getParent().getSource();
         boolean setToNull = value == null;
         if (parent instanceof Expression) {
           if (value == null) {

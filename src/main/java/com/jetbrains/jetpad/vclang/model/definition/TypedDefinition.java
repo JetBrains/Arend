@@ -1,12 +1,13 @@
 package com.jetbrains.jetpad.vclang.model.definition;
 
-import com.jetbrains.jetpad.vclang.model.expr.Argument;
-import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import jetbrains.jetpad.model.children.ChildList;
 import jetbrains.jetpad.model.children.ChildProperty;
 import jetbrains.jetpad.model.collections.list.ObservableList;
 import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
+
+import static com.jetbrains.jetpad.vclang.model.expr.Model.Argument;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.Expression;
 
 public abstract class TypedDefinition extends Definition {
   private final Property<String> myName = new ValueProperty<>();

@@ -1,10 +1,11 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.editor.definition.ArgumentMapper;
-import com.jetbrains.jetpad.vclang.model.expr.*;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.mapper.MapperFactory;
+
+import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
 
 public class ExpressionMapperFactory implements MapperFactory<Expression, Cell> {
   private final static ExpressionMapperFactory INSTANCE = new ExpressionMapperFactory();

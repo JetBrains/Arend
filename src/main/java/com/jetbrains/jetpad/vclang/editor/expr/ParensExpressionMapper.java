@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
-import com.jetbrains.jetpad.vclang.model.expr.ParensExpression;
 import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.util.CellFactory;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.ParensExpression;
 import static jetbrains.jetpad.cell.util.CellFactory.indent;
 import static jetbrains.jetpad.cell.util.CellFactory.label;
 

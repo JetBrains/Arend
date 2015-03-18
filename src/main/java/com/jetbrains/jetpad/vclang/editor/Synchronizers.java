@@ -9,8 +9,6 @@ import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.definition.Definition;
 import com.jetbrains.jetpad.vclang.model.definition.EmptyDefinition;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.model.expr.Argument;
-import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.util.CellLists;
 import jetbrains.jetpad.completion.CompletionItem;
@@ -27,6 +25,9 @@ import jetbrains.jetpad.projectional.generic.RoleCompletion;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.model.expr.Model.Argument;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.Expression;
 
 public class Synchronizers {
   public static Synchronizer forDefinitions(Mapper<? extends Node, ? extends Cell> mapper, ObservableList<Definition> definitions, Cell target) {

@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.editor;
 
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.event.KeyEvent;
@@ -13,6 +11,8 @@ import org.junit.Test;
 
 import java.util.Collections;
 
+import static com.jetbrains.jetpad.vclang.model.expr.Model.AppExpression;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.VarExpression;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

@@ -2,8 +2,9 @@ package com.jetbrains.jetpad.vclang.model;
 
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.model.definition.TypedDefinition;
-import com.jetbrains.jetpad.vclang.model.expr.*;
 import jetbrains.jetpad.model.children.HasParent;
+
+import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
 
 public class Node extends HasParent<Node, Node> {
   public Position position() {

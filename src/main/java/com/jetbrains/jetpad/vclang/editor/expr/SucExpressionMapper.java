@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
-import com.jetbrains.jetpad.vclang.model.expr.SucExpression;
 import jetbrains.jetpad.cell.TextCell;
 
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.SucExpression;
 
 public class SucExpressionMapper extends ExpressionMapper<SucExpression, TextCell> {
   public SucExpressionMapper(SucExpression source) {

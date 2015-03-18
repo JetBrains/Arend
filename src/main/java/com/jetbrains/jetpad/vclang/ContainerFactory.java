@@ -3,13 +3,11 @@ package com.jetbrains.jetpad.vclang;
 import com.jetbrains.jetpad.vclang.editor.ModuleMapper;
 import com.jetbrains.jetpad.vclang.model.Module;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.model.expr.LamExpression;
-import com.jetbrains.jetpad.vclang.model.expr.NatExpression;
-import com.jetbrains.jetpad.vclang.model.expr.PiExpression;
-import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
 import jetbrains.jetpad.cell.CellContainer;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.projectional.util.RootController;
+
+import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
 
 public class ContainerFactory {
   public static CellContainer getContainer() {

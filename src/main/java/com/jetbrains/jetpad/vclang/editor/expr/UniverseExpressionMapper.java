@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
-import com.jetbrains.jetpad.vclang.model.expr.UniverseExpression;
 import jetbrains.jetpad.base.Validators;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.indent.IndentCell;
@@ -10,6 +9,7 @@ import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.values.Color;
 
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.UniverseExpression;
 import static jetbrains.jetpad.cell.util.CellFactory.text;
 import static jetbrains.jetpad.cell.util.ValueEditors.intProperty;
 import static jetbrains.jetpad.mapper.Synchronizers.*;

@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang.model.definition;
 
-import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import jetbrains.jetpad.model.children.ChildProperty;
 import jetbrains.jetpad.model.property.Property;
+
+import static com.jetbrains.jetpad.vclang.model.expr.Model.Expression;
 
 public class FunctionDefinition extends TypedDefinition {
   private final ChildProperty<FunctionDefinition, Expression> myTerm = new ChildProperty<>(this);

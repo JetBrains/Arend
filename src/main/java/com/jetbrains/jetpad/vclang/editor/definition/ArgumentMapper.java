@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.editor.definition;
 
 import com.jetbrains.jetpad.vclang.editor.util.Validators;
-import com.jetbrains.jetpad.vclang.model.expr.Argument;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.indent.IndentCell;
@@ -12,6 +11,7 @@ import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.Argument;
 import static jetbrains.jetpad.cell.util.CellFactory.*;
 import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 

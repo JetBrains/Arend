@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.editor;
 
 import com.jetbrains.jetpad.vclang.editor.definition.FunctionDefinitionMapper;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.model.expr.Expression;
-import com.jetbrains.jetpad.vclang.model.expr.VarExpression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.event.Key;
 import jetbrains.jetpad.event.KeyEvent;
@@ -15,6 +13,8 @@ import org.junit.Test;
 
 import java.util.Collections;
 
+import static com.jetbrains.jetpad.vclang.model.expr.Model.Expression;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.VarExpression;
 import static org.junit.Assert.*;
 
 public class IdentifierTest extends EditingTestCase {

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
-import com.jetbrains.jetpad.vclang.model.expr.LamExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import jetbrains.jetpad.base.Validators;
 import jetbrains.jetpad.cell.TextCell;
@@ -12,6 +11,7 @@ import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.LamExpression;
 import static jetbrains.jetpad.cell.util.CellFactory.*;
 import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 

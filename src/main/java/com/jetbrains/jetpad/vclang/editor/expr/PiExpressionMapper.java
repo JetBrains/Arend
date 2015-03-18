@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
-import com.jetbrains.jetpad.vclang.model.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.indent.IndentCell;
@@ -10,6 +9,7 @@ import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forArgument;
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.PiExpression;
 import static jetbrains.jetpad.cell.util.CellFactory.*;
 
 public class PiExpressionMapper extends ExpressionMapper<PiExpression, PiExpressionMapper.Cell> {

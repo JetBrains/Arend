@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.editor.util.IdCompletionItem;
 import com.jetbrains.jetpad.vclang.model.Node;
-import com.jetbrains.jetpad.vclang.model.expr.*;
 import jetbrains.jetpad.completion.CompletionItem;
 import jetbrains.jetpad.completion.CompletionParameters;
 import jetbrains.jetpad.completion.SimpleCompletionItem;
@@ -12,6 +11,8 @@ import jetbrains.jetpad.projectional.generic.RoleCompletion;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
 
 public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
   private static final ExpressionCompletion INSTANCE = new ExpressionCompletion();

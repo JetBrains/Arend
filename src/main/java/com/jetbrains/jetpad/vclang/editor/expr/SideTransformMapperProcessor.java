@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.model.Position;
-import com.jetbrains.jetpad.vclang.model.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.model.expr.Expression;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.completion.Completion;
@@ -18,6 +16,9 @@ import jetbrains.jetpad.model.composite.Composites;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.model.expr.Model.AppExpression;
+import static com.jetbrains.jetpad.vclang.model.expr.Model.Expression;
 
 public class SideTransformMapperProcessor implements MapperProcessor<Expression, Cell> {
   private static final SideTransformMapperProcessor INSTANCE = new SideTransformMapperProcessor();
