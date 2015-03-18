@@ -17,6 +17,9 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
 
+  @Override
+  public void setWellTyped(Expression wellTyped) {}
+
   public final Expression liftIndex(int from, int on) {
     return accept(new LiftIndexVisitor(from, on));
   }

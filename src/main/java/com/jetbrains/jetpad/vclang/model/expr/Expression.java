@@ -11,4 +11,9 @@ public abstract class Expression extends Node implements Abstract.Expression {
   public Property<com.jetbrains.jetpad.vclang.term.expr.Expression> wellTypedExpr() {
     return myWellTypedExpr;
   }
+
+  @Override
+  public void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
+    myWellTypedExpr.set(wellTyped);
+  }
 }

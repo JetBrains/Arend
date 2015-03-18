@@ -72,22 +72,25 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
     checkType(expectedType, result.type, expr.getArgument());
+    expr.setWellTyped(result.expression);
     return result;
   }
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    Expression actualType = expr.getDefinition().getSignature().getType();
-    checkType(expectedType, actualType, expr);
-    return new Result(DefCall(expr.getDefinition()), actualType);
+    Result result = new Result(DefCall(expr.getDefinition()), expr.getDefinition().getSignature().getType());
+    checkType(expectedType, result.type, expr);
+    expr.setWellTyped(result.expression);
+    return result;
   }
 
   @Override
   public Result visitIndex(Abstract.IndexExpression expr, Expression expectedType) {
     assert expr.getIndex() < myLocalContext.size();
-    Expression actualType = myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getSignature().getType().liftIndex(0, expr.getIndex() + 1);
-    checkType(expectedType, actualType, expr);
-    return new Result(Index(expr.getIndex()), actualType);
+    Result result = new Result(Index(expr.getIndex()), myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getSignature().getType().liftIndex(0, expr.getIndex() + 1));
+    checkType(expectedType, result.type, expr);
+    expr.setWellTyped(result.expression);
+    return result;
   }
 
   @Override
@@ -102,7 +105,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(type.getDomain()), new VarExpression(expr.getVariable())));
       Result body = expr.getBody().accept(this, type.getCodomain());
       myLocalContext.remove(myLocalContext.size() - 1);
-      return new Result(Lam(expr.getVariable(), body.expression), Pi(type.isExplicit(), type.getVariable(), type.getDomain(), body.type));
+      Result result = new Result(Lam(expr.getVariable(), body.expression), Pi(type.isExplicit(), type.getVariable(), type.getDomain(), body.type));
+      expr.setWellTyped(result.expression);
+      return result;
     } else {
       throw new TypeMismatchException(expectedNorm, Pi(Var("_"), Var("_")), expr);
     }
@@ -112,6 +117,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitNat(Abstract.NatExpression expr, Expression expectedType) {
     Expression actualType = Universe(0);
     checkType(expectedType, actualType, expr);
+    expr.setWellTyped(Nat());
     return new Result(Nat(), actualType);
   }
 
@@ -122,6 +128,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression type = ((PiExpression)expectedType).getDomain();
       Expression actualType = Pi(type, Pi(Pi(Nat(), Pi(type, type)), Pi(Nat(), type)));
       checkType(expectedType, actualType, expr);
+      expr.setWellTyped(Nelim());
       return new Result(Nelim(), actualType);
     } else {
       throw new TypeInferenceException(expr);
@@ -135,13 +142,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(domainResult.expression), Var(expr.getVariable())));
     Result codomainResult = expr.getCodomain().accept(this, Universe(-1));
     myLocalContext.remove(myLocalContext.size() - 1);
-    return new Result(Pi(expr.isExplicit(), expr.getVariable(), domainResult.expression, codomainResult.expression), Universe(Math.max(((UniverseExpression) domainResult.type).getLevel(), ((UniverseExpression) codomainResult.type).getLevel())));
+    Result result = new Result(Pi(expr.isExplicit(), expr.getVariable(), domainResult.expression, codomainResult.expression), Universe(Math.max(((UniverseExpression) domainResult.type).getLevel(), ((UniverseExpression) codomainResult.type).getLevel())));
+    expr.setWellTyped(result.expression);
+    return result;
   }
 
   @Override
   public Result visitSuc(Abstract.SucExpression expr, Expression expectedType) {
     Expression actualType = Pi(Nat(), Nat());
     checkType(expectedType, actualType, expr);
+    expr.setWellTyped(Suc());
     return new Result(Suc(), actualType);
   }
 
@@ -149,7 +159,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
     Expression actualType = Universe(expr.getLevel() == -1 ? -1 : expr.getLevel() + 1);
     checkType(expectedType, actualType, expr);
-    return new Result(Universe(expr.getLevel()), actualType);
+    Result result = new Result(Universe(expr.getLevel()), actualType);
+    expr.setWellTyped(result.expression);
+    return result;
   }
 
   @Override
@@ -161,7 +173,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (expr.getName().equals(def.getName())) {
         Expression actualType = def.getSignature().getType().liftIndex(0, index + 1);
         checkType(expectedType, actualType, expr);
-        return new Result(Index(index), actualType);
+        Result result = new Result(Index(index), actualType);
+        expr.setWellTyped(result.expression);
+        return result;
       }
       ++index;
     }
@@ -171,12 +185,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     Expression actualType = def.getSignature().getType();
     checkType(expectedType, actualType, expr);
-    return new Result(DefCall(def), actualType);
+    Result result = new Result(DefCall(def), actualType);
+    expr.setWellTyped(result.expression);
+    return result;
   }
 
   @Override
   public Result visitZero(Abstract.ZeroExpression expr, Expression expectedType) {
     checkType(expectedType, Nat(), Zero());
+    expr.setWellTyped(Zero());
     return new Result(Zero(), Nat());
   }
 }

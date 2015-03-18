@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 public class Abstract {
   public static interface Expression {
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
+    public void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
   public static interface AppExpression extends Expression {
