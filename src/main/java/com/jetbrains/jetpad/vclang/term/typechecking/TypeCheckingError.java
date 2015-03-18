@@ -2,17 +2,21 @@ package com.jetbrains.jetpad.vclang.term.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
-public class TypeCheckingException extends RuntimeException {
+public class TypeCheckingError {
   private final Abstract.Expression expression;
   private final String message;
 
-  public TypeCheckingException(String message, Abstract.Expression expression) {
+  public TypeCheckingError(String message, Abstract.Expression expression) {
     this.message = message;
     this.expression = expression;
   }
 
   public Abstract.Expression getExpression() {
     return expression;
+  }
+
+  public String getMessage() {
+    return message;
   }
 
   @Override

@@ -1,23 +1,25 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
-import com.jetbrains.jetpad.vclang.term.NotInScopeException;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingException;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeInferenceException;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchException;
+import com.jetbrains.jetpad.vclang.term.typechecking.NotInScopeError;
+import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.typechecking.TypeInferenceError;
+import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchError;
 
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.Error;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
-  private Map<String, Definition> myGlobalContext;
-  private List<Definition> myLocalContext;
+  private final Map<String, Definition> myGlobalContext;
+  private final List<Definition> myLocalContext;
+  private final List<TypeCheckingError> myErrors;
 
   public static class Result {
     public Expression expression;
@@ -29,18 +31,28 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private void checkType(Expression expectedType, Expression actualType, Abstract.Expression expression) throws TypeCheckingException {
-    if (expectedType == null) return;
-    Expression actualNorm = actualType.normalize();
-    Expression expectedNorm = expectedType.normalize();
-    if (!expectedNorm.equals(actualNorm)) {
-      throw new TypeMismatchException(expectedNorm, actualNorm, expression);
-    }
-  }
-
-  public CheckTypeVisitor(Map<String, Definition> globalContext, List<Definition> localContext) {
+  public CheckTypeVisitor(Map<String, Definition> globalContext, List<Definition> localContext, List<TypeCheckingError> errors) {
     myGlobalContext = globalContext;
     myLocalContext = localContext;
+    myErrors = errors;
+  }
+
+  private Result checkResult(Expression expectedType, Result result, Abstract.Expression expression) {
+    if (expectedType == null) {
+      expression.setWellTyped(result.expression);
+      return result;
+    }
+    Expression actualNorm = result.type.normalize();
+    Expression expectedNorm = expectedType.normalize();
+    if (expectedNorm.equals(actualNorm)) {
+      expression.setWellTyped(result.expression);
+      return result;
+    } else {
+      TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression);
+      expression.setWellTyped(Error(result.expression, error));
+      myErrors.add(error);
+      return null;
+    }
   }
 
   /*
@@ -59,44 +71,50 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result result;
     if (expr.getFunction() instanceof Abstract.NelimExpression) {
       Result argument = expr.getArgument().accept(this, null);
+      if (argument == null) return null;
       result = new Result(Apps(Nelim(), argument.expression), Pi(Pi(Nat(), Pi(argument.type, argument.type)), Pi(Nat(), argument.type)));
     } else {
       Result function = expr.getFunction().accept(this, null);
+      if (function == null) {
+        expr.getArgument().accept(this, null);
+        return null;
+      }
       Expression functionType = function.type.normalize();
       if (functionType instanceof PiExpression) {
         PiExpression piType = (PiExpression) functionType;
         Result argument = expr.getArgument().accept(this, piType.getDomain());
+        if (argument == null) return null;
         result = new Result(Apps(function.expression, argument.expression), piType.getCodomain().subst(argument.expression, 0));
       } else {
-        throw new TypeMismatchException(Pi(Var("_"), Var("_")), functionType, expr.getFunction());
+        TypeCheckingError error = new TypeMismatchError(Pi(Var("_"), Var("_")), functionType, expr.getFunction());
+        expr.getFunction().setWellTyped(Error(function.expression, error));
+        myErrors.add(error);
+        expr.getArgument().accept(this, null);
+        return null;
       }
     }
-    checkType(expectedType, result.type, expr.getArgument());
-    expr.setWellTyped(result.expression);
-    return result;
+    return checkResult(expectedType, result, expr);
   }
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    Result result = new Result(DefCall(expr.getDefinition()), expr.getDefinition().getSignature().getType());
-    checkType(expectedType, result.type, expr);
-    expr.setWellTyped(result.expression);
-    return result;
+    return checkResult(expectedType, new Result(DefCall(expr.getDefinition()), expr.getDefinition().getSignature().getType()), expr);
   }
 
   @Override
   public Result visitIndex(Abstract.IndexExpression expr, Expression expectedType) {
     assert expr.getIndex() < myLocalContext.size();
-    Result result = new Result(Index(expr.getIndex()), myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getSignature().getType().liftIndex(0, expr.getIndex() + 1));
-    checkType(expectedType, result.type, expr);
-    expr.setWellTyped(result.expression);
-    return result;
+    Expression actualType = myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getSignature().getType().liftIndex(0, expr.getIndex() + 1);
+    return checkResult(expectedType, new Result(Index(expr.getIndex()), actualType), expr);
   }
 
   @Override
   public Result visitLam(Abstract.LamExpression expr, Expression expectedType) {
     if (expectedType == null) {
-      throw new TypeInferenceException(expr);
+      TypeCheckingError error = new TypeInferenceError(expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
     }
     Expression expectedNorm = expectedType.normalize();
     if (expectedNorm instanceof PiExpression) {
@@ -105,63 +123,52 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(type.getDomain()), new VarExpression(expr.getVariable())));
       Result body = expr.getBody().accept(this, type.getCodomain());
       myLocalContext.remove(myLocalContext.size() - 1);
+      if (body == null) return null;
       Result result = new Result(Lam(expr.getVariable(), body.expression), Pi(type.isExplicit(), type.getVariable(), type.getDomain(), body.type));
       expr.setWellTyped(result.expression);
       return result;
     } else {
-      throw new TypeMismatchException(expectedNorm, Pi(Var("_"), Var("_")), expr);
+      TypeCheckingError error = new TypeMismatchError(expectedNorm, Pi(Var("_"), Var("_")), expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
     }
   }
 
   @Override
   public Result visitNat(Abstract.NatExpression expr, Expression expectedType) {
-    Expression actualType = Universe(0);
-    checkType(expectedType, actualType, expr);
-    expr.setWellTyped(Nat());
-    return new Result(Nat(), actualType);
+    return checkResult(expectedType, new Result(Nat(), Universe(0)), expr);
   }
 
   @Override
   public Result visitNelim(Abstract.NelimExpression expr, Expression expectedType) {
-    expectedType = expectedType.normalize();
-    if (expectedType instanceof PiExpression) {
-      Expression type = ((PiExpression)expectedType).getDomain();
-      Expression actualType = Pi(type, Pi(Pi(Nat(), Pi(type, type)), Pi(Nat(), type)));
-      checkType(expectedType, actualType, expr);
-      expr.setWellTyped(Nelim());
-      return new Result(Nelim(), actualType);
-    } else {
-      throw new TypeInferenceException(expr);
-    }
+    TypeCheckingError error = new TypeCheckingError("Expected at least one argument to N-elim", expr);
+    expr.setWellTyped(Error(null, error));
+    myErrors.add(error);
+    return null;
   }
 
   @Override
   public Result visitPi(Abstract.PiExpression expr, Expression expectedType) {
     Result domainResult = expr.getDomain().accept(this, Universe(-1));
+    if (domainResult == null) return null;
     // TODO: This is ugly. Fix it.
     myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(domainResult.expression), Var(expr.getVariable())));
     Result codomainResult = expr.getCodomain().accept(this, Universe(-1));
     myLocalContext.remove(myLocalContext.size() - 1);
-    Result result = new Result(Pi(expr.isExplicit(), expr.getVariable(), domainResult.expression, codomainResult.expression), Universe(Math.max(((UniverseExpression) domainResult.type).getLevel(), ((UniverseExpression) codomainResult.type).getLevel())));
-    expr.setWellTyped(result.expression);
-    return result;
+    if (codomainResult == null) return null;
+    Expression actualType = Universe(Math.max(((UniverseExpression) domainResult.type).getLevel(), ((UniverseExpression) codomainResult.type).getLevel()));
+    return checkResult(expectedType, new Result(Pi(expr.isExplicit(), expr.getVariable(), domainResult.expression, codomainResult.expression), actualType), expr);
   }
 
   @Override
   public Result visitSuc(Abstract.SucExpression expr, Expression expectedType) {
-    Expression actualType = Pi(Nat(), Nat());
-    checkType(expectedType, actualType, expr);
-    expr.setWellTyped(Suc());
-    return new Result(Suc(), actualType);
+    return checkResult(expectedType, new Result(Suc(), Pi(Nat(), Nat())), expr);
   }
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
-    Expression actualType = Universe(expr.getLevel() == -1 ? -1 : expr.getLevel() + 1);
-    checkType(expectedType, actualType, expr);
-    Result result = new Result(Universe(expr.getLevel()), actualType);
-    expr.setWellTyped(result.expression);
-    return result;
+    return checkResult(expectedType, new Result(Universe(expr.getLevel()), Universe(expr.getLevel() == -1 ? -1 : expr.getLevel() + 1)), expr);
   }
 
   @Override
@@ -171,29 +178,23 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     while (it.hasPrevious()) {
       Definition def = it.previous();
       if (expr.getName().equals(def.getName())) {
-        Expression actualType = def.getSignature().getType().liftIndex(0, index + 1);
-        checkType(expectedType, actualType, expr);
-        Result result = new Result(Index(index), actualType);
-        expr.setWellTyped(result.expression);
-        return result;
+        return checkResult(expectedType, new Result(Index(index), def.getSignature().getType().liftIndex(0, index + 1)), expr);
       }
       ++index;
     }
     Definition def = myGlobalContext.get(expr.getName());
     if (def == null) {
-      throw new NotInScopeException(expr.getName());
+      NotInScopeError error = new NotInScopeError(expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    } else {
+      return checkResult(expectedType, new Result(DefCall(def), def.getSignature().getType()), expr);
     }
-    Expression actualType = def.getSignature().getType();
-    checkType(expectedType, actualType, expr);
-    Result result = new Result(DefCall(def), actualType);
-    expr.setWellTyped(result.expression);
-    return result;
   }
 
   @Override
   public Result visitZero(Abstract.ZeroExpression expr, Expression expectedType) {
-    checkType(expectedType, Nat(), Zero());
-    expr.setWellTyped(Zero());
-    return new Result(Zero(), Nat());
+    return checkResult(expectedType, new Result(Zero(), Nat()), expr);
   }
 }

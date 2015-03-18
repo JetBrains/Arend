@@ -75,6 +75,6 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitError(ErrorExpression expr) {
-    return Error(expr.expression().accept(this), expr.message());
+    return Error(expr.expression() == null ? null : expr.expression().accept(this), expr.error());
   }
 }

@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingException;
+import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.visitor.*;
 
 import java.io.PrintStream;
@@ -36,8 +36,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     accept(new PrettyPrintVisitor(stream, names), prec);
   }
 
-  public final CheckTypeVisitor.Result checkType(Map<String, Definition> globalContext, List<Definition> localContext, Expression expectedType) throws TypeCheckingException {
-    return accept(new CheckTypeVisitor(globalContext, localContext), expectedType);
+  public final CheckTypeVisitor.Result checkType(Map<String, Definition> globalContext, List<Definition> localContext, Expression expectedType, List<TypeCheckingError> errors) {
+    return accept(new CheckTypeVisitor(globalContext, localContext, errors), expectedType);
   }
 
   public static Expression Apps(Expression expr, Expression... exprs) {
@@ -99,7 +99,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return NELIM;
   }
 
-  public static ErrorExpression Error(Expression expr, String message) {
-    return new ErrorExpression(expr, message);
+  public static ErrorExpression Error(Expression expr, TypeCheckingError error) {
+    return new ErrorExpression(expr, error);
   }
 }

@@ -1,23 +1,24 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class ErrorExpression extends Expression {
   private final Expression myExpr;
-  private final String myMessage;
+  private final TypeCheckingError myError;
 
-  public ErrorExpression(Expression expr, String message) {
+  public ErrorExpression(Expression expr, TypeCheckingError error) {
     myExpr = expr;
-    myMessage = message;
+    myError = error;
   }
 
   public Expression expression() {
     return myExpr;
   }
 
-  public String message() {
-    return myMessage;
+  public TypeCheckingError error() {
+    return myError;
   }
 
   @Override

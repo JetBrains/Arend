@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
 
 import java.io.PrintStream;
@@ -33,10 +34,10 @@ public final class FunctionDefinition extends Definition {
   }
 
   @Override
-  public FunctionDefinition checkTypes(Map<String, Definition> globalContext) {
-    super.checkTypes(globalContext);
+  public FunctionDefinition checkTypes(Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
+    super.checkTypes(globalContext, errors);
     Expression type = getSignature().getType();
-    CheckTypeVisitor.Result result = term.checkType(globalContext, new ArrayList<Definition>(), type);
-    return new FunctionDefinition(getName(), new Signature(result.type), result.expression);
+    CheckTypeVisitor.Result result = term.checkType(globalContext, new ArrayList<Definition>(), type, errors);
+    return result == null ? null : new FunctionDefinition(getName(), new Signature(result.type), result.expression);
   }
 }
