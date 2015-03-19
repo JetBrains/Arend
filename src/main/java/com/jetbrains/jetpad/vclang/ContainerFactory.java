@@ -1,25 +1,53 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.editor.ModuleMapper;
+import com.jetbrains.jetpad.vclang.editor.error.ErrorListMapper;
 import com.jetbrains.jetpad.vclang.model.Module;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import jetbrains.jetpad.cell.CellContainer;
-import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.projectional.util.RootController;
 
 import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
 
 public class ContainerFactory {
-  public static CellContainer getContainer() {
+  private static CellContainer MAIN_CONTAINER;
+  private static CellContainer ERRORS_CONTAINER;
+  private static ModuleMapper MAIN_ROOT_MAPPER;
+  private static ErrorListMapper ERRORS_ROOT_MAPPER;
+
+  static {
     Module m = createModel();
-    Mapper<Module, ModuleMapper.Cell> rootMapper = new ModuleMapper(m);
-    rootMapper.attachRoot();
+    MAIN_ROOT_MAPPER = new ModuleMapper(m);
+    MAIN_ROOT_MAPPER.attachRoot();
 
-    CellContainer cellContainer = new CellContainer();
-    cellContainer.root.children().add(rootMapper.getTarget());
-    RootController.install(cellContainer);
+    MAIN_CONTAINER = new CellContainer();
+    MAIN_CONTAINER.root.children().add(MAIN_ROOT_MAPPER.getTarget());
+    RootController.install(MAIN_CONTAINER);
+  }
 
-    return cellContainer;
+  static {
+    ERRORS_ROOT_MAPPER = new ErrorListMapper();
+    ERRORS_ROOT_MAPPER.attachRoot();
+
+    ERRORS_CONTAINER = new CellContainer();
+    ERRORS_CONTAINER.root.children().add(ERRORS_ROOT_MAPPER.getTarget());
+    RootController.install(ERRORS_CONTAINER);
+  }
+
+  public static CellContainer getMainContainer() {
+    return MAIN_CONTAINER;
+  }
+
+  public static CellContainer getErrorsContainer() {
+    return ERRORS_CONTAINER;
+  }
+
+  public static ModuleMapper getMainRootMapper() {
+    return MAIN_ROOT_MAPPER;
+  }
+
+  public static ErrorListMapper getErrorsRootMapper() {
+    return ERRORS_ROOT_MAPPER;
   }
 
   private static Module createModel() {

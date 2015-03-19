@@ -55,7 +55,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private Result typeCheck(Abstract.Expression expr, Expression expectedType) {
+  public Result typeCheck(Abstract.Expression expr, Expression expectedType) {
     if (expr == null) {
       return null;
     } else {

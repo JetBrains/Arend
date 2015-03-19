@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.editor;
 
+import com.jetbrains.jetpad.vclang.ContainerFactory;
 import com.jetbrains.jetpad.vclang.model.Module;
 import com.jetbrains.jetpad.vclang.model.definition.Definition;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.model.error.ErrorMessage;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
@@ -32,8 +34,16 @@ public class ModuleMapper extends Mapper<Module, ModuleMapper.Cell> {
           for (Definition def : getSource().definitions) {
             if (def instanceof FunctionDefinition) {
               FunctionDefinition funDef = (FunctionDefinition) def;
-              CheckTypeVisitor.Result typeResult = funDef.getResultType().accept(new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<com.jetbrains.jetpad.vclang.term.definition.Definition>(), errors), new UniverseExpression());
-              funDef.getTerm().accept(new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<com.jetbrains.jetpad.vclang.term.definition.Definition>(), errors), typeResult == null ? null : typeResult.expression);
+              CheckTypeVisitor visitor = new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<com.jetbrains.jetpad.vclang.term.definition.Definition>(), errors);
+              CheckTypeVisitor.Result typeResult = visitor.typeCheck(funDef.getResultType(), new UniverseExpression());
+              visitor.typeCheck(funDef.getTerm(), typeResult == null ? null : typeResult.expression);
+            }
+            List<ErrorMessage> errorList = ContainerFactory.getErrorsRootMapper().getSource();
+            errorList.clear();
+            for (TypeCheckingError error : errors) {
+              ErrorMessage msg = new ErrorMessage();
+              errorList.add(msg);
+              msg.message().set(error.toString());
             }
           }
           event.consume();

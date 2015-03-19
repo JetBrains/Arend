@@ -8,6 +8,6 @@ import static com.google.gwt.query.client.GQuery.$;
 public class GwtMain implements EntryPoint {
   @Override
   public void onModuleLoad() {
-    new CellContainerToDomMapper(ContainerFactory.getContainer(), $("#proofDemo").get(0)).attachRoot();
+    new CellContainerToDomMapper(ContainerFactory.getMainContainer(), $("#proofDemo").get(0)).attachRoot();
   }
 }
