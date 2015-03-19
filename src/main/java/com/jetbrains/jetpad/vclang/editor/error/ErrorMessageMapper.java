@@ -24,6 +24,7 @@ public class ErrorMessageMapper extends Mapper<ErrorMessage, ErrorMessageMapper.
 
     public Cell() {
       CellFactory.to(this, message);
+      message.focusable().set(true);
     }
   }
 }

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
+import com.google.common.collect.Lists;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
@@ -9,9 +10,7 @@ import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeInferenceError;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchError;
 
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.Error;
@@ -63,45 +62,52 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  /*
-  public Expression visitApps(Abstract.Expression fun, List<Expression> args) {
+  private Result visitApps(Abstract.Expression fun, List<Abstract.Expression> args) {
     if (fun instanceof Abstract.NelimExpression) {
-      Expression type = args.get(0).accept(this);
-      return Pi(Pi(Nat(), Pi(type, type)), Pi(Nat(), type));
+      Result argument = typeCheck(args.get(0), null);
+      if (argument == null) return null;
+      return new Result(Apps(Nelim(), argument.expression), Pi(Pi(Nat(), Pi(argument.type, argument.type)), Pi(Nat(), argument.type)));
+    } else {
+      Result function = typeCheck(fun, null);
+      if (function == null) {
+        for (Abstract.Expression arg : args) {
+          typeCheck(arg, null);
+        }
+        return null;
+      }
+      Expression resultExpr = function.expression;
+      Expression resultType = function.type;
+      Iterator<Abstract.Expression> it = args.iterator();
+      while (it.hasNext()) {
+        resultType = resultType.normalize();
+        if (resultType instanceof PiExpression) {
+          PiExpression piType = (PiExpression) resultType;
+          Result argument = typeCheck(it.next(), piType.getDomain());
+          if (argument == null) return null;
+          resultExpr = Apps(resultExpr, argument.expression);
+          resultType = piType.getCodomain().subst(argument.expression, 0);
+        } else {
+          TypeCheckingError error = new TypeMismatchError(Pi(Var("_"), Var("_")), resultType, fun);
+          fun.setWellTyped(Error(function.expression, error));
+          myErrors.add(error);
+          while (it.hasNext()) {
+            typeCheck(it.next(), null);
+          }
+          return null;
+        }
+      }
+      return new Result(resultExpr, resultType);
     }
-    Expression funType = fun.accept(this).normalize();
-    return null;
   }
-  */
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
-    Result result;
-    if (expr.getFunction() instanceof Abstract.NelimExpression) {
-      Result argument = typeCheck(expr.getArgument(), null);
-      if (argument == null) return null;
-      result = new Result(Apps(Nelim(), argument.expression), Pi(Pi(Nat(), Pi(argument.type, argument.type)), Pi(Nat(), argument.type)));
-    } else {
-      Result function = typeCheck(expr.getFunction(), null);
-      if (function == null) {
-        typeCheck(expr.getArgument(), null);
-        return null;
-      }
-      Expression functionType = function.type.normalize();
-      if (functionType instanceof PiExpression) {
-        PiExpression piType = (PiExpression) functionType;
-        Result argument = typeCheck(expr.getArgument(), piType.getDomain());
-        if (argument == null) return null;
-        result = new Result(Apps(function.expression, argument.expression), piType.getCodomain().subst(argument.expression, 0));
-      } else {
-        TypeCheckingError error = new TypeMismatchError(Pi(Var("_"), Var("_")), functionType, expr.getFunction());
-        expr.getFunction().setWellTyped(Error(function.expression, error));
-        myErrors.add(error);
-        typeCheck(expr.getArgument(), null);
-        return null;
-      }
+    List<Abstract.Expression> args = new ArrayList<>();
+    Abstract.Expression fexpr;
+    for (fexpr = expr; fexpr instanceof Abstract.AppExpression; fexpr = ((Abstract.AppExpression) fexpr).getFunction()) {
+      args.add(((Abstract.AppExpression) fexpr).getArgument());
     }
-    return checkResult(expectedType, result, expr);
+    return checkResult(expectedType, visitApps(fexpr, Lists.reverse(args)), expr);
   }
 
   @Override
