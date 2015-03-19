@@ -41,8 +41,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       expression.setWellTyped(result.expression);
       return result;
     }
-    Expression actualNorm = result.type.normalize();
-    Expression expectedNorm = expectedType.normalize();
+    Expression actualNorm = result.type.normalize(NormalizeVisitor.Mode.NF);
+    Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
     if (expectedNorm.equals(actualNorm)) {
       expression.setWellTyped(result.expression);
       return result;
@@ -79,7 +79,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression resultType = function.type;
       Iterator<Abstract.Expression> it = args.iterator();
       while (it.hasNext()) {
-        resultType = resultType.normalize();
+        resultType = resultType.normalize(NormalizeVisitor.Mode.WHNF);
         if (resultType instanceof PiExpression) {
           PiExpression piType = (PiExpression) resultType;
           Result argument = typeCheck(it.next(), piType.getDomain());
@@ -130,7 +130,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrors.add(error);
       return null;
     }
-    Expression expectedNorm = expectedType.normalize();
+    Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
     if (expectedNorm instanceof PiExpression) {
       PiExpression type = (PiExpression)expectedNorm;
       // TODO: This is ugly. Fix it.

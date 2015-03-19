@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.visitor.NormalizeVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 
@@ -35,7 +36,7 @@ public class ConsoleMain {
       if (def instanceof FunctionDefinition) {
         def = def.checkTypes(context, errors);
         if (def != null) {
-          def = new FunctionDefinition(def.getName(), def.getSignature(), ((FunctionDefinition) def).getTerm().normalize());
+          def = new FunctionDefinition(def.getName(), def.getSignature(), ((FunctionDefinition) def).getTerm().normalize(NormalizeVisitor.Mode.NF));
           context.put(def.getName(), def);
         }
       }

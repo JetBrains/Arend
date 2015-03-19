@@ -7,8 +7,13 @@ import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.Error;
 
 // TODO: Rewrite normalization using thunks
-// TODO: Add normalization to whnf
 public class NormalizeVisitor implements ExpressionVisitor<Expression> {
+  private final Mode myMode;
+
+  public NormalizeVisitor(Mode mode) {
+    myMode = mode;
+  }
+
   @Override
   public Expression visitApp(AppExpression expr) {
     Expression function1 = expr.getFunction().accept(this);
@@ -24,7 +29,9 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
           Expression zeroClause = appExpr2.getArgument();
           Expression sucClause = appExpr1.getArgument();
           Expression caseExpr = expr.getArgument().accept(this);
-          if (caseExpr instanceof ZeroExpression) return zeroClause;
+          if (caseExpr instanceof ZeroExpression) {
+            return myMode == Mode.WHNF ? zeroClause.accept(this) : zeroClause;
+          }
           if (caseExpr instanceof AppExpression) {
             AppExpression appExpr3 = (AppExpression)caseExpr;
             if (appExpr3.getFunction() instanceof SucExpression) {
@@ -36,7 +43,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         }
       }
     }
-    return Apps(function1, expr.getArgument().accept(this));
+    return Apps(function1, myMode == Mode.WHNF ? expr.getArgument() : expr.getArgument().accept(this));
   }
 
   @Override
@@ -55,7 +62,11 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLam(LamExpression expr) {
-    return Lam(expr.getVariable(), expr.getBody().accept(this));
+    if (myMode == Mode.NF) {
+      return Lam(expr.getVariable(), expr.getBody().accept(this));
+    } else {
+      return expr;
+    }
   }
 
   @Override
@@ -70,7 +81,11 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr) {
-    return Pi(expr.isExplicit(), expr.getVariable(), expr.getDomain().accept(this), expr.getCodomain().accept(this));
+    if (myMode == Mode.WHNF) {
+      return expr;
+    } else {
+      return Pi(expr.isExplicit(), expr.getVariable(), expr.getDomain().accept(this), expr.getCodomain().accept(this));
+    }
   }
 
   @Override
@@ -97,4 +112,6 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   public Expression visitError(ErrorExpression expr) {
     return Error(expr.expression() == null ? null : expr.expression().accept(this), expr.error());
   }
+
+  public static enum Mode { WHNF, NF }
 }

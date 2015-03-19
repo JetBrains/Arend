@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
+import com.jetbrains.jetpad.vclang.term.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,11 +18,11 @@ public class Signature {
 
   public Signature(Expression type) {
     List<Argument> args = new ArrayList<>();
-    type = type.normalize();
+    type = type.normalize(NormalizeVisitor.Mode.WHNF);
     while (type instanceof PiExpression) {
       PiExpression pi = (PiExpression)type;
       args.add(new Argument(pi.isExplicit(), pi.getVariable(), pi.getDomain()));
-      type = pi.getCodomain();
+      type = pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
     }
     arguments = args.toArray(new Argument[args.size()]);
     resultType = type;

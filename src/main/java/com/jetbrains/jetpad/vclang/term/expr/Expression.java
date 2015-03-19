@@ -28,8 +28,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return accept(new SubstVisitor(substExpr, from));
   }
 
-  public final Expression normalize() {
-    return accept(new NormalizeVisitor());
+  public final Expression normalize(NormalizeVisitor.Mode mode) {
+    return accept(new NormalizeVisitor(mode));
   }
 
   public final void prettyPrint(PrintStream stream, List<String> names, int prec) {
