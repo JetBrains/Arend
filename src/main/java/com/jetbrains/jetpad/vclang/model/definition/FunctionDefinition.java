@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.model.definition;
 
+import com.jetbrains.jetpad.vclang.model.Node;
 import jetbrains.jetpad.model.children.ChildProperty;
 import jetbrains.jetpad.model.property.Property;
 
@@ -14,5 +15,14 @@ public class FunctionDefinition extends TypedDefinition {
 
   public Property<Expression> term() {
     return myTerm;
+  }
+
+  @Override
+  public Node[] children() {
+    Node[] nodes = new Node[arguments().size() + 2];
+    arguments().toArray(nodes);
+    nodes[arguments().size()] = getResultType();
+    nodes[arguments().size() + 1] = getTerm();
+    return nodes;
   }
 }

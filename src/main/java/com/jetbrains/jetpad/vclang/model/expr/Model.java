@@ -47,6 +47,11 @@ public class Model {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitApp(this, params);
     }
+
+    @Override
+    public Node[] children() {
+      return new Node[] { getFunction(), getArgument() };
+    }
   }
 
   // TODO: Replace myName with a list of variables
@@ -83,6 +88,11 @@ public class Model {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       throw new IllegalStateException();
     }
+
+    @Override
+    public Node[] children() {
+      return new Node[] { getType() };
+    }
   }
 
   public static class LamExpression extends Expression implements Abstract.LamExpression {
@@ -111,6 +121,11 @@ public class Model {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitLam(this, params);
     }
+
+    @Override
+    public Node[] children() {
+      return new Node[] { getBody() };
+    }
   }
 
   public static class NatExpression extends Expression implements Abstract.NatExpression {
@@ -118,12 +133,22 @@ public class Model {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitNat(this, params);
     }
+
+    @Override
+    public Node[] children() {
+      return new Node[0];
+    }
   }
 
   public static class NelimExpression extends Expression implements Abstract.NelimExpression {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitNelim(this, params);
+    }
+
+    @Override
+    public Node[] children() {
+      return new Node[0];
     }
   }
 
@@ -151,6 +176,11 @@ public class Model {
       } else {
         return expr;
       }
+    }
+
+    @Override
+    public Node[] children() {
+      return new Node[] { getExpression() };
     }
   }
 
@@ -201,12 +231,22 @@ public class Model {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitPi(this, params);
     }
+
+    @Override
+    public Node[] children() {
+      return new Node[] { myDomain.get(), getCodomain() };
+    }
   }
 
   public static class SucExpression extends Expression implements Abstract.SucExpression {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitSuc(this, params);
+    }
+
+    @Override
+    public Node[] children() {
+      return new Node[0];
     }
   }
 
@@ -226,6 +266,11 @@ public class Model {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitUniverse(this, params);
     }
+
+    @Override
+    public Node[] children() {
+      return new Node[0];
+    }
   }
 
   public static class VarExpression extends Expression implements Abstract.VarExpression {
@@ -244,12 +289,22 @@ public class Model {
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitVar(this, params);
     }
+
+    @Override
+    public Node[] children() {
+      return new Node[0];
+    }
   }
 
   public static class ZeroExpression extends Expression implements Abstract.ZeroExpression {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitZero(this, params);
+    }
+
+    @Override
+    public Node[] children() {
+      return new Node[0];
     }
   }
 }

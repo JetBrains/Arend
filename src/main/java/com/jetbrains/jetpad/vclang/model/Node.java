@@ -6,7 +6,7 @@ import jetbrains.jetpad.model.children.HasParent;
 
 import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
 
-public class Node extends HasParent<Node, Node> {
+public abstract class Node extends HasParent<Node, Node> {
   public Position position() {
     Node parent = parent().get();
     if (parent instanceof FunctionDefinition) {
@@ -84,4 +84,6 @@ public class Node extends HasParent<Node, Node> {
         throw new IllegalStateException();
     }
   }
+
+  public abstract Node[] children();
 }

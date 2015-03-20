@@ -37,6 +37,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private Result checkResult(Expression expectedType, Result result, Abstract.Expression expression) {
+    if (result == null) return null;
     if (expectedType == null) {
       expression.setWellTyped(result.expression);
       return result;
