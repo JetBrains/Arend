@@ -14,5 +14,5 @@ public interface ExpressionVisitor<T> {
   T visitUniverse(UniverseExpression expr);
   T visitVar(VarExpression expr);
   T visitZero(ZeroExpression expr);
-  T visitError(ErrorExpression expr);
+  T visitHole(HoleExpression expr);
 }

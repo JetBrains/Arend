@@ -4,35 +4,27 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class LamExpression extends Expression implements Abstract.LamExpression {
-  private final String variable;
-  private final Expression body;
+  private final String myVariable;
+  private final Expression myBody;
 
-  public LamExpression(String variable, Expression expression) {
-    this.variable = variable;
-    this.body = expression;
+  public LamExpression(String variable, Expression body) {
+    myVariable = variable;
+    myBody = body;
   }
 
   @Override
   public String getVariable() {
-    return variable;
+    return myVariable;
   }
 
   @Override
   public Expression getBody() {
-    return body;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (o == this) return true;
-    if (!(o instanceof LamExpression)) return false;
-    LamExpression other = (LamExpression)o;
-    return body.equals(other.body);
+    return myBody;
   }
 
   @Override
   public String toString() {
-    return "\\" + variable + " -> " + body;
+    return "\\" + myVariable + " -> " + myBody;
   }
 
   @Override

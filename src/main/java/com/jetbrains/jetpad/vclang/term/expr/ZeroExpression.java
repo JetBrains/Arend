@@ -5,11 +5,6 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class ZeroExpression extends Expression implements Abstract.ZeroExpression {
   @Override
-  public boolean equals(Object o) {
-    return o == this || o instanceof ZeroExpression;
-  }
-
-  @Override
   public String toString() {
     return "0";
   }

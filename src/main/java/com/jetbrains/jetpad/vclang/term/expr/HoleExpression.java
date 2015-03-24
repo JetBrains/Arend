@@ -3,30 +3,26 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
-public class VarExpression extends Expression implements Abstract.VarExpression {
-  private final String name;
+public abstract class HoleExpression extends Expression implements Abstract.HoleExpression {
+  private final Expression myExpr;
 
-  public VarExpression(String name) {
-    this.name = name;
+  public HoleExpression(Expression expr) {
+    myExpr = expr;
   }
 
-  @Override
-  public String getName() {
-    return name;
+  public Expression expression() {
+    return myExpr;
   }
 
-  @Override
-  public String toString() {
-    return name;
-  }
+  public abstract HoleExpression getInstance(Expression expr);
 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitVar(this);
+    return visitor.visitHole(this);
   }
 
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitVar(this, params);
+    return visitor.visitHole(this, params);
   }
 }

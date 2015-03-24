@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.editor.definition;
+package com.jetbrains.jetpad.vclang.editor.expr;
 
 import com.jetbrains.jetpad.vclang.editor.util.Validators;
 import jetbrains.jetpad.cell.TextCell;

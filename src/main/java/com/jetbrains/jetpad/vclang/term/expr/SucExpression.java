@@ -5,11 +5,6 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class SucExpression extends Expression implements Abstract.SucExpression {
   @Override
-  public boolean equals(Object o) {
-    return o == this || o instanceof SucExpression;
-  }
-
-  @Override
   public String toString() {
     return "S";
   }

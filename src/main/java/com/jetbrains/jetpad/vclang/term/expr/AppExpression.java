@@ -4,35 +4,34 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class AppExpression extends Expression implements Abstract.AppExpression {
-  private final Expression function;
-  private final Expression argument;
+  private final Expression myFunction;
+  private final Expression myArgument;
+  private final boolean myExplicit;
 
-  public AppExpression(Expression function, Expression argument) {
-    this.function = function;
-    this.argument = argument;
+  public AppExpression(Expression function, Expression argument, boolean isExplicit) {
+    myFunction = function;
+    myArgument = argument;
+    myExplicit = isExplicit;
   }
 
   @Override
   public Expression getFunction() {
-    return function;
+    return myFunction;
   }
 
   @Override
   public Expression getArgument() {
-    return argument;
+    return myArgument;
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (o == this) return true;
-    if (!(o instanceof AppExpression)) return false;
-    AppExpression other = (AppExpression)o;
-    return function.equals(other.function) && argument.equals(other.argument);
+  public boolean isExplicit() {
+    return myExplicit;
   }
 
   @Override
   public String toString() {
-    return "(" + function.toString() + ") (" + argument.toString() + ")";
+    return "(" + myFunction.toString() + ") (" + myArgument.toString() + ")";
   }
 
   @Override

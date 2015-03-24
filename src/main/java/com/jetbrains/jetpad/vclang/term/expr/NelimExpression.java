@@ -5,11 +5,6 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class NelimExpression extends Expression implements Abstract.NelimExpression {
   @Override
-  public boolean equals(Object o) {
-    return o == this || o instanceof NelimExpression;
-  }
-
-  @Override
   public String toString() {
     return "N-elim";
   }

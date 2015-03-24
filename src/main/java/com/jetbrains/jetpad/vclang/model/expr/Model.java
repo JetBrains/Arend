@@ -35,6 +35,15 @@ public class Model {
       return myArgument.get();
     }
 
+    @Override
+    public boolean isExplicit() {
+      if (getArgument() instanceof Argument) {
+        return ((Argument) getArgument()).getExplicit();
+      } else {
+        return true;
+      }
+    }
+
     public Property<Expression> function() {
       return myFunction;
     }
@@ -227,6 +236,7 @@ public class Model {
     public Property<Expression> codomain() {
       return myCodomain;
     }
+
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitPi(this, params);

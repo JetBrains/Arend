@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.Error;
 
 // TODO: Rewrite normalization using thunks
 public class NormalizeVisitor implements ExpressionVisitor<Expression> {
@@ -109,8 +108,12 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitError(ErrorExpression expr) {
-    return Error(expr.expression() == null ? null : expr.expression().accept(this), expr.error());
+  public Expression visitHole(HoleExpression expr) {
+    if (myMode == Mode.WHNF) {
+      return expr;
+    } else {
+      return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
+    }
   }
 
   public static enum Mode { WHNF, NF }

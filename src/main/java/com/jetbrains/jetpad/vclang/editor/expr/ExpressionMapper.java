@@ -27,7 +27,20 @@ public class ExpressionMapper<E extends Model.Expression, C extends Cell> extend
         if (value == null && parent instanceof Model.Expression) {
           ((Model.Expression) parent).wellTypedExpr().set(null);
         }
-        updateBackground(value);
+        if (value == null) {
+          getTarget().background().set(null);
+          for (Node node : getSource().children()) {
+            Mapper<?, ?> mapper = getDescendantMapper(node);
+            if (mapper instanceof ExpressionMapper) {
+              Expression cvalue = ((Model.Expression) mapper.getSource()).wellTypedExpr().get();
+              if (cvalue != null) {
+                ((ExpressionMapper) mapper).updateBackground(cvalue);
+              }
+            }
+          }
+        } else {
+          updateBackground(value);
+        }
       }
     }));
   }
@@ -45,22 +58,15 @@ public class ExpressionMapper<E extends Model.Expression, C extends Cell> extend
   }
 
   private void updateBackground(Expression value) {
-    if (value == null) {
-      getTarget().background().set(null);
-      for (Node node : getSource().children()) {
-        Mapper<?, ?> mapper = getDescendantMapper(node);
-        if (mapper instanceof ExpressionMapper) {
-          ((ExpressionMapper) mapper).updateBackground(((Model.Expression) mapper.getSource()).wellTypedExpr().get());
-        }
-      }
+    if (value instanceof ErrorExpression) {
+      getTarget().background().set(Color.LIGHT_PINK);
     } else {
-      if (value instanceof ErrorExpression) {
-        getTarget().background().set(Color.LIGHT_PINK);
-      } else {
-        getTarget().background().set(Color.LIGHT_GREEN);
-      }
-      for (Node node : getSource().children()) {
-        ((Cell) getDescendantMapper(node).getTarget()).background().set(null);
+      getTarget().background().set(Color.LIGHT_GREEN);
+    }
+    for (Node node : getSource().children()) {
+      Mapper<?, ?> mapper = getDescendantMapper(node);
+      if (mapper != null) {
+        ((Cell) mapper.getTarget()).background().set(null);
       }
     }
   }

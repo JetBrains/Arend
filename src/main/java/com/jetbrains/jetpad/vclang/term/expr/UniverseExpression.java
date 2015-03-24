@@ -20,11 +20,6 @@ public class UniverseExpression extends Expression implements Abstract.UniverseE
   }
 
   @Override
-  public boolean equals(Object o) {
-    return o == this || o instanceof UniverseExpression;
-  }
-
-  @Override
   public String toString() {
     return "Type" + (level < 0 ? "" : level);
   }

@@ -149,4 +149,14 @@ public class TypeCheckingTest {
     assertEquals(Universe(2), expr.checkType(new HashMap<String, Definition>(), new ArrayList<Definition>(), null, errors).type);
     assertEquals(0, errors.size());
   }
+
+  @Test
+  public void typeCheckingUniverse() {
+    // (f : Type1 -> Type1) -> f Type1
+    Expression expr = Pi("f", Pi(Universe(1), Universe(1)), Apps(Var("f"), Universe(1)));
+    List<TypeCheckingError> errors = new ArrayList<>();
+    assertEquals(null, expr.checkType(new HashMap<String, Definition>(), new ArrayList<Definition>(), null, errors));
+    assertEquals(1, errors.size());
+    assertTrue(errors.get(0) instanceof TypeMismatchError);
+  }
 }

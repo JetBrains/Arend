@@ -13,6 +13,7 @@ public class Abstract {
     final static int PREC = 10;
     Expression getFunction();
     Expression getArgument();
+    boolean isExplicit();
   }
 
   public static interface DefCallExpression extends Expression {
@@ -62,6 +63,10 @@ public class Abstract {
   }
 
   public static interface ZeroExpression extends Expression {
+    final static int PREC = 11;
+  }
+
+  public static interface HoleExpression extends Expression {
     final static int PREC = 11;
   }
 }

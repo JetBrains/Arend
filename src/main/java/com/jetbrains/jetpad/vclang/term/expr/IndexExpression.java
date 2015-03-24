@@ -16,14 +16,6 @@ public class IndexExpression extends Expression implements Abstract.IndexExpress
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (o == this) return true;
-    if (!(o instanceof IndexExpression)) return false;
-    IndexExpression other = (IndexExpression)o;
-    return index == other.index;
-  }
-
-  @Override
   public String toString() {
     return "<" + index + ">";
   }

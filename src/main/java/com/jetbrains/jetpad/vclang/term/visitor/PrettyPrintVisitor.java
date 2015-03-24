@@ -19,7 +19,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
     if (prec > Abstract.AppExpression.PREC) myStream.print("(");
     expr.getFunction().accept(this, Abstract.AppExpression.PREC);
     myStream.print(" ");
-    expr.getArgument().accept(this, Abstract.AppExpression.PREC + 1);
+    if (expr.isExplicit()) {
+      expr.getArgument().accept(this, Abstract.AppExpression.PREC + 1);
+    } else {
+      myStream.print("{");
+      expr.getArgument().accept(this, 0);
+      myStream.print("}");
+    }
     if (prec > Abstract.AppExpression.PREC) myStream.print(")");
     return null;
   }
@@ -101,6 +107,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
   @Override
   public Void visitZero(Abstract.ZeroExpression expr, Integer prec) {
     myStream.print("0");
+    return null;
+  }
+
+  @Override
+  public Void visitHole(Abstract.HoleExpression expr, Integer params) {
+    myStream.print("?");
     return null;
   }
 }

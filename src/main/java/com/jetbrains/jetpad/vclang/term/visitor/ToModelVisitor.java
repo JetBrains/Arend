@@ -114,10 +114,13 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
   }
 
   @Override
-  public Model.Expression visitError(ErrorExpression expr) {
+  public Model.Expression visitHole(HoleExpression expr) {
+    /*
     // TODO: Check if expr.expression() == null.
     Model.Expression result = expr.expression().accept(this);
     result.wellTypedExpr().set(expr);
     return result;
+    */
+    return null;
   }
 }

@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.Error;
 
 public class SubstVisitor implements ExpressionVisitor<Expression> {
   private final Expression substExpr;
@@ -72,7 +71,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitError(ErrorExpression expr) {
-    return Error(expr.expression() == null ? null : expr.expression().accept(this), expr.error());
+  public Expression visitHole(HoleExpression expr) {
+    return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
   }
 }

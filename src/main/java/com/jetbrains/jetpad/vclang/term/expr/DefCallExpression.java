@@ -17,14 +17,6 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (o == this) return true;
-    if (!(o instanceof DefCallExpression)) return false;
-    DefCallExpression other = (DefCallExpression)o;
-    return definition.equals(other.definition);
-  }
-
-  @Override
   public String toString() {
     return definition.getName();
   }

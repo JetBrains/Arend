@@ -20,6 +20,13 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   @Override
   public void setWellTyped(Expression wellTyped) {}
 
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (!(obj instanceof Expression)) return false;
+    return compare(this, (Expression) obj) == CompareVisitor.Result.OK;
+  }
+
   public final Expression liftIndex(int from, int on) {
     return accept(new LiftIndexVisitor(from, on));
   }
@@ -40,9 +47,13 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return accept(new CheckTypeVisitor(globalContext, localContext, errors), expectedType);
   }
 
+  public static CompareVisitor.Result compare(Abstract.Expression expr1, Abstract.Expression expr2) {
+    return expr1.accept(new CompareVisitor(), expr2);
+  }
+
   public static Expression Apps(Expression expr, Expression... exprs) {
     for (Expression expr1 : exprs) {
-      expr = new AppExpression(expr, expr1);
+      expr = new AppExpression(expr, expr1, true);
     }
     return expr;
   }
