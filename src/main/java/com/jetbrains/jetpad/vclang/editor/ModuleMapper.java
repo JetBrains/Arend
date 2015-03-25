@@ -35,8 +35,8 @@ public class ModuleMapper extends Mapper<Module, ModuleMapper.Cell> {
             if (def instanceof FunctionDefinition) {
               FunctionDefinition funDef = (FunctionDefinition) def;
               CheckTypeVisitor visitor = new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<com.jetbrains.jetpad.vclang.term.definition.Definition>(), errors);
-              CheckTypeVisitor.Result typeResult = visitor.typeCheck(funDef.getResultType(), new UniverseExpression());
-              visitor.typeCheck(funDef.getTerm(), typeResult == null ? null : typeResult.expression);
+              CheckTypeVisitor.OKResult typeResult = visitor.checkType(funDef.getResultType(), new UniverseExpression());
+              visitor.checkType(funDef.getTerm(), typeResult == null ? null : typeResult.expression);
             }
             List<ErrorMessage> errorList = ContainerFactory.getErrorsRootMapper().getSource();
             errorList.clear();

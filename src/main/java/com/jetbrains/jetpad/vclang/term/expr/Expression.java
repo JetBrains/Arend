@@ -24,7 +24,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   public boolean equals(Object obj) {
     if (this == obj) return true;
     if (!(obj instanceof Expression)) return false;
-    return compare(this, (Expression) obj) == CompareVisitor.Result.OK;
+    List<CompareVisitor.Equation> result = compare(this, (Expression) obj);
+    return result != null && result.size() == 0;
   }
 
   public final Expression liftIndex(int from, int on) {
@@ -43,12 +44,14 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     accept(new PrettyPrintVisitor(stream, names), prec);
   }
 
-  public final CheckTypeVisitor.Result checkType(Map<String, Definition> globalContext, List<Definition> localContext, Expression expectedType, List<TypeCheckingError> errors) {
-    return accept(new CheckTypeVisitor(globalContext, localContext, errors), expectedType);
+  public final CheckTypeVisitor.OKResult checkType(Map<String, Definition> globalContext, List<Definition> localContext, Expression expectedType, List<TypeCheckingError> errors) {
+    return new CheckTypeVisitor(globalContext, localContext, errors).checkType(this, expectedType);
   }
 
-  public static CompareVisitor.Result compare(Abstract.Expression expr1, Abstract.Expression expr2) {
-    return expr1.accept(new CompareVisitor(), expr2);
+  public static List<CompareVisitor.Equation> compare(Abstract.Expression expr1, Abstract.Expression expr2) {
+    CompareVisitor visitor = new CompareVisitor();
+    Boolean result = expr1.accept(visitor, expr2);
+    return result ? visitor.equations() : null;
   }
 
   public static Expression Apps(Expression expr, Expression... exprs) {

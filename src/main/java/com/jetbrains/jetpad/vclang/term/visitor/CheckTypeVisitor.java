@@ -17,7 +17,6 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.Error;
-import static com.jetbrains.jetpad.vclang.term.visitor.CompareVisitor.and;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Map<String, Definition> myGlobalContext;
@@ -34,26 +33,33 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private static class ImplicitArgumentExpression extends HoleExpression {
-    public ImplicitArgumentExpression() {
+  static class InferHoleExpression extends HoleExpression {
+    public InferHoleExpression() {
       super(null);
-    }
-
-    @Override
-    public HoleExpression getInstance(Expression expr) {
-      return new ImplicitArgumentExpression();
     }
   }
 
-  public static class Result {
+  public static abstract class Result {}
+
+  public static class OKResult extends Result {
     public Expression expression;
     public Expression type;
-    public CompareVisitor.Result result;
+    public List<CompareVisitor.Equation> equations;
 
-    public Result(Expression expression, Expression type, CompareVisitor.Result result) {
+    public OKResult(Expression expression, Expression type, List<CompareVisitor.Equation> equations) {
       this.expression = expression;
       this.type = type;
-      this.result = result;
+      this.equations = equations;
+    }
+  }
+
+  public static class InferErrorResult extends Result {
+    public InferHoleExpression hole;
+    public TypeCheckingError error;
+
+    public InferErrorResult(InferHoleExpression hole, TypeCheckingError error) {
+      this.hole = hole;
+      this.error = error;
     }
   }
 
@@ -63,7 +69,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myErrors = errors;
   }
 
-  private Result checkResult(Expression expectedType, Result result, Abstract.Expression expression) {
+  private OKResult checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
     if (result == null) return null;
     if (expectedType == null) {
       expression.setWellTyped(result.expression);
@@ -71,8 +77,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     Expression actualNorm = result.type.normalize(NormalizeVisitor.Mode.NF);
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
-    result.result = and(result.result, compare(expectedNorm, actualNorm));
-    if (result.result == CompareVisitor.Result.NOT_OK) {
+    result.equations = compare(expectedNorm, actualNorm);
+    if (result.equations == null) {
       TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression);
       expression.setWellTyped(Error(result.expression, error));
       myErrors.add(error);
@@ -83,7 +89,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  public Result typeCheck(Abstract.Expression expr, Expression expectedType) {
+  private Result typeCheck(Abstract.Expression expr, Expression expectedType) {
     if (expr == null) {
       return null;
     } else {
@@ -91,85 +97,95 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private Result typeCheckApps(Abstract.Expression fun, Arg[] args) {
+  private Result typeCheckApps(Abstract.Expression fun, Arg[] args, Expression expectedType) {
     if (fun instanceof Abstract.NelimExpression) {
       Result argument = typeCheck(args[0].expression, null);
-      if (argument == null) return null;
-      return new Result(Apps(Nelim(), argument.expression), Pi(Pi(Nat(), Pi(argument.type, argument.type)), Pi(Nat(), argument.type)), argument.result);
-    } else {
-      Result function = typeCheck(fun, null);
-      if (function == null) {
-        for (Arg arg : args) {
-          typeCheck(arg.expression, null);
-        }
-        return null;
-      }
+      if (!(argument instanceof OKResult)) return argument;
+      OKResult okArgument = (OKResult) argument;
+      return new OKResult(Apps(Nelim(), okArgument.expression), Pi(Pi(Nat(), Pi(okArgument.type, okArgument.type)), Pi(Nat(), okArgument.type)), null);
+    }
 
-      Signature signature = new Signature(function.type);
-      Result[] resultArgs = new Result[signature.getArguments().length];
-      int argsNumber = Math.min(args.length, signature.getArguments().length);
-      for (int i = 0; i < argsNumber; ++i) {
-        Expression type = signature.getArgument(i).getType();
-        for (int j = i - 1; j >= 0; --j) {
-          type = type.subst(resultArgs[j].expression, 0);
-        }
-        if (args[i].isExplicit == signature.getArgument(i).isExplicit()) {
-          resultArgs[i] = typeCheck(args[i].expression, type);
-          if (resultArgs[i] == null) {
-            for (int j = i + 1; j < args.length; ++j) {
-              typeCheck(args[j].expression, null);
-            }
-            return null;
-          }
-        } else
-        if (args[i].isExplicit) {
-          // TODO: Infer arguments
-        } else {
-          TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args[i].expression);
-          args[i].expression.setWellTyped(Error(null, error));
-          myErrors.add(error);
+    Result function = typeCheck(fun, null);
+    if (!(function instanceof OKResult)) {
+      if (function instanceof InferErrorResult) {
+        myErrors.add(((InferErrorResult) function).error);
+      }
+      for (Arg arg : args) {
+        typeCheck(arg.expression, null);
+      }
+      return null;
+    }
+    OKResult okFunction = (OKResult) function;
+
+    Signature signature = new Signature(okFunction.type);
+    OKResult[] resultArgs = new OKResult[signature.getArguments().length];
+    int argsNumber = Math.min(args.length, signature.getArguments().length);
+    for (int i = 0; i < argsNumber; ++i) {
+      Expression type = signature.getArgument(i).getType();
+      for (int j = i - 1; j >= 0; --j) {
+        type = type.subst(resultArgs[j].expression, 0);
+      }
+      if (args[i].isExplicit == signature.getArgument(i).isExplicit()) {
+        Result result = typeCheck(args[i].expression, type);
+        if (!(result instanceof OKResult)) {
           for (int j = i + 1; j < args.length; ++j) {
             typeCheck(args[j].expression, null);
           }
-          return null;
+          return result;
         }
-      }
-
-      if (args.length > signature.getArguments().length) {
-        TypeCheckingError error = new TypeCheckingError("Function expects " + signature.getArguments().length + " arguments, but is applied to " + args.length, fun);
-        fun.setWellTyped(Error(function.expression, error));
+        resultArgs[i] = (OKResult) result;
+      } else
+      if (args[i].isExplicit) {
+        // TODO: Infer arguments
+      } else {
+        TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args[i].expression);
+        args[i].expression.setWellTyped(Error(null, error));
         myErrors.add(error);
-        for (int i = signature.getArguments().length; i < args.length; ++i) {
-          typeCheck(args[i].expression, null);
+        for (int j = i + 1; j < args.length; ++j) {
+          typeCheck(args[j].expression, null);
         }
         return null;
       }
-
-      Expression resultType;
-      if (signature.getArguments().length == args.length) {
-        resultType = signature.getResultType();
-      } else {
-        Argument[] rest = new Argument[signature.getArguments().length - args.length];
-        for (int i = 0; i < rest.length; ++i) {
-          rest[i] = signature.getArgument(args.length + i);
-        }
-        resultType = new Signature(rest, signature.getResultType()).getType();
-      }
-      for (int i = argsNumber - 1; i >= 0; --i) {
-        resultType = resultType.subst(resultArgs[i].expression, 0);
-      }
-
-      Expression resultExpr = function.expression;
-      for (Result result : resultArgs) {
-        resultExpr = Apps(resultExpr, result.expression);
-      }
-
-      CompareVisitor.Result resultResult = function.result;
-      for (Result result : resultArgs) {
-        resultResult = and(resultResult, result.result);
-      }
-      return new Result(resultExpr, resultType, resultResult);
     }
+
+    if (args.length > signature.getArguments().length) {
+      TypeCheckingError error = new TypeCheckingError("Function expects " + signature.getArguments().length + " arguments, but is applied to " + args.length, fun);
+      fun.setWellTyped(Error(okFunction.expression, error));
+      myErrors.add(error);
+      for (int i = signature.getArguments().length; i < args.length; ++i) {
+        typeCheck(args[i].expression, null);
+      }
+      return null;
+    }
+
+    Expression resultType;
+    if (signature.getArguments().length == args.length) {
+      resultType = signature.getResultType();
+    } else {
+      Argument[] rest = new Argument[signature.getArguments().length - args.length];
+      for (int i = 0; i < rest.length; ++i) {
+        rest[i] = signature.getArgument(args.length + i);
+      }
+      resultType = new Signature(rest, signature.getResultType()).getType();
+    }
+    for (int i = argsNumber - 1; i >= 0; --i) {
+      resultType = resultType.subst(resultArgs[i].expression, 0);
+    }
+
+    Expression resultExpr = okFunction.expression;
+    for (OKResult result : resultArgs) {
+      resultExpr = Apps(resultExpr, result.expression);
+    }
+
+    return new OKResult(resultExpr, resultType, null);
+  }
+
+  public OKResult checkType(Abstract.Expression expr, Expression expectedType) {
+    if (expr == null) return null;
+    Result result = expr.accept(this, expectedType);
+    if (result == null) return null;
+    if (result instanceof OKResult) return (OKResult) result;
+    throw new IllegalStateException();
   }
 
   @Override
@@ -184,19 +200,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (int i = 0; i < argsArray.length; ++i) {
       argsArray[i] = args.get(argsArray.length - 1 - i);
     }
-    return checkResult(expectedType, typeCheckApps(fexpr, argsArray), expr);
+    Result result = typeCheckApps(fexpr, argsArray, expectedType);
+    return result instanceof OKResult ? checkResult(expectedType, (OKResult) result, expr) : result;
   }
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new Result(DefCall(expr.getDefinition()), expr.getDefinition().getSignature().getType(), CompareVisitor.Result.OK), expr);
+    return checkResult(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getSignature().getType(), null), expr);
   }
 
   @Override
   public Result visitIndex(Abstract.IndexExpression expr, Expression expectedType) {
     assert expr.getIndex() < myLocalContext.size();
     Expression actualType = myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getSignature().getType().liftIndex(0, expr.getIndex() + 1);
-    return checkResult(expectedType, new Result(Index(expr.getIndex()), actualType, CompareVisitor.Result.OK), expr);
+    return checkResult(expectedType, new OKResult(Index(expr.getIndex()), actualType, null), expr);
   }
 
   @Override
@@ -207,28 +224,40 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrors.add(error);
       return null;
     }
+
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
     if (expectedNorm instanceof PiExpression) {
-      PiExpression type = (PiExpression)expectedNorm;
-      // TODO: This is ugly. Fix it.
-      myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(type.getDomain()), new VarExpression(expr.getVariable())));
-      Result body = typeCheck(expr.getBody(), type.getCodomain());
-      myLocalContext.remove(myLocalContext.size() - 1);
-      if (body == null) return null;
-      Result result = new Result(Lam(expr.getVariable(), body.expression), Pi(type.isExplicit(), type.getVariable(), type.getDomain(), body.type), body.result);
-      expr.setWellTyped(result.expression);
-      return result;
-    } else {
-      TypeCheckingError error = new TypeMismatchError(expectedNorm, Pi(Var("_"), Var("_")), expr);
-      expr.setWellTyped(Error(null, error));
-      myErrors.add(error);
-      return null;
+      PiExpression type = (PiExpression) expectedNorm;
+      InferHoleExpression hole = type.getDomain().accept(new FindHoleVisitor());
+      if (hole == null) {
+        // TODO: This is ugly. Fix it.
+        myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(type.getDomain()), new VarExpression(expr.getVariable())));
+        Result body = typeCheck(expr.getBody(), type.getCodomain());
+        myLocalContext.remove(myLocalContext.size() - 1);
+        if (!(body instanceof OKResult)) return body;
+        OKResult okBody = (OKResult) body;
+        // TODO: replace null with okBody.equations
+        OKResult result = new OKResult(Lam(expr.getVariable(), okBody.expression), Pi(type.isExplicit(), type.getVariable(), type.getDomain(), okBody.type), null);
+        expr.setWellTyped(result.expression);
+        return result;
+      } else {
+        return new InferErrorResult(hole, new TypeInferenceError(new VarExpression(expr.getVariable())));
+      }
     }
+
+    if (expectedNorm instanceof InferHoleExpression) {
+      return new InferErrorResult((InferHoleExpression) expectedNorm, new TypeInferenceError(new VarExpression(expr.getVariable())));
+    }
+
+    TypeCheckingError error = new TypeMismatchError(expectedNorm, Pi(Var("?"), Var("?")), expr);
+    expr.setWellTyped(Error(null, error));
+    myErrors.add(error);
+    return null;
   }
 
   @Override
   public Result visitNat(Abstract.NatExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new Result(Nat(), Universe(0), CompareVisitor.Result.OK), expr);
+    return checkResult(expectedType, new OKResult(Nat(), Universe(0), null), expr);
   }
 
   @Override
@@ -242,24 +271,27 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitPi(Abstract.PiExpression expr, Expression expectedType) {
     Result domainResult = typeCheck(expr.getDomain(), Universe(-1));
-    if (domainResult == null) return null;
+    if (!(domainResult instanceof OKResult)) return domainResult;
+    OKResult okDomainResult = (OKResult) domainResult;
     // TODO: This is ugly. Fix it.
-    myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(domainResult.expression), Var(expr.getVariable())));
+    myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(okDomainResult.expression), Var(expr.getVariable())));
     Result codomainResult = typeCheck(expr.getCodomain(), Universe(-1));
     myLocalContext.remove(myLocalContext.size() - 1);
-    if (codomainResult == null) return null;
-    Expression actualType = Universe(Math.max(((UniverseExpression) domainResult.type).getLevel(), ((UniverseExpression) codomainResult.type).getLevel()));
-    return checkResult(expectedType, new Result(Pi(expr.isExplicit(), expr.getVariable(), domainResult.expression, codomainResult.expression), actualType, and(domainResult.result, codomainResult.result)), expr);
+    if (!(codomainResult instanceof OKResult)) return codomainResult;
+    OKResult okCodomainResult = (OKResult) codomainResult;
+    Expression actualType = Universe(Math.max(((UniverseExpression) okDomainResult.type).getLevel(), ((UniverseExpression) okCodomainResult.type).getLevel()));
+    // TODO: Add okCodomain.equations
+    return checkResult(expectedType, new OKResult(Pi(expr.isExplicit(), expr.getVariable(), okDomainResult.expression, okCodomainResult.expression), actualType, okDomainResult.equations), expr);
   }
 
   @Override
   public Result visitSuc(Abstract.SucExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new Result(Suc(), Pi(Nat(), Nat()), CompareVisitor.Result.OK), expr);
+    return checkResult(expectedType, new OKResult(Suc(), Pi(Nat(), Nat()), null), expr);
   }
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new Result(Universe(expr.getLevel()), Universe(expr.getLevel() == -1 ? -1 : expr.getLevel() + 1), CompareVisitor.Result.OK), expr);
+    return checkResult(expectedType, new OKResult(Universe(expr.getLevel()), Universe(expr.getLevel() == -1 ? -1 : expr.getLevel() + 1), null), expr);
   }
 
   @Override
@@ -269,7 +301,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     while (it.hasPrevious()) {
       Definition def = it.previous();
       if (expr.getName().equals(def.getName())) {
-        return checkResult(expectedType, new Result(Index(index), def.getSignature().getType().liftIndex(0, index + 1), CompareVisitor.Result.OK), expr);
+        return checkResult(expectedType, new OKResult(Index(index), def.getSignature().getType().liftIndex(0, index + 1), null), expr);
       }
       ++index;
     }
@@ -280,13 +312,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrors.add(error);
       return null;
     } else {
-      return checkResult(expectedType, new Result(DefCall(def), def.getSignature().getType(), CompareVisitor.Result.OK), expr);
+      return checkResult(expectedType, new OKResult(DefCall(def), def.getSignature().getType(), null), expr);
     }
   }
 
   @Override
   public Result visitZero(Abstract.ZeroExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new Result(Zero(), Nat(), CompareVisitor.Result.OK), expr);
+    return checkResult(expectedType, new OKResult(Zero(), Nat(), null), expr);
   }
 
   @Override

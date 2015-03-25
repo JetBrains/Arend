@@ -1,116 +1,104 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.HoleExpression;
 
-public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expression, CompareVisitor.Result> {
-  public static enum Result { OK, NOT_OK, MAYBE_OK }
+import java.util.ArrayList;
+import java.util.List;
 
-  public static Result and(Result a, Result b) {
-    switch (a) {
-      case OK:
-        return b;
-      case NOT_OK:
-        return Result.NOT_OK;
-      case MAYBE_OK:
-        if (b == Result.NOT_OK) {
-          return Result.NOT_OK;
-        } else {
-          return Result.MAYBE_OK;
-        }
-      default:
-        throw new IllegalStateException();
+public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expression, Boolean> {
+  private final List<Equation> myEquations = new ArrayList<>();
+
+  public static class Equation {
+    public Abstract.HoleExpression hole;
+    public Abstract.Expression expression;
+
+    public Equation(Abstract.HoleExpression hole, Abstract.Expression expression) {
+      this.hole = hole;
+      this.expression = expression;
     }
   }
 
+  public List<Equation> equations() {
+    return myEquations;
+  }
+
   @Override
-  public Result visitApp(Abstract.AppExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    if (!(other instanceof Abstract.AppExpression)) return Result.NOT_OK;
+  public Boolean visitApp(Abstract.AppExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    if (!(other instanceof Abstract.AppExpression)) return false;
     Abstract.AppExpression otherApp = (Abstract.AppExpression) other;
-    return and(expr.getFunction().accept(this, otherApp.getFunction()), expr.getArgument().accept(this, otherApp.getArgument()));
+    return expr.getFunction().accept(this, otherApp.getFunction()) && expr.getArgument().accept(this, otherApp.getArgument());
   }
 
   @Override
-  public Result visitDefCall(Abstract.DefCallExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    if (!(other instanceof Abstract.DefCallExpression)) return Result.NOT_OK;
-    return expr.getDefinition().equals(((Abstract.DefCallExpression) other).getDefinition()) ? Result.OK : Result.NOT_OK;
+  public Boolean visitDefCall(Abstract.DefCallExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    return other instanceof Abstract.DefCallExpression && expr.getDefinition().equals(((Abstract.DefCallExpression) other).getDefinition());
   }
 
   @Override
-  public Result visitIndex(Abstract.IndexExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    if (!(other instanceof Abstract.IndexExpression)) return Result.NOT_OK;
-    return expr.getIndex() == ((Abstract.IndexExpression) other).getIndex() ? Result.OK : Result.NOT_OK;
+  public Boolean visitIndex(Abstract.IndexExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    return other instanceof Abstract.IndexExpression && expr.getIndex() == ((Abstract.IndexExpression) other).getIndex();
   }
 
   @Override
-  public Result visitLam(Abstract.LamExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    if (!(other instanceof Abstract.LamExpression)) return Result.NOT_OK;
-    return expr.getBody().accept(this, ((Abstract.LamExpression) other).getBody());
+  public Boolean visitLam(Abstract.LamExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    return other instanceof Abstract.LamExpression && expr.getBody().accept(this, ((Abstract.LamExpression) other).getBody());
   }
 
   @Override
-  public Result visitNat(Abstract.NatExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    return other instanceof Abstract.NatExpression ? Result.OK : Result.NOT_OK;
+  public Boolean visitNat(Abstract.NatExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    return other instanceof Abstract.NatExpression;
   }
 
   @Override
-  public Result visitNelim(Abstract.NelimExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    return other instanceof Abstract.NelimExpression ? Result.OK : Result.NOT_OK;
+  public Boolean visitNelim(Abstract.NelimExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    return other instanceof Abstract.NelimExpression;
   }
 
   @Override
-  public Result visitPi(Abstract.PiExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    if (!(other instanceof Abstract.PiExpression)) return Result.NOT_OK;
+  public Boolean visitPi(Abstract.PiExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    if (!(other instanceof Abstract.PiExpression)) return false;
     Abstract.PiExpression otherPi = (Abstract.PiExpression) other;
-    return and(expr.getDomain().accept(this, otherPi.getDomain()), expr.getCodomain().accept(this, otherPi.getCodomain()));
+    return expr.getDomain().accept(this, otherPi.getDomain()) && expr.getCodomain().accept(this, otherPi.getCodomain());
   }
 
   @Override
-  public Result visitSuc(Abstract.SucExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    return other instanceof Abstract.SucExpression ? Result.OK : Result.NOT_OK;
+  public Boolean visitSuc(Abstract.SucExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    return other instanceof Abstract.SucExpression;
   }
 
   @Override
-  public Result visitUniverse(Abstract.UniverseExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    if (!(other instanceof Abstract.UniverseExpression)) return Result.NOT_OK;
-    return expr.getLevel() == -1 || expr.getLevel() >= ((Abstract.UniverseExpression) other).getLevel() ? Result.OK : Result.NOT_OK;
+  public Boolean visitUniverse(Abstract.UniverseExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    return other instanceof Abstract.UniverseExpression && (expr.getLevel() == -1 || expr.getLevel() >= ((Abstract.UniverseExpression) other).getLevel());
   }
 
   @Override
-  public Result visitVar(Abstract.VarExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    if (!(other instanceof Abstract.VarExpression)) return Result.NOT_OK;
-    return expr.getName().equals(((Abstract.VarExpression) other).getName()) ? Result.OK : Result.NOT_OK;
+  public Boolean visitVar(Abstract.VarExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    return other instanceof Abstract.VarExpression && expr.getName().equals(((Abstract.VarExpression) other).getName());
   }
 
   @Override
-  public Result visitZero(Abstract.ZeroExpression expr, Abstract.Expression other) {
-    if (expr == other) return Result.OK;
-    if (other instanceof HoleExpression) return Result.MAYBE_OK;
-    return other instanceof Abstract.ZeroExpression ? Result.OK : Result.NOT_OK;
+  public Boolean visitZero(Abstract.ZeroExpression expr, Abstract.Expression other) {
+    if (expr == other) return true;
+    return other instanceof Abstract.ZeroExpression;
   }
 
   @Override
-  public Result visitHole(Abstract.HoleExpression expr, Abstract.Expression other) {
-    return Result.MAYBE_OK;
+  public Boolean visitHole(Abstract.HoleExpression expr, Abstract.Expression other) {
+    if (expr instanceof CheckTypeVisitor.InferHoleExpression) {
+      myEquations.add(new Equation(expr, other));
+      return true;
+    }
+
+    return expr == other;
   }
 }
