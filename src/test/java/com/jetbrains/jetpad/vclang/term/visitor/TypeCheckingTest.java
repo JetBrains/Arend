@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchError;
@@ -11,8 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class TypeCheckingTest {
   @Test
@@ -158,5 +159,18 @@ public class TypeCheckingTest {
     assertEquals(null, expr.checkType(new HashMap<String, Definition>(), new ArrayList<Definition>(), null, errors));
     assertEquals(1, errors.size());
     assertTrue(errors.get(0) instanceof TypeMismatchError);
+  }
+
+  @Test
+  public void typeCheckingTwoErrors() {
+    // f : Nat -> Nat -> Nat |- f S (f 0 S) : Nat
+    Expression expr = Apps(Index(0), Suc(), Apps(Index(0), Zero(), Suc()));
+    List<Definition> defs = new ArrayList<>();
+    defs.add(new FunctionDefinition("f", new Signature(Pi(Nat(), Pi(Nat(), Nat()))), Var("f")));
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
+    assertEquals(2, errors.size());
+    assertNull(result);
   }
 }

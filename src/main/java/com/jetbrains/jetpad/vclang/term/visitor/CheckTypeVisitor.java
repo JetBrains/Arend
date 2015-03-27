@@ -5,10 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.typechecking.NotInScopeError;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeInferenceError;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.term.typechecking.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,15 +99,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private static String suffix(int n) {
-    switch (n) {
-      case 1: return "st";
-      case 2: return "nd";
-      case 3: return "rd";
-      default: return "th";
-    }
-  }
-
   private Result typeCheckApps(Abstract.Expression fun, Arg[] args, Expression expectedType, Abstract.Expression expression) {
     if (fun instanceof Abstract.NelimExpression) {
       Result argument = typeCheck(args[0].expression, null);
@@ -169,7 +157,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (resultArgs[i] instanceof OKResult) continue;
 
       if (argsImp[i] instanceof InferHoleExpression) {
-        resultArgs[i] = new InferErrorResult((InferHoleExpression) argsImp[i], new TypeCheckingError("Cannot infer " + (i + 1) + suffix(i + 1) + " argument", fun));
+        resultArgs[i] = new InferErrorResult((InferHoleExpression) argsImp[i], new ArgInferenceError(fun, i + 1));
         continue;
       }
 
@@ -234,13 +222,29 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       resultExpr = App(resultExpr, resultArgs[i].expression, signature.getArgument(i).isExplicit());
     }
     OKResult result = checkResult(expectedType, new OKResult(resultExpr, resultType, null), expression);
+
     // TODO: Infer implicit arguments from the goal.
-    if (result.equations == null) {
-      result.equations = resultEquations;
-    } else {
-      result.equations.addAll(resultEquations);
+
+    int argIndex = 0;
+    for (i = 0; i < argsNumber; ++i) {
+      if (!(resultArgs[i] instanceof OKResult)) {
+        argIndex = i + 1;
+        break;
+      }
     }
-    return result;
+    if (argIndex == 0) {
+      if (result.equations == null) {
+        result.equations = resultEquations;
+      } else {
+        result.equations.addAll(resultEquations);
+      }
+      return result;
+    } else {
+      TypeCheckingError error = new ArgInferenceError(fun, argIndex);
+      expression.setWellTyped(Error(result.expression, error));
+      myErrors.add(error);
+      return null;
+    }
   }
 
   public OKResult checkType(Abstract.Expression expr, Expression expectedType) {
@@ -256,7 +260,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     List<Arg> args = new ArrayList<>();
     Abstract.Expression fexpr;
     for (fexpr = expr; fexpr instanceof Abstract.AppExpression; fexpr = ((Abstract.AppExpression) fexpr).getFunction()) {
-      args.add(new Arg(((Abstract.AppExpression) fexpr).getArgument(), expr.isExplicit()));
+      Abstract.AppExpression appfexpr = (Abstract.AppExpression) fexpr;
+      args.add(new Arg(appfexpr.getArgument(), appfexpr.isExplicit()));
     }
 
     Arg[] argsArray = new Arg[args.size()];
