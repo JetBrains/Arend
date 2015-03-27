@@ -25,11 +25,9 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitIndex(IndexExpression expr) {
-    if (expr.getIndex() < from) {
-      return expr;
-    } else {
-      return Index(expr.getIndex() + on);
-    }
+    if (expr.getIndex() < from) return expr;
+    if (expr.getIndex() + on >= 0) return Index(expr.getIndex() + on);
+    throw new NegativeIndex();
   }
 
   @Override
@@ -76,4 +74,6 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   public Expression visitHole(HoleExpression expr) {
     return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
   }
+
+  public static class NegativeIndex extends RuntimeException {}
 }

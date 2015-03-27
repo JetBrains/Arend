@@ -303,8 +303,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         myLocalContext.remove(myLocalContext.size() - 1);
         if (!(body instanceof OKResult)) return body;
         OKResult okBody = (OKResult) body;
-        // TODO: replace null with okBody.equations
-        OKResult result = new OKResult(Lam(expr.getVariable(), okBody.expression), Pi(type.isExplicit(), type.getVariable(), type.getDomain(), okBody.type), null);
+        List<CompareVisitor.Equation> equations = new ArrayList<>(okBody.equations.size());
+        for (CompareVisitor.Equation equation : okBody.equations) {
+          try {
+            equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -1)));
+          } catch (LiftIndexVisitor.NegativeIndex ignored) { }
+        }
+        OKResult result = new OKResult(Lam(expr.getVariable(), okBody.expression), Pi(type.isExplicit(), type.getVariable(), type.getDomain(), okBody.type), equations);
         expr.setWellTyped(result.expression);
         return result;
       } else {
@@ -347,7 +352,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (!(codomainResult instanceof OKResult)) return codomainResult;
     OKResult okCodomainResult = (OKResult) codomainResult;
     Expression actualType = Universe(Math.max(((UniverseExpression) okDomainResult.type).getLevel(), ((UniverseExpression) okCodomainResult.type).getLevel()));
-    // TODO: Add okCodomain.equations
+
+    for (CompareVisitor.Equation equation : okCodomainResult.equations) {
+      try {
+        okCodomainResult.equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -1)));
+      } catch (LiftIndexVisitor.NegativeIndex ignored) { }
+    }
     return checkResult(expectedType, new OKResult(Pi(expr.isExplicit(), expr.getVariable(), okDomainResult.expression, okCodomainResult.expression), actualType, okDomainResult.equations), expr);
   }
 
