@@ -54,6 +54,10 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return result ? visitor.equations() : null;
   }
 
+  public static AppExpression App(Expression function, Expression argument, boolean isExplicit) {
+    return new AppExpression(function, argument, isExplicit);
+  }
+
   public static Expression Apps(Expression expr, Expression... exprs) {
     for (Expression expr1 : exprs) {
       expr = new AppExpression(expr, expr1, true);

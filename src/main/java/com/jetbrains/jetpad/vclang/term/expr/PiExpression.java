@@ -50,7 +50,7 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
 
   @Override
   public String toString() {
-    return "(" + (variable == null ? "" : variable + " : ") + domain.toString() + ") -> " + codomain.toString();
+    return (explicit ? "(" : "{") + (variable == null ? "" : variable + " : ") + domain.toString() + (explicit ? ")" : "}") + " -> " + codomain.toString();
   }
 
   @Override

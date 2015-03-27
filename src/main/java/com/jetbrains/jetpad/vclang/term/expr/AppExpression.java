@@ -31,7 +31,7 @@ public class AppExpression extends Expression implements Abstract.AppExpression 
 
   @Override
   public String toString() {
-    return "(" + myFunction.toString() + ") (" + myArgument.toString() + ")";
+    return "(" + myFunction.toString() + ") " + (myExplicit ? "(" : "{") + myArgument.toString() + (myExplicit ? ")" : "}");
   }
 
   @Override

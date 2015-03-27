@@ -37,12 +37,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     public InferHoleExpression() {
       super(null);
     }
+
+    @Override
+    public InferHoleExpression getInstance(Expression expr) {
+      return this;
+    }
   }
 
-  public static abstract class Result {}
+  public static abstract class Result {
+    public Expression expression;
+  }
 
   public static class OKResult extends Result {
-    public Expression expression;
     public Expression type;
     public List<CompareVisitor.Equation> equations;
 
@@ -54,11 +60,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   public static class InferErrorResult extends Result {
-    public InferHoleExpression hole;
     public TypeCheckingError error;
 
     public InferErrorResult(InferHoleExpression hole, TypeCheckingError error) {
-      this.hole = hole;
+      expression = hole;
       this.error = error;
     }
   }
@@ -97,7 +102,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private Result typeCheckApps(Abstract.Expression fun, Arg[] args, Expression expectedType) {
+  private static String suffix(int n) {
+    switch (n) {
+      case 1: return "st";
+      case 2: return "nd";
+      case 3: return "rd";
+      default: return "th";
+    }
+  }
+
+  private Result typeCheckApps(Abstract.Expression fun, Arg[] args, Expression expectedType, Abstract.Expression expression) {
     if (fun instanceof Abstract.NelimExpression) {
       Result argument = typeCheck(args[0].expression, null);
       if (!(argument instanceof OKResult)) return argument;
@@ -118,66 +132,115 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     OKResult okFunction = (OKResult) function;
 
     Signature signature = new Signature(okFunction.type);
-    OKResult[] resultArgs = new OKResult[signature.getArguments().length];
-    int argsNumber = Math.min(args.length, signature.getArguments().length);
-    for (int i = 0; i < argsNumber; ++i) {
-      Expression type = signature.getArgument(i).getType();
-      for (int j = i - 1; j >= 0; --j) {
-        type = type.subst(resultArgs[j].expression, 0);
-      }
-      if (args[i].isExplicit == signature.getArgument(i).isExplicit()) {
-        Result result = typeCheck(args[i].expression, type);
-        if (!(result instanceof OKResult)) {
-          for (int j = i + 1; j < args.length; ++j) {
-            typeCheck(args[j].expression, null);
-          }
-          return result;
-        }
-        resultArgs[i] = (OKResult) result;
+    Abstract.Expression[] argsImp = new Abstract.Expression[signature.getArguments().length];
+    int i, j;
+    for (i = 0, j = 0; i < signature.getArguments().length && j < args.length; ++i, ++j) {
+      if (args[j].isExplicit == signature.getArgument(i).isExplicit()) {
+        argsImp[i] = args[j].expression;
       } else
-      if (args[i].isExplicit) {
-        // TODO: Infer arguments
+      if (args[j].isExplicit) {
+        argsImp[i] = new InferHoleExpression();
+        --j;
       } else {
-        TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args[i].expression);
-        args[i].expression.setWellTyped(Error(null, error));
+        TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args[j].expression);
+        args[j].expression.setWellTyped(Error(null, error));
         myErrors.add(error);
-        for (int j = i + 1; j < args.length; ++j) {
-          typeCheck(args[j].expression, null);
+        for (Arg arg : args) {
+          typeCheck(arg.expression, null);
         }
         return null;
       }
     }
 
-    if (args.length > signature.getArguments().length) {
-      TypeCheckingError error = new TypeCheckingError("Function expects " + signature.getArguments().length + " arguments, but is applied to " + args.length, fun);
+    if (j < args.length) {
+      TypeCheckingError error = new TypeCheckingError("Function expects " + i + " arguments, but is applied to " + (i + args.length - j), fun);
       fun.setWellTyped(Error(okFunction.expression, error));
       myErrors.add(error);
-      for (int i = signature.getArguments().length; i < args.length; ++i) {
-        typeCheck(args[i].expression, null);
+      for (Arg arg : args) {
+        typeCheck(arg.expression, null);
       }
       return null;
     }
 
+    int argsNumber = i;
+    Result[] resultArgs = new Result[argsNumber];
+    List<CompareVisitor.Equation> resultEquations = new ArrayList<>();
+    for (i = 0; i < argsNumber; ++i) {
+      if (resultArgs[i] instanceof OKResult) continue;
+
+      if (argsImp[i] instanceof InferHoleExpression) {
+        resultArgs[i] = new InferErrorResult((InferHoleExpression) argsImp[i], new TypeCheckingError("Cannot infer " + (i + 1) + suffix(i + 1) + " argument", fun));
+        continue;
+      }
+
+      Expression type = signature.getArgument(i).getType();
+      for (j = i - 1; j >= 0; --j) {
+        type = type.subst(resultArgs[j].expression, 0);
+      }
+
+      resultArgs[i] = typeCheck(argsImp[i], type);
+      if (resultArgs[i] == null) {
+        for (j = i + 1; j < argsNumber; ++j) {
+          if (!(argsImp[j] instanceof InferHoleExpression)) {
+            typeCheck(argsImp[j], null);
+          }
+        }
+        return null;
+      }
+      if (resultArgs[i] instanceof InferErrorResult) {
+        // TODO: Try to infer implicit arguments from other arguments
+        myErrors.add(((InferErrorResult) resultArgs[i]).error);
+        return null;
+      }
+
+      OKResult okResult = (OKResult) resultArgs[i];
+      if (okResult.equations == null) continue;
+      int found = i;
+      for (CompareVisitor.Equation equation : okResult.equations) {
+        boolean foundEq = false;
+        for (j = 0; j < i; ++j) {
+          if (resultArgs[j] instanceof InferErrorResult && ((InferErrorResult) resultArgs[j]).expression == equation.hole) {
+            argsImp[j] = equation.expression;
+            found = j < found ? j : found;
+            foundEq = true;
+          }
+        }
+        if (!foundEq) {
+          resultEquations.add(equation);
+        }
+      }
+      if (found != i) {
+        i = found - 1;
+      }
+    }
+
+    // TODO: Infer tail implicit arguments.
+
     Expression resultType;
-    if (signature.getArguments().length == args.length) {
+    if (signature.getArguments().length == argsNumber) {
       resultType = signature.getResultType();
     } else {
-      Argument[] rest = new Argument[signature.getArguments().length - args.length];
-      for (int i = 0; i < rest.length; ++i) {
-        rest[i] = signature.getArgument(args.length + i);
+      Argument[] rest = new Argument[signature.getArguments().length - argsNumber];
+      for (i = 0; i < rest.length; ++i) {
+        rest[i] = signature.getArgument(argsNumber + i);
       }
       resultType = new Signature(rest, signature.getResultType()).getType();
     }
-    for (int i = argsNumber - 1; i >= 0; --i) {
+    for (i = argsNumber - 1; i >= 0; --i) {
       resultType = resultType.subst(resultArgs[i].expression, 0);
     }
-
     Expression resultExpr = okFunction.expression;
-    for (OKResult result : resultArgs) {
-      resultExpr = Apps(resultExpr, result.expression);
+    for (i = 0; i < argsNumber; ++i) {
+      resultExpr = App(resultExpr, resultArgs[i].expression, signature.getArgument(i).isExplicit());
     }
-
-    return new OKResult(resultExpr, resultType, null);
+    OKResult result = checkResult(expectedType, new OKResult(resultExpr, resultType, null), expression);
+    // TODO: Infer implicit arguments from the goal.
+    if (result.equations == null) {
+      result.equations = resultEquations;
+    } else {
+      result.equations.addAll(resultEquations);
+    }
+    return result;
   }
 
   public OKResult checkType(Abstract.Expression expr, Expression expectedType) {
@@ -200,8 +263,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (int i = 0; i < argsArray.length; ++i) {
       argsArray[i] = args.get(argsArray.length - 1 - i);
     }
-    Result result = typeCheckApps(fexpr, argsArray, expectedType);
-    return result instanceof OKResult ? checkResult(expectedType, (OKResult) result, expr) : result;
+    return typeCheckApps(fexpr, argsArray, expectedType, expr);
   }
 
   @Override
@@ -231,7 +293,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       InferHoleExpression hole = type.getDomain().accept(new FindHoleVisitor());
       if (hole == null) {
         // TODO: This is ugly. Fix it.
-        myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(type.getDomain()), new VarExpression(expr.getVariable())));
+        myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(type.getDomain()), Var(expr.getVariable())));
         Result body = typeCheck(expr.getBody(), type.getCodomain());
         myLocalContext.remove(myLocalContext.size() - 1);
         if (!(body instanceof OKResult)) return body;
