@@ -5,8 +5,8 @@ import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 public class ArgInferenceError extends TypeCheckingError {
   private final int myIndex;
 
-  public ArgInferenceError(Abstract.Expression expression, int index) {
-    super(null, expression);
+  public ArgInferenceError(String message, Abstract.Expression expression, int index) {
+    super(message, expression);
     myIndex = index;
   }
 
@@ -21,11 +21,11 @@ public class ArgInferenceError extends TypeCheckingError {
 
   @Override
   public String toString() {
-    String message = "Cannot infer " + myIndex + suffix(myIndex) + " argument";
+    String message = "Cannot infer " + myIndex + suffix(myIndex) + " argument " + getMessage();
     if (getExpression() == null) {
       return message;
     } else {
-      return message + " to " + getExpression();
+      return message + " " + getExpression();
     }
   }
 }

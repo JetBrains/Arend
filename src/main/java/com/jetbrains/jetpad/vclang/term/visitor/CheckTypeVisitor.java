@@ -157,7 +157,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (resultArgs[i] instanceof OKResult) continue;
 
       if (argsImp[i] instanceof InferHoleExpression) {
-        resultArgs[i] = new InferErrorResult((InferHoleExpression) argsImp[i], new ArgInferenceError(fun, i + 1));
+        resultArgs[i] = new InferErrorResult((InferHoleExpression) argsImp[i], new ArgInferenceError("to function", fun, i + 1));
         continue;
       }
 
@@ -240,7 +240,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       return result;
     } else {
-      TypeCheckingError error = new ArgInferenceError(fun, argIndex);
+      TypeCheckingError error = new ArgInferenceError("to function", fun, argIndex);
       expression.setWellTyped(Error(result.expression, error));
       myErrors.add(error);
       return null;
@@ -400,7 +400,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitHole(Abstract.HoleExpression expr, Expression expectedType) {
-    // TODO
+    // TODO: Type checking of holes?
     return null;
   }
 }
