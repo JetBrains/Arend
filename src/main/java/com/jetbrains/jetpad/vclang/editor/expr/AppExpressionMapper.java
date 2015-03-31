@@ -11,7 +11,7 @@ import static jetbrains.jetpad.cell.util.CellFactory.*;
 
 public class AppExpressionMapper extends ExpressionMapper<AppExpression, AppExpressionMapper.Cell> {
   public AppExpressionMapper(AppExpression source) {
-    super(source, new AppExpressionMapper.Cell(source.position().prec() > Abstract.AppExpression.PREC));
+    super(source, new AppExpressionMapper.Cell(source.prec() > Abstract.AppExpression.PREC));
   }
 
   @Override

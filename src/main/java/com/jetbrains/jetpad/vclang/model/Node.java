@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.model.definition.TypedDefinition;
 import jetbrains.jetpad.model.children.HasParent;
 
+import java.util.List;
+
 import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
 
 public abstract class Node extends HasParent<Node, Node> {
@@ -27,8 +29,10 @@ public abstract class Node extends HasParent<Node, Node> {
     }
     if (parent instanceof PiExpression) {
       PiExpression piExpression = (PiExpression) parent;
-      if (piExpression.domain().get() == this) {
-        return Position.ARR_DOM;
+      for (Argument arg : piExpression.getArguments()) {
+        if (arg == this) {
+          return Position.ARR_DOM;
+        }
       }
       if (piExpression.codomain().get() == this) {
         return Position.ARR_COD;
@@ -51,13 +55,24 @@ public abstract class Node extends HasParent<Node, Node> {
     throw new IllegalStateException();
   }
 
+  public int prec() {
+    Position pos = position();
+    if (pos == Position.ARG) {
+      Argument arg = (Argument) parent();
+      if (!(arg instanceof TelescopeArgument) && arg.getExplicit()) {
+        return parent().get().prec();
+      }
+    }
+    return pos.prec();
+  }
+
   public void replaceWith(Node node) {
     switch (position()) {
       case FUN_CLAUSE:
         ((FunctionDefinition) parent().get()).term().set((Expression) node);
         break;
       case ARG:
-        ((Argument) parent().get()).type().set((Expression) node);
+        ((TypeArgument) parent().get()).type().set((Expression) node);
         break;
       case PARENS:
         ((ParensExpression) parent().get()).expression().set((Expression) node);
@@ -66,7 +81,12 @@ public abstract class Node extends HasParent<Node, Node> {
         ((TypedDefinition) parent().get()).resultType().set((Expression) node);
         break;
       case ARR_DOM:
-        ((PiExpression) parent().get()).domain().set((Argument) node);
+        List<TypeArgument> arguments = ((PiExpression) parent().get()).getArguments();
+        for (int i = 0; i < arguments.size(); ++i) {
+          if (arguments.get(i) == this) {
+            arguments.set(i, (TypeArgument) node);
+          }
+        }
         break;
       case ARR_COD:
         ((PiExpression) parent().get()).codomain().set((Expression) node);

@@ -65,6 +65,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
   @Override
   public Boolean visitLam(Abstract.LamExpression expr, Abstract.Expression other) {
     if (expr == other) return true;
+    // TODO: Compare arguments.
     return other instanceof Abstract.LamExpression && expr.getBody().accept(this, ((Abstract.LamExpression) other).getBody());
   }
 
@@ -85,7 +86,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
     if (expr == other) return true;
     if (!(other instanceof Abstract.PiExpression)) return false;
     Abstract.PiExpression otherPi = (Abstract.PiExpression) other;
-    return expr.getDomain().accept(new CompareVisitor(not(myCmp), myEquations), otherPi.getDomain()) && expr.getCodomain().accept(this, otherPi.getCodomain());
+    // TODO: Compare arguments.
+    return expr.getCodomain().accept(this, otherPi.getCodomain());
   }
 
   @Override

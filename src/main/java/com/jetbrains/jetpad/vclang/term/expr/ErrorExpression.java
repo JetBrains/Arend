@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 
 public class ErrorExpression extends HoleExpression {
   private final TypeCheckingError myError;

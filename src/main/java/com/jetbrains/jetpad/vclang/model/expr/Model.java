@@ -3,7 +3,10 @@ package com.jetbrains.jetpad.vclang.model.expr;
 import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
+import jetbrains.jetpad.model.children.ChildList;
 import jetbrains.jetpad.model.children.ChildProperty;
+import jetbrains.jetpad.model.collections.list.ObservableArrayList;
+import jetbrains.jetpad.model.collections.list.ObservableList;
 import jetbrains.jetpad.model.property.Property;
 import jetbrains.jetpad.model.property.ValueProperty;
 
@@ -63,39 +66,52 @@ public class Model {
     }
   }
 
-  // TODO: Replace myName with a list of variables
-  public static class Argument extends Expression {
+  public abstract static class Argument extends Expression implements Abstract.Argument {
     private final Property<Boolean> myExplicit = new ValueProperty<>(true);
-    private final Property<String> myName = new ValueProperty<>();
-    private final ChildProperty<Argument, Expression> myType = new ChildProperty<>(this);
 
-    public Boolean getExplicit() {
+    @Override
+    public boolean getExplicit() {
       return myExplicit.get();
-    }
-
-    public String getName() {
-      return myName.get();
-    }
-
-    public Expression getType() {
-      return myType.get();
     }
 
     public Property<Boolean> isExplicit() {
       return myExplicit;
     }
 
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      throw new IllegalStateException();
+    }
+  }
+
+  public static class NameArgument extends Argument implements Abstract.NameArgument {
+    private final Property<String> myName = new ValueProperty<>();
+
+    @Override
+    public String getName() {
+      return myName.get();
+    }
+
     public Property<String> name() {
       return myName;
     }
 
-    public Property<Expression> type() {
-      return myType;
+    @Override
+    public Node[] children() {
+      return new Node[0];
     }
+  }
+
+  public static class TypeArgument extends Argument implements Abstract.TypeArgument {
+    private final ChildProperty<TypeArgument, Expression> myType = new ChildProperty<>(this);
 
     @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      throw new IllegalStateException();
+    public Expression getType() {
+      return myType.get();
+    }
+
+    public Property<Expression> type() {
+      return myType;
     }
 
     @Override
@@ -104,22 +120,41 @@ public class Model {
     }
   }
 
+  public static class TelescopeArgument extends TypeArgument implements Abstract.TelescopeArgument {
+    private final ObservableList<String> myNames = new ObservableArrayList<>();
+
+    @Override
+    public ObservableList<String> getNames() {
+      return myNames;
+    }
+
+    @Override
+    public String getName(int index) {
+      return myNames.get(index);
+    }
+
+    public ObservableList<String> names() {
+      return myNames;
+    }
+  }
+
   public static class LamExpression extends Expression implements Abstract.LamExpression {
-    private final Property<String> myVariable = new ValueProperty<>();
+    private final ChildList<LamExpression, Argument> myArguments = new ChildList<>(this);
     private final ChildProperty<LamExpression, Expression> myBody = new ChildProperty<>(this);
 
     @Override
-    public String getVariable() {
-      return myVariable.get();
+    public ObservableList<Argument> getArguments() {
+      return myArguments;
+    }
+
+    @Override
+    public Argument getArgument(int index) {
+      return myArguments.get(index);
     }
 
     @Override
     public Expression getBody() {
       return myBody.get();
-    }
-
-    public Property<String> variable() {
-      return myVariable;
     }
 
     public Property<Expression> body() {
@@ -133,7 +168,9 @@ public class Model {
 
     @Override
     public Node[] children() {
-      return new Node[] { getBody() };
+      Node[] result = myArguments.toArray(new Node[myArguments.size() + 1]);
+      result[myArguments.size()] = getBody();
+      return result;
     }
   }
 
@@ -194,43 +231,22 @@ public class Model {
   }
 
   public static class PiExpression extends Expression implements Abstract.PiExpression {
-    private final ChildProperty<PiExpression, Expression> myDomain = new ChildProperty<>(this);
+    private final ChildList<PiExpression, TypeArgument> myArguments = new ChildList<>(this);
     private final ChildProperty<PiExpression, Expression> myCodomain = new ChildProperty<>(this);
 
     @Override
-    public boolean isExplicit() {
-      if (myDomain.get() instanceof Argument) {
-        return ((Argument) myDomain.get()).getExplicit();
-      } else {
-        return true;
-      }
+    public ObservableList<TypeArgument> getArguments() {
+      return myArguments;
     }
 
     @Override
-    public String getVariable() {
-      if (myDomain.get() instanceof Argument) {
-        return ((Argument) myDomain.get()).getName();
-      } else {
-        return null;
-      }
-    }
-
-    @Override
-    public Expression getDomain() {
-      if (myDomain.get() instanceof Argument) {
-        return ((Argument) myDomain.get()).getType();
-      } else {
-        return myDomain.get();
-      }
+    public TypeArgument getArgument(int index) {
+      return myArguments.get(index);
     }
 
     @Override
     public Expression getCodomain() {
       return myCodomain.get();
-    }
-
-    public Property<Expression> domain() {
-      return myDomain;
     }
 
     public Property<Expression> codomain() {
@@ -244,7 +260,9 @@ public class Model {
 
     @Override
     public Node[] children() {
-      return new Node[] { myDomain.get(), getCodomain() };
+      Node[] result = myArguments.toArray(new Node[myArguments.size() + 1]);
+      result[myArguments.size()] = getCodomain();
+      return result;
     }
   }
 

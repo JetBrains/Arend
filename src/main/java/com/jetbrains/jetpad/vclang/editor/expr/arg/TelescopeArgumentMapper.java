@@ -1,6 +1,7 @@
-package com.jetbrains.jetpad.vclang.editor.expr;
+package com.jetbrains.jetpad.vclang.editor.expr.arg;
 
 import com.jetbrains.jetpad.vclang.editor.util.Validators;
+import com.jetbrains.jetpad.vclang.model.expr.Model;
 import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.cell.action.CellActions;
 import jetbrains.jetpad.cell.indent.IndentCell;
@@ -11,19 +12,18 @@ import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
-import static com.jetbrains.jetpad.vclang.model.expr.Model.Argument;
 import static jetbrains.jetpad.cell.util.CellFactory.*;
-import static jetbrains.jetpad.mapper.Synchronizers.forPropsTwoWay;
 
-public class ArgumentMapper extends Mapper<Argument, ArgumentMapper.Cell> {
-  public ArgumentMapper(Argument source) {
+public class TelescopeArgumentMapper extends Mapper<Model.TelescopeArgument, TelescopeArgumentMapper.Cell> {
+  public TelescopeArgumentMapper(Model.TelescopeArgument source) {
     super(source, new Cell());
   }
 
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forPropsTwoWay(getSource().name(), getTarget().variable.text()));
+    // TODO: Fix this.
+    // conf.add(forPropsTwoWay(getSource().name(), getTarget().variable.text()));
     conf.add(forExpression(this, getSource().type(), getTarget().type, "<type>"));
   }
 

@@ -2,6 +2,13 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
 
@@ -62,7 +69,18 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitLam(LamExpression expr) {
     if (myMode == Mode.NF) {
-      return Lam(expr.getVariable(), expr.getBody().accept(this));
+      List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
+      for (Argument argument : expr.getArguments()) {
+        if (argument instanceof NameArgument) {
+          arguments.add(argument);
+        } else
+        if (argument instanceof TelescopeArgument) {
+          arguments.add(new TelescopeArgument(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), ((TypeArgument) argument).getType().accept(this)));
+        } else {
+          throw new IllegalStateException();
+        }
+      }
+      return Lam(arguments, expr.getBody().accept(this));
     } else {
       return expr;
     }
@@ -83,7 +101,15 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     if (myMode == Mode.WHNF) {
       return expr;
     } else {
-      return Pi(expr.isExplicit(), expr.getVariable(), expr.getDomain().accept(this), expr.getCodomain().accept(this));
+      List<TypeArgument> arguments = new ArrayList<>();
+      for (TypeArgument argument : expr.getArguments()) {
+        if (argument instanceof TelescopeArgument) {
+          arguments.add(new TelescopeArgument(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), argument.getType().accept(this)));
+        } else {
+          arguments.add(new TypeArgument(argument.getExplicit(), argument.getType().accept(this)));
+        }
+      }
+      return Pi(arguments, expr.getCodomain().accept(this));
     }
   }
 

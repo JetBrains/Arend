@@ -3,9 +3,9 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
+import com.jetbrains.jetpad.vclang.term.error.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.typechecking.ArgInferenceError;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
 import org.junit.Test;
 
 import java.util.ArrayList;

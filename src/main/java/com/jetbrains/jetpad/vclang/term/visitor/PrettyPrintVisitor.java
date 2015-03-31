@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import java.io.PrintStream;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
+
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Void> {
   private final PrintStream myStream;
   private final List<String> myNames;
@@ -46,12 +48,17 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
   @Override
   public Void visitLam(Abstract.LamExpression expr, Integer prec) {
     if (prec > Abstract.LamExpression.PREC) myStream.print("(");
-    String var;
-    for (var = expr.getVariable(); myNames.contains(var); var += "'");
-    myStream.print("\\" + var + " => ");
-    myNames.add(var);
+    myStream.print("\\");
+    for (Abstract.Argument arg : expr.getArguments()) {
+      prettyPrintArgument(arg, myStream, myNames, 0);
+      addNames(myNames, arg);
+      myStream.print(" ");
+    }
+    myStream.print("=> ");
     expr.getBody().accept(this, Abstract.LamExpression.PREC);
-    myNames.remove(myNames.size() - 1);
+    for (Abstract.Argument arg : expr.getArguments()) {
+      removeNames(myNames, arg);
+    }
     if (prec > Abstract.LamExpression.PREC) myStream.print(")");
     return null;
   }
@@ -71,17 +78,17 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
   @Override
   public Void visitPi(Abstract.PiExpression expr, Integer prec) {
     if (prec > Abstract.PiExpression.PREC) myStream.print("(");
-    if (expr.getVariable() == null) {
-      expr.getDomain().accept(this, Abstract.PiExpression.PREC + 1);
-    } else {
-      myStream.print("(" + expr.getVariable() + " : ");
-      expr.getDomain().accept(this, 0);
-      myStream.print(")");
+    int domPrec = expr.getArguments().size() > 1 ? Abstract.AppExpression.PREC + 1 : Abstract.PiExpression.PREC + 1;
+    for (Abstract.Argument argument : expr.getArguments()) {
+      prettyPrintArgument(argument, myStream, myNames, domPrec);
+      addNames(myNames, argument);
+      myStream.print(" ");
     }
-    myStream.print(" -> ");
-    myNames.add(expr.getVariable());
+    myStream.print("-> ");
     expr.getCodomain().accept(this, Abstract.PiExpression.PREC);
-    myNames.remove(myNames.size() - 1);
+    for (Abstract.Argument arg : expr.getArguments()) {
+      removeNames(myNames, arg);
+    }
     if (prec > Abstract.PiExpression.PREC) myStream.print(")");
     return null;
   }

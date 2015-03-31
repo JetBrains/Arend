@@ -1,16 +1,23 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
 
 public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
-  private final int from;
-  private final int on;
+  private int myFrom;
+  private int myOn;
 
   public LiftIndexVisitor(int from, int on) {
-    this.from = from;
-    this.on = on;
+    myFrom = from;
+    myOn = on;
   }
 
   @Override
@@ -25,14 +32,28 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitIndex(IndexExpression expr) {
-    if (expr.getIndex() < from) return expr;
-    if (expr.getIndex() + on >= 0) return Index(expr.getIndex() + on);
-    throw new NegativeIndex();
+    if (expr.getIndex() < myFrom) return expr;
+    if (expr.getIndex() + myOn >= 0) return Index(expr.getIndex() + myOn);
+    throw new NegativeIndexException();
   }
 
   @Override
   public Expression visitLam(LamExpression expr) {
-    return Lam(expr.getVariable(), expr.getBody().liftIndex(from + 1, on));
+    List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
+    for (Argument argument : expr.getArguments()) {
+      if (argument instanceof NameArgument) {
+        arguments.add(argument);
+        ++myFrom;
+      } else
+      if (argument instanceof TelescopeArgument) {
+        TelescopeArgument teleArgument = (TelescopeArgument) argument;
+        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(myFrom, myOn)));
+        myFrom += teleArgument.getNames().size();
+      } else {
+        throw new IllegalStateException();
+      }
+    }
+    return Lam(arguments, expr.getBody().liftIndex(myFrom, myOn));
   }
 
   @Override
@@ -47,7 +68,18 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr) {
-    return Pi(expr.isExplicit(), expr.getVariable(), expr.getDomain().accept(this), expr.getCodomain().liftIndex(from + 1, on));
+    List<TypeArgument> arguments = new ArrayList<>(expr.getArguments().size());
+    for (TypeArgument argument : expr.getArguments()) {
+      if (argument instanceof TelescopeArgument) {
+        TelescopeArgument teleArgument = (TelescopeArgument) argument;
+        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(myFrom, myOn)));
+        myFrom += teleArgument.getNames().size();
+      } else {
+        arguments.add(new TypeArgument(argument.getExplicit(), argument.getType().liftIndex(myFrom, myOn)));
+        ++myFrom;
+      }
+    }
+    return Pi(arguments, expr.getCodomain().liftIndex(myFrom, myOn));
   }
 
   @Override
@@ -75,5 +107,5 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
   }
 
-  public static class NegativeIndex extends RuntimeException {}
+  public static class NegativeIndexException extends RuntimeException {}
 }

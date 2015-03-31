@@ -1,5 +1,9 @@
 package com.jetbrains.jetpad.vclang.editor.expr;
 
+import com.jetbrains.jetpad.vclang.editor.expr.arg.NameArgumentMapper;
+import com.jetbrains.jetpad.vclang.editor.expr.arg.TelescopeArgumentMapper;
+import com.jetbrains.jetpad.vclang.editor.expr.arg.TypeArgumentMapper;
+import com.jetbrains.jetpad.vclang.model.expr.Model;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.mapper.MapperFactory;
@@ -43,8 +47,14 @@ public class ExpressionMapperFactory implements MapperFactory<Expression, Cell> 
     if (source instanceof ParensExpression) {
       return new ParensExpressionMapper((ParensExpression)source);
     }
-    if (source instanceof Argument) {
-      return new ArgumentMapper((Argument) source);
+    if (source instanceof Model.TelescopeArgument) {
+      return new TelescopeArgumentMapper((Model.TelescopeArgument) source);
+    }
+    if (source instanceof Model.TypeArgument) {
+      return new TypeArgumentMapper((Model.TypeArgument) source);
+    }
+    if (source instanceof Model.NameArgument) {
+      return new NameArgumentMapper((Model.NameArgument) source);
     }
     return null;
   }

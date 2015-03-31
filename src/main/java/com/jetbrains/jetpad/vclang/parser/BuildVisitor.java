@@ -1,13 +1,15 @@
 package com.jetbrains.jetpad.vclang.parser;
 
-import com.jetbrains.jetpad.vclang.term.definition.Argument;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;

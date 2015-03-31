@@ -1,56 +1,39 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PiExpression extends Expression implements Abstract.PiExpression {
-  private final boolean explicit;
-  private final String variable;
-  private final Expression domain;
-  private final Expression codomain;
+  private final List<TypeArgument> myArguments;
+  private final Expression myCodomain;
 
   public PiExpression(Expression domain, Expression codomain) {
-    this(true, null, domain, codomain.liftIndex(0, 1));
+    this(new ArrayList<TypeArgument>(1), codomain.liftIndex(0, 1));
+    myArguments.add(new TypeArgument(true, domain));
   }
 
-  public PiExpression(boolean explicit, String variable, Expression domain, Expression codomain) {
-    this.explicit = explicit;
-    this.variable = variable;
-    this.domain = domain;
-    this.codomain = codomain;
-  }
-
-  @Override
-  public String getVariable() {
-    return variable;
+  public PiExpression(List<TypeArgument> arguments, Expression codomain) {
+    myArguments = arguments;
+    myCodomain = codomain;
   }
 
   @Override
-  public Expression getDomain() {
-    return domain;
+  public List<TypeArgument> getArguments() {
+    return myArguments;
+  }
+
+  @Override
+  public TypeArgument getArgument(int index) {
+    return myArguments.get(index);
   }
 
   @Override
   public Expression getCodomain() {
-    return codomain;
-  }
-
-  @Override
-  public boolean isExplicit() {
-    return explicit;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (o == this) return true;
-    if (!(o instanceof PiExpression)) return false;
-    PiExpression other = (PiExpression)o;
-    return domain.equals(other.domain) && codomain.equals(other.codomain);
-  }
-
-  @Override
-  public String toString() {
-    return (explicit ? "(" : "{") + (variable == null ? "" : variable + " : ") + domain.toString() + (explicit ? ")" : "}") + " -> " + codomain.toString();
+    return myCodomain;
   }
 
   @Override

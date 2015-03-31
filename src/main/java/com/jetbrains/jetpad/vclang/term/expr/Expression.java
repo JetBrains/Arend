@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.visitor.*;
 
 import java.io.PrintStream;
@@ -29,8 +31,13 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return result != null && result.size() == 0;
   }
 
+  @Override
+  public void prettyPrint(PrintStream stream, List<String> names, int prec) {
+    accept(new PrettyPrintVisitor(stream, names), prec);
+  }
+
   public final Expression liftIndex(int from, int on) {
-    return accept(new LiftIndexVisitor(from, on));
+    return on == 0 ? this : accept(new LiftIndexVisitor(from, on));
   }
 
   public final Expression subst(Expression substExpr, int from) {
@@ -39,10 +46,6 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   public final Expression normalize(NormalizeVisitor.Mode mode) {
     return accept(new NormalizeVisitor(mode));
-  }
-
-  public final void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    accept(new PrettyPrintVisitor(stream, names), prec);
   }
 
   public final CheckTypeVisitor.OKResult checkType(Map<String, Definition> globalContext, List<Definition> localContext, Expression expectedType, List<TypeCheckingError> errors) {
@@ -74,20 +77,16 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return new IndexExpression(i);
   }
 
-  public static LamExpression Lam(String variable, Expression body) {
-    return new LamExpression(variable, body);
+  public static LamExpression Lam(List<Argument> arguments, Expression body) {
+    return new LamExpression(arguments, body);
   }
 
-  public static PiExpression Pi(String variable, Expression left, Expression right) {
-    return new PiExpression(true, variable, left, right);
+  public static PiExpression Pi(List<TypeArgument> arguments, Expression codomain) {
+    return new PiExpression(arguments, codomain);
   }
 
-  public static PiExpression Pi(boolean explicit, String variable, Expression left, Expression right) {
-    return new PiExpression(explicit, variable, left, right);
-  }
-
-  public static PiExpression Pi(Expression left, Expression right) {
-    return new PiExpression(left, right);
+  public static PiExpression Pi(Expression domain, Expression codomain) {
+    return new PiExpression(domain, codomain);
   }
 
   public static VarExpression Var(String name) {

@@ -1,11 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
-import com.jetbrains.jetpad.vclang.term.definition.Argument;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
+import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.typechecking.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,7 +126,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Abstract.Expression[] argsImp = new Abstract.Expression[signature.getArguments().length];
     int i, j;
     for (i = 0, j = 0; i < signature.getArguments().length && j < args.length; ++i, ++j) {
-      if (args[j].isExplicit == signature.getArgument(i).isExplicit()) {
+      if (args[j].isExplicit == signature.getArgument(i).getExplicit()) {
         argsImp[i] = args[j].expression;
       } else
       if (args[j].isExplicit) {
@@ -208,7 +211,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (signature.getArguments().length == argsNumber) {
       resultType = signature.getResultType();
     } else {
-      Argument[] rest = new Argument[signature.getArguments().length - argsNumber];
+      TypeArgument[] rest = new TypeArgument[signature.getArguments().length - argsNumber];
       for (i = 0; i < rest.length; ++i) {
         rest[i] = signature.getArgument(argsNumber + i);
       }
@@ -219,7 +222,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     Expression resultExpr = okFunction.expression;
     for (i = 0; i < argsNumber; ++i) {
-      resultExpr = App(resultExpr, resultArgs[i].expression, signature.getArgument(i).isExplicit());
+      resultExpr = App(resultExpr, resultArgs[i].expression, signature.getArgument(i).getExplicit());
     }
     OKResult result = checkResult(expectedType, new OKResult(resultExpr, resultType, null), expression);
 
@@ -285,6 +288,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitLam(Abstract.LamExpression expr, Expression expectedType) {
+    // TODO: Fix this.
+
     if (expectedType == null) {
       TypeCheckingError error = new TypeInferenceError(expr);
       expr.setWellTyped(Error(null, error));
@@ -293,12 +298,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+    String var = expr.getArgument(0) instanceof NameArgument ? ((NameArgument) expr.getArgument(0)).getName() : ((TelescopeArgument) expr.getArgument(0)).getName(0);
     if (expectedNorm instanceof PiExpression) {
       PiExpression type = (PiExpression) expectedNorm;
-      InferHoleExpression hole = type.getDomain().accept(new FindHoleVisitor());
+      InferHoleExpression hole = type.getArgument(0).getType().accept(new FindHoleVisitor());
       if (hole == null) {
         // TODO: This is ugly. Fix it.
-        myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(type.getDomain()), Var(expr.getVariable())));
+        myLocalContext.add(new FunctionDefinition(var, new Signature(type.getArgument(0).getType()), Var(var)));
         Result body = typeCheck(expr.getBody(), type.getCodomain());
         myLocalContext.remove(myLocalContext.size() - 1);
         if (!(body instanceof OKResult)) return body;
@@ -307,18 +313,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         for (CompareVisitor.Equation equation : okBody.equations) {
           try {
             equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -1)));
-          } catch (LiftIndexVisitor.NegativeIndex ignored) { }
+          } catch (LiftIndexVisitor.NegativeIndexException ignored) { }
         }
-        OKResult result = new OKResult(Lam(expr.getVariable(), okBody.expression), Pi(type.isExplicit(), type.getVariable(), type.getDomain(), okBody.type), equations);
+        List<Argument> args = new ArrayList<>();
+        args.add(new NameArgument(expr.getArgument(0).getExplicit(), var));
+        OKResult result = new OKResult(Lam(args, okBody.expression), Pi(type.getArguments(), okBody.type), equations);
         expr.setWellTyped(result.expression);
         return result;
       } else {
-        return new InferErrorResult(hole, new TypeInferenceError(new VarExpression(expr.getVariable())));
+        return new InferErrorResult(hole, new TypeInferenceError(Var(var)));
       }
     }
 
     if (expectedNorm instanceof InferHoleExpression) {
-      return new InferErrorResult((InferHoleExpression) expectedNorm, new TypeInferenceError(new VarExpression(expr.getVariable())));
+      return new InferErrorResult((InferHoleExpression) expectedNorm, new TypeInferenceError(Var(var)));
     }
 
     TypeCheckingError error = new TypeMismatchError(expectedNorm, Pi(Var("?"), Var("?")), expr);
@@ -342,23 +350,54 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitPi(Abstract.PiExpression expr, Expression expectedType) {
-    Result domainResult = typeCheck(expr.getDomain(), Universe(-1));
-    if (!(domainResult instanceof OKResult)) return domainResult;
-    OKResult okDomainResult = (OKResult) domainResult;
-    // TODO: This is ugly. Fix it.
-    myLocalContext.add(new FunctionDefinition(expr.getVariable(), new Signature(okDomainResult.expression), Var(expr.getVariable())));
+    OKResult[] domainResults = new OKResult[expr.getArguments().size()];
+    int numberOfVars = 0;
+    List<CompareVisitor.Equation> equations = new ArrayList<>();
+    for (int i = 0; i < domainResults.length; ++i) {
+      Result result = typeCheck(expr.getArgument(i).getType(), Universe(-1));
+      if (!(result instanceof OKResult)) return result;
+      domainResults[i] = (OKResult) result;
+      for (CompareVisitor.Equation equation : domainResults[i].equations) {
+        try {
+          equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -numberOfVars)));
+        } catch (LiftIndexVisitor.NegativeIndexException ignored) { }
+      }
+      if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
+        for (String name : ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames()) {
+          // TODO: This is ugly. Fix it.
+          myLocalContext.add(new FunctionDefinition(name, new Signature(domainResults[i].expression), Var(name)));
+          ++numberOfVars;
+        }
+      }
+    }
+
     Result codomainResult = typeCheck(expr.getCodomain(), Universe(-1));
-    myLocalContext.remove(myLocalContext.size() - 1);
+    for (int i = 0; i < numberOfVars; ++i) {
+      myLocalContext.remove(myLocalContext.size() - 1);
+    }
     if (!(codomainResult instanceof OKResult)) return codomainResult;
     OKResult okCodomainResult = (OKResult) codomainResult;
-    Expression actualType = Universe(Math.max(((UniverseExpression) okDomainResult.type).getLevel(), ((UniverseExpression) okCodomainResult.type).getLevel()));
+    int level = ((UniverseExpression) okCodomainResult.type).getLevel();
+    for (OKResult domainResult : domainResults) {
+      level = Math.max(((UniverseExpression) domainResult.type).getLevel(), level);
+    }
+    Expression actualType = Universe(level);
 
     for (CompareVisitor.Equation equation : okCodomainResult.equations) {
       try {
-        okCodomainResult.equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -1)));
-      } catch (LiftIndexVisitor.NegativeIndex ignored) { }
+        okCodomainResult.equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -numberOfVars)));
+      } catch (LiftIndexVisitor.NegativeIndexException ignored) { }
     }
-    return checkResult(expectedType, new OKResult(Pi(expr.isExplicit(), expr.getVariable(), okDomainResult.expression, okCodomainResult.expression), actualType, okDomainResult.equations), expr);
+
+    List<TypeArgument> resultArguments = new ArrayList<>(domainResults.length);
+    for (int i = 0; i < domainResults.length; ++i) {
+      if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
+        resultArguments.add(new TelescopeArgument(expr.getArgument(i).getExplicit(), ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames(), domainResults[i].expression));
+      } else {
+        resultArguments.add(new TypeArgument(expr.getArgument(i).getExplicit(), domainResults[i].expression));
+      }
+    }
+    return checkResult(expectedType, new OKResult(Pi(resultArguments, okCodomainResult.expression), actualType, equations), expr);
   }
 
   @Override

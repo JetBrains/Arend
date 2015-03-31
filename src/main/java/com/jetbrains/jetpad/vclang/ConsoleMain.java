@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.visitor.NormalizeVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;

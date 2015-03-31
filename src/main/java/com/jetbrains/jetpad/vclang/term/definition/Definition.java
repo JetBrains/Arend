@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
 
 import java.util.ArrayList;
 import java.util.List;

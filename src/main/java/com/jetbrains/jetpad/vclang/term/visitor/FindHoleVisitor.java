@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 public class FindHoleVisitor implements ExpressionVisitor<CheckTypeVisitor.InferHoleExpression> {
   @Override
@@ -21,7 +23,15 @@ public class FindHoleVisitor implements ExpressionVisitor<CheckTypeVisitor.Infer
 
   @Override
   public CheckTypeVisitor.InferHoleExpression visitLam(LamExpression expr) {
-    return expr.getBody().accept(this);
+    CheckTypeVisitor.InferHoleExpression result = expr.getBody().accept(this);
+    if (result != null) return result;
+    for (Argument argument : expr.getArguments()) {
+      if (argument instanceof TypeArgument) {
+        result = ((TypeArgument) argument).getType().accept(this);
+        if (result != null) return result;
+      }
+    }
+    return null;
   }
 
   @Override
@@ -36,8 +46,13 @@ public class FindHoleVisitor implements ExpressionVisitor<CheckTypeVisitor.Infer
 
   @Override
   public CheckTypeVisitor.InferHoleExpression visitPi(PiExpression expr) {
-    CheckTypeVisitor.InferHoleExpression result = expr.getDomain().accept(this);
-    return result == null ? expr.getCodomain().accept(this) : result;
+    CheckTypeVisitor.InferHoleExpression result = expr.getCodomain().accept(this);
+    if (result != null) return result;
+    for (TypeArgument argument : expr.getArguments()) {
+      result = argument.getType().accept(this);
+      if (result != null) return result;
+    }
+    return null;
   }
 
   @Override

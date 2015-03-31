@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term.typechecking;
+package com.jetbrains.jetpad.vclang.term.error;
 
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 

@@ -6,7 +6,6 @@ import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.util.CellFactory;
 import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
-import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forArgument;
 import static com.jetbrains.jetpad.vclang.editor.Synchronizers.forExpression;
 import static com.jetbrains.jetpad.vclang.editor.util.Cells.noDelete;
 import static com.jetbrains.jetpad.vclang.model.expr.Model.PiExpression;
@@ -14,13 +13,14 @@ import static jetbrains.jetpad.cell.util.CellFactory.*;
 
 public class PiExpressionMapper extends ExpressionMapper<PiExpression, PiExpressionMapper.Cell> {
   public PiExpressionMapper(PiExpression source) {
-    super(source, new Cell(source.position().prec() > Abstract.PiExpression.PREC));
+    super(source, new Cell(source.prec() > Abstract.PiExpression.PREC));
   }
 
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
-    conf.add(forArgument(this, getSource().domain(), getTarget().domain, "<dom>"));
+    // TODO: Fix this.
+    // conf.add(forArgument(this, getSource().domain(), getTarget().domain, "<dom>"));
     conf.add(forExpression(this, getSource().codomain(), getTarget().codomain, "<cod>"));
   }
 

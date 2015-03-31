@@ -2,6 +2,10 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.model.expr.Model;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.List;
 
@@ -25,7 +29,7 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
   public Model.VarExpression visitDefCall(DefCallExpression expr) {
     Model.VarExpression result = new Model.VarExpression();
     result.name().set(expr.getDefinition().getName());
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
   }
 
@@ -34,59 +38,98 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
     assert expr.getIndex() < myLocalContext.size();
     Model.VarExpression result = new Model.VarExpression();
     result.name().set(myLocalContext.get(expr.getIndex()));
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
   }
 
   @Override
   public Model.LamExpression visitLam(LamExpression expr) {
     Model.LamExpression result = new Model.LamExpression();
-    result.variable().set(expr.getVariable());
-    myLocalContext.add(expr.getVariable());
-    result.body().set(expr.accept(this));
-    myLocalContext.remove(myLocalContext.size() - 1);
-    result.wellTypedExpr().set(expr);
+    int numberOfVars = 0;
+    for (Argument argument : expr.getArguments()) {
+      if (argument instanceof NameArgument) {
+        Model.NameArgument modelArgument = new Model.NameArgument();
+        result.getArguments().add(modelArgument);
+        modelArgument.isExplicit().set(argument.getExplicit());
+        modelArgument.name().set(((NameArgument) argument).getName());
+        modelArgument.setWellTyped(argument);
+
+        ++numberOfVars;
+        myLocalContext.add(((NameArgument) argument).getName());
+      } else
+      if (argument instanceof TelescopeArgument) {
+        Model.TelescopeArgument modelArgument = new Model.TelescopeArgument();
+        result.getArguments().add(modelArgument);
+        modelArgument.isExplicit().set(argument.getExplicit());
+        modelArgument.getNames().addAll(((TelescopeArgument) argument).getNames());
+        modelArgument.type().set(((TelescopeArgument) argument).getType().accept(this));
+        modelArgument.setWellTyped(argument);
+
+        numberOfVars += ((TelescopeArgument) argument).getNames().size();
+        myLocalContext.addAll(((TelescopeArgument) argument).getNames());
+      } else {
+        throw new IllegalStateException();
+      }
+    }
+
+    result.body().set(expr.getBody().accept(this));
+    for (int i = 0; i < numberOfVars; ++i) {
+      myLocalContext.remove(myLocalContext.size() - 1);
+    }
+    result.setWellTyped(expr);
     return result;
   }
 
   @Override
   public Model.NatExpression visitNat(NatExpression expr) {
     Model.NatExpression result = new Model.NatExpression();
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
   }
 
   @Override
   public Model.NelimExpression visitNelim(NelimExpression expr) {
     Model.NelimExpression result = new Model.NelimExpression();
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
   }
 
   @Override
   public Model.PiExpression visitPi(PiExpression expr) {
     Model.PiExpression result = new Model.PiExpression();
-    Model.Argument arg = new Model.Argument();
-    String var = expr.getVariable();
-    arg.isExplicit().set(expr.isExplicit());
-    arg.name().set(var);
-    arg.type().set(expr.getDomain().accept(this));
-    result.domain().set(arg);
-    if (var != null) {
-      myLocalContext.add(expr.getVariable());
+    int numberOfVars = 0;
+    for (TypeArgument argument : expr.getArguments()) {
+      if (argument instanceof TelescopeArgument) {
+        Model.TelescopeArgument arg = new Model.TelescopeArgument();
+        result.getArguments().add(arg);
+        arg.isExplicit().set(argument.getExplicit());
+        arg.type().set(argument.getType().accept(this));
+        arg.names().addAll(((TelescopeArgument) argument).getNames());
+        arg.setWellTyped(argument);
+
+        numberOfVars += ((TelescopeArgument) argument).getNames().size();
+        myLocalContext.addAll(((TelescopeArgument) argument).getNames());
+      } else {
+        Model.TypeArgument arg = new Model.TypeArgument();
+        result.getArguments().add(arg);
+        arg.isExplicit().set(argument.getExplicit());
+        arg.type().set(argument.getType().accept(this));
+        arg.setWellTyped(argument);
+      }
     }
+
     result.codomain().set(expr.getCodomain().accept(this));
-    if (var != null) {
+    for (int i = 0; i < numberOfVars; ++i) {
       myLocalContext.remove(myLocalContext.size() - 1);
     }
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
   }
 
   @Override
   public Model.SucExpression visitSuc(SucExpression expr) {
     Model.SucExpression result = new Model.SucExpression();
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
   }
 
@@ -94,7 +137,7 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
   public Model.UniverseExpression visitUniverse(UniverseExpression expr) {
     Model.UniverseExpression result = new Model.UniverseExpression();
     result.level().set(expr.getLevel());
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
   }
 
@@ -102,14 +145,14 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
   public Model.VarExpression visitVar(VarExpression expr) {
     Model.VarExpression result = new Model.VarExpression();
     result.name().set(expr.getName());
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
   }
 
   @Override
   public Model.ZeroExpression visitZero(ZeroExpression expr) {
     Model.ZeroExpression result = new Model.ZeroExpression();
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
   }
 
@@ -118,7 +161,7 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
     /*
     // TODO: Check if expr.expression() == null.
     Model.Expression result = expr.expression().accept(this);
-    result.wellTypedExpr().set(expr);
+    result.setWellTyped(expr);
     return result;
     */
     return null;

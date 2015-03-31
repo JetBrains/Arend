@@ -56,14 +56,19 @@ public class ContainerFactory {
     result.definitions.add(def);
     LamExpression expr1 = new LamExpression();
     def.term().set(expr1);
-    expr1.variable().set("x");
+    NameArgument arg1 = new NameArgument();
+    expr1.getArguments().add(arg1);
+    arg1.isExplicit().set(true);
+    arg1.name().set("x");
     VarExpression expr2 = new VarExpression();
     expr1.body().set(expr2);
     expr2.name().set("x");
     PiExpression expr3 = new PiExpression();
     def.resultType().set(expr3);
-    expr3.domain().set(new NatExpression());
-    expr3.codomain().set(new NatExpression());
+    TypeArgument arg2 = new TypeArgument();
+    expr3.getArguments().add(arg2);
+    arg2.isExplicit().set(true);
+    arg2.type().set(new NatExpression());
     return result;
   }
 }

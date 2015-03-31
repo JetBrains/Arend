@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.definition.Definition;
 import com.jetbrains.jetpad.vclang.model.definition.EmptyDefinition;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.model.expr.Model;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.util.CellLists;
 import jetbrains.jetpad.completion.CompletionItem;
@@ -26,7 +27,6 @@ import jetbrains.jetpad.projectional.generic.RoleCompletion;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.model.expr.Model.Argument;
 import static com.jetbrains.jetpad.vclang.model.expr.Model.Expression;
 
 public class Synchronizers {
@@ -69,10 +69,10 @@ public class Synchronizers {
       @Override
       public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Expression> target) {
         List<CompletionItem> result = ExpressionCompletion.getInstance().createRoleCompletion(ctx, mapper, contextNode, target);
-        result.add(new SimpleCompletionItem("bind ", "binder") {
+        result.add(new SimpleCompletionItem("tele ", "telescope") {
           @Override
           public Runnable complete(String text) {
-            return target.set(new Argument());
+            return target.set(new Model.TelescopeArgument());
           }
         });
         return result;
