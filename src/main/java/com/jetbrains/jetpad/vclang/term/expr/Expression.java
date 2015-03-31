@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.typechecking.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.visitor.*;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +25,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   public boolean equals(Object obj) {
     if (this == obj) return true;
     if (!(obj instanceof Expression)) return false;
-    List<CompareVisitor.Equation> result = compare(this, (Expression) obj);
+    List<CompareVisitor.Equation> result = compare(this, (Expression) obj, CompareVisitor.CMP.EQ);
     return result != null && result.size() == 0;
   }
 
@@ -48,8 +49,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return new CheckTypeVisitor(globalContext, localContext, errors).checkType(this, expectedType);
   }
 
-  public static List<CompareVisitor.Equation> compare(Abstract.Expression expr1, Abstract.Expression expr2) {
-    CompareVisitor visitor = new CompareVisitor();
+  public static List<CompareVisitor.Equation> compare(Abstract.Expression expr1, Abstract.Expression expr2, CompareVisitor.CMP cmp) {
+    CompareVisitor visitor = new CompareVisitor(cmp, new ArrayList<CompareVisitor.Equation>());
     Boolean result = expr1.accept(visitor, expr2);
     return result ? visitor.equations() : null;
   }

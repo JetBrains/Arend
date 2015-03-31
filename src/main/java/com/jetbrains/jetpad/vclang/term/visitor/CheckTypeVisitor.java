@@ -79,7 +79,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     Expression actualNorm = result.type.normalize(NormalizeVisitor.Mode.NF);
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
-    result.equations = compare(expectedNorm, actualNorm);
+    result.equations = compare(expectedNorm, actualNorm, CompareVisitor.CMP.GEQ);
     if (result.equations == null) {
       TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression);
       expression.setWellTyped(Error(result.expression, error));

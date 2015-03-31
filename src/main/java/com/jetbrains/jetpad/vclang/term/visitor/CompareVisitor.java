@@ -2,11 +2,26 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expression, Boolean> {
-  private final List<Equation> myEquations = new ArrayList<>();
+  private final List<Equation> myEquations;
+  private final CMP myCmp;
+
+  public static enum CMP { EQ, GEQ, LEQ }
+
+  private static CMP not(CMP cmp) {
+    switch (cmp) {
+      case EQ:
+        return CMP.EQ;
+      case GEQ:
+        return CMP.LEQ;
+      case LEQ:
+        return CMP.GEQ;
+      default:
+        throw new IllegalStateException();
+    }
+  }
 
   public static class Equation {
     public Abstract.HoleExpression hole;
@@ -16,6 +31,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
       this.hole = hole;
       this.expression = expression;
     }
+  }
+
+  public CompareVisitor(CMP cmp, List<Equation> equations) {
+    myCmp = cmp;
+    myEquations = equations;
   }
 
   public List<Equation> equations() {
@@ -65,7 +85,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
     if (expr == other) return true;
     if (!(other instanceof Abstract.PiExpression)) return false;
     Abstract.PiExpression otherPi = (Abstract.PiExpression) other;
-    return expr.getDomain().accept(this, otherPi.getDomain()) && expr.getCodomain().accept(this, otherPi.getCodomain());
+    return expr.getDomain().accept(new CompareVisitor(not(myCmp), myEquations), otherPi.getDomain()) && expr.getCodomain().accept(this, otherPi.getCodomain());
   }
 
   @Override
@@ -77,7 +97,19 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
   @Override
   public Boolean visitUniverse(Abstract.UniverseExpression expr, Abstract.Expression other) {
     if (expr == other) return true;
-    return other instanceof Abstract.UniverseExpression && (expr.getLevel() == -1 || expr.getLevel() >= ((Abstract.UniverseExpression) other).getLevel());
+    if (!(other instanceof Abstract.UniverseExpression)) return false;
+    Abstract.UniverseExpression otherUniverse = (Abstract.UniverseExpression) other;
+
+    switch (myCmp) {
+      case EQ:
+        return expr.getLevel() == otherUniverse.getLevel();
+      case GEQ:
+        return expr.getLevel() == -1 || expr.getLevel() >= otherUniverse.getLevel();
+      case LEQ:
+        return otherUniverse.getLevel() == -1 || otherUniverse.getLevel() >= expr.getLevel();
+      default:
+        throw new IllegalStateException();
+    }
   }
 
   @Override
