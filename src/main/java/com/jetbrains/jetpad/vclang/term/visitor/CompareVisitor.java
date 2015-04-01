@@ -2,11 +2,12 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expression, Boolean> {
   private final List<Equation> myEquations;
-  private final CMP myCmp;
+  private CMP myCmp;
 
   public static enum CMP { EQ, GEQ, LEQ }
 
@@ -20,6 +21,46 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
         return CMP.GEQ;
       default:
         throw new IllegalStateException();
+    }
+  }
+
+  private static Abstract.Expression lamArgs(Abstract.Expression expr, List<Abstract.Expression> args) {
+    if (expr instanceof Abstract.LamExpression) {
+      Abstract.LamExpression lamExpr = (Abstract.LamExpression) expr;
+      for (Abstract.Argument arg : lamExpr.getArguments()) {
+        if (arg instanceof Abstract.TelescopeArgument) {
+          Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
+          for (String ignored : teleArg.getNames()) {
+            args.add(teleArg.getType());
+          }
+        } else
+        if (arg instanceof Abstract.NameArgument) {
+          args.add(null);
+        }
+      }
+      return lamArgs(lamExpr.getBody(), args);
+    } else {
+      return expr;
+    }
+  }
+
+  private static Abstract.Expression piArgs(Abstract.Expression expr, List<Abstract.Expression> args) {
+    if (expr instanceof Abstract.PiExpression) {
+      Abstract.PiExpression piExpr = (Abstract.PiExpression) expr;
+      for (Abstract.Argument arg : piExpr.getArguments()) {
+        if (arg instanceof Abstract.TelescopeArgument) {
+          Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
+          for (String ignored : teleArg.getNames()) {
+            args.add(teleArg.getType());
+          }
+        } else
+        if (arg instanceof Abstract.TypeArgument) {
+          args.add(((Abstract.TypeArgument) arg).getType());
+        }
+      }
+      return piArgs(piExpr.getCodomain(), args);
+    } else {
+      return expr;
     }
   }
 
@@ -65,8 +106,16 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
   @Override
   public Boolean visitLam(Abstract.LamExpression expr, Abstract.Expression other) {
     if (expr == other) return true;
-    // TODO: Compare arguments.
-    return other instanceof Abstract.LamExpression && expr.getBody().accept(this, ((Abstract.LamExpression) other).getBody());
+    if (!(other instanceof Abstract.LamExpression)) return false;
+    List<Abstract.Expression> args1 = new ArrayList<>();
+    Abstract.Expression body1 = lamArgs(expr, args1);
+    List<Abstract.Expression> args2 = new ArrayList<>();
+    Abstract.Expression body2 = lamArgs(other, args2);
+    if (args1.size() != args2.size() || !body1.accept(this, body2)) return false;
+    for (int i = 0; i < args1.size(); ++i) {
+      if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, args2.get(i))) return false;
+    }
+    return true;
   }
 
   @Override
@@ -85,9 +134,17 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
   public Boolean visitPi(Abstract.PiExpression expr, Abstract.Expression other) {
     if (expr == other) return true;
     if (!(other instanceof Abstract.PiExpression)) return false;
-    Abstract.PiExpression otherPi = (Abstract.PiExpression) other;
-    // TODO: Compare arguments.
-    return expr.getCodomain().accept(this, otherPi.getCodomain());
+    List<Abstract.Expression> args1 = new ArrayList<>();
+    Abstract.Expression codomain1 = piArgs(expr, args1);
+    List<Abstract.Expression> args2 = new ArrayList<>();
+    Abstract.Expression codomain2 = piArgs(other, args2);
+    if (args1.size() != args2.size() || !codomain1.accept(this, codomain2)) return false;
+    myCmp = not(myCmp);
+    for (int i = 0; i < args1.size(); ++i) {
+      if (!args1.get(i).accept(this, args2.get(i))) return false;
+    }
+    myCmp = not(myCmp);
+    return true;
   }
 
   @Override

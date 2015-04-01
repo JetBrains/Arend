@@ -54,6 +54,18 @@ public class ExpressionFactory {
     return Arrays.asList(args);
   }
 
+  public static List<Argument> argsLam(Argument... args) {
+    return Arrays.asList(args);
+  }
+
+  public static NameArgument Name(boolean explicit, String name) {
+    return new NameArgument(explicit, name);
+  }
+
+  public static NameArgument Name(String name) {
+    return new NameArgument(true, name);
+  }
+
   public static TypeArgument TypeArg(boolean explicit, Expression type) {
     return new TypeArgument(explicit, type);
   }
@@ -61,6 +73,7 @@ public class ExpressionFactory {
   public static TypeArgument TypeArg(Expression type) {
     return new TypeArgument(true, type);
   }
+
   public static TelescopeArgument Tele(boolean explicit, List<String> names, Expression type) {
     return new TelescopeArgument(explicit, names, type);
   }
