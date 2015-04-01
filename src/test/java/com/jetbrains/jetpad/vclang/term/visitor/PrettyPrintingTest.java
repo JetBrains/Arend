@@ -10,7 +10,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class PrettyPrintingTest {
   private class NullOutputStream extends OutputStream {

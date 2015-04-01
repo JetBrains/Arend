@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
 public class SubstTest {

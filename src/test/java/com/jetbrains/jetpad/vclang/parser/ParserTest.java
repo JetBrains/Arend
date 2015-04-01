@@ -9,7 +9,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class ParserTest {
@@ -73,12 +73,12 @@ public class ParserTest {
     FunctionDefinition def = (FunctionDefinition)parseDef("function f : (x y : N) {z w : N} -> (t : N) -> {r : N} -> N x y z w t r = N");
     def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
     assertEquals(6, def.getSignature().getArguments().length);
-    assertTrue(def.getSignature().getArgument(0).isExplicit());
-    assertTrue(def.getSignature().getArgument(1).isExplicit());
-    assertFalse(def.getSignature().getArgument(2).isExplicit());
-    assertFalse(def.getSignature().getArgument(3).isExplicit());
-    assertTrue(def.getSignature().getArgument(4).isExplicit());
-    assertFalse(def.getSignature().getArgument(5).isExplicit());
+    assertTrue(def.getSignature().getArgument(0).getExplicit());
+    assertTrue(def.getSignature().getArgument(1).getExplicit());
+    assertFalse(def.getSignature().getArgument(2).getExplicit());
+    assertFalse(def.getSignature().getArgument(3).getExplicit());
+    assertTrue(def.getSignature().getArgument(4).getExplicit());
+    assertFalse(def.getSignature().getArgument(5).getExplicit());
     assertEquals(Pi("x", Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi("w", Nat(), Pi("t", Nat(), Pi("r", Nat(), Apps(Nat(), Var("x"), Var("y"), Var("z"), Var("w"), Var("t"), Var("r")))))))), def.getSignature().getType());
   }
 
@@ -87,11 +87,11 @@ public class ParserTest {
     FunctionDefinition def = (FunctionDefinition)parseDef("function f : {x : N} -> N -> {y z : N} -> N x y z -> N = N");
     def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
     assertEquals(5, def.getSignature().getArguments().length);
-    assertFalse(def.getSignature().getArgument(0).isExplicit());
-    assertTrue(def.getSignature().getArgument(1).isExplicit());
-    assertFalse(def.getSignature().getArgument(2).isExplicit());
-    assertFalse(def.getSignature().getArgument(3).isExplicit());
-    assertTrue(def.getSignature().getArgument(4).isExplicit());
+    assertFalse(def.getSignature().getArgument(0).getExplicit());
+    assertTrue(def.getSignature().getArgument(1).getExplicit());
+    assertFalse(def.getSignature().getArgument(2).getExplicit());
+    assertFalse(def.getSignature().getArgument(3).getExplicit());
+    assertTrue(def.getSignature().getArgument(4).getExplicit());
     assertEquals(Pi("x", Nat(), Pi(Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi(Apps(Nat(), Var("x"), Var("y"), Var("z")), Nat()))))), def.getSignature().getType());
   }
 }

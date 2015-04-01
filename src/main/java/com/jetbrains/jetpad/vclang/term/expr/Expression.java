@@ -3,8 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.visitor.*;
 
 import java.io.PrintStream;
@@ -13,11 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Expression implements PrettyPrintable, Abstract.Expression {
-  private static final NatExpression NAT = new NatExpression();
-  private static final ZeroExpression ZERO = new ZeroExpression();
-  private static final SucExpression SUC = new SucExpression();
-  private static final NelimExpression NELIM = new NelimExpression();
-
   public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
 
   @Override
@@ -56,68 +49,5 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     CompareVisitor visitor = new CompareVisitor(cmp, new ArrayList<CompareVisitor.Equation>());
     Boolean result = expr1.accept(visitor, expr2);
     return result ? visitor.equations() : null;
-  }
-
-  public static AppExpression App(Expression function, Expression argument, boolean isExplicit) {
-    return new AppExpression(function, argument, isExplicit);
-  }
-
-  public static Expression Apps(Expression expr, Expression... exprs) {
-    for (Expression expr1 : exprs) {
-      expr = new AppExpression(expr, expr1, true);
-    }
-    return expr;
-  }
-
-  public static DefCallExpression DefCall(Definition definition) {
-    return new DefCallExpression(definition);
-  }
-
-  public static IndexExpression Index(int i) {
-    return new IndexExpression(i);
-  }
-
-  public static LamExpression Lam(List<Argument> arguments, Expression body) {
-    return new LamExpression(arguments, body);
-  }
-
-  public static PiExpression Pi(List<TypeArgument> arguments, Expression codomain) {
-    return new PiExpression(arguments, codomain);
-  }
-
-  public static PiExpression Pi(Expression domain, Expression codomain) {
-    return new PiExpression(domain, codomain);
-  }
-
-  public static VarExpression Var(String name) {
-    return new VarExpression(name);
-  }
-
-  public static NatExpression Nat() {
-    return NAT;
-  }
-
-  public static ZeroExpression Zero() {
-    return ZERO;
-  }
-
-  public static SucExpression Suc() {
-    return SUC;
-  }
-
-  public static Expression Suc(Expression expr) {
-    return Apps(SUC, expr);
-  }
-
-  public static UniverseExpression Universe(int level) {
-    return new UniverseExpression(level);
-  }
-
-  public static NelimExpression Nelim() {
-    return NELIM;
-  }
-
-  public static ErrorExpression Error(Expression expr, TypeCheckingError error) {
-    return new ErrorExpression(expr, error);
   }
 }

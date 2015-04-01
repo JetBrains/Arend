@@ -5,6 +5,9 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
@@ -12,7 +15,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
   public Expression visitExpr(ExprContext expr) {
@@ -37,7 +40,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     String name = ctx.ID().getText();
     Expression type = visitExpr(ctx.expr1());
     Expression term = visitExpr(ctx.expr());
-    return new FunctionDefinition(name, new Signature(new Argument[0], type), term);
+    return new FunctionDefinition(name, new Signature(new TypeArgument[0], type), term);
   }
 
   @Override
@@ -84,7 +87,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Expression expr = visitExpr(ctx.expr());
     ListIterator<TerminalNode> it = ctx.ID().listIterator(ctx.ID().size());
     while (it.hasPrevious()) {
-      expr = Lam(it.previous().getText(), expr);
+      List<Argument> arguments = new ArrayList<>(1);
+      arguments.add(new NameArgument(true, it.previous().getText()));
+      expr = Lam(arguments, expr);
     }
     return expr;
   }
@@ -109,14 +114,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       lefts[i] = visitExpr(expr1);
     }
     Expression expr = visitExpr(ctx.expr1());
-    for (int i = telescopeSize - 1; i >= 0; --i) {
+    List<TypeArgument> arguments = new ArrayList<>(telescopeSize);
+    for (int i = 0; i < telescopeSize; ++i) {
       boolean explicit = ctx.tele(i) instanceof ExplicitContext;
       List<TerminalNode> ids = explicit ? ((ExplicitContext) ctx.tele(i)).ID() : ((ImplicitContext) ctx.tele(i)).ID();
-      ListIterator<TerminalNode> it = ids.listIterator(ids.size());
-      while (it.hasPrevious()) {
-        expr = Pi(explicit, it.previous().getText(), lefts[i], expr);
+      List<String> names = new ArrayList<>(ids.size());
+      for (TerminalNode id : ids) {
+        names.add(id.getText());
       }
+      arguments.add(new TelescopeArgument(explicit, names, lefts[i]));
     }
-    return expr;
+    return Pi(arguments, expr);
   }
 }

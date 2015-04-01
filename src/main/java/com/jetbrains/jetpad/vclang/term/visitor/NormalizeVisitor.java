@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 // TODO: Rewrite normalization using thunks
 public class NormalizeVisitor implements ExpressionVisitor<Expression> {

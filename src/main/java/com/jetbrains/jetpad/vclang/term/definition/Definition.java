@@ -2,11 +2,12 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Universe;
 
 public abstract class Definition implements PrettyPrintable {
   private final String name;
@@ -42,7 +43,7 @@ public abstract class Definition implements PrettyPrintable {
   }
 
   public Definition checkTypes(Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
-    signature.getType().checkType(globalContext, new ArrayList<Definition>(), Expression.Universe(-1), errors);
+    signature.getType().checkType(globalContext, new ArrayList<Definition>(), Universe(-1), errors);
     return this;
   }
 }

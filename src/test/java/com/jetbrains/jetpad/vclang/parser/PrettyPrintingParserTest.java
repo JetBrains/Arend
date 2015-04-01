@@ -12,7 +12,7 @@ import java.util.ArrayList;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
 public class PrettyPrintingParserTest {

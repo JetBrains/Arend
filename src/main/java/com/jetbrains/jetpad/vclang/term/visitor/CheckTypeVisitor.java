@@ -15,8 +15,9 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.*;
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.Error;
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Map<String, Definition> myGlobalContext;
