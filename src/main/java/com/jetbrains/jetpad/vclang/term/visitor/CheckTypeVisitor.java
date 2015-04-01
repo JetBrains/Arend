@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -21,7 +21,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Map<String, Definition> myGlobalContext;
-  private final List<Definition> myLocalContext;
+  private final List<Binding> myLocalContext;
   private final List<TypeCheckingError> myErrors;
 
   private static class Arg {
@@ -69,7 +69,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  public CheckTypeVisitor(Map<String, Definition> globalContext, List<Definition> localContext, List<TypeCheckingError> errors) {
+  public CheckTypeVisitor(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors) {
     myGlobalContext = globalContext;
     myLocalContext = localContext;
     myErrors = errors;
@@ -304,8 +304,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       PiExpression type = (PiExpression) expectedNorm;
       InferHoleExpression hole = type.getArgument(0).getType().accept(new FindHoleVisitor());
       if (hole == null) {
-        // TODO: This is ugly. Fix it.
-        myLocalContext.add(new FunctionDefinition(var, new Signature(type.getArgument(0).getType()), Var(var)));
+        myLocalContext.add(new Binding(var, new Signature(type.getArgument(0).getType())));
         Result body = typeCheck(expr.getBody(), type.getCodomain());
         myLocalContext.remove(myLocalContext.size() - 1);
         if (!(body instanceof OKResult)) return body;
@@ -365,13 +364,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
         for (String name : ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames()) {
-          // TODO: This is ugly. Fix it.
-          myLocalContext.add(new FunctionDefinition(name, new Signature(domainResults[i].expression), Var(name)));
+          myLocalContext.add(new Binding(name, new Signature(domainResults[i].expression)));
           ++numberOfVars;
         }
       } else {
-        // TODO: This is ugly. Fix it.
-        myLocalContext.add(new FunctionDefinition(null, new Signature(domainResults[i].expression), Var(null)));
+        myLocalContext.add(new Binding(null, new Signature(domainResults[i].expression)));
         ++numberOfVars;
       }
     }
@@ -417,10 +414,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitVar(Abstract.VarExpression expr, Expression expectedType) {
-    ListIterator<Definition> it = myLocalContext.listIterator(myLocalContext.size());
+    ListIterator<Binding> it = myLocalContext.listIterator(myLocalContext.size());
     int index = 0;
     while (it.hasPrevious()) {
-      Definition def = it.previous();
+      Binding def = it.previous();
       if (expr.getName().equals(def.getName())) {
         return checkResult(expectedType, new OKResult(Index(index), def.getSignature().getType().liftIndex(0, index + 1), null), expr);
       }

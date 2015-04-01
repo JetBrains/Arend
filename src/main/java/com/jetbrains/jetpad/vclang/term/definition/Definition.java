@@ -9,24 +9,13 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Universe;
 
-public abstract class Definition implements PrettyPrintable {
-  private final String name;
-  private final Signature signature;
-  private final int id;
+public abstract class Definition extends Binding implements PrettyPrintable {
+  private final int myID;
   private static int idCounter = 0;
 
   public Definition(String name, Signature signature) {
-    this.name = name;
-    this.signature = signature;
-    id = idCounter++;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public Signature getSignature() {
-    return signature;
+    super(name, signature);
+    myID = idCounter++;
   }
 
   @Override
@@ -34,16 +23,16 @@ public abstract class Definition implements PrettyPrintable {
     if (o == this) return true;
     if (!(o instanceof Definition)) return false;
     Definition other = (Definition)o;
-    return other.id == id;
+    return other.myID == myID;
   }
 
   @Override
   public String toString() {
-    return name + " : " + signature.toString();
+    return getName() + " : " + getSignature();
   }
 
   public Definition checkTypes(Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
-    signature.getType().checkType(globalContext, new ArrayList<Definition>(), Universe(-1), errors);
+    getSignature().getType().checkType(globalContext, new ArrayList<Binding>(), Universe(-1), errors);
     return this;
   }
 }

@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.model.Module;
 import com.jetbrains.jetpad.vclang.model.definition.Definition;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.model.error.ErrorMessage;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
@@ -34,7 +35,7 @@ public class ModuleMapper extends Mapper<Module, ModuleMapper.Cell> {
           for (Definition def : getSource().definitions) {
             if (def instanceof FunctionDefinition) {
               FunctionDefinition funDef = (FunctionDefinition) def;
-              CheckTypeVisitor visitor = new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<com.jetbrains.jetpad.vclang.term.definition.Definition>(), errors);
+              CheckTypeVisitor visitor = new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<Binding>(), errors);
               CheckTypeVisitor.OKResult typeResult = visitor.checkType(funDef.getResultType(), new UniverseExpression());
               visitor.checkType(funDef.getTerm(), typeResult == null ? null : typeResult.expression);
             }

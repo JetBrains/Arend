@@ -36,7 +36,7 @@ public final class FunctionDefinition extends Definition {
   public FunctionDefinition checkTypes(Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
     super.checkTypes(globalContext, errors);
     Expression type = getSignature().getType();
-    CheckTypeVisitor.OKResult result = term.checkType(globalContext, new ArrayList<Definition>(), type, errors);
+    CheckTypeVisitor.OKResult result = term.checkType(globalContext, new ArrayList<Binding>(), type, errors);
     return result == null ? null : new FunctionDefinition(getName(), new Signature(result.type), result.expression);
   }
 }
