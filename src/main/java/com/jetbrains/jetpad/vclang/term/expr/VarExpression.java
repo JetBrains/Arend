@@ -16,11 +16,6 @@ public class VarExpression extends Expression implements Abstract.VarExpression 
   }
 
   @Override
-  public String toString() {
-    return name;
-  }
-
-  @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitVar(this);
   }

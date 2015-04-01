@@ -30,11 +30,6 @@ public class AppExpression extends Expression implements Abstract.AppExpression 
   }
 
   @Override
-  public String toString() {
-    return "(" + myFunction.toString() + ") " + (myExplicit ? "(" : "{") + myArgument.toString() + (myExplicit ? ")" : "}");
-  }
-
-  @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitApp(this);
   }

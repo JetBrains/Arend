@@ -16,11 +16,6 @@ public class IndexExpression extends Expression implements Abstract.IndexExpress
   }
 
   @Override
-  public String toString() {
-    return "<" + index + ">";
-  }
-
-  @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitIndex(this);
   }

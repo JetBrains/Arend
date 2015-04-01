@@ -4,7 +4,8 @@ import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeNames;
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Void> {
   private final StringBuilder myBuilder;
@@ -39,8 +40,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
 
   @Override
   public Void visitIndex(Abstract.IndexExpression expr, Integer prec) {
-    assert expr.getIndex() < myNames.size();
-    myBuilder.append(myNames.get(myNames.size() - 1 - expr.getIndex()));
+    if (expr.getIndex() < myNames.size()) {
+      myBuilder.append(myNames.get(myNames.size() - 1 - expr.getIndex()));
+    } else {
+      myBuilder.append('<').append(expr.getIndex()).append('>');
+    }
     return null;
   }
 
@@ -50,7 +54,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
     myBuilder.append("\\");
     for (Abstract.Argument arg : expr.getArguments()) {
       prettyPrintArgument(arg, myBuilder, myNames, 0);
-      addNames(myNames, arg);
       myBuilder.append(" ");
     }
     myBuilder.append("=> ");
@@ -80,7 +83,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
     int domPrec = expr.getArguments().size() > 1 ? Abstract.AppExpression.PREC + 1 : Abstract.PiExpression.PREC + 1;
     for (Abstract.Argument argument : expr.getArguments()) {
       prettyPrintArgument(argument, myBuilder, myNames, domPrec);
-      addNames(myNames, argument);
       myBuilder.append(' ');
     }
     myBuilder.append("-> ");

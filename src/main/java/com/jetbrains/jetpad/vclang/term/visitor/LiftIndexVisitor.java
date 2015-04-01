@@ -12,8 +12,8 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
-  private int myFrom;
-  private int myOn;
+  private final int myFrom;
+  private final int myOn;
 
   public LiftIndexVisitor(int from, int on) {
     myFrom = from;
@@ -39,21 +39,22 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLam(LamExpression expr) {
+    int from = myFrom;
     List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
     for (Argument argument : expr.getArguments()) {
       if (argument instanceof NameArgument) {
         arguments.add(argument);
-        ++myFrom;
+        ++from;
       } else
       if (argument instanceof TelescopeArgument) {
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(myFrom, myOn)));
-        myFrom += teleArgument.getNames().size();
+        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(from, myOn)));
+        from += teleArgument.getNames().size();
       } else {
         throw new IllegalStateException();
       }
     }
-    return Lam(arguments, expr.getBody().liftIndex(myFrom, myOn));
+    return Lam(arguments, expr.getBody().liftIndex(from, myOn));
   }
 
   @Override
@@ -68,18 +69,19 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr) {
+    int from = myFrom;
     List<TypeArgument> arguments = new ArrayList<>(expr.getArguments().size());
     for (TypeArgument argument : expr.getArguments()) {
       if (argument instanceof TelescopeArgument) {
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(myFrom, myOn)));
-        myFrom += teleArgument.getNames().size();
+        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(from, myOn)));
+        from += teleArgument.getNames().size();
       } else {
-        arguments.add(new TypeArgument(argument.getExplicit(), argument.getType().liftIndex(myFrom, myOn)));
-        ++myFrom;
+        arguments.add(new TypeArgument(argument.getExplicit(), argument.getType().liftIndex(from, myOn)));
+        ++from;
       }
     }
-    return Pi(arguments, expr.getCodomain().liftIndex(myFrom, myOn));
+    return Pi(arguments, expr.getCodomain().liftIndex(from, myOn));
   }
 
   @Override

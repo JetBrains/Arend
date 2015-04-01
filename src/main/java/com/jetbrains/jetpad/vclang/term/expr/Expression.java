@@ -16,6 +16,13 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   public void setWellTyped(Expression wellTyped) {}
 
   @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    accept(new PrettyPrintVisitor(builder, new ArrayList<String>()), 0);
+    return builder.toString();
+  }
+
+  @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
     if (!(obj instanceof Expression)) return false;

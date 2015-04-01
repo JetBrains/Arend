@@ -17,11 +17,6 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   }
 
   @Override
-  public String toString() {
-    return definition.getName();
-  }
-
-  @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitDefCall(this);
   }

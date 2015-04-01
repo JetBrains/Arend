@@ -45,7 +45,7 @@ public class Signature {
   }
 
   public Expression getType() {
-    return Pi(Arrays.asList(myArguments), myResultType);
+    return myArguments.length == 0 ? myResultType : Pi(Arrays.asList(myArguments), myResultType);
   }
 
   @Override

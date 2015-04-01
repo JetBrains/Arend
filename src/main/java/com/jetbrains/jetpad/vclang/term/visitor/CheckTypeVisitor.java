@@ -369,6 +369,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           myLocalContext.add(new FunctionDefinition(name, new Signature(domainResults[i].expression), Var(name)));
           ++numberOfVars;
         }
+      } else {
+        // TODO: This is ugly. Fix it.
+        myLocalContext.add(new FunctionDefinition(null, new Signature(domainResults[i].expression), Var(null)));
+        ++numberOfVars;
       }
     }
 

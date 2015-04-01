@@ -47,8 +47,8 @@ public class PrettyPrintingParserTest {
 
   @Test
   public void prettyPrintingParserPiImplicit() throws UnsupportedEncodingException {
-    // (x : N) {y z : N} -> N -> (t z : N) {x : N -> N} -> N x y z t
-    Expression expected = Pi("x", Nat(), Pi(false, "y", Nat(), Pi(false, "z", Nat(), Pi(Nat(), Pi("t", Nat(), Pi("z", Nat(), Pi(false, "x", Pi(Nat(), Nat()), Apps(Nat(), Var("x"), Var("y"), Var("z"), Var("t")))))))));
+    // (x : N) {y z : N} -> N -> (t z' : N) {x' : N -> N} -> N x' y z' t
+    Expression expected = Pi("x", Nat(), Pi(false, "y", Nat(), Pi(false, "z", Nat(), Pi(Nat(), Pi("t", Nat(), Pi("z", Nat(), Pi(false, "x", Pi(Nat(), Nat()), Apps(Nat(), Var("x'"), Var("y"), Var("z'"), Var("t")))))))));
     Expression expr = Pi("x", Nat(), Pi(false, "y", Nat(), Pi(false, "z", Nat(), Pi(Nat(), Pi("t", Nat(), Pi("z", Nat(), Pi(false, "x", Pi(Nat(), Nat()), Apps(Nat(), Index(0), Index(4), Index(1), Index(2)))))))));
     testExpr(expected, expr);
   }

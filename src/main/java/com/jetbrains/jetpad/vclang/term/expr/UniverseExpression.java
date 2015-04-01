@@ -20,11 +20,6 @@ public class UniverseExpression extends Expression implements Abstract.UniverseE
   }
 
   @Override
-  public String toString() {
-    return "Type" + (level < 0 ? "" : level);
-  }
-
-  @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitUniverse(this);
   }

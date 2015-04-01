@@ -12,8 +12,8 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class SubstVisitor implements ExpressionVisitor<Expression> {
-  private Expression mySubstExpr;
-  private int myFrom;
+  private final Expression mySubstExpr;
+  private final int myFrom;
 
   public SubstVisitor(Expression substExpr, int from) {
     mySubstExpr = substExpr;
@@ -40,6 +40,8 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitLam(LamExpression expr) {
     List<Argument> arguments = new ArrayList<>();
+    Expression substExpr = mySubstExpr;
+    int from = myFrom;
     int on = 0;
     for (Argument argument : expr.getArguments()) {
       if (argument instanceof NameArgument) {
@@ -47,16 +49,16 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
         ++on;
       } else
       if (argument instanceof TelescopeArgument) {
-        myFrom += on;
+        from += on;
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        mySubstExpr = mySubstExpr.liftIndex(0, on);
-        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(mySubstExpr, myFrom)));
+        substExpr = substExpr.liftIndex(0, on);
+        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(substExpr, from)));
         on = teleArgument.getNames().size();
       } else {
         throw new IllegalStateException();
       }
     }
-    return Lam(arguments, expr.getBody().subst(mySubstExpr.liftIndex(0, on), myFrom + on));
+    return Lam(arguments, expr.getBody().subst(substExpr.liftIndex(0, on), from + on));
   }
 
   @Override
@@ -71,20 +73,22 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr) {
+    Expression substExpr = mySubstExpr;
+    int from = myFrom;
     List<TypeArgument> arguments = new ArrayList<>();
     for (TypeArgument argument : expr.getArguments()) {
       if (argument instanceof TelescopeArgument) {
         List<String> names = ((TelescopeArgument) argument).getNames();
-        arguments.add(new TelescopeArgument(argument.getExplicit(), names, argument.getType().subst(mySubstExpr, myFrom)));
-        mySubstExpr = mySubstExpr.liftIndex(0, names.size());
-        myFrom += names.size();
+        arguments.add(new TelescopeArgument(argument.getExplicit(), names, argument.getType().subst(substExpr, from)));
+        substExpr = substExpr.liftIndex(0, names.size());
+        from += names.size();
       } else {
-        arguments.add(new TypeArgument(argument.getExplicit(), argument.getType().subst(mySubstExpr, myFrom)));
-        mySubstExpr = mySubstExpr.liftIndex(0, 1);
-        ++myFrom;
+        arguments.add(new TypeArgument(argument.getExplicit(), argument.getType().subst(substExpr, from)));
+        substExpr = substExpr.liftIndex(0, 1);
+        ++from;
       }
     }
-    return Pi(arguments, expr.getCodomain().subst(mySubstExpr, myFrom));
+    return Pi(arguments, expr.getCodomain().subst(substExpr, from));
   }
 
   @Override

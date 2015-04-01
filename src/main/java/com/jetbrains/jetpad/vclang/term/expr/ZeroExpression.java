@@ -5,11 +5,6 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class ZeroExpression extends Expression implements Abstract.ZeroExpression {
   @Override
-  public String toString() {
-    return "0";
-  }
-
-  @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitZero(this);
   }

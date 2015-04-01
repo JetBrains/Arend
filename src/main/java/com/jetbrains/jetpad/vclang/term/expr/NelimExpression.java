@@ -5,11 +5,6 @@ import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class NelimExpression extends Expression implements Abstract.NelimExpression {
   @Override
-  public String toString() {
-    return "N-elim";
-  }
-
-  @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitNelim(this);
   }

@@ -9,9 +9,9 @@ import static org.junit.Assert.assertEquals;
 public class SubstTest {
   @Test
   public void substConst() {
-    // zero -> null [0 := null] = zero -> null
+    // zero -> null [0 := S] = zero -> null
     Expression expr = Pi(Zero(), DefCall(null));
-    assertEquals(expr, expr.subst(null, 0));
+    assertEquals(expr, expr.subst(Suc(), 0));
   }
 
   @Test

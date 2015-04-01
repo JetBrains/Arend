@@ -13,37 +13,28 @@ public class Utils {
     return var;
   }
 
-  public static void addNames(List<String> names, Abstract.Argument argument) {
-    if (argument instanceof Abstract.NameArgument) {
-      names.add(renameVar(names, ((Abstract.NameArgument) argument).getName()));
-    } else
-    if (argument instanceof Abstract.TelescopeArgument) {
-      for (String name : ((Abstract.TelescopeArgument) argument).getNames()) {
-        names.add(renameVar(names, name));
-      }
-    }
-  }
-
   public static void removeNames(List<String> names, Abstract.Argument argument) {
-    if (argument instanceof Abstract.NameArgument) {
-      names.remove(names.size() - 1);
-    } else
     if (argument instanceof Abstract.TelescopeArgument) {
       for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
         names.remove(names.size() - 1);
       }
+    } else {
+      names.remove(names.size() - 1);
     }
   }
 
   public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, int prec) {
     if (argument instanceof Abstract.NameArgument) {
-      String name = ((Abstract.NameArgument) argument).getName();
+      String name = renameVar(names, ((Abstract.NameArgument) argument).getName());
       builder.append(argument.getExplicit() ? name : "{" + name + "}");
+      names.add(name);
     } else
     if (argument instanceof TelescopeArgument) {
       builder.append(argument.getExplicit() ? '(' : '{');
       for (String name : ((TelescopeArgument) argument).getNames()) {
-        builder.append(name).append(" ");
+        String newName = renameVar(names, name);
+        builder.append(newName).append(" ");
+        names.add(newName);
       }
       builder.append(": ");
       ((TypeArgument) argument).getType().prettyPrint(builder, names, 0);
@@ -58,8 +49,7 @@ public class Utils {
         type.accept(new PrettyPrintVisitor(builder, names), 0);
         builder.append('}');
       }
-    } else {
-      throw new IllegalStateException();
+      names.add(null);
     }
   }
 }
