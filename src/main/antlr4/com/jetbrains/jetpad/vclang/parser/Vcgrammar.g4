@@ -2,15 +2,19 @@ grammar Vcgrammar;
 
 defs  : def+;
 
-def   : 'function' ID ':' expr1 '=' expr;
+def   : '\\function' ID ':' expr1 '=>' expr;
 
 expr  : expr1                           # exprExpr1
-      | '\\' ID+ '=>' expr              # lam
+      | '\\lam' lamArg+ '=>' expr       # lam
       ;
+
+lamArg  : ID                            # lamArgId
+        | tele                          # lamArgTele
+        ;
 
 expr1 : expr1 expr1                     # app
       | <assoc=right> expr1 '->' expr1  # arr
-      | <assoc=right> tele+ '->' expr1  # pi
+      | '\\Pi' tele+ '->' expr1         # pi
       | '(' expr ')'                    # parens
       | UNIVERSE                        # universe
       | ID                              # id
@@ -20,12 +24,18 @@ expr1 : expr1 expr1                     # app
       | 'S'                             # suc
       ;
 
-tele : '(' ID+ ':' expr1 ')'            # explicit
-     | '{' ID+ ':' expr1 '}'            # implicit
+tele : '(' typedExpr ')'                # explicit
+     | '{' typedExpr '}'                # implicit
      ;
 
-UNIVERSE : 'Type' [0-9]+;
+typedExpr : expr1                       # notTyped
+          | expr1 ':' expr1             # typed
+          ;
+
+UNIVERSE : '\\Type' [0-9]+;
 ID : [a-zA-Z_][a-zA-Z0-9_\-\']*;
 WS : [ \t\r\n]+ -> skip;
 LINE_COMMENT : '--' .*? '\r'? '\n' -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
+COLON : ':';
+LAMBDA : '\\lam';

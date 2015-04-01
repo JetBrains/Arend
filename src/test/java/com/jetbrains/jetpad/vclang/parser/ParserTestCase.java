@@ -7,6 +7,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 public class ParserTestCase {
   public static VcgrammarParser parse(String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
@@ -17,16 +19,19 @@ public class ParserTestCase {
 
   public static Expression parseExpr(String text) {
     BuildVisitor builder = new BuildVisitor();
+    assertEquals(0, builder.getErrors().size());
     return builder.visitExpr(parse(text).expr());
   }
 
   public static Definition parseDef(String text) {
     BuildVisitor builder = new BuildVisitor();
+    assertEquals(0, builder.getErrors().size());
     return builder.visitDef(parse(text).def());
   }
 
   public static List<Definition> parseDefs(String text) {
     BuildVisitor builder = new BuildVisitor();
+    assertEquals(0, builder.getErrors().size());
     return builder.visitDefs(parse(text).defs());
   }
 }

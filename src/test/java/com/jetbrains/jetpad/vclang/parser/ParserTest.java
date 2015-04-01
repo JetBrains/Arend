@@ -15,59 +15,65 @@ import static org.junit.Assert.*;
 public class ParserTest {
   @Test
   public void parserLam() {
-    Expression expr = parseExpr("\\x y z => y");
+    Expression expr = parseExpr("\\lam x y z => y");
     assertEquals(Lam("x", Lam("y", Lam("z", Var("y")))), expr);
   }
 
   @Test
   public void parserLam2() {
-    Expression expr = parseExpr("\\x y => (\\z w => y z) y");
+    Expression expr = parseExpr("\\lam x y => (\\lam z w => y z) y");
     assertEquals(Lam("x'", Lam("y'", Apps(Lam("z'", Lam("w'", Apps(Var("y"), Var("z")))), Var("y")))), expr);
   }
 
   @Test
+  public void parserLamTele() {
+    Expression expr = parseExpr("\\lam p {x t : N} {y} (a : N -> N) => (\\lam (z w : N) => y z) y");
+    assertEquals(Lam(argsLam(Name("p"), Tele(false, vars("x", "t"), Nat()), Name(false, "y"), Tele(vars("a"), Pi(Nat(), Nat()))), Apps(Lam(argsLam(Tele(vars("z", "w"), Nat())), Apps(Var("y"), Var("z"))), Var("y"))), expr);
+  }
+
+  @Test
   public void parserPi() {
-    Expression expr = parseExpr("(x y z : N) (w t : N -> N) -> (a b : ((c : N) -> N c)) -> N b y w");
+    Expression expr = parseExpr("\\Pi (x y z : N) (w t : N -> N) -> \\Pi (a b : \\Pi (c : N) -> N c) -> N b y w");
     assertEquals(Pi(args(Tele(vars("x", "y", "z"), Nat()), Tele(vars("w", "t"), Pi(Nat(), Nat()))), Pi(args(Tele(vars("a", "b"), Pi("c", Nat(), Apps(Nat(), Var("c"))))), Apps(Nat(), Var("b"), Var("y"), Var("w")))), expr);
   }
 
   @Test
   public void parserPi2() {
-    Expression expr = parseExpr("(x y : N) (z : N x -> N y) -> N z y x");
+    Expression expr = parseExpr("\\Pi (x y : N) (z : N x -> N y) -> N z y x");
     assertEquals(Pi(args(Tele(vars("x", "y"), Nat()), Tele(vars("z"), Pi(Apps(Nat(), Var("x")), Apps(Nat(), Var("y"))))), Apps(Nat(), Var("z"), Var("y"), Var("x"))), expr);
   }
 
   @Test
   public void parserLamOpen() {
-    Expression expr = parseExpr("\\x => ((y : N) -> (\\y => y)) y");
+    Expression expr = parseExpr("\\lam x => (\\Pi (y : N) -> (\\lam y => y)) y");
     assertEquals(Lam("x", Apps(Pi("y", Nat(), Lam("y", Var("y"))), Var("y"))), expr);
   }
 
   @Test
   public void parserPiOpen() {
-    Expression expr = parseExpr("(a b : N a) -> N a b");
+    Expression expr = parseExpr("\\Pi (a b : N a) -> N a b");
     assertEquals(Pi(args(Tele(vars("a", "b"), Apps(Nat(), Var("a")))), Apps(Nat(), Var("a"), Var("b"))), expr);
   }
 
   @Test
   public void parserDef() {
     List<Definition> defs = parseDefs(
-        "function x : N = 0\n" +
-        "function y : N = x");
+        "\\function x : N => 0\n" +
+        "\\function y : N => x");
     assertEquals(2, defs.size());
   }
 
   @Test
   public void parserDefType() {
     List<Definition> defs = parseDefs(
-        "function x : Type0 = N\n" +
-        "function y : x = 0");
+        "\\function x : \\Type0 => N\n" +
+        "\\function y : x => 0");
     assertEquals(2, defs.size());
   }
 
   @Test
   public void parserImplicit() {
-    FunctionDefinition def = (FunctionDefinition)parseDef("function f : (x y : N) {z w : N} -> (t : N) -> {r : N} -> N x y z w t r = N");
+    FunctionDefinition def = (FunctionDefinition)parseDef("\\function f : \\Pi (x y : N) {z w : N} (t : N) {r : N} -> N x y z w t r => N");
     def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
     assertEquals(4, def.getSignature().getArguments().length);
     assertTrue(def.getSignature().getArgument(0).getExplicit());
@@ -79,7 +85,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit2() {
-    FunctionDefinition def = (FunctionDefinition)parseDef("function f : {x : N} -> N -> {y z : N} -> N x y z -> N = N");
+    FunctionDefinition def = (FunctionDefinition)parseDef("\\function f : \\Pi {x : N} (N) {y z : N} (N x y z) -> N => N");
     def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
     assertEquals(4, def.getSignature().getArguments().length);
     assertFalse(def.getSignature().getArgument(0).getExplicit());

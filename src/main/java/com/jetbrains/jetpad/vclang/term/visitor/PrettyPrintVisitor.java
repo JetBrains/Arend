@@ -51,7 +51,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
   @Override
   public Void visitLam(Abstract.LamExpression expr, Integer prec) {
     if (prec > Abstract.LamExpression.PREC) myBuilder.append("(");
-    myBuilder.append("\\");
+    myBuilder.append("\\lam ");
     for (Abstract.Argument arg : expr.getArguments()) {
       prettyPrintArgument(arg, myBuilder, myNames, 0);
       myBuilder.append(" ");
@@ -81,9 +81,16 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
   public Void visitPi(Abstract.PiExpression expr, Integer prec) {
     if (prec > Abstract.PiExpression.PREC) myBuilder.append('(');
     int domPrec = expr.getArguments().size() > 1 ? Abstract.AppExpression.PREC + 1 : Abstract.PiExpression.PREC + 1;
-    for (Abstract.Argument argument : expr.getArguments()) {
-      prettyPrintArgument(argument, myBuilder, myNames, domPrec);
+    if (expr.getArguments().size() == 1 && !(expr.getArgument(0) instanceof Abstract.TelescopeArgument)) {
+      expr.getArgument(0).getType().accept(this, Abstract.PiExpression.PREC + 1);
       myBuilder.append(' ');
+      myNames.add(null);
+    } else {
+      myBuilder.append("\\Pi ");
+      for (Abstract.Argument argument : expr.getArguments()) {
+        prettyPrintArgument(argument, myBuilder, myNames, domPrec);
+        myBuilder.append(' ');
+      }
     }
     myBuilder.append("-> ");
     expr.getCodomain().accept(this, Abstract.PiExpression.PREC);
@@ -102,7 +109,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
 
   @Override
   public Void visitUniverse(Abstract.UniverseExpression expr, Integer prec) {
-    myBuilder.append("Type").append(expr.getLevel() < 0 ? "" : expr.getLevel());
+    myBuilder.append("\\Type").append(expr.getLevel() < 0 ? "" : expr.getLevel());
     return null;
   }
 

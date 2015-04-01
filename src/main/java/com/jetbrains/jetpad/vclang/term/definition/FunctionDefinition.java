@@ -21,15 +21,15 @@ public final class FunctionDefinition extends Definition {
   }
 
   public void prettyPrint(StringBuilder builder, List<String> names, int prec) {
-    builder.append("function\n").append(getName()).append(" : ");
+    builder.append("\\function\n").append(getName()).append(" : ");
     getSignature().getType().prettyPrint(builder, names, 0);
-    builder.append("\n    = ");
+    builder.append("\n    => ");
     term.prettyPrint(builder, names, 0);
   }
 
   @Override
   public String toString() {
-    return "function " + getName() + " : " + getSignature().toString() + " = " + term.toString();
+    return "\\function " + getName() + " : " + getSignature().toString() + " => " + term.toString();
   }
 
   @Override

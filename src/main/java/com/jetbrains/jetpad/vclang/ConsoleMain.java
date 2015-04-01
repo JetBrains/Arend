@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.visitor.NormalizeVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
@@ -30,6 +31,14 @@ public class ConsoleMain {
     VcgrammarParser.DefsContext tree = parser.defs();
     BuildVisitor builder = new BuildVisitor();
     List<Definition> defs = builder.visitDefs(tree);
+    List<ParserError> parserErrors = builder.getErrors();
+    if (!parserErrors.isEmpty()) {
+      for (ParserError error : parserErrors) {
+        System.err.println(error);
+      }
+      return;
+    }
+
     Map<String, Definition> context = new HashMap<>();
     List<TypeCheckingError> errors = new ArrayList<>();
     for (Definition def : defs) {
@@ -48,7 +57,7 @@ public class ConsoleMain {
       }
     }
     for (TypeCheckingError error : errors) {
-      System.err.println(error.toString());
+      System.err.println(error);
     }
   }
 }

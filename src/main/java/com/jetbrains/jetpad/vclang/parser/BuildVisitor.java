@@ -1,23 +1,47 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.google.common.collect.Lists;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
+import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import org.antlr.v4.runtime.tree.TerminalNode;
+import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
+  private final List<ParserError> myErrors = new ArrayList<>();
+
+  public List<ParserError> getErrors() {
+    return myErrors;
+  }
+
+  private List<String> getVars(Expression expr) {
+    List<String> vars = new ArrayList<>();
+    while (expr instanceof AppExpression) {
+      Expression arg = ((AppExpression) expr).getArgument();
+      if (arg instanceof VarExpression) {
+        vars.add(((VarExpression) arg).getName());
+      } else {
+        return null;
+      }
+      expr = ((AppExpression) expr).getFunction();
+    }
+    if (expr instanceof VarExpression) {
+      vars.add(((VarExpression) expr).getName());
+    } else {
+      return null;
+    }
+    return Lists.reverse(vars);
+  }
+
   public Expression visitExpr(ExprContext expr) {
     return (Expression) visit(expr);
   }
@@ -85,13 +109,39 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Expression visitLam(LamContext ctx) {
     Expression expr = visitExpr(ctx.expr());
-    ListIterator<TerminalNode> it = ctx.ID().listIterator(ctx.ID().size());
-    while (it.hasPrevious()) {
-      List<Argument> arguments = new ArrayList<>(1);
-      arguments.add(new NameArgument(true, it.previous().getText()));
-      expr = Lam(arguments, expr);
+    List<Argument> arguments = new ArrayList<>(ctx.lamArg().size());
+    for (LamArgContext arg : ctx.lamArg()) {
+      if (arg instanceof LamArgIdContext) {
+        arguments.add(Name(((LamArgIdContext) arg).ID().getText()));
+      } else {
+        TeleContext tele = ((LamArgTeleContext) arg).tele();
+        boolean explicit = tele instanceof ExplicitContext;
+        TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
+        Expression varsExpr;
+        Expression typeExpr;
+        if (typedExpr instanceof TypedContext) {
+          varsExpr = visitExpr(((TypedContext) typedExpr).expr1(0));
+          typeExpr = visitExpr(((TypedContext) typedExpr).expr1(1));
+        } else {
+          varsExpr = visitExpr(((NotTypedContext) typedExpr).expr1());
+          typeExpr = null;
+        }
+        List<String> vars = getVars(varsExpr);
+        if (vars == null) {
+          Token token = ctx.getToken(LAMBDA, 0).getSymbol();
+          myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), null));
+          return null;
+        }
+        if (typeExpr == null) {
+          for (String var : vars) {
+            arguments.add(Name(explicit, var));
+          }
+        } else {
+          arguments.add(Tele(explicit, vars, typeExpr));
+        }
+      }
     }
-    return expr;
+    return Lam(arguments, expr);
   }
 
   @Override
@@ -101,28 +151,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public UniverseExpression visitUniverse(UniverseContext ctx) {
-    return Universe(Integer.valueOf(ctx.UNIVERSE().getText().substring("Type".length())));
+    return Universe(Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length())));
   }
 
   @Override
   public Expression visitPi(PiContext ctx) {
     int telescopeSize = ctx.tele().size();
-    Expression[] lefts = new Expression[telescopeSize];
-    for (int i = 0; i < telescopeSize; ++i) {
-      boolean explicit = ctx.tele(i) instanceof ExplicitContext;
-      Expr1Context expr1 = explicit ? ((ExplicitContext) ctx.tele(i)).expr1() : ((ImplicitContext) ctx.tele(i)).expr1();
-      lefts[i] = visitExpr(expr1);
-    }
-    Expression expr = visitExpr(ctx.expr1());
     List<TypeArgument> arguments = new ArrayList<>(telescopeSize);
+    Expression expr = visitExpr(ctx.expr1());
     for (int i = 0; i < telescopeSize; ++i) {
       boolean explicit = ctx.tele(i) instanceof ExplicitContext;
-      List<TerminalNode> ids = explicit ? ((ExplicitContext) ctx.tele(i)).ID() : ((ImplicitContext) ctx.tele(i)).ID();
-      List<String> names = new ArrayList<>(ids.size());
-      for (TerminalNode id : ids) {
-        names.add(id.getText());
+      TypedExprContext typedExpr = explicit ? ((ExplicitContext) ctx.tele(i)).typedExpr() : ((ImplicitContext) ctx.tele(i)).typedExpr();
+      if (typedExpr instanceof TypedContext) {
+        List<String> vars = getVars(visitExpr(((TypedContext) typedExpr).expr1(0)));
+        arguments.add(Tele(explicit, vars, visitExpr(((TypedContext) typedExpr).expr1(1))));
+      } else {
+        arguments.add(TypeArg(explicit, visitExpr(((NotTypedContext) typedExpr).expr1())));
       }
-      arguments.add(new TelescopeArgument(explicit, names, lefts[i]));
     }
     return Pi(arguments, expr);
   }
