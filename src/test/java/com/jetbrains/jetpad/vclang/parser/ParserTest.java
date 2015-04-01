@@ -28,7 +28,7 @@ public class ParserTest {
   @Test
   public void parserLamTele() {
     Expression expr = parseExpr("\\lam p {x t : N} {y} (a : N -> N) => (\\lam (z w : N) => y z) y");
-    assertEquals(Lam(argsLam(Name("p"), Tele(false, vars("x", "t"), Nat()), Name(false, "y"), Tele(vars("a"), Pi(Nat(), Nat()))), Apps(Lam(argsLam(Tele(vars("z", "w"), Nat())), Apps(Var("y"), Var("z"))), Var("y"))), expr);
+    assertEquals(Lam(lamArgs(Name("p"), Tele(false, vars("x", "t"), Nat()), Name(false, "y"), Tele(vars("a"), Pi(Nat(), Nat()))), Apps(Lam(lamArgs(Tele(vars("z", "w"), Nat())), Apps(Var("y"), Var("z"))), Var("y"))), expr);
   }
 
   @Test

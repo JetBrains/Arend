@@ -54,7 +54,7 @@ public class ExpressionFactory {
     return Arrays.asList(args);
   }
 
-  public static List<Argument> argsLam(Argument... args) {
+  public static List<Argument> lamArgs(Argument... args) {
     return Arrays.asList(args);
   }
 
