@@ -41,8 +41,9 @@ public class ConsoleMain {
         }
       }
       if (def != null) {
-        def.prettyPrint(System.out, new ArrayList<String>(), 0);
-        System.out.println();
+        StringBuilder stringBuilder = new StringBuilder();
+        def.prettyPrint(stringBuilder, new ArrayList<String>(), 0);
+        System.out.println(stringBuilder);
         System.out.println();
       }
     }

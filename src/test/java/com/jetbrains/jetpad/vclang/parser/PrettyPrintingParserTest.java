@@ -5,8 +5,6 @@ import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
@@ -17,18 +15,16 @@ import static org.junit.Assert.assertEquals;
 
 public class PrettyPrintingParserTest {
   private void testExpr(Expression expected, Expression expr) throws UnsupportedEncodingException {
-    ByteArrayOutputStream os = new ByteArrayOutputStream();
-    PrintStream ps = new PrintStream(os);
-    expr.prettyPrint(ps, new ArrayList<String>(), 0);
-    Expression result = parseExpr(os.toString("UTF8"));
+    StringBuilder builder = new StringBuilder();
+    expr.prettyPrint(builder, new ArrayList<String>(), 0);
+    Expression result = parseExpr(builder.toString());
     assertEquals(expected, result);
   }
 
   private void testDef(FunctionDefinition expected, FunctionDefinition def) throws UnsupportedEncodingException {
-    ByteArrayOutputStream os = new ByteArrayOutputStream();
-    PrintStream ps = new PrintStream(os);
-    def.prettyPrint(ps, new ArrayList<String>(), 0);
-    FunctionDefinition result = (FunctionDefinition) parseDef(os.toString("UTF8"));
+    StringBuilder builder = new StringBuilder();
+    def.prettyPrint(builder, new ArrayList<String>(), 0);
+    FunctionDefinition result = (FunctionDefinition) parseDef(builder.toString());
     assertEquals(expected.getSignature().getType(), result.getSignature().getType());
     assertEquals(expected.getTerm(), result.getTerm());
   }

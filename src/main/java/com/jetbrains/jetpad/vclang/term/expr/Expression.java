@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.visitor.*;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +24,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   @Override
-  public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    accept(new PrettyPrintVisitor(stream, names), prec);
+  public void prettyPrint(StringBuilder builder, List<String> names, int prec) {
+    accept(new PrettyPrintVisitor(builder, names), prec);
   }
 
   public final Expression liftIndex(int from, int on) {

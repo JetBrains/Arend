@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,11 +20,11 @@ public final class FunctionDefinition extends Definition {
     return term;
   }
 
-  public void prettyPrint(PrintStream stream, List<String> names, int prec) {
-    stream.print("function\n" + getName() + " : ");
-    getSignature().getType().prettyPrint(stream, names, 0);
-    stream.print("\n    = ");
-    term.prettyPrint(stream, names, 0);
+  public void prettyPrint(StringBuilder builder, List<String> names, int prec) {
+    builder.append("function\n").append(getName()).append(" : ");
+    getSignature().getType().prettyPrint(builder, names, 0);
+    builder.append("\n    = ");
+    term.prettyPrint(builder, names, 0);
   }
 
   @Override

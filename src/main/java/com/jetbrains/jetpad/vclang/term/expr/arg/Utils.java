@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.arg;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.PrettyPrintVisitor;
 
-import java.io.PrintStream;
 import java.util.List;
 
 public class Utils {
@@ -36,28 +35,28 @@ public class Utils {
     }
   }
 
-  public static void prettyPrintArgument(Abstract.Argument argument, PrintStream stream, List<String> names, int prec) {
+  public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, int prec) {
     if (argument instanceof Abstract.NameArgument) {
       String name = ((Abstract.NameArgument) argument).getName();
-      stream.print(argument.getExplicit() ? name : "{" + name + "}");
+      builder.append(argument.getExplicit() ? name : "{" + name + "}");
     } else
     if (argument instanceof TelescopeArgument) {
-      stream.print(argument.getExplicit() ? '(' : '{');
+      builder.append(argument.getExplicit() ? '(' : '{');
       for (String name : ((TelescopeArgument) argument).getNames()) {
-        stream.print(name + " ");
+        builder.append(name).append(" ");
       }
-      stream.print(": ");
-      ((TypeArgument) argument).getType().prettyPrint(stream, names, 0);
-      stream.print(argument.getExplicit() ? ')' : '}');
+      builder.append(": ");
+      ((TypeArgument) argument).getType().prettyPrint(builder, names, 0);
+      builder.append(argument.getExplicit() ? ')' : '}');
     } else
     if (argument instanceof TypeArgument) {
       Abstract.Expression type = ((TypeArgument) argument).getType();
       if (argument.getExplicit()) {
-        type.accept(new PrettyPrintVisitor(stream, names), prec);
+        type.accept(new PrettyPrintVisitor(builder, names), prec);
       } else {
-        stream.print('{');
-        type.accept(new PrettyPrintVisitor(stream, names), 0);
-        stream.print('}');
+        builder.append('{');
+        type.accept(new PrettyPrintVisitor(builder, names), 0);
+        builder.append('}');
       }
     } else {
       throw new IllegalStateException();

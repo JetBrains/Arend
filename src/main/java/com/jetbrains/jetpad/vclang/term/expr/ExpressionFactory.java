@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ExpressionFactory {
@@ -43,6 +44,29 @@ public class ExpressionFactory {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(new NameArgument(true, var));
     return Lam(arguments, body);
+  }
+
+  public static List<String> vars(String... vars) {
+    return Arrays.asList(vars);
+  }
+
+  public static List<TypeArgument> args(TypeArgument... args) {
+    return Arrays.asList(args);
+  }
+
+  public static TypeArgument TypeArg(boolean explicit, Expression type) {
+    return new TypeArgument(explicit, type);
+  }
+
+  public static TypeArgument TypeArg(Expression type) {
+    return new TypeArgument(true, type);
+  }
+  public static TelescopeArgument Tele(boolean explicit, List<String> names, Expression type) {
+    return new TelescopeArgument(explicit, names, type);
+  }
+
+  public static TelescopeArgument Tele(List<String> names, Expression type) {
+    return new TelescopeArgument(true, names, type);
   }
 
   public static PiExpression Pi(List<TypeArgument> arguments, Expression codomain) {

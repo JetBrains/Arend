@@ -28,15 +28,13 @@ public class ParserTest {
   @Test
   public void parserPi() {
     Expression expr = parseExpr("(x y z : N) (w t : N -> N) -> (a b : ((c : N) -> N c)) -> N b y w");
-    Expression natNat = Pi(Nat(), Nat());
-    Expression piNat = Pi("c", Nat(), Apps(Nat(), Var("c")));
-    assertEquals(Pi("x", Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi("w", natNat, Pi("t", natNat, Pi("a", piNat, Pi("b", piNat, Apps(Nat(), Var("b"), Var("y"), Var("w"))))))))), expr);
+    assertEquals(Pi(args(Tele(vars("x", "y", "z"), Nat()), Tele(vars("w", "t"), Pi(Nat(), Nat()))), Pi(args(Tele(vars("a", "b"), Pi("c", Nat(), Apps(Nat(), Var("c"))))), Apps(Nat(), Var("b"), Var("y"), Var("w")))), expr);
   }
 
   @Test
   public void parserPi2() {
     Expression expr = parseExpr("(x y : N) (z : N x -> N y) -> N z y x");
-    assertEquals(Pi("x'", Nat(), Pi("y'", Nat(), Pi("z'", Pi(Apps(Nat(), Var("x")), Apps(Nat(), Var("y"))), Apps(Nat(), Var("z"), Var("y"), Var("x"))))), expr);
+    assertEquals(Pi(args(Tele(vars("x", "y"), Nat()), Tele(vars("z"), Pi(Apps(Nat(), Var("x")), Apps(Nat(), Var("y"))))), Apps(Nat(), Var("z"), Var("y"), Var("x"))), expr);
   }
 
   @Test
@@ -48,8 +46,7 @@ public class ParserTest {
   @Test
   public void parserPiOpen() {
     Expression expr = parseExpr("(a b : N a) -> N a b");
-    Expression natVar = Apps(Nat(), Var("a"));
-    assertEquals(Pi("a", natVar, Pi("b", natVar, Apps(Nat(), Var("a"), Var("b")))), expr);
+    assertEquals(Pi(args(Tele(vars("a", "b"), Apps(Nat(), Var("a")))), Apps(Nat(), Var("a"), Var("b"))), expr);
   }
 
   @Test
@@ -72,26 +69,23 @@ public class ParserTest {
   public void parserImplicit() {
     FunctionDefinition def = (FunctionDefinition)parseDef("function f : (x y : N) {z w : N} -> (t : N) -> {r : N} -> N x y z w t r = N");
     def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
-    assertEquals(6, def.getSignature().getArguments().length);
+    assertEquals(4, def.getSignature().getArguments().length);
     assertTrue(def.getSignature().getArgument(0).getExplicit());
-    assertTrue(def.getSignature().getArgument(1).getExplicit());
-    assertFalse(def.getSignature().getArgument(2).getExplicit());
+    assertFalse(def.getSignature().getArgument(1).getExplicit());
+    assertTrue(def.getSignature().getArgument(2).getExplicit());
     assertFalse(def.getSignature().getArgument(3).getExplicit());
-    assertTrue(def.getSignature().getArgument(4).getExplicit());
-    assertFalse(def.getSignature().getArgument(5).getExplicit());
-    assertEquals(Pi("x", Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi("w", Nat(), Pi("t", Nat(), Pi("r", Nat(), Apps(Nat(), Var("x"), Var("y"), Var("z"), Var("w"), Var("t"), Var("r")))))))), def.getSignature().getType());
+    assertEquals(Pi(args(Tele(vars("x", "y"), Nat()), Tele(false, vars("z", "w"), Nat()), Tele(vars("t"), Nat()), Tele(false, vars("r"), Nat())), Apps(Nat(), Var("x"), Var("y"), Var("z"), Var("w"), Var("t"), Var("r"))), def.getSignature().getType());
   }
 
   @Test
   public void parserImplicit2() {
     FunctionDefinition def = (FunctionDefinition)parseDef("function f : {x : N} -> N -> {y z : N} -> N x y z -> N = N");
     def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
-    assertEquals(5, def.getSignature().getArguments().length);
+    assertEquals(4, def.getSignature().getArguments().length);
     assertFalse(def.getSignature().getArgument(0).getExplicit());
     assertTrue(def.getSignature().getArgument(1).getExplicit());
     assertFalse(def.getSignature().getArgument(2).getExplicit());
-    assertFalse(def.getSignature().getArgument(3).getExplicit());
-    assertTrue(def.getSignature().getArgument(4).getExplicit());
-    assertEquals(Pi("x", Nat(), Pi(Nat(), Pi("y", Nat(), Pi("z", Nat(), Pi(Apps(Nat(), Var("x"), Var("y"), Var("z")), Nat()))))), def.getSignature().getType());
+    assertTrue(def.getSignature().getArgument(3).getExplicit());
+    assertEquals(Pi(args(Tele(false, vars("x"), Nat()), TypeArg(Nat()), Tele(false, vars("y", "z"), Nat()), TypeArg(Apps(Nat(), Var("x"), Var("y"), Var("z")))), Nat()), def.getSignature().getType());
   }
 }

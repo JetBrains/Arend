@@ -2,13 +2,14 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.ListIterator;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class Signature {
   private final TypeArgument[] myArguments;
@@ -44,27 +45,7 @@ public class Signature {
   }
 
   public Expression getType() {
-    Expression type = myResultType;
-    List<ArrayList<TypeArgument>> arguments = new ArrayList<>();
-    ArrayList<TypeArgument> list = new ArrayList<>();
-    for (TypeArgument argument : myArguments) {
-      if (argument instanceof TelescopeArgument) {
-        list.add(argument);
-      } else {
-        if (!list.isEmpty()) {
-          arguments.add(list);
-          list = new ArrayList<>();
-        }
-        list.add(argument);
-        arguments.add(list);
-        list = new ArrayList<>();
-      }
-    }
-    ListIterator<ArrayList<TypeArgument>> it = arguments.listIterator(arguments.size());
-    while (it.hasPrevious()) {
-      type = new PiExpression(it.previous(), type);
-    }
-    return type;
+    return Pi(Arrays.asList(myArguments), myResultType);
   }
 
   @Override
