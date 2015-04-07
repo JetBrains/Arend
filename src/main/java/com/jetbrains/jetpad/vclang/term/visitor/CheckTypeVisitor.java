@@ -12,10 +12,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -405,7 +402,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    Expression[] argumentTypes = new Expression[lambdaArgs.size()];
+    TypeArgument[] argumentTypes = new TypeArgument[lambdaArgs.size()];
     for (int i = 0; i < lambdaArgs.size(); ++i) {
       if (lambdaArgs.get(i).expression != null) {
         Result argResult = typeCheck(lambdaArgs.get(i).expression, Universe(-1));
@@ -426,11 +423,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             }
           }
         }
-        argumentTypes[i] = okArgResult.expression;
+        argumentTypes[i] = Tele(lambdaArgs.get(i).isExplicit, vars(lambdaArgs.get(i).name), okArgResult.expression);
 
         if (piArgs.get(i) != null) {
           Expression argExpectedType = ((Expression) piArgs.get(i).expression).normalize(NormalizeVisitor.Mode.NF);
-          Expression argActualType = argumentTypes[i].normalize(NormalizeVisitor.Mode.NF);
+          Expression argActualType = argumentTypes[i].getType().normalize(NormalizeVisitor.Mode.NF);
           List<CompareVisitor.Equation> equations = compare(argExpectedType, argActualType, CompareVisitor.CMP.LEQ);
           if (equations == null) {
             errors.add(new TypeMismatchError(piArgs.get(i).expression, lambdaArgs.get(i).expression, expr));
@@ -439,9 +436,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           }
         }
       } else {
-        argumentTypes[i] = (Expression) piArgs.get(i).expression;
+        argumentTypes[i] = Tele(piArgs.get(i).isExplicit, vars(piArgs.get(i).name), (Expression) piArgs.get(i).expression);
       }
-      myLocalContext.add(new Binding(lambdaArgs.get(i).name, new Signature(argumentTypes[i])));
+      myLocalContext.add(new Binding(lambdaArgs.get(i).name, new Signature(argumentTypes[i].getType())));
     }
 
     Result bodyResult = typeCheck(expr.getBody(), resultType instanceof InferHoleExpression ? null : resultType);
@@ -464,15 +461,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (resultType instanceof InferHoleExpression) {
-      // TODO: Add an equation for resultType.
+      Expression actualType = okBodyResult.type;
+      if (lambdaArgs.size() > actualNumberOfPiArgs) {
+        actualType = Pi(Arrays.asList(argumentTypes).subList(actualNumberOfPiArgs, lambdaArgs.size()), actualType);
+      }
+      try {
+        resultEquations.add(new CompareVisitor.Equation((InferHoleExpression) resultType, actualType.liftIndex(0, -actualNumberOfPiArgs)));
+      } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+      }
     }
 
     List<Argument> resultLambdaArgs = new ArrayList<>(argumentTypes.length);
     List<TypeArgument> resultPiArgs = new ArrayList<>(argumentTypes.length);
-    for (int i = 0; i < argumentTypes.length; ++i) {
-      TelescopeArgument arg = Tele(lambdaArgs.get(i).isExplicit, vars(lambdaArgs.get(i).name), argumentTypes[i]);
-      resultLambdaArgs.add(arg);
-      resultPiArgs.add(arg);
+    for (TypeArgument argumentType : argumentTypes) {
+      resultLambdaArgs.add(argumentType);
+      resultPiArgs.add(argumentType);
     }
     OKResult result = new OKResult(Lam(resultLambdaArgs, okBodyResult.expression), Pi(resultPiArgs, okBodyResult.type), resultEquations);
     expr.setWellTyped(result.expression);

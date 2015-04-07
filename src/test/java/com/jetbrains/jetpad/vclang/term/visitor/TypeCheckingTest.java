@@ -170,9 +170,8 @@ public class TypeCheckingTest {
     defs.add(new FunctionDefinition("f", new Signature(Pi(Nat(), Pi(Nat(), Nat()))), Var("f")));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
+    assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
     assertEquals(2, errors.size());
-    assertNull(result);
   }
 
   @Test
@@ -181,6 +180,24 @@ public class TypeCheckingTest {
     Expression expr = Lam(lamArgs(Tele(true, vars("x"), Nat())), Index(0));
     List<TypeCheckingError> errors = new ArrayList<>();
     assertEquals(Pi(Nat(), Nat()), expr.checkType(new HashMap<String, Definition>(), new ArrayList<Binding>(), null, errors).type);
+    assertEquals(0, errors.size());
+  }
+
+  @Test
+  public void tooManyLambdasError() {
+    // \x y. x : Nat -> Nat
+    Expression expr = Lam(lamArgs(Name("x"), Name("y")), Index(1));
+    List<TypeCheckingError> errors = new ArrayList<>();
+    assertNull(expr.checkType(new HashMap<String, Definition>(), new ArrayList<Binding>(), Pi(Nat(), Nat()), errors));
+    assertEquals(1, errors.size());
+  }
+
+  @Test
+  public void typedLambdaExpectedType() {
+    // \(X : Type1) x. x : (X : Type0) (X) -> X
+    Expression expr = Lam(lamArgs(Tele(vars("X"), Universe(1)), Name("x")), Index(0));
+    List<TypeCheckingError> errors = new ArrayList<>();
+    assertEquals(expr, expr.checkType(new HashMap<String, Definition>(), new ArrayList<Binding>(), Pi(args(Tele(vars("X"), Universe(0)), TypeArg(Index(0))), Index(1)), errors).expression);
     assertEquals(0, errors.size());
   }
 }

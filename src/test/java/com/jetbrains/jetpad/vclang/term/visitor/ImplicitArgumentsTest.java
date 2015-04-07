@@ -109,6 +109,21 @@ public class ImplicitArgumentsTest {
   }
 
   @Test
+  public void inferFromLamType() {
+    // f : {A : Type0} -> (Nat -> A) -> A |- f (\x (y : Nat -> Nat). y x) : (Nat -> Nat) -> Nat
+    Expression arg = Lam(lamArgs(Name("x"), Tele(vars("y"), Pi(Nat(), Nat()))), Apps(Index(0), Index(1)));
+    Expression expr = Apps(Index(0), arg);
+    List<Binding> defs = new ArrayList<>();
+    defs.add(new FunctionDefinition("f", new Signature(Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))), Var("f")));
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
+    assertEquals(0, errors.size());
+    assertEquals(Apps(App(Index(0), Pi(Pi(Nat(), Nat()), Nat()), false), arg), result.expression);
+    assertEquals(Pi(Pi(Nat(), Nat()), Nat()), result.type);
+  }
+
+  @Test
   public void inferFromSecondArg() {
     // f : {A : Type0} -> (A -> A) -> (A -> Nat) -> Nat |- f (\x. x) (\x:Nat. x) : Nat
     // TODO: Write it.
