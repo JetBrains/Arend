@@ -178,7 +178,7 @@ public class TypeCheckingTest {
   @Test
   public void typedLambda() {
     // \x:Nat. x : Nat -> Nat
-    Expression expr = Lam("x", Index(0));
+    Expression expr = Lam(lamArgs(Tele(true, vars("x"), Nat())), Index(0));
     List<TypeCheckingError> errors = new ArrayList<>();
     assertEquals(Pi(Nat(), Nat()), expr.checkType(new HashMap<String, Definition>(), new ArrayList<Binding>(), null, errors).type);
     assertEquals(0, errors.size());
