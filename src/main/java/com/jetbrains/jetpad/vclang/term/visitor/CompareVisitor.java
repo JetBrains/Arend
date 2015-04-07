@@ -1,11 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expression, Boolean> {
+public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boolean> {
   private final List<Equation> myEquations;
   private CMP myCmp;
 
@@ -84,77 +87,81 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
   }
 
   @Override
-  public Boolean visitApp(Abstract.AppExpression expr, Abstract.Expression other) {
+  public Boolean visitApp(Abstract.AppExpression expr, Expression other) {
     if (expr == other) return true;
-    if (!(other instanceof Abstract.AppExpression)) return false;
-    Abstract.AppExpression otherApp = (Abstract.AppExpression) other;
+    if (!(other instanceof AppExpression)) return false;
+    AppExpression otherApp = (AppExpression) other;
     return expr.getFunction().accept(this, otherApp.getFunction()) && expr.getArgument().accept(this, otherApp.getArgument());
   }
 
   @Override
-  public Boolean visitDefCall(Abstract.DefCallExpression expr, Abstract.Expression other) {
+  public Boolean visitDefCall(Abstract.DefCallExpression expr, Expression other) {
     if (expr == other) return true;
     return other instanceof Abstract.DefCallExpression && expr.getDefinition().equals(((Abstract.DefCallExpression) other).getDefinition());
   }
 
   @Override
-  public Boolean visitIndex(Abstract.IndexExpression expr, Abstract.Expression other) {
+  public Boolean visitIndex(Abstract.IndexExpression expr, Expression other) {
     if (expr == other) return true;
     return other instanceof Abstract.IndexExpression && expr.getIndex() == ((Abstract.IndexExpression) other).getIndex();
   }
 
   @Override
-  public Boolean visitLam(Abstract.LamExpression expr, Abstract.Expression other) {
+  public Boolean visitLam(Abstract.LamExpression expr, Expression other) {
     if (expr == other) return true;
     if (!(other instanceof Abstract.LamExpression)) return false;
     List<Abstract.Expression> args1 = new ArrayList<>();
     Abstract.Expression body1 = lamArgs(expr, args1);
     List<Abstract.Expression> args2 = new ArrayList<>();
     Abstract.Expression body2 = lamArgs(other, args2);
-    if (args1.size() != args2.size() || !body1.accept(this, body2)) return false;
+    if (args1.size() != args2.size() || !body1.accept(this, (Expression) body2)) return false;
     for (int i = 0; i < args1.size(); ++i) {
-      if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, args2.get(i))) return false;
+      if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, (Expression) args2.get(i))) return false;
     }
     return true;
   }
 
   @Override
-  public Boolean visitNat(Abstract.NatExpression expr, Abstract.Expression other) {
+  public Boolean visitNat(Abstract.NatExpression expr, Expression other) {
     if (expr == other) return true;
     return other instanceof Abstract.NatExpression;
   }
 
   @Override
-  public Boolean visitNelim(Abstract.NelimExpression expr, Abstract.Expression other) {
+  public Boolean visitNelim(Abstract.NelimExpression expr, Expression other) {
     if (expr == other) return true;
     return other instanceof Abstract.NelimExpression;
   }
 
   @Override
-  public Boolean visitPi(Abstract.PiExpression expr, Abstract.Expression other) {
+  public Boolean visitPi(Abstract.PiExpression expr, Expression other) {
     if (expr == other) return true;
     if (!(other instanceof Abstract.PiExpression)) return false;
+
     List<Abstract.Expression> args1 = new ArrayList<>();
     Abstract.Expression codomain1 = piArgs(expr, args1);
-    List<Abstract.Expression> args2 = new ArrayList<>();
-    Abstract.Expression codomain2 = piArgs(other, args2);
-    if (args1.size() != args2.size() || !codomain1.accept(this, codomain2)) return false;
+    List<TypeArgument> args2 = new ArrayList<>(args1.size());
+    Expression codomain2 = other.splitAt(args1.size(), args2);
+    if (args1.size() != args2.size()) return false;
+
     myCmp = not(myCmp);
     for (int i = 0; i < args1.size(); ++i) {
-      if (!args1.get(i).accept(this, args2.get(i))) return false;
+      if (i > 0 && args1.get(i) == args1.get(i - 1) && args2.get(i).getType() == args2.get(i - 1).getType()) continue;
+      if (!args1.get(i).accept(this, args2.get(i).getType())) return false;
     }
     myCmp = not(myCmp);
-    return true;
+
+    return codomain1.accept(this, codomain2);
   }
 
   @Override
-  public Boolean visitSuc(Abstract.SucExpression expr, Abstract.Expression other) {
+  public Boolean visitSuc(Abstract.SucExpression expr, Expression other) {
     if (expr == other) return true;
     return other instanceof Abstract.SucExpression;
   }
 
   @Override
-  public Boolean visitUniverse(Abstract.UniverseExpression expr, Abstract.Expression other) {
+  public Boolean visitUniverse(Abstract.UniverseExpression expr, Expression other) {
     if (expr == other) return true;
     if (!(other instanceof Abstract.UniverseExpression)) return false;
     Abstract.UniverseExpression otherUniverse = (Abstract.UniverseExpression) other;
@@ -172,19 +179,19 @@ public class CompareVisitor implements AbstractExpressionVisitor<Abstract.Expres
   }
 
   @Override
-  public Boolean visitVar(Abstract.VarExpression expr, Abstract.Expression other) {
+  public Boolean visitVar(Abstract.VarExpression expr, Expression other) {
     if (expr == other) return true;
     return other instanceof Abstract.VarExpression && expr.getName().equals(((Abstract.VarExpression) other).getName());
   }
 
   @Override
-  public Boolean visitZero(Abstract.ZeroExpression expr, Abstract.Expression other) {
+  public Boolean visitZero(Abstract.ZeroExpression expr, Expression other) {
     if (expr == other) return true;
     return other instanceof Abstract.ZeroExpression;
   }
 
   @Override
-  public Boolean visitHole(Abstract.HoleExpression expr, Abstract.Expression other) {
+  public Boolean visitHole(Abstract.HoleExpression expr, Expression other) {
     if (expr instanceof CheckTypeVisitor.InferHoleExpression) {
       myEquations.add(new Equation(expr, other));
       return true;
