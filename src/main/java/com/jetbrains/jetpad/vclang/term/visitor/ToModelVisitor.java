@@ -166,4 +166,16 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
     */
     return null;
   }
+
+  @Override
+  public Model.Expression visitTuple(TupleExpression expr) {
+    // TODO: Write this.
+    return null;
+  }
+
+  @Override
+  public Model.Expression visitSigma(SigmaExpression expr) {
+    // TODO: Write this.
+    return null;
+  }
 }

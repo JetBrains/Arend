@@ -126,8 +126,33 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Integer, Vo
   }
 
   @Override
-  public Void visitHole(Abstract.HoleExpression expr, Integer params) {
+  public Void visitHole(Abstract.HoleExpression expr, Integer prec) {
     myBuilder.append('?');
+    return null;
+  }
+
+  @Override
+  public Void visitTuple(Abstract.TupleExpression expr, Integer prec) {
+    myBuilder.append('(');
+    for (int i = 0; i < expr.getFields().size(); ++i) {
+      expr.getField(i).accept(this, 0);
+      if (i < expr.getFields().size() - 1) {
+        myBuilder.append(", ");
+      }
+    }
+    myBuilder.append(')');
+    return null;
+  }
+
+  @Override
+  public Void visitSigma(Abstract.SigmaExpression expr, Integer prec) {
+    if (prec > Abstract.SigmaExpression.PREC) myBuilder.append('(');
+    myBuilder.append("\\Sigma");
+    for (Abstract.Argument argument : expr.getArguments()) {
+      myBuilder.append(' ');
+      prettyPrintArgument(argument, myBuilder, myNames, Abstract.AppExpression.PREC + 1);
+    }
+    if (prec > Abstract.SigmaExpression.PREC) myBuilder.append(')');
     return null;
   }
 }

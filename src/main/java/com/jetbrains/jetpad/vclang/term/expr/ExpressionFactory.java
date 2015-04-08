@@ -102,6 +102,18 @@ public class ExpressionFactory {
     return new PiExpression(domain, codomain);
   }
 
+  public static SigmaExpression Sigma(List<TypeArgument> arguments) {
+    return new SigmaExpression(arguments);
+  }
+
+  public static TupleExpression Tuple(List<Expression> fields) {
+    return new TupleExpression(fields);
+  }
+
+  public static TupleExpression Tuple(Expression... fields) {
+    return new TupleExpression(Arrays.asList(fields));
+  }
+
   public static VarExpression Var(String name) {
     return new VarExpression(name);
   }

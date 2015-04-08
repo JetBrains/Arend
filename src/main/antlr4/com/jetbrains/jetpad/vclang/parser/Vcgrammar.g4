@@ -15,7 +15,8 @@ lamArg  : ID                            # lamArgId
 expr1 : expr1 expr1                     # app
       | <assoc=right> expr1 '->' expr1  # arr
       | '\\Pi' tele+ '->' expr1         # pi
-      | '(' expr ')'                    # parens
+      | '\\Sigma' tele+                 # sigma
+      | '(' expr (',' expr)* ')'        # tuple
       | UNIVERSE                        # universe
       | ID                              # id
       | 'N'                             # Nat

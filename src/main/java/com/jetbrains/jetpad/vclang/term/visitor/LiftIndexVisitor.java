@@ -67,21 +67,26 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     return expr;
   }
 
-  @Override
-  public Expression visitPi(PiExpression expr) {
+  private int visitArguments(List<TypeArgument> arguments, List<TypeArgument> result) {
     int from = myFrom;
-    List<TypeArgument> arguments = new ArrayList<>(expr.getArguments().size());
-    for (TypeArgument argument : expr.getArguments()) {
+    for (TypeArgument argument : arguments) {
       if (argument instanceof TelescopeArgument) {
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(from, myOn)));
+        result.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(from, myOn)));
         from += teleArgument.getNames().size();
       } else {
-        arguments.add(new TypeArgument(argument.getExplicit(), argument.getType().liftIndex(from, myOn)));
+        result.add(new TypeArgument(argument.getExplicit(), argument.getType().liftIndex(from, myOn)));
         ++from;
       }
     }
-    return Pi(arguments, expr.getCodomain().liftIndex(from, myOn));
+    return from;
+  }
+
+  @Override
+  public Expression visitPi(PiExpression expr) {
+    List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
+    int from = visitArguments(expr.getArguments(), result);
+    return Pi(result, expr.getCodomain().liftIndex(from, myOn));
   }
 
   @Override
@@ -107,6 +112,22 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitHole(HoleExpression expr) {
     return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
+  }
+
+  @Override
+  public Expression visitTuple(TupleExpression expr) {
+    List<Expression> fields = new ArrayList<>(expr.getFields().size());
+    for (Expression field : expr.getFields()) {
+      fields.add(field.accept(this));
+    }
+    return Tuple(fields);
+  }
+
+  @Override
+  public Expression visitSigma(SigmaExpression expr) {
+    List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
+    visitArguments(expr.getArguments(), result);
+    return Sigma(result);
   }
 
   public static class NegativeIndexException extends RuntimeException {}

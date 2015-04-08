@@ -662,4 +662,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     // TODO: Type checking of holes?
     return null;
   }
+
+  @Override
+  public Result visitTuple(Abstract.TupleExpression expr, Expression params) {
+    // TODO: Write this.
+    return null;
+  }
+
+  @Override
+  public Result visitSigma(Abstract.SigmaExpression expr, Expression params) {
+    // TODO: Write this.
+    return null;
+  }
 }

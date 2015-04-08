@@ -79,4 +79,22 @@ public class FindHoleVisitor implements ExpressionVisitor<CheckTypeVisitor.Infer
   public CheckTypeVisitor.InferHoleExpression visitHole(HoleExpression expr) {
     return expr instanceof CheckTypeVisitor.InferHoleExpression ? (CheckTypeVisitor.InferHoleExpression) expr : null;
   }
+
+  @Override
+  public CheckTypeVisitor.InferHoleExpression visitTuple(TupleExpression expr) {
+    for (Expression field : expr.getFields()) {
+      CheckTypeVisitor.InferHoleExpression result = field.accept(this);
+      if (result != null) return result;
+    }
+    return null;
+  }
+
+  @Override
+  public CheckTypeVisitor.InferHoleExpression visitSigma(SigmaExpression expr) {
+    for (TypeArgument argument : expr.getArguments()) {
+      CheckTypeVisitor.InferHoleExpression result = argument.getType().accept(this);
+      if (result != null) return result;
+    }
+    return null;
+  }
 }

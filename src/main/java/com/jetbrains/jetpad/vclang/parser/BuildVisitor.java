@@ -97,8 +97,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Expression visitParens(ParensContext ctx) {
-    return visitExpr(ctx.expr());
+  public Expression visitTuple(TupleContext ctx) {
+    if (ctx.expr().size() == 1) {
+      return visitExpr(ctx.expr(0));
+    } else {
+      List<Expression> fields = new ArrayList<>(ctx.expr().size());
+      for (ExprContext exprCtx : ctx.expr()) {
+        fields.add(visitExpr(exprCtx));
+      }
+      return Tuple(fields);
+    }
   }
 
   @Override
@@ -154,14 +162,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return Universe(Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length())));
   }
 
-  @Override
-  public Expression visitPi(PiContext ctx) {
-    int telescopeSize = ctx.tele().size();
-    List<TypeArgument> arguments = new ArrayList<>(telescopeSize);
-    Expression expr = visitExpr(ctx.expr1());
-    for (int i = 0; i < telescopeSize; ++i) {
-      boolean explicit = ctx.tele(i) instanceof ExplicitContext;
-      TypedExprContext typedExpr = explicit ? ((ExplicitContext) ctx.tele(i)).typedExpr() : ((ImplicitContext) ctx.tele(i)).typedExpr();
+  private List<TypeArgument> visitTeles(List<TeleContext> teles) {
+    List<TypeArgument> arguments = new ArrayList<>(teles.size());
+    for (TeleContext tele : teles) {
+      boolean explicit = tele instanceof ExplicitContext;
+      TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
       if (typedExpr instanceof TypedContext) {
         List<String> vars = getVars(visitExpr(((TypedContext) typedExpr).expr1(0)));
         arguments.add(Tele(explicit, vars, visitExpr(((TypedContext) typedExpr).expr1(1))));
@@ -169,6 +174,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         arguments.add(TypeArg(explicit, visitExpr(((NotTypedContext) typedExpr).expr1())));
       }
     }
-    return Pi(arguments, expr);
+    return arguments;
+  }
+
+  @Override
+  public Object visitSigma(SigmaContext ctx) {
+    return Sigma(visitTeles(ctx.tele()));
+  }
+
+  @Override
+  public Expression visitPi(PiContext ctx) {
+    return Pi(visitTeles(ctx.tele()), visitExpr(ctx.expr1()));
   }
 }

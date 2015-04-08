@@ -60,6 +60,18 @@ public class Abstract {
     final static int PREC = 11;
   }
 
+  public static interface TupleExpression extends Expression {
+    final static int PREC = 11;
+    List<? extends Expression> getFields();
+    Expression getField(int index);
+  }
+
+  public static interface SigmaExpression extends Expression {
+    final static int PREC = 7;
+    List<? extends TypeArgument> getArguments();
+    TypeArgument getArgument(int index);
+  }
+
   public static interface PiExpression extends Expression {
     final static int PREC = 6;
     List<? extends TypeArgument> getArguments();

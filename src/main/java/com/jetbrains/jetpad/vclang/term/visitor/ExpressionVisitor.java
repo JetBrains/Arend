@@ -15,4 +15,6 @@ public interface ExpressionVisitor<T> {
   T visitVar(VarExpression expr);
   T visitZero(ZeroExpression expr);
   T visitHole(HoleExpression expr);
+  T visitTuple(TupleExpression expr);
+  T visitSigma(SigmaExpression expr);
 }

@@ -71,24 +71,28 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
     return expr;
   }
 
-  @Override
-  public Expression visitPi(PiExpression expr) {
+  private Expression visitArguments(List<TypeArgument> arguments, Expression codomain) {
     Expression substExpr = mySubstExpr;
     int from = myFrom;
-    List<TypeArgument> arguments = new ArrayList<>();
-    for (TypeArgument argument : expr.getArguments()) {
+    List<TypeArgument> result = new ArrayList<>();
+    for (TypeArgument argument : arguments) {
       if (argument instanceof TelescopeArgument) {
         List<String> names = ((TelescopeArgument) argument).getNames();
-        arguments.add(new TelescopeArgument(argument.getExplicit(), names, argument.getType().subst(substExpr, from)));
+        result.add(new TelescopeArgument(argument.getExplicit(), names, argument.getType().subst(substExpr, from)));
         substExpr = substExpr.liftIndex(0, names.size());
         from += names.size();
       } else {
-        arguments.add(new TypeArgument(argument.getExplicit(), argument.getType().subst(substExpr, from)));
+        result.add(new TypeArgument(argument.getExplicit(), argument.getType().subst(substExpr, from)));
         substExpr = substExpr.liftIndex(0, 1);
         ++from;
       }
     }
-    return Pi(arguments, expr.getCodomain().subst(substExpr, from));
+    return codomain == null ? Sigma(result) : Pi(result, codomain.subst(substExpr, from));
+  }
+
+  @Override
+  public Expression visitPi(PiExpression expr) {
+    return visitArguments(expr.getArguments(), expr.getCodomain());
   }
 
   @Override
@@ -114,5 +118,19 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitHole(HoleExpression expr) {
     return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
+  }
+
+  @Override
+  public Expression visitTuple(TupleExpression expr) {
+    List<Expression> fields = new ArrayList<>(expr.getFields().size());
+    for (Expression field : expr.getFields()) {
+      fields.add(field.accept(this));
+    }
+    return Tuple(fields);
+  }
+
+  @Override
+  public Expression visitSigma(SigmaExpression expr) {
+    return visitArguments(expr.getArguments(), null);
   }
 }

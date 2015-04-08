@@ -96,21 +96,22 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return expr;
   }
 
+  private List<TypeArgument> visitArguments(List<TypeArgument> arguments) {
+    List<TypeArgument> result = new ArrayList<>(arguments.size());
+    for (TypeArgument argument : arguments) {
+      if (argument instanceof TelescopeArgument) {
+        result.add(new TelescopeArgument(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), argument.getType().accept(this)));
+      } else {
+        result.add(new TypeArgument(argument.getExplicit(), argument.getType().accept(this)));
+      }
+    }
+    return result;
+  }
+
   @Override
   public Expression visitPi(PiExpression expr) {
-    if (myMode == Mode.WHNF) {
-      return expr;
-    } else {
-      List<TypeArgument> arguments = new ArrayList<>();
-      for (TypeArgument argument : expr.getArguments()) {
-        if (argument instanceof TelescopeArgument) {
-          arguments.add(new TelescopeArgument(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), argument.getType().accept(this)));
-        } else {
-          arguments.add(new TypeArgument(argument.getExplicit(), argument.getType().accept(this)));
-        }
-      }
-      return Pi(arguments, expr.getCodomain().accept(this));
-    }
+    if (myMode == Mode.WHNF) return expr;
+    return Pi(visitArguments(expr.getArguments()), expr.getCodomain().accept(this));
   }
 
   @Override
@@ -135,11 +136,24 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitHole(HoleExpression expr) {
-    if (myMode == Mode.WHNF) {
-      return expr;
-    } else {
-      return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
+    if (myMode == Mode.WHNF) return expr;
+    return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
+  }
+
+  @Override
+  public Expression visitTuple(TupleExpression expr) {
+    if (myMode == Mode.WHNF) return expr;
+    List<Expression> fields = new ArrayList<>(expr.getFields().size());
+    for (Expression field : expr.getFields()) {
+      fields.add(field.accept(this));
     }
+    return Tuple(fields);
+  }
+
+  @Override
+  public Expression visitSigma(SigmaExpression expr) {
+    if (myMode == Mode.WHNF) return expr;
+    return Sigma(visitArguments(expr.getArguments()));
   }
 
   public static enum Mode { WHNF, NF }

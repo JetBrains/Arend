@@ -1,8 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
@@ -198,5 +197,54 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     }
 
     return expr == other;
+  }
+
+  @Override
+  public Boolean visitTuple(Abstract.TupleExpression expr, Expression other) {
+    if (expr == other) return true;
+    if (!(other instanceof TupleExpression)) return false;
+
+    TupleExpression otherTuple = (TupleExpression) other;
+    if (expr.getFields().size() != otherTuple.getFields().size()) return false;
+    for (int i = 0; i < expr.getFields().size(); ++i) {
+      if (!expr.getField(i).accept(this, otherTuple.getField(i))) return false;
+    }
+    return true;
+  }
+
+  @Override
+  public Boolean visitSigma(Abstract.SigmaExpression expr, Expression other) {
+    if (expr == other) return true;
+    if (!(other instanceof SigmaExpression)) return false;
+
+    List<Abstract.Expression> args = new ArrayList<>();
+    for (Abstract.TypeArgument arg : expr.getArguments()) {
+      if (arg instanceof Abstract.TelescopeArgument) {
+        for (String ignored : ((Abstract.TelescopeArgument) arg).getNames()) {
+          args.add(arg.getType());
+        }
+      } else {
+        args.add(arg.getType());
+      }
+    }
+
+    SigmaExpression otherSigma = (SigmaExpression) other;
+    List<Expression> otherArgs = new ArrayList<>();
+    for (TypeArgument arg : otherSigma.getArguments()) {
+      if (arg instanceof TelescopeArgument) {
+        for (String ignored : ((TelescopeArgument) arg).getNames()) {
+          otherArgs.add(arg.getType());
+        }
+      } else {
+        otherArgs.add(arg.getType());
+      }
+    }
+
+    if (args.size() != otherArgs.size()) return false;
+    for (int i = 0; i < args.size(); ++i) {
+      if (i > 0 && args.get(i) == args.get(i - 1) && otherArgs.get(i) == otherArgs.get(i - 1)) continue;
+      if (!args.get(i).accept(this, otherArgs.get(i))) return false;
+    }
+    return true;
   }
 }
