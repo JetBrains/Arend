@@ -17,11 +17,6 @@ public class InferedArgumentsMismatch extends TypeCheckingError {
     myOptions = options;
   }
 
-  private InferedArgumentsMismatch() {
-    myArgument = 0;
-    myOptions = null;
-  }
-
   @Override
   public String toString() {
     String msg = "Cannot infer " + myArgument + suffix(myArgument) + " to function " + getExpression() + "\n" +

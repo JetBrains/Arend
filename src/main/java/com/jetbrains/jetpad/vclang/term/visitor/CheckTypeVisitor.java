@@ -35,17 +35,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private static class TypeCheckingException extends Exception {
-    TypeCheckingError error;
-
-    TypeCheckingException(TypeCheckingError error) {
-      this.error = error;
-    }
-
-    private TypeCheckingException() {
-    }
-  }
-
   static class InferHoleExpression extends HoleExpression {
     public InferHoleExpression() {
       super(null);
@@ -115,7 +104,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private int solveEquations(int size, Abstract.Expression[] argsImp, Result[] resultArgs, List<CompareVisitor.Equation> equations, List<CompareVisitor.Equation> resultEquations, Abstract.Expression fun) throws TypeCheckingException {
+  private int solveEquations(int size, Abstract.Expression[] argsImp, Result[] resultArgs, List<CompareVisitor.Equation> equations, List<CompareVisitor.Equation> resultEquations, Abstract.Expression fun) {
     int found = size;
     for (CompareVisitor.Equation equation : equations) {
       for (int i = 0; i < size; ++i) {
@@ -135,7 +124,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
                   options.add((Expression) equation.expression);
                 }
               }
-              throw new TypeCheckingException(new InferedArgumentsMismatch(i, options, fun));
+              myErrors.add(new InferedArgumentsMismatch(i, options, fun));
+              return -1;
             }
           }
 
@@ -149,7 +139,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return found;
   }
 
-  private boolean typeCheckArgs(Abstract.Expression[] argsImp, Result[] resultArgs, Signature signature, List<CompareVisitor.Equation> resultEquations, int startIndex, Abstract.Expression fun) throws TypeCheckingException {
+  private boolean typeCheckArgs(Abstract.Expression[] argsImp, Result[] resultArgs, Signature signature, List<CompareVisitor.Equation> resultEquations, int startIndex, Abstract.Expression fun) {
     for (int i = startIndex; i < resultArgs.length; ++i) {
       if (resultArgs[i] instanceof OKResult) continue;
 
@@ -173,14 +163,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return false;
       }
       if (resultArgs[i] instanceof InferErrorResult) {
-        // TODO: Try to infer implicit arguments from other arguments
-        myErrors.add(((InferErrorResult) resultArgs[i]).error);
-        return false;
+        continue;
       }
 
       OKResult okResult = (OKResult) resultArgs[i];
       if (okResult.equations == null) continue;
       int found = solveEquations(i, argsImp, resultArgs, okResult.equations, resultEquations, fun);
+      if (found < 0) return false;
       if (found != i) {
         i = found - 1;
       }
@@ -242,11 +231,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int argsNumber = i;
     Result[] resultArgs = new Result[argsNumber];
     List<CompareVisitor.Equation> resultEquations = new ArrayList<>();
-    try {
-      if (!typeCheckArgs(argsImp, resultArgs, signature, resultEquations, 0, fun)) return null;
-    } catch (TypeCheckingException exception) {
-      expression.setWellTyped(Error(null, exception.error));
-      myErrors.add(exception.error);
+    if (!typeCheckArgs(argsImp, resultArgs, signature, resultEquations, 0, fun)) {
+      expression.setWellTyped(Error(null, myErrors.get(myErrors.size() - 1)));
       return null;
     }
 
@@ -293,14 +279,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           return null;
         }
 
-        try {
-          int found = solveEquations(argsNumber, argsImp, resultArgs, equations, resultEquations, fun);
-          if (found != argsNumber) {
-            if (!typeCheckArgs(argsImp, resultArgs, signature, resultEquations, found, fun)) return null;
-          }
-        } catch (TypeCheckingException exception) {
-          expression.setWellTyped(Error(null, exception.error));
-          myErrors.add(exception.error);
+        int found = solveEquations(argsNumber, argsImp, resultArgs, equations, resultEquations, fun);
+        if (found < 0 || (found != argsNumber && !typeCheckArgs(argsImp, resultArgs, signature, resultEquations, found, fun))) {
+          expression.setWellTyped(Error(null, myErrors.get(myErrors.size() - 1)));
           return null;
         }
       }
