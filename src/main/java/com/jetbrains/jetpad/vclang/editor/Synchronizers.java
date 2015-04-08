@@ -14,6 +14,7 @@ import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.util.CellLists;
 import jetbrains.jetpad.completion.CompletionItem;
 import jetbrains.jetpad.completion.CompletionParameters;
+import jetbrains.jetpad.completion.CompletionSupplier;
 import jetbrains.jetpad.completion.SimpleCompletionItem;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.mapper.Synchronizer;
@@ -24,7 +25,6 @@ import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 import jetbrains.jetpad.projectional.generic.Role;
 import jetbrains.jetpad.projectional.generic.RoleCompletion;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.model.expr.Model.Expression;
@@ -34,15 +34,13 @@ public class Synchronizers {
     ProjectionalRoleSynchronizer<Node, Definition> synchronizer = ProjectionalSynchronizers.forRole(mapper, definitions, target, CellLists.newLineSeparated(target.children()), DefinitionMapperFactory.getInstance());
     synchronizer.setCompletion(new RoleCompletion<Node, Definition>() {
       @Override
-      public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Definition> target) {
-        List<CompletionItem> result = new ArrayList<>();
-        result.add(new SimpleCompletionItem("fun ", "function") {
+      public CompletionSupplier createRoleCompletion(Mapper<?, ?> mapper, Node contextNode, final Role<Definition> target) {
+        return CompletionSupplier.create(new SimpleCompletionItem("fun ", "function") {
           @Override
           public Runnable complete(String text) {
             return target.set(new FunctionDefinition());
           }
         });
-        return result;
       }
     });
     synchronizer.setItemFactory(new Supplier<Definition>() {
@@ -67,15 +65,20 @@ public class Synchronizers {
     synchronizer.setPlaceholderText(placeholderText);
     synchronizer.setCompletion(new RoleCompletion<Node, Expression>() {
       @Override
-      public List<CompletionItem> createRoleCompletion(CompletionParameters ctx, Mapper<?, ?> mapper, Node contextNode, final Role<Expression> target) {
-        List<CompletionItem> result = ExpressionCompletion.getInstance().createRoleCompletion(ctx, mapper, contextNode, target);
-        result.add(new SimpleCompletionItem("tele ", "telescope") {
+      public CompletionSupplier createRoleCompletion(final Mapper<?, ?> mapper, final Node contextNode, final Role<Expression> target) {
+        return new CompletionSupplier() {
           @Override
-          public Runnable complete(String text) {
-            return target.set(new Model.TelescopeArgument());
+          public List<CompletionItem> get(CompletionParameters cp) {
+            List<CompletionItem> result = ExpressionCompletion.getInstance().createRoleCompletion(mapper, contextNode, target).get(cp);
+            result.add(new SimpleCompletionItem("tele ", "telescope") {
+              @Override
+              public Runnable complete(String text) {
+                return target.set(new Model.TelescopeArgument());
+              }
+            });
+            return result;
           }
-        });
-        return result;
+        };
       }
     });
     return synchronizer;
