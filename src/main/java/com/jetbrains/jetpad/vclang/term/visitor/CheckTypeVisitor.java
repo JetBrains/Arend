@@ -96,6 +96,22 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
+  private Result checkResultImplicit(Expression expectedType, OKResult result, Abstract.Expression expression) {
+    if (result == null) return null;
+    if (expectedType == null) {
+      expression.setWellTyped(result.expression);
+      return result;
+    }
+
+    Signature actualSignature = new Signature(result.type);
+    Signature expectedSignature = new Signature(expectedType);
+    if (actualSignature.getArguments().length > expectedSignature.getArguments().length) {
+      return typeCheckApps(expression, new Arg[0], expectedType, expression);
+    } else {
+      return checkResult(expectedType, result, expression);
+    }
+  }
+
   private Result typeCheck(Abstract.Expression expr, Expression expectedType) {
     if (expr == null) {
       return null;
@@ -178,7 +194,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private Result typeCheckApps(Abstract.Expression fun, Arg[] args, Expression expectedType, Abstract.Expression expression) {
-    if (fun instanceof Abstract.NelimExpression) {
+    if (fun instanceof Abstract.NelimExpression && args.length > 0) {
       Result argument = typeCheck(args[0].expression, null);
       if (!(argument instanceof OKResult)) return argument;
       OKResult okArgument = (OKResult) argument;
@@ -228,6 +244,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
+    if (expectedType != null) {
+      Signature expectedSignature = new Signature(expectedType);
+      for (; i < signature.getArguments().length - expectedSignature.getArguments().length; ++i) {
+        if (signature.getArgument(i).getExplicit()) {
+          break;
+        } else {
+          argsImp[i] = new InferHoleExpression();
+        }
+      }
+    }
+
     int argsNumber = i;
     Result[] resultArgs = new Result[argsNumber];
     List<CompareVisitor.Equation> resultEquations = new ArrayList<>();
@@ -235,8 +262,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       expression.setWellTyped(Error(null, myErrors.get(myErrors.size() - 1)));
       return null;
     }
-
-    // TODO: Infer tail implicit arguments.
 
     Expression resultType;
     if (signature.getArguments().length == argsNumber) {
@@ -260,17 +285,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    boolean expectedTypeChecked = false;
+    boolean expectedTypeHasHoles = expectedType != null && expectedType.accept(new FindHoleVisitor()) != null;
     if (argIndex != 0) {
-      expectedTypeChecked = expectedType == null || expectedType.accept(new FindHoleVisitor()) == null;
-      if (expectedType != null && expectedTypeChecked) {
+      if (expectedType != null && !expectedTypeHasHoles) {
         Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
         Expression actualNorm = resultType.normalize(NormalizeVisitor.Mode.NF);
         List<CompareVisitor.Equation> equations = compare(actualNorm, expectedNorm, CompareVisitor.CMP.LEQ);
         if (equations == null) {
           Expression resultExpr = okFunction.expression;
           for (i = 0; i < argsNumber; ++i) {
-            resultExpr = App(resultExpr, resultArgs[i].expression, signature.getArgument(i).getExplicit());
+            resultExpr = App(resultExpr, resultArgs[i] == null ? new InferHoleExpression() : resultArgs[i].expression, signature.getArgument(i).getExplicit());
           }
 
           TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression);
@@ -281,7 +305,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
         int found = solveEquations(argsNumber, argsImp, resultArgs, equations, resultEquations, fun);
         if (found < 0 || (found != argsNumber && !typeCheckArgs(argsImp, resultArgs, signature, resultEquations, found, fun))) {
-          expression.setWellTyped(Error(null, myErrors.get(myErrors.size() - 1)));
+          Expression resultExpr = okFunction.expression;
+          for (i = 0; i < argsNumber; ++i) {
+            resultExpr = App(resultExpr, resultArgs[i] == null ? new InferHoleExpression() : resultArgs[i].expression, signature.getArgument(i).getExplicit());
+          }
+          expression.setWellTyped(Error(resultExpr, myErrors.get(myErrors.size() - 1)));
           return null;
         }
       }
@@ -317,7 +345,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (argIndex == 0) {
       OKResult result = new OKResult(resultExpr, resultType, resultEquations);
-      return expectedTypeChecked ? result : checkResult(expectedType, result, expression);
+      if (expectedTypeHasHoles) {
+        return checkResult(expectedType, result, expression);
+      } else {
+        expression.setWellTyped(resultExpr);
+        return result;
+      }
     } else {
       TypeCheckingError error = new ArgInferenceError("to function", fun, argIndex);
       expression.setWellTyped(Error(resultExpr, error));
@@ -352,14 +385,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getSignature().getType(), null), expr);
+    return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getSignature().getType(), null), expr);
   }
 
   @Override
   public Result visitIndex(Abstract.IndexExpression expr, Expression expectedType) {
     assert expr.getIndex() < myLocalContext.size();
     Expression actualType = myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getSignature().getType().liftIndex(0, expr.getIndex() + 1);
-    return checkResult(expectedType, new OKResult(Index(expr.getIndex()), actualType, null), expr);
+    return checkResultImplicit(expectedType, new OKResult(Index(expr.getIndex()), actualType, null), expr);
   }
 
   @Override
@@ -604,7 +637,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     while (it.hasPrevious()) {
       Binding def = it.previous();
       if (expr.getName().equals(def.getName())) {
-        return checkResult(expectedType, new OKResult(Index(index), def.getSignature().getType().liftIndex(0, index + 1), null), expr);
+        return checkResultImplicit(expectedType, new OKResult(Index(index), def.getSignature().getType().liftIndex(0, index + 1), null), expr);
       }
       ++index;
     }
@@ -615,7 +648,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrors.add(error);
       return null;
     } else {
-      return checkResult(expectedType, new OKResult(DefCall(def), def.getSignature().getType(), null), expr);
+      return checkResultImplicit(expectedType, new OKResult(DefCall(def), def.getSignature().getType(), null), expr);
     }
   }
 

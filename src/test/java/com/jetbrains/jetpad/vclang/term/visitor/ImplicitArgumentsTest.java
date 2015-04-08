@@ -177,4 +177,49 @@ public class ImplicitArgumentsTest {
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
     assertEquals(1, errors.size());
   }
+
+  @Test
+  public void inferTail() {
+    // I : Nat -> Type0, i : {x : Nat} -> I (suc x) |- i : I (suc (suc 0))
+    Expression expr = Index(0);
+    Expression type = Apps(Index(1), Apps(Suc(), Apps(Suc(), Zero())));
+    List<Binding> defs = new ArrayList<>();
+    defs.add(new Binding("I", new Signature(Pi(Nat(), Universe(0)))));
+    defs.add(new Binding("i", new Signature(Pi(false, "x", Nat(), Apps(Index(1), Apps(Suc(), Index(0)))))));
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, type, errors);
+    assertEquals(0, errors.size());
+    assertEquals(App(Index(0), Apps(Suc(), Zero()), false), result.expression);
+    assertEquals(type, result.type);
+  }
+
+  @Test
+  public void inferTail2() {
+    // I : Nat -> Type0, i : {x : Nat} -> I x |- i : {x : Nat} -> I x
+    Expression expr = Index(0);
+    Expression type = Pi(false, "x", Nat(), Apps(Index(1), Index(0)));
+    List<Binding> defs = new ArrayList<>();
+    defs.add(new Binding("I", new Signature(Pi(Nat(), Universe(0)))));
+    defs.add(new Binding("i", new Signature(type)));
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, type.liftIndex(0, 1), errors);
+    assertEquals(0, errors.size());
+    assertEquals(Index(0), result.expression);
+    assertEquals(type.liftIndex(0, 1), result.type);
+  }
+
+  @Test
+  public void inferTailError() {
+    // I : Type1 -> Type1, i : {x : Type0} -> I x |- i : I Type0
+    Expression expr = Index(0);
+    List<Binding> defs = new ArrayList<>();
+    defs.add(new Binding("I", new Signature(Pi(Universe(1), Universe(1)))));
+    defs.add(new Binding("i", new Signature(Pi(false, "x", Universe(0), Apps(Index(1), Index(0))))));
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    assertNull(expr.checkType(new HashMap<String, Definition>(), defs, Apps(Index(1), Universe(0)), errors));
+    assertEquals(1, errors.size());
+  }
 }
