@@ -3,10 +3,11 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 
+import java.io.Serializable;
 import java.util.List;
 
 public class Abstract {
-  public static interface Expression {
+  public static interface Expression extends Serializable {
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
     public void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.error.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.term.error.InferedArgumentsMismatch;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
@@ -152,6 +153,7 @@ public class ImplicitArgumentsTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, Pi(Nat(), Pi(Nat(), Nat())), errors));
     assertEquals(1, errors.size());
+    assertTrue(errors.get(0) instanceof InferedArgumentsMismatch);
   }
 
   @Test
