@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang;
 import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
@@ -29,7 +30,7 @@ public class ConsoleMain {
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     VcgrammarParser parser = new VcgrammarParser(tokens);
     VcgrammarParser.DefsContext tree = parser.defs();
-    BuildVisitor builder = new BuildVisitor();
+    BuildVisitor builder = new BuildVisitor(Prelude.OPERATOR_PRECEDENCE);
     List<Definition> defs = builder.visitDefs(tree);
     List<ParserError> parserErrors = builder.getErrors();
     if (!parserErrors.isEmpty()) {
@@ -51,7 +52,7 @@ public class ConsoleMain {
       }
       if (def != null) {
         StringBuilder stringBuilder = new StringBuilder();
-        def.prettyPrint(stringBuilder, new ArrayList<String>(), 0);
+        def.prettyPrint(stringBuilder, new ArrayList<String>(), (byte) 0);
         System.out.println(stringBuilder);
         System.out.println();
       }

@@ -11,7 +11,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
   private final List<Equation> myEquations;
   private CMP myCmp;
 
-  public static enum CMP { EQ, GEQ, LEQ }
+  public enum CMP { EQ, GEQ, LEQ }
 
   private static CMP not(CMP cmp) {
     switch (cmp) {
@@ -246,5 +246,14 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
       if (!args.get(i).accept(this, otherArgs.get(i))) return false;
     }
     return true;
+  }
+
+  @Override
+  public Boolean visitBinOp(Abstract.BinOpExpression expr, Expression other) {
+    if (expr == other) return true;
+    if (!(other instanceof BinOpExpression)) return false;
+
+    BinOpExpression otherBinOp = (BinOpExpression) other;
+    return expr.getBinOp().equals(otherBinOp.getBinOp()) && expr.getLeft().accept(this, otherBinOp.getLeft()) && expr.getRight().accept(this, otherBinOp.getRight());
   }
 }

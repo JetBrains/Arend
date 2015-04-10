@@ -145,4 +145,8 @@ public class ExpressionFactory {
   public static ErrorExpression Error(Expression expr, TypeCheckingError error) {
     return new ErrorExpression(expr, error);
   }
+
+  public static BinOpExpression BinOp(Expression left, Definition binOp, Expression right) {
+    return new BinOpExpression(left, binOp, right);
+  }
 }

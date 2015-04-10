@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -52,13 +53,17 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return Apps(function1, myMode == Mode.WHNF ? expr.getArgument() : expr.getArgument().accept(this));
   }
 
-  @Override
-  public Expression visitDefCall(DefCallExpression expr) {
-    if (expr.getDefinition() instanceof FunctionDefinition) {
-      return ((FunctionDefinition) expr.getDefinition()).getTerm().accept(this);
+  private Expression visitDefCall(Expression expr, Definition function, Expression... expressions) {
+    if (function instanceof FunctionDefinition) {
+      return Apps(((FunctionDefinition) function).getTerm(), expressions).accept(this);
     } else {
       return expr;
     }
+  }
+
+  @Override
+  public Expression visitDefCall(DefCallExpression expr) {
+    return visitDefCall(expr, expr.getDefinition());
   }
 
   @Override
@@ -156,5 +161,10 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return Sigma(visitArguments(expr.getArguments()));
   }
 
-  public static enum Mode { WHNF, NF }
+  @Override
+  public Expression visitBinOp(BinOpExpression expr) {
+    return visitDefCall(expr, expr.getBinOp(), expr.getLeft(), expr.getRight());
+  }
+
+  public enum Mode { WHNF, NF }
 }

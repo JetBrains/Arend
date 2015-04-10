@@ -97,4 +97,10 @@ public class FindHoleVisitor implements ExpressionVisitor<CheckTypeVisitor.Infer
     }
     return null;
   }
+
+  @Override
+  public CheckTypeVisitor.InferHoleExpression visitBinOp(BinOpExpression expr) {
+    CheckTypeVisitor.InferHoleExpression result = expr.getLeft().accept(this);
+    return result == null ? expr.getRight().accept(this) : result;
+  }
 }

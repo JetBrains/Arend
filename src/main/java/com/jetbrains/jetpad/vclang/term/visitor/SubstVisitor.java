@@ -133,4 +133,9 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   public Expression visitSigma(SigmaExpression expr) {
     return visitArguments(expr.getArguments(), null);
   }
+
+  @Override
+  public Expression visitBinOp(BinOpExpression expr) {
+    return BinOp(expr.getLeft().accept(this), expr.getBinOp(), expr.getRight().accept(this));
+  }
 }

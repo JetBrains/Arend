@@ -12,10 +12,55 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Universe;
 public abstract class Definition extends Binding implements PrettyPrintable {
   private final int myID;
   private static int idCounter = 0;
+  private final Precedence myPrecedence;
+  private final Fixity myFixity;
 
-  public Definition(String name, Signature signature) {
+  public enum Fixity { PREFIX, INFIX }
+  public enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
+
+  public static class Precedence {
+    public Associativity associativity;
+    public byte priority;
+
+    public Precedence(Associativity associativity, byte priority) {
+      this.associativity = associativity;
+      this.priority = priority;
+    }
+
+    @Override
+    public String toString() {
+      String result = "infix";
+      if (associativity == Associativity.LEFT_ASSOC) {
+        result += "l";
+      }
+      if (associativity == Associativity.RIGHT_ASSOC) {
+        result += "r";
+      }
+      return result + " " + priority;
+    }
+  }
+
+  public Definition(String name, Signature signature, Precedence precedence, Fixity fixity) {
     super(name, signature);
     myID = idCounter++;
+    myPrecedence = precedence;
+    myFixity = fixity;
+  }
+
+  public Definition(String name, Signature signature, Fixity fixity) {
+    this(name, signature, new Precedence(Associativity.RIGHT_ASSOC, (byte) 10), fixity);
+  }
+
+  public Definition(String name, Signature signature) {
+    this(name, signature, Fixity.PREFIX);
+  }
+
+  public Precedence getPrecedence() {
+    return myPrecedence;
+  }
+
+  public Fixity getFixity() {
+    return myFixity;
   }
 
   @Override

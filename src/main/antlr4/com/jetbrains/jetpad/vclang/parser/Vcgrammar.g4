@@ -2,7 +2,11 @@ grammar Vcgrammar;
 
 defs  : def+;
 
-def   : '\\function' ID ':' expr1 '=>' expr;
+def   : '\\function' name ':' expr1 '=>' expr;
+
+name  : ID                              # nameId
+      | '(' BIN_OP ')'                  # nameBinOp
+      ;
 
 expr  : expr1                           # exprExpr1
       | '\\lam' lamArg+ '=>' expr       # lam
@@ -12,11 +16,18 @@ lamArg  : ID                            # lamArgId
         | tele                          # lamArgTele
         ;
 
-expr1 : expr1 expr1                     # app
+expr1 : expr2                           # expr1Expr2
       | <assoc=right> expr1 '->' expr1  # arr
       | '\\Pi' tele+ '->' expr1         # pi
       | '\\Sigma' tele+                 # sigma
-      | '(' expr (',' expr)* ')'        # tuple
+      ;
+
+expr2 : atom+                           # expr2Atom
+      | atom+ BIN_OP expr2              # expr2BinOp
+      | atom+ '`' ID '`' expr2          # expr2Id
+      ;
+
+atom  : '(' expr (',' expr)* ')'        # tuple
       | UNIVERSE                        # universe
       | ID                              # id
       | 'N'                             # Nat
@@ -40,3 +51,4 @@ LINE_COMMENT : '--' .*? '\r'? '\n' -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
 COLON : ':';
 LAMBDA : '\\lam';
+BIN_OP : [~!@#$%^&*-+=<>?/:|.]+;

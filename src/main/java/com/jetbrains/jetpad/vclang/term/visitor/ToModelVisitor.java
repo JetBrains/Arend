@@ -178,4 +178,10 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
     // TODO: Write this.
     return null;
   }
+
+  @Override
+  public Model.Expression visitBinOp(BinOpExpression expr) {
+    // TODO: Write this.
+    return null;
+  }
 }

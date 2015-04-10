@@ -12,12 +12,18 @@ import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
   private final List<ParserError> myErrors = new ArrayList<>();
+  private final Map<String, Definition.Precedence> myOperators;
+
+  public BuildVisitor(Map<String, Definition.Precedence> operators) {
+    myOperators = operators;
+  }
 
   public List<ParserError> getErrors() {
     return myErrors;
@@ -50,6 +56,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Expression) visit(expr);
   }
 
+  public Expression visitExpr(Expr2Context expr) {
+    return (Expression) visit(expr);
+  }
+
+  public Expression visitExpr(AtomContext expr) {
+    return (Expression) visit(expr);
+  }
+
   @Override
   public List<Definition> visitDefs(DefsContext ctx) {
     List<Definition> defs = new ArrayList<>();
@@ -61,10 +75,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Definition visitDef(DefContext ctx) {
-    String name = ctx.ID().getText();
+    boolean isPrefix = ctx.name() instanceof NameIdContext;
+    String name = isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
     Expression type = visitExpr(ctx.expr1());
     Expression term = visitExpr(ctx.expr());
-    return new FunctionDefinition(name, new Signature(new TypeArgument[0], type), term);
+    return new FunctionDefinition(name, new Signature(new TypeArgument[0], type), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, term);
   }
 
   @Override
@@ -87,13 +102,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Expression left = visitExpr(ctx.expr1(0));
     Expression right = visitExpr(ctx.expr1(1));
     return Pi(left, right);
-  }
-
-  @Override
-  public Expression visitApp(AppContext ctx) {
-    Expression left = visitExpr(ctx.expr1(0));
-    Expression right = visitExpr(ctx.expr1(1));
-    return Apps(left, right);
   }
 
   @Override
@@ -178,12 +186,63 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Object visitSigma(SigmaContext ctx) {
+  public SigmaExpression visitSigma(SigmaContext ctx) {
     return Sigma(visitTeles(ctx.tele()));
   }
 
   @Override
-  public Expression visitPi(PiContext ctx) {
+  public PiExpression visitPi(PiContext ctx) {
     return Pi(visitTeles(ctx.tele()), visitExpr(ctx.expr1()));
+  }
+
+  private Expression visitAtoms(List<AtomContext> atoms) {
+    Expression result = visitExpr(atoms.get(0));
+    for (int i = 1; i < atoms.size(); ++i) {
+      result = Apps(result, visitExpr(atoms.get(i)));
+    }
+    return result;
+  }
+
+  @Override
+  public Expression visitExpr2Atom(Expr2AtomContext ctx) {
+    return visitAtoms(ctx.atom());
+  }
+
+  private Expression insertBinOp(Expression expr1, Definition.Precedence prec, String binOp, Token token, Expression expr2) {
+    if (expr2 instanceof BinOpExpression) {
+      BinOpExpression binOp2 = (BinOpExpression) expr2;
+      Definition.Precedence prec2 = binOp2.getBinOp().getPrecedence();
+      if (prec.priority < prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.RIGHT_ASSOC && prec2.associativity == Definition.Associativity.RIGHT_ASSOC)) {
+        return BinOp(expr1, new FunctionDefinition(binOp, null, prec, Definition.Fixity.INFIX, Var(binOp)), expr2);
+      }
+      if (prec.priority > prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.LEFT_ASSOC && prec2.associativity == Definition.Associativity.LEFT_ASSOC)) {
+        return BinOp(insertBinOp(expr1, prec, binOp, token, binOp2.getLeft()), binOp2.getBinOp(), binOp2.getRight());
+      }
+      String msg = "Precedence parsing error: cannot mix (" + binOp + ") [" + prec + "] and (" + binOp2.getBinOp().getName() + ") [" + prec2 + "] in the same infix expression";
+      myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), msg));
+      return BinOp(expr1, new FunctionDefinition(binOp, null, prec, Definition.Fixity.INFIX, Var(binOp)), expr2);
+    } else {
+      return BinOp(expr1, new FunctionDefinition(binOp, null, prec, Definition.Fixity.INFIX, Var(binOp)), expr2);
+    }
+  }
+
+  private Expression visitExpr2Infix(List<AtomContext> atoms, String binOp, Token binOpToken, Definition.Fixity fixity, Expr2Context expr2Ctx) {
+    Expression expr1 = visitAtoms(atoms);
+    Expression expr2 = visitExpr(expr2Ctx);
+    Definition.Precedence prec = myOperators.get(binOp);
+    if (prec == null) {
+      return BinOp(expr1, new FunctionDefinition(binOp, null, null, fixity, Var(binOp)), expr2);
+    }
+    return insertBinOp(expr1, prec, binOp, binOpToken, expr2);
+  }
+
+  @Override
+  public Expression visitExpr2BinOp(Expr2BinOpContext ctx) {
+    return visitExpr2Infix(ctx.atom(), ctx.BIN_OP().getText(), ctx.getToken(BIN_OP, 0).getSymbol(), Definition.Fixity.INFIX, ctx.expr2());
+  }
+
+  @Override
+  public Object visitExpr2Id(Expr2IdContext ctx) {
+    return visitExpr2Infix(ctx.atom(), ctx.ID().getText(), ctx.getToken(ID, 0).getSymbol(), Definition.Fixity.PREFIX, ctx.expr2());
   }
 }

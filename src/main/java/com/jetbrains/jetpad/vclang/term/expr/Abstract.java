@@ -6,98 +6,104 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import java.util.List;
 
 public class Abstract {
-  public static interface Expression {
+  public interface Expression {
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    public void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
+    void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
-  public static interface Argument extends Expression {
+  public interface Argument extends Expression {
     boolean getExplicit();
   }
 
-  public static interface NameArgument extends Argument {
+  public interface NameArgument extends Argument {
     String getName();
   }
 
-  public static interface TypeArgument extends Argument {
+  public interface TypeArgument extends Argument {
     Expression getType();
   }
 
-  public static interface TelescopeArgument extends TypeArgument {
+  public interface TelescopeArgument extends TypeArgument {
     List<String> getNames();
     String getName(int index);
   }
 
-  public static interface AppExpression extends Expression {
-    final static int PREC = 10;
+  public interface AppExpression extends Expression {
+    byte PREC = 11;
     Expression getFunction();
     Expression getArgument();
     boolean isExplicit();
   }
 
-  public static interface DefCallExpression extends Expression {
-    final static int PREC = 11;
+  public interface DefCallExpression extends Expression {
+    byte PREC = 12;
     Definition getDefinition();
   }
 
-  public static interface IndexExpression extends Expression {
-    final static int PREC = 11;
+  public interface IndexExpression extends Expression {
+    byte PREC = 12;
     int getIndex();
   }
 
-  public static interface LamExpression extends Expression {
-    final static int PREC = 5;
+  public interface LamExpression extends Expression {
+    byte PREC = -5;
     List<? extends Argument> getArguments();
     Argument getArgument(int index);
     Expression getBody();
   }
 
-  public static interface NatExpression extends Expression {
-    final static int PREC = 11;
+  public interface NatExpression extends Expression {
+    byte PREC = 12;
   }
 
-  public static interface NelimExpression extends Expression {
-    final static int PREC = 11;
+  public interface NelimExpression extends Expression {
+    byte PREC = 12;
   }
 
-  public static interface TupleExpression extends Expression {
-    final static int PREC = 11;
+  public interface TupleExpression extends Expression {
+    byte PREC = 12;
     List<? extends Expression> getFields();
     Expression getField(int index);
   }
 
-  public static interface SigmaExpression extends Expression {
-    final static int PREC = 7;
+  public interface SigmaExpression extends Expression {
+    byte PREC = -3;
     List<? extends TypeArgument> getArguments();
     TypeArgument getArgument(int index);
   }
 
-  public static interface PiExpression extends Expression {
-    final static int PREC = 6;
+  public interface PiExpression extends Expression {
+    byte PREC = -4;
     List<? extends TypeArgument> getArguments();
     TypeArgument getArgument(int index);
     Expression getCodomain();
   }
 
-  public static interface SucExpression extends Expression {
-    final static int PREC = 11;
+  public interface BinOpExpression extends Expression {
+    Definition getBinOp();
+    Expression getLeft();
+    Expression getRight();
   }
 
-  public static interface UniverseExpression extends Expression {
-    final static int PREC = 11;
+  public interface SucExpression extends Expression {
+    byte PREC = 12;
+  }
+
+  public interface UniverseExpression extends Expression {
+    byte PREC = 12;
     int getLevel();
   }
 
-  public static interface VarExpression extends Expression {
-    final static int PREC = 11;
+  public interface VarExpression extends Expression {
+    byte PREC = 12;
     String getName();
   }
 
-  public static interface ZeroExpression extends Expression {
-    final static int PREC = 11;
+  public interface ZeroExpression extends Expression {
+    byte PREC = 12;
   }
 
-  public static interface HoleExpression extends Expression {
-    final static int PREC = 11;
+  public interface HoleExpression extends Expression {
+    byte PREC = 12;
   }
 }

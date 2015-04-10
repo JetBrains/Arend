@@ -4,10 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.error.*;
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.HoleExpression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -664,14 +661,28 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitTuple(Abstract.TupleExpression expr, Expression params) {
+  public Result visitTuple(Abstract.TupleExpression expr, Expression expectedType) {
     // TODO: Write this.
     return null;
   }
 
   @Override
-  public Result visitSigma(Abstract.SigmaExpression expr, Expression params) {
+  public Result visitSigma(Abstract.SigmaExpression expr, Expression expectedType) {
     // TODO: Write this.
     return null;
+  }
+
+  @Override
+  public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
+    Arg[] args = new Arg[] { new Arg(true, null, expr.getLeft()), new Arg(true, null, expr.getRight()) };
+    Result result = typeCheckApps(DefCall(expr.getBinOp()), args, expectedType, expr);
+    if (!(result instanceof OKResult) || !(result.expression instanceof AppExpression)) return result;
+    AppExpression appExpr1 = (AppExpression) result.expression;
+    if (!(appExpr1.getFunction() instanceof AppExpression)) return result;
+    AppExpression appExpr2 = (AppExpression) appExpr1.getFunction();
+    if (!(appExpr2.getFunction() instanceof DefCallExpression)) return result;
+    result.expression = BinOp(appExpr2.getArgument(), ((DefCallExpression) appExpr2.getFunction()).getDefinition(), appExpr1.getArgument());
+    expr.setWellTyped(result.expression);
+    return result;
   }
 }
