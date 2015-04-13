@@ -6,5 +6,5 @@ import java.util.Collections;
 import java.util.Map;
 
 public class Prelude {
-  public static Map<String, Definition.Precedence> OPERATOR_PRECEDENCE = Collections.emptyMap();
+  public static Map<String, Definition> DEFINITIONS = Collections.emptyMap();
 }

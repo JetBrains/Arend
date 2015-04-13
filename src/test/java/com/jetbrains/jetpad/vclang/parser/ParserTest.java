@@ -6,7 +6,9 @@ import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -59,7 +61,7 @@ public class ParserTest {
   public void parserDef() {
     List<Definition> defs = parseDefs(
         "\\function x : N => 0\n" +
-        "\\function y : N => x");
+            "\\function y : N => x");
     assertEquals(2, defs.size());
   }
 
@@ -93,5 +95,16 @@ public class ParserTest {
     assertFalse(def.getSignature().getArgument(2).getExplicit());
     assertTrue(def.getSignature().getArgument(3).getExplicit());
     assertEquals(Pi(args(Tele(false, vars("x"), Nat()), TypeArg(Nat()), Tele(false, vars("y", "z"), Nat()), TypeArg(Apps(Nat(), Var("x"), Var("y"), Var("z")))), Nat()), def.getSignature().getType());
+  }
+
+  @Test
+  public void parserInfix() {
+    Map<String, Definition> definitions = new HashMap<>();
+    Definition plus = new FunctionDefinition("+", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Var("+"));
+    Definition mul = new FunctionDefinition("*", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, Var("*"));
+    definitions.put("+", plus);
+    definitions.put("*", mul);
+    Expression expr = parseExpr("a + b * c + d * (e * f) * (g + h)", definitions);
+    assertEquals(BinOp(BinOp(Var("a"), plus, BinOp(Var("b"), mul, Var("c"))), plus, BinOp(BinOp(Var("d"), mul, BinOp(Var("e"), mul, Var("f"))), mul, BinOp(Var("g"), plus, Var("h")))), expr);
   }
 }

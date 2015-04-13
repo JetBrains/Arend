@@ -30,7 +30,7 @@ public class ConsoleMain {
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     VcgrammarParser parser = new VcgrammarParser(tokens);
     VcgrammarParser.DefsContext tree = parser.defs();
-    BuildVisitor builder = new BuildVisitor(Prelude.OPERATOR_PRECEDENCE);
+    BuildVisitor builder = new BuildVisitor(Prelude.DEFINITIONS);
     List<Definition> defs = builder.visitDefs(tree);
     List<ParserError> parserErrors = builder.getErrors();
     if (!parserErrors.isEmpty()) {

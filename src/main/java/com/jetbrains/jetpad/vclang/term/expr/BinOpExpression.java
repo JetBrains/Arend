@@ -32,11 +32,11 @@ public class BinOpExpression extends Expression implements Abstract.BinOpExpress
 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return null;
+    return visitor.visitBinOp(this);
   }
 
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return null;
+    return visitor.visitBinOp(this, params);
   }
 }

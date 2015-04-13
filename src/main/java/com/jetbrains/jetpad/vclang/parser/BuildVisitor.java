@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
+import com.jetbrains.jetpad.vclang.term.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -19,10 +20,10 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
   private final List<ParserError> myErrors = new ArrayList<>();
-  private final Map<String, Definition.Precedence> myOperators;
+  private final Map<String, Definition> myGlobalContext;
 
-  public BuildVisitor(Map<String, Definition.Precedence> operators) {
-    myOperators = operators;
+  public BuildVisitor(Map<String, Definition> globalContext) {
+    myGlobalContext = globalContext;
   }
 
   public List<ParserError> getErrors() {
@@ -53,10 +54,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   public Expression visitExpr(Expr1Context expr) {
-    return (Expression) visit(expr);
-  }
-
-  public Expression visitExpr(Expr2Context expr) {
     return (Expression) visit(expr);
   }
 
@@ -203,46 +200,62 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return result;
   }
 
-  @Override
-  public Expression visitExpr2Atom(Expr2AtomContext ctx) {
-    return visitAtoms(ctx.atom());
+  private class Pair {
+    Expression expression;
+    Definition binOp;
+
+    Pair(Expression expression, Definition binOp) {
+      this.expression = expression;
+      this.binOp = binOp;
+    }
   }
 
-  private Expression insertBinOp(Expression expr1, Definition.Precedence prec, String binOp, Token token, Expression expr2) {
-    if (expr2 instanceof BinOpExpression) {
-      BinOpExpression binOp2 = (BinOpExpression) expr2;
-      Definition.Precedence prec2 = binOp2.getBinOp().getPrecedence();
-      if (prec.priority < prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.RIGHT_ASSOC && prec2.associativity == Definition.Associativity.RIGHT_ASSOC)) {
-        return BinOp(expr1, new FunctionDefinition(binOp, null, prec, Definition.Fixity.INFIX, Var(binOp)), expr2);
-      }
-      if (prec.priority > prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.LEFT_ASSOC && prec2.associativity == Definition.Associativity.LEFT_ASSOC)) {
-        return BinOp(insertBinOp(expr1, prec, binOp, token, binOp2.getLeft()), binOp2.getBinOp(), binOp2.getRight());
-      }
-      String msg = "Precedence parsing error: cannot mix (" + binOp + ") [" + prec + "] and (" + binOp2.getBinOp().getName() + ") [" + prec2 + "] in the same infix expression";
+  private void pushOnStack(List<Pair> stack, Expression left, Definition binOp, Token token) {
+    if (stack.isEmpty()) {
+      stack.add(new Pair(left, binOp));
+      return;
+    }
+
+    Pair pair = stack.get(stack.size() - 1);
+    Definition.Precedence prec = pair.binOp.getPrecedence();
+    Definition.Precedence prec2 = binOp.getPrecedence();
+    if (prec.priority < prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.RIGHT_ASSOC && prec2.associativity == Definition.Associativity.RIGHT_ASSOC)) {
+      stack.add(new Pair(left, binOp));
+      return;
+    }
+    if (!(prec.priority > prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.LEFT_ASSOC && prec2.associativity == Definition.Associativity.LEFT_ASSOC))) {
+      String msg = "Precedence parsing error: cannot mix (" + pair.binOp.getName() + ") [" + prec + "] and (" + binOp.getName() + ") [" + prec2 + "] in the same infix expression";
       myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), msg));
-      return BinOp(expr1, new FunctionDefinition(binOp, null, prec, Definition.Fixity.INFIX, Var(binOp)), expr2);
-    } else {
-      return BinOp(expr1, new FunctionDefinition(binOp, null, prec, Definition.Fixity.INFIX, Var(binOp)), expr2);
     }
-  }
-
-  private Expression visitExpr2Infix(List<AtomContext> atoms, String binOp, Token binOpToken, Definition.Fixity fixity, Expr2Context expr2Ctx) {
-    Expression expr1 = visitAtoms(atoms);
-    Expression expr2 = visitExpr(expr2Ctx);
-    Definition.Precedence prec = myOperators.get(binOp);
-    if (prec == null) {
-      return BinOp(expr1, new FunctionDefinition(binOp, null, null, fixity, Var(binOp)), expr2);
-    }
-    return insertBinOp(expr1, prec, binOp, binOpToken, expr2);
+    stack.remove(stack.size() - 1);
+    pushOnStack(stack, BinOp(pair.expression, pair.binOp, left), binOp, token);
   }
 
   @Override
-  public Expression visitExpr2BinOp(Expr2BinOpContext ctx) {
-    return visitExpr2Infix(ctx.atom(), ctx.BIN_OP().getText(), ctx.getToken(BIN_OP, 0).getSymbol(), Definition.Fixity.INFIX, ctx.expr2());
-  }
+  public Expression visitExpr1BinOp(Expr1BinOpContext ctx) {
+    List<Pair> stack = new ArrayList<>(ctx.binOpLeft().size());
+    for (BinOpLeftContext leftContext : ctx.binOpLeft()) {
+      String name;
+      Token token;
+      if (leftContext.infix() instanceof InfixBinOpContext) {
+        name = ((InfixBinOpContext) leftContext.infix()).BIN_OP().getText();
+        token = ((InfixBinOpContext) leftContext.infix()).BIN_OP().getSymbol();
+      } else {
+        name = ((InfixIdContext) leftContext.infix()).ID().getText();
+        token = ((InfixIdContext) leftContext.infix()).ID().getSymbol();
+      }
+      Definition def = myGlobalContext.get(name);
+      if (def == null) {
+        myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), new NotInScopeError(Var(name)).toString()));
+        return null;
+      }
+      pushOnStack(stack, visitAtoms(leftContext.atom()), def, token);
+    }
 
-  @Override
-  public Object visitExpr2Id(Expr2IdContext ctx) {
-    return visitExpr2Infix(ctx.atom(), ctx.ID().getText(), ctx.getToken(ID, 0).getSymbol(), Definition.Fixity.PREFIX, ctx.expr2());
+    Expression result = visitAtoms(ctx.atom());
+    for (int i = stack.size() - 1; i >= 0; --i) {
+      result = BinOp(stack.get(i).expression, stack.get(i).binOp, result);
+    }
+    return result;
   }
 }

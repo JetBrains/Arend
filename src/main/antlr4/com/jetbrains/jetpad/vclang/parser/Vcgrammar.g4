@@ -16,15 +16,16 @@ lamArg  : ID                            # lamArgId
         | tele                          # lamArgTele
         ;
 
-expr1 : expr2                           # expr1Expr2
+expr1 : binOpLeft* atom+                # expr1BinOp
       | <assoc=right> expr1 '->' expr1  # arr
       | '\\Pi' tele+ '->' expr1         # pi
       | '\\Sigma' tele+                 # sigma
       ;
 
-expr2 : atom+                           # expr2Atom
-      | atom+ BIN_OP expr2              # expr2BinOp
-      | atom+ '`' ID '`' expr2          # expr2Id
+binOpLeft : atom+ infix;
+
+infix : BIN_OP                          # infixBinOp
+      | '`' ID '`'                      # infixId
       ;
 
 atom  : '(' expr (',' expr)* ')'        # tuple
