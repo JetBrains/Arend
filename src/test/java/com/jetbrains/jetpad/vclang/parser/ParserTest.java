@@ -107,4 +107,25 @@ public class ParserTest {
     Expression expr = parseExpr("a + b * c + d * (e * f) * (g + h)", definitions);
     assertEquals(BinOp(BinOp(Var("a"), plus, BinOp(Var("b"), mul, Var("c"))), plus, BinOp(BinOp(Var("d"), mul, BinOp(Var("e"), mul, Var("f"))), mul, BinOp(Var("g"), plus, Var("h")))), expr);
   }
+
+  @Test
+  public void parserInfixDef() {
+    List<Definition> defs = parseDefs(
+        "\\function (+) : N -> N -> N => \\lam x y => x\n" +
+            "\\function (*) : N -> N=> \\lam x => x + 0");
+    assertEquals(2, defs.size());
+  }
+
+  @Test
+  public void parserInfixError() {
+    Map<String, Definition> definitions = new HashMap<>();
+    Definition plus = new FunctionDefinition("+", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Var("+"));
+    Definition mul = new FunctionDefinition("*", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Var("*"));
+    definitions.put("+", plus);
+    definitions.put("*", mul);
+
+    BuildVisitor builder = new BuildVisitor(definitions);
+    builder.visitExpr(parse("a + b * c").expr());
+    assertEquals(1, builder.getErrors().size());
+  }
 }

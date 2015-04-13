@@ -15,7 +15,7 @@ public class ParserError {
   public String toString() {
     String msg = myLine + ":" + myPos + ": Parser error";
     if (myMessage != null) {
-      msg += myMessage;
+      msg += ": " + myMessage;
     }
     return msg;
   }

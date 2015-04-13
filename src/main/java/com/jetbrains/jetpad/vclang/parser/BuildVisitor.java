@@ -76,7 +76,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     String name = isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
     Expression type = visitExpr(ctx.expr1());
     Expression term = visitExpr(ctx.expr());
-    return new FunctionDefinition(name, new Signature(new TypeArgument[0], type), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, term);
+    Definition def = new FunctionDefinition(name, new Signature(new TypeArgument[0], type), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, term);
+    myGlobalContext.put(name, def);
+    return def;
   }
 
   @Override
