@@ -662,14 +662,131 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitTuple(Abstract.TupleExpression expr, Expression expectedType) {
-    // TODO: Write this.
-    return null;
+    Expression expectedTypeNorm = null;
+    if (expectedType != null) {
+      expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+      if (expectedTypeNorm instanceof SigmaExpression) {
+        SigmaExpression expectedSigma = (SigmaExpression) expectedTypeNorm;
+        int argsNumber = 0;
+        for (TypeArgument arg : expectedSigma.getArguments()) {
+          if (arg instanceof TelescopeArgument) {
+            argsNumber += ((TelescopeArgument) arg).getNames().size();
+          } else {
+            ++argsNumber;
+          }
+        }
+
+        if (expr.getFields().size() != argsNumber) {
+          TypeCheckingError error = new TypeCheckingError("Expected a tuple with " + argsNumber + " fields, but given " + expr.getFields().size(), expr);
+          expr.setWellTyped(Error(null, error));
+          myErrors.add(error);
+          return null;
+        }
+
+        int i = 0;
+        List<Expression> fields = new ArrayList<>(expr.getFields().size());
+        Expression expression = Tuple(fields);
+        List<TypeArgument> arguments = new ArrayList<>(expr.getFields().size());
+        Expression type = Sigma(arguments);
+        List<CompareVisitor.Equation> equations = new ArrayList<>();
+        for (TypeArgument arg : expectedSigma.getArguments()) {
+          if (arg instanceof TelescopeArgument) {
+            for (String ignored : ((TelescopeArgument) arg).getNames()) {
+              Result result = expr.getField(i).accept(this, arg.getType());
+              if (!(result instanceof OKResult)) return result;
+              OKResult okResult = (OKResult) result;
+              fields.add(okResult.expression);
+              arguments.add(TypeArg(okResult.type));
+              equations.addAll(okResult.equations);
+              ++i;
+            }
+          } else {
+            Result result = expr.getField(i).accept(this, arg.getType());
+            if (!(result instanceof OKResult)) return result;
+            OKResult okResult = (OKResult) result;
+            fields.add(okResult.expression);
+            arguments.add(TypeArg(okResult.type));
+            equations.addAll(okResult.equations);
+            ++i;
+          }
+        }
+        return new OKResult(expression, type, equations);
+      } else
+      if (!(expectedTypeNorm instanceof InferHoleExpression)) {
+        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(args(TypeArg(Var("?")), TypeArg(Var("?")))), expr);
+        expr.setWellTyped(Error(null, error));
+        myErrors.add(error);
+        return null;
+      }
+    }
+
+    List<Expression> fields = new ArrayList<>(expr.getFields().size());
+    Expression expression = Tuple(fields);
+    List<TypeArgument> arguments = new ArrayList<>(expr.getFields().size());
+    Expression type = Sigma(arguments);
+    List<CompareVisitor.Equation> equations = new ArrayList<>();
+    for (Abstract.Expression field : expr.getFields()) {
+      Result result = field.accept(this, null);
+      if (!(result instanceof OKResult)) return result;
+      OKResult okResult = (OKResult) result;
+      fields.add(okResult.expression);
+      arguments.add(TypeArg(okResult.type));
+      equations.addAll(okResult.equations);
+    }
+    if (expectedTypeNorm != null) {
+      equations.add(new CompareVisitor.Equation((InferHoleExpression) expectedTypeNorm, type));
+    }
+    return new OKResult(expression, type, equations);
   }
 
   @Override
   public Result visitSigma(Abstract.SigmaExpression expr, Expression expectedType) {
-    // TODO: Write this.
-    return null;
+    OKResult[] domainResults = new OKResult[expr.getArguments().size()];
+    int numberOfVars = 0;
+    List<CompareVisitor.Equation> equations = new ArrayList<>();
+    for (int i = 0; i < domainResults.length; ++i) {
+      Result result = typeCheck(expr.getArgument(i).getType(), Universe(-1));
+      if (!(result instanceof OKResult)) return result;
+      domainResults[i] = (OKResult) result;
+      if (domainResults[i].equations != null) {
+        for (CompareVisitor.Equation equation : domainResults[i].equations) {
+          try {
+            if (equation.expression instanceof Expression) {
+              equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -numberOfVars)));
+            }
+          } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+          }
+        }
+      }
+      if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
+        for (String name : ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames()) {
+          myLocalContext.add(new Binding(name, new Signature(domainResults[i].expression)));
+          ++numberOfVars;
+        }
+      } else {
+        myLocalContext.add(new Binding(null, new Signature(domainResults[i].expression)));
+        ++numberOfVars;
+      }
+    }
+
+    for (int i = 0; i < numberOfVars; ++i) {
+      myLocalContext.remove(myLocalContext.size() - 1);
+    }
+    int level = -1;
+    for (OKResult domainResult : domainResults) {
+      level = Math.max(((UniverseExpression) domainResult.type).getLevel(), level);
+    }
+    Expression actualType = Universe(level);
+
+    List<TypeArgument> resultArguments = new ArrayList<>(domainResults.length);
+    for (int i = 0; i < domainResults.length; ++i) {
+      if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
+        resultArguments.add(new TelescopeArgument(expr.getArgument(i).getExplicit(), ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames(), domainResults[i].expression));
+      } else {
+        resultArguments.add(new TypeArgument(expr.getArgument(i).getExplicit(), domainResults[i].expression));
+      }
+    }
+    return checkResult(expectedType, new OKResult(Sigma(resultArguments), actualType, equations), expr);
   }
 
   @Override
