@@ -102,7 +102,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Signature actualSignature = new Signature(result.type);
     Signature expectedSignature = new Signature(expectedType);
-    if (actualSignature.getArguments().length > expectedSignature.getArguments().length) {
+    if (actualSignature.getArguments().size() > expectedSignature.getArguments().size()) {
       return typeCheckApps(expression, new Arg[0], expectedType, expression);
     } else {
       return checkResult(expectedType, result, expression);
@@ -211,9 +211,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     OKResult okFunction = (OKResult) function;
 
     Signature signature = new Signature(okFunction.type);
-    Abstract.Expression[] argsImp = new Abstract.Expression[signature.getArguments().length];
+    Abstract.Expression[] argsImp = new Abstract.Expression[signature.getArguments().size()];
     int i, j;
-    for (i = 0, j = 0; i < signature.getArguments().length && j < args.length; ++i, ++j) {
+    for (i = 0, j = 0; i < signature.getArguments().size() && j < args.length; ++i, ++j) {
       if (args[j].isExplicit == signature.getArgument(i).getExplicit()) {
         argsImp[i] = args[j].expression;
       } else
@@ -243,7 +243,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (expectedType != null) {
       Signature expectedSignature = new Signature(expectedType);
-      for (; i < signature.getArguments().length - expectedSignature.getArguments().length; ++i) {
+      for (; i < signature.getArguments().size() - expectedSignature.getArguments().size(); ++i) {
         if (signature.getArgument(i).getExplicit()) {
           break;
         } else {
@@ -261,12 +261,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     Expression resultType;
-    if (signature.getArguments().length == argsNumber) {
+    if (signature.getArguments().size() == argsNumber) {
       resultType = signature.getResultType();
     } else {
-      TypeArgument[] rest = new TypeArgument[signature.getArguments().length - argsNumber];
-      for (i = 0; i < rest.length; ++i) {
-        rest[i] = signature.getArgument(argsNumber + i);
+      int size = signature.getArguments().size() - argsNumber;
+      List<TypeArgument> rest = new ArrayList<>(size);
+      for (i = 0; i < size; ++i) {
+        rest.add(signature.getArgument(argsNumber + i));
       }
       resultType = new Signature(rest, signature.getResultType()).getType();
     }
@@ -320,12 +321,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       if (argIndex == 0) {
-        if (signature.getArguments().length == argsNumber) {
+        if (signature.getArguments().size() == argsNumber) {
           resultType = signature.getResultType();
         } else {
-          TypeArgument[] rest = new TypeArgument[signature.getArguments().length - argsNumber];
-          for (i = 0; i < rest.length; ++i) {
-            rest[i] = signature.getArgument(argsNumber + i);
+          int size = signature.getArguments().size() - argsNumber;
+          List<TypeArgument> rest = new ArrayList<>(size);
+          for (i = 0; i < size; ++i) {
+            rest.add(signature.getArgument(argsNumber + i));
           }
           resultType = new Signature(rest, signature.getResultType()).getType();
         }
@@ -361,7 +363,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result result = expr.accept(this, expectedType);
     if (result == null) return null;
     if (result instanceof OKResult) return (OKResult) result;
-    throw new IllegalStateException();
+    InferErrorResult errorResult = (InferErrorResult) result;
+    myErrors.add(errorResult.error);
+    return null;
   }
 
   @Override
@@ -444,7 +448,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           if (!errors.isEmpty()) {
             break;
           } else {
-            return new InferErrorResult(hole, new ArgInferenceError("of the lambda", expr, i));
+            TypeCheckingError error = new ArgInferenceError("of the lambda", expr, i);
+            expr.setWellTyped(Error(null, error));
+            return new InferErrorResult(hole, error);
           }
         }
       } else
@@ -692,7 +698,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         for (TypeArgument arg : expectedSigma.getArguments()) {
           if (arg instanceof TelescopeArgument) {
             for (String ignored : ((TelescopeArgument) arg).getNames()) {
-              Result result = expr.getField(i).accept(this, arg.getType());
+              Result result = typeCheck(expr.getField(i), arg.getType());
               if (!(result instanceof OKResult)) return result;
               OKResult okResult = (OKResult) result;
               fields.add(okResult.expression);
@@ -701,7 +707,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               ++i;
             }
           } else {
-            Result result = expr.getField(i).accept(this, arg.getType());
+            Result result = typeCheck(expr.getField(i), arg.getType());
             if (!(result instanceof OKResult)) return result;
             OKResult okResult = (OKResult) result;
             fields.add(okResult.expression);
@@ -726,7 +732,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression type = Sigma(arguments);
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     for (Abstract.Expression field : expr.getFields()) {
-      Result result = field.accept(this, null);
+      Result result = typeCheck(field, null);
       if (!(result instanceof OKResult)) return result;
       OKResult okResult = (OKResult) result;
       fields.add(okResult.expression);

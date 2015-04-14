@@ -1,26 +1,40 @@
 grammar Vcgrammar;
 
-defs  : def+;
+defs  : def*;
 
-def   : '\\function' name ':' expr1 '=>' expr;
+def   : '\\function' name tele* typeOpt arrow expr          # defFunction
+      | '\\data' name tele* typeOpt arrowOpt constructor*   # defData
+      ;
+
+arrow : '<='                            # arrowLeft
+      | '=>'                            # arrowRight
+      ;
+
+arrowOpt : | '<=';
+
+typeOpt :                               # noType
+        | ':' expr                      # withType
+        ;
+
+constructor : '|' name tele*;
 
 name  : ID                              # nameId
       | '(' BIN_OP ')'                  # nameBinOp
       ;
 
-expr  : expr1                           # exprExpr1
-      | '\\lam' lamArg+ '=>' expr       # lam
-      ;
-
-lamArg  : ID                            # lamArgId
-        | tele                          # lamArgTele
-        ;
-
-expr1 : binOpLeft* atom+                # expr1BinOp
-      | <assoc=right> expr1 '->' expr1  # arr
-      | '\\Pi' tele+ '->' expr1         # pi
+expr  : binOpLeft* atom+                # binOp
+      | <assoc=right> expr '->' expr    # arr
+      | '\\Pi' tele+ '->' expr          # pi
       | '\\Sigma' tele+                 # sigma
+      | '\\lam' tele+ '=>' expr         # lam
+      | elimCase expr clause*           # exprElim
       ;
+
+clause : '|' name ID* arrow expr;
+
+elimCase : '\\elim'                     # elim
+         | '\\case'                     # case
+         ;
 
 binOpLeft : atom+ infix;
 
@@ -29,20 +43,25 @@ infix : BIN_OP                          # infixBinOp
       ;
 
 atom  : '(' expr (',' expr)* ')'        # tuple
-      | UNIVERSE                        # universe
-      | ID                              # id
-      | 'N'                             # Nat
-      | 'N-elim'                        # Nelim
-      | '0'                             # zero
-      | 'S'                             # suc
+      | literal                         # atomLiteral
       ;
 
-tele : '(' typedExpr ')'                # explicit
+literal : UNIVERSE                      # universe
+        | ID                            # id
+        | 'N'                           # Nat
+        | 'N-elim'                      # Nelim
+        | '0'                           # zero
+        | 'S'                           # suc
+        | '_'                           # unknown
+        ;
+
+tele : literal                          # teleLiteral
+     | '(' typedExpr ')'                # explicit
      | '{' typedExpr '}'                # implicit
      ;
 
-typedExpr : expr1                       # notTyped
-          | expr1 ':' expr1             # typed
+typedExpr : expr                        # notTyped
+          | expr ':' expr               # typed
           ;
 
 UNIVERSE : '\\Type' [0-9]+;

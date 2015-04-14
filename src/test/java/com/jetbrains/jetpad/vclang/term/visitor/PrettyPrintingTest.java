@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -40,8 +41,8 @@ public class PrettyPrintingTest {
 
   @Test
   public void prettyPrintingFunDef() {
-    // f : (X : Type0) -> X -> X = \X x -> x;
-    FunctionDefinition def = new FunctionDefinition("f", new Signature(Pi("X", Universe(0), Pi(Index(0), Index(0)))), Lam("X", Lam("x", Index(0))));
+    // f : (X : Type0) -> X -> X => \X x -> x;
+    FunctionDefinition def = new FunctionDefinition("f", new Signature(Pi("X", Universe(0), Pi(Index(0), Index(0)))), Definition.Arrow.RIGHT, Lam("X", Lam("x", Index(0))));
     def.prettyPrint(new StringBuilder(), new ArrayList<String>(), (byte) 0);
   }
 }

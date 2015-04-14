@@ -8,26 +8,36 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeNames;
+
 public final class FunctionDefinition extends Definition {
-  private final Expression term;
+  private final Expression myTerm;
+  private final Arrow myArrow;
 
-  public FunctionDefinition(String name, Signature signature, Precedence precedence, Fixity fixity, Expression term) {
+  public FunctionDefinition(String name, Signature signature, Precedence precedence, Fixity fixity, Arrow arrow, Expression term) {
     super(name, signature, precedence, fixity);
-    this.term = term;
+    myArrow = arrow;
+    myTerm = term;
   }
 
-  public FunctionDefinition(String name, Signature signature, Fixity fixity, Expression term) {
+  public FunctionDefinition(String name, Signature signature, Fixity fixity, Arrow arrow, Expression term) {
     super(name, signature, fixity);
-    this.term = term;
+    myArrow = arrow;
+    myTerm = term;
   }
 
-  public FunctionDefinition(String name, Signature signature, Expression term) {
+  public FunctionDefinition(String name, Signature signature, Arrow arrow, Expression term) {
     super(name, signature);
-    this.term = term;
+    myArrow = arrow;
+    myTerm = term;
+  }
+
+  public Arrow getArrow() {
+    return myArrow;
   }
 
   public Expression getTerm() {
-    return term;
+    return myTerm;
   }
 
   @Override
@@ -38,23 +48,18 @@ public final class FunctionDefinition extends Definition {
     } else {
       builder.append('(').append(getName()).append(')');
     }
-    builder.append(" : ");
-    getSignature().getType().prettyPrint(builder, names, (byte) 0);
-    builder.append("\n    => ");
-    term.prettyPrint(builder, names, (byte) 0);
-  }
-
-  @Override
-  public String toString() {
-    String name = getFixity() == Fixity.PREFIX ? getName() : "(" + getName() + ")";
-    return "\\function " + name + " : " + getSignature().toString() + " => " + term.toString();
+    builder.append(" ");
+    getSignature().prettyPrint(builder, names, (byte) 0);
+    builder.append(myArrow == Arrow.RIGHT ? " => " : " <= ");
+    myTerm.prettyPrint(builder, names, (byte) 0);
+    removeNames(names, getSignature().getArguments());
   }
 
   @Override
   public FunctionDefinition checkTypes(Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
     super.checkTypes(globalContext, errors);
     Expression type = getSignature().getType();
-    CheckTypeVisitor.OKResult result = term.checkType(globalContext, new ArrayList<Binding>(), type, errors);
-    return result == null ? null : new FunctionDefinition(getName(), new Signature(result.type), result.expression);
+    CheckTypeVisitor.OKResult result = myTerm.checkType(globalContext, new ArrayList<Binding>(), type, errors);
+    return result == null ? null : new FunctionDefinition(getName(), new Signature(result.type), getPrecedence(), getFixity(), myArrow, result.expression);
   }
 }

@@ -13,7 +13,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-// TODO: Rewrite normalization using thunks
 public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   private final Mode myMode;
 

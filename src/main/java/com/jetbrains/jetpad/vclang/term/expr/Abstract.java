@@ -11,7 +11,7 @@ public class Abstract {
     void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
-  public interface Argument extends Expression {
+  public interface Argument {
     boolean getExplicit();
   }
 
