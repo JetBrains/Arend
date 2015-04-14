@@ -11,15 +11,15 @@
 
   <entry-point class="com.jetbrains.jetpad.vclang.GwtMain" />
 
-  <inherits name="jetbrains.jetpad.model.Model"/>
   <inherits name="jetbrains.jetpad.model.ModelGwt"/>
-  <inherits name="jetbrains.jetpad.mapper.Mapper"/>
-  <inherits name="jetbrains.jetpad.otmodel.OtModel"/>
-  <inherits name="jetbrains.jetpad.projectional.Projectional"/>
+  <inherits name="jetbrains.jetpad.model.Model" />
+  <inherits name="jetbrains.jetpad.mapper.Mapper" />
+  <inherits name="com.google.gwt.query.Query"/>
   <inherits name="jetbrains.jetpad.projectional.view.View" />
 
-  <inherits name="com.google.gwt.query.Query"/>
   <inherits name="org.vectomatic.libgwtsvg" />
+
+  <inherits name="jetbrains.jetpad.projectional.Projectional"/>
 
   <add-linker name="xsiframe"/>
   <set-configuration-property name="devModeRedirectEnabled" value="true"/>

@@ -17,6 +17,12 @@
     </dependency>
 
     <dependency>
+      <groupId>jetbrains.jetpad</groupId>
+      <artifactId>otmodel</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
       <groupId>jetbrains.jetpad.projectional</groupId>
       <artifactId>cell</artifactId>
       <version>1.1-SNAPSHOT</version>
