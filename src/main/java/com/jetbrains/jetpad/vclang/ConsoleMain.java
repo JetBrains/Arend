@@ -46,7 +46,7 @@ public class ConsoleMain {
       if (def instanceof FunctionDefinition) {
         def = def.checkTypes(context, errors);
         if (def != null) {
-          def = new FunctionDefinition(def.getName(), def.getSignature(), ((FunctionDefinition) def).getTerm().normalize(NormalizeVisitor.Mode.NF));
+          def = new FunctionDefinition(def.getName(), def.getSignature(), def.getPrecedence(), def.getFixity(), ((FunctionDefinition) def).getArrow(), ((FunctionDefinition) def).getTerm().normalize(NormalizeVisitor.Mode.NF));
           context.put(def.getName(), def);
         }
       }

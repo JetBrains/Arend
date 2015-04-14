@@ -15,6 +15,8 @@ public abstract class Definition extends Binding implements PrettyPrintable {
   private final Precedence myPrecedence;
   private final Fixity myFixity;
 
+  public enum Arrow { LEFT, RIGHT }
+
   public enum Fixity { PREFIX, INFIX }
   public enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
@@ -73,7 +75,9 @@ public abstract class Definition extends Binding implements PrettyPrintable {
 
   @Override
   public String toString() {
-    return getName() + " : " + getSignature();
+    StringBuilder builder = new StringBuilder();
+    prettyPrint(builder, new ArrayList<String>(), (byte) 0);
+    return builder.toString();
   }
 
   public Definition checkTypes(Map<String, Definition> globalContext, List<TypeCheckingError> errors) {

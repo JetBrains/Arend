@@ -52,7 +52,6 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
         result.getArguments().add(modelArgument);
         modelArgument.isExplicit().set(argument.getExplicit());
         modelArgument.name().set(((NameArgument) argument).getName());
-        modelArgument.setWellTyped(argument);
 
         ++numberOfVars;
         myLocalContext.add(((NameArgument) argument).getName());
@@ -63,7 +62,6 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
         modelArgument.isExplicit().set(argument.getExplicit());
         modelArgument.getNames().addAll(((TelescopeArgument) argument).getNames());
         modelArgument.type().set(((TelescopeArgument) argument).getType().accept(this));
-        modelArgument.setWellTyped(argument);
 
         numberOfVars += ((TelescopeArgument) argument).getNames().size();
         myLocalContext.addAll(((TelescopeArgument) argument).getNames());
@@ -105,7 +103,6 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
         arg.isExplicit().set(argument.getExplicit());
         arg.type().set(argument.getType().accept(this));
         arg.names().addAll(((TelescopeArgument) argument).getNames());
-        arg.setWellTyped(argument);
 
         numberOfVars += ((TelescopeArgument) argument).getNames().size();
         myLocalContext.addAll(((TelescopeArgument) argument).getNames());
@@ -114,7 +111,6 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
         result.getArguments().add(arg);
         arg.isExplicit().set(argument.getExplicit());
         arg.type().set(argument.getType().accept(this));
-        arg.setWellTyped(argument);
       }
     }
 

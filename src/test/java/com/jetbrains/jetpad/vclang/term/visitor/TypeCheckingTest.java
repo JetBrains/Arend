@@ -167,7 +167,7 @@ public class TypeCheckingTest {
     // f : Nat -> Nat -> Nat |- f S (f 0 S) : Nat
     Expression expr = Apps(Index(0), Suc(), Apps(Index(0), Zero(), Suc()));
     List<Binding> defs = new ArrayList<>();
-    defs.add(new FunctionDefinition("f", new Signature(Pi(Nat(), Pi(Nat(), Nat()))), Var("f")));
+    defs.add(new FunctionDefinition("f", new Signature(Pi(Nat(), Pi(Nat(), Nat()))), Definition.Arrow.LEFT, Var("f")));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));

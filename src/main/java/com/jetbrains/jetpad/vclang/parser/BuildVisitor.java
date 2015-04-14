@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.google.common.collect.Lists;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Signature;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -53,11 +51,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Expression) visit(expr);
   }
 
-  public Expression visitExpr(Expr1Context expr) {
+  public Expression visitExpr(AtomContext expr) {
     return (Expression) visit(expr);
   }
 
-  public Expression visitExpr(AtomContext expr) {
+  public Expression visitExpr(LiteralContext expr) {
     return (Expression) visit(expr);
   }
 
@@ -70,25 +68,65 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return defs;
   }
 
-  @Override
   public Definition visitDef(DefContext ctx) {
+    if (ctx instanceof DefFunctionContext) {
+      return visitDefFunction((DefFunctionContext) ctx);
+    }
+    if (ctx instanceof DefDataContext) {
+      return visitDefData((DefDataContext) ctx);
+    }
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
     boolean isPrefix = ctx.name() instanceof NameIdContext;
     String name = isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
-    Expression type = visitExpr(ctx.expr1());
+    List<TypeArgument> arguments = visitTeles(ctx.tele());
+    Expression type = visitTypeOpt(ctx.typeOpt());
+    Definition.Arrow arrow = ctx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
     Expression term = visitExpr(ctx.expr());
-    Definition def = new FunctionDefinition(name, new Signature(new TypeArgument[0], type), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, term);
+    FunctionDefinition def = new FunctionDefinition(name, new Signature(arguments, type), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arrow, term);
     myGlobalContext.put(name, def);
     return def;
   }
 
   @Override
-  public NatExpression visitNat(NatContext ctx) {
-    return Nat();
+  public DataDefinition visitDefData(DefDataContext ctx) {
+    boolean isPrefix = ctx.name() instanceof NameIdContext;
+    String name = isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
+    List<TypeArgument> arguments = visitTeles(ctx.tele());
+    Expression type = visitTypeOpt(ctx.typeOpt());
+    List<Constructor> constructors = new ArrayList<>();
+    DataDefinition def = new DataDefinition(name, new Signature(arguments, type), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, constructors);
+    for (ConstructorContext constructor : ctx.constructor()) {
+      isPrefix = constructor.name() instanceof NameIdContext;
+      name = isPrefix ? ((NameIdContext) constructor.name()).ID().getText() : ((NameBinOpContext) constructor.name()).BIN_OP().getText();
+      arguments = visitTeles(constructor.tele());
+      constructors.add(new Constructor(name, arguments, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, def));
+    }
+    myGlobalContext.put(name, def);
+    return def;
+  }
+
+  private Expression visitTypeOpt(TypeOptContext ctx) {
+    if (ctx instanceof NoTypeContext) {
+      return null;
+    }
+    if (ctx instanceof WithTypeContext) {
+      return visitExpr(((WithTypeContext) ctx).expr());
+    }
+    throw new IllegalStateException();
   }
 
   @Override
   public ZeroExpression visitZero(ZeroContext ctx) {
     return Zero();
+  }
+
+  @Override
+  public NatExpression visitNat(NatContext ctx) {
+    return Nat();
   }
 
   @Override
@@ -98,8 +136,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public PiExpression visitArr(ArrContext ctx) {
-    Expression left = visitExpr(ctx.expr1(0));
-    Expression right = visitExpr(ctx.expr1(1));
+    Expression left = visitExpr(ctx.expr(0));
+    Expression right = visitExpr(ctx.expr(1));
     return Pi(left, right);
   }
 
@@ -124,21 +162,29 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Expression visitLam(LamContext ctx) {
     Expression expr = visitExpr(ctx.expr());
-    List<Argument> arguments = new ArrayList<>(ctx.lamArg().size());
-    for (LamArgContext arg : ctx.lamArg()) {
-      if (arg instanceof LamArgIdContext) {
-        arguments.add(Name(((LamArgIdContext) arg).ID().getText()));
+    List<Argument> arguments = new ArrayList<>(ctx.tele().size());
+    for (TeleContext arg : ctx.tele()) {
+      if (arg instanceof TeleLiteralContext) {
+        LiteralContext literalContext = ((TeleLiteralContext) arg).literal();
+        if (literalContext instanceof IdContext) {
+          arguments.add(Name(((IdContext) literalContext).ID().getText()));
+        } else
+        if (literalContext instanceof UnknownContext) {
+          arguments.add(Name("_"));
+        } else {
+          myErrors.add(new ParserError(literalContext.getStart().getLine(), literalContext.getStart().getCharPositionInLine(), "Unexpected token. Expected an identifier."));
+          return null;
+        }
       } else {
-        TeleContext tele = ((LamArgTeleContext) arg).tele();
-        boolean explicit = tele instanceof ExplicitContext;
-        TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
+        boolean explicit = arg instanceof ExplicitContext;
+        TypedExprContext typedExpr = explicit ? ((ExplicitContext) arg).typedExpr() : ((ImplicitContext) arg).typedExpr();
         Expression varsExpr;
         Expression typeExpr;
         if (typedExpr instanceof TypedContext) {
-          varsExpr = visitExpr(((TypedContext) typedExpr).expr1(0));
-          typeExpr = visitExpr(((TypedContext) typedExpr).expr1(1));
+          varsExpr = visitExpr(((TypedContext) typedExpr).expr(0));
+          typeExpr = visitExpr(((TypedContext) typedExpr).expr(1));
         } else {
-          varsExpr = visitExpr(((NotTypedContext) typedExpr).expr1());
+          varsExpr = visitExpr(((NotTypedContext) typedExpr).expr());
           typeExpr = null;
         }
         List<String> vars = getVars(varsExpr);
@@ -172,16 +218,31 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<TypeArgument> visitTeles(List<TeleContext> teles) {
     List<TypeArgument> arguments = new ArrayList<>(teles.size());
     for (TeleContext tele : teles) {
-      boolean explicit = tele instanceof ExplicitContext;
-      TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
-      if (typedExpr instanceof TypedContext) {
-        List<String> vars = getVars(visitExpr(((TypedContext) typedExpr).expr1(0)));
-        arguments.add(Tele(explicit, vars, visitExpr(((TypedContext) typedExpr).expr1(1))));
+      boolean explicit = !(tele instanceof ImplicitContext);
+      TypedExprContext typedExpr;
+      if (explicit) {
+        if (tele instanceof ExplicitContext) {
+          typedExpr = ((ExplicitContext) tele).typedExpr();
+        } else {
+          arguments.add(TypeArg(visitExpr(((TeleLiteralContext) tele).literal())));
+          continue;
+        }
       } else {
-        arguments.add(TypeArg(explicit, visitExpr(((NotTypedContext) typedExpr).expr1())));
+        typedExpr = ((ImplicitContext) tele).typedExpr();
+      }
+      if (typedExpr instanceof TypedContext) {
+        List<String> vars = getVars(visitExpr(((TypedContext) typedExpr).expr(0)));
+        arguments.add(Tele(explicit, vars, visitExpr(((TypedContext) typedExpr).expr(1))));
+      } else {
+        arguments.add(TypeArg(explicit, visitExpr(((NotTypedContext) typedExpr).expr())));
       }
     }
     return arguments;
+  }
+
+  @Override
+  public Expression visitAtomLiteral(AtomLiteralContext ctx) {
+    return visitExpr(ctx.literal());
   }
 
   @Override
@@ -191,7 +252,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public PiExpression visitPi(PiContext ctx) {
-    return Pi(visitTeles(ctx.tele()), visitExpr(ctx.expr1()));
+    return Pi(visitTeles(ctx.tele()), visitExpr(ctx.expr()));
   }
 
   private Expression visitAtoms(List<AtomContext> atoms) {
@@ -234,7 +295,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Expression visitExpr1BinOp(Expr1BinOpContext ctx) {
+  public Expression visitBinOp(BinOpContext ctx) {
     List<Pair> stack = new ArrayList<>(ctx.binOpLeft().size());
     for (BinOpLeftContext leftContext : ctx.binOpLeft()) {
       String name;
@@ -259,5 +320,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       result = BinOp(stack.get(i).expression, stack.get(i).binOp, result);
     }
     return result;
+  }
+
+  @Override
+  public Expression visitExprElim(ExprElimContext ctx) {
+    // TODO: Write this.
+    return null;
   }
 }

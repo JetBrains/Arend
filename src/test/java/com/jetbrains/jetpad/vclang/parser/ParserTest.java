@@ -69,15 +69,15 @@ public class ParserTest {
   public void parserDefType() {
     List<Definition> defs = parseDefs(
         "\\function x : \\Type0 => N\n" +
-        "\\function y : x => 0");
+            "\\function y : x => 0");
     assertEquals(2, defs.size());
   }
 
   @Test
   public void parserImplicit() {
     FunctionDefinition def = (FunctionDefinition)parseDef("\\function f : \\Pi (x y : N) {z w : N} (t : N) {r : N} -> N x y z w t r => N");
-    def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
-    assertEquals(4, def.getSignature().getArguments().length);
+    def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), Definition.Arrow.RIGHT, def.getTerm());
+    assertEquals(4, def.getSignature().getArguments().size());
     assertTrue(def.getSignature().getArgument(0).getExplicit());
     assertFalse(def.getSignature().getArgument(1).getExplicit());
     assertTrue(def.getSignature().getArgument(2).getExplicit());
@@ -88,8 +88,8 @@ public class ParserTest {
   @Test
   public void parserImplicit2() {
     FunctionDefinition def = (FunctionDefinition)parseDef("\\function f : \\Pi {x : N} (N) {y z : N} (N x y z) -> N => N");
-    def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), def.getTerm());
-    assertEquals(4, def.getSignature().getArguments().length);
+    def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), Definition.Arrow.RIGHT, def.getTerm());
+    assertEquals(4, def.getSignature().getArguments().size());
     assertFalse(def.getSignature().getArgument(0).getExplicit());
     assertTrue(def.getSignature().getArgument(1).getExplicit());
     assertFalse(def.getSignature().getArgument(2).getExplicit());
@@ -100,8 +100,8 @@ public class ParserTest {
   @Test
   public void parserInfix() {
     Map<String, Definition> definitions = new HashMap<>();
-    Definition plus = new FunctionDefinition("+", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Var("+"));
-    Definition mul = new FunctionDefinition("*", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, Var("*"));
+    Definition plus = new FunctionDefinition("+", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Definition.Arrow.LEFT, Var("+"));
+    Definition mul = new FunctionDefinition("*", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, Definition.Arrow.LEFT, Var("*"));
     definitions.put("+", plus);
     definitions.put("*", mul);
     Expression expr = parseExpr("a + b * c + d * (e * f) * (g + h)", definitions);
@@ -119,8 +119,8 @@ public class ParserTest {
   @Test
   public void parserInfixError() {
     Map<String, Definition> definitions = new HashMap<>();
-    Definition plus = new FunctionDefinition("+", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Var("+"));
-    Definition mul = new FunctionDefinition("*", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Var("*"));
+    Definition plus = new FunctionDefinition("+", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Definition.Arrow.LEFT, Var("+"));
+    Definition mul = new FunctionDefinition("*", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Definition.Arrow.LEFT, Var("*"));
     definitions.put("+", plus);
     definitions.put("*", mul);
 

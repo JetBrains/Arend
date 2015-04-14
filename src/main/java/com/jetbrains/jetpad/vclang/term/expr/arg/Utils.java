@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.visitor.PrettyPrintVisitor;
 import java.util.List;
 
 public class Utils {
-  private static String renameVar(List<String> names, String var) {
+  public static String renameVar(List<String> names, String var) {
     while (names.contains(var)) {
       var += "'";
     }
@@ -20,6 +20,12 @@ public class Utils {
       }
     } else {
       names.remove(names.size() - 1);
+    }
+  }
+
+  public static void removeNames(List<String> names, List<? extends Abstract.TypeArgument> arguments) {
+    for (Abstract.TypeArgument argument : arguments) {
+      removeNames(names, argument);
     }
   }
 

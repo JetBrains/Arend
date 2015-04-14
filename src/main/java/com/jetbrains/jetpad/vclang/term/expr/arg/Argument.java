@@ -1,11 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.expr.arg;
 
+import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
-public abstract class Argument extends Expression implements Abstract.Argument {
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
+
+public abstract class Argument implements Abstract.Argument, PrettyPrintable {
   private final boolean myExplicit;
 
   public Argument(boolean explicit) {
@@ -18,12 +21,14 @@ public abstract class Argument extends Expression implements Abstract.Argument {
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    throw new IllegalStateException();
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    prettyPrint(builder, new ArrayList<String>(), (byte) 0);
+    return builder.toString();
   }
 
   @Override
-  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    throw new IllegalStateException();
+  public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+    prettyPrintArgument(this, builder, names, prec);
   }
 }
