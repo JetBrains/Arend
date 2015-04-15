@@ -7,6 +7,7 @@ import jetbrains.jetpad.completion.CompletionParameters;
 import jetbrains.jetpad.completion.CompletionSupplier;
 import jetbrains.jetpad.completion.SimpleCompletionItem;
 import jetbrains.jetpad.mapper.Mapper;
+import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 import jetbrains.jetpad.projectional.generic.Role;
 import jetbrains.jetpad.projectional.generic.RoleCompletion;
 
@@ -22,7 +23,7 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
 
   @Override
   public CompletionSupplier createRoleCompletion(Mapper<?, ?> mapper, Node node, final Role<Expression> target) {
-
+    final WrapperContext ctx = node.getContext();
     return new CompletionSupplier() {
       @Override
       public List<CompletionItem> get(CompletionParameters cp) {
@@ -31,7 +32,7 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
           result.add(new IdCompletionItem() {
             @Override
             public Runnable complete(String text) {
-              VarExpression expr = new VarExpression();
+              VarExpression expr = new VarExpression(ctx);
               expr.name().set(text);
               return target.set(expr);
             }
@@ -40,49 +41,49 @@ public class ExpressionCompletion implements RoleCompletion<Node, Expression> {
         result.add(new SimpleCompletionItem("\\lam ", "lambda") {
           @Override
           public Runnable complete(String text) {
-            return target.set(new LamExpression());
+            return target.set(new LamExpression(ctx));
           }
         });
         result.add(new SimpleCompletionItem("\\app ", "application") {
           @Override
           public Runnable complete(String text) {
-            return target.set(new AppExpression());
+            return target.set(new AppExpression(ctx));
           }
         });
         result.add(new SimpleCompletionItem("\\zero ", "0") {
           @Override
           public Runnable complete(String text) {
-            return target.set(new ZeroExpression());
+            return target.set(new ZeroExpression(ctx));
           }
         });
         result.add(new SimpleCompletionItem("\\N ", "nat") {
           @Override
           public Runnable complete(String s) {
-            return target.set(new NatExpression());
+            return target.set(new NatExpression(ctx));
           }
         });
         result.add(new SimpleCompletionItem("\\N-elim ", "nat-elim") {
           @Override
           public Runnable complete(String s) {
-            return target.set(new NelimExpression());
+            return target.set(new NelimExpression(ctx));
           }
         });
         result.add(new SimpleCompletionItem("\\S ", "suc") {
           @Override
           public Runnable complete(String s) {
-            return target.set(new SucExpression());
+            return target.set(new SucExpression(ctx));
           }
         });
         result.add(new SimpleCompletionItem("\\Type ", "Type") {
           @Override
           public Runnable complete(String s) {
-            return target.set(new UniverseExpression());
+            return target.set(new UniverseExpression(ctx));
           }
         });
         result.add(new SimpleCompletionItem("\\pi ", "pi") {
           @Override
           public Runnable complete(String s) {
-            return target.set(new PiExpression());
+            return target.set(new PiExpression(ctx));
           }
         });
         return result;

@@ -13,6 +13,7 @@ import jetbrains.jetpad.completion.SimpleCompletionItem;
 import jetbrains.jetpad.mapper.Mapper;
 import jetbrains.jetpad.mapper.MapperProcessor;
 import jetbrains.jetpad.model.composite.Composites;
+import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,7 @@ public class SideTransformMapperProcessor implements MapperProcessor<Expression,
   public void process(final Mapper<? extends Expression, ? extends Cell> mapper) {
     final Cell cell = mapper.getTarget();
     final Expression expr = mapper.getSource();
+    final WrapperContext ctx = expr.getContext();
 
     Cell firstFocusable = Composites.firstFocusable(cell);
     Cell lastFocusable = Composites.lastFocusable(cell);
@@ -45,7 +47,7 @@ public class SideTransformMapperProcessor implements MapperProcessor<Expression,
                 result.add(new SimpleCompletionItem("") {
                   @Override
                   public Runnable complete(String text) {
-                    AppExpression appExpr = new AppExpression();
+                    AppExpression appExpr = new AppExpression(ctx);
                     Mapper<?, ?> parentMapper = mapper.getParent();
                     if (expr.position() == Position.APP_ARG) {
                       AppExpression parentExpr = ((AppExpression) expr.parent().get());
@@ -82,7 +84,7 @@ public class SideTransformMapperProcessor implements MapperProcessor<Expression,
                 result.add(new SimpleCompletionItem("") {
                   @Override
                   public Runnable complete(String text) {
-                    AppExpression appExpr = new AppExpression();
+                    AppExpression appExpr = new AppExpression(ctx);
                     Mapper<?, ?> parent = mapper.getParent();
                     boolean inAppArg = expr.position() == Position.APP_ARG;
                     if (inAppArg) {

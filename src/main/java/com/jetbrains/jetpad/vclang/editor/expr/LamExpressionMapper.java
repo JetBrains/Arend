@@ -11,6 +11,7 @@ import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.text.TextEditing;
 import jetbrains.jetpad.cell.util.CellFactory;
 import jetbrains.jetpad.cell.util.CellLists;
+import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 import jetbrains.jetpad.projectional.cell.ProjectionalRoleSynchronizer;
 import jetbrains.jetpad.projectional.cell.ProjectionalSynchronizers;
 
@@ -27,11 +28,12 @@ public class LamExpressionMapper extends ExpressionMapper<LamExpression, LamExpr
   @Override
   protected void registerSynchronizers(SynchronizersConfiguration conf) {
     super.registerSynchronizers(conf);
+    final WrapperContext ctx = getSource().getContext();
     ProjectionalRoleSynchronizer<Model.LamExpression, Model.Argument> synchronizer = ProjectionalSynchronizers.forRole(this, getSource().getArguments(), getTarget(), CellLists.spaced(getTarget().children()), ArgumentMapperFactory.getInstance());
     synchronizer.setItemFactory(new Supplier<Model.Argument>() {
       @Override
       public Model.Argument get() {
-        return new Model.NameArgument();
+        return new Model.NameArgument(ctx);
       }
     });
     conf.add(synchronizer);

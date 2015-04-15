@@ -6,6 +6,7 @@ import jetbrains.jetpad.cell.TextCell;
 import jetbrains.jetpad.event.KeyEvent;
 import jetbrains.jetpad.event.ModifierKey;
 import jetbrains.jetpad.model.composite.Composites;
+import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,10 +18,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class SideTransformTest extends EditingTestCase {
-  private VarExpression myVarExpr1 = new VarExpression();
-  private VarExpression myVarExpr2 = new VarExpression();
-  private AppExpression myAppExpr = new AppExpression();
-  private FunctionDefinition myDef = new FunctionDefinition();
+  private WrapperContext myContext = new WrapperContext();
+  private VarExpression myVarExpr1 = new VarExpression(myContext);
+  private VarExpression myVarExpr2 = new VarExpression(myContext);
+  private AppExpression myAppExpr = new AppExpression(myContext);
+  private FunctionDefinition myDef = new FunctionDefinition(myContext);
 
   @Before
   public void init() {

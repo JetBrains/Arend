@@ -1,14 +1,25 @@
 package com.jetbrains.jetpad.vclang.model;
 
+import jetbrains.jetpad.otmodel.node.NodeConceptId;
+import jetbrains.jetpad.otmodel.wrapper.NodeWrapper;
+import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.model.definition.TypedDefinition;
-import jetbrains.jetpad.model.children.HasParent;
 
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
 
-public abstract class Node extends HasParent<Node, Node> {
+public abstract class Node extends NodeWrapper<Node> {
+
+  protected Node(WrapperContext ctx, NodeConceptId conceptId) {
+    super(ctx, conceptId);
+  }
+
+  protected Node(WrapperContext ctx, jetbrains.jetpad.otmodel.node.Node node) {
+    super(ctx, node);
+  }
+
   public Position position() {
     Node parent = parent().get();
     if (parent instanceof FunctionDefinition) {
