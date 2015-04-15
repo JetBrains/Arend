@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.editor.error.ErrorListMapper;
 import com.jetbrains.jetpad.vclang.model.Module;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import jetbrains.jetpad.cell.CellContainer;
+import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 import jetbrains.jetpad.projectional.util.RootController;
 
 import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
@@ -51,24 +52,25 @@ public class ContainerFactory {
   }
 
   private static Module createModel() {
-    Module result = new Module();
-    FunctionDefinition def = new FunctionDefinition();
+    final WrapperContext ctx = new WrapperContext();
+    Module result = new Module(ctx);
+    FunctionDefinition def = new FunctionDefinition(ctx);
     result.definitions.add(def);
-    LamExpression expr1 = new LamExpression();
+    LamExpression expr1 = new LamExpression(ctx);
     def.term().set(expr1);
-    NameArgument arg1 = new NameArgument();
+    NameArgument arg1 = new NameArgument(ctx);
     expr1.getArguments().add(arg1);
     arg1.isExplicit().set(true);
     arg1.name().set("x");
-    VarExpression expr2 = new VarExpression();
+    VarExpression expr2 = new VarExpression(ctx);
     expr1.body().set(expr2);
     expr2.name().set("x");
-    PiExpression expr3 = new PiExpression();
+    PiExpression expr3 = new PiExpression(ctx);
     def.resultType().set(expr3);
-    TypeArgument arg2 = new TypeArgument();
+    TypeArgument arg2 = new TypeArgument(ctx);
     expr3.getArguments().add(arg2);
     arg2.isExplicit().set(true);
-    arg2.type().set(new NatExpression());
+    arg2.type().set(new NatExpression(ctx));
     return result;
   }
 }

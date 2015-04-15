@@ -8,6 +8,7 @@ import jetbrains.jetpad.event.KeyEvent;
 import jetbrains.jetpad.event.ModifierKey;
 import jetbrains.jetpad.model.composite.Composites;
 import jetbrains.jetpad.model.property.Property;
+import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public class IdentifierTest extends EditingTestCase {
 
   @Before
   public void init() {
-    FunctionDefinition def = new FunctionDefinition();
+    FunctionDefinition def = new FunctionDefinition(new WrapperContext());
     myModule.definitions.add(def);
     myTerm = def.term();
 
