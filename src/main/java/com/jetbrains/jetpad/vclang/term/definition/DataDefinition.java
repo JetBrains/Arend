@@ -20,6 +20,13 @@ public class DataDefinition extends Definition {
   private final List<TypeArgument> myParameters;
   private final Integer myUniverseLevel;
 
+  protected DataDefinition(int id, String name, Precedence precedence, Fixity fixity, List<TypeArgument> parameters, Integer universeLevel, List<Constructor> constructors) {
+    super(id, name, precedence, fixity);
+    myParameters = parameters;
+    myUniverseLevel = universeLevel;
+    myConstructors = constructors;
+  }
+
   public DataDefinition(String name, Precedence precedence, Fixity fixity, List<TypeArgument> parameters, Integer universeLevel, List<Constructor> constructors) {
     super(name, precedence, fixity);
     myParameters = parameters;
@@ -108,14 +115,16 @@ public class DataDefinition extends Definition {
         trimToSize(localContext, origSize);
         return null;
       }
+      constructors.add(newConstructor);
     }
 
     trimToSize(localContext, origSize);
-    return new DataDefinition(getName(), getPrecedence(), getFixity(), parameters, myUniverseLevel, constructors);
+    return new DataDefinition(myID, getName(), getPrecedence(), getFixity(), parameters, myUniverseLevel, constructors);
   }
 
   @Override
   public Expression getType() {
-    return Pi(myParameters, Universe(myUniverseLevel == null ? -1 : myUniverseLevel));
+    Expression resultType = Universe(myUniverseLevel == null ? -1 : myUniverseLevel);
+    return myParameters.isEmpty() ? resultType : Pi(myParameters, resultType);
   }
 }

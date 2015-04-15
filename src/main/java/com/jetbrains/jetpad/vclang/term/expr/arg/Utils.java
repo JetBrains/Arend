@@ -35,6 +35,22 @@ public class Utils {
     }
   }
 
+  public static int numberOfVariables(Abstract.Argument argument) {
+    if (argument instanceof Abstract.TelescopeArgument) {
+      return ((Abstract.TelescopeArgument) argument).getNames().size();
+    } else {
+      return 1;
+    }
+  }
+
+  public static int numberOfVariables(List<? extends Abstract.Argument> arguments) {
+    int result = 0;
+    for (Abstract.Argument argument : arguments) {
+      result += numberOfVariables(argument);
+    }
+    return result;
+  }
+
   public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, byte prec) {
     if (argument instanceof Abstract.NameArgument) {
       String name = renameVar(names, ((Abstract.NameArgument) argument).getName());

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Definition extends Binding implements PrettyPrintable {
-  private final int myID;
+  protected final int myID;
   private static int idCounter = 0;
   private final Precedence myPrecedence;
   private final Fixity myFixity;
@@ -38,6 +38,13 @@ public abstract class Definition extends Binding implements PrettyPrintable {
       }
       return result + " " + priority;
     }
+  }
+
+  protected Definition(int id, String name, Precedence precedence, Fixity fixity) {
+    super(name);
+    myID = id;
+    myPrecedence = precedence;
+    myFixity = fixity;
   }
 
   public Definition(String name, Precedence precedence, Fixity fixity) {

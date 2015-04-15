@@ -12,12 +12,17 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 
 public class Constructor extends Definition {
   private final DataDefinition myDataType;
   private final List<TypeArgument> myArguments;
+
+  protected Constructor(int id, String name, Precedence precedence, Fixity fixity, List<TypeArgument> arguments, DataDefinition dataType) {
+    super(id, name, precedence, fixity);
+    myArguments = arguments;
+    myDataType = dataType;
+  }
 
   public Constructor(String name, Precedence precedence, Fixity fixity, List<TypeArgument> arguments, DataDefinition dataType) {
     super(name, precedence, fixity);
@@ -73,15 +78,22 @@ public class Constructor extends Definition {
     }
 
     trimToSize(localContext, origSize);
-    return new Constructor(getName(), getPrecedence(), getFixity(), arguments, myDataType);
+    return new Constructor(myID, getName(), getPrecedence(), getFixity(), arguments, myDataType);
   }
 
   @Override
   public Expression getType() {
     Expression resultType = DefCall(myDataType);
-    for (int i = myDataType.getParameters().size() - 1; i >= 0; --i) {
-      resultType = Apps(resultType, Index(i));
+    int numberOfVars = numberOfVariables(myArguments);
+    for (int i = numberOfVariables(myDataType.getParameters()) - 1, j = 0; i >= 0; ++j) {
+      if (myDataType.getParameter(j) instanceof TelescopeArgument) {
+        for (String ignored : ((TelescopeArgument) myDataType.getParameter(j)).getNames()) {
+          resultType = App(resultType, Index(i-- + numberOfVars), myDataType.getParameter(j).getExplicit());
+        }
+      } else {
+        resultType = App(resultType, Index(i-- + numberOfVars), myDataType.getParameter(j).getExplicit());
+      }
     }
-    return Pi(myArguments, resultType);
+    return myArguments.isEmpty() ? resultType : Pi(myArguments, resultType);
   }
 }

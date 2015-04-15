@@ -21,6 +21,14 @@ public final class FunctionDefinition extends Definition {
   private final List<TelescopeArgument> myArguments;
   private final Expression myResultType;
 
+  protected FunctionDefinition(int id, String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Arrow arrow, Expression term) {
+    super(id, name, precedence, fixity);
+    myArguments = arguments;
+    myResultType = resultType;
+    myArrow = arrow;
+    myTerm = term;
+  }
+
   public FunctionDefinition(String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Arrow arrow, Expression term) {
     super(name, precedence, fixity);
     myArguments = arguments;
@@ -116,11 +124,11 @@ public final class FunctionDefinition extends Definition {
 
     CheckTypeVisitor.OKResult termResult = myTerm.checkType(globalContext, localContext, expectedType, errors);
     trimToSize(localContext, origSize);
-    return termResult == null ? null : new FunctionDefinition(getName(), getPrecedence(), getFixity(), arguments, termResult.type, myArrow, termResult.expression);
+    return termResult == null ? null : new FunctionDefinition(myID, getName(), getPrecedence(), getFixity(), arguments, termResult.type, myArrow, termResult.expression);
   }
 
   @Override
   public Expression getType() {
-    return Pi(new ArrayList<TypeArgument>(myArguments), myResultType);
+    return myArguments.isEmpty() ? myResultType : Pi(new ArrayList<TypeArgument>(myArguments), myResultType);
   }
 }
