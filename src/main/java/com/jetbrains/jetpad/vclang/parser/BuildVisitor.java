@@ -32,20 +32,24 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return myErrors;
   }
 
-  private List<String> getVars(Expression expr) {
+  private List<String> getVars(Expression expr, Token token) {
     List<String> vars = new ArrayList<>();
     while (expr instanceof AppExpression) {
       Expression arg = ((AppExpression) expr).getArgument();
       if (arg instanceof VarExpression) {
         vars.add(((VarExpression) arg).getName());
       } else {
-        return null;
+        break;
       }
       expr = ((AppExpression) expr).getFunction();
     }
     if (expr instanceof VarExpression) {
       vars.add(((VarExpression) expr).getName());
+    } else
+    if (expr instanceof InferHoleExpression) {
+      vars.add("_");
     } else {
+      myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), "Expected a list of variables"));
       return null;
     }
     return Lists.reverse(vars);
@@ -140,6 +144,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public InferHoleExpression visitUnknown(UnknownContext ctx) {
+    return new InferHoleExpression();
+  }
+
+  @Override
   public ZeroExpression visitZero(ZeroContext ctx) {
     return Zero();
   }
@@ -204,12 +213,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         varsExpr = visitExpr(((NotTypedContext) typedExpr).expr());
         typeExpr = null;
       }
-      List<String> vars = getVars(varsExpr);
-      if (vars == null) {
-        Token token = typedExpr.getStart();
-        myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), null));
-        return null;
-      }
+      List<String> vars = getVars(varsExpr, typedExpr.getStart());
+      if (vars == null) return null;
       if (typeExpr == null) {
         for (String var : vars) {
           arguments.add(Name(explicit, var));
@@ -258,7 +263,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         typedExpr = ((ImplicitContext) tele).typedExpr();
       }
       if (typedExpr instanceof TypedContext) {
-        List<String> vars = getVars(visitExpr(((TypedContext) typedExpr).expr(0)));
+        List<String> vars = getVars(visitExpr(((TypedContext) typedExpr).expr(0)), typedExpr.getStart());
+        if (vars == null) return null;
         arguments.add(Tele(explicit, vars, visitExpr(((TypedContext) typedExpr).expr(1))));
       } else {
         arguments.add(TypeArg(explicit, visitExpr(((NotTypedContext) typedExpr).expr())));

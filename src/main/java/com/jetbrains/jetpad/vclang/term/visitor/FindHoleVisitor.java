@@ -4,26 +4,26 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
-public class FindHoleVisitor implements ExpressionVisitor<CheckTypeVisitor.InferHoleExpression> {
+public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitApp(AppExpression expr) {
-    CheckTypeVisitor.InferHoleExpression result = expr.getFunction().accept(this);
+  public InferHoleExpression visitApp(AppExpression expr) {
+    InferHoleExpression result = expr.getFunction().accept(this);
     return result == null ? expr.getArgument().accept(this) : result;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitDefCall(DefCallExpression expr) {
+  public InferHoleExpression visitDefCall(DefCallExpression expr) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitIndex(IndexExpression expr) {
+  public InferHoleExpression visitIndex(IndexExpression expr) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitLam(LamExpression expr) {
-    CheckTypeVisitor.InferHoleExpression result = expr.getBody().accept(this);
+  public InferHoleExpression visitLam(LamExpression expr) {
+    InferHoleExpression result = expr.getBody().accept(this);
     if (result != null) return result;
     for (Argument argument : expr.getArguments()) {
       if (argument instanceof TypeArgument) {
@@ -35,18 +35,18 @@ public class FindHoleVisitor implements ExpressionVisitor<CheckTypeVisitor.Infer
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitNat(NatExpression expr) {
+  public InferHoleExpression visitNat(NatExpression expr) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitNelim(NelimExpression expr) {
+  public InferHoleExpression visitNelim(NelimExpression expr) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitPi(PiExpression expr) {
-    CheckTypeVisitor.InferHoleExpression result = expr.getCodomain().accept(this);
+  public InferHoleExpression visitPi(PiExpression expr) {
+    InferHoleExpression result = expr.getCodomain().accept(this);
     if (result != null) return result;
     for (TypeArgument argument : expr.getArguments()) {
       result = argument.getType().accept(this);
@@ -56,51 +56,51 @@ public class FindHoleVisitor implements ExpressionVisitor<CheckTypeVisitor.Infer
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitSuc(SucExpression expr) {
+  public InferHoleExpression visitSuc(SucExpression expr) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitUniverse(UniverseExpression expr) {
+  public InferHoleExpression visitUniverse(UniverseExpression expr) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitVar(VarExpression expr) {
+  public InferHoleExpression visitVar(VarExpression expr) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitZero(ZeroExpression expr) {
+  public InferHoleExpression visitZero(ZeroExpression expr) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitHole(HoleExpression expr) {
-    return expr instanceof CheckTypeVisitor.InferHoleExpression ? (CheckTypeVisitor.InferHoleExpression) expr : null;
+  public InferHoleExpression visitHole(HoleExpression expr) {
+    return expr instanceof InferHoleExpression ? (InferHoleExpression) expr : null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitTuple(TupleExpression expr) {
+  public InferHoleExpression visitTuple(TupleExpression expr) {
     for (Expression field : expr.getFields()) {
-      CheckTypeVisitor.InferHoleExpression result = field.accept(this);
+      InferHoleExpression result = field.accept(this);
       if (result != null) return result;
     }
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitSigma(SigmaExpression expr) {
+  public InferHoleExpression visitSigma(SigmaExpression expr) {
     for (TypeArgument argument : expr.getArguments()) {
-      CheckTypeVisitor.InferHoleExpression result = argument.getType().accept(this);
+      InferHoleExpression result = argument.getType().accept(this);
       if (result != null) return result;
     }
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.InferHoleExpression visitBinOp(BinOpExpression expr) {
-    CheckTypeVisitor.InferHoleExpression result = expr.getLeft().accept(this);
+  public InferHoleExpression visitBinOp(BinOpExpression expr) {
+    InferHoleExpression result = expr.getLeft().accept(this);
     return result == null ? expr.getRight().accept(this) : result;
   }
 }

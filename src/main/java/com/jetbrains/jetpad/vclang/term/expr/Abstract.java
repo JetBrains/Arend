@@ -106,4 +106,8 @@ public class Abstract {
   public interface HoleExpression extends Expression {
     byte PREC = 12;
   }
+
+  public interface InferHoleExpression extends HoleExpression {
+    byte PREC = 12;
+  }
 }

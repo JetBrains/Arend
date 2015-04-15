@@ -87,7 +87,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit2() {
-    FunctionDefinition def = (FunctionDefinition)parseDef("\\function f {x : N} (N) {y z : N} (N x y z) : N => N");
+    FunctionDefinition def = (FunctionDefinition) parseDef("\\function f {x : N} (_ : N) {y z : N} (_ : N x y z) : N => N");
     assertEquals(4, def.getArguments().size());
     assertFalse(def.getArgument(0).getExplicit());
     assertTrue(def.getArgument(1).getExplicit());

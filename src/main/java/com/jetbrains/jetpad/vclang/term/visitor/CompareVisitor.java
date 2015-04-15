@@ -191,7 +191,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
 
   @Override
   public Boolean visitHole(Abstract.HoleExpression expr, Expression other) {
-    if (expr instanceof CheckTypeVisitor.InferHoleExpression) {
+    if (expr instanceof Abstract.InferHoleExpression) {
       myEquations.add(new Equation(expr, other));
       return true;
     }
