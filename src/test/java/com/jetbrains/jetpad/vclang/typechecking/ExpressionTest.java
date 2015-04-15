@@ -1,9 +1,8 @@
-package com.jetbrains.jetpad.vclang.term.visitor;
+package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Signature;
+import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -16,7 +15,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
-public class TypeCheckingTest {
+public class ExpressionTest {
   @Test
   public void typeCheckingLam() {
     // \x. x : N -> N
@@ -167,7 +166,7 @@ public class TypeCheckingTest {
     // f : Nat -> Nat -> Nat |- f S (f 0 S) : Nat
     Expression expr = Apps(Index(0), Suc(), Apps(Index(0), Zero(), Suc()));
     List<Binding> defs = new ArrayList<>();
-    defs.add(new FunctionDefinition("f", new Signature(Pi(Nat(), Pi(Nat(), Nat()))), Definition.Arrow.LEFT, Var("f")));
+    defs.add(new TypedBinding("f", Pi(Nat(), Pi(Nat(), Nat()))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));

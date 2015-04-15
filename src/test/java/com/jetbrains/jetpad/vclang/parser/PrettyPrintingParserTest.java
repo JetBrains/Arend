@@ -2,12 +2,13 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
@@ -26,7 +27,7 @@ public class PrettyPrintingParserTest {
     StringBuilder builder = new StringBuilder();
     def.prettyPrint(builder, new ArrayList<String>(), (byte) 0);
     FunctionDefinition result = (FunctionDefinition) parseDef(builder.toString());
-    assertEquals(expected.getSignature().getType(), result.getSignature().getType());
+    assertEquals(expected.getType(), result.getType());
     assertEquals(expected.getArrow(), result.getArrow());
     assertEquals(expected.getTerm(), result.getTerm());
   }
@@ -57,9 +58,11 @@ public class PrettyPrintingParserTest {
 
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
-    // f : (x : N) -> N x => \y z. y z;
-    FunctionDefinition expected = new FunctionDefinition("f", new Signature(Pi("x", Nat(), Apps(Nat(), Var("x")))), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Var("y"), Var("z"))));
-    FunctionDefinition def = new FunctionDefinition("f", new Signature(Pi("x", Nat(), Apps(Nat(), Index(0)))), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Index(1), Index(0))));
+    // f (x : N) : N x => \y z. y z;
+    List<TelescopeArgument> arguments = new ArrayList<>();
+    arguments.add(Tele(vars("x"), Nat()));
+    FunctionDefinition expected = new FunctionDefinition("f", arguments, Apps(Nat(), Var("x")), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Var("y"), Var("z"))));
+    FunctionDefinition def = new FunctionDefinition("f", arguments, Apps(Nat(), Index(0)), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Index(1), Index(0))));
     testDef(expected, def);
   }
 }

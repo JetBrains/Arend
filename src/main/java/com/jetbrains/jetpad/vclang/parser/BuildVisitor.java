@@ -1,11 +1,15 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.google.common.collect.Lists;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import org.antlr.v4.runtime.Token;
 
@@ -82,11 +86,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
     boolean isPrefix = ctx.name() instanceof NameIdContext;
     String name = isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
-    List<TypeArgument> arguments = visitTeles(ctx.tele());
+    List<TelescopeArgument> arguments = new ArrayList<>();
+    for (TeleContext tele : ctx.tele()) {
+      List<Argument> args = visitLamTele(tele);
+      if (args == null) return null;
+      if (args.get(0) instanceof TelescopeArgument) {
+        arguments.add((TelescopeArgument) args.get(0));
+      } else {
+        myErrors.add(new ParserError(tele.getStart().getLine(), tele.getStart().getCharPositionInLine(), "Expected a typed variable"));
+        return null;
+      }
+    }
     Expression type = visitTypeOpt(ctx.typeOpt());
     Definition.Arrow arrow = ctx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
     Expression term = visitExpr(ctx.expr());
-    FunctionDefinition def = new FunctionDefinition(name, new Signature(arguments, type), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arrow, term);
+    FunctionDefinition def = new FunctionDefinition(name, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, term);
     myGlobalContext.put(name, def);
     return def;
   }
@@ -95,15 +109,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public DataDefinition visitDefData(DefDataContext ctx) {
     boolean isPrefix = ctx.name() instanceof NameIdContext;
     String name = isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
-    List<TypeArgument> arguments = visitTeles(ctx.tele());
+    List<TypeArgument> parameters = visitTeles(ctx.tele());
     Expression type = visitTypeOpt(ctx.typeOpt());
+    if (type != null && !(type instanceof UniverseExpression)) {
+      myErrors.add(new ParserError(ctx.typeOpt().getStart().getLine(), ctx.typeOpt().getStart().getCharPositionInLine(), "Expected a universe"));
+      return null;
+    }
+
     List<Constructor> constructors = new ArrayList<>();
-    DataDefinition def = new DataDefinition(name, new Signature(arguments, type), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, constructors);
+    Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
+    Integer level = type == null ? null : ((UniverseExpression) type).getLevel();
+    DataDefinition def = new DataDefinition(name, fixity, parameters, level, constructors);
     for (ConstructorContext constructor : ctx.constructor()) {
       isPrefix = constructor.name() instanceof NameIdContext;
       name = isPrefix ? ((NameIdContext) constructor.name()).ID().getText() : ((NameBinOpContext) constructor.name()).BIN_OP().getText();
-      arguments = visitTeles(constructor.tele());
-      constructors.add(new Constructor(name, arguments, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, def));
+      constructors.add(new Constructor(name, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, visitTeles(constructor.tele()), def));
     }
     myGlobalContext.put(name, def);
     return def;
@@ -159,50 +179,57 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return Nelim();
   }
 
-  @Override
-  public Expression visitLam(LamContext ctx) {
-    Expression expr = visitExpr(ctx.expr());
-    List<Argument> arguments = new ArrayList<>(ctx.tele().size());
-    for (TeleContext arg : ctx.tele()) {
-      if (arg instanceof TeleLiteralContext) {
-        LiteralContext literalContext = ((TeleLiteralContext) arg).literal();
-        if (literalContext instanceof IdContext) {
-          arguments.add(Name(((IdContext) literalContext).ID().getText()));
-        } else
-        if (literalContext instanceof UnknownContext) {
-          arguments.add(Name("_"));
-        } else {
-          myErrors.add(new ParserError(literalContext.getStart().getLine(), literalContext.getStart().getCharPositionInLine(), "Unexpected token. Expected an identifier."));
-          return null;
+  private List<Argument> visitLamTele(TeleContext tele) {
+    List<Argument> arguments = new ArrayList<>(3);
+    if (tele instanceof TeleLiteralContext) {
+      LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
+      if (literalContext instanceof IdContext) {
+        arguments.add(Name(((IdContext) literalContext).ID().getText()));
+      } else
+      if (literalContext instanceof UnknownContext) {
+        arguments.add(Name("_"));
+      } else {
+        myErrors.add(new ParserError(literalContext.getStart().getLine(), literalContext.getStart().getCharPositionInLine(), "Unexpected token. Expected an identifier."));
+        return null;
+      }
+    } else {
+      boolean explicit = tele instanceof ExplicitContext;
+      TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
+      Expression varsExpr;
+      Expression typeExpr;
+      if (typedExpr instanceof TypedContext) {
+        varsExpr = visitExpr(((TypedContext) typedExpr).expr(0));
+        typeExpr = visitExpr(((TypedContext) typedExpr).expr(1));
+      } else {
+        varsExpr = visitExpr(((NotTypedContext) typedExpr).expr());
+        typeExpr = null;
+      }
+      List<String> vars = getVars(varsExpr);
+      if (vars == null) {
+        Token token = typedExpr.getStart();
+        myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), null));
+        return null;
+      }
+      if (typeExpr == null) {
+        for (String var : vars) {
+          arguments.add(Name(explicit, var));
         }
       } else {
-        boolean explicit = arg instanceof ExplicitContext;
-        TypedExprContext typedExpr = explicit ? ((ExplicitContext) arg).typedExpr() : ((ImplicitContext) arg).typedExpr();
-        Expression varsExpr;
-        Expression typeExpr;
-        if (typedExpr instanceof TypedContext) {
-          varsExpr = visitExpr(((TypedContext) typedExpr).expr(0));
-          typeExpr = visitExpr(((TypedContext) typedExpr).expr(1));
-        } else {
-          varsExpr = visitExpr(((NotTypedContext) typedExpr).expr());
-          typeExpr = null;
-        }
-        List<String> vars = getVars(varsExpr);
-        if (vars == null) {
-          Token token = ctx.getToken(LAMBDA, 0).getSymbol();
-          myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), null));
-          return null;
-        }
-        if (typeExpr == null) {
-          for (String var : vars) {
-            arguments.add(Name(explicit, var));
-          }
-        } else {
-          arguments.add(Tele(explicit, vars, typeExpr));
-        }
+        arguments.add(Tele(explicit, vars, typeExpr));
       }
     }
-    return Lam(arguments, expr);
+    return arguments;
+  }
+
+  @Override
+  public Expression visitLam(LamContext ctx) {
+    List<Argument> arguments = new ArrayList<>(ctx.tele().size());
+    for (TeleContext arg : ctx.tele()) {
+      List<Argument> args = visitLamTele(arg);
+      if (args == null) return null;
+      arguments.addAll(args);
+    }
+    return Lam(arguments, visitExpr(ctx.expr()));
   }
 
   @Override

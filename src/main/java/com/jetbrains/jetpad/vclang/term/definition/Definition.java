@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Universe;
-
 public abstract class Definition extends Binding implements PrettyPrintable {
   private final int myID;
   private static int idCounter = 0;
@@ -42,19 +40,19 @@ public abstract class Definition extends Binding implements PrettyPrintable {
     }
   }
 
-  public Definition(String name, Signature signature, Precedence precedence, Fixity fixity) {
-    super(name, signature);
+  public Definition(String name, Precedence precedence, Fixity fixity) {
+    super(name);
     myID = idCounter++;
     myPrecedence = precedence;
     myFixity = fixity;
   }
 
-  public Definition(String name, Signature signature, Fixity fixity) {
-    this(name, signature, new Precedence(Associativity.RIGHT_ASSOC, (byte) 10), fixity);
+  public Definition(String name, Fixity fixity) {
+    this(name, new Precedence(Associativity.RIGHT_ASSOC, (byte) 10), fixity);
   }
 
-  public Definition(String name, Signature signature) {
-    this(name, signature, Fixity.PREFIX);
+  public Definition(String name) {
+    this(name, Fixity.PREFIX);
   }
 
   public Precedence getPrecedence() {
@@ -80,8 +78,5 @@ public abstract class Definition extends Binding implements PrettyPrintable {
     return builder.toString();
   }
 
-  public Definition checkTypes(Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
-    getSignature().getType().checkType(globalContext, new ArrayList<Binding>(), Universe(-1), errors);
-    return this;
-  }
+  public abstract Definition checkTypes(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors);
 }

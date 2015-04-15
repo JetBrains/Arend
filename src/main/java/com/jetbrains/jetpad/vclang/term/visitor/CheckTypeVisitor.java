@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Signature;
+import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -386,13 +387,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getSignature().getType(), null), expr);
+    return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
   }
 
   @Override
   public Result visitIndex(Abstract.IndexExpression expr, Expression expectedType) {
     assert expr.getIndex() < myLocalContext.size();
-    Expression actualType = myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getSignature().getType().liftIndex(0, expr.getIndex() + 1);
+    Expression actualType = myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getType().liftIndex(0, expr.getIndex() + 1);
     return checkResultImplicit(expectedType, new OKResult(Index(expr.getIndex()), actualType, null), expr);
   }
 
@@ -502,7 +503,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       } else {
         argumentTypes[i] = Tele(piArgs.get(i).getExplicit(), vars(lambdaArgs.get(i).name), piArgs.get(i).getType());
       }
-      myLocalContext.add(new Binding(lambdaArgs.get(i).name, new Signature(argumentTypes[i].getType())));
+      myLocalContext.add(new TypedBinding(lambdaArgs.get(i).name, argumentTypes[i].getType()));
     }
 
     Result bodyResult = typeCheck(expr.getBody(), resultType instanceof InferHoleExpression ? null : resultType);
@@ -580,11 +581,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
         for (String name : ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames()) {
-          myLocalContext.add(new Binding(name, new Signature(domainResults[i].expression)));
+          myLocalContext.add(new TypedBinding(name, domainResults[i].expression));
           ++numberOfVars;
         }
       } else {
-        myLocalContext.add(new Binding(null, new Signature(domainResults[i].expression)));
+        myLocalContext.add(new TypedBinding(null, domainResults[i].expression));
         ++numberOfVars;
       }
     }
@@ -640,7 +641,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     while (it.hasPrevious()) {
       Binding def = it.previous();
       if (expr.getName().equals(def.getName())) {
-        return checkResultImplicit(expectedType, new OKResult(Index(index), def.getSignature().getType().liftIndex(0, index + 1), null), expr);
+        return checkResultImplicit(expectedType, new OKResult(Index(index), def.getType().liftIndex(0, index + 1), null), expr);
       }
       ++index;
     }
@@ -651,7 +652,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrors.add(error);
       return null;
     } else {
-      return checkResultImplicit(expectedType, new OKResult(DefCall(def), def.getSignature().getType(), null), expr);
+      return checkResultImplicit(expectedType, new OKResult(DefCall(def), def.getType(), null), expr);
     }
   }
 
@@ -766,11 +767,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
         for (String name : ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames()) {
-          myLocalContext.add(new Binding(name, new Signature(domainResults[i].expression)));
+          myLocalContext.add(new TypedBinding(name, domainResults[i].expression));
           ++numberOfVars;
         }
       } else {
-        myLocalContext.add(new Binding(null, new Signature(domainResults[i].expression)));
+        myLocalContext.add(new TypedBinding(null, domainResults[i].expression));
         ++numberOfVars;
       }
     }

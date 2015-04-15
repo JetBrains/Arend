@@ -13,19 +13,25 @@ public class Utils {
     return var;
   }
 
-  public static void removeNames(List<String> names, Abstract.Argument argument) {
+  public static void removeFromList(List<?> list, Abstract.Argument argument) {
     if (argument instanceof Abstract.TelescopeArgument) {
       for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
-        names.remove(names.size() - 1);
+        list.remove(list.size() - 1);
       }
     } else {
-      names.remove(names.size() - 1);
+      list.remove(list.size() - 1);
     }
   }
 
-  public static void removeNames(List<String> names, List<? extends Abstract.TypeArgument> arguments) {
-    for (Abstract.TypeArgument argument : arguments) {
-      removeNames(names, argument);
+  public static void removeFromList(List<?> list, List<? extends Abstract.Argument> arguments) {
+    for (Abstract.Argument argument : arguments) {
+      removeFromList(list, argument);
+    }
+  }
+
+  public static void trimToSize(List<?> list, int size) {
+    while (list.size() > size) {
+      list.remove(list.size() - 1);
     }
   }
 

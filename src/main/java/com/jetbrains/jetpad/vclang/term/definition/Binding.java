@@ -1,19 +1,17 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-public class Binding {
-  private final String myName;
-  private final Signature mySignature;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
-  public Binding(String name, Signature signature) {
+public abstract class Binding {
+  private final String myName;
+
+  public Binding(String name) {
     myName = name;
-    mySignature = signature;
   }
 
   public String getName() {
     return myName;
   }
 
-  public Signature getSignature() {
-    return mySignature;
-  }
+  public abstract Expression getType();
 }

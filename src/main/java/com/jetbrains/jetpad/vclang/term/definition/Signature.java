@@ -61,7 +61,9 @@ public class Signature implements PrettyPrintable {
       argument.prettyPrint(builder, names, Abstract.VarExpression.PREC);
       builder.append(' ');
     }
-    builder.append(": ");
-    myResultType.prettyPrint(builder, names, (byte) 0);
+    if (myResultType != null) {
+      builder.append(": ");
+      myResultType.prettyPrint(builder, names, (byte) 0);
+    }
   }
 }

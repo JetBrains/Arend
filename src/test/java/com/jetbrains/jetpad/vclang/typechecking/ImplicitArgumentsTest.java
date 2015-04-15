@@ -1,12 +1,13 @@
-package com.jetbrains.jetpad.vclang.term.visitor;
+package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Signature;
+import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.term.error.InferedArgumentsMismatch;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ public class ImplicitArgumentsTest {
     // f : {A : Type0} -> A -> A |- f 0 : N
     Expression expr = Apps(Index(0), Zero());
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(Index(0), Index(0))))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Index(0), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
@@ -36,7 +37,7 @@ public class ImplicitArgumentsTest {
     // f : N -> N |- f {0} 0 : N
     Expression expr = Apps(App(Index(0), Zero(), false), Zero());
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(Nat(), Nat()))));
+    defs.add(new TypedBinding("f", Pi(Nat(), Nat())));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
@@ -48,7 +49,7 @@ public class ImplicitArgumentsTest {
     // f : (x : N) {y : N} (z : N) -> N |- f 0 0 0 : N
     Expression expr = Apps(Index(0), Zero(), Zero(), Zero());
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi("x", Nat(), Pi(false, "y", Nat(), Pi("z", Nat(), Nat()))))));
+    defs.add(new TypedBinding("f", Pi("x", Nat(), Pi(false, "y", Nat(), Pi("z", Nat(), Nat())))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
@@ -60,7 +61,7 @@ public class ImplicitArgumentsTest {
     // f : {A B : Type0} -> A -> A |- f 0 : N
     Expression expr = Apps(Index(0), Zero());
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(false, "B", Universe(0), Pi(Index(0), Index(0)))))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(false, "B", Universe(0), Pi(Index(0), Index(0))))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
@@ -73,7 +74,7 @@ public class ImplicitArgumentsTest {
     // f : {A : Type0} -> ((A -> Nat) -> Nat) -> A |- f (\g. g 0) : Nat
     Expression expr = Apps(Index(0), Lam("g", Apps(Index(0), Zero())));
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(Pi(Pi(Index(0), Nat()), Nat()), Index(0))))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Pi(Index(0), Nat()), Nat()), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
@@ -85,7 +86,7 @@ public class ImplicitArgumentsTest {
     // f : {A : Type0} -> (Nat -> A) -> A |- f S : Nat
     Expression expr = Apps(Index(0), Suc());
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0))))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
@@ -99,7 +100,7 @@ public class ImplicitArgumentsTest {
     // f : {A : Type0} -> (Nat -> A) -> A |- f (\x. S) : Nat -> Nat
     Expression expr = Apps(Index(0), Lam("x", Suc()));
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0))))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
@@ -114,7 +115,7 @@ public class ImplicitArgumentsTest {
     Expression arg = Lam(lamArgs(Name("x"), Tele(vars("y"), Pi(Nat(), Nat()))), Apps(Index(0), Index(1)));
     Expression expr = Apps(Index(0), arg);
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0))))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
@@ -128,7 +129,7 @@ public class ImplicitArgumentsTest {
     // f : {A : Type0} -> (A -> A) -> (A -> Nat) -> Nat |- f (\x. x) (\x:Nat. x) : Nat
     Expression expr = Apps(Index(0), Lam("x", Index(0)), Lam(lamArgs(Tele(vars("x"), Nat())), Index(0)));
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(Pi(Index(0), Index(0)), Pi(Pi(Index(0), Nat()), Nat()))))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Index(0), Index(0)), Pi(Pi(Index(0), Nat()), Nat())))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
@@ -142,7 +143,7 @@ public class ImplicitArgumentsTest {
     // f : {A : Type0} -> Nat -> A -> A |- f 0 : Nat -> Nat
     Expression expr = Apps(Index(0), Zero());
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(Nat(), Pi(Index(0), Index(0)))))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Nat(), Pi(Index(0), Index(0))))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, Pi(Nat(), Nat()), errors);
@@ -156,7 +157,7 @@ public class ImplicitArgumentsTest {
     // f : {A : Type0} -> Nat -> A -> A |- f 0 : Nat -> Nat -> Nat
     Expression expr = Apps(Index(0), Zero());
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(Nat(), Pi(Index(0), Index(0)))))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Nat(), Pi(Index(0), Index(0))))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, Pi(Nat(), Pi(Nat(), Nat())), errors));
@@ -169,9 +170,9 @@ public class ImplicitArgumentsTest {
     // I : Type1 -> Type1, i : I Type0, f : {A : Type0} -> I A -> Nat |- f i : Nat
     Expression expr = Apps(Index(0), Index(1));
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("I", new Signature(Pi(Universe(1), Universe(1)))));
-    defs.add(new Binding("i", new Signature(Apps(Index(0), Universe(0)))));
-    defs.add(new Binding("f", new Signature(Pi(false, "A", Universe(0), Pi(Apps(Index(2), Index(0)), Nat())))));
+    defs.add(new TypedBinding("I", Pi(Universe(1), Universe(1))));
+    defs.add(new TypedBinding("i", Apps(Index(0), Universe(0))));
+    defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Apps(Index(2), Index(0)), Nat()))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
@@ -184,8 +185,8 @@ public class ImplicitArgumentsTest {
     Expression expr = Index(0);
     Expression type = Apps(Index(1), Apps(Suc(), Apps(Suc(), Zero())));
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("I", new Signature(Pi(Nat(), Universe(0)))));
-    defs.add(new Binding("i", new Signature(Pi(false, "x", Nat(), Apps(Index(1), Apps(Suc(), Index(0)))))));
+    defs.add(new TypedBinding("I", Pi(Nat(), Universe(0))));
+    defs.add(new TypedBinding("i", Pi(false, "x", Nat(), Apps(Index(1), Apps(Suc(), Index(0))))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, type, errors);
@@ -200,8 +201,8 @@ public class ImplicitArgumentsTest {
     Expression expr = Index(0);
     Expression type = Pi(false, "x", Nat(), Apps(Index(1), Index(0)));
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("I", new Signature(Pi(Nat(), Universe(0)))));
-    defs.add(new Binding("i", new Signature(type)));
+    defs.add(new TypedBinding("I", Pi(Nat(), Universe(0))));
+    defs.add(new TypedBinding("i", type));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, type.liftIndex(0, 1), errors);
@@ -215,8 +216,8 @@ public class ImplicitArgumentsTest {
     // I : Type1 -> Type1, i : {x : Type0} -> I x |- i : I Type0
     Expression expr = Index(0);
     List<Binding> defs = new ArrayList<>();
-    defs.add(new Binding("I", new Signature(Pi(Universe(1), Universe(1)))));
-    defs.add(new Binding("i", new Signature(Pi(false, "x", Universe(0), Apps(Index(1), Index(0))))));
+    defs.add(new TypedBinding("I", Pi(Universe(1), Universe(1))));
+    defs.add(new TypedBinding("i", Pi(false, "x", Universe(0), Apps(Index(1), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(new HashMap<String, Definition>(), defs, Apps(Index(1), Universe(0)), errors));

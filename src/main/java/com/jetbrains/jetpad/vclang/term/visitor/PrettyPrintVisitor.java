@@ -2,11 +2,11 @@ package com.jetbrains.jetpad.vclang.term.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeNames;
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void> {
   private final StringBuilder myBuilder;
@@ -60,7 +60,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append("=> ");
     expr.getBody().accept(this, Abstract.LamExpression.PREC);
     for (Abstract.Argument arg : expr.getArguments()) {
-      removeNames(myNames, arg);
+      Utils.removeFromList(myNames, arg);
     }
     if (prec > Abstract.LamExpression.PREC) myBuilder.append(")");
     return null;
@@ -96,7 +96,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append("-> ");
     expr.getCodomain().accept(this, Abstract.PiExpression.PREC);
     for (Abstract.Argument arg : expr.getArguments()) {
-      removeNames(myNames, arg);
+      Utils.removeFromList(myNames, arg);
     }
     if (prec > Abstract.PiExpression.PREC) myBuilder.append(')');
     return null;

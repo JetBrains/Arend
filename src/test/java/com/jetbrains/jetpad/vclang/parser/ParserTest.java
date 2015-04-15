@@ -2,10 +2,11 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Signature;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,33 +76,31 @@ public class ParserTest {
 
   @Test
   public void parserImplicit() {
-    FunctionDefinition def = (FunctionDefinition)parseDef("\\function f : \\Pi (x y : N) {z w : N} (t : N) {r : N} -> N x y z w t r => N");
-    def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), Definition.Arrow.RIGHT, def.getTerm());
-    assertEquals(4, def.getSignature().getArguments().size());
-    assertTrue(def.getSignature().getArgument(0).getExplicit());
-    assertFalse(def.getSignature().getArgument(1).getExplicit());
-    assertTrue(def.getSignature().getArgument(2).getExplicit());
-    assertFalse(def.getSignature().getArgument(3).getExplicit());
-    assertEquals(Pi(args(Tele(vars("x", "y"), Nat()), Tele(false, vars("z", "w"), Nat()), Tele(vars("t"), Nat()), Tele(false, vars("r"), Nat())), Apps(Nat(), Var("x"), Var("y"), Var("z"), Var("w"), Var("t"), Var("r"))), def.getSignature().getType());
+    FunctionDefinition def = (FunctionDefinition) parseDef("\\function f (x y : N) {z w : N} (t : N) {r : N} : N x y z w t r => N");
+    assertEquals(4, def.getArguments().size());
+    assertTrue(def.getArgument(0).getExplicit());
+    assertFalse(def.getArgument(1).getExplicit());
+    assertTrue(def.getArgument(2).getExplicit());
+    assertFalse(def.getArgument(3).getExplicit());
+    assertEquals(Pi(args(Tele(vars("x", "y"), Nat()), Tele(false, vars("z", "w"), Nat()), Tele(vars("t"), Nat()), Tele(false, vars("r"), Nat())), Apps(Nat(), Var("x"), Var("y"), Var("z"), Var("w"), Var("t"), Var("r"))), def.getType());
   }
 
   @Test
   public void parserImplicit2() {
-    FunctionDefinition def = (FunctionDefinition)parseDef("\\function f : \\Pi {x : N} (N) {y z : N} (N x y z) -> N => N");
-    def = new FunctionDefinition(def.getName(), new Signature(def.getSignature().getType()), Definition.Arrow.RIGHT, def.getTerm());
-    assertEquals(4, def.getSignature().getArguments().size());
-    assertFalse(def.getSignature().getArgument(0).getExplicit());
-    assertTrue(def.getSignature().getArgument(1).getExplicit());
-    assertFalse(def.getSignature().getArgument(2).getExplicit());
-    assertTrue(def.getSignature().getArgument(3).getExplicit());
-    assertEquals(Pi(args(Tele(false, vars("x"), Nat()), TypeArg(Nat()), Tele(false, vars("y", "z"), Nat()), TypeArg(Apps(Nat(), Var("x"), Var("y"), Var("z")))), Nat()), def.getSignature().getType());
+    FunctionDefinition def = (FunctionDefinition)parseDef("\\function f {x : N} (N) {y z : N} (N x y z) : N => N");
+    assertEquals(4, def.getArguments().size());
+    assertFalse(def.getArgument(0).getExplicit());
+    assertTrue(def.getArgument(1).getExplicit());
+    assertFalse(def.getArgument(2).getExplicit());
+    assertTrue(def.getArgument(3).getExplicit());
+    assertEquals(Pi(args(Tele(false, vars("x"), Nat()), TypeArg(Nat()), Tele(false, vars("y", "z"), Nat()), TypeArg(Apps(Nat(), Var("x"), Var("y"), Var("z")))), Nat()), def.getType());
   }
 
   @Test
   public void parserInfix() {
     Map<String, Definition> definitions = new HashMap<>();
-    Definition plus = new FunctionDefinition("+", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Definition.Arrow.LEFT, Var("+"));
-    Definition mul = new FunctionDefinition("*", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, Definition.Arrow.LEFT, Var("*"));
+    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.LEFT, Var("+"));
+    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.LEFT, Var("*"));
     definitions.put("+", plus);
     definitions.put("*", mul);
     Expression expr = parseExpr("a + b * c + d * (e * f) * (g + h)", definitions);
@@ -119,8 +118,8 @@ public class ParserTest {
   @Test
   public void parserInfixError() {
     Map<String, Definition> definitions = new HashMap<>();
-    Definition plus = new FunctionDefinition("+", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Definition.Arrow.LEFT, Var("+"));
-    Definition mul = new FunctionDefinition("*", new Signature(Nat()), new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, Definition.Arrow.LEFT, Var("*"));
+    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.LEFT, Var("+"));
+    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.LEFT, Var("*"));
     definitions.put("+", plus);
     definitions.put("*", mul);
 

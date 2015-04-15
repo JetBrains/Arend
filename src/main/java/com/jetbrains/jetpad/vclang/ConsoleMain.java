@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
@@ -44,9 +45,9 @@ public class ConsoleMain {
     List<TypeCheckingError> errors = new ArrayList<>();
     for (Definition def : defs) {
       if (def instanceof FunctionDefinition) {
-        def = def.checkTypes(context, errors);
-        if (def != null) {
-          def = new FunctionDefinition(def.getName(), def.getSignature(), def.getPrecedence(), def.getFixity(), ((FunctionDefinition) def).getArrow(), ((FunctionDefinition) def).getTerm().normalize(NormalizeVisitor.Mode.NF));
+        FunctionDefinition funcDef = (FunctionDefinition) def.checkTypes(context, new ArrayList<Binding>(), errors);
+        if (funcDef != null) {
+          def = new FunctionDefinition(def.getName(), def.getPrecedence(), def.getFixity(), funcDef.getArguments(), funcDef.getResultType(), ((FunctionDefinition) def).getArrow(), ((FunctionDefinition) def).getTerm().normalize(NormalizeVisitor.Mode.NF));
           context.put(def.getName(), def);
         }
       }
