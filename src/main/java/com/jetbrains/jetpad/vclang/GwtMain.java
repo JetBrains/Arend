@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.google.gwt.core.client.EntryPoint;
-import com.jetbrains.jetpad.vclang.model.Example;
+import com.jetbrains.jetpad.vclang.model.Loader;
 import jetbrains.jetpad.cell.CellContainer;
 import jetbrains.jetpad.cell.toDom.CellContainerToDomMapper;
 
@@ -11,7 +11,7 @@ public class GwtMain implements EntryPoint {
   @Override
   public void onModuleLoad() {
     final CellContainer container = ContainerFactory.getMainContainer();
-    container.root.children().add(Example.create().getTarget());
+    container.root.children().add(Loader.create(load(), Loader.MOCK).getTarget());
 
     new CellContainerToDomMapper(container, $("#proofDemo").get(0)).attachRoot();
   }

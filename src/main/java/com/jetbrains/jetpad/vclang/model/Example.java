@@ -2,16 +2,12 @@ package com.jetbrains.jetpad.vclang.model;
 
 import com.jetbrains.jetpad.vclang.editor.ModuleMapper;
 import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
-import jetbrains.jetpad.cell.CellContainer;
 import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 
 import static com.jetbrains.jetpad.vclang.model.expr.Model.*;
 
 public class Example {
-  public static ModuleMapper create() {
-    final WrapperContext ctx = new WrapperContext();
-    ctx.addNodeWrapperFactory(new NodeWrapperFactory());
-
+  public static Module create(WrapperContext ctx) {
     Module module = new Module(ctx);
 
     FunctionDefinition def = new FunctionDefinition(ctx);
@@ -32,8 +28,6 @@ public class Example {
     arg2.isExplicit().set(true);
     arg2.type().set(new NatExpression(ctx));
 
-    final ModuleMapper mapper = new ModuleMapper(module);
-    mapper.attachRoot();
-    return mapper;
+    return module;
   }
 }

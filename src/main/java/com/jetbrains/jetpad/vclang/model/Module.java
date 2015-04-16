@@ -7,10 +7,12 @@ import jetbrains.jetpad.otmodel.node.NodeConceptId;
 import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 
 public class Module extends Node {
+  public static final NodeConceptId CONCEPT_ID = new NodeConceptId("e-lVXYvvhR.HMthbUwSlw7", "Module");
+
   public final ObservableList<Definition> definitions = new ObservableArrayList<>();
 
   public Module(WrapperContext ctx) {
-    super(ctx, new NodeConceptId("e-lVXYvvhR.HMthbUwSlw7", "Module"));
+    super(ctx, CONCEPT_ID);
   }
 
   protected Module(WrapperContext ctx, jetbrains.jetpad.otmodel.node.Node node) {
