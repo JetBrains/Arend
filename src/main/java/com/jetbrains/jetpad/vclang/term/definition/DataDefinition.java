@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
@@ -12,39 +14,35 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Universe;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class DataDefinition extends Definition {
   private final List<Constructor> myConstructors;
   private final List<TypeArgument> myParameters;
-  private final Integer myUniverseLevel;
 
-  protected DataDefinition(int id, String name, Precedence precedence, Fixity fixity, List<TypeArgument> parameters, Integer universeLevel, List<Constructor> constructors) {
-    super(id, name, precedence, fixity);
+  protected DataDefinition(int id, String name, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+    super(id, name, precedence, fixity, universe);
     myParameters = parameters;
-    myUniverseLevel = universeLevel;
     myConstructors = constructors;
   }
 
-  public DataDefinition(String name, Precedence precedence, Fixity fixity, List<TypeArgument> parameters, Integer universeLevel, List<Constructor> constructors) {
-    super(name, precedence, fixity);
+  public DataDefinition(String name, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+    super(name, precedence, fixity, universe);
     myParameters = parameters;
-    myUniverseLevel = universeLevel;
     myConstructors = constructors;
   }
 
-  public DataDefinition(String name, Fixity fixity, List<TypeArgument> parameters, Integer universeLevel, List<Constructor> constructors) {
-    super(name, fixity);
+  public DataDefinition(String name, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+    super(name, fixity, universe);
     myParameters = parameters;
-    myUniverseLevel = universeLevel;
     myConstructors = constructors;
   }
 
-  public DataDefinition(String name, List<TypeArgument> parameters, Integer universeLevel, List<Constructor> constructors) {
-    super(name);
+  public DataDefinition(String name, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+    super(name, universe);
     myParameters = parameters;
-    myUniverseLevel = universeLevel;
     myConstructors = constructors;
   }
 
@@ -76,9 +74,8 @@ public class DataDefinition extends Definition {
       builder.append(' ');
       parameter.prettyPrint(builder, names, Abstract.VarExpression.PREC);
     }
-    if (myUniverseLevel != null) {
-      builder.append(" : ");
-      Universe(myUniverseLevel).prettyPrint(builder, names, (byte) 0);
+    if (getUniverse() != null) {
+      builder.append(" : ").append(getUniverse());
     }
     for (Constructor constructor : myConstructors) {
       builder.append("\n    | ");
@@ -91,8 +88,9 @@ public class DataDefinition extends Definition {
   public DataDefinition checkTypes(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors) {
     List<TypeArgument> parameters = new ArrayList<>(myParameters.size());
     int origSize = localContext.size();
+    Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
     for (TypeArgument parameter : myParameters) {
-      CheckTypeVisitor.OKResult result = parameter.getType().checkType(globalContext, localContext, Universe(-1), errors);
+      CheckTypeVisitor.OKResult result = parameter.getType().checkType(globalContext, localContext, Universe(), errors);
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -115,16 +113,31 @@ public class DataDefinition extends Definition {
         trimToSize(localContext, origSize);
         return null;
       }
+
+      Universe maxUniverse = universe.max(newConstructor.getUniverse());
+      if (maxUniverse == null) {
+        String msg = "Universe " + newConstructor.getUniverse() + " of constructor " + newConstructor.getName() + " is not comparable to universe " + universe + " of previous constructors";
+        errors.add(new TypeCheckingError(msg, null));
+        trimToSize(localContext, origSize);
+        return null;
+      }
+      universe = maxUniverse;
+
       constructors.add(newConstructor);
     }
 
     trimToSize(localContext, origSize);
-    return new DataDefinition(myID, getName(), getPrecedence(), getFixity(), parameters, myUniverseLevel, constructors);
+    if (getUniverse() != null && !universe.lessOrEquals(getUniverse())) {
+      errors.add(new TypeMismatchError(new UniverseExpression(getUniverse()), new UniverseExpression(universe), null));
+      return null;
+    }
+
+    return new DataDefinition(myID, getName(), getPrecedence(), getFixity(), getUniverse() != null ? getUniverse() : universe, parameters, constructors);
   }
 
   @Override
   public Expression getType() {
-    Expression resultType = Universe(myUniverseLevel == null ? -1 : myUniverseLevel);
+    Expression resultType = new UniverseExpression(getUniverse());
     return myParameters.isEmpty() ? resultType : Pi(myParameters, resultType);
   }
 }

@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.model.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.model.error.ErrorMessage;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
 import jetbrains.jetpad.cell.indent.IndentCell;
 import jetbrains.jetpad.cell.trait.CellTrait;
@@ -36,7 +36,7 @@ public class ModuleMapper extends Mapper<Module, ModuleMapper.Cell> {
             if (def instanceof FunctionDefinition) {
               FunctionDefinition funDef = (FunctionDefinition) def;
               CheckTypeVisitor visitor = new CheckTypeVisitor(new HashMap<String, com.jetbrains.jetpad.vclang.term.definition.Definition>(), new ArrayList<Binding>(), errors);
-              CheckTypeVisitor.OKResult typeResult = visitor.checkType(funDef.getResultType(), new UniverseExpression());
+              CheckTypeVisitor.OKResult typeResult = visitor.checkType(funDef.getResultType(), ExpressionFactory.Universe());
               visitor.checkType(funDef.getTerm(), typeResult == null ? null : typeResult.expression);
             }
             List<ErrorMessage> errorList = ContainerFactory.getErrorsRootMapper().getSource();

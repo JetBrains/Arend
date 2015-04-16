@@ -1,22 +1,19 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class UniverseExpression extends Expression implements Abstract.UniverseExpression {
-  private final int level;
+  private final Universe myUniverse;
 
-  public UniverseExpression() {
-    level = -1;
-  }
-
-  public UniverseExpression(int level) {
-    this.level = level;
+  public UniverseExpression(Universe universe) {
+    myUniverse = universe;
   }
 
   @Override
-  public int getLevel() {
-    return level;
+  public Universe getUniverse() {
+    return myUniverse;
   }
 
   @Override

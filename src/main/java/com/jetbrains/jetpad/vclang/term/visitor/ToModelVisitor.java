@@ -136,7 +136,7 @@ public class ToModelVisitor implements ExpressionVisitor<Model.Expression> {
   @Override
   public Model.UniverseExpression visitUniverse(UniverseExpression expr) {
     Model.UniverseExpression result = new Model.UniverseExpression(myContext);
-    result.level().set(expr.getLevel());
+    result.universe = expr.getUniverse();
     result.setWellTyped(expr);
     return result;
   }

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 
 import java.util.List;
@@ -91,7 +92,7 @@ public class Abstract {
 
   public interface UniverseExpression extends Expression {
     byte PREC = 12;
-    int getLevel();
+    Universe getUniverse();
   }
 
   public interface VarExpression extends Expression {

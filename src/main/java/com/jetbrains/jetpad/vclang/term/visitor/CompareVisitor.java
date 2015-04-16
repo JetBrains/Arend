@@ -163,18 +163,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
   public Boolean visitUniverse(Abstract.UniverseExpression expr, Expression other) {
     if (expr == other) return true;
     if (!(other instanceof Abstract.UniverseExpression)) return false;
-    Abstract.UniverseExpression otherUniverse = (Abstract.UniverseExpression) other;
-
-    switch (myCmp) {
-      case EQ:
-        return expr.getLevel() == otherUniverse.getLevel();
-      case GEQ:
-        return expr.getLevel() == -1 || expr.getLevel() >= otherUniverse.getLevel();
-      case LEQ:
-        return otherUniverse.getLevel() == -1 || otherUniverse.getLevel() >= expr.getLevel();
-      default:
-        throw new IllegalStateException();
-    }
+    return expr.getUniverse().lessOrEquals(((Abstract.UniverseExpression) other).getUniverse());
   }
 
   @Override

@@ -60,23 +60,23 @@ public class DefinitionTest {
     parameters.add(Tele(vars("b"), Index(2)));
 
     List<Constructor> constructors = new ArrayList<>(2);
-    DataDefinition def = new DataDefinition("D", parameters, null, constructors);
+    DataDefinition def = new DataDefinition("D", null, parameters, constructors);
 
     List<TypeArgument> arguments1 = new ArrayList<>(2);
     arguments1.add(Tele(vars("x"), Index(4)));
     arguments1.add(TypeArg(Apps(Index(3), Index(0), Index(1))));
-    constructors.add(new Constructor("con1", arguments1, def));
+    constructors.add(new Constructor("con1", null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(2);
     arguments2.add(Tele(false, vars("y"), Index(3)));
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
-    constructors.add(new Constructor("con2", arguments2, def));
+    constructors.add(new Constructor("con2", null, arguments2, def));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     def = def.checkTypes(Prelude.DEFINITIONS, new ArrayList<Binding>(), errors);
     assertEquals(0, errors.size());
     assertNotNull(def);
-    assertEquals(Pi(parameters, Universe(-1)), def.getType());
+    assertEquals(Pi(parameters, Universe()), def.getType());
     assertEquals(2, def.getConstructors().size());
     assertEquals(Pi(arguments1, Apps(App(App(DefCall(def), Index(6), false), Index(5), false), Index(4), Index(3), Index(2))), def.getConstructor(0).getType());
     assertEquals(Pi(arguments2, Apps(App(App(DefCall(def), Index(6), false), Index(5), false), Index(4), Index(3), Index(2))), def.getConstructor(1).getType());
