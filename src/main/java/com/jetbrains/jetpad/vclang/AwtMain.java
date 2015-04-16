@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang;
 
+import com.jetbrains.jetpad.vclang.model.Example;
 import jetbrains.jetpad.cell.Cell;
 import jetbrains.jetpad.cell.CellContainer;
 import jetbrains.jetpad.cell.event.CompletionEvent;
@@ -15,6 +16,8 @@ import java.awt.*;
 public class AwtMain {
   public static void main(String[] args) {
     final CellContainer container = ContainerFactory.getMainContainer();
+    container.root.children().add(Example.create().getTarget());
+
     final ViewContainer viewContainer = new ViewContainer();
     CellToView.map(container, viewContainer);
 
@@ -69,5 +72,9 @@ public class AwtMain {
         frame.setVisible(true);
       }
     });
+  }
+
+  private static String load() {
+    return null; //TODO
   }
 }
