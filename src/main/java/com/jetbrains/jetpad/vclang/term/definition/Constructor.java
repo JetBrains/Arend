@@ -76,7 +76,7 @@ public class Constructor extends Definition {
       Universe maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
         String msg = "Universe " + argUniverse + " of " + index + suffix(index) + " argument is not comparable to universe " + universe + " of previous arguments";
-        errors.add(new TypeCheckingError(msg, null));
+        errors.add(new TypeCheckingError(msg, DefCall(this)));
         trimToSize(localContext, origSize);
         return null;
       }

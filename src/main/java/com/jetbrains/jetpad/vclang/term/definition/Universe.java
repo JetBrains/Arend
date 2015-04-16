@@ -25,12 +25,7 @@ public abstract class Universe {
     return result == Cmp.LESS || result == Cmp.EQUALS;
   }
 
-  public Universe max(Universe other) {
-    Cmp result = compare(other);
-    if (result == Cmp.GREATER || result == Cmp.EQUALS) return this;
-    if (result == Cmp.LESS) return other;
-    return null;
-  }
+  public abstract Universe max(Universe other);
 
   protected Cmp compareLevels(int other) {
     if (myLevel == other) return Cmp.EQUALS;
@@ -112,6 +107,16 @@ public abstract class Universe {
     @Override
     public Type succ() {
       return new Type(getLevel() == NO_LEVEL ? NO_LEVEL : getLevel() + 1, myTruncated);
+    }
+
+    @Override
+    public Type max(Universe other) {
+      if (!(other instanceof Type)) return null;
+      int level = getLevel() == NO_LEVEL || other.getLevel() == NO_LEVEL ? NO_LEVEL : Math.max(getLevel(), other.getLevel());
+      int truncated = myTruncated == NOT_TRUNCATED || ((Type) other).myTruncated == NOT_TRUNCATED ? NOT_TRUNCATED : Math.max(myTruncated, ((Type) other).myTruncated);
+      if (myTruncated == PROP) level = other.getLevel();
+      if (((Type) other).myTruncated == PROP) level = getLevel();
+      return new Type(level, truncated);
     }
   }
 }

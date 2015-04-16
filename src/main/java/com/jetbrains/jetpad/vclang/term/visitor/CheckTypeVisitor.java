@@ -586,7 +586,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
     for (int i = 0; i < domainResults.length; ++i) {
-      Universe argUniverse = universe.max(((UniverseExpression) domainResults[i].type).getUniverse());
+      Universe argUniverse = ((UniverseExpression) domainResults[i].type).getUniverse();
       Universe maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
         String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not comparable to universe " + universe + " of previous arguments";
@@ -788,7 +788,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
     for (int i = 0; i < domainResults.length; ++i) {
-      Universe argUniverse = universe.max(((UniverseExpression) domainResults[i].type).getUniverse());
+      Universe argUniverse = ((UniverseExpression) domainResults[i].type).getUniverse();
       Universe maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
         String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not comparable to universe " + universe + " of previous arguments";
