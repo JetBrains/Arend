@@ -64,7 +64,7 @@ public class DataDefinition extends Definition {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    builder.append("\\function\n");
+    builder.append("\\dat a");
     if (getFixity() == Fixity.PREFIX) {
       builder.append(getName());
     } else {

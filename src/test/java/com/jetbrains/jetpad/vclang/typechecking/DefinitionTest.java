@@ -76,7 +76,7 @@ public class DefinitionTest {
     def = def.checkTypes(Prelude.DEFINITIONS, new ArrayList<Binding>(), errors);
     assertEquals(0, errors.size());
     assertNotNull(def);
-    assertEquals(Pi(parameters, Universe()), def.getType());
+    assertEquals(Pi(parameters, Universe(0)), def.getType());
     assertEquals(2, def.getConstructors().size());
     assertEquals(Pi(arguments1, Apps(App(App(DefCall(def), Index(6), false), Index(5), false), Index(4), Index(3), Index(2))), def.getConstructor(0).getType());
     assertEquals(Pi(arguments2, Apps(App(App(DefCall(def), Index(6), false), Index(5), false), Index(4), Index(3), Index(2))), def.getConstructor(1).getType());

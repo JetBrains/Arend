@@ -43,6 +43,7 @@ public abstract class Universe {
     private final int myTruncated;
     public static final int NOT_TRUNCATED = -20;
     public static final int PROP = -1;
+    public static final int SET = 0;
 
     public Type(int level, int truncated) {
       super(level);
@@ -73,7 +74,9 @@ public abstract class Universe {
     @Override
     public String toString() {
       if (myTruncated == PROP) return "\\Prop";
-      return "\\Type" + (myTruncated);
+      String level = getLevel() == NO_LEVEL ? "" : Integer.toString(getLevel());
+      if (myTruncated == SET) return "\\Set" + level;
+      return "\\" + (myTruncated == NOT_TRUNCATED ? "" : myTruncated + "-") + "Type" + level;
     }
 
     private Cmp compareTruncated(int other) {

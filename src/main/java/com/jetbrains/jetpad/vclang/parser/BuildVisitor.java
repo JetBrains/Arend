@@ -258,7 +258,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public UniverseExpression visitSet(SetContext ctx) {
-    return Universe(Integer.valueOf(ctx.SET().getText().substring("\\Set".length())), 0);
+    return Universe(Integer.valueOf(ctx.SET().getText().substring("\\Set".length())), Universe.Type.SET);
   }
 
   private List<TypeArgument> visitTeles(List<TeleContext> teles) {
