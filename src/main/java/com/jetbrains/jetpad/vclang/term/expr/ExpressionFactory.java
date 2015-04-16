@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -134,8 +135,16 @@ public class ExpressionFactory {
     return Apps(SUC, expr);
   }
 
+  public static UniverseExpression Universe() {
+    return new UniverseExpression(new Universe.Type());
+  }
+
   public static UniverseExpression Universe(int level) {
-    return new UniverseExpression(level);
+    return new UniverseExpression(new Universe.Type(level));
+  }
+
+  public static UniverseExpression Universe(int level, int truncated) {
+    return new UniverseExpression(new Universe.Type(level, truncated));
   }
 
   public static NelimExpression Nelim() {

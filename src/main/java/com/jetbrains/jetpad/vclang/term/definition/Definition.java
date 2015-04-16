@@ -12,6 +12,7 @@ public abstract class Definition extends Binding implements PrettyPrintable {
   private static int idCounter = 0;
   private final Precedence myPrecedence;
   private final Fixity myFixity;
+  private final Universe myUniverse;
 
   public enum Arrow { LEFT, RIGHT }
 
@@ -40,26 +41,28 @@ public abstract class Definition extends Binding implements PrettyPrintable {
     }
   }
 
-  protected Definition(int id, String name, Precedence precedence, Fixity fixity) {
+  protected Definition(int id, String name, Precedence precedence, Fixity fixity, Universe universe) {
     super(name);
     myID = id;
     myPrecedence = precedence;
     myFixity = fixity;
+    myUniverse = universe;
   }
 
-  public Definition(String name, Precedence precedence, Fixity fixity) {
+  public Definition(String name, Precedence precedence, Fixity fixity, Universe universe) {
     super(name);
     myID = idCounter++;
     myPrecedence = precedence;
     myFixity = fixity;
+    myUniverse = universe;
   }
 
-  public Definition(String name, Fixity fixity) {
-    this(name, new Precedence(Associativity.RIGHT_ASSOC, (byte) 10), fixity);
+  public Definition(String name, Fixity fixity, Universe universe) {
+    this(name, new Precedence(Associativity.RIGHT_ASSOC, (byte) 10), fixity, universe);
   }
 
-  public Definition(String name) {
-    this(name, Fixity.PREFIX);
+  public Definition(String name, Universe universe) {
+    this(name, Fixity.PREFIX, universe);
   }
 
   public Precedence getPrecedence() {
@@ -68,6 +71,10 @@ public abstract class Definition extends Binding implements PrettyPrintable {
 
   public Fixity getFixity() {
     return myFixity;
+  }
+
+  public Universe getUniverse() {
+    return myUniverse;
   }
 
   @Override

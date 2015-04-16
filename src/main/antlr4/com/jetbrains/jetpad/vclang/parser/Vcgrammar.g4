@@ -47,6 +47,9 @@ atom  : '(' expr (',' expr)* ')'        # tuple
       ;
 
 literal : UNIVERSE                      # universe
+        | TRUNCATED_UNIVERSE            # truncatedUniverse
+        | PROP                          # prop
+        | SET                           # set
         | ID                            # id
         | 'N'                           # Nat
         | 'N-elim'                      # Nelim
@@ -65,6 +68,9 @@ typedExpr : expr                        # notTyped
           ;
 
 UNIVERSE : '\\Type' [0-9]+;
+TRUNCATED_UNIVERSE : '\\' [0-9]+ '-Type' [0-9]+;
+PROP : '\\Prop';
+SET : '\\Set' [0-9]+;
 ID : [a-zA-Z_][a-zA-Z0-9_\-\']*;
 WS : [ \t\r\n]+ -> skip;
 LINE_COMMENT : '--' .*? '\r'? '\n' -> skip;

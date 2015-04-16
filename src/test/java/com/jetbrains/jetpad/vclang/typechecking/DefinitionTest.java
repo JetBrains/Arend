@@ -52,7 +52,7 @@ public class DefinitionTest {
 
   @Test
   public void dataType() {
-    // \data D {A B : Type0} (I : A -> B -> Type0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)
+    // \data D {A B : \Type0} (I : A -> B -> Type0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)
     List<TypeArgument> parameters = new ArrayList<>(4);
     parameters.add(Tele(false, vars("A", "B"), Universe(0)));
     parameters.add(Tele(vars("I"), Pi(Index(1), Pi(Index(0), Universe(0)))));
@@ -60,25 +60,54 @@ public class DefinitionTest {
     parameters.add(Tele(vars("b"), Index(2)));
 
     List<Constructor> constructors = new ArrayList<>(2);
-    DataDefinition def = new DataDefinition("D", parameters, null, constructors);
+    DataDefinition def = new DataDefinition("D", null, parameters, constructors);
 
     List<TypeArgument> arguments1 = new ArrayList<>(2);
     arguments1.add(Tele(vars("x"), Index(4)));
     arguments1.add(TypeArg(Apps(Index(3), Index(0), Index(1))));
-    constructors.add(new Constructor("con1", arguments1, def));
+    constructors.add(new Constructor("con1", null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(2);
     arguments2.add(Tele(false, vars("y"), Index(3)));
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
-    constructors.add(new Constructor("con2", arguments2, def));
+    constructors.add(new Constructor("con2", null, arguments2, def));
 
     List<TypeCheckingError> errors = new ArrayList<>();
     def = def.checkTypes(Prelude.DEFINITIONS, new ArrayList<Binding>(), errors);
     assertEquals(0, errors.size());
     assertNotNull(def);
-    assertEquals(Pi(parameters, Universe(-1)), def.getType());
+    assertEquals(Pi(parameters, Universe(0)), def.getType());
     assertEquals(2, def.getConstructors().size());
     assertEquals(Pi(arguments1, Apps(App(App(DefCall(def), Index(6), false), Index(5), false), Index(4), Index(3), Index(2))), def.getConstructor(0).getType());
     assertEquals(Pi(arguments2, Apps(App(App(DefCall(def), Index(6), false), Index(5), false), Index(4), Index(3), Index(2))), def.getConstructor(1).getType());
+  }
+
+  @Test
+  public void dataType2() {
+    // \data D (A : \7-Type2) = con1 (X : \1-Type5) X | con2 (Y : \2-Type3) A Y
+    List<TypeArgument> parameters = new ArrayList<>(1);
+    parameters.add(Tele(vars("A"), Universe(2, 7)));
+    List<Constructor> constructors = new ArrayList<>(2);
+    DataDefinition def = new DataDefinition("D", null, parameters, constructors);
+
+    List<TypeArgument> arguments1 = new ArrayList<>(2);
+    arguments1.add(Tele(vars("X"), Universe(5, 1)));
+    arguments1.add(TypeArg(Index(0)));
+    constructors.add(new Constructor("con1", null, arguments1, def));
+
+    List<TypeArgument> arguments2 = new ArrayList<>(3);
+    arguments2.add(Tele(vars("Y"), Universe(3, 2)));
+    arguments2.add(TypeArg(Index(1)));
+    arguments2.add(TypeArg(Index(1)));
+    constructors.add(new Constructor("con2", null, arguments2, def));
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    def = def.checkTypes(Prelude.DEFINITIONS, new ArrayList<Binding>(), errors);
+    assertEquals(0, errors.size());
+    assertNotNull(def);
+    assertEquals(Pi(parameters, Universe(6, 7)), def.getType());
+    assertEquals(2, def.getConstructors().size());
+    assertEquals(Pi(arguments1, Apps(DefCall(def), Index(2))), def.getConstructor(0).getType());
+    assertEquals(Pi(arguments2, Apps(DefCall(def), Index(3))), def.getConstructor(1).getType());
   }
 }

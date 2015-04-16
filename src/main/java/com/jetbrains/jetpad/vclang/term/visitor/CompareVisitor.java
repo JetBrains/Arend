@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -163,18 +164,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
   public Boolean visitUniverse(Abstract.UniverseExpression expr, Expression other) {
     if (expr == other) return true;
     if (!(other instanceof Abstract.UniverseExpression)) return false;
-    Abstract.UniverseExpression otherUniverse = (Abstract.UniverseExpression) other;
-
-    switch (myCmp) {
-      case EQ:
-        return expr.getLevel() == otherUniverse.getLevel();
-      case GEQ:
-        return expr.getLevel() == -1 || expr.getLevel() >= otherUniverse.getLevel();
-      case LEQ:
-        return otherUniverse.getLevel() == -1 || otherUniverse.getLevel() >= expr.getLevel();
-      default:
-        throw new IllegalStateException();
-    }
+    Universe.Cmp cmp = expr.getUniverse().compare(((Abstract.UniverseExpression) other).getUniverse());
+    if (myCmp == CMP.LEQ) return cmp == Universe.Cmp.EQUALS || cmp == Universe.Cmp.LESS;
+    if (myCmp == CMP.GEQ) return cmp == Universe.Cmp.EQUALS || cmp == Universe.Cmp.GREATER;
+    return cmp == Universe.Cmp.EQUALS;
   }
 
   @Override

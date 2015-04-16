@@ -1,10 +1,7 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.google.common.collect.Lists;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -122,12 +119,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<Constructor> constructors = new ArrayList<>();
     Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
-    Integer level = type == null ? null : ((UniverseExpression) type).getLevel();
-    DataDefinition def = new DataDefinition(name, fixity, parameters, level, constructors);
+    Universe universe = type == null ? new Universe.Type() : ((UniverseExpression) type).getUniverse();
+    DataDefinition def = new DataDefinition(name, fixity, universe, parameters, constructors);
     for (ConstructorContext constructor : ctx.constructor()) {
       isPrefix = constructor.name() instanceof NameIdContext;
       name = isPrefix ? ((NameIdContext) constructor.name()).ID().getText() : ((NameBinOpContext) constructor.name()).BIN_OP().getText();
-      constructors.add(new Constructor(name, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, visitTeles(constructor.tele()), def));
+      constructors.add(new Constructor(name, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), visitTeles(constructor.tele()), def));
     }
     myGlobalContext.put(name, def);
     return def;
@@ -245,6 +242,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public UniverseExpression visitUniverse(UniverseContext ctx) {
     return Universe(Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length())));
+  }
+
+  @Override
+  public UniverseExpression visitTruncatedUniverse(TruncatedUniverseContext ctx) {
+    String text = ctx.TRUNCATED_UNIVERSE().getText();
+    int indexOfMinusSign = text.indexOf('-');
+    return Universe(Integer.valueOf(text.substring(1, indexOfMinusSign)), Integer.valueOf(text.substring(indexOfMinusSign + "-Type".length())));
+  }
+
+  @Override
+  public UniverseExpression visitProp(PropContext ctx) {
+    return Universe(Universe.NO_LEVEL, Universe.Type.PROP);
+  }
+
+  @Override
+  public UniverseExpression visitSet(SetContext ctx) {
+    return Universe(Integer.valueOf(ctx.SET().getText().substring("\\Set".length())), Universe.Type.SET);
   }
 
   private List<TypeArgument> visitTeles(List<TeleContext> teles) {

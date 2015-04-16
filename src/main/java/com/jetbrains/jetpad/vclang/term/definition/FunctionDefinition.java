@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Universe;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
@@ -22,7 +23,7 @@ public final class FunctionDefinition extends Definition {
   private final Expression myResultType;
 
   protected FunctionDefinition(int id, String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Arrow arrow, Expression term) {
-    super(id, name, precedence, fixity);
+    super(id, name, precedence, fixity, null);
     myArguments = arguments;
     myResultType = resultType;
     myArrow = arrow;
@@ -30,7 +31,7 @@ public final class FunctionDefinition extends Definition {
   }
 
   public FunctionDefinition(String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Arrow arrow, Expression term) {
-    super(name, precedence, fixity);
+    super(name, precedence, fixity, null);
     myArguments = arguments;
     myResultType = resultType;
     myArrow = arrow;
@@ -38,7 +39,7 @@ public final class FunctionDefinition extends Definition {
   }
 
   public FunctionDefinition(String name, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Arrow arrow, Expression term) {
-    super(name, fixity);
+    super(name, fixity, null);
     myArguments = arguments;
     myResultType = resultType;
     myArrow = arrow;
@@ -46,7 +47,7 @@ public final class FunctionDefinition extends Definition {
   }
 
   public FunctionDefinition(String name, List<TelescopeArgument> arguments, Expression resultType, Arrow arrow, Expression term) {
-    super(name);
+    super(name, null);
     myArguments = arguments;
     myResultType = resultType;
     myArrow = arrow;
@@ -99,11 +100,12 @@ public final class FunctionDefinition extends Definition {
     List<TelescopeArgument> arguments = new ArrayList<>(myArguments.size());
     int origSize = localContext.size();
     for (TelescopeArgument argument : myArguments) {
-      CheckTypeVisitor.OKResult result = argument.getType().checkType(globalContext, localContext, Universe(-1), errors);
+      CheckTypeVisitor.OKResult result = argument.getType().checkType(globalContext, localContext, Universe(), errors);
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
       }
+
       arguments.add(Tele(argument.getExplicit(), argument.getNames(), result.expression));
       for (String name : argument.getNames()) {
         localContext.add(new TypedBinding(name, result.expression));
@@ -112,7 +114,7 @@ public final class FunctionDefinition extends Definition {
 
     Expression expectedType;
     if (myResultType != null) {
-      CheckTypeVisitor.OKResult typeResult = myResultType.checkType(globalContext, localContext, Universe(-1), errors);
+      CheckTypeVisitor.OKResult typeResult = myResultType.checkType(globalContext, localContext, Universe(), errors);
       if (typeResult == null) {
         trimToSize(localContext, origSize);
         return null;

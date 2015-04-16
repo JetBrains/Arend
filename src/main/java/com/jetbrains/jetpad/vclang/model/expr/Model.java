@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.model.expr;
 
 import com.jetbrains.jetpad.vclang.model.Node;
 import com.jetbrains.jetpad.vclang.model.StringWrapper;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import jetbrains.jetpad.model.collections.list.ObservableList;
@@ -389,6 +390,8 @@ public class Model {
 
   public static class UniverseExpression extends Expression implements Abstract.UniverseExpression {
     private final Property<Integer> myLevel = getIntProperty(new NodePropertyId("25cYCLnpUH.CQp9lSZ-mzA", "level"));
+    // TODO: Replace this with property.
+    public Universe universe = new Universe.Type();
 
     public UniverseExpression(WrapperContext ctx) {
       super(ctx, new NodeConceptId("FVfU-3nByuh.EMAAAX4zYsZ", "UniverseExpression"));
@@ -396,11 +399,6 @@ public class Model {
 
     protected UniverseExpression(WrapperContext ctx, jetbrains.jetpad.otmodel.node.Node node) {
       super(ctx, node);
-    }
-
-    @Override
-    public int getLevel() {
-      return myLevel.get();
     }
 
     public Property<Integer> level() {
@@ -415,6 +413,11 @@ public class Model {
     @Override
     public Node[] children() {
       return new Node[0];
+    }
+
+    @Override
+    public Universe getUniverse() {
+      return universe;
     }
   }
 

@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Signature;
-import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -12,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
@@ -446,7 +444,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       } else
       if (piArgs.get(i) != null && lambdaArgs.get(i).expression != null) {
         if (piArgs.get(i).getExplicit() != lambdaArgs.get(i).isExplicit) {
-          errors.add(new TypeCheckingError(i + ArgInferenceError.suffix(i) + " argument of the lambda should be " + (piArgs.get(i).getExplicit() ? "explicit" : "implicit"), expr));
+          errors.add(new TypeCheckingError(i + suffix(i) + " argument of the lambda should be " + (piArgs.get(i).getExplicit() ? "explicit" : "implicit"), expr));
         }
       }
     }
@@ -459,7 +457,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     TypeArgument[] argumentTypes = new TypeArgument[lambdaArgs.size()];
     for (int i = 0; i < lambdaArgs.size(); ++i) {
       if (lambdaArgs.get(i).expression != null) {
-        Result argResult = typeCheck(lambdaArgs.get(i).expression, Universe(-1));
+        Result argResult = typeCheck(lambdaArgs.get(i).expression, Universe());
         if (!(argResult instanceof OKResult)) {
           while (i-- > 0) {
             myLocalContext.remove(myLocalContext.size() - 1);
@@ -555,7 +553,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int numberOfVars = 0;
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     for (int i = 0; i < domainResults.length; ++i) {
-      Result result = typeCheck(expr.getArgument(i).getType(), Universe(-1));
+      Result result = typeCheck(expr.getArgument(i).getType(), Universe());
       if (!(result instanceof OKResult)) return result;
       domainResults[i] = (OKResult) result;
       if (domainResults[i].equations != null) {
@@ -579,17 +577,36 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    Result codomainResult = typeCheck(expr.getCodomain(), Universe(-1));
+    Result codomainResult = typeCheck(expr.getCodomain(), Universe());
     for (int i = 0; i < numberOfVars; ++i) {
       myLocalContext.remove(myLocalContext.size() - 1);
     }
     if (!(codomainResult instanceof OKResult)) return codomainResult;
     OKResult okCodomainResult = (OKResult) codomainResult;
-    int level = ((UniverseExpression) okCodomainResult.type).getLevel();
-    for (OKResult domainResult : domainResults) {
-      level = Math.max(((UniverseExpression) domainResult.type).getLevel(), level);
+
+    Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
+    for (int i = 0; i < domainResults.length; ++i) {
+      Universe argUniverse = ((UniverseExpression) domainResults[i].type).getUniverse();
+      Universe maxUniverse = universe.max(argUniverse);
+      if (maxUniverse == null) {
+        String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not comparable to universe " + universe + " of previous arguments";
+        TypeCheckingError error = new TypeCheckingError(msg, expr);
+        expr.setWellTyped(Error(null, error));
+        myErrors.add(error);
+        return null;
+      }
+      universe = maxUniverse;
     }
-    Expression actualType = Universe(level);
+    Universe codomainUniverse = ((UniverseExpression) okCodomainResult.type).getUniverse();
+    Universe maxUniverse = universe.max(codomainUniverse);
+    if (maxUniverse == null) {
+      String msg = "Universe " + codomainUniverse + " the codomain is not comparable to universe " + universe + " of arguments";
+      TypeCheckingError error = new TypeCheckingError(msg, expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+    Expression actualType = new UniverseExpression(maxUniverse);
 
     if (okCodomainResult.equations != null) {
       for (CompareVisitor.Equation equation : okCodomainResult.equations) {
@@ -620,7 +637,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new OKResult(Universe(expr.getLevel()), Universe(expr.getLevel() == -1 ? -1 : expr.getLevel() + 1), null), expr);
+    return checkResult(expectedType, new OKResult(new UniverseExpression(expr.getUniverse()), new UniverseExpression(expr.getUniverse().succ()), null), expr);
   }
 
   @Override
@@ -741,7 +758,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int numberOfVars = 0;
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     for (int i = 0; i < domainResults.length; ++i) {
-      Result result = typeCheck(expr.getArgument(i).getType(), Universe(-1));
+      Result result = typeCheck(expr.getArgument(i).getType(), Universe());
       if (!(result instanceof OKResult)) return result;
       domainResults[i] = (OKResult) result;
       if (domainResults[i].equations != null) {
@@ -768,11 +785,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (int i = 0; i < numberOfVars; ++i) {
       myLocalContext.remove(myLocalContext.size() - 1);
     }
-    int level = -1;
-    for (OKResult domainResult : domainResults) {
-      level = Math.max(((UniverseExpression) domainResult.type).getLevel(), level);
+
+    Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
+    for (int i = 0; i < domainResults.length; ++i) {
+      Universe argUniverse = ((UniverseExpression) domainResults[i].type).getUniverse();
+      Universe maxUniverse = universe.max(argUniverse);
+      if (maxUniverse == null) {
+        String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not comparable to universe " + universe + " of previous arguments";
+        TypeCheckingError error = new TypeCheckingError(msg, expr);
+        expr.setWellTyped(Error(null, error));
+        myErrors.add(error);
+        return null;
+      }
+      universe = maxUniverse;
     }
-    Expression actualType = Universe(level);
+    Expression actualType = new UniverseExpression(universe);
 
     List<TypeArgument> resultArguments = new ArrayList<>(domainResults.length);
     for (int i = 0; i < domainResults.length; ++i) {

@@ -110,7 +110,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitUniverse(Abstract.UniverseExpression expr, Byte prec) {
-    myBuilder.append("\\Type").append(expr.getLevel() < 0 ? "" : expr.getLevel());
+    myBuilder.append(expr.getUniverse());
     return null;
   }
 
