@@ -3,8 +3,10 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -109,5 +111,59 @@ public class DefinitionTest {
     assertEquals(2, def.getConstructors().size());
     assertEquals(Pi(arguments1, Apps(DefCall(def), Index(2))), def.getConstructor(0).getType());
     assertEquals(Pi(arguments2, Apps(DefCall(def), Index(3))), def.getConstructor(1).getType());
+  }
+
+  @Test
+  public void constructor() {
+    // \data D (A : \Type0) = con (B : \Type1) A B |- con Nat zero zero : D Nat
+    List<Constructor> constructors = new ArrayList<>(1);
+    DataDefinition def = new DataDefinition("D", null, args(Tele(vars("A"), Universe(0))), constructors);
+    Constructor con = new Constructor("con", null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    constructors.add(con);
+
+    Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, new ArrayList<Binding>(), null, errors);
+    assertEquals(0, errors.size());
+    assertNotNull(result);
+    assertEquals(Apps(DefCall(def), Nat()), result.type);
+  }
+
+  @Test
+  public void constructorInfer() {
+    // \data D (A : \Type0) = con (B : \Type1) A B, f : D (Nat -> Nat) -> Nat |- f (con Nat (\lam x => x) zero) : Nat
+    List<Constructor> constructors = new ArrayList<>(1);
+    DataDefinition def = new DataDefinition("D", null, args(Tele(vars("A"), Universe(0))), constructors);
+    Constructor con = new Constructor("con", null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    constructors.add(con);
+
+    Expression expr = Apps(Index(0), Apps(DefCall(con), Nat(), Lam("x", Index(0)), Zero()));
+    List<TypeCheckingError> errors = new ArrayList<>();
+    List<Binding> localContext = new ArrayList<>(1);
+    localContext.add(new TypedBinding("f", Pi(Apps(DefCall(def), Pi(Nat(), Nat())), Nat())));
+
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, localContext, null, errors);
+    assertEquals(0, errors.size());
+    assertNotNull(result);
+    assertEquals(Nat(), result.type);
+  }
+
+  @Test
+  public void constructorConst() {
+    // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
+    List<Constructor> constructors = new ArrayList<>(1);
+    DataDefinition def = new DataDefinition("D", null, args(Tele(vars("A"), Universe(0))), constructors);
+    Constructor con = new Constructor("con", null, args(TypeArg(Index(0))), def);
+    constructors.add(con);
+
+    Expression expr = Apps(Index(0), DefCall(con));
+    List<TypeCheckingError> errors = new ArrayList<>();
+    List<Binding> localContext = new ArrayList<>(1);
+    localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DefCall(def), Nat())), Pi(Nat(), Nat()))));
+
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, localContext, null, errors);
+    assertEquals(0, errors.size());
+    assertNotNull(result);
+    assertEquals(Pi(Nat(), Nat()), result.type);
   }
 }
