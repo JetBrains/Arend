@@ -3,11 +3,20 @@ package com.jetbrains.jetpad.vclang.term.error;
 import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
 public class ArgInferenceError extends TypeCheckingError {
-  private final int myIndex;
-
-  public ArgInferenceError(String message, Abstract.Expression expression, int index) {
+  public ArgInferenceError(String message, Abstract.Expression expression) {
     super(message, expression);
-    myIndex = index;
+  }
+
+  public static String functionArg(int index) {
+    return "Cannot infer " + index + suffix(index) + " argument to function";
+  }
+
+  public static String lambdaArg(int index) {
+    return "Cannot infer " + index + suffix(index) + " argument of lambda";
+  }
+
+  public static String parameter(int index) {
+    return "Cannot infer " + index + suffix(index) + " parameter to data type";
   }
 
   public static String suffix(int n) {
@@ -21,11 +30,10 @@ public class ArgInferenceError extends TypeCheckingError {
 
   @Override
   public String toString() {
-    String message = "Cannot infer " + myIndex + suffix(myIndex) + " argument " + getMessage();
     if (getExpression() == null) {
-      return message;
+      return getMessage();
     } else {
-      return message + " " + getExpression();
+      return getMessage() + " " + getExpression();
     }
   }
 }

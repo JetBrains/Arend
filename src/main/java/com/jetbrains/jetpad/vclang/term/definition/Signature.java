@@ -1,24 +1,41 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-public class Signature implements PrettyPrintable {
+public class Signature {
   private final List<TypeArgument> myArguments;
   private final Expression myResultType;
 
+  private void addArgs(TypeArgument argument) {
+    if (argument instanceof TelescopeArgument) {
+      int i = 0;
+      for (String name : ((TelescopeArgument) argument).getNames()) {
+        myArguments.add(Tele(argument.getExplicit(), vars(name), argument.getType().liftIndex(0, i++)));
+      }
+    } else {
+      myArguments.add(TypeArg(argument.getExplicit(), argument.getType()));
+    }
+  }
+
+  private void addArgs(List<TypeArgument> arguments) {
+    for (TypeArgument argument : arguments) {
+      addArgs(argument);
+    }
+  }
+
   public Signature(List<TypeArgument> arguments, Expression resultType) {
-    myArguments = arguments;
+    myArguments = new ArrayList<>();
     myResultType = resultType;
+    addArgs(arguments);
   }
 
   public Signature(Expression type) {
@@ -26,7 +43,7 @@ public class Signature implements PrettyPrintable {
     type = type.normalize(NormalizeVisitor.Mode.WHNF);
     while (type instanceof PiExpression) {
       PiExpression pi = (PiExpression)type;
-      myArguments.addAll(pi.getArguments());
+      addArgs(pi.getArguments());
       type = pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
     }
     myResultType = type;
@@ -48,6 +65,7 @@ public class Signature implements PrettyPrintable {
     return myArguments.size() == 0 ? myResultType : Pi(myArguments, myResultType);
   }
 
+  /*
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
@@ -55,10 +73,9 @@ public class Signature implements PrettyPrintable {
     return builder.toString();
   }
 
-  @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    for (TypeArgument argument : myArguments) {
-      argument.prettyPrint(builder, names, Abstract.VarExpression.PREC);
+    for (Arg argument : myArguments) {
+      Tele(argument.isExplicit, vars(argument.name), argument.type).prettyPrint(builder, names, Abstract.VarExpression.PREC);
       builder.append(' ');
     }
     if (myResultType != null) {
@@ -66,4 +83,5 @@ public class Signature implements PrettyPrintable {
       myResultType.prettyPrint(builder, names, (byte) 0);
     }
   }
+  */
 }

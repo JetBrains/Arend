@@ -14,7 +14,7 @@ import jetbrains.jetpad.otmodel.entity.event.EntityAdapter;
 import jetbrains.jetpad.otmodel.entity.event.EntityEvent;
 import jetbrains.jetpad.otmodel.json.Node2JsonConverter;
 import jetbrains.jetpad.otmodel.node.ot.persistence.NodeIdPersistenceContext;
-import jetbrains.jetpad.otmodel.ot.persistence.id.BaseIdCompressor;
+import jetbrains.jetpad.otmodel.ot.persistence.id.IdCompressor;
 import jetbrains.jetpad.otmodel.ot.persistence.id.UpdatableIdCompressor;
 import jetbrains.jetpad.projectional.view.*;
 import jetbrains.jetpad.projectional.view.toAwt.ViewContainerComponent;
@@ -120,7 +120,7 @@ public class AwtMain {
       root.getContext().getEntityContext().addEntityListener(new EntityAdapter() {
         @Override
         protected void onEntityFeatureChanged(EntityEvent event) {
-          BaseIdCompressor idCompressor = new UpdatableIdCompressor();
+          IdCompressor idCompressor = new UpdatableIdCompressor();
           NodeIdPersistenceContext persistenceContext = new NodeIdPersistenceContext(idCompressor);
           Node2JsonConverter converter = new Node2JsonConverter(persistenceContext);
           JsonArray jsonArray = converter.toJson(root.input.get().getNode());

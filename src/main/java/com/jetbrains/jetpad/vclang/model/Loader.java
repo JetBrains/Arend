@@ -6,7 +6,7 @@ import jetbrains.jetpad.json.JsonParser;
 import jetbrains.jetpad.otmodel.json.Node2JsonConverter;
 import jetbrains.jetpad.otmodel.node.ot.persistence.NodeIdPersistenceContext;
 import jetbrains.jetpad.otmodel.ot.command.EntityContextCommandProcessor;
-import jetbrains.jetpad.otmodel.ot.persistence.id.BaseIdCompressor;
+import jetbrains.jetpad.otmodel.ot.persistence.id.IdCompressor;
 import jetbrains.jetpad.otmodel.ot.persistence.id.SelfUpdatingIdCompressor;
 import jetbrains.jetpad.otmodel.wrapper.WrapperContext;
 
@@ -39,7 +39,7 @@ public class Loader {
     }
 
     JsonArray jsonArray = (JsonArray) JsonParser.parse(data);
-    BaseIdCompressor idCompressor = new SelfUpdatingIdCompressor();
+    IdCompressor idCompressor = new SelfUpdatingIdCompressor();
     Node2JsonConverter converter = new Node2JsonConverter(new NodeIdPersistenceContext(idCompressor));
     jetbrains.jetpad.otmodel.node.Node node = converter.fromJson(jsonArray);
     return (Module) ctx.getWrapperFor(node);
@@ -50,7 +50,7 @@ public class Loader {
     public void run(Root root) {}
   };
 
-  public static interface Hook {
+  public interface Hook {
     void run(Root root);
   }
 }
