@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.parser;
 
-import com.google.common.collect.Lists;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
@@ -49,7 +48,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), "Expected a list of variables"));
       return null;
     }
-    return Lists.reverse(vars);
+
+    List<String> result = new ArrayList<>(vars.size());
+    for (int i = vars.size() - 1; i >= 0; --i) {
+        result.add(vars.get(i));
+    }
+    return result;
   }
 
   public Expression visitExpr(ExprContext expr) {
