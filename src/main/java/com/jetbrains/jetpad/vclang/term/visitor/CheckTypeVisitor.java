@@ -702,8 +702,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitHole(Abstract.HoleExpression expr, Expression expectedType) {
-    // TODO: Type checking of holes?
+  public Result visitError(Abstract.ErrorExpression expr, Expression expectedType) {
+    myErrors.add(new GoalError(myLocalContext, expectedType));
+    return null;
+  }
+
+  @Override
+  public Result visitInferHole(Abstract.InferHoleExpression expr, Expression expectedType) {
+    TypeCheckingError error = new ArgInferenceError(expression(), null);
+    expr.setWellTyped(Error(null, error));
+    myErrors.add(error);
     return null;
   }
 

@@ -139,9 +139,13 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitHole(HoleExpression expr) {
-    if (myMode == Mode.WHNF) return expr;
-    return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
+  public Expression visitError(ErrorExpression expr) {
+    return myMode == Mode.WHNF || expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this), expr.getError());
+  }
+
+  @Override
+  public Expression visitInferHole(InferHoleExpression expr) {
+    return expr;
   }
 
   @Override

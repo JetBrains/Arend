@@ -104,11 +104,12 @@ public class Abstract {
     byte PREC = 12;
   }
 
-  public interface HoleExpression extends Expression {
+  public interface InferHoleExpression extends Expression {
     byte PREC = 12;
   }
 
-  public interface InferHoleExpression extends HoleExpression {
+  public interface ErrorExpression extends Expression {
     byte PREC = 12;
+    Expression getExpr();
   }
 }

@@ -14,7 +14,8 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitUniverse(Abstract.UniverseExpression expr, P params);
   R visitVar(Abstract.VarExpression expr, P params);
   R visitZero(Abstract.ZeroExpression expr, P params);
-  R visitHole(Abstract.HoleExpression expr, P params);
+  R visitInferHole(Abstract.InferHoleExpression expr, P params);
+  R visitError(Abstract.ErrorExpression expr, P params);
   R visitTuple(Abstract.TupleExpression expr, P params);
   R visitSigma(Abstract.SigmaExpression expr, P params);
   R visitBinOp(Abstract.BinOpExpression expr, P params);

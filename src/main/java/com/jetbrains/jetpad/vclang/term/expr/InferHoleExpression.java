@@ -1,12 +1,16 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-public class InferHoleExpression extends HoleExpression implements Abstract.InferHoleExpression {
-  public InferHoleExpression() {
-    super(null);
+import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
+
+public class InferHoleExpression extends Expression implements Abstract.InferHoleExpression {
+  @Override
+  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
+    return visitor.visitInferHole(this);
   }
 
   @Override
-  public InferHoleExpression getInstance(Expression expr) {
-    return this;
+  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitInferHole(this, params);
   }
 }

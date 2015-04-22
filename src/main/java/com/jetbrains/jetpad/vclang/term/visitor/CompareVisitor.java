@@ -68,10 +68,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
   }
 
   public static class Equation {
-    public Abstract.HoleExpression hole;
+    public Abstract.InferHoleExpression hole;
     public Abstract.Expression expression;
 
-    public Equation(Abstract.HoleExpression hole, Abstract.Expression expression) {
+    public Equation(Abstract.InferHoleExpression hole, Abstract.Expression expression) {
       this.hole = hole;
       this.expression = expression;
     }
@@ -183,13 +183,14 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
   }
 
   @Override
-  public Boolean visitHole(Abstract.HoleExpression expr, Expression other) {
-    if (expr instanceof Abstract.InferHoleExpression) {
-      myEquations.add(new Equation(expr, other));
-      return true;
-    }
+  public Boolean visitError(Abstract.ErrorExpression expr, Expression other) {
+    return true;
+  }
 
-    return expr == other;
+  @Override
+  public Boolean visitInferHole(Abstract.InferHoleExpression expr, Expression other) {
+    myEquations.add(new Equation(expr, other));
+    return true;
   }
 
   @Override

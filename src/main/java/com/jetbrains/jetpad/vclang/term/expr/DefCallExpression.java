@@ -5,15 +5,15 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class DefCallExpression extends Expression implements Abstract.DefCallExpression {
-  private final Definition definition;
+  private final Definition myDefinition;
 
-  public DefCallExpression(Definition function) {
-    this.definition = function;
+  public DefCallExpression(Definition definition) {
+    myDefinition = definition;
   }
 
   @Override
   public Definition getDefinition() {
-    return definition;
+    return myDefinition;
   }
 
   @Override

@@ -76,8 +76,13 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
   }
 
   @Override
-  public InferHoleExpression visitHole(HoleExpression expr) {
-    return expr instanceof InferHoleExpression ? (InferHoleExpression) expr : null;
+  public InferHoleExpression visitError(ErrorExpression expr) {
+    return null;
+  }
+
+  @Override
+  public InferHoleExpression visitInferHole(InferHoleExpression expr) {
+    return expr;
   }
 
   @Override

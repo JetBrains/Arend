@@ -110,8 +110,13 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitHole(HoleExpression expr) {
-    return expr.getInstance(expr.expression() == null ? null : expr.expression().accept(this));
+  public Expression visitError(ErrorExpression expr) {
+    return expr.getExpr() == null ? expr : new ErrorExpression(expr.accept(this), expr.getError());
+  }
+
+  @Override
+  public Expression visitInferHole(InferHoleExpression expr) {
+    return expr;
   }
 
   @Override

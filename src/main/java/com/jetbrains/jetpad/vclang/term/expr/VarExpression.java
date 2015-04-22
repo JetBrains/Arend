@@ -4,15 +4,15 @@ import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
 
 public class VarExpression extends Expression implements Abstract.VarExpression {
-  private final String name;
+  private final String myName;
 
   public VarExpression(String name) {
-    this.name = name;
+    myName = name;
   }
 
   @Override
   public String getName() {
-    return name;
+    return myName;
   }
 
   @Override

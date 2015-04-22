@@ -127,8 +127,18 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitHole(Abstract.HoleExpression expr, Byte prec) {
-    myBuilder.append('?');
+  public Void visitInferHole(Abstract.InferHoleExpression expr, Byte prec) {
+    myBuilder.append('_');
+    return null;
+  }
+
+  @Override
+  public Void visitError(Abstract.ErrorExpression expr, Byte prec) {
+    myBuilder.append("{!");
+    if (expr.getExpr() != null) {
+      expr.getExpr().accept(this, (byte) 0);
+    }
+    myBuilder.append('}');
     return null;
   }
 
