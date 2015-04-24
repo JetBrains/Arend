@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public interface AbstractExpressionVisitor<P, R> {
   R visitApp(Abstract.AppExpression expr, P params);

@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.error;
 
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class NotInScopeError extends TypeCheckingError {
   public NotInScopeError(Abstract.Expression expression) {

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.arg;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;

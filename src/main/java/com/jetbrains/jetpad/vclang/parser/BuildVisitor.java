@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
-import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -28,21 +28,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return myErrors;
   }
 
-  private List<String> getVars(Expression expr, Token token) {
+  private List<String> getVars(Concrete.Expression expr, Token token) {
     List<String> vars = new ArrayList<>();
-    while (expr instanceof AppExpression) {
-      Expression arg = ((AppExpression) expr).getArgument();
-      if (arg instanceof VarExpression) {
-        vars.add(((VarExpression) arg).getName());
+    while (expr instanceof Concrete.AppExpression) {
+      Concrete.Expression arg = ((Concrete.AppExpression) expr).getArgument();
+      if (arg instanceof Concrete.VarExpression) {
+        vars.add(((Concrete.VarExpression) arg).getName());
       } else {
         break;
       }
-      expr = ((AppExpression) expr).getFunction();
+      expr = ((Concrete.AppExpression) expr).getFunction();
     }
-    if (expr instanceof VarExpression) {
-      vars.add(((VarExpression) expr).getName());
+    if (expr instanceof Concrete.VarExpression) {
+      vars.add(((Concrete.VarExpression) expr).getName());
     } else
-    if (expr instanceof InferHoleExpression) {
+    if (expr instanceof Concrete.InferHoleExpression) {
       vars.add("_");
     } else {
       myErrors.add(new ParserError(token.getLine(), token.getCharPositionInLine(), "Expected a list of variables"));
@@ -56,16 +56,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return result;
   }
 
-  public Expression visitExpr(ExprContext expr) {
-    return (Expression) visit(expr);
+  public Concrete.Expression visitExpr(ExprContext expr) {
+    return (Concrete.Expression) visit(expr);
   }
 
-  public Expression visitExpr(AtomContext expr) {
-    return (Expression) visit(expr);
+  public Concrete.Expression visitExpr(AtomContext expr) {
+    return (Concrete.Expression) visit(expr);
   }
 
-  public Expression visitExpr(LiteralContext expr) {
-    return (Expression) visit(expr);
+  public Concrete.Expression visitExpr(LiteralContext expr) {
+    return (Concrete.Expression) visit(expr);
   }
 
   @Override
@@ -102,9 +102,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         return null;
       }
     }
-    Expression type = visitTypeOpt(ctx.typeOpt());
+    Concrete.Expression type = visitTypeOpt(ctx.typeOpt());
     Definition.Arrow arrow = ctx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
-    Expression term = visitExpr(ctx.expr());
+    Concrete.Expression term = visitExpr(ctx.expr());
     FunctionDefinition def = new FunctionDefinition(name, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, term);
     myGlobalContext.put(name, def);
     return def;
@@ -115,15 +115,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     boolean isPrefix = ctx.name() instanceof NameIdContext;
     String name = isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
     List<TypeArgument> parameters = visitTeles(ctx.tele());
-    Expression type = visitTypeOpt(ctx.typeOpt());
-    if (type != null && !(type instanceof UniverseExpression)) {
+    Concrete.Expression type = visitTypeOpt(ctx.typeOpt());
+    if (type != null && !(type instanceof Concrete.UniverseExpression)) {
       myErrors.add(new ParserError(ctx.typeOpt().getStart().getLine(), ctx.typeOpt().getStart().getCharPositionInLine(), "Expected a universe"));
       return null;
     }
 
     List<Constructor> constructors = new ArrayList<>();
     Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
-    Universe universe = type == null ? new Universe.Type() : ((UniverseExpression) type).getUniverse();
+    Universe universe = type == null ? new Universe.Type() : ((Concrete.UniverseExpression) type).getUniverse();
     DataDefinition def = new DataDefinition(name, fixity, universe, parameters, constructors);
     for (ConstructorContext constructor : ctx.constructor()) {
       isPrefix = constructor.name() instanceof NameIdContext;
@@ -134,7 +134,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return def;
   }
 
-  private Expression visitTypeOpt(TypeOptContext ctx) {
+  private Concrete.Expression visitTypeOpt(TypeOptContext ctx) {
     if (ctx instanceof NoTypeContext) {
       return null;
     }
@@ -145,38 +145,38 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public InferHoleExpression visitUnknown(UnknownContext ctx) {
-    return new InferHoleExpression();
+  public Concrete.InferHoleExpression visitUnknown(UnknownContext ctx) {
+    return new Concrete.InferHoleExpression();
   }
 
   @Override
-  public ZeroExpression visitZero(ZeroContext ctx) {
+  public Concrete.ZeroExpression visitZero(ZeroContext ctx) {
     return Zero();
   }
 
   @Override
-  public NatExpression visitNat(NatContext ctx) {
+  public Concrete.NatExpression visitNat(NatContext ctx) {
     return Nat();
   }
 
   @Override
-  public SucExpression visitSuc(SucContext ctx) {
+  public Concrete.SucExpression visitSuc(SucContext ctx) {
     return Suc();
   }
 
   @Override
-  public PiExpression visitArr(ArrContext ctx) {
-    Expression left = visitExpr(ctx.expr(0));
-    Expression right = visitExpr(ctx.expr(1));
+  public Concrete.PiExpression visitArr(ArrContext ctx) {
+    Concrete.Expression left = visitExpr(ctx.expr(0));
+    Concrete.Expression right = visitExpr(ctx.expr(1));
     return Pi(left, right);
   }
 
   @Override
-  public Expression visitTuple(TupleContext ctx) {
+  public Concrete.Expression visitTuple(TupleContext ctx) {
     if (ctx.expr().size() == 1) {
       return visitExpr(ctx.expr(0));
     } else {
-      List<Expression> fields = new ArrayList<>(ctx.expr().size());
+      List<Concrete.Expression> fields = new ArrayList<>(ctx.expr().size());
       for (ExprContext exprCtx : ctx.expr()) {
         fields.add(visitExpr(exprCtx));
       }
@@ -185,7 +185,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public NelimExpression visitNelim(NelimContext ctx) {
+  public Concrete.NelimExpression visitNelim(NelimContext ctx) {
     return Nelim();
   }
 
@@ -205,8 +205,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else {
       boolean explicit = tele instanceof ExplicitContext;
       TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
-      Expression varsExpr;
-      Expression typeExpr;
+      Concrete.Expression varsExpr;
+      Concrete.Expression typeExpr;
       if (typedExpr instanceof TypedContext) {
         varsExpr = visitExpr(((TypedContext) typedExpr).expr(0));
         typeExpr = visitExpr(((TypedContext) typedExpr).expr(1));
@@ -228,7 +228,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Expression visitLam(LamContext ctx) {
+  public Concrete.Expression visitLam(LamContext ctx) {
     List<Argument> arguments = new ArrayList<>(ctx.tele().size());
     for (TeleContext arg : ctx.tele()) {
       List<Argument> args = visitLamTele(arg);
@@ -239,29 +239,29 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Expression visitId(IdContext ctx) {
+  public Concrete.Expression visitId(IdContext ctx) {
     return Var(ctx.ID().getText());
   }
 
   @Override
-  public UniverseExpression visitUniverse(UniverseContext ctx) {
+  public Concrete.UniverseExpression visitUniverse(UniverseContext ctx) {
     return Universe(Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length())));
   }
 
   @Override
-  public UniverseExpression visitTruncatedUniverse(TruncatedUniverseContext ctx) {
+  public Concrete.UniverseExpression visitTruncatedUniverse(TruncatedUniverseContext ctx) {
     String text = ctx.TRUNCATED_UNIVERSE().getText();
     int indexOfMinusSign = text.indexOf('-');
     return Universe(Integer.valueOf(text.substring(1, indexOfMinusSign)), Integer.valueOf(text.substring(indexOfMinusSign + "-Type".length())));
   }
 
   @Override
-  public UniverseExpression visitProp(PropContext ctx) {
+  public Concrete.UniverseExpression visitProp(PropContext ctx) {
     return Universe(Universe.NO_LEVEL, Universe.Type.PROP);
   }
 
   @Override
-  public UniverseExpression visitSet(SetContext ctx) {
+  public Concrete.UniverseExpression visitSet(SetContext ctx) {
     return Universe(Integer.valueOf(ctx.SET().getText().substring("\\Set".length())), Universe.Type.SET);
   }
 
@@ -292,22 +292,22 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Expression visitAtomLiteral(AtomLiteralContext ctx) {
+  public Concrete.Expression visitAtomLiteral(AtomLiteralContext ctx) {
     return visitExpr(ctx.literal());
   }
 
   @Override
-  public SigmaExpression visitSigma(SigmaContext ctx) {
+  public Concrete.SigmaExpression visitSigma(SigmaContext ctx) {
     return Sigma(visitTeles(ctx.tele()));
   }
 
   @Override
-  public PiExpression visitPi(PiContext ctx) {
+  public Concrete.PiExpression visitPi(PiContext ctx) {
     return Pi(visitTeles(ctx.tele()), visitExpr(ctx.expr()));
   }
 
-  private Expression visitAtoms(List<AtomContext> atoms) {
-    Expression result = visitExpr(atoms.get(0));
+  private Concrete.Expression visitAtoms(List<AtomContext> atoms) {
+    Concrete.Expression result = visitExpr(atoms.get(0));
     for (int i = 1; i < atoms.size(); ++i) {
       result = Apps(result, visitExpr(atoms.get(i)));
     }
@@ -315,16 +315,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private class Pair {
-    Expression expression;
+    Concrete.Expression expression;
     Definition binOp;
 
-    Pair(Expression expression, Definition binOp) {
+    Pair(Concrete.Expression expression, Definition binOp) {
       this.expression = expression;
       this.binOp = binOp;
     }
   }
 
-  private void pushOnStack(List<Pair> stack, Expression left, Definition binOp, Token token) {
+  private void pushOnStack(List<Pair> stack, Concrete.Expression left, Definition binOp, Token token) {
     if (stack.isEmpty()) {
       stack.add(new Pair(left, binOp));
       return;
@@ -346,7 +346,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Expression visitBinOp(BinOpContext ctx) {
+  public Concrete.Expression visitBinOp(BinOpContext ctx) {
     List<Pair> stack = new ArrayList<>(ctx.binOpLeft().size());
     for (BinOpLeftContext leftContext : ctx.binOpLeft()) {
       String name;
@@ -366,7 +366,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       pushOnStack(stack, visitAtoms(leftContext.atom()), def, token);
     }
 
-    Expression result = visitAtoms(ctx.atom());
+    Concrete.Expression result = visitAtoms(ctx.atom());
     for (int i = stack.size() - 1; i >= 0; --i) {
       result = BinOp(stack.get(i).expression, stack.get(i).binOp, result);
     }
@@ -374,7 +374,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Expression visitExprElim(ExprElimContext ctx) {
+  public Concrete.Expression visitExprElim(ExprElimContext ctx) {
     // TODO: Write this.
     return null;
   }

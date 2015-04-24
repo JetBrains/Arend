@@ -1,10 +1,12 @@
-package com.jetbrains.jetpad.vclang.term.expr;
+package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
 
 import java.util.List;
+import java.util.Map;
 
 public class Abstract {
   public interface Expression {
@@ -112,5 +114,11 @@ public class Abstract {
   public interface ErrorExpression extends Expression {
     byte PREC = 12;
     Expression getExpr();
+  }
+
+  public interface Definition extends PrettyPrintable {
+    enum Arrow { LEFT, RIGHT }
+    Universe getUniverse();
+    Definition checkTypes(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors);
   }
 }

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.visitor;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.List;

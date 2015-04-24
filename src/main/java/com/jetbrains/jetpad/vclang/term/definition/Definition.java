@@ -1,12 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public abstract class Definition extends Binding implements PrettyPrintable {
   protected final int myID;
@@ -14,8 +11,6 @@ public abstract class Definition extends Binding implements PrettyPrintable {
   private final Precedence myPrecedence;
   private final Fixity myFixity;
   private final Universe myUniverse;
-
-  public enum Arrow { LEFT, RIGHT }
 
   public enum Fixity { PREFIX, INFIX }
   public enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
@@ -92,6 +87,4 @@ public abstract class Definition extends Binding implements PrettyPrintable {
     prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     return builder.toString();
   }
-
-  public abstract Definition checkTypes(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors);
 }

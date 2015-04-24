@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.error;
 
-import com.jetbrains.jetpad.vclang.term.expr.Abstract;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 public class TypeMismatchError extends TypeCheckingError {
   private final Abstract.Expression expected;
