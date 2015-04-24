@@ -297,9 +297,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    boolean expectedTypeHasHoles = expectedType != null && expectedType.accept(new FindHoleVisitor()) != null;
     if (argIndex != 0) {
-      if (expectedType != null && !expectedTypeHasHoles) {
+      if (expectedType != null && expectedType.accept(new FindHoleVisitor()) == null) {
         Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
         Expression actualNorm = resultType.normalize(NormalizeVisitor.Mode.NF);
         List<CompareVisitor.Equation> equations = compare(actualNorm, expectedNorm, CompareVisitor.CMP.LEQ);
@@ -357,13 +356,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (argIndex == 0) {
-      OKResult result = new OKResult(resultExpr, resultType, resultEquations);
-      if (expectedTypeHasHoles) {
-        return checkResult(expectedType, result, expression);
-      } else {
-        expression.setWellTyped(resultExpr);
-        return result;
-      }
+      return checkResult(expectedType, new OKResult(resultExpr, resultType, resultEquations), expression);
     } else {
       TypeCheckingError error;
       if (argIndex > parametersNumber) {
