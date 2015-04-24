@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -198,5 +199,38 @@ public class ExpressionTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     assertEquals(expr, expr.checkType(new HashMap<String, Definition>(), new ArrayList<Binding>(), Pi(args(Tele(vars("X"), Universe(0)), TypeArg(Index(0))), Index(1)), errors).expression);
     assertEquals(0, errors.size());
+  }
+
+  @Test
+  public void lambdaExpectedError() {
+    // \x. x : (Nat -> Nat) -> Nat
+    Expression expr = Lam("x", Var("x"));
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), new ArrayList<Binding>(), Pi(Pi(Nat(), Nat()), Nat()), errors);
+    assertEquals(1, errors.size());
+    assertEquals(null, result);
+    assertTrue(errors.get(0) instanceof TypeMismatchError);
+  }
+
+  @Test
+  public void lambdaOmegaError() {
+    // \x. x x : (Nat -> Nat) -> Nat
+    Expression expr = Lam("x", Apps(Var("x"), Var("x")));
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), new ArrayList<Binding>(), Pi(Pi(Nat(), Nat()), Nat()), errors);
+    assertEquals(1, errors.size());
+    assertEquals(null, result);
+    assertTrue(errors.get(0) instanceof TypeMismatchError);
+  }
+
+  @Test
+  public void lambdaExpectedError2() {
+    // \x. x 0 : (Nat -> Nat) -> Nat -> Nat
+    Expression expr = Lam("x", Apps(Var("x"), Zero()));
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), new ArrayList<Binding>(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())), errors);
+    assertEquals(1, errors.size());
+    assertEquals(null, result);
+    assertTrue(errors.get(0) instanceof TypeMismatchError);
   }
 }

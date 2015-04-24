@@ -23,7 +23,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    accept(new PrettyPrintVisitor(builder, new ArrayList<String>()), (byte) 0);
+    accept(new PrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
     return builder.toString();
   }
 

@@ -8,8 +8,8 @@ import java.util.List;
 
 public class Concrete {
   public static class Position {
-    int line;
-    int column;
+    public int line;
+    public int column;
   }
 
   public static class SourceElement {

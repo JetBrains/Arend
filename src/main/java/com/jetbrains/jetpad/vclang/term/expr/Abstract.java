@@ -8,6 +8,7 @@ import java.util.List;
 
 public class Abstract {
   public interface Expression {
+    byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
     void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }

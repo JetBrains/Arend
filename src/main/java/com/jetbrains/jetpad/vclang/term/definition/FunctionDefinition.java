@@ -88,10 +88,10 @@ public final class FunctionDefinition extends Definition {
     }
     if (myResultType != null) {
       builder.append(" : ");
-      myResultType.prettyPrint(builder, names, (byte) 0);
+      myResultType.prettyPrint(builder, names, Abstract.Expression.PREC);
     }
     builder.append(myArrow == Arrow.RIGHT ? " => " : " <= ");
-    myTerm.prettyPrint(builder, names, (byte) 0);
+    myTerm.prettyPrint(builder, names, Abstract.Expression.PREC);
     removeFromList(names, myArguments);
   }
 

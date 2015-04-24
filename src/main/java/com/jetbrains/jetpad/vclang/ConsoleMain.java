@@ -9,6 +9,8 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
+import com.jetbrains.jetpad.vclang.term.expr.Concrete;
 import com.jetbrains.jetpad.vclang.term.visitor.NormalizeVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -53,12 +55,16 @@ public class ConsoleMain {
       }
       if (def != null) {
         StringBuilder stringBuilder = new StringBuilder();
-        def.prettyPrint(stringBuilder, new ArrayList<String>(), (byte) 0);
+        def.prettyPrint(stringBuilder, new ArrayList<String>(), Abstract.Expression.PREC);
         System.out.println(stringBuilder);
         System.out.println();
       }
     }
     for (TypeCheckingError error : errors) {
+      if (error.getExpression() instanceof Concrete.Expression) {
+        Concrete.Position position = ((Concrete.Expression) error.getExpression()).getPosition();
+        System.err.print(position.line + ":" + position.column + ": ");
+      }
       System.err.println(error);
     }
   }

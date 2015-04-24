@@ -26,7 +26,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       expr.getArgument().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
     } else {
       myBuilder.append('{');
-      expr.getArgument().accept(this, (byte) 0);
+      expr.getArgument().accept(this, Abstract.Expression.PREC);
       myBuilder.append('}');
     }
     if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
@@ -54,7 +54,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (prec > Abstract.LamExpression.PREC) myBuilder.append("(");
     myBuilder.append("\\lam ");
     for (Abstract.Argument arg : expr.getArguments()) {
-      prettyPrintArgument(arg, myBuilder, myNames, (byte) 0);
+      prettyPrintArgument(arg, myBuilder, myNames, Abstract.Expression.PREC);
       myBuilder.append(" ");
     }
     myBuilder.append("=> ");
@@ -136,7 +136,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitError(Abstract.ErrorExpression expr, Byte prec) {
     myBuilder.append("{!");
     if (expr.getExpr() != null) {
-      expr.getExpr().accept(this, (byte) 0);
+      expr.getExpr().accept(this, Abstract.Expression.PREC);
     }
     myBuilder.append('}');
     return null;
@@ -146,7 +146,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitTuple(Abstract.TupleExpression expr, Byte prec) {
     myBuilder.append('(');
     for (int i = 0; i < expr.getFields().size(); ++i) {
-      expr.getField(i).accept(this, (byte) 0);
+      expr.getField(i).accept(this, Abstract.Expression.PREC);
       if (i < expr.getFields().size() - 1) {
         myBuilder.append(", ");
       }

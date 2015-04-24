@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import org.junit.Test;
@@ -18,14 +19,14 @@ import static org.junit.Assert.assertEquals;
 public class PrettyPrintingParserTest {
   private void testExpr(Expression expected, Expression expr) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    expr.prettyPrint(builder, new ArrayList<String>(), (byte) 0);
+    expr.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     Expression result = parseExpr(builder.toString());
     assertEquals(expected, result);
   }
 
   private void testDef(FunctionDefinition expected, FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    def.prettyPrint(builder, new ArrayList<String>(), (byte) 0);
+    def.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     FunctionDefinition result = (FunctionDefinition) parseDef(builder.toString());
     assertEquals(expected.getType(), result.getType());
     assertEquals(expected.getArrow(), result.getArrow());

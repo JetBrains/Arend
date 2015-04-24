@@ -217,8 +217,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int parametersNumber = numberOfVariables(parameters);
 
     Signature signature = new Signature(okFunction.type);
-    parameters.addAll(signature.getArguments());
-    signature = new Signature(parameters, signature.getResultType());
+    if (!parameters.isEmpty()) {
+      parameters.addAll(signature.getArguments());
+      signature = new Signature(parameters, signature.getResultType());
+    }
     Abstract.Expression[] argsImp = new Abstract.Expression[signature.getArguments().size()];
     for (int i = 0; i < parametersNumber; ++i) {
       argsImp[i] = new InferHoleExpression();

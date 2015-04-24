@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,7 +89,7 @@ public abstract class Definition extends Binding implements PrettyPrintable {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    prettyPrint(builder, new ArrayList<String>(), (byte) 0);
+    prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     return builder.toString();
   }
 

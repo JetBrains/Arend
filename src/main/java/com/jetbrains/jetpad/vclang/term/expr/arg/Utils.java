@@ -67,7 +67,7 @@ public class Utils {
         newNames.add(newName);
       }
       builder.append(": ");
-      ((TypeArgument) argument).getType().prettyPrint(builder, names, (byte) 0);
+      ((TypeArgument) argument).getType().prettyPrint(builder, names, Abstract.Expression.PREC);
       builder.append(argument.getExplicit() ? ')' : '}');
       for (String name : newNames) {
         names.add(name);
@@ -79,7 +79,7 @@ public class Utils {
         type.accept(new PrettyPrintVisitor(builder, names), prec);
       } else {
         builder.append('{');
-        type.accept(new PrettyPrintVisitor(builder, names), (byte) 0);
+        type.accept(new PrettyPrintVisitor(builder, names), Abstract.Expression.PREC);
         builder.append('}');
       }
       names.add(null);

@@ -64,24 +64,4 @@ public class Signature {
   public Expression getType() {
     return myArguments.size() == 0 ? myResultType : Pi(myArguments, myResultType);
   }
-
-  /*
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    prettyPrint(builder, new ArrayList<String>(), (byte) 0);
-    return builder.toString();
-  }
-
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    for (Arg argument : myArguments) {
-      Tele(argument.isExplicit, vars(argument.name), argument.type).prettyPrint(builder, names, Abstract.VarExpression.PREC);
-      builder.append(' ');
-    }
-    if (myResultType != null) {
-      builder.append(": ");
-      myResultType.prettyPrint(builder, names, (byte) 0);
-    }
-  }
-  */
 }

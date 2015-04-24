@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.error;
 
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public class GoalError extends TypeCheckingError {
       for (Binding binding : myContext) {
         names.add(binding.getName());
       }
-      myType.prettyPrint(builder, names, (byte) 0);
+      myType.prettyPrint(builder, names, Abstract.Expression.PREC);
     }
 
     if (!myContext.isEmpty()) {
@@ -38,7 +39,7 @@ public class GoalError extends TypeCheckingError {
       List<String> names = new ArrayList<>(myContext.size());
       for (Binding binding : myContext) {
         builder.append("\n\t\t").append(binding.getName()).append(" : ");
-        binding.getType().prettyPrint(builder, names, (byte) 0);
+        binding.getType().prettyPrint(builder, names, Abstract.Expression.PREC);
         names.add(binding.getName());
       }
     }

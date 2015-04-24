@@ -79,7 +79,7 @@ public class DataDefinition extends Definition {
     }
     for (Constructor constructor : myConstructors) {
       builder.append("\n    | ");
-      constructor.prettyPrint(builder, names, (byte) 0);
+      constructor.prettyPrint(builder, names, Abstract.Expression.PREC);
     }
     removeFromList(names, myParameters);
   }
