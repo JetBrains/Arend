@@ -1,18 +1,11 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Tele;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class Concrete {
   public static class Position {
@@ -426,8 +419,6 @@ public class Concrete {
       prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
       return builder.toString();
     }
-
-    public abstract Definition checkTypes(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors);
   }
 
   public class FunctionDefinition extends Definition {
@@ -435,40 +426,6 @@ public class Concrete {
     private final Arrow myArrow;
     private final List<TelescopeArgument> myArguments;
     private final Expression myResultType;
-
-    @Override
-    public FunctionDefinition checkTypes(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors) {
-      List<TelescopeArgument> arguments = new ArrayList<>(myArguments.size());
-      int origSize = localContext.size();
-      for (TelescopeArgument argument : myArguments) {
-        CheckTypeVisitor.OKResult result = argument.getType().checkType(globalContext, localContext, Universe(), errors);
-        if (result == null) {
-          trimToSize(localContext, origSize);
-          return null;
-        }
-
-        arguments.add(Tele(argument.getExplicit(), argument.getNames(), result.expression));
-        for (String name : argument.getNames()) {
-          localContext.add(new TypedBinding(name, result.expression));
-        }
-      }
-
-      Expression expectedType;
-      if (myResultType != null) {
-        CheckTypeVisitor.OKResult typeResult = myResultType.checkType(globalContext, localContext, Universe(), errors);
-        if (typeResult == null) {
-          trimToSize(localContext, origSize);
-          return null;
-        }
-        expectedType = typeResult.expression;
-      } else {
-        expectedType = null;
-      }
-
-      CheckTypeVisitor.OKResult termResult = myTerm.checkType(globalContext, localContext, expectedType, errors);
-      trimToSize(localContext, origSize);
-      return termResult == null ? null : new FunctionDefinition(myID, getName(), getPrecedence(), getFixity(), arguments, termResult.type, myArrow, termResult.expression);
-    }
 
     @Override
     public com.jetbrains.jetpad.vclang.term.expr.Expression getType() {

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term.visitor;
+package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;

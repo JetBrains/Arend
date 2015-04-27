@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.term.error.InferedArgumentsMismatch;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;

@@ -1,21 +1,19 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
 import java.util.List;
-import java.util.Map;
 
 public class Abstract {
-  public interface Expression {
+  public interface Expression extends PrettyPrintable {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
     void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
-  public interface Argument {
+  public interface Argument extends PrettyPrintable {
     boolean getExplicit();
   }
 
@@ -116,9 +114,51 @@ public class Abstract {
     Expression getExpr();
   }
 
-  public interface Definition extends PrettyPrintable {
+  public interface Binding {
+    String getName();
+    Expression getType();
+  }
+
+  public interface Definition extends Binding {
     enum Arrow { LEFT, RIGHT }
+    enum Fixity { PREFIX, INFIX }
+    enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
+
+    class Precedence {
+      public Associativity associativity;
+      public byte priority;
+
+      public Precedence(Associativity associativity, byte priority) {
+        this.associativity = associativity;
+        this.priority = priority;
+      }
+
+      @Override
+      public String toString() {
+        String result = "infix";
+        if (associativity == Associativity.LEFT_ASSOC) {
+          result += "l";
+        }
+        if (associativity == Associativity.RIGHT_ASSOC) {
+          result += "r";
+        }
+        return result + " " + priority;
+      }
+    }
+
+    Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
+
     Universe getUniverse();
-    Definition checkTypes(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors);
+    Precedence getPrecedence();
+    Fixity getFixity();
+    <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
+  }
+
+  public interface FunctionDefinition extends Definition {
+    Definition.Arrow getArrow();
+    Expression getTerm();
+    List<? extends TelescopeArgument> getArguments();
+    TelescopeArgument getArgument(int index);
+    Expression getResultType();
   }
 }

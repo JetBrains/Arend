@@ -11,7 +11,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.term.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 

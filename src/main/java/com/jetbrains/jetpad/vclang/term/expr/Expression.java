@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.visitor.*;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,14 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr.arg;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
 
-public abstract class Argument implements Abstract.Argument, PrettyPrintable {
+public abstract class Argument implements Abstract.Argument {
   private final boolean myExplicit;
 
   public Argument(boolean explicit) {

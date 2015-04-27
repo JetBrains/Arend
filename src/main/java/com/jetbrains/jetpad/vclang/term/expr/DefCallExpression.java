@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class DefCallExpression extends Expression implements Abstract.DefCallExpression {
   private final Definition myDefinition;

@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.term.visitor.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class ErrorExpression extends Expression implements Abstract.ErrorExpression {
   private final Expression myExpr;
