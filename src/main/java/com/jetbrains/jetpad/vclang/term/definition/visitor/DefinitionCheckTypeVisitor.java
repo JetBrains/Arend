@@ -84,7 +84,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     List<Constructor> constructors = new ArrayList<>(def.getConstructors().size());
-    DataDefinition result = new DataDefinition(def.getName(), def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : universe, parameters, constructors);
 
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor newConstructor = visitConstructor(constructor, localContext);
@@ -92,7 +91,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         trimToSize(localContext, origSize);
         return null;
       }
-      newConstructor.setDataType(result);
 
       Universe maxUniverse = universe.max(newConstructor.getUniverse());
       if (maxUniverse == null) {
@@ -104,6 +102,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       universe = maxUniverse;
 
       constructors.add(newConstructor);
+    }
+
+    DataDefinition result = new DataDefinition(def.getName(), def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : universe, parameters, constructors);
+    for (Constructor constructor : constructors) {
+      constructor.setDataType(result);
     }
 
     trimToSize(localContext, origSize);

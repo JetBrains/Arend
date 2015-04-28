@@ -58,23 +58,23 @@ public class Utils {
       builder.append(argument.getExplicit() ? name : '{' + name + '}');
       names.add(name);
     } else
-    if (argument instanceof TelescopeArgument) {
+    if (argument instanceof Abstract.TelescopeArgument) {
       builder.append(argument.getExplicit() ? '(' : '{');
-      List<String> newNames = new ArrayList<>(((TelescopeArgument) argument).getNames().size());
-      for (String name : ((TelescopeArgument) argument).getNames()) {
+      List<String> newNames = new ArrayList<>(((Abstract.TelescopeArgument) argument).getNames().size());
+      for (String name : ((Abstract.TelescopeArgument) argument).getNames()) {
         String newName = renameVar(names, name);
         builder.append(newName).append(' ');
         newNames.add(newName);
       }
       builder.append(": ");
-      ((TypeArgument) argument).getType().prettyPrint(builder, names, Abstract.Expression.PREC);
+      ((Abstract.TypeArgument) argument).getType().accept(new PrettyPrintVisitor(builder, names), Abstract.Expression.PREC);
       builder.append(argument.getExplicit() ? ')' : '}');
       for (String name : newNames) {
         names.add(name);
       }
     } else
-    if (argument instanceof TypeArgument) {
-      Abstract.Expression type = ((TypeArgument) argument).getType();
+    if (argument instanceof Abstract.TypeArgument) {
+      Abstract.Expression type = ((Abstract.TypeArgument) argument).getType();
       if (argument.getExplicit()) {
         type.accept(new PrettyPrintVisitor(builder, names), prec);
       } else {

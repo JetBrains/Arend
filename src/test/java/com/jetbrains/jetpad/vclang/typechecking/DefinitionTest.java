@@ -12,7 +12,9 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
@@ -76,8 +78,13 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
     constructors.add(new Constructor("con2", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2, def));
 
+    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
+    definitions.put("D", def);
+    definitions.put("con1", constructors.get(0));
+    definitions.put("con2", constructors.get(1));
+
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitData(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(definitions, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Pi(parameters, Universe(0)), def.getType());
@@ -105,8 +112,13 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Index(1)));
     constructors.add(new Constructor("con2", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2, def));
 
+    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
+    definitions.put("D", def);
+    definitions.put("con1", constructors.get(0));
+    definitions.put("con2", constructors.get(1));
+
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitData(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(definitions, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Pi(parameters, Universe(6, 7)), def.getType());
@@ -123,9 +135,13 @@ public class DefinitionTest {
     Constructor con = new Constructor("con", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     constructors.add(con);
 
+    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
+    definitions.put("D", def);
+    definitions.put("con", con);
+
     Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, new ArrayList<Binding>(), null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(definitions, new ArrayList<Binding>(), null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
     assertEquals(Apps(DefCall(def), Nat()), result.type);
@@ -144,7 +160,11 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DefCall(def), Pi(Nat(), Nat())), Nat())));
 
-    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, localContext, null, errors);
+    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
+    definitions.put("D", def);
+    definitions.put("con", con);
+
+    CheckTypeVisitor.OKResult result = expr.checkType(definitions, localContext, null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
     assertEquals(Nat(), result.type);
@@ -163,7 +183,11 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DefCall(def), Nat())), Pi(Nat(), Nat()))));
 
-    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, localContext, null, errors);
+    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
+    definitions.put("D", def);
+    definitions.put("con", con);
+
+    CheckTypeVisitor.OKResult result = expr.checkType(definitions, localContext, null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);

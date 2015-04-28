@@ -402,7 +402,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Definition def = myGlobalContext.get(expr.getDefinition().getName());
     if (def == null) {
-      NotInScopeError error = new NotInScopeError(expr);
+      NotInScopeError error = new NotInScopeError(Var(expr.getDefinition().getName()));
       expr.setWellTyped(Error(null, error));
       myErrors.add(error);
       return null;
