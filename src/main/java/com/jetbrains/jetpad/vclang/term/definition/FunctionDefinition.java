@@ -17,14 +17,6 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   private final List<TelescopeArgument> myArguments;
   private final Expression myResultType;
 
-  protected FunctionDefinition(int id, String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
-    super(id, name, precedence, fixity, null);
-    myArguments = arguments;
-    myResultType = resultType;
-    myArrow = arrow;
-    myTerm = term;
-  }
-
   public FunctionDefinition(String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
     super(name, precedence, fixity, null);
     myArguments = arguments;

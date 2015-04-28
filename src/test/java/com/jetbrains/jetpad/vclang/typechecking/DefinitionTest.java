@@ -1,7 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
@@ -20,9 +22,9 @@ public class DefinitionTest {
   @Test
   public void function() {
     // f : N => 0;
-    FunctionDefinition def = new FunctionDefinition("f", new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition("f", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.RIGHT, Zero());
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = def.checkTypes(Prelude.DEFINITIONS, new ArrayList<Binding>(), errors);
+    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitFunction(def, new ArrayList<Binding>());
     assertNotNull(def);
     assertEquals(0, errors.size());
   }
@@ -30,9 +32,9 @@ public class DefinitionTest {
   @Test
   public void functionUntyped() {
     // f => 0;
-    FunctionDefinition def = new FunctionDefinition("f", new ArrayList<TelescopeArgument>(), null, Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition("f", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), null, Definition.Arrow.RIGHT, Zero());
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = def.checkTypes(Prelude.DEFINITIONS, new ArrayList<Binding>(), errors);
+    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Nat(), def.getType());
@@ -44,9 +46,9 @@ public class DefinitionTest {
     List<TelescopeArgument> arguments = new ArrayList<>();
     arguments.add(Tele(vars("x"), Nat()));
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
-    FunctionDefinition def = new FunctionDefinition("f", arguments, null, Definition.Arrow.RIGHT, Index(0));
+    FunctionDefinition def = new FunctionDefinition("f", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, null, Definition.Arrow.RIGHT, Index(0));
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = def.checkTypes(Prelude.DEFINITIONS, new ArrayList<Binding>(), errors);
+    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), def.getType());
@@ -62,20 +64,20 @@ public class DefinitionTest {
     parameters.add(Tele(vars("b"), Index(2)));
 
     List<Constructor> constructors = new ArrayList<>(2);
-    DataDefinition def = new DataDefinition("D", null, parameters, constructors);
+    DataDefinition def = new DataDefinition("D", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, parameters, constructors);
 
     List<TypeArgument> arguments1 = new ArrayList<>(2);
     arguments1.add(Tele(vars("x"), Index(4)));
     arguments1.add(TypeArg(Apps(Index(3), Index(0), Index(1))));
-    constructors.add(new Constructor("con1", null, arguments1, def));
+    constructors.add(new Constructor("con1", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(2);
     arguments2.add(Tele(false, vars("y"), Index(3)));
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
-    constructors.add(new Constructor("con2", null, arguments2, def));
+    constructors.add(new Constructor("con2", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2, def));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = def.checkTypes(Prelude.DEFINITIONS, new ArrayList<Binding>(), errors);
+    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Pi(parameters, Universe(0)), def.getType());
@@ -90,21 +92,21 @@ public class DefinitionTest {
     List<TypeArgument> parameters = new ArrayList<>(1);
     parameters.add(Tele(vars("A"), Universe(2, 7)));
     List<Constructor> constructors = new ArrayList<>(2);
-    DataDefinition def = new DataDefinition("D", null, parameters, constructors);
+    DataDefinition def = new DataDefinition("D", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, parameters, constructors);
 
     List<TypeArgument> arguments1 = new ArrayList<>(2);
     arguments1.add(Tele(vars("X"), Universe(5, 1)));
     arguments1.add(TypeArg(Index(0)));
-    constructors.add(new Constructor("con1", null, arguments1, def));
+    constructors.add(new Constructor("con1", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(3);
     arguments2.add(Tele(vars("Y"), Universe(3, 2)));
     arguments2.add(TypeArg(Index(1)));
     arguments2.add(TypeArg(Index(1)));
-    constructors.add(new Constructor("con2", null, arguments2, def));
+    constructors.add(new Constructor("con2", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2, def));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = def.checkTypes(Prelude.DEFINITIONS, new ArrayList<Binding>(), errors);
+    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Pi(parameters, Universe(6, 7)), def.getType());
@@ -117,8 +119,8 @@ public class DefinitionTest {
   public void constructor() {
     // \data D (A : \Type0) = con (B : \Type1) A B |- con Nat zero zero : D Nat
     List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition("D", null, args(Tele(vars("A"), Universe(0))), constructors);
-    Constructor con = new Constructor("con", null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    DataDefinition def = new DataDefinition("D", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("A"), Universe(0))), constructors);
+    Constructor con = new Constructor("con", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     constructors.add(con);
 
     Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
@@ -133,8 +135,8 @@ public class DefinitionTest {
   public void constructorInfer() {
     // \data D (A : \Type0) = con (B : \Type1) A B, f : D (Nat -> Nat) -> Nat |- f (con Nat (\lam x => x) zero) : Nat
     List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition("D", null, args(Tele(vars("A"), Universe(0))), constructors);
-    Constructor con = new Constructor("con", null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    DataDefinition def = new DataDefinition("D", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("A"), Universe(0))), constructors);
+    Constructor con = new Constructor("con", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     constructors.add(con);
 
     Expression expr = Apps(Index(0), Apps(DefCall(con), Nat(), Lam("x", Index(0)), Zero()));
@@ -152,8 +154,8 @@ public class DefinitionTest {
   public void constructorConst() {
     // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
     List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition("D", null, args(Tele(vars("A"), Universe(0))), constructors);
-    Constructor con = new Constructor("con", null, args(TypeArg(Index(0))), def);
+    DataDefinition def = new DataDefinition("D", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("A"), Universe(0))), constructors);
+    Constructor con = new Constructor("con", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(TypeArg(Index(0))), def);
     constructors.add(con);
 
     Expression expr = Apps(Index(0), DefCall(con));

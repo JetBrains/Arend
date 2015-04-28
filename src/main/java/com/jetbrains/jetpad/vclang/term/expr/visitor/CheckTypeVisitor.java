@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -399,7 +400,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
+    Definition def = myGlobalContext.get(expr.getDefinition().getName());
+    if (def == null) {
+      NotInScopeError error = new NotInScopeError(expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    } else {
+      return checkResultImplicit(expectedType, new OKResult(DefCall(def), def.getType(), null), expr);
+    }
   }
 
   @Override
@@ -853,7 +862,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
     Arg[] args = new Arg[] { new Arg(true, null, expr.getLeft()), new Arg(true, null, expr.getRight()) };
-    Result result = typeCheckApps(DefCall(expr.getBinOp()), args, expectedType, expr);
+    Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
+    Result result = typeCheckApps(new Concrete.DefCallExpression(position, expr.getBinOp()), args, expectedType, expr);
     if (!(result instanceof OKResult) || !(result.expression instanceof AppExpression)) return result;
     AppExpression appExpr1 = (AppExpression) result.expression;
     if (!(appExpr1.getFunction() instanceof AppExpression)) return result;

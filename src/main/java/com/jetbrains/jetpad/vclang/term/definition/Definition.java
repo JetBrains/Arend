@@ -1,26 +1,16 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 
 import java.util.ArrayList;
-import java.util.List;
 
-public abstract class Definition extends Binding implements PrettyPrintable, Abstract.Definition {
-  protected final int myID;
+public abstract class Definition extends Binding implements Abstract.Definition {
+  private final int myID;
   private static int idCounter = 0;
   private final Precedence myPrecedence;
   private final Fixity myFixity;
   private final Universe myUniverse;
-
-  protected Definition(int id, String name, Precedence precedence, Fixity fixity, Universe universe) {
-    super(name);
-    myID = id;
-    myPrecedence = precedence;
-    myFixity = fixity;
-    myUniverse = universe;
-  }
 
   public Definition(String name, Precedence precedence, Fixity fixity, Universe universe) {
     super(name);
@@ -56,12 +46,7 @@ public abstract class Definition extends Binding implements PrettyPrintable, Abs
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+    accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
     return builder.toString();
-  }
-
-  @Override
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    accept(new PrettyPrintVisitor(builder, names), prec);
   }
 }

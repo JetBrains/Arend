@@ -1,16 +1,27 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Concrete {
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
+
+public final class Concrete {
+  private Concrete() {}
+
   public static class Position {
     public int line;
     public int column;
+
+    public Position(int line, int column) {
+      this.line = line;
+      this.column = column;
+    }
   }
 
   public static class SourceElement {
@@ -33,6 +44,13 @@ public class Concrete {
     @Override
     public void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
     }
+
+    @Override
+    public String toString() {
+      StringBuilder builder = new StringBuilder();
+      accept(new PrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
+      return builder.toString();
+    }
   }
 
   public static class Argument extends SourceElement implements Abstract.Argument {
@@ -46,6 +64,11 @@ public class Concrete {
     @Override
     public boolean getExplicit() {
       return myExplicit;
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+      prettyPrintArgument(this, builder, names, prec);
     }
   }
 
@@ -69,6 +92,10 @@ public class Concrete {
     public TypeArgument(Position position, boolean explicit, Expression type) {
       super(position, explicit);
       myType = type;
+    }
+
+    public TypeArgument(boolean explicit, Expression type) {
+      this(type.getPosition(), explicit, type);
     }
 
     @Override
@@ -132,9 +159,9 @@ public class Concrete {
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
     private final Expression myLeft;
     private final Expression myRight;
-    private final Definition myBinOp;
+    private final Abstract.Definition myBinOp;
 
-    public BinOpExpression(Position position, Expression left, Definition binOp, Expression right) {
+    public BinOpExpression(Position position, Expression left, Abstract.Definition binOp, Expression right) {
       super(position);
       myLeft = left;
       myRight = right;
@@ -152,7 +179,7 @@ public class Concrete {
     }
 
     @Override
-    public Definition getBinOp() {
+    public Abstract.Definition getBinOp() {
       return myBinOp;
     }
 
@@ -163,15 +190,15 @@ public class Concrete {
   }
 
   public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
-    private final Definition myDefinition;
+    private final Abstract.Definition myDefinition;
 
-    public DefCallExpression(Position position, Definition definition) {
+    public DefCallExpression(Position position, Abstract.Definition definition) {
       super(position);
       myDefinition = definition;
     }
 
     @Override
-    public Definition getDefinition() {
+    public Abstract.Definition getDefinition() {
       return myDefinition;
     }
 
@@ -400,12 +427,40 @@ public class Concrete {
     }
   }
 
-  public abstract class Definition extends Binding implements Abstract.Definition {
+  public static abstract class Binding extends SourceElement implements Abstract.Binding {
+    private final String myName;
+
+    public Binding(Position position, String name) {
+      super(position);
+      myName = name;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
+    }
+  }
+
+  public static abstract class Definition extends Binding implements Abstract.Definition {
+    private final Precedence myPrecedence;
+    private final Fixity myFixity;
     private final Universe myUniverse;
 
-    public Definition(String name, Universe universe) {
-      super(name);
+    public Definition(Position position, String name, Precedence precedence, Fixity fixity, Universe universe) {
+      super(position, name);
+      myPrecedence = precedence;
+      myFixity = fixity;
       myUniverse = universe;
+    }
+
+    @Override
+    public Precedence getPrecedence() {
+      return myPrecedence;
+    }
+
+    @Override
+    public Fixity getFixity() {
+      return myFixity;
     }
 
     @Override
@@ -416,25 +471,120 @@ public class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+      accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
       return builder.toString();
     }
   }
 
-  public class FunctionDefinition extends Definition {
+  public static class FunctionDefinition extends Definition implements Abstract.FunctionDefinition {
     private final Expression myTerm;
-    private final Arrow myArrow;
+    private final Abstract.Definition.Arrow myArrow;
     private final List<TelescopeArgument> myArguments;
     private final Expression myResultType;
 
-    @Override
-    public com.jetbrains.jetpad.vclang.term.expr.Expression getType() {
-      return myArguments.isEmpty() ? myResultType : Pi(new ArrayList<TypeArgument>(myArguments), myResultType);
+    public FunctionDefinition(Position position, String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+      super(position, name, precedence, fixity, null);
+      myArguments = arguments;
+      myResultType = resultType;
+      myArrow = arrow;
+      myTerm = term;
     }
 
     @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+    public Abstract.Definition.Arrow getArrow() {
+      return myArrow;
+    }
 
+    @Override
+    public Expression getTerm() {
+      return myTerm;
+    }
+
+    @Override
+    public List<TelescopeArgument> getArguments() {
+      return myArguments;
+    }
+
+    @Override
+    public TelescopeArgument getArgument(int index) {
+      return myArguments.get(index);
+    }
+
+    @Override
+    public Expression getResultType() {
+      return myResultType;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitFunction(this, params);
+    }
+  }
+
+  public static class DataDefinition extends Definition implements Abstract.DataDefinition {
+    private final List<Constructor> myConstructors;
+    private final List<TypeArgument> myParameters;
+
+    public DataDefinition(Position position, String name, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+      super(position, name, precedence, fixity, universe);
+      myParameters = parameters;
+      myConstructors = constructors;
+    }
+
+    @Override
+    public List<TypeArgument> getParameters() {
+      return myParameters;
+    }
+
+    @Override
+    public TypeArgument getParameter(int index) {
+      return myParameters.get(index);
+    }
+
+    @Override
+    public List<Constructor> getConstructors() {
+      return myConstructors;
+    }
+
+    @Override
+    public Constructor getConstructor(int index) {
+      return myConstructors.get(index);
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitData(this, params);
+    }
+  }
+
+  public static class Constructor extends Definition implements Abstract.Constructor {
+    private final DataDefinition myDataType;
+    private final List<TypeArgument> myArguments;
+
+    public Constructor(Position position, String name, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
+      super(position, name, precedence, fixity, universe);
+      myArguments = arguments;
+      myDataType = dataType;
+    }
+
+    @Override
+    public List<? extends Abstract.TypeArgument> getArguments() {
+      return myArguments;
+    }
+
+    @Override
+    public Abstract.TypeArgument getArgument(int index) {
+      return myArguments.get(index);
+    }
+
+    @Override
+    public DataDefinition getDataType() {
+      return myDataType;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitConstructor(this, params);
     }
   }
 }

@@ -6,8 +6,10 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
 import java.util.List;
 
-public class Abstract {
-  public interface Expression extends PrettyPrintable {
+public final class Abstract {
+  private Abstract() {}
+
+  public interface Expression {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
     void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
@@ -116,7 +118,6 @@ public class Abstract {
 
   public interface Binding {
     String getName();
-    Expression getType();
   }
 
   public interface Definition extends Binding {
@@ -160,5 +161,18 @@ public class Abstract {
     List<? extends TelescopeArgument> getArguments();
     TelescopeArgument getArgument(int index);
     Expression getResultType();
+  }
+
+  public interface DataDefinition extends Definition {
+    List<? extends TypeArgument> getParameters();
+    TypeArgument getParameter(int index);
+    List<? extends Constructor> getConstructors();
+    Constructor getConstructor(int index);
+  }
+
+  public interface Constructor extends Definition {
+    List<? extends TypeArgument> getArguments();
+    TypeArgument getArgument(int index);
+    DataDefinition getDataType();
   }
 }

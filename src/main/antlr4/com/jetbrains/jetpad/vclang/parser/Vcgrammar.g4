@@ -78,3 +78,4 @@ COMMENT : '{-' .*? '-}' -> skip;
 COLON : ':';
 LAMBDA : '\\lam';
 BIN_OP : [~!@#$%^&*-+=<>?/:|.]+;
+ARROW : '->';

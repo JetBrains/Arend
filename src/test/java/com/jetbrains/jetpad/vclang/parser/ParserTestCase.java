@@ -1,11 +1,15 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,28 +23,34 @@ public class ParserTestCase {
     return new VcgrammarParser(tokens);
   }
 
-  public static Expression parseExpr(String text, Map<String, Definition> definitions) {
+  public static Concrete.Expression parseExpr(String text, Map<String, Definition> definitions) {
     BuildVisitor builder = new BuildVisitor(definitions);
-    Expression result = builder.visitExpr(parse(text).expr());
+    Concrete.Expression result = builder.visitExpr(parse(text).expr());
     assertEquals(0, builder.getErrors().size());
     return result;
   }
 
-  public static Expression parseExpr(String text) {
+  public static Concrete.Expression parseExpr(String text) {
     return parseExpr(text, Prelude.DEFINITIONS);
   }
 
-  public static Definition parseDef(String text) {
+  public static Concrete.Definition parseDef(String text) {
     BuildVisitor builder = new BuildVisitor(Prelude.DEFINITIONS);
-    Definition result = builder.visitDef(parse(text).def());
+    Concrete.Definition result = builder.visitDef(parse(text).def());
     assertEquals(0, builder.getErrors().size());
     return result;
   }
 
-  public static List<Definition> parseDefs(String text) {
+  public static List<Concrete.Definition> parseDefs(String text) {
     BuildVisitor builder = new BuildVisitor(Prelude.DEFINITIONS);
-    List<Definition> result = builder.visitDefs(parse(text).defs());
+    List<Concrete.Definition> result = builder.visitDefs(parse(text).defs());
     assertEquals(0, builder.getErrors().size());
     return result;
+  }
+
+  public static boolean compare(Expression expr1, Abstract.Expression expr2) {
+    List<CompareVisitor.Equation> equations = new ArrayList<>();
+    boolean result = expr2.accept(new CompareVisitor(CompareVisitor.CMP.EQ, equations), expr1);
+    return result && equations.size() == 0;
   }
 }

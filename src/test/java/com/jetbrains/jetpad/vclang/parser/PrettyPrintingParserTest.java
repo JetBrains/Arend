@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import org.junit.Test;
@@ -11,26 +13,30 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PrettyPrintingParserTest {
   private void testExpr(Expression expected, Expression expr) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     expr.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
-    Expression result = parseExpr(builder.toString());
-    assertEquals(expected, result);
+    Concrete.Expression result = parseExpr(builder.toString());
+    assertTrue(compare(expected, result));
   }
 
   private void testDef(FunctionDefinition expected, FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    def.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
-    FunctionDefinition result = (FunctionDefinition) parseDef(builder.toString());
-    assertEquals(expected.getType(), result.getType());
+    def.accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
+    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(builder.toString());
+    assertEquals(expected.getArguments().size(), result.getArguments().size());
+    for (int i = 0; i < expected.getArguments().size(); ++i) {
+      assertTrue(compare(expected.getArgument(i).getType(), result.getArgument(i).getType()));
+    }
+    assertTrue(compare(expected.getResultType(), result.getResultType()));
     assertEquals(expected.getArrow(), result.getArrow());
-    assertEquals(expected.getTerm(), result.getTerm());
+    assertTrue(compare(expected.getTerm(), result.getTerm()));
   }
 
   @Test
@@ -62,8 +68,8 @@ public class PrettyPrintingParserTest {
     // f (x : N) : N x => \y z. y z;
     List<TelescopeArgument> arguments = new ArrayList<>();
     arguments.add(Tele(vars("x"), Nat()));
-    FunctionDefinition expected = new FunctionDefinition("f", arguments, Apps(Nat(), Var("x")), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Var("y"), Var("z"))));
-    FunctionDefinition def = new FunctionDefinition("f", arguments, Apps(Nat(), Index(0)), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Index(1), Index(0))));
+    FunctionDefinition expected = new FunctionDefinition("f", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, Apps(Nat(), Var("x")), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Var("y"), Var("z"))));
+    FunctionDefinition def      = new FunctionDefinition("f", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, Apps(Nat(), Index(0)), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Index(1), Index(0))));
     testDef(expected, def);
   }
 }
