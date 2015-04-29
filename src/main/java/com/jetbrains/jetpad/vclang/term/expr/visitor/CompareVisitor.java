@@ -251,4 +251,30 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     BinOpExpression otherBinOp = (BinOpExpression) other;
     return expr.getBinOp().equals(otherBinOp.getBinOp()) && expr.getLeft().accept(this, otherBinOp.getLeft()) && expr.getRight().accept(this, otherBinOp.getRight());
   }
+
+  @Override
+  public Boolean visitElim(Abstract.ElimExpression expr, Expression other) {
+    if (expr == other) return true;
+    if (!(other instanceof ElimExpression)) return false;
+
+    ElimExpression otherElim = (ElimExpression) other;
+    if (expr.getElimType() != otherElim.getElimType() || expr.getClauses().size() != otherElim.getClauses().size() || !expr.getExpression().accept(this, otherElim.getExpression())) return false;
+    for (int i = 0; i < expr.getClauses().size(); ++i) {
+      if (!visitClause(expr.getClause(i), otherElim.getClause(i))) return false;
+    }
+    return true;
+  }
+
+  public boolean visitClause(Abstract.Clause clause, Clause other) {
+    if (!other.getName().equals(clause.getName()) || clause.getArrow() != other.getArrow()) return false;
+    List<Abstract.Expression> args1 = new ArrayList<>();
+    Abstract.Expression expr1 = lamArgs(clause.getExpression(), args1);
+    List<Abstract.Expression> args2 = new ArrayList<>();
+    Abstract.Expression expr2 = lamArgs(other.getExpression(), args2);
+    if (args1.size() != args2.size() || !expr1.accept(this, (Expression) expr2)) return false;
+    for (int i = 0; i < args1.size(); ++i) {
+      if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, (Expression) args2.get(i))) return false;
+    }
+    return true;
+  }
 }

@@ -873,4 +873,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     expr.setWellTyped(result.expression);
     return result;
   }
+
+  @Override
+  public Result visitElim(Abstract.ElimExpression expr, Expression params) {
+    // TODO: Type checking for eliminators.
+    return null;
+  }
 }

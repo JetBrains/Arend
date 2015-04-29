@@ -108,4 +108,21 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
     InferHoleExpression result = expr.getLeft().accept(this);
     return result == null ? expr.getRight().accept(this) : result;
   }
+
+  @Override
+  public InferHoleExpression visitElim(ElimExpression expr) {
+    InferHoleExpression result = expr.getExpression().accept(this);
+    if (result != null) return result;
+    for (Clause clause : expr.getClauses()) {
+      result = clause.getExpression().accept(this);
+      if (result != null) return result;
+      for (Argument argument : clause.getArguments()) {
+        if (argument instanceof TypeArgument) {
+          result = ((TypeArgument) argument).getType().accept(this);
+          if (result != null) return result;
+        }
+      }
+    }
+    return null;
+  }
 }

@@ -11,10 +11,12 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgumen
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void> {
   private final StringBuilder myBuilder;
   private final List<String> myNames;
+  private int myIndent;
 
-  public PrettyPrintVisitor(StringBuilder builder, List<String> names) {
+  public PrettyPrintVisitor(StringBuilder builder, List<String> names, int indent) {
     myBuilder = builder;
     myNames = names;
+    myIndent = indent;
   }
 
   @Override
@@ -54,7 +56,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (prec > Abstract.LamExpression.PREC) myBuilder.append("(");
     myBuilder.append("\\lam ");
     for (Abstract.Argument arg : expr.getArguments()) {
-      prettyPrintArgument(arg, myBuilder, myNames, Abstract.Expression.PREC);
+      prettyPrintArgument(arg, myBuilder, myNames, Abstract.Expression.PREC, myIndent);
       myBuilder.append(" ");
     }
     myBuilder.append("=> ");
@@ -89,7 +91,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     } else {
       myBuilder.append("\\Pi ");
       for (Abstract.Argument argument : expr.getArguments()) {
-        prettyPrintArgument(argument, myBuilder, myNames, domPrec);
+        prettyPrintArgument(argument, myBuilder, myNames, domPrec, myIndent);
         myBuilder.append(' ');
       }
     }
@@ -161,7 +163,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append("\\Sigma");
     for (Abstract.Argument argument : expr.getArguments()) {
       myBuilder.append(' ');
-      prettyPrintArgument(argument, myBuilder, myNames, (byte) (Abstract.AppExpression.PREC + 1));
+      prettyPrintArgument(argument, myBuilder, myNames, (byte) (Abstract.AppExpression.PREC + 1), myIndent);
     }
     if (prec > Abstract.SigmaExpression.PREC) myBuilder.append(')');
     return null;
@@ -175,5 +177,33 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     expr.getRight().accept(this, (byte) (expr.getBinOp().getPrecedence().priority + (expr.getBinOp().getPrecedence().associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
     if (prec > expr.getBinOp().getPrecedence().priority) myBuilder.append(')');
     return null;
+  }
+
+  @Override
+  public Void visitElim(Abstract.ElimExpression expr, Byte prec) {
+    if (prec > Abstract.ElimExpression.PREC) myBuilder.append('(');
+    myBuilder.append(expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM ? "\\elim " : "\\case ");
+    expr.getExpression().accept(this, Abstract.Expression.PREC);
+    myBuilder.append(' ');
+    ++myIndent;
+    for (Abstract.Clause clause : expr.getClauses()) {
+      printIndent();
+      myBuilder.append("| ").append(clause.getName());
+      for (Abstract.Argument argument : clause.getArguments()){
+        myBuilder.append(' ');
+        prettyPrintArgument(argument, myBuilder, myNames, (byte) (Abstract.AppExpression.PREC + 1), myIndent);
+      }
+      myBuilder.append(clause.getArrow() == Abstract.Definition.Arrow.LEFT ? " <= " : " => ");
+      clause.getExpression().accept(this, Abstract.Expression.PREC);
+    }
+    --myIndent;
+    if (prec > Abstract.ElimExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
+  private void printIndent() {
+    for (int i = 0; i < myIndent; ++i) {
+      myBuilder.append('\t');
+    }
   }
 }

@@ -255,15 +255,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return arguments;
   }
 
-  @Override
-  public Concrete.Expression visitLam(LamContext ctx) {
-    List<Concrete.Argument> arguments = new ArrayList<>(ctx.tele().size());
-    for (TeleContext arg : ctx.tele()) {
+  private List<Concrete.Argument> visitLamTeles(List<TeleContext> tele) {
+    List<Concrete.Argument> arguments = new ArrayList<>(tele.size());
+    for (TeleContext arg : tele) {
       List<Concrete.Argument> args = visitLamTele(arg);
       if (args == null) return null;
       arguments.addAll(args);
     }
-    return new Concrete.LamExpression(tokenPosition(ctx.getStart()), arguments, visitExpr(ctx.expr()));
+    return arguments;
+  }
+
+  @Override
+  public Concrete.Expression visitLam(LamContext ctx) {
+    return new Concrete.LamExpression(tokenPosition(ctx.getStart()), visitLamTeles(ctx.tele()), visitExpr(ctx.expr()));
   }
 
   @Override
@@ -410,8 +414,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitExprElim(ExprElimContext ctx) {
-    // TODO: Write this.
-    return null;
+    List<Concrete.Clause> clauses = new ArrayList<>(ctx.clause().size());
+    for (ClauseContext clause : ctx.clause()) {
+      clauses.add(visitClause(clause));
+    }
+    Abstract.ElimExpression.ElimType elimType = ctx.elimCase() instanceof ElimContext ? Abstract.ElimExpression.ElimType.ELIM : Abstract.ElimExpression.ElimType.CASE;
+    return new Concrete.ElimExpression(tokenPosition(ctx.getStart()), elimType, visitExpr(ctx.expr()), clauses);
+  }
+
+  @Override
+  public Concrete.Clause visitClause(ClauseContext ctx) {
+    boolean isPrefix = ctx.name() instanceof NameIdContext;
+    String name = isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
+    Definition.Arrow arrow = ctx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
+    List<Concrete.Argument> arguments = visitLamTeles(ctx.tele());
+    return new Concrete.Clause(tokenPosition(ctx.getStart()), name, arguments, arrow, visitExpr(ctx.expr()));
   }
 
   private static Concrete.Position tokenPosition(Token token) {

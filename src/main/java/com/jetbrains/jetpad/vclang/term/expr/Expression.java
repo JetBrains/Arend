@@ -24,7 +24,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    accept(new PrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
+    accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
     return builder.toString();
   }
 
@@ -38,7 +38,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    accept(new PrettyPrintVisitor(builder, names), prec);
+    accept(new PrettyPrintVisitor(builder, names, 0), prec);
   }
 
   public final Expression liftIndex(int from, int on) {

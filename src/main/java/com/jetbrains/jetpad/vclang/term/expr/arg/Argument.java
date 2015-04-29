@@ -28,6 +28,6 @@ public abstract class Argument implements Abstract.Argument {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    prettyPrintArgument(this, builder, names, prec);
+    prettyPrintArgument(this, builder, names, prec, 0);
   }
 }

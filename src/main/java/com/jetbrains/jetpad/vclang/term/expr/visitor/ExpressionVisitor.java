@@ -19,4 +19,5 @@ public interface ExpressionVisitor<T> {
   T visitTuple(TupleExpression expr);
   T visitSigma(SigmaExpression expr);
   T visitBinOp(BinOpExpression expr);
+  T visitElim(ElimExpression expr);
 }

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -157,5 +158,9 @@ public class ExpressionFactory {
 
   public static BinOpExpression BinOp(Expression left, Definition binOp, Expression right) {
     return new BinOpExpression(left, binOp, right);
+  }
+
+  public static ElimExpression Elim(Abstract.ElimExpression.ElimType elimType, Expression expression, List<Clause> clauses) {
+    return new ElimExpression(elimType, expression, clauses);
   }
 }

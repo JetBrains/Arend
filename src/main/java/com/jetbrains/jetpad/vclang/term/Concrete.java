@@ -48,7 +48,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
+      accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
       return builder.toString();
     }
   }
@@ -68,7 +68,7 @@ public final class Concrete {
 
     @Override
     public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      prettyPrintArgument(this, builder, names, prec);
+      prettyPrintArgument(this, builder, names, prec, 0);
     }
   }
 
@@ -424,6 +424,84 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitZero(this, params);
+    }
+  }
+
+  public static class ElimExpression extends Expression implements Abstract.ElimExpression {
+    private final ElimType myElimType;
+    private final Expression myExpression;
+    private final List<Clause> myClauses;
+
+    public ElimExpression(Position position, ElimType elimType, Expression expression, List<Clause> clauses) {
+      super(position);
+      myElimType = elimType;
+      myExpression = expression;
+      myClauses = clauses;
+    }
+
+    @Override
+    public ElimType getElimType() {
+      return myElimType;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public List<Clause> getClauses() {
+      return myClauses;
+    }
+
+    @Override
+    public Clause getClause(int index) {
+      return myClauses.get(index);
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitElim(this, params);
+    }
+  }
+
+  public static class Clause extends SourceElement implements Abstract.Clause {
+    private final String myName;
+    private final List<Argument> myArguments;
+    private final Definition.Arrow myArrow;
+    private final Expression myExpression;
+
+    public Clause(Position position, String name, List<Argument> arguments, Abstract.Definition.Arrow arrow, Expression expression) {
+      super(position);
+      myName = name;
+      myArguments = arguments;
+      myArrow = arrow;
+      myExpression = expression;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
+    public List<Argument> getArguments() {
+      return myArguments;
+    }
+
+    @Override
+    public Argument getArgument(int index) {
+      return myArguments.get(index);
+    }
+
+    @Override
+    public Definition.Arrow getArrow() {
+      return myArrow;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
     }
   }
 

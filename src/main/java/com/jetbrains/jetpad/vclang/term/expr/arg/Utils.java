@@ -52,7 +52,7 @@ public class Utils {
     return result;
   }
 
-  public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, byte prec) {
+  public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, byte prec, int indent) {
     if (argument instanceof Abstract.NameArgument) {
       String name = renameVar(names, ((Abstract.NameArgument) argument).getName());
       builder.append(argument.getExplicit() ? name : '{' + name + '}');
@@ -67,7 +67,7 @@ public class Utils {
         newNames.add(newName);
       }
       builder.append(": ");
-      ((Abstract.TypeArgument) argument).getType().accept(new PrettyPrintVisitor(builder, names), Abstract.Expression.PREC);
+      ((Abstract.TypeArgument) argument).getType().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.Expression.PREC);
       builder.append(argument.getExplicit() ? ')' : '}');
       for (String name : newNames) {
         names.add(name);
@@ -76,10 +76,10 @@ public class Utils {
     if (argument instanceof Abstract.TypeArgument) {
       Abstract.Expression type = ((Abstract.TypeArgument) argument).getType();
       if (argument.getExplicit()) {
-        type.accept(new PrettyPrintVisitor(builder, names), prec);
+        type.accept(new PrettyPrintVisitor(builder, names, indent), prec);
       } else {
         builder.append('{');
-        type.accept(new PrettyPrintVisitor(builder, names), Abstract.Expression.PREC);
+        type.accept(new PrettyPrintVisitor(builder, names, indent), Abstract.Expression.PREC);
         builder.append('}');
       }
       names.add(null);

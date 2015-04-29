@@ -27,10 +27,10 @@ expr  : binOpLeft* atom+                # binOp
       | '\\Pi' tele+ '->' expr          # pi
       | '\\Sigma' tele+                 # sigma
       | '\\lam' tele+ '=>' expr         # lam
-      | elimCase expr clause*           # exprElim
+      | elimCase expr clause* ';'?      # exprElim
       ;
 
-clause : '|' name ID* arrow expr;
+clause : '|' name tele* arrow expr;
 
 elimCase : '\\elim'                     # elim
          | '\\case'                     # case

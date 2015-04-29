@@ -116,6 +116,23 @@ public final class Abstract {
     Expression getExpr();
   }
 
+  public interface ElimExpression extends Expression {
+    byte PREC = -8;
+    enum ElimType { ELIM, CASE }
+    ElimType getElimType();
+    Expression getExpression();
+    List<? extends Clause> getClauses();
+    Clause getClause(int index);
+  }
+
+  public interface Clause {
+    String getName();
+    List<? extends Argument> getArguments();
+    Argument getArgument(int index);
+    Definition.Arrow getArrow();
+    Expression getExpression();
+  }
+
   public interface Binding {
     String getName();
   }

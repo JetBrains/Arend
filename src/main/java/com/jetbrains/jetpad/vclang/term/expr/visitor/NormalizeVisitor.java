@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
@@ -52,6 +52,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return Apps(function1, myMode == Mode.WHNF ? expr.getArgument() : expr.getArgument().accept(this));
   }
 
+  // TODO: Fix normalization of function calls with <=.
   private Expression visitDefCall(Expression expr, Definition function, Expression... expressions) {
     if (function instanceof FunctionDefinition) {
       return Apps(((FunctionDefinition) function).getTerm(), expressions).accept(this);
@@ -72,22 +73,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLam(LamExpression expr) {
-    if (myMode == Mode.NF) {
-      List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
-      for (Argument argument : expr.getArguments()) {
-        if (argument instanceof NameArgument) {
-          arguments.add(argument);
-        } else
-        if (argument instanceof TelescopeArgument) {
-          arguments.add(new TelescopeArgument(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), ((TypeArgument) argument).getType().accept(this)));
-        } else {
-          throw new IllegalStateException();
-        }
-      }
-      return Lam(arguments, expr.getBody().accept(this));
-    } else {
-      return expr;
-    }
+    return myMode == Mode.NF ? Lam(visitArguments(expr.getArguments()), expr.getBody().accept(this)) : expr;
   }
 
   @Override
@@ -100,7 +86,23 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return expr;
   }
 
-  private List<TypeArgument> visitArguments(List<TypeArgument> arguments) {
+  private List<Argument> visitArguments(List<Argument> arguments) {
+    List<Argument> result = new ArrayList<>(arguments.size());
+    for (Argument argument : arguments) {
+      if (argument instanceof TelescopeArgument) {
+        result.add(new TelescopeArgument(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), ((TelescopeArgument) argument).getType().accept(this)));
+      } else {
+        if (argument instanceof TypeArgument) {
+          result.add(new TypeArgument(argument.getExplicit(), ((TypeArgument) argument).getType().accept(this)));
+        } else {
+          result.add(argument);
+        }
+      }
+    }
+    return result;
+  }
+
+  private List<TypeArgument> visitTypeArguments(List<TypeArgument> arguments) {
     List<TypeArgument> result = new ArrayList<>(arguments.size());
     for (TypeArgument argument : arguments) {
       if (argument instanceof TelescopeArgument) {
@@ -115,7 +117,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitPi(PiExpression expr) {
     if (myMode == Mode.WHNF) return expr;
-    return Pi(visitArguments(expr.getArguments()), expr.getCodomain().accept(this));
+    return Pi(visitTypeArguments(expr.getArguments()), expr.getCodomain().accept(this));
   }
 
   @Override
@@ -161,12 +163,46 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitSigma(SigmaExpression expr) {
     if (myMode == Mode.WHNF) return expr;
-    return Sigma(visitArguments(expr.getArguments()));
+    return Sigma(visitTypeArguments(expr.getArguments()));
   }
 
   @Override
   public Expression visitBinOp(BinOpExpression expr) {
     return visitDefCall(expr, expr.getBinOp(), expr.getLeft(), expr.getRight());
+  }
+
+  // TODO: Fix normalization of eliminators with <=.
+  @Override
+  public Expression visitElim(ElimExpression expr) {
+    Expression fun = expr.getExpression().normalize(Mode.WHNF);
+    List<Expression> args = new ArrayList<>();
+    while (fun instanceof AppExpression) {
+      args.add(((AppExpression) fun).getArgument());
+      fun = ((AppExpression) fun).getFunction();
+    }
+    if (!(fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition() instanceof Constructor)) {
+      return myMode == Mode.WHNF ? expr : visitElimNF(expr);
+    }
+
+    Constructor constructor = (Constructor) ((DefCallExpression) fun).getDefinition();
+    for (Clause clause : expr.getClauses()) {
+      if (clause.getConstructor().equals(constructor) && clause.getArguments().size() == args.size()) {
+        Expression result = clause.getExpression();
+        for (int i = 0; i < args.size(); ++i) {
+          result = result.subst(args.get(i).liftIndex(0, args.size() - 1 - i), 0);
+        }
+        return result.accept(this);
+      }
+    }
+    return myMode == Mode.WHNF ? expr : visitElimNF(expr);
+  }
+
+  private ElimExpression visitElimNF(ElimExpression expr) {
+    List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
+    for (Clause clause : expr.getClauses()) {
+      clauses.add(new Clause(clause.getConstructor(), visitArguments(clause.getArguments()), clause.getArrow(), clause.getExpression().accept(this)));
+    }
+    return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
   }
 
   public enum Mode { WHNF, NF }

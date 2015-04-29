@@ -11,6 +11,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
+// TODO: Implement parallel substitution.
 public class SubstVisitor implements ExpressionVisitor<Expression> {
   private final Expression mySubstExpr;
   private final int myFrom;
@@ -142,5 +143,33 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitBinOp(BinOpExpression expr) {
     return BinOp(expr.getLeft().accept(this), expr.getBinOp(), expr.getRight().accept(this));
+  }
+
+  @Override
+  public Expression visitElim(ElimExpression expr) {
+    List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
+    for (Clause clause : expr.getClauses()) {
+      List<Argument> arguments = new ArrayList<>();
+      Expression substExpr = mySubstExpr;
+      int from = myFrom;
+      int on = 0;
+      for (Argument argument : clause.getArguments()) {
+        if (argument instanceof NameArgument) {
+          arguments.add(argument);
+          ++on;
+        } else
+        if (argument instanceof TelescopeArgument) {
+          from += on;
+          TelescopeArgument teleArgument = (TelescopeArgument) argument;
+          substExpr = substExpr.liftIndex(0, on);
+          arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(substExpr, from)));
+          on = teleArgument.getNames().size();
+        } else {
+          throw new IllegalStateException();
+        }
+      }
+      clauses.add(new Clause(clause.getConstructor(), arguments, clause.getArrow(), clause.getExpression().subst(substExpr.liftIndex(0, on), from + on)));
+    }
+    return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
   }
 }

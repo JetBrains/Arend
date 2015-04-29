@@ -140,5 +140,29 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     return BinOp(expr.getLeft().accept(this), expr.getBinOp(), expr.getRight().accept(this));
   }
 
+  @Override
+  public Expression visitElim(ElimExpression expr) {
+    List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
+    for (Clause clause : expr.getClauses()) {
+      int from = myFrom;
+      List<Argument> arguments = new ArrayList<>(clause.getArguments().size());
+      for (Argument argument : clause.getArguments()) {
+        if (argument instanceof NameArgument) {
+          arguments.add(argument);
+          ++from;
+        } else if (argument instanceof TelescopeArgument) {
+          TelescopeArgument teleArgument = (TelescopeArgument) argument;
+          arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(from, myOn)));
+          from += teleArgument.getNames().size();
+        } else {
+          throw new IllegalStateException();
+        }
+      }
+      clauses.add(new Clause(clause.getConstructor(), arguments, clause.getArrow(), clause.getExpression().liftIndex(from, myOn)));
+    }
+    return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
+    // return Lam(arguments, expr.getBody().liftIndex(from, myOn));
+  }
+
   public static class NegativeIndexException extends RuntimeException {}
 }
