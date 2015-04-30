@@ -107,4 +107,13 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     }
     return type;
   }
+
+  public Expression getFunction(List<Expression> arguments) {
+    Expression expr = this;
+    while (expr instanceof AppExpression) {
+      arguments.add(((AppExpression) expr).getArgument());
+      expr = ((AppExpression) expr).getFunction();
+    }
+    return expr;
+  }
 }

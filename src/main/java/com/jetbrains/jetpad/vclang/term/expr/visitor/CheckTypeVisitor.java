@@ -21,6 +21,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private final Map<String, Definition> myGlobalContext;
   private final List<Binding> myLocalContext;
   private final List<TypeCheckingError> myErrors;
+  private Side mySide;
 
   private static class Arg {
     boolean isExplicit;
@@ -58,10 +59,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  public CheckTypeVisitor(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors) {
+  public enum Side { LHS, RHS }
+
+  public CheckTypeVisitor(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors, Side side) {
     myGlobalContext = globalContext;
     myLocalContext = localContext;
     myErrors = errors;
+    mySide = side;
   }
 
   private OKResult checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
@@ -94,14 +98,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result.expression instanceof DefCallExpression) {
       DefCallExpression defCall = (DefCallExpression) result.expression;
       if (defCall.getDefinition() instanceof Constructor && !((Constructor) defCall.getDefinition()).getDataType().getParameters().isEmpty()) {
-        return typeCheckApps(expression, new Arg[0], expectedType, expression);
+        return typeCheckApps(expression, new ArrayList<Arg>(), expectedType, expression);
       }
     }
 
     Signature actualSignature = new Signature(result.type);
     Signature expectedSignature = new Signature(expectedType);
     if (actualSignature.getArguments().size() > expectedSignature.getArguments().size()) {
-      return typeCheckApps(expression, new Arg[0], expectedType, expression);
+      return typeCheckApps(expression, new ArrayList<Arg>(), expectedType, expression);
     } else {
       return checkResult(expectedType, result, expression);
     }
@@ -189,9 +193,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return true;
   }
 
-  private Result typeCheckApps(Abstract.Expression fun, Arg[] args, Expression expectedType, Abstract.Expression expression) {
-    if (fun instanceof Abstract.NelimExpression && args.length > 0) {
-      Result argument = typeCheck(args[0].expression, null);
+  private Result typeCheckApps(Abstract.Expression fun, List<Arg> args, Expression expectedType, Abstract.Expression expression) {
+    if (fun instanceof Abstract.NelimExpression && args.size() > 0) {
+      Result argument = typeCheck(args.get(0).expression, null);
       if (!(argument instanceof OKResult)) return argument;
       OKResult okArgument = (OKResult) argument;
       return new OKResult(Apps(Nelim(), okArgument.expression), Pi(Pi(Nat(), Pi(okArgument.type, okArgument.type)), Pi(Nat(), okArgument.type)), null);
@@ -229,16 +233,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     int i, j;
-    for (i = parametersNumber, j = 0; i < signature.getArguments().size() && j < args.length; ++i, ++j) {
-      if (args[j].isExplicit == signature.getArgument(i).getExplicit()) {
-        argsImp[i] = args[j].expression;
+    for (i = parametersNumber, j = 0; i < signature.getArguments().size() && j < args.size(); ++i, ++j) {
+      if (args.get(j).isExplicit == signature.getArgument(i).getExplicit()) {
+        argsImp[i] = args.get(j).expression;
       } else
-      if (args[j].isExplicit) {
+      if (args.get(j).isExplicit) {
         argsImp[i] = new InferHoleExpression();
         --j;
       } else {
-        TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args[j].expression);
-        args[j].expression.setWellTyped(Error(null, error));
+        TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args.get(j).expression);
+        args.get(j).expression.setWellTyped(Error(null, error));
         myErrors.add(error);
         for (Arg arg : args) {
           typeCheck(arg.expression, null);
@@ -247,8 +251,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    if (j < args.length) {
-      TypeCheckingError error = new TypeCheckingError("Function expects " + i + " arguments, but is applied to " + (i + args.length - j), fun);
+    if (j < args.size()) {
+      TypeCheckingError error = new TypeCheckingError("Function expects " + i + " arguments, but is applied to " + (i + args.size() - j), fun);
       fun.setWellTyped(Error(okFunction.expression, error));
       myErrors.add(error);
       for (Arg arg : args) {
@@ -382,20 +386,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return null;
   }
 
+  private static Abstract.Expression getFunction(Abstract.Expression expr, List<Arg> args) {
+    while (expr instanceof Abstract.AppExpression) {
+      args.add(new Arg(((Abstract.AppExpression) expr).isExplicit(), null, ((Abstract.AppExpression) expr).getArgument()));
+      expr = ((Abstract.AppExpression) expr).getFunction();
+    }
+    Collections.reverse(args);
+    return expr;
+  }
+
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
     List<Arg> args = new ArrayList<>();
-    Abstract.Expression fexpr;
-    for (fexpr = expr; fexpr instanceof Abstract.AppExpression; fexpr = ((Abstract.AppExpression) fexpr).getFunction()) {
-      Abstract.AppExpression appfexpr = (Abstract.AppExpression) fexpr;
-      args.add(new Arg(appfexpr.isExplicit(), null, appfexpr.getArgument()));
-    }
-
-    Arg[] argsArray = new Arg[args.size()];
-    for (int i = 0; i < argsArray.length; ++i) {
-      argsArray[i] = args.get(argsArray.length - 1 - i);
-    }
-    return typeCheckApps(fexpr, argsArray, expectedType, expr);
+    return typeCheckApps(getFunction(expr, args), args, expectedType, expr);
   }
 
   @Override
@@ -861,7 +864,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
-    Arg[] args = new Arg[] { new Arg(true, null, expr.getLeft()), new Arg(true, null, expr.getRight()) };
+    List<Arg> args = new ArrayList<>(2);
+    args.add(new Arg(true, null, expr.getLeft()));
+    args.add(new Arg(true, null, expr.getRight()));
+
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
     Result result = typeCheckApps(new Concrete.DefCallExpression(position, expr.getBinOp()), args, expectedType, expr);
     if (!(result instanceof OKResult) || !(result.expression instanceof AppExpression)) return result;
@@ -876,7 +882,86 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression params) {
-    // TODO: Type checking for eliminators.
-    return null;
+    if (expr.getElimType() == Abstract.ElimExpression.ElimType.CASE) {
+      TypeCheckingError error = new TypeCheckingError("Not implemented yet: \\case", expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+
+    if (mySide != Side.LHS) {
+      TypeCheckingError error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+
+    Result exprResult = typeCheck(expr.getExpression(), null);
+    if (!(exprResult instanceof OKResult)) return exprResult;
+    OKResult exprOKResult = (OKResult) exprResult;
+
+    if (!(exprOKResult.expression instanceof IndexExpression)) {
+      TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+
+    List<Expression> parameters = new ArrayList<>();
+    Expression type = exprOKResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression ftype = type.getFunction(parameters);
+    if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
+      TypeCheckingError error = new TypeMismatchError("a data type", type, expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+
+    DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
+    List<Constructor> constructors = dataType.getConstructors();
+    List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
+    for (Abstract.Clause clause : expr.getClauses()) {
+      int index;
+      for (index = 0; index < constructors.size(); ++index) {
+        if (constructors.get(index).getName().equals(clause.getName())) {
+          break;
+        }
+      }
+      if (index == constructors.size()) {
+        for (index = 0; index < dataType.getConstructors().size(); ++index) {
+          if (dataType.getConstructor(index).getName().equals(clause.getName())) {
+            break;
+          }
+        }
+        TypeCheckingError error;
+        if (index == dataType.getConstructors().size()) {
+          error = new NotInScopeError(Var(clause.getName() == null ? "" : clause.getName()));
+        } else {
+          error = new TypeCheckingError("Overlapping pattern matching: " + dataType.getConstructor(index), expr);
+        }
+        expr.setWellTyped(Error(null, error));
+        myErrors.add(error);
+        continue;
+      }
+
+      Constructor constructor = constructors.get(index);
+      constructors.remove(index);
+    }
+
+    if (!constructors.isEmpty()) {
+      String msg = "Incomplete pattern matching. Unhandled constructors: ";
+      for (int i = 0; i < constructors.size(); ++i) {
+        if (i > 0) msg += ", ";
+        msg += constructors.get(i).getName();
+      }
+      TypeCheckingError error = new TypeCheckingError(msg + ".", expr);
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+
+    Expression resultExpr = new ElimExpression(expr.getElimType(), exprOKResult.expression, clauses);
+    Expression resultType;
+    return new OKResult(resultExpr, resultType, null);
   }
 }

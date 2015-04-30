@@ -174,12 +174,8 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   // TODO: Fix normalization of eliminators with <=.
   @Override
   public Expression visitElim(ElimExpression expr) {
-    Expression fun = expr.getExpression().normalize(Mode.WHNF);
     List<Expression> args = new ArrayList<>();
-    while (fun instanceof AppExpression) {
-      args.add(((AppExpression) fun).getArgument());
-      fun = ((AppExpression) fun).getFunction();
-    }
+    Expression fun = expr.getExpression().normalize(Mode.WHNF).getFunction(args);
     if (!(fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition() instanceof Constructor)) {
       return myMode == Mode.WHNF ? expr : visitElimNF(expr);
     }
