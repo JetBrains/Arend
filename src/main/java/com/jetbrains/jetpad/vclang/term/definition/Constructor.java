@@ -14,20 +14,22 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 public class Constructor extends Definition implements Abstract.Constructor {
   private DataDefinition myDataType;
   private final List<TypeArgument> myArguments;
+  private final int myIndex;
 
-  public Constructor(String name, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
+  public Constructor(int index, String name, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
     super(name, precedence, fixity, universe);
     myArguments = arguments;
     myDataType = dataType;
+    myIndex = index;
   }
 
   @Override
-  public List<? extends Abstract.TypeArgument> getArguments() {
+  public List<? extends TypeArgument> getArguments() {
     return myArguments;
   }
 
   @Override
-  public Abstract.TypeArgument getArgument(int index) {
+  public TypeArgument getArgument(int index) {
     return myArguments.get(index);
   }
 
@@ -38,6 +40,10 @@ public class Constructor extends Definition implements Abstract.Constructor {
 
   public void setDataType(DataDefinition dataType) {
     myDataType = dataType;
+  }
+
+  public int getIndex() {
+    return myIndex;
   }
 
   @Override

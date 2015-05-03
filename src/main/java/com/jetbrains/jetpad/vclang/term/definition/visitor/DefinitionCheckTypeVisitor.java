@@ -32,7 +32,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     List<TelescopeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     for (Abstract.TelescopeArgument argument : def.getArguments()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors).checkType(argument.getType(), Universe());
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -46,7 +46,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
     Expression expectedType;
     if (def.getResultType() != null) {
-      CheckTypeVisitor.OKResult typeResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors).checkType(def.getResultType(), Universe());
+      CheckTypeVisitor.OKResult typeResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(def.getResultType(), Universe());
       if (typeResult == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -56,7 +56,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       expectedType = null;
     }
 
-    CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors).checkType(def.getTerm(), expectedType);
+    CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
     trimToSize(localContext, origSize);
     return termResult == null ? null : new FunctionDefinition(def.getName(), def.getPrecedence(), def.getFixity(), arguments, termResult.type, def.getArrow(), termResult.expression);
   }
@@ -67,7 +67,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     int origSize = localContext.size();
     Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors).checkType(parameter.getType(), Universe());
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(parameter.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -126,7 +126,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     int index = 1;
     String error = null;
     for (Abstract.TypeArgument argument : def.getArguments()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors).checkType(argument.getType(), Universe());
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -154,7 +154,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     trimToSize(localContext, origSize);
-    Constructor newConstructor = new Constructor(def.getName(), def.getPrecedence(), def.getFixity(), universe, arguments, null);
+    Constructor newConstructor = new Constructor(def.getDataType().getConstructors().indexOf(def), def.getName(), def.getPrecedence(), def.getFixity(), universe, arguments, null);
     if (error != null) {
       myErrors.add(new TypeCheckingError(error, DefCall(newConstructor)));
       return null;

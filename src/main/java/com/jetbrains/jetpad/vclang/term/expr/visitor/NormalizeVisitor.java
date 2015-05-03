@@ -181,16 +181,16 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
 
     Constructor constructor = (Constructor) ((DefCallExpression) fun).getDefinition();
-    for (Clause clause : expr.getClauses()) {
-      if (clause.getConstructor().equals(constructor) && clause.getArguments().size() == args.size()) {
-        Expression result = clause.getExpression();
-        for (int i = 0; i < args.size(); ++i) {
-          result = result.subst(args.get(i).liftIndex(0, args.size() - 1 - i), 0);
-        }
-        return result.accept(this);
+    Clause clause = expr.getClauses().get(constructor.getIndex());
+    if (clause != null && clause.getArguments().size() == args.size()) {
+      Expression result = clause.getExpression();
+      for (int i = 0; i < args.size(); ++i) {
+        result = result.subst(args.get(i).liftIndex(0, args.size() - 1 - i), 0);
       }
+      return result.accept(this);
+    } else {
+      return myMode == Mode.WHNF ? expr : visitElimNF(expr);
     }
-    return myMode == Mode.WHNF ? expr : visitElimNF(expr);
   }
 
   private ElimExpression visitElimNF(ElimExpression expr) {

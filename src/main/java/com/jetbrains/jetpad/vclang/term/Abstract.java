@@ -9,13 +9,15 @@ import java.util.List;
 public final class Abstract {
   private Abstract() {}
 
-  public interface Expression {
+  public interface SourceNode {}
+
+  public interface Expression extends SourceNode {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
     void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
-  public interface Argument extends PrettyPrintable {
+  public interface Argument extends SourceNode, PrettyPrintable {
     boolean getExplicit();
   }
 
@@ -125,7 +127,7 @@ public final class Abstract {
     Clause getClause(int index);
   }
 
-  public interface Clause {
+  public interface Clause extends SourceNode {
     String getName();
     List<? extends Argument> getArguments();
     Argument getArgument(int index);
@@ -133,7 +135,7 @@ public final class Abstract {
     Expression getExpression();
   }
 
-  public interface Binding {
+  public interface Binding extends SourceNode {
     String getName();
   }
 

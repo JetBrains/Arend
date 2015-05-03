@@ -24,10 +24,10 @@ public final class Concrete {
     }
   }
 
-  public static class SourceElement {
+  public static class SourceNode implements Abstract.SourceNode {
     private final Position myPosition;
 
-    public SourceElement(Position position) {
+    public SourceNode(Position position) {
       myPosition = position;
     }
 
@@ -36,7 +36,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Expression extends SourceElement implements Abstract.Expression {
+  public static abstract class Expression extends SourceNode implements Abstract.Expression {
     public Expression(Position position) {
       super(position);
     }
@@ -53,7 +53,7 @@ public final class Concrete {
     }
   }
 
-  public static class Argument extends SourceElement implements Abstract.Argument {
+  public static class Argument extends SourceNode implements Abstract.Argument {
     private final boolean myExplicit;
 
     public Argument(Position position, boolean explicit) {
@@ -465,7 +465,7 @@ public final class Concrete {
     }
   }
 
-  public static class Clause extends SourceElement implements Abstract.Clause {
+  public static class Clause extends SourceNode implements Abstract.Clause {
     private final String myName;
     private final List<Argument> myArguments;
     private final Definition.Arrow myArrow;
@@ -505,7 +505,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Binding extends SourceElement implements Abstract.Binding {
+  public static abstract class Binding extends SourceNode implements Abstract.Binding {
     private final String myName;
 
     public Binding(Position position, String name) {
