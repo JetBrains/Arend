@@ -996,10 +996,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (!(clauseResult instanceof OKResult)) return exprResult;
       OKResult clauseOKResult = (OKResult) clauseResult;
 
-      for (int i = 0; i < clause.getArguments().size(); ++i) {
-        myLocalContext.remove(myLocalContext.size() - 1);
-      }
-
       clauses.set(constructor.getIndex(), new Clause(constructor, arguments, clause.getArrow(), clauseOKResult.expression));
     }
 

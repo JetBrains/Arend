@@ -2,11 +2,11 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void> {
   private final StringBuilder myBuilder;
@@ -62,7 +62,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append("=> ");
     expr.getBody().accept(this, Abstract.LamExpression.PREC);
     for (Abstract.Argument arg : expr.getArguments()) {
-      Utils.removeFromList(myNames, arg);
+      removeFromList(myNames, arg);
     }
     if (prec > Abstract.LamExpression.PREC) myBuilder.append(")");
     return null;
@@ -97,9 +97,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
     myBuilder.append("-> ");
     expr.getCodomain().accept(this, Abstract.PiExpression.PREC);
-    for (Abstract.Argument arg : expr.getArguments()) {
-      Utils.removeFromList(myNames, arg);
-    }
+    removeFromList(myNames, expr.getArguments());
     if (prec > Abstract.PiExpression.PREC) myBuilder.append(')');
     return null;
   }
@@ -165,6 +163,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append(' ');
       prettyPrintArgument(argument, myBuilder, myNames, (byte) (Abstract.AppExpression.PREC + 1), myIndent);
     }
+    removeFromList(myNames, expr.getArguments());
     if (prec > Abstract.SigmaExpression.PREC) myBuilder.append(')');
     return null;
   }
@@ -184,7 +183,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append('(');
     myBuilder.append(expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM ? "\\elim " : "\\case ");
     expr.getExpression().accept(this, Abstract.Expression.PREC);
-    myBuilder.append(' ');
+    myBuilder.append('\n');
     ++myIndent;
     for (Abstract.Clause clause : expr.getClauses()) {
       printIndent();
@@ -195,7 +194,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       }
       myBuilder.append(clause.getArrow() == Abstract.Definition.Arrow.LEFT ? " <= " : " => ");
       clause.getExpression().accept(this, Abstract.Expression.PREC);
+      myBuilder.append('\n');
+      removeFromList(myNames, clause.getArguments());
     }
+    printIndent();
+    myBuilder.append(";");
     --myIndent;
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append(')');
     return null;
