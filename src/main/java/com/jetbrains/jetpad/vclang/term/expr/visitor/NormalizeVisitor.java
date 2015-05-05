@@ -20,6 +20,22 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     myMode = mode;
   }
 
+  private Expression visitApps(Expression expr, List<Expression> exprs) {
+
+  }
+
+  @Override
+  public Expression visitApp(AppExpression expr) {
+    List<Expression> exprs = new ArrayList<>();
+    Expression expr1 = expr;
+    while (expr1 instanceof AppExpression) {
+      exprs.add(((AppExpression) expr1).getArgument());
+      expr1 = ((AppExpression) expr1).getFunction();
+    }
+    return visitApps(expr1, exprs);
+  }
+
+  /*
   @Override
   public Expression visitApp(AppExpression expr) {
     Expression function1 = expr.getFunction().accept(this);
@@ -51,6 +67,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
     return Apps(function1, myMode == Mode.WHNF ? expr.getArgument() : expr.getArgument().accept(this));
   }
+  */
 
   // TODO: Fix normalization of function calls with <=.
   private Expression visitDefCall(Expression expr, Definition function, Expression... expressions) {

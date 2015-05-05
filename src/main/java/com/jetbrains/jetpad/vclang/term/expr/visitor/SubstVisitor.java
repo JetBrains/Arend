@@ -11,13 +11,12 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-// TODO: Implement parallel substitution.
 public class SubstVisitor implements ExpressionVisitor<Expression> {
-  private final Expression mySubstExpr;
+  private final List<Expression> mySubstExprs;
   private final int myFrom;
 
-  public SubstVisitor(Expression substExpr, int from) {
-    mySubstExpr = substExpr;
+  public SubstVisitor(List<Expression> substExprs, int from) {
+    mySubstExprs = substExprs;
     myFrom = from;
   }
 
@@ -34,14 +33,14 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitIndex(IndexExpression expr) {
     if (expr.getIndex() < myFrom) return Index(expr.getIndex());
-    if (expr.getIndex() == myFrom) return mySubstExpr;
-    return Index(expr.getIndex() - 1);
+    if (expr.getIndex() >= mySubstExprs.size() + myFrom) return Index(expr.getIndex() - mySubstExprs.size());
+    return mySubstExprs.get(expr.getIndex() - myFrom);
   }
 
   @Override
   public Expression visitLam(LamExpression expr) {
     List<Argument> arguments = new ArrayList<>();
-    Expression substExpr = mySubstExpr;
+    List<Expression> substExprs = new ArrayList<>(mySubstExprs);
     int from = myFrom;
     int on = 0;
     for (Argument argument : expr.getArguments()) {
@@ -52,14 +51,20 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
       if (argument instanceof TelescopeArgument) {
         from += on;
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        substExpr = substExpr.liftIndex(0, on);
-        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(substExpr, from)));
+        for (int i = 0; i < substExprs.size(); ++i) {
+          substExprs.set(i, substExprs.get(i).liftIndex(0, on));
+        }
+        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(substExprs, from)));
         on = teleArgument.getNames().size();
       } else {
         throw new IllegalStateException();
       }
     }
-    return Lam(arguments, expr.getBody().subst(substExpr.liftIndex(0, on), from + on));
+
+    for (int i = 0; i < substExprs.size(); ++i) {
+      substExprs.set(i, substExprs.get(i).liftIndex(0, on));
+    }
+    return Lam(arguments, expr.getBody().subst(substExprs, from + on));
   }
 
   @Override
@@ -73,22 +78,26 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   }
 
   private Expression visitArguments(List<TypeArgument> arguments, Expression codomain) {
-    Expression substExpr = mySubstExpr;
+    List<Expression> substExprs = new ArrayList<>(mySubstExprs);
     int from = myFrom;
     List<TypeArgument> result = new ArrayList<>();
     for (TypeArgument argument : arguments) {
       if (argument instanceof TelescopeArgument) {
         List<String> names = ((TelescopeArgument) argument).getNames();
-        result.add(new TelescopeArgument(argument.getExplicit(), names, argument.getType().subst(substExpr, from)));
-        substExpr = substExpr.liftIndex(0, names.size());
+        result.add(new TelescopeArgument(argument.getExplicit(), names, argument.getType().subst(substExprs, from)));
+        for (int i = 0; i < substExprs.size(); ++i) {
+          substExprs.set(i, substExprs.get(i).liftIndex(0, names.size()));
+        }
         from += names.size();
       } else {
-        result.add(new TypeArgument(argument.getExplicit(), argument.getType().subst(substExpr, from)));
-        substExpr = substExpr.liftIndex(0, 1);
+        result.add(new TypeArgument(argument.getExplicit(), argument.getType().subst(substExprs, from)));
+        for (int i = 0; i < substExprs.size(); ++i) {
+          substExprs.set(i, substExprs.get(i).liftIndex(0, 1));
+        }
         ++from;
       }
     }
-    return codomain == null ? Sigma(result) : Pi(result, codomain.subst(substExpr, from));
+    return codomain == null ? Sigma(result) : Pi(result, codomain.subst(substExprs, from));
   }
 
   @Override
@@ -150,7 +159,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
     List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
     for (Clause clause : expr.getClauses()) {
       List<Argument> arguments = new ArrayList<>();
-      Expression substExpr = mySubstExpr;
+      List<Expression> substExprs = new ArrayList<>(mySubstExprs);
       int from = myFrom;
       int on = 0;
       for (Argument argument : clause.getArguments()) {
@@ -161,14 +170,20 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
         if (argument instanceof TelescopeArgument) {
           from += on;
           TelescopeArgument teleArgument = (TelescopeArgument) argument;
-          substExpr = substExpr.liftIndex(0, on);
-          arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(substExpr, from)));
+          for (int i = 0; i < substExprs.size(); ++i) {
+            substExprs.set(i, substExprs.get(i).liftIndex(0, on));
+          }
+          arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(substExprs, from)));
           on = teleArgument.getNames().size();
         } else {
           throw new IllegalStateException();
         }
       }
-      clauses.add(new Clause(clause.getConstructor(), arguments, clause.getArrow(), clause.getExpression().subst(substExpr.liftIndex(0, on), from + on)));
+
+      for (int i = 0; i < substExprs.size(); ++i) {
+        substExprs.set(i, substExprs.get(i).liftIndex(0, on));
+      }
+      clauses.add(new Clause(clause.getConstructor(), arguments, clause.getArrow(), clause.getExpression().subst(substExprs, from + on)));
     }
     return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
   }

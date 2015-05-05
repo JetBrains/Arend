@@ -45,8 +45,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return on == 0 ? this : accept(new LiftIndexVisitor(from, on));
   }
 
-  public final Expression subst(Expression substExpr, int from) {
-    return accept(new SubstVisitor(substExpr, from));
+  public final Expression subst(List<Expression> substExprs, int from) {
+    return accept(new SubstVisitor(substExprs, from));
   }
 
   public final Expression normalize(NormalizeVisitor.Mode mode) {
