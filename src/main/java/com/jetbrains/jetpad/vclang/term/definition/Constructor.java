@@ -24,7 +24,7 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public List<? extends TypeArgument> getArguments() {
+  public List<TypeArgument> getArguments() {
     return myArguments;
   }
 

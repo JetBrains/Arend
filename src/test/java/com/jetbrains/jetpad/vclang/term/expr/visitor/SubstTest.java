@@ -18,7 +18,7 @@ public class SubstTest {
   public void substIndexLess() {
     // var(2) [3 := null] = var(2)
     Expression expr = Index(2);
-    assertEquals(expr, expr.subst(null, 3));
+    assertEquals(expr, expr.subst((Expression) null, 3));
   }
 
   @Test
@@ -32,7 +32,7 @@ public class SubstTest {
   public void substIndexGreater() {
     // var(4) [1 := null] = var(3)
     Expression expr = Index(4);
-    assertEquals(Index(3), expr.subst(null, 1));
+    assertEquals(Index(3), expr.subst((Expression) null, 1));
   }
 
   @Test

@@ -41,7 +41,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitData(Abstract.DataDefinition def, Byte params) {
-    myBuilder.append("\\dat a");
+    myBuilder.append("\\data ");
     if (def.getFixity() == Abstract.Definition.Fixity.PREFIX) {
       myBuilder.append(def.getName());
     } else {

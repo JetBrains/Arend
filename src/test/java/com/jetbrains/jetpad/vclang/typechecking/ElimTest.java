@@ -43,11 +43,11 @@ public class ElimTest {
     arguments3.add(Tele(vars("d2"), Apps(DefCall(dataType), Index(2), Index(1), Index(0))));
     List<Argument> arguments11 = new ArrayList<>(1);
     List<Argument> arguments12 = new ArrayList<>(4);
-    arguments11.add(Name("x"));
+    arguments11.add(Name("s"));
     arguments12.add(Name("x"));
     arguments12.add(Name("y"));
     arguments12.add(Name("z"));
-    arguments12.add(Name("w"));
+    arguments12.add(Name("t"));
     List<Clause> clauses1 = new ArrayList<>(2);
     clauses1.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Nat()));
     clauses1.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Pi(Nat(), Nat())));
@@ -56,19 +56,19 @@ public class ElimTest {
 
     List<TelescopeArgument> arguments = new ArrayList<>(3);
     arguments.add(Tele(vars("q", "w"), Nat()));
-    arguments.add(Tele(vars("e"), Apps(DefCall(dataType), Index(0), Zero(), Index(1))));
-    arguments.add(Tele(vars("r"), Apps(DefCall(dataType), Index(2), Index(1), Suc(Zero()))));
-    Expression resultType = Apps(DefCall(pFunction), Index(2), Zero(), Index(3), Index(1), Index(3), Index(2), Suc(Zero()), Index(0));
+    arguments.add(Tele(vars("e"), Apps(DefCall(dataType), Var("w"), Zero(), Var("q"))));
+    arguments.add(Tele(vars("r"), Apps(DefCall(dataType), Var("q"), Var("w"), Suc(Zero()))));
+    Expression resultType = Apps(DefCall(pFunction), Var("w"), Zero(), Var("q"), Var("e"), Var("q"), Var("w"), Suc(Zero()), Var("r"));
     List<Clause> clauses2 = new ArrayList<>();
     List<Clause> clauses3 = new ArrayList<>();
     List<Clause> clauses4 = new ArrayList<>();
-    clauses2.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.LEFT, Elim(Abstract.ElimExpression.ElimType.ELIM, Index(5), clauses4)));
-    clauses2.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.LEFT, Elim(Abstract.ElimExpression.ElimType.ELIM, Index(2), clauses3)));
-    clauses3.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(3)));
-    clauses3.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Index(0)));
-    clauses4.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Apps(Index(4), Index(2))));
+    clauses2.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.LEFT, Elim(Abstract.ElimExpression.ElimType.ELIM, Var("e"), clauses4)));
+    clauses2.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.LEFT, Elim(Abstract.ElimExpression.ElimType.ELIM, Var("e"), clauses3)));
+    clauses3.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Var("x")));
+    clauses3.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Var("s")));
+    clauses4.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Apps(Var("x"), Var("z"))));
     clauses4.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(7)));
-    Expression term = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses2);
+    Expression term = Elim(Abstract.ElimExpression.ElimType.ELIM, Var("r"), clauses2);
     FunctionDefinition function = new FunctionDefinition("fun", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term);
 
     Map<String, Definition> globalContext = new HashMap<>();

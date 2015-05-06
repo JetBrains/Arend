@@ -45,6 +45,12 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return on == 0 ? this : accept(new LiftIndexVisitor(from, on));
   }
 
+  public final Expression subst(Expression substExpr, int from) {
+    List<Expression> substExprs = new ArrayList<>(1);
+    substExprs.add(substExpr);
+    return accept(new SubstVisitor(substExprs, from));
+  }
+
   public final Expression subst(List<Expression> substExprs, int from) {
     return accept(new SubstVisitor(substExprs, from));
   }
@@ -112,7 +118,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     Expression expr = this;
     while (expr instanceof AppExpression) {
       arguments.add(((AppExpression) expr).getArgument());
-      expr = ((AppExpression) expr).getFunction();
+      expr = ((AppExpression) expr).getFunction().normalize(NormalizeVisitor.Mode.WITHOUT_ETA);
     }
     return expr;
   }
