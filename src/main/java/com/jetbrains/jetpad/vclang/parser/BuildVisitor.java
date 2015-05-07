@@ -141,7 +141,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<Concrete.Constructor> constructors = new ArrayList<>();
     Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
-    Universe universe = type == null ? new Universe.Type() : ((Concrete.UniverseExpression) type).getUniverse();
+    Universe universe = type == null ? null : ((Concrete.UniverseExpression) type).getUniverse();
     Concrete.DataDefinition def = new Concrete.DataDefinition(tokenPosition(token), name, Abstract.Definition.DEFAULT_PRECEDENCE, fixity, universe, parameters, constructors);
     for (ConstructorContext constructor : ctx.constructor()) {
       isPrefix = constructor.name() instanceof NameIdContext;

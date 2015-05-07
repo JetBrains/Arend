@@ -68,16 +68,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
   public DataDefinition visitData(Abstract.DataDefinition def, List<Binding> localContext) {
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     int origSize = localContext.size();
-    Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
+    Universe universe = new Universe.Type(0, Universe.Type.PROP);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
       CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(parameter.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
       }
-      if (parameter instanceof TelescopeArgument) {
-        parameters.add(Tele(parameter.getExplicit(), ((TelescopeArgument) parameter).getNames(), result.expression));
-        for (String name : ((TelescopeArgument) parameter).getNames()) {
+      if (parameter instanceof Abstract.TelescopeArgument) {
+        parameters.add(Tele(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
+        for (String name : ((Abstract.TelescopeArgument) parameter).getNames()) {
           localContext.add(new TypedBinding(name, result.expression));
         }
       } else {
@@ -94,8 +94,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor newConstructor = visitConstructor(constructor, localContext);
       if (newConstructor == null) {
-        trimToSize(localContext, origSize);
-        return null;
+        continue;
       }
 
       for (int i = 0; i < newConstructor.getArguments().size(); ++i) {
@@ -153,7 +152,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
   public Constructor visitConstructor(Abstract.Constructor def, List<Binding> localContext) {
     List<TypeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
-    Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
+    Universe universe = new Universe.Type(0, Universe.Type.PROP);
     int index = 1;
     String error = null;
     for (Abstract.TypeArgument argument : def.getArguments()) {
@@ -171,12 +170,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         universe = maxUniverse;
       }
 
-      if (argument instanceof TelescopeArgument) {
-        arguments.add(Tele(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), result.expression));
-        for (String name : ((TelescopeArgument) argument).getNames()) {
+      if (argument instanceof Abstract.TelescopeArgument) {
+        arguments.add(Tele(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
+        for (String name : ((Abstract.TelescopeArgument) argument).getNames()) {
           localContext.add(new TypedBinding(name, result.expression));
         }
-        index += ((TelescopeArgument) argument).getNames().size();
+        index += ((Abstract.TelescopeArgument) argument).getNames().size();
       } else {
         arguments.add(TypeArg(argument.getExplicit(), result.expression));
         localContext.add(new TypedBinding(null, result.expression));
