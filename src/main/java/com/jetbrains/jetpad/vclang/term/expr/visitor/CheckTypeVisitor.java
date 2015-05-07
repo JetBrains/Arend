@@ -195,13 +195,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private Result typeCheckApps(Abstract.Expression fun, List<Arg> args, Expression expectedType, Abstract.Expression expression) {
-    if (fun instanceof Abstract.NelimExpression && args.size() > 0) {
-      Result argument = typeCheck(args.get(0).expression, null);
-      if (!(argument instanceof OKResult)) return argument;
-      OKResult okArgument = (OKResult) argument;
-      return new OKResult(Apps(Nelim(), okArgument.expression), Pi(Pi(Nat(), Pi(okArgument.type, okArgument.type)), Pi(Nat(), okArgument.type)), null);
-    }
-
     Result function = typeCheck(fun, null);
     if (!(function instanceof OKResult)) {
       if (function instanceof InferErrorResult) {
@@ -580,19 +573,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitNat(Abstract.NatExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new OKResult(Nat(), Universe(0), null), expr);
-  }
-
-  @Override
-  public Result visitNelim(Abstract.NelimExpression expr, Expression expectedType) {
-    TypeCheckingError error = new TypeCheckingError("Expected at least one argument to N-elim", expr);
-    expr.setWellTyped(Error(null, error));
-    myErrors.add(error);
-    return null;
-  }
-
-  @Override
   public Result visitPi(Abstract.PiExpression expr, Expression expectedType) {
     OKResult[] domainResults = new OKResult[expr.getArguments().size()];
     int numberOfVars = 0;
@@ -676,11 +656,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitSuc(Abstract.SucExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new OKResult(Suc(), Pi(Nat(), Nat()), null), expr);
-  }
-
-  @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
     return checkResult(expectedType, new OKResult(new UniverseExpression(expr.getUniverse()), new UniverseExpression(expr.getUniverse().succ()), null), expr);
   }
@@ -705,11 +680,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     } else {
       return checkResultImplicit(expectedType, new OKResult(DefCall(def), def.getType(), null), expr);
     }
-  }
-
-  @Override
-  public Result visitZero(Abstract.ZeroExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new OKResult(Zero(), Nat(), null), expr);
   }
 
   @Override

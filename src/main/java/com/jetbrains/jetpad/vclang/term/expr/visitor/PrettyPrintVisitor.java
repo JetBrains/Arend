@@ -69,18 +69,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitNat(Abstract.NatExpression expr, Byte prec) {
-    myBuilder.append("N");
-    return null;
-  }
-
-  @Override
-  public Void visitNelim(Abstract.NelimExpression expr, Byte prec) {
-    myBuilder.append("N-elim");
-    return null;
-  }
-
-  @Override
   public Void visitPi(Abstract.PiExpression expr, Byte prec) {
     if (prec > Abstract.PiExpression.PREC) myBuilder.append('(');
     byte domPrec = (byte) (expr.getArguments().size() > 1 ? Abstract.AppExpression.PREC + 1 : Abstract.PiExpression.PREC + 1);
@@ -103,12 +91,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitSuc(Abstract.SucExpression expr, Byte prec) {
-    myBuilder.append("S");
-    return null;
-  }
-
-  @Override
   public Void visitUniverse(Abstract.UniverseExpression expr, Byte prec) {
     myBuilder.append(expr.getUniverse());
     return null;
@@ -117,12 +99,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitVar(Abstract.VarExpression expr, Byte prec) {
     myBuilder.append(expr.getName());
-    return null;
-  }
-
-  @Override
-  public Void visitZero(Abstract.ZeroExpression expr, Byte prec) {
-    myBuilder.append("0");
     return null;
   }
 

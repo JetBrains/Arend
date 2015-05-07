@@ -51,10 +51,6 @@ literal : UNIVERSE                      # universe
         | PROP                          # prop
         | SET                           # set
         | ID                            # id
-        | 'N'                           # Nat
-        | 'N-elim'                      # Nelim
-        | '0'                           # zero
-        | 'S'                           # suc
         | '_'                           # unknown
         ;
 

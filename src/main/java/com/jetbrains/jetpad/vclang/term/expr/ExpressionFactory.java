@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -14,11 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ExpressionFactory {
-  private static final NatExpression NAT = new NatExpression();
-  private static final ZeroExpression ZERO = new ZeroExpression();
-  private static final SucExpression SUC = new SucExpression();
-  private static final NelimExpression NELIM = new NelimExpression();
-
   public static AppExpression App(Expression function, Expression argument, boolean isExplicit) {
     return new AppExpression(function, argument, isExplicit);
   }
@@ -53,6 +49,10 @@ public class ExpressionFactory {
   }
 
   public static List<TypeArgument> args(TypeArgument... args) {
+    return Arrays.asList(args);
+  }
+
+  public static List<TelescopeArgument> teleArgs(TelescopeArgument... args) {
     return Arrays.asList(args);
   }
 
@@ -120,20 +120,20 @@ public class ExpressionFactory {
     return new VarExpression(name);
   }
 
-  public static NatExpression Nat() {
-    return NAT;
+  public static DefCallExpression Nat() {
+    return DefCall(Prelude.DEFINITIONS.get("Nat"));
   }
 
-  public static ZeroExpression Zero() {
-    return ZERO;
+  public static DefCallExpression Zero() {
+    return DefCall(Prelude.DEFINITIONS.get("zero"));
   }
 
-  public static SucExpression Suc() {
-    return SUC;
+  public static DefCallExpression Suc() {
+    return DefCall(Prelude.DEFINITIONS.get("suc"));
   }
 
   public static Expression Suc(Expression expr) {
-    return Apps(SUC, expr);
+    return Apps(Suc(), expr);
   }
 
   public static UniverseExpression Universe() {
@@ -146,10 +146,6 @@ public class ExpressionFactory {
 
   public static UniverseExpression Universe(int level, int truncated) {
     return new UniverseExpression(new Universe.Type(level, truncated));
-  }
-
-  public static NelimExpression Nelim() {
-    return NELIM;
   }
 
   public static ErrorExpression Error(Expression expr, TypeCheckingError error) {

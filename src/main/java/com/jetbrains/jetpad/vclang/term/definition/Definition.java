@@ -10,7 +10,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   private static int idCounter = 0;
   private final Precedence myPrecedence;
   private final Fixity myFixity;
-  private final Universe myUniverse;
+  private Universe myUniverse;
 
   public Definition(String name, Precedence precedence, Fixity fixity, Universe universe) {
     super(name);
@@ -33,6 +33,10 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   @Override
   public Universe getUniverse() {
     return myUniverse;
+  }
+
+  public void setUniverse(Universe universe) {
+    myUniverse = universe;
   }
 
   @Override

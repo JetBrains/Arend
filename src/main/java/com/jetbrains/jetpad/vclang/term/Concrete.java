@@ -266,28 +266,6 @@ public final class Concrete {
     }
   }
 
-  public static class NatExpression extends Expression implements Abstract.NatExpression {
-    public NatExpression(Position position) {
-      super(position);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitNat(this, params);
-    }
-  }
-
-  public static class NelimExpression extends Expression implements Abstract.NelimExpression {
-    public NelimExpression(Position position) {
-      super(position);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitNelim(this, params);
-    }
-  }
-
   public static class PiExpression extends Expression implements Abstract.PiExpression {
     private final List<TypeArgument> myArguments;
     private final Expression myCodomain;
@@ -340,17 +318,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return null;
-    }
-  }
-
-  public static class SucExpression extends Expression implements Abstract.SucExpression {
-    public SucExpression(Position position) {
-      super(position);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitSuc(this, params);
     }
   }
 
@@ -413,17 +380,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitVar(this, params);
-    }
-  }
-
-  public static class ZeroExpression extends Expression implements Abstract.ZeroExpression {
-    public ZeroExpression(Position position) {
-      super(position);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitZero(this, params);
     }
   }
 

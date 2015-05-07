@@ -30,85 +30,85 @@ public class ParserTest {
 
   @Test
   public void parserLamTele() {
-    Concrete.Expression expr = parseExpr("\\lam p {x t : N} {y} (a : N -> N) => (\\lam (z w : N) => y z) y");
-    assertTrue(compare(Lam(lamArgs(Name("p"), Tele(false, vars("x", "t"), Nat()), Name(false, "y"), Tele(vars("a"), Pi(Nat(), Nat()))), Apps(Lam(lamArgs(Tele(vars("z", "w"), Nat())), Apps(Var("y"), Var("z"))), Var("y"))), expr));
+    Concrete.Expression expr = parseExpr("\\lam p {x t : Nat} {y} (a : Nat -> Nat) => (\\lam (z w : Nat) => y z) y");
+    assertTrue(compare(Lam(lamArgs(Name("p"), Tele(false, vars("x", "t"), Var("Nat")), Name(false, "y"), Tele(vars("a"), Pi(Var("Nat"), Var("Nat")))), Apps(Lam(lamArgs(Tele(vars("z", "w"), Var("Nat"))), Apps(Var("y"), Var("z"))), Var("y"))), expr));
   }
 
   @Test
   public void parserPi() {
-    Concrete.Expression expr = parseExpr("\\Pi (x y z : N) (w t : N -> N) -> \\Pi (a b : \\Pi (c : N) -> N c) -> N b y w");
-    assertTrue(compare(Pi(args(Tele(vars("x", "y", "z"), Nat()), Tele(vars("w", "t"), Pi(Nat(), Nat()))), Pi(args(Tele(vars("a", "b"), Pi("c", Nat(), Apps(Nat(), Var("c"))))), Apps(Nat(), Var("b"), Var("y"), Var("w")))), expr));
+    Concrete.Expression expr = parseExpr("\\Pi (x y z : Nat) (w t : Nat -> Nat) -> \\Pi (a b : \\Pi (c : Nat) -> Nat c) -> Nat b y w");
+    assertTrue(compare(Pi(args(Tele(vars("x", "y", "z"), Var("Nat")), Tele(vars("w", "t"), Pi(Var("Nat"), Var("Nat")))), Pi(args(Tele(vars("a", "b"), Pi("c", Var("Nat"), Apps(Var("Nat"), Var("c"))))), Apps(Var("Nat"), Var("b"), Var("y"), Var("w")))), expr));
   }
 
   @Test
   public void parserPi2() {
-    Concrete.Expression expr = parseExpr("\\Pi (x y : N) (z : N x -> N y) -> N z y x");
-    assertTrue(compare(Pi(args(Tele(vars("x", "y"), Nat()), Tele(vars("z"), Pi(Apps(Nat(), Var("x")), Apps(Nat(), Var("y"))))), Apps(Nat(), Var("z"), Var("y"), Var("x"))), expr));
+    Concrete.Expression expr = parseExpr("\\Pi (x y : Nat) (z : Nat x -> Nat y) -> Nat z y x");
+    assertTrue(compare(Pi(args(Tele(vars("x", "y"), Var("Nat")), Tele(vars("z"), Pi(Apps(Var("Nat"), Var("x")), Apps(Var("Nat"), Var("y"))))), Apps(Var("Nat"), Var("z"), Var("y"), Var("x"))), expr));
   }
 
   @Test
   public void parserLamOpen() {
-    Concrete.Expression expr = parseExpr("\\lam x => (\\Pi (y : N) -> (\\lam y => y)) y");
-    assertTrue(compare(Lam("x", Apps(Pi("y", Nat(), Lam("y", Var("y"))), Var("y"))), expr));
+    Concrete.Expression expr = parseExpr("\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y");
+    assertTrue(compare(Lam("x", Apps(Pi("y", Var("Nat"), Lam("y", Var("y"))), Var("y"))), expr));
   }
 
   @Test
   public void parserPiOpen() {
-    Concrete.Expression expr = parseExpr("\\Pi (a b : N a) -> N a b");
-    assertTrue(compare(Pi(args(Tele(vars("a", "b"), Apps(Nat(), Var("a")))), Apps(Nat(), Var("a"), Var("b"))), expr));
+    Concrete.Expression expr = parseExpr("\\Pi (a b : Nat a) -> Nat a b");
+    assertTrue(compare(Pi(args(Tele(vars("a", "b"), Apps(Var("Nat"), Var("a")))), Apps(Var("Nat"), Var("a"), Var("b"))), expr));
   }
 
   @Test
   public void parserDef() {
     List<Concrete.Definition> defs = parseDefs(
-        "\\function x : N => 0\n" +
-            "\\function y : N => x");
+        "\\function x : Nat => zero\n" +
+            "\\function y : Nat => x");
     assertEquals(2, defs.size());
   }
 
   @Test
   public void parserDefType() {
     List<Concrete.Definition> defs = parseDefs(
-        "\\function x : \\Type0 => N\n" +
-            "\\function y : x => 0");
+        "\\function x : \\Type0 => Nat\n" +
+            "\\function y : x => zero");
     assertEquals(2, defs.size());
   }
 
   @Test
   public void parserImplicit() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f (x y : N) {z w : N} (t : N) {r : N} : N x y z w t r => N");
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} : Nat x y z w t r => Nat");
     assertEquals(4, def.getArguments().size());
     assertTrue(def.getArgument(0).getExplicit());
     assertFalse(def.getArgument(1).getExplicit());
     assertTrue(def.getArgument(2).getExplicit());
     assertFalse(def.getArgument(3).getExplicit());
-    assertTrue(compare(Nat(), def.getArgument(0).getType()));
-    assertTrue(compare(Nat(), def.getArgument(1).getType()));
-    assertTrue(compare(Nat(), def.getArgument(2).getType()));
-    assertTrue(compare(Nat(), def.getArgument(3).getType()));
-    assertTrue(compare(Apps(Nat(), Var("x"), Var("y"), Var("z"), Var("w"), Var("t"), Var("r")), def.getResultType()));
+    assertTrue(compare(Var("Nat"), def.getArgument(0).getType()));
+    assertTrue(compare(Var("Nat"), def.getArgument(1).getType()));
+    assertTrue(compare(Var("Nat"), def.getArgument(2).getType()));
+    assertTrue(compare(Var("Nat"), def.getArgument(3).getType()));
+    assertTrue(compare(Apps(Var("Nat"), Var("x"), Var("y"), Var("z"), Var("w"), Var("t"), Var("r")), def.getResultType()));
   }
 
   @Test
   public void parserImplicit2() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f {x : N} (_ : N) {y z : N} (_ : N x y z) : N => N");
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f {x : Nat} (_ : Nat) {y z : Nat} (_ : Nat x y z) : Nat => Nat");
     assertEquals(4, def.getArguments().size());
     assertFalse(def.getArgument(0).getExplicit());
     assertTrue(def.getArgument(1).getExplicit());
     assertFalse(def.getArgument(2).getExplicit());
     assertTrue(def.getArgument(3).getExplicit());
-    assertTrue(compare(Nat(), def.getArgument(0).getType()));
-    assertTrue(compare(Nat(), def.getArgument(1).getType()));
-    assertTrue(compare(Nat(), def.getArgument(2).getType()));
-    assertTrue(compare(Apps(Nat(), Var("x"), Var("y"), Var("z")), def.getArgument(3).getType()));
-    assertTrue(compare(Nat(), def.getResultType()));
+    assertTrue(compare(Var("Nat"), def.getArgument(0).getType()));
+    assertTrue(compare(Var("Nat"), def.getArgument(1).getType()));
+    assertTrue(compare(Var("Nat"), def.getArgument(2).getType()));
+    assertTrue(compare(Apps(Var("Nat"), Var("x"), Var("y"), Var("z")), def.getArgument(3).getType()));
+    assertTrue(compare(Var("Nat"), def.getResultType()));
   }
 
   @Test
   public void parserInfix() {
     Map<String, Definition> definitions = new HashMap<>();
-    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.LEFT, Var("+"));
-    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.LEFT, Var("*"));
+    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Var("Nat"), Definition.Arrow.LEFT, Var("+"));
+    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Var("Nat"), Definition.Arrow.LEFT, Var("*"));
     definitions.put("+", plus);
     definitions.put("*", mul);
     Concrete.Expression expr = parseExpr("a + b * c + d * (e * f) * (g + h)", definitions);
@@ -118,16 +118,16 @@ public class ParserTest {
   @Test
   public void parserInfixDef() {
     List<Concrete.Definition> defs = parseDefs(
-        "\\function (+) : N -> N -> N => \\lam x y => x\n" +
-            "\\function (*) : N -> N=> \\lam x => x + 0");
+        "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
+            "\\function (*) : Nat -> Nat => \\lam x => x + zero");
     assertEquals(2, defs.size());
   }
 
   @Test
   public void parserInfixError() {
     Map<String, Definition> definitions = new HashMap<>();
-    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.LEFT, Var("+"));
-    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.LEFT, Var("*"));
+    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Var("Nat"), Definition.Arrow.LEFT, Var("+"));
+    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Var("Nat"), Definition.Arrow.LEFT, Var("*"));
     definitions.put("+", plus);
     definitions.put("*", mul);
 

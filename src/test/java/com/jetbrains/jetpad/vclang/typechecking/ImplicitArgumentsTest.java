@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.term.error.InferedArgumentsMismatch;
@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -26,7 +25,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Index(0), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
     assertEquals(Apps(App(Index(0), Nat(), false), Zero()), result.expression);
     assertEquals(Nat(), result.type);
@@ -40,7 +39,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(Nat(), Nat())));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
+    assertNull(expr.checkType(Prelude.DEFINITIONS, defs, null, errors));
     assertEquals(1, errors.size());
   }
 
@@ -52,7 +51,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi("x", Nat(), Pi(false, "y", Nat(), Pi("z", Nat(), Nat())))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
+    assertNull(expr.checkType(Prelude.DEFINITIONS, defs, null, errors));
     assertEquals(1, errors.size());
   }
 
@@ -64,7 +63,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(false, "B", Universe(0), Pi(Index(0), Index(0))))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
+    assertNull(expr.checkType(Prelude.DEFINITIONS, defs, null, errors));
     assertEquals(1, errors.size());
     assertTrue(errors.get(0) instanceof ArgInferenceError);
   }
@@ -77,7 +76,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Pi(Index(0), Nat()), Nat()), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
+    assertNull(expr.checkType(Prelude.DEFINITIONS, defs, null, errors));
     assertEquals(1, errors.size());
   }
 
@@ -89,7 +88,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
     assertEquals(Apps(App(Index(0), Nat(), false), Suc()), result.expression);
     assertEquals(Nat(), result.type);
@@ -103,7 +102,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
     assertEquals(Apps(App(Index(0), Pi(Nat(), Nat()), false), Lam("x", Suc())), result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
@@ -118,7 +117,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
     assertEquals(Apps(App(Index(0), Pi(Pi(Nat(), Nat()), Nat()), false), arg), result.expression);
     assertEquals(Pi(Pi(Nat(), Nat()), Nat()), result.type);
@@ -132,7 +131,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Index(0), Index(0)), Pi(Pi(Index(0), Nat()), Nat())))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
     assertEquals(Apps(App(Index(0), Nat(), false), Lam("x", Index(0)), Lam(lamArgs(Tele(vars("x"), Nat())), Index(0))), result.expression);
     assertEquals(Nat(), result.type);
@@ -146,7 +145,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Nat(), Pi(Index(0), Index(0))))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, Pi(Nat(), Nat()), errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, Pi(Nat(), Nat()), errors);
     assertEquals(0, errors.size());
     assertEquals(Apps(App(Index(0), Nat(), false), Zero()), result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
@@ -160,7 +159,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Nat(), Pi(Index(0), Index(0))))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    assertNull(expr.checkType(new HashMap<String, Definition>(), defs, Pi(Nat(), Pi(Nat(), Nat())), errors));
+    assertNull(expr.checkType(Prelude.DEFINITIONS, defs, Pi(Nat(), Pi(Nat(), Nat())), errors));
     assertEquals(1, errors.size());
     assertTrue(errors.get(0) instanceof InferedArgumentsMismatch);
   }
@@ -175,7 +174,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Apps(Index(2), Index(0)), Nat()))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    assertNull(expr.checkType(new HashMap<String, Definition>(), defs, null, errors));
+    assertNull(expr.checkType(Prelude.DEFINITIONS, defs, null, errors));
     assertEquals(1, errors.size());
   }
 
@@ -189,7 +188,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("i", Pi(false, "x", Nat(), Apps(Index(1), Apps(Suc(), Index(0))))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, type, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, type, errors);
     assertEquals(0, errors.size());
     assertEquals(App(Index(0), Apps(Suc(), Zero()), false), result.expression);
     assertEquals(type, result.type);
@@ -205,7 +204,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("i", type));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new HashMap<String, Definition>(), defs, type.liftIndex(0, 1), errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, type.liftIndex(0, 1), errors);
     assertEquals(0, errors.size());
     assertEquals(Index(0), result.expression);
     assertEquals(type.liftIndex(0, 1), result.type);
@@ -220,7 +219,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("i", Pi(false, "x", Universe(0), Apps(Index(1), Index(0)))));
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    assertNull(expr.checkType(new HashMap<String, Definition>(), defs, Apps(Index(1), Universe(0)), errors));
+    assertNull(expr.checkType(Prelude.DEFINITIONS, defs, Apps(Index(1), Universe(0)), errors));
     assertEquals(1, errors.size());
   }
 }

@@ -97,14 +97,12 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
 
   @Override
   public Boolean visitDefCall(Abstract.DefCallExpression expr, Expression other) {
-    if (expr == other) return true;
-    return other instanceof Abstract.DefCallExpression && expr.getDefinition().equals(((Abstract.DefCallExpression) other).getDefinition());
+    return expr == other || other instanceof Abstract.DefCallExpression && expr.getDefinition().equals(((Abstract.DefCallExpression) other).getDefinition());
   }
 
   @Override
   public Boolean visitIndex(Abstract.IndexExpression expr, Expression other) {
-    if (expr == other) return true;
-    return other instanceof Abstract.IndexExpression && expr.getIndex() == ((Abstract.IndexExpression) other).getIndex();
+    return expr == other || other instanceof Abstract.IndexExpression && expr.getIndex() == ((Abstract.IndexExpression) other).getIndex();
   }
 
   @Override
@@ -120,18 +118,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
       if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, (Expression) args2.get(i))) return false;
     }
     return true;
-  }
-
-  @Override
-  public Boolean visitNat(Abstract.NatExpression expr, Expression other) {
-    if (expr == other) return true;
-    return other instanceof Abstract.NatExpression;
-  }
-
-  @Override
-  public Boolean visitNelim(Abstract.NelimExpression expr, Expression other) {
-    if (expr == other) return true;
-    return other instanceof Abstract.NelimExpression;
   }
 
   @Override
@@ -156,12 +142,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
   }
 
   @Override
-  public Boolean visitSuc(Abstract.SucExpression expr, Expression other) {
-    if (expr == other) return true;
-    return other instanceof Abstract.SucExpression;
-  }
-
-  @Override
   public Boolean visitUniverse(Abstract.UniverseExpression expr, Expression other) {
     if (expr == other) return true;
     if (!(other instanceof Abstract.UniverseExpression)) return false;
@@ -173,14 +153,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
 
   @Override
   public Boolean visitVar(Abstract.VarExpression expr, Expression other) {
-    if (expr == other) return true;
-    return other instanceof Abstract.VarExpression && expr.getName().equals(((Abstract.VarExpression) other).getName());
-  }
-
-  @Override
-  public Boolean visitZero(Abstract.ZeroExpression expr, Expression other) {
-    if (expr == other) return true;
-    return other instanceof Abstract.ZeroExpression;
+    return expr == other || other instanceof Abstract.VarExpression && expr.getName().equals(((Abstract.VarExpression) other).getName());
   }
 
   @Override

@@ -5,10 +5,13 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.FindDefCallVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +87,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     List<Constructor> constructors = new ArrayList<>(def.getConstructors().size());
+    DataDefinition result = new DataDefinition(def.getName(), def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : universe, parameters, constructors);
 
+    myGlobalContext.put(def.getName(), result);
+    constructors_loop:
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor newConstructor = visitConstructor(constructor, localContext);
       if (newConstructor == null) {
@@ -92,23 +98,48 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         return null;
       }
 
+      for (int i = 0; i < newConstructor.getArguments().size(); ++i) {
+        Expression type = newConstructor.getArgument(i).getType().normalize(NormalizeVisitor.Mode.WHNF);
+        while (type instanceof PiExpression) {
+          for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
+            List<List<Expression>> arguments = new ArrayList<>();
+            argument1.getType().accept(new FindDefCallVisitor(result, arguments));
+            if (!arguments.isEmpty()) {
+              String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
+              myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType()));
+              continue constructors_loop;
+            }
+          }
+          type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+        }
+
+        List<Expression> exprs = new ArrayList<>();
+        type.getFunction(exprs);
+        for (Expression expr : exprs) {
+          List<List<Expression>> arguments = new ArrayList<>();
+          expr.accept(new FindDefCallVisitor(result, arguments));
+          if (!arguments.isEmpty()) {
+            String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
+            myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType()));
+            continue constructors_loop;
+          }
+        }
+      }
+
       Universe maxUniverse = universe.max(newConstructor.getUniverse());
       if (maxUniverse == null) {
         String msg = "Universe " + newConstructor.getUniverse() + " of constructor " + newConstructor.getName() + " is not comparable to universe " + universe + " of previous constructors";
         myErrors.add(new TypeCheckingError(msg, null));
-        trimToSize(localContext, origSize);
-        return null;
+        continue;
       }
       universe = maxUniverse;
 
       constructors.add(newConstructor);
+      newConstructor.setDataType(result);
     }
+    myGlobalContext.remove(def.getName());
 
-    DataDefinition result = new DataDefinition(def.getName(), def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : universe, parameters, constructors);
-    for (Constructor constructor : constructors) {
-      constructor.setDataType(result);
-    }
-
+    result.setUniverse(universe);
     trimToSize(localContext, origSize);
     if (def.getUniverse() != null && !universe.lessOrEquals(def.getUniverse())) {
       myErrors.add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null));

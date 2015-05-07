@@ -58,14 +58,6 @@ public final class Abstract {
     Expression getBody();
   }
 
-  public interface NatExpression extends Expression {
-    byte PREC = 12;
-  }
-
-  public interface NelimExpression extends Expression {
-    byte PREC = 12;
-  }
-
   public interface TupleExpression extends Expression {
     byte PREC = 12;
     List<? extends Expression> getFields();
@@ -91,10 +83,6 @@ public final class Abstract {
     Expression getRight();
   }
 
-  public interface SucExpression extends Expression {
-    byte PREC = 12;
-  }
-
   public interface UniverseExpression extends Expression {
     byte PREC = 12;
     Universe getUniverse();
@@ -103,10 +91,6 @@ public final class Abstract {
   public interface VarExpression extends Expression {
     byte PREC = 12;
     String getName();
-  }
-
-  public interface ZeroExpression extends Expression {
-    byte PREC = 12;
   }
 
   public interface InferHoleExpression extends Expression {

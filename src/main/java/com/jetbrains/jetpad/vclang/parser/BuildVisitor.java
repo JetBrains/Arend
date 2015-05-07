@@ -174,26 +174,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.ZeroExpression visitZero(ZeroContext ctx) {
-    return new Concrete.ZeroExpression(tokenPosition(ctx.getStart()));
-  }
-
-  @Override
-  public Concrete.NatExpression visitNat(NatContext ctx) {
-    return new Concrete.NatExpression(tokenPosition(ctx.getStart()));
-  }
-
-  @Override
-  public Concrete.SucExpression visitSuc(SucContext ctx) {
-    return new Concrete.SucExpression(tokenPosition(ctx.getStart()));
-  }
-
-  @Override
-  public Concrete.NelimExpression visitNelim(NelimContext ctx) {
-    return new Concrete.NelimExpression(tokenPosition(ctx.getStart()));
-  }
-
-  @Override
   public Concrete.PiExpression visitArr(ArrContext ctx) {
     Concrete.Expression domain = visitExpr(ctx.expr(0));
     List<Concrete.TypeArgument> arguments = new ArrayList<>(1);

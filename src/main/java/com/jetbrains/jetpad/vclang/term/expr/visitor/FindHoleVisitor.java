@@ -33,17 +33,6 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
     }
     return null;
   }
-
-  @Override
-  public InferHoleExpression visitNat(NatExpression expr) {
-    return null;
-  }
-
-  @Override
-  public InferHoleExpression visitNelim(NelimExpression expr) {
-    return null;
-  }
-
   @Override
   public InferHoleExpression visitPi(PiExpression expr) {
     InferHoleExpression result = expr.getCodomain().accept(this);
@@ -56,22 +45,12 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
   }
 
   @Override
-  public InferHoleExpression visitSuc(SucExpression expr) {
-    return null;
-  }
-
-  @Override
   public InferHoleExpression visitUniverse(UniverseExpression expr) {
     return null;
   }
 
   @Override
   public InferHoleExpression visitVar(VarExpression expr) {
-    return null;
-  }
-
-  @Override
-  public InferHoleExpression visitZero(ZeroExpression expr) {
     return null;
   }
 

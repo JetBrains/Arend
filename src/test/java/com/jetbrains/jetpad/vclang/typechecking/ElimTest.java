@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -71,7 +72,7 @@ public class ElimTest {
     Expression term = Elim(Abstract.ElimExpression.ElimType.ELIM, Var("r"), clauses2);
     FunctionDefinition function = new FunctionDefinition("fun", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term);
 
-    Map<String, Definition> globalContext = new HashMap<>();
+    Map<String, Definition> globalContext = new HashMap<>(Prelude.DEFINITIONS);
     globalContext.put("D", dataType);
     globalContext.put("P", pFunction);
     globalContext.put("con1", constructors.get(0));

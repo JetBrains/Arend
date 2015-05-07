@@ -204,16 +204,6 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return myMode == Mode.TOP ? null : myMode == Mode.NF ? Lam(visitArguments(expr.getArguments()), expr.getBody().accept(this)) : expr;
   }
 
-  @Override
-  public Expression visitNat(NatExpression expr) {
-    return myMode == Mode.TOP ? null : expr;
-  }
-
-  @Override
-  public Expression visitNelim(NelimExpression expr) {
-    return myMode == Mode.TOP ? null : expr;
-  }
-
   private List<Argument> visitArguments(List<Argument> arguments) {
     List<Argument> result = new ArrayList<>(arguments.size());
     for (Argument argument : arguments) {
@@ -248,22 +238,12 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitSuc(SucExpression expr) {
-    return myMode == Mode.TOP ? null : expr;
-  }
-
-  @Override
   public Expression visitUniverse(UniverseExpression expr) {
     return myMode == Mode.TOP ? null : expr;
   }
 
   @Override
   public Expression visitVar(VarExpression expr) {
-    return myMode == Mode.TOP ? null : expr;
-  }
-
-  @Override
-  public Expression visitZero(ZeroExpression expr) {
     return myMode == Mode.TOP ? null : expr;
   }
 

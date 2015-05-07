@@ -57,16 +57,6 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     return Lam(arguments, expr.getBody().liftIndex(from, myOn));
   }
 
-  @Override
-  public Expression visitNat(NatExpression expr) {
-    return expr;
-  }
-
-  @Override
-  public Expression visitNelim(NelimExpression expr) {
-    return expr;
-  }
-
   private int visitArguments(List<TypeArgument> arguments, List<TypeArgument> result) {
     int from = myFrom;
     for (TypeArgument argument : arguments) {
@@ -90,22 +80,12 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitSuc(SucExpression expr) {
-    return expr;
-  }
-
-  @Override
   public Expression visitUniverse(UniverseExpression expr) {
     return expr;
   }
 
   @Override
   public Expression visitVar(VarExpression expr) {
-    return expr;
-  }
-
-  @Override
-  public Expression visitZero(ZeroExpression expr) {
     return expr;
   }
 
@@ -161,7 +141,6 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
       clauses.add(new Clause(clause.getConstructor(), arguments, clause.getArrow(), clause.getExpression().liftIndex(from, myOn)));
     }
     return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
-    // return Lam(arguments, expr.getBody().liftIndex(from, myOn));
   }
 
   public static class NegativeIndexException extends RuntimeException {}

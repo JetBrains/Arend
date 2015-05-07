@@ -67,16 +67,6 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
     return Lam(arguments, expr.getBody().subst(substExprs, from + on));
   }
 
-  @Override
-  public Expression visitNat(NatExpression expr) {
-    return expr;
-  }
-
-  @Override
-  public Expression visitNelim(NelimExpression expr) {
-    return expr;
-  }
-
   private Expression visitArguments(List<TypeArgument> arguments, Expression codomain) {
     List<Expression> substExprs = new ArrayList<>(mySubstExprs);
     int from = myFrom;
@@ -106,22 +96,12 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitSuc(SucExpression expr) {
-    return expr;
-  }
-
-  @Override
   public Expression visitUniverse(UniverseExpression expr) {
     return expr;
   }
 
   @Override
   public Expression visitVar(VarExpression expr) {
-    return expr;
-  }
-
-  @Override
-  public Expression visitZero(ZeroExpression expr) {
     return expr;
   }
 
