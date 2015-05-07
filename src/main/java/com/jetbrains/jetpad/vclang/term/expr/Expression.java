@@ -118,7 +118,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     Expression expr = this;
     while (expr instanceof AppExpression) {
       arguments.add(((AppExpression) expr).getArgument());
-      expr = ((AppExpression) expr).getFunction().normalize(NormalizeVisitor.Mode.WITHOUT_ETA);
+      expr = ((AppExpression) expr).getFunction().normalize(NormalizeVisitor.Mode.WHNF);
     }
     return expr;
   }

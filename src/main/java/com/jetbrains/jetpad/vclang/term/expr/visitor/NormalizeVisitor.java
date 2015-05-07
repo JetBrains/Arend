@@ -27,7 +27,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     int numberOfLambdas = 0;
     while (expr instanceof LamExpression && numberOfLambdas < exprs.size()) {
       ++numberOfLambdas;
-      expr = ((LamExpression) expr).getBody().normalize(Mode.WITHOUT_ETA);
+      expr = ((LamExpression) expr).getBody().normalize(Mode.WHNF);
     }
     if (numberOfLambdas > 0) {
       if (numberOfLambdas < exprs.size()) {
@@ -72,8 +72,40 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return visitApps(expr.getFunction(exprs), exprs);
   }
 
-  private Expression etaExpansion(Expression expr, List<TypeArgument> arguments) {
+  private Expression addLambdas(List<? extends TypeArgument> args1, int drop, Expression expr) {
+    List<Argument> arguments = new ArrayList<>();
+    int j = 0, i = 0;
+    if (i < drop) {
+      for (; j < args1.size(); ++j) {
+        if (args1.get(j) instanceof TelescopeArgument) {
+          List<String> names = ((TelescopeArgument) args1.get(j)).getNames();
+          i += names.size();
+          if (i > drop) {
+            arguments.add(Tele(names.subList(i - drop, names.size()), args1.get(j).getType()));
+            ++j;
+            break;
+          }
+          if (i == drop) {
+            ++j;
+            break;
+          }
+        } else {
+          if (++i == drop) {
+            ++j;
+            break;
+          }
+        }
+      }
+    }
+    for (; j < args1.size(); ++j) {
+      if (args1.get(j) instanceof TelescopeArgument) {
+        arguments.add(args1.get(j));
+      } else {
+        arguments.add(Tele(args1.get(j).getExplicit(), vars("x"), args1.get(j).getType()));
+      }
+    }
 
+    return arguments.isEmpty() ? expr : Lam(arguments, expr);
   }
 
   public Expression applyDefCall(Definition def, Abstract.Definition.Fixity fixity, List<Expression> args) {
@@ -96,7 +128,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     if (def instanceof FunctionDefinition) {
       List<TelescopeArgument> args1 = ((FunctionDefinition) def).getArguments();
       int numberOfArgs = numberOfVariables(args1);
-      if (myMode == Mode.WITHOUT_ETA && numberOfArgs > args.size()) {
+      if (myMode == Mode.WHNF && numberOfArgs > args.size()) {
         return applyDefCall(def, fixity, args);
       }
 
@@ -115,30 +147,19 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
           return myMode == Mode.TOP ? null : applyDefCall(def, fixity, args);
         }
       }
+
       if (numberOfArgs <= args.size()) {
         for (int i = numberOfArgs; i < args.size(); ++i) {
           result = Apps(result, args.get(i));
         }
-        return myMode == Mode.TOP ? result : result.accept(this);
       } else {
-        List<TypeArgument> arguments = new ArrayList<>();
-        int j, i = 0;
-        for (j = 0; j < args1.size(); ++j) {
-          i += args1.get(j).getNames().size();
-          if (i > args.size()) {
-            arguments.add(Tele(args1.get(j).getNames().subList(i - args.size(), args1.get(j).getNames().size()), args1.get(j).getType()));
-            break;
-          }
-          if (i == args.size()) {
-            break;
-          }
-        }
-        for (; j < args1.size(); ++j) {
-          arguments.add(args1.get(j));
-        }
-        // TODO: Finish this.
+        result = addLambdas(args1, args.size(), result);
       }
+
+      return myMode == Mode.TOP ? result : result.accept(this);
     }
+
+    if (myMode == Mode.TOP) return null;
 
     List<TypeArgument> arguments;
     if (def instanceof DataDefinition) {
@@ -151,6 +172,21 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
 
     int numberOfArgs = numberOfVariables(arguments);
+    if (myMode == Mode.WHNF && numberOfArgs >= args.size()) {
+      return applyDefCall(def, fixity, args);
+    }
+
+    int argsSize = fixity == Abstract.Definition.Fixity.PREFIX ? args.size() : args.size() - 2;
+    Expression result = fixity == Abstract.Definition.Fixity.PREFIX ? DefCall(def) : BinOp(args.get(args.size() - 1), def, args.get(args.size() - 2));
+    for (int i = argsSize - 1; i >= 0; --i) {
+      Expression arg = myMode == Mode.NF ? args.get(i).accept(this) : args.get(i);
+      result = Apps(result, numberOfArgs > args.size() ? arg.liftIndex(0, numberOfArgs - args.size()) : arg);
+    }
+    for (int i = numberOfArgs - args.size() - 1; i >= 0; --i) {
+      result = Apps(result, Index(i));
+    }
+    result = addLambdas(arguments, args.size(), result);
+    return result;
   }
 
   @Override
@@ -291,5 +327,5 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
   }
 
-  public enum Mode { WHNF, NF, WITHOUT_ETA, TOP }
+  public enum Mode { WHNF, NF, TOP }
 }
