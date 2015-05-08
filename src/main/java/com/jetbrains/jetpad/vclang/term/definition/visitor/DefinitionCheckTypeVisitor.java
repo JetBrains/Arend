@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.FindDefCallVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,9 +60,23 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       expectedType = null;
     }
 
+    FunctionDefinition result = new FunctionDefinition(def.getName(), def.getPrecedence(), def.getFixity(), arguments, expectedType, def.getArrow(), null);
+    myGlobalContext.put(def.getName(), result);
     CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
+    myGlobalContext.remove(def.getName());
     trimToSize(localContext, origSize);
-    return termResult == null ? null : new FunctionDefinition(def.getName(), def.getPrecedence(), def.getFixity(), arguments, termResult.type, def.getArrow(), termResult.expression);
+    if (termResult == null) return null;
+
+    if (!termResult.expression.accept(new TerminationCheckVisitor(result))) {
+      myErrors.add(new TypeCheckingError("Termination check failed", termResult.expression));
+      return null;
+    }
+
+    result.setTerm(termResult.expression);
+    if (expectedType == null) {
+      result.setResultType(termResult.type);
+    }
+    return result;
   }
 
   @Override
@@ -101,9 +116,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         Expression type = newConstructor.getArgument(i).getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
-            List<List<Expression>> arguments = new ArrayList<>();
-            argument1.getType().accept(new FindDefCallVisitor(result, arguments));
-            if (!arguments.isEmpty()) {
+            if (argument1.getType().accept(new FindDefCallVisitor(result))) {
               String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
               myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType()));
               continue constructors_loop;
@@ -115,9 +128,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         List<Expression> exprs = new ArrayList<>();
         type.getFunction(exprs);
         for (Expression expr : exprs) {
-          List<List<Expression>> arguments = new ArrayList<>();
-          expr.accept(new FindDefCallVisitor(result, arguments));
-          if (!arguments.isEmpty()) {
+          if (expr.accept(new FindDefCallVisitor(result))) {
             String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
             myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType()));
             continue constructors_loop;

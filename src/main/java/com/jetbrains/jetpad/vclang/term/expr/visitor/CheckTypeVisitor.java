@@ -922,7 +922,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       constructors.remove(index);
 
       for (Abstract.Argument argument : clause.getArguments()) {
-        if (!(argument instanceof NameArgument)) {
+        if (!(argument instanceof Abstract.NameArgument)) {
           error = new TypeCheckingError("Expected a variable", argument);
           expr.setWellTyped(Error(null, error));
           myErrors.add(error);

@@ -44,10 +44,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitIndex(Abstract.IndexExpression expr, Byte prec) {
     if (expr.getIndex() < myNames.size()) {
-      myBuilder.append(myNames.get(myNames.size() - 1 - expr.getIndex()));
-    } else {
-      myBuilder.append('<').append(expr.getIndex()).append('>');
+      String var = myNames.get(myNames.size() - 1 - expr.getIndex());
+      if (var != null) {
+        myBuilder.append(var);
+        return null;
+      }
     }
+    myBuilder.append('<').append(expr.getIndex()).append('>');
     return null;
   }
 

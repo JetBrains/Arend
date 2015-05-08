@@ -511,10 +511,10 @@ public final class Concrete {
   }
 
   public static class FunctionDefinition extends Definition implements Abstract.FunctionDefinition {
-    private final Expression myTerm;
     private final Abstract.Definition.Arrow myArrow;
     private final List<TelescopeArgument> myArguments;
     private final Expression myResultType;
+    private Expression myTerm;
 
     public FunctionDefinition(Position position, String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
       super(position, name, precedence, fixity, null);
@@ -532,6 +532,10 @@ public final class Concrete {
     @Override
     public Expression getTerm() {
       return myTerm;
+    }
+
+    public void setTerm(Expression term) {
+      myTerm = term;
     }
 
     @Override

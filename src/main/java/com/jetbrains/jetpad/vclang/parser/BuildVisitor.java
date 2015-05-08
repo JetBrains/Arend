@@ -114,9 +114,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     Concrete.Expression type = visitTypeOpt(ctx.typeOpt());
     Definition.Arrow arrow = ctx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
-    Concrete.Expression term = visitExpr(ctx.expr());
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(tokenPosition(token), name, Abstract.Definition.DEFAULT_PRECEDENCE, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, term);
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(tokenPosition(token), name, Abstract.Definition.DEFAULT_PRECEDENCE, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null);
     myLocalContext.put(name, def);
+    def.setTerm(visitExpr(ctx.expr()));
     return def;
   }
 
@@ -143,6 +143,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
     Universe universe = type == null ? null : ((Concrete.UniverseExpression) type).getUniverse();
     Concrete.DataDefinition def = new Concrete.DataDefinition(tokenPosition(token), name, Abstract.Definition.DEFAULT_PRECEDENCE, fixity, universe, parameters, constructors);
+    myLocalContext.put(name, def);
     for (ConstructorContext constructor : ctx.constructor()) {
       isPrefix = constructor.name() instanceof NameIdContext;
       if (isPrefix) {
@@ -152,9 +153,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         name = ((NameBinOpContext) constructor.name()).BIN_OP().getText();
         token = ((NameBinOpContext) constructor.name()).BIN_OP().getSymbol();
       }
-      constructors.add(new Concrete.Constructor(tokenPosition(token), name, Abstract.Definition.DEFAULT_PRECEDENCE, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), visitTeles(constructor.tele()), def));
+      Concrete.Constructor constructor1 = new Concrete.Constructor(tokenPosition(token), name, Abstract.Definition.DEFAULT_PRECEDENCE, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), visitTeles(constructor.tele()), def);
+      constructors.add(constructor1);
+      myLocalContext.put(name, constructor1);
     }
-    myLocalContext.put(name, def);
     return def;
   }
 

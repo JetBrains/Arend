@@ -12,10 +12,10 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition {
-  private final Expression myTerm;
   private final Abstract.Definition.Arrow myArrow;
   private final List<TelescopeArgument> myArguments;
-  private final Expression myResultType;
+  private Expression myResultType;
+  private Expression myTerm;
 
   public FunctionDefinition(String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
     super(name, precedence, fixity, null);
@@ -35,6 +35,10 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
     return myTerm;
   }
 
+  public void setTerm(Expression term) {
+    myTerm = term;
+  }
+
   @Override
   public List<TelescopeArgument> getArguments() {
     return myArguments;
@@ -48,6 +52,10 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   @Override
   public Expression getResultType() {
     return myResultType;
+  }
+
+  public void setResultType(Expression resultType) {
+    myResultType = resultType;
   }
 
   @Override

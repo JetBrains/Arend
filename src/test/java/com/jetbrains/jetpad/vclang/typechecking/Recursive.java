@@ -40,4 +40,47 @@ public class Recursive {
     def.accept(new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors), new ArrayList<Binding>());
     assertEquals(1, errors.size());
   }
+
+  @Test
+  public void plus() {
+    Concrete.Definition plus = parseDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => suc (x' + y)");
+    List<TypeCheckingError> errors = new ArrayList<>();
+    Definition newPlus = plus.accept(new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors), new ArrayList<Binding>());
+    assertEquals(0, errors.size());
+    assertNotNull(newPlus);
+  }
+
+  @Test
+  public void doubleRec() {
+    Concrete.Definition foo = parseDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => suc x'' + (x'' + y)");
+    List<TypeCheckingError> errors = new ArrayList<>();
+    Definition newFoo = foo.accept(new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors), new ArrayList<Binding>());
+    assertEquals(0, errors.size());
+    assertNotNull(newFoo);
+  }
+
+  @Test
+  public void functionError() {
+    Concrete.Definition foo = parseDef("\\function (+) (x y : Nat) : Nat <= x + y");
+    List<TypeCheckingError> errors = new ArrayList<>();
+    foo.accept(new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors), new ArrayList<Binding>());
+    assertEquals(1, errors.size());
+  }
+
+  @Test
+  public void functionError2() {
+    Concrete.Definition foo = parseDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => y + y");
+    List<TypeCheckingError> errors = new ArrayList<>();
+    foo.accept(new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors), new ArrayList<Binding>());
+    assertEquals(1, errors.size());
+  }
+
+  @Test
+  public void functionPartiallyApplied() {
+    Concrete.Definition foo = parseDef("\\function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => z (foo z x')");
+    List<TypeCheckingError> errors = new ArrayList<>();
+    Definition newFoo = foo.accept(new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors), new ArrayList<Binding>());
+    assertEquals(0, errors.size());
+    assertNotNull(newFoo);
+  }
 }
