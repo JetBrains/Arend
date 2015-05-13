@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVi
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.antlr.v4.runtime.*;
 
@@ -44,7 +45,7 @@ public class ConsoleMain {
     });
 
     VcgrammarParser.DefsContext tree = parser.defs();
-    List<Concrete.Definition> defs = builder.visitDefs(tree);
+    List<Concrete.Definition> defs = parserErrors.isEmpty() ? builder.visitDefs(tree) : null;
     if (!parserErrors.isEmpty()) {
       for (ParserError error : parserErrors) {
         System.err.println(error);
@@ -52,14 +53,17 @@ public class ConsoleMain {
       return;
     }
 
-    Map<String, Definition> context = new HashMap<>();
+    Map<String, Definition> context = new HashMap<>(Prelude.DEFINITIONS);
     List<TypeCheckingError> errors = new ArrayList<>();
-    for (Concrete.Definition def : defs) {
+    for (Abstract.Definition def : defs) {
       if (def instanceof Concrete.FunctionDefinition) {
         FunctionDefinition funcDef = new DefinitionCheckTypeVisitor(context, errors).visitFunction((Concrete.FunctionDefinition) def, new ArrayList<Binding>());
         if (funcDef != null) {
-          funcDef = new FunctionDefinition(funcDef.getName(), funcDef.getPrecedence(), funcDef.getFixity(), funcDef.getArguments(), funcDef.getResultType(), funcDef.getArrow(), funcDef.getTerm().normalize(NormalizeVisitor.Mode.NF));
+          if (!(funcDef.getTerm() instanceof ElimExpression)) {
+            funcDef = new FunctionDefinition(funcDef.getName(), funcDef.getPrecedence(), funcDef.getFixity(), funcDef.getArguments(), funcDef.getResultType(), funcDef.getArrow(), funcDef.getTerm().normalize(NormalizeVisitor.Mode.NF));
+          }
           context.put(def.getName(), funcDef);
+          def = funcDef;
         }
       }
       if (def != null) {
