@@ -85,7 +85,7 @@ public class SubstTest {
     // \x y. x (var(1)) (\z. var(0) z y) [0 := \w t. t (var(0)) (w (var(1)))] = \x y. x (var(0)) (\z. (\w t. t (var(0)) (w (var(1)))) z y)
     Expression expr = Lam("x", Lam("y", Apps(Index(1), Index(3), Lam("z", Apps(Index(3), Index(0), Index(1))))));
     Expression substExpr = Lam("w", Lam("t", Apps(Index(0), Index(2), Apps(Index(1), Index(3)))));
-    Expression result = Lam("x", Lam("y", Apps(Index(1), Index(2), Lam("z", Apps(Lam("w", Lam("t", Apps(Index(0), Index(5), Apps(Index(1),Index(6))))), Index(0), Index(1))))));
+    Expression result = Lam("x", Lam("y", Apps(Index(1), Index(2), Lam("z", Apps(Lam("w", Lam("t", Apps(Index(0), Index(5), Apps(Index(1), Index(6))))), Index(0), Index(1))))));
     assertEquals(result, expr.subst(substExpr, 0));
   }
 
@@ -111,4 +111,52 @@ public class SubstTest {
     Expression expr2 = Pi(Nat(), Apps(Nat(), Zero()));
     assertEquals(expr2, expr1.subst(Zero(), 0));
   }
+
+  /*
+  @Test
+  public void substElimLess() {
+    // (\elim <1> | con a b c => <0> <2> <4>) [0 := suc <1>] = \elim <0> | con a b c => suc <3> <1> <3>
+    List<Constructor> constructors = new ArrayList<>(1);
+    DataDefinition def = new DataDefinition("D", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
+    Constructor con = new Constructor(0, "con", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
+    constructors.add(con);
+
+    List<Clause> clauses1 = new ArrayList<>(1);
+    clauses1.add(new Clause(con, lamArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(0), Index(2), Index(4))));
+    Expression expr1 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses1);
+
+    List<Clause> clauses2 = new ArrayList<>(1);
+    clauses2.add(new Clause(con, lamArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Suc(), Index(3), Index(1), Index(3))));
+    Expression expr2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses2);
+
+    Expression result = expr1.subst(Suc(Index(1)), 0);
+    assertEquals(expr2, result);
+  }
+
+  @Test
+  public void substElimEquals() {
+    // (\elim <1> | con a b c => <2> <3> <4>) [2, 1, 0 := <1>, con zero (suc zero) zero, Nat] = \elim con zero (suc zero) zero | con a b c => Nat <1> <4>
+    List<Constructor> constructors = new ArrayList<>(1);
+    DataDefinition def = new DataDefinition("D", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
+    Constructor con = new Constructor(0, "con", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
+    constructors.add(con);
+
+    List<Clause> clauses1 = new ArrayList<>(1);
+    clauses1.add(new Clause(con, lamArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(0), Index(2), Index(4))));
+    Expression expr1 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses1);
+
+    List<Clause> clauses2 = new ArrayList<>(1);
+    clauses2.add(new Clause(con, lamArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Nat(), Index(1), Index(4))));
+    Expression expr2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Apps(DefCall(con), Zero(), Suc(Zero()), Zero()), clauses2);
+
+    List<Expression> substs = new ArrayList<>(3);
+    substs.add(Index(1));
+    substs.add(Apps(DefCall(con), Zero(), Suc(Zero()), Zero()));
+    substs.add(Nat());
+
+    Expression result = expr1.subst(substs, 0);
+    assertEquals(expr2, result);
+    assertEquals(Apps(Nat(), Suc(Zero()), Index(1)), expr2.normalize(NormalizeVisitor.Mode.WHNF));
+  }
+  */
 }

@@ -122,6 +122,8 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitElim(ElimExpression expr) {
+    throw new IllegalStateException();
+    /*
     List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
     for (Clause clause : expr.getClauses()) {
       int from = myFrom;
@@ -138,9 +140,18 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
           throw new IllegalStateException();
         }
       }
+
+      if (expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM && expr.getExpression() instanceof IndexExpression) {
+        if (myFrom > ((IndexExpression) expr.getExpression()).getIndex()) {
+          --from;
+        } else {
+          from = myFrom;
+        }
+      }
       clauses.add(new Clause(clause.getConstructor(), arguments, clause.getArrow(), clause.getExpression().liftIndex(from, myOn)));
     }
     return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
+    */
   }
 
   public static class NegativeIndexException extends RuntimeException {}

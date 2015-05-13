@@ -132,7 +132,7 @@ public class ParserTest {
     definitions.put("*", mul);
 
     BuildVisitor builder = new BuildVisitor(definitions);
-    builder.visitExpr(parse("a + b * c").expr());
+    builder.visitExpr(parse("a + b * c", builder.getErrors()).expr());
     assertEquals(1, builder.getErrors().size());
   }
 }

@@ -109,6 +109,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   }
 
   public Expression applyDefCall(Definition def, Abstract.Definition.Fixity fixity, List<Expression> args) {
+    if (myMode == Mode.TOP) return null;
     if (fixity == Abstract.Definition.Fixity.PREFIX) {
       Expression expr = DefCall(def);
       for (int i = args.size() - 1; i >= 0; --i) {
@@ -140,11 +141,31 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         args2.add(Index(i));
       }
 
-      Expression result = ((FunctionDefinition) def).getTerm().subst(args2, 0);
-      if (((FunctionDefinition) def).getArrow() == Abstract.Definition.Arrow.LEFT) {
+      Expression result = ((FunctionDefinition) def).getTerm();
+      Abstract.Definition.Arrow arrow = ((FunctionDefinition) def).getArrow();
+      while (result instanceof ElimExpression && ((ElimExpression) result).getElimType() == Abstract.ElimExpression.ElimType.ELIM) {
+        List<Expression> constructorArgs = new ArrayList<>();
+        Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0).normalize(Mode.WHNF).getFunction(constructorArgs);
+        if (expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor) {
+          Constructor constructor = (Constructor) ((DefCallExpression) expr).getDefinition();
+          Clause clause = ((ElimExpression) result).getClauses().get(constructor.getIndex());
+          if (clause != null && clause.getArguments().size() == constructorArgs.size()) {
+            int var = ((IndexExpression) ((ElimExpression) result).getExpression()).getIndex();
+            args2.remove(var);
+            args2.addAll(var, constructorArgs);
+            result = clause.getExpression();
+            arrow = clause.getArrow();
+            continue;
+          }
+        }
+        return applyDefCall(def, fixity, args);
+      }
+
+      result = result.subst(args2, 0);
+      if (arrow == Abstract.Definition.Arrow.LEFT) {
         result = result.normalize(Mode.TOP);
         if (result == null) {
-          return myMode == Mode.TOP ? null : applyDefCall(def, fixity, args);
+          return applyDefCall(def, fixity, args);
         }
       }
 
@@ -283,6 +304,8 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitElim(ElimExpression expr) {
+    throw new IllegalStateException();
+    /*
     List<Expression> args = new ArrayList<>();
     Expression fun = expr.getExpression().normalize(Mode.WHNF).getFunction(args);
     if (!(fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition() instanceof Constructor)) {
@@ -292,13 +315,16 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     Constructor constructor = (Constructor) ((DefCallExpression) fun).getDefinition();
     Clause clause = expr.getClauses().get(constructor.getIndex());
     if (clause != null && clause.getArguments().size() == args.size()) {
-      Expression result = clause.getExpression().subst(args, 0);
+      int index = expr.getExpression() instanceof IndexExpression ? ((IndexExpression) expr.getExpression()).getIndex() : 0;
+      Expression result = clause.getExpression().subst(args, index);
       return myMode == Mode.TOP ? result : result.accept(this);
     } else {
       return myMode == Mode.NF ? visitElimNF(expr) : myMode == Mode.TOP ? null : expr;
     }
+    */
   }
 
+  /*
   private ElimExpression visitElimNF(ElimExpression expr) {
     List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
     for (Clause clause : expr.getClauses()) {
@@ -306,6 +332,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
     return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
   }
+  */
 
   public enum Mode { WHNF, NF, TOP }
 }

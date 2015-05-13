@@ -52,7 +52,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public final Expression subst(List<Expression> substExprs, int from) {
-    return accept(new SubstVisitor(substExprs, from));
+    return substExprs.isEmpty() ? this : accept(new SubstVisitor(substExprs, from));
   }
 
   public final Expression normalize(NormalizeVisitor.Mode mode) {
@@ -118,7 +118,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     Expression expr = this;
     while (expr instanceof AppExpression) {
       arguments.add(((AppExpression) expr).getArgument());
-      expr = ((AppExpression) expr).getFunction().normalize(NormalizeVisitor.Mode.WHNF);
+      expr = ((AppExpression) expr).getFunction();
     }
     return expr;
   }

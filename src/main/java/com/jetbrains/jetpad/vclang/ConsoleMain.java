@@ -14,8 +14,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrint
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,10 +33,18 @@ public class ConsoleMain {
     VcgrammarLexer lexer = new VcgrammarLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     VcgrammarParser parser = new VcgrammarParser(tokens);
-    VcgrammarParser.DefsContext tree = parser.defs();
     BuildVisitor builder = new BuildVisitor(Prelude.DEFINITIONS);
+    final List<ParserError> parserErrors = builder.getErrors();
+    parser.removeErrorListeners();
+    parser.addErrorListener(new BaseErrorListener() {
+      @Override
+      public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
+        parserErrors.add(new ParserError(line, pos, msg));
+      }
+    });
+
+    VcgrammarParser.DefsContext tree = parser.defs();
     List<Concrete.Definition> defs = builder.visitDefs(tree);
-    List<ParserError> parserErrors = builder.getErrors();
     if (!parserErrors.isEmpty()) {
       for (ParserError error : parserErrors) {
         System.err.println(error);

@@ -36,7 +36,7 @@ public class NormalizationTest {
     Expression mulTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), mulClauses);
     mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), Abstract.Definition.Fixity.INFIX, teleArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, mulTerm);
     mulClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("zero"), new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Zero()));
-    mulClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("suc"), lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Index(1), plus, BinOp(Index(0), mul, Index(1)))));
+    mulClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("suc"), lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0)))));
 
     List<Clause> facClauses = new ArrayList<>(2);
     Expression facTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), facClauses);
@@ -46,9 +46,9 @@ public class NormalizationTest {
 
     List<Clause> nelimClauses = new ArrayList<>(2);
     Expression nelimTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), nelimClauses);
-    nelim = new FunctionDefinition("fac", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
-    nelimClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("zero"), new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(2)));
-    nelimClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("suc"), lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(0), Apps(DefCall(nelim), Index(3), Index(2), Index(0)))));
+    nelim = new FunctionDefinition("nelim", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
+    nelimClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("zero"), new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(1)));
+    nelimClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("suc"), lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(DefCall(nelim), Index(2), Index(1), Index(0)))));
   }
 
   @Test
@@ -98,7 +98,8 @@ public class NormalizationTest {
     // normalize( N-elim (suc zero) (var(0)) ((\x. x) zero) ) = suc zero
     Expression arg = Apps(Lam("x", Index(0)), Zero());
     Expression expr = Apps(DefCall(nelim), Suc(Zero()), Index(0), arg);
-    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+    Expression result = expr.normalize(NormalizeVisitor.Mode.NF);
+    assertEquals(Suc(Zero()), result);
   }
 
   @Test

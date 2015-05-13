@@ -136,6 +136,8 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitElim(ElimExpression expr) {
+    throw new IllegalStateException();
+    /*
     List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
     for (Clause clause : expr.getClauses()) {
       List<Argument> arguments = new ArrayList<>();
@@ -161,10 +163,37 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
       }
 
       for (int i = 0; i < substExprs.size(); ++i) {
-        substExprs.set(i, substExprs.get(i).liftIndex(0, on));
+        substExprs.set(i, substExprs.get(i).liftIndex(0, myFrom + i < var ? on : on - 1));
       }
-      clauses.add(new Clause(clause.getConstructor(), arguments, clause.getArrow(), clause.getExpression().subst(substExprs, from + on)));
+
+      if (expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM && expr.getExpression() instanceof IndexExpression) {
+        int var = ((IndexExpression) expr.getExpression()).getIndex();
+        if (substExprs.size() + myFrom <= var + 1) {
+          from = myFrom;
+          if (substExprs.size() + myFrom == var + 1 && substExprs.size() > 0) {
+            substExprs.remove(0);
+          }
+        } else
+        if (myFrom >= var) {
+          from = from + on - 1;
+          if (myFrom == var && substExprs.size() > 0) {
+            substExprs.remove(substExprs.size() - 1);
+          }
+        } else {
+          List<Expression> exprs = new ArrayList<>(from + on - myFrom);
+          for (int i = from + on - myFrom - 1; i >= 0; --i) {
+            exprs.add(Index(i));
+          }
+          substExprs.remove(var - myFrom);
+          substExprs.addAll(var - myFrom, exprs);
+          from = myFrom;
+        }
+      } else {
+        from += on;
+      }
+      clauses.add(new Clause(clause.getConstructor(), arguments, clause.getArrow(), clause.getExpression().subst(substExprs, from)));
     }
     return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
+    */
   }
 }
