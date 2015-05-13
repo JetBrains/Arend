@@ -7,70 +7,65 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
-  private static class Pair {
-    int index;
-    boolean reduced;
-
-    Pair(int index, boolean reduced) {
-      this.index = index;
-      this.reduced = reduced;
-    }
-  }
-
   private final FunctionDefinition myDef;
-  private final Pair[] myIndices;
-
-  private TerminationCheckVisitor(FunctionDefinition def, Pair[] indices) {
-    myDef = def;
-    myIndices = indices;
-  }
+  private final List<Expression> myPatterns;
 
   public TerminationCheckVisitor(FunctionDefinition def) {
     myDef = def;
-    myIndices = new Pair[numberOfVariables(def.getArguments()) + 1];
-    for (int i = 0; i < myIndices.length; ++i) {
-      myIndices[i] = new Pair(myIndices.length - 1 - i, false);
+
+    int vars = numberOfVariables(def.getArguments());
+    myPatterns = new ArrayList<>(vars);
+    for (int i = 0; i < vars; ++i) {
+      myPatterns.add(Index(i));
     }
   }
 
-  private boolean checkTermination(List<Expression> args) {
-    if (args.size() + 1 > myIndices.length) return false;
+  private TerminationCheckVisitor(FunctionDefinition def, List<Expression> patterns) {
+    myDef = def;
+    myPatterns = patterns;
+  }
 
-    for (int i = 0; i < args.size(); ++i) {
-      Expression arg = args.get(args.size() - 1 - i);
-      while (arg instanceof AppExpression) {
-        arg = ((AppExpression) arg).getFunction();
-      }
-      if (arg instanceof IndexExpression) {
-        int index = ((IndexExpression) arg).getIndex();
-        if (index >= myIndices[i + 1].index && index < myIndices[i].index) {
-          if (myIndices[i].reduced) return true;
-        } else {
-          return false;
-        }
-      } else {
-        return false;
-      }
+  private enum Ord { LESS, EQUALS, NOT_LESS }
+
+  private Ord isLess(Expression expr1, Expression expr2) {
+    List<Expression> args1 = new ArrayList<>();
+    expr1 = expr1.getFunction(args1);
+    List<Expression> args2 = new ArrayList<>();
+    expr2 = expr2.getFunction(args2);
+    if (expr1.equals(expr2)) {
+      Ord ord = isLess(args1, args2);
+      if (ord != Ord.NOT_LESS) return ord;
     }
+    for (Expression arg : args2) {
+      if (isLess(expr1, arg) != Ord.NOT_LESS) return Ord.LESS;
+    }
+    return Ord.NOT_LESS;
+  }
 
-    return false;
+  private Ord isLess(List<Expression> exprs1, List<Expression> exprs2) {
+    for (int i = 0; i < Math.min(exprs1.size(), exprs2.size()); ++i) {
+      Ord ord = isLess(exprs1.get(exprs1.size() - 1 - i), exprs2.get(exprs2.size() - 1 - i));
+      if (ord != Ord.EQUALS) return ord;
+    }
+    return exprs1.size() >= exprs2.size() ? Ord.EQUALS : Ord.NOT_LESS;
   }
 
   @Override
   public Boolean visitApp(AppExpression expr) {
     List<Expression> args = new ArrayList<>();
     Expression fun = expr.getFunction(args);
-    if (fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition().equals(myDef)) {
-      if (!checkTermination(args)) return false;
+    if (fun instanceof DefCallExpression) {
+      if (((DefCallExpression) fun).getDefinition().equals(myDef) && isLess(args, myPatterns) != Ord.LESS) return false;
+    } else {
+      if (!fun.accept(this)) return false;
     }
 
-    if (!fun.accept(this)) return false;
     for (Expression arg : args) {
       if (!arg.accept(this)) return false;
     }
@@ -147,7 +142,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
       List<Expression> args = new ArrayList<>(2);
       args.add(expr.getRight());
       args.add(expr.getLeft());
-      if (!checkTermination(args)) return false;
+      if (isLess(args, myPatterns) != Ord.LESS) return false;
     }
     return expr.getLeft().accept(this) && expr.getRight().accept(this);
   }
@@ -166,18 +161,18 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     if (expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM && expr.getExpression() instanceof IndexExpression) {
       int var = ((IndexExpression) expr.getExpression()).getIndex();
       for (Clause clause : expr.getClauses()) {
-        Pair[] indices = Arrays.copyOf(myIndices, myIndices.length);
-        int shift = numberOfVariables(clause.getArguments()) - 1;
-        for (int i = 0; i < indices.length; ++i) {
-          if (indices[i].index <= var) {
-            indices[i] = new Pair(indices[i].index, true);
-            break;
-          } else {
-            indices[i] = new Pair(indices[i].index + shift, indices[i].reduced);
-          }
+        int vars = numberOfVariables(clause.getArguments());
+        Expression newExpr = DefCall(clause.getConstructor());
+        for (int i = var + vars - 1; i >= var; --i) {
+          newExpr = Apps(newExpr, Index(i));
         }
 
-        if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, indices))) return false;
+        List<Expression> patterns = new ArrayList<>(myPatterns.size());
+        for (Expression pattern : myPatterns) {
+          patterns.add(pattern.liftIndex(var + 1, vars).subst(newExpr, var));
+        }
+
+        if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns))) return false;
       }
     } else {
       for (Clause clause : expr.getClauses()) {
