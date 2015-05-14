@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
+import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
@@ -76,16 +77,16 @@ public class PrettyPrintingParserTest {
   public void prettyPrintingParserElim() throws UnsupportedEncodingException {
     // \function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \elim x | zero => y | suc x' => z (foo z x')
     List<Clause> clausesExpected = new ArrayList<>();
-    Expression termExpected = Elim(Abstract.ElimExpression.ElimType.ELIM, Var("x"), clausesExpected, null);
+    ElimExpression termExpected = Elim(Abstract.ElimExpression.ElimType.ELIM, Var("x"), clausesExpected, null);
     FunctionDefinition expected = new FunctionDefinition("foo", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("z"), Pi(Pi(Var("Nat"), Var("Nat")), Var("Nat"))), Tele(vars("x", "y"), Var("Nat"))), Var("Nat"), Abstract.Definition.Arrow.LEFT, termExpected);
-    clausesExpected.add(new Clause(Prelude.ZERO, lamArgs(), Abstract.Definition.Arrow.RIGHT, Var("y")));
-    clausesExpected.add(new Clause(Prelude.SUC, lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Var("z"), Apps(Var("foo"), Var("z"), Var("x'")))));
+    clausesExpected.add(new Clause(Prelude.ZERO, lamArgs(), Abstract.Definition.Arrow.RIGHT, Var("y"), termExpected));
+    clausesExpected.add(new Clause(Prelude.SUC, lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Var("z"), Apps(Var("foo"), Var("z"), Var("x'"))), termExpected));
 
     List<Clause> clausesActual = new ArrayList<>();
-    Expression termActual = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clausesActual, null);
+    ElimExpression termActual = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clausesActual, null);
     FunctionDefinition actual = new FunctionDefinition("foo", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, termActual);
-    clausesActual.add(new Clause(Prelude.ZERO, lamArgs(), Abstract.Definition.Arrow.RIGHT, Index(0)));
-    clausesActual.add(new Clause(Prelude.SUC, lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(actual), Index(2), Index(1)))));
+    clausesActual.add(new Clause(Prelude.ZERO, lamArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), termActual));
+    clausesActual.add(new Clause(Prelude.SUC, lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(actual), Index(2), Index(1))), termActual));
 
     testDef(expected, actual);
   }

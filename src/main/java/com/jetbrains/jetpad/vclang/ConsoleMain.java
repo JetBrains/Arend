@@ -74,8 +74,8 @@ public class ConsoleMain {
       }
     }
     for (TypeCheckingError error : errors) {
-      if (error.getExpression() instanceof Concrete.Expression) {
-        Concrete.Position position = ((Concrete.Expression) error.getExpression()).getPosition();
+      if (error.getExpression() instanceof Concrete.SourceNode) {
+        Concrete.Position position = ((Concrete.SourceNode) error.getExpression()).getPosition();
         System.err.print(position.line + ":" + position.column + ": ");
       }
       System.err.println(error);

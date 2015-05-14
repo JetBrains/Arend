@@ -10,14 +10,15 @@ public final class Abstract {
   private Abstract() {}
 
   public interface SourceNode {}
+  public interface PrettyPrintableSourceNode extends SourceNode, PrettyPrintable {}
 
-  public interface Expression extends SourceNode {
+  public interface Expression extends PrettyPrintableSourceNode {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
     void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
-  public interface Argument extends SourceNode, PrettyPrintable {
+  public interface Argument extends PrettyPrintableSourceNode {
     boolean getExplicit();
   }
 
@@ -112,7 +113,7 @@ public final class Abstract {
     Clause getOtherwise();
   }
 
-  public interface Clause extends SourceNode {
+  public interface Clause extends PrettyPrintableSourceNode {
     String getName();
     List<? extends Argument> getArguments();
     Argument getArgument(int index);

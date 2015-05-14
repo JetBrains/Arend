@@ -3,11 +3,9 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void> {
   private final StringBuilder myBuilder;
@@ -166,34 +164,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append('\n');
     ++myIndent;
     for (Abstract.Clause clause : expr.getClauses()) {
-      if (clause == null) continue;
-
-      printIndent();
-      myBuilder.append("| ").append(clause.getName());
-      int startIndex = myNames.size();
-      for (Abstract.Argument argument : clause.getArguments()){
-        myBuilder.append(' ');
-        prettyPrintArgument(argument, myBuilder, myNames, (byte) (Abstract.AppExpression.PREC + 1), myIndent);
-      }
-
-      List<String> names = myNames;
-      if (expr.getExpression() instanceof Abstract.IndexExpression) {
-        int varIndex = ((Abstract.IndexExpression) expr.getExpression()).getIndex();
-        names = new ArrayList<>(myNames.subList(0, startIndex - varIndex - 1 > 0 ? startIndex - varIndex - 1 : 0));
-        names.addAll(myNames.subList(startIndex, myNames.size()));
-        if (startIndex >= varIndex) {
-          names.addAll(myNames.subList(startIndex - varIndex, startIndex));
-        } else {
-          for (int i = 0; i < varIndex; ++i) {
-            names.add(null);
-          }
-        }
-      }
-
-      myBuilder.append(clause.getArrow() == Abstract.Definition.Arrow.LEFT ? " <= " : " => ");
-      clause.getExpression().accept(new PrettyPrintVisitor(myBuilder, names, myIndent), Abstract.Expression.PREC);
-      myBuilder.append('\n');
-      removeFromList(myNames, clause.getArguments());
+      prettyPrintClause(expr, clause, myBuilder, myNames, myIndent);
     }
 
     if (expr.getOtherwise() != null) {
@@ -210,7 +181,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  private void printIndent() {
+  public void printIndent() {
     for (int i = 0; i < myIndent; ++i) {
       myBuilder.append('\t');
     }

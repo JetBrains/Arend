@@ -2,9 +2,11 @@ package com.jetbrains.jetpad.vclang.term.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import java.util.List;
+
 public class NotInScopeError extends TypeCheckingError {
-  public NotInScopeError(Abstract.Expression expression) {
-    super("Not in scope", expression);
+  public NotInScopeError(Abstract.Expression expression, List<String> names) {
+    super("Not in scope", expression, names);
   }
 
   public String getName() {

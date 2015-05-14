@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.suffix;
+import static com.jetbrains.jetpad.vclang.term.error.TypeCheckingError.getNames;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
@@ -64,11 +65,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     myGlobalContext.put(def.getName(), result);
     CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
     myGlobalContext.remove(def.getName());
-    trimToSize(localContext, origSize);
-    if (termResult == null) return null;
+    if (termResult == null) {
+      trimToSize(localContext, origSize);
+      return null;
+    }
 
     if (!termResult.expression.accept(new TerminationCheckVisitor(result))) {
-      myErrors.add(new TypeCheckingError("Termination check failed", termResult.expression));
+      myErrors.add(new TypeCheckingError("Termination check failed", termResult.expression, getNames(localContext)));
+      trimToSize(localContext, origSize);
       return null;
     }
 
@@ -76,6 +80,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     if (expectedType == null) {
       result.setResultType(termResult.type);
     }
+    trimToSize(localContext, origSize);
     return result;
   }
 
@@ -118,7 +123,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
             if (argument1.getType().accept(new FindDefCallVisitor(result))) {
               String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
-              myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType()));
+              myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType(), getNames(localContext)));
               continue constructors_loop;
             }
           }
@@ -130,7 +135,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         for (Expression expr : exprs) {
           if (expr.accept(new FindDefCallVisitor(result))) {
             String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
-            myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType()));
+            myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType(), getNames(localContext)));
             continue constructors_loop;
           }
         }
@@ -139,7 +144,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       Universe maxUniverse = universe.max(newConstructor.getUniverse());
       if (maxUniverse == null) {
         String msg = "Universe " + newConstructor.getUniverse() + " of constructor " + newConstructor.getName() + " is not comparable to universe " + universe + " of previous constructors";
-        myErrors.add(new TypeCheckingError(msg, null));
+        myErrors.add(new TypeCheckingError(msg, null, null));
         continue;
       }
       universe = maxUniverse;
@@ -152,7 +157,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     result.setUniverse(universe);
     trimToSize(localContext, origSize);
     if (def.getUniverse() != null && !universe.lessOrEquals(def.getUniverse())) {
-      myErrors.add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null));
+      myErrors.add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
       return null;
     }
 
@@ -197,7 +202,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     trimToSize(localContext, origSize);
     Constructor newConstructor = new Constructor(def.getDataType().getConstructors().indexOf(def), def.getName(), def.getPrecedence(), def.getFixity(), universe, arguments, null);
     if (error != null) {
-      myErrors.add(new TypeCheckingError(error, DefCall(newConstructor)));
+      myErrors.add(new TypeCheckingError(error, DefCall(newConstructor), new ArrayList<String>()));
       return null;
     } else {
       return newConstructor;

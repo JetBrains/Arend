@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintClause;
 
 public final class Concrete {
   private Concrete() {}
@@ -20,7 +21,7 @@ public final class Concrete {
 
     public Position(int line, int column) {
       this.line = line;
-      this.column = column;
+      this.column = column + 1;
     }
   }
 
@@ -50,6 +51,11 @@ public final class Concrete {
       StringBuilder builder = new StringBuilder();
       accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
       return builder.toString();
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+      accept(new PrettyPrintVisitor(builder, names, 0), prec);
     }
   }
 
@@ -433,13 +439,19 @@ public final class Concrete {
     private final List<Argument> myArguments;
     private final Definition.Arrow myArrow;
     private final Expression myExpression;
+    private ElimExpression myElimExpression;
 
-    public Clause(Position position, String name, List<Argument> arguments, Abstract.Definition.Arrow arrow, Expression expression) {
+    public Clause(Position position, String name, List<Argument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
       super(position);
       myName = name;
       myArguments = arguments;
       myArrow = arrow;
       myExpression = expression;
+      myElimExpression = elimExpression;
+    }
+
+    public void setElimExpression(ElimExpression elimExpression) {
+      myElimExpression = elimExpression;
     }
 
     @Override
@@ -465,6 +477,11 @@ public final class Concrete {
     @Override
     public Expression getExpression() {
       return myExpression;
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+      prettyPrintClause(myElimExpression, this, builder, names, 0);
     }
   }
 

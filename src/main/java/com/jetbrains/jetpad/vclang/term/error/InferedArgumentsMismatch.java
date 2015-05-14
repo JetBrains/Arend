@@ -11,8 +11,8 @@ public class InferedArgumentsMismatch extends TypeCheckingError {
   private final int myArgument;
   private final List<Expression> myOptions;
 
-  public InferedArgumentsMismatch(int argument, List<Expression> options, Abstract.Expression expression) {
-    super(null, expression);
+  public InferedArgumentsMismatch(int argument, List<Expression> options, Abstract.Expression expression, List<String> names) {
+    super(null, expression, names);
     myArgument = argument;
     myOptions = options;
   }

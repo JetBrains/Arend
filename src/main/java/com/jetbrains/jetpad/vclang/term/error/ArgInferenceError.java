@@ -2,9 +2,11 @@ package com.jetbrains.jetpad.vclang.term.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import java.util.List;
+
 public class ArgInferenceError extends TypeCheckingError {
-  public ArgInferenceError(String message, Abstract.Expression expression) {
-    super(message, expression);
+  public ArgInferenceError(String message, Abstract.PrettyPrintableSourceNode expression, List<String> names) {
+    super(message, expression, names);
   }
 
   public static String functionArg(int index) {

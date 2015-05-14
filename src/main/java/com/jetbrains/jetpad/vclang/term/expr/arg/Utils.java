@@ -62,8 +62,8 @@ public class Utils {
       builder.append(argument.getExplicit() ? '(' : '{');
       List<String> newNames = new ArrayList<>(((Abstract.TelescopeArgument) argument).getNames().size());
       for (String name : ((Abstract.TelescopeArgument) argument).getNames()) {
-        String newName = renameVar(names, name);
-        builder.append(newName).append(' ');
+        String newName = name == null ? null : renameVar(names, name);
+        builder.append(newName == null ? "_" : newName).append(' ');
         newNames.add(newName);
       }
       builder.append(": ");
@@ -84,5 +84,36 @@ public class Utils {
       }
       names.add(null);
     }
+  }
+
+  public static void prettyPrintClause(Abstract.ElimExpression expr, Abstract.Clause clause, StringBuilder builder, List<String> names, int indent) {
+    if (clause == null) return;
+
+    new PrettyPrintVisitor(builder, names, indent).printIndent();
+    builder.append("| ").append(clause.getName());
+    int startIndex = names.size();
+    for (Abstract.Argument argument : clause.getArguments()){
+      builder.append(' ');
+      prettyPrintArgument(argument, builder, names, (byte) (Abstract.AppExpression.PREC + 1), indent);
+    }
+
+    List<String> newNames = names;
+    if (expr.getExpression() instanceof Abstract.IndexExpression) {
+      int varIndex = ((Abstract.IndexExpression) expr.getExpression()).getIndex();
+      newNames = new ArrayList<>(names.subList(0, startIndex - varIndex - 1 > 0 ? startIndex - varIndex - 1 : 0));
+      newNames.addAll(names.subList(startIndex, names.size()));
+      if (startIndex >= varIndex) {
+        newNames.addAll(names.subList(startIndex - varIndex, startIndex));
+      } else {
+        for (int i = 0; i < varIndex; ++i) {
+          newNames.add(null);
+        }
+      }
+    }
+
+    builder.append(clause.getArrow() == Abstract.Definition.Arrow.LEFT ? " <= " : " => ");
+    clause.getExpression().accept(new PrettyPrintVisitor(builder, newNames, indent), Abstract.Expression.PREC);
+    builder.append('\n');
+    removeFromList(names, clause.getArguments());
   }
 }

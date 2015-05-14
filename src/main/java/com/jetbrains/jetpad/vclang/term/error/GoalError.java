@@ -12,7 +12,7 @@ public class GoalError extends TypeCheckingError {
   private final Expression myType;
 
   public GoalError(List<Binding> context, Expression type) {
-    super("Goal", null);
+    super("Goal", null, null);
     myContext = context;
     myType = type;
   }

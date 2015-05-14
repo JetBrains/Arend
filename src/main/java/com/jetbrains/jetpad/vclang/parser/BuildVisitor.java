@@ -380,7 +380,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (def == null) {
         def = myGlobalContext.get(name);
         if (def == null) {
-          myErrors.add(new ParserError(position, new NotInScopeError(Var(name)).toString()));
+          myErrors.add(new ParserError(position, new NotInScopeError(Var(name), new ArrayList<String>()).toString()));
           return null;
         }
       }
@@ -409,8 +409,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         clauses.add(clause);
       }
     }
+
     Abstract.ElimExpression.ElimType elimType = ctx.elimCase() instanceof ElimContext ? Abstract.ElimExpression.ElimType.ELIM : Abstract.ElimExpression.ElimType.CASE;
-    return new Concrete.ElimExpression(tokenPosition(ctx.getStart()), elimType, visitExpr(ctx.expr()), clauses, otherwise);
+    Concrete.ElimExpression result = new Concrete.ElimExpression(tokenPosition(ctx.getStart()), elimType, visitExpr(ctx.expr()), clauses, otherwise);
+    for (Concrete.Clause clause : clauses) {
+      clause.setElimExpression(result);
+    }
+    if (otherwise != null) {
+      otherwise.setElimExpression(result);
+    }
+    return result;
   }
 
   @Override
@@ -429,7 +437,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     String name = (String) visit(ctx.clauseName());
     Definition.Arrow arrow = ctx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
     List<Concrete.Argument> arguments = ctx.clauseName() instanceof ClauseNameArgsContext ? visitLamTeles(((ClauseNameArgsContext) ctx.clauseName()).tele()) : null;
-    return new Concrete.Clause(tokenPosition(ctx.getStart()), name, arguments, arrow, visitExpr(ctx.expr()));
+    return new Concrete.Clause(tokenPosition(ctx.getStart()), name, arguments, arrow, visitExpr(ctx.expr()), null);
   }
 
   private static Concrete.Position tokenPosition(Token token) {
