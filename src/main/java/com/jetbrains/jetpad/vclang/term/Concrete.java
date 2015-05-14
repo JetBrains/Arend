@@ -387,12 +387,14 @@ public final class Concrete {
     private final ElimType myElimType;
     private final Expression myExpression;
     private final List<Clause> myClauses;
+    private final Clause myOtherwise;
 
-    public ElimExpression(Position position, ElimType elimType, Expression expression, List<Clause> clauses) {
+    public ElimExpression(Position position, ElimType elimType, Expression expression, List<Clause> clauses, Clause otherwise) {
       super(position);
       myElimType = elimType;
       myExpression = expression;
       myClauses = clauses;
+      myOtherwise = otherwise;
     }
 
     @Override
@@ -413,6 +415,11 @@ public final class Concrete {
     @Override
     public Clause getClause(int index) {
       return myClauses.get(index);
+    }
+
+    @Override
+    public Clause getOtherwise() {
+      return myOtherwise;
     }
 
     @Override

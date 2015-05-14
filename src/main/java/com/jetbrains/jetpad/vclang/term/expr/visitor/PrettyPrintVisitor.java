@@ -166,6 +166,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append('\n');
     ++myIndent;
     for (Abstract.Clause clause : expr.getClauses()) {
+      if (clause == null) continue;
+
       printIndent();
       myBuilder.append("| ").append(clause.getName());
       int startIndex = myNames.size();
@@ -193,6 +195,14 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append('\n');
       removeFromList(myNames, clause.getArguments());
     }
+
+    if (expr.getOtherwise() != null) {
+      printIndent();
+      myBuilder.append("| _ ").append(expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.LEFT ? "<= " : "=> ");
+      expr.getOtherwise().getExpression().accept(this, Abstract.Expression.PREC);
+      myBuilder.append('\n');
+    }
+
     printIndent();
     myBuilder.append(';');
     --myIndent;

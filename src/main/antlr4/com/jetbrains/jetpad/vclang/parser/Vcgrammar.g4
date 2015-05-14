@@ -30,7 +30,12 @@ expr  : binOpLeft* atom+                # binOp
       | elimCase expr clause* ';'?      # exprElim
       ;
 
-clause : '|' name tele* arrow expr;
+clauseName
+      : '_'                             # clauseNoName
+      | name tele*                      # clauseNameArgs
+      ;
+
+clause : '|' clauseName arrow expr;
 
 elimCase : '\\elim'                     # elim
          | '\\case'                     # case

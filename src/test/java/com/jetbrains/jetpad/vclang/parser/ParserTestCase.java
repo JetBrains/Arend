@@ -25,7 +25,7 @@ public class ParserTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errors.add(new ParserError(line, pos, msg));
+        errors.add(new ParserError(new Concrete.Position(line, pos), msg));
       }
     });
     return parser;

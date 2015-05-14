@@ -121,15 +121,15 @@ public class ExpressionFactory {
   }
 
   public static DefCallExpression Nat() {
-    return DefCall(Prelude.DEFINITIONS.get("Nat"));
+    return DefCall(Prelude.NAT);
   }
 
   public static DefCallExpression Zero() {
-    return DefCall(Prelude.DEFINITIONS.get("zero"));
+    return DefCall(Prelude.ZERO);
   }
 
   public static DefCallExpression Suc() {
-    return DefCall(Prelude.DEFINITIONS.get("suc"));
+    return DefCall(Prelude.SUC);
   }
 
   public static Expression Suc(Expression expr) {
@@ -156,7 +156,7 @@ public class ExpressionFactory {
     return new BinOpExpression(left, binOp, right);
   }
 
-  public static ElimExpression Elim(Abstract.ElimExpression.ElimType elimType, Expression expression, List<Clause> clauses) {
-    return new ElimExpression(elimType, expression, clauses);
+  public static ElimExpression Elim(Abstract.ElimExpression.ElimType elimType, Expression expression, List<Clause> clauses, Clause otherwise) {
+    return new ElimExpression(elimType, expression, clauses, otherwise);
   }
 }

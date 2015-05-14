@@ -231,14 +231,18 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     if (!(other instanceof ElimExpression)) return false;
 
     ElimExpression otherElim = (ElimExpression) other;
-    if (expr.getElimType() != otherElim.getElimType() || expr.getClauses().size() != otherElim.getClauses().size() || !expr.getExpression().accept(this, otherElim.getExpression())) return false;
+    if (expr.getElimType() != otherElim.getElimType() || expr.getClauses().size() != otherElim.getClauses().size() || !expr.getExpression().accept(this, otherElim.getExpression()))
+      return false;
     for (int i = 0; i < expr.getClauses().size(); ++i) {
       if (!visitClause(expr.getClause(i), otherElim.getClause(i))) return false;
     }
-    return true;
+    return expr.getOtherwise() == otherElim.getOtherwise() || expr.getOtherwise() != null && otherElim.getOtherwise() != null && expr.getOtherwise().getArrow() == otherElim.getOtherwise().getArrow() && expr.getExpression().accept(this, otherElim.getOtherwise().getExpression());
   }
 
   public boolean visitClause(Abstract.Clause clause, Clause other) {
+    if (clause == other) return true;
+    if (clause == null || other == null) return false;
+
     if (!other.getName().equals(clause.getName()) || clause.getArrow() != other.getArrow()) return false;
     List<Abstract.Expression> args1 = new ArrayList<>();
     Abstract.Expression expr1 = lamArgs(clause.getExpression(), args1);
@@ -246,7 +250,9 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     Abstract.Expression expr2 = lamArgs(other.getExpression(), args2);
     if (args1.size() != args2.size() || !expr1.accept(this, (Expression) expr2)) return false;
     for (int i = 0; i < args1.size(); ++i) {
-      if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, (Expression) args2.get(i))) return false;
+      if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, (Expression) args2.get(i))) {
+        return false;
+      }
     }
     return true;
   }

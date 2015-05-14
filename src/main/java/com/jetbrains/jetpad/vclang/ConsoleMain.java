@@ -40,7 +40,7 @@ public class ConsoleMain {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        parserErrors.add(new ParserError(line, pos, msg));
+        parserErrors.add(new ParserError(new Concrete.Position(line, pos), msg));
       }
     });
 

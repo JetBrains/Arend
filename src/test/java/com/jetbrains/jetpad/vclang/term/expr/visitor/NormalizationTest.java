@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -27,28 +26,28 @@ public class NormalizationTest {
 
   public NormalizationTest() {
     List<Clause> plusClauses = new ArrayList<>(2);
-    Expression plusTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), plusClauses);
+    Expression plusTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), plusClauses, null);
     plus = new FunctionDefinition("+", new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), Abstract.Definition.Fixity.INFIX, teleArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, plusTerm);
-    plusClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("zero"), new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(0)));
-    plusClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("suc"), lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Suc(BinOp(Index(0), plus, Index(1)))));
+    plusClauses.add(new Clause(Prelude.ZERO, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(0)));
+    plusClauses.add(new Clause(Prelude.SUC, lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Suc(BinOp(Index(0), plus, Index(1)))));
 
     List<Clause> mulClauses = new ArrayList<>(2);
-    Expression mulTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), mulClauses);
+    Expression mulTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), mulClauses, null);
     mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), Abstract.Definition.Fixity.INFIX, teleArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, mulTerm);
-    mulClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("zero"), new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Zero()));
-    mulClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("suc"), lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0)))));
+    mulClauses.add(new Clause(Prelude.ZERO, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Zero()));
+    mulClauses.add(new Clause(Prelude.SUC, lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0)))));
 
     List<Clause> facClauses = new ArrayList<>(2);
-    Expression facTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), facClauses);
+    Expression facTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), facClauses, null);
     fac = new FunctionDefinition("fac", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, facTerm);
-    facClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("zero"), new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Suc(Zero())));
-    facClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("suc"), lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Suc(Index(0)), mul, Apps(DefCall(fac), Index(0)))));
+    facClauses.add(new Clause(Prelude.ZERO, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Suc(Zero())));
+    facClauses.add(new Clause(Prelude.SUC, lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Suc(Index(0)), mul, Apps(DefCall(fac), Index(0)))));
 
     List<Clause> nelimClauses = new ArrayList<>(2);
-    Expression nelimTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), nelimClauses);
+    Expression nelimTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), nelimClauses, null);
     nelim = new FunctionDefinition("nelim", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
-    nelimClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("zero"), new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(1)));
-    nelimClauses.add(new Clause((Constructor) Prelude.DEFINITIONS.get("suc"), lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(DefCall(nelim), Index(2), Index(1), Index(0)))));
+    nelimClauses.add(new Clause(Prelude.ZERO, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(1)));
+    nelimClauses.add(new Clause(Prelude.SUC, lamArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(DefCall(nelim), Index(2), Index(1), Index(0)))));
   }
 
   @Test

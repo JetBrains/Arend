@@ -109,6 +109,7 @@ public final class Abstract {
     Expression getExpression();
     List<? extends Clause> getClauses();
     Clause getClause(int index);
+    Clause getOtherwise();
   }
 
   public interface Clause extends SourceNode {

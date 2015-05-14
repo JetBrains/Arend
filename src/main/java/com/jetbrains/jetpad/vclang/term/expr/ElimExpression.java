@@ -10,11 +10,13 @@ public class ElimExpression extends Expression implements Abstract.ElimExpressio
   private final ElimType myElimType;
   private final Expression myExpression;
   private final List<Clause> myClauses;
+  private final Clause myOtherwise;
 
-  public ElimExpression(ElimType elimType, Expression expression, List<Clause> clauses) {
+  public ElimExpression(ElimType elimType, Expression expression, List<Clause> clauses, Clause otherwise) {
     myElimType = elimType;
     myExpression = expression;
     myClauses = clauses;
+    myOtherwise = otherwise;
   }
 
   @Override
@@ -35,6 +37,11 @@ public class ElimExpression extends Expression implements Abstract.ElimExpressio
   @Override
   public Clause getClause(int index) {
     return myClauses.get(index);
+  }
+
+  @Override
+  public Clause getOtherwise() {
+    return myOtherwise;
   }
 
   @Override

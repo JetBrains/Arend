@@ -158,6 +158,11 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
             continue;
           }
         }
+        if (((ElimExpression) result).getOtherwise() != null) {
+          result = ((ElimExpression) result).getOtherwise().getExpression();
+          arrow = ((ElimExpression) result).getOtherwise().getArrow();
+          continue;
+        }
         return applyDefCall(def, fixity, args);
       }
 
@@ -305,34 +310,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitElim(ElimExpression expr) {
     throw new IllegalStateException();
-    /*
-    List<Expression> args = new ArrayList<>();
-    Expression fun = expr.getExpression().normalize(Mode.WHNF).getFunction(args);
-    if (!(fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition() instanceof Constructor)) {
-      return myMode == Mode.NF ? visitElimNF(expr) : myMode == Mode.TOP ? null : expr;
-    }
-
-    Constructor constructor = (Constructor) ((DefCallExpression) fun).getDefinition();
-    Clause clause = expr.getClauses().get(constructor.getIndex());
-    if (clause != null && clause.getArguments().size() == args.size()) {
-      int index = expr.getExpression() instanceof IndexExpression ? ((IndexExpression) expr.getExpression()).getIndex() : 0;
-      Expression result = clause.getExpression().subst(args, index);
-      return myMode == Mode.TOP ? result : result.accept(this);
-    } else {
-      return myMode == Mode.NF ? visitElimNF(expr) : myMode == Mode.TOP ? null : expr;
-    }
-    */
   }
-
-  /*
-  private ElimExpression visitElimNF(ElimExpression expr) {
-    List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
-    for (Clause clause : expr.getClauses()) {
-      clauses.add(new Clause(clause.getConstructor(), visitArguments(clause.getArguments()), clause.getArrow(), clause.getExpression().accept(this)));
-    }
-    return Elim(expr.getElimType(), expr.getExpression().accept(this), clauses);
-  }
-  */
 
   public enum Mode { WHNF, NF, TOP }
 }

@@ -90,6 +90,7 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
   public Boolean visitElim(ElimExpression expr) {
     if (expr.getExpression().accept(this)) return true;
     for (Clause clause : expr.getClauses()) {
+      if (clause == null) continue;
       for (Argument argument : clause.getArguments()) {
         if (argument instanceof TypeArgument) {
           if (((TypeArgument) argument).getType().accept(this)) return true;
@@ -97,6 +98,6 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
       }
       if (clause.getExpression().accept(this)) return true;
     }
-    return false;
+    return expr.getOtherwise() == null ? false : expr.getOtherwise().getExpression().accept(this);
   }
 }

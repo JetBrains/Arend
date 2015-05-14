@@ -93,6 +93,7 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
     InferHoleExpression result = expr.getExpression().accept(this);
     if (result != null) return result;
     for (Clause clause : expr.getClauses()) {
+      if (clause == null) continue;
       result = clause.getExpression().accept(this);
       if (result != null) return result;
       for (Argument argument : clause.getArguments()) {
@@ -102,6 +103,6 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
         }
       }
     }
-    return null;
+    return expr.getOtherwise() == null ? null : expr.getOtherwise().getExpression().accept(this);
   }
 }

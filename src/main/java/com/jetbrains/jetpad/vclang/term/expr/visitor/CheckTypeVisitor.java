@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -890,12 +891,25 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
     List<Constructor> constructors = new ArrayList<>(dataType.getConstructors());
     List<Clause> clauses = new ArrayList<>(dataType.getConstructors().size());
+    Clause otherwise = null;
     for (int i = 0; i < dataType.getConstructors().size(); ++i) {
       clauses.add(null);
     }
 
     clauses_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
+      if (clause == null) continue;
+
+      if (clause.getName() == null) {
+        Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
+        CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myGlobalContext, myLocalContext, myErrors, side) : this;
+        Result clauseResult = visitor.typeCheck(clause.getExpression(), expectedType);
+        if (!(clauseResult instanceof OKResult)) return exprResult;
+        OKResult clauseOKResult = (OKResult) clauseResult;
+        otherwise = new Clause(null, null, clause.getArrow(), clauseOKResult.expression);
+        continue;
+      }
+
       int index;
       for (index = 0; index < constructors.size(); ++index) {
         if (constructors.get(index).getName().equals(clause.getName())) {
@@ -971,10 +985,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (!constructors.isEmpty()) {
-      String msg = "Incomplete pattern matching. Unhandled constructors: ";
-      for (int i = 0; i < constructors.size(); ++i) {
-        if (i > 0) msg += ", ";
-        msg += constructors.get(i).getName();
+      String msg = "Incomplete pattern matching";
+      if (!dataType.equals(Prelude.INTERVAL)) {
+        msg += ". Unhandled constructors: ";
+        for (int i = 0; i < constructors.size(); ++i) {
+          if (i > 0) msg += ", ";
+          msg += constructors.get(i).getName();
+        }
       }
       error = new TypeCheckingError(msg + ".", expr);
       expr.setWellTyped(Error(null, error));
@@ -982,6 +999,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    return new OKResult(Elim(expr.getElimType(), exprOKResult.expression, clauses), expectedType, null);
+    return new OKResult(Elim(expr.getElimType(), exprOKResult.expression, clauses, otherwise), expectedType, null);
   }
 }

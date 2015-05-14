@@ -161,6 +161,8 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     if (expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM && expr.getExpression() instanceof IndexExpression) {
       int var = ((IndexExpression) expr.getExpression()).getIndex();
       for (Clause clause : expr.getClauses()) {
+        if (clause == null) continue;
+
         int vars = numberOfVariables(clause.getArguments());
         Expression newExpr = DefCall(clause.getConstructor());
         for (int i = var + vars - 1; i >= var; --i) {
@@ -174,6 +176,8 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
         if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns))) return false;
       }
+
+      if (expr.getOtherwise() != null && !expr.getExpression().accept(this)) return false;
     } else {
       for (Clause clause : expr.getClauses()) {
         if (!clause.getExpression().accept(this)) return false;
