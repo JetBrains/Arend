@@ -36,7 +36,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Byte prec) {
+    if (expr.getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX) myBuilder.append('(');
     myBuilder.append(expr.getDefinition().getName());
+    if (expr.getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX) myBuilder.append(')');
     return null;
   }
 

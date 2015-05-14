@@ -91,8 +91,8 @@ public class Prelude {
     Clause otherwise = new Clause(null, null, Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0)), null);
     ElimExpression atTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), atClauses, otherwise);
     otherwise.setElimExpression(atTerm);
-    atClauses.add(new Clause(LEFT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(3), atTerm));
-    atClauses.add(new Clause(RIGHT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(2), atTerm));
+    atClauses.add(new Clause(LEFT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(2), atTerm));
+    atClauses.add(new Clause(RIGHT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(1), atTerm));
     AT = new FunctionDefinition("@", new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), Abstract.Definition.Fixity.INFIX, atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);
 
     DEFINITIONS.put(AT.getName(), AT);

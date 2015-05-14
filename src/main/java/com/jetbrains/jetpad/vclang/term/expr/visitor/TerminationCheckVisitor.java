@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
@@ -82,22 +84,54 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     return true;
   }
 
+  private void liftPatterns(int on) {
+    if (on == 0) return;
+    for (int i = 0; i < myPatterns.size(); ++i) {
+      myPatterns.set(i, myPatterns.get(i).liftIndex(0, on));
+    }
+  }
+
   @Override
   public Boolean visitLam(LamExpression expr) {
+    int on = 0, total = 0;
     for (Argument argument : expr.getArguments()) {
-      if (argument instanceof TypeArgument) {
+      if (argument instanceof NameArgument) {
+        ++on;
+        ++total;
+      } else
+      if (argument instanceof TelescopeArgument) {
+        liftPatterns(on);
+        on = ((TelescopeArgument) argument).getNames().size();
+        total += on;
         if (!((TypeArgument) argument).getType().accept(this)) return false;
+      } else {
+        throw new IllegalStateException();
       }
     }
-    return expr.getBody().accept(this);
+
+    liftPatterns(on);
+    Boolean result = expr.getBody().accept(this);
+    liftPatterns(-total);
+    return result;
+  }
+
+  private Boolean visitArguments(List<TypeArgument> arguments) {
+    int total = 0;
+    for (TypeArgument argument : arguments) {
+      if (argument instanceof TelescopeArgument) {
+        int on = ((TelescopeArgument) argument).getNames().size();
+        total += on;
+        liftPatterns(on);
+      }
+      if (!argument.getType().accept(this)) return false;
+    }
+    liftPatterns(-total);
+    return true;
   }
 
   @Override
   public Boolean visitPi(PiExpression expr) {
-    for (TypeArgument argument : expr.getArguments()) {
-      if (!argument.getType().accept(this)) return false;
-    }
-    return expr.getCodomain().accept(this);
+    return visitArguments(expr.getArguments()) && expr.getCodomain().accept(this);
   }
 
   @Override
@@ -130,10 +164,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitSigma(SigmaExpression expr) {
-    for (TypeArgument argument : expr.getArguments()) {
-      if (!argument.getType().accept(this)) return false;
-    }
-    return true;
+    return visitArguments(expr.getArguments());
   }
 
   @Override

@@ -70,7 +70,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     mySide = side;
   }
 
-  private OKResult checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
+  private Result checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
     if (result == null) return null;
     if (expectedType == null) {
       expression.setWellTyped(result.expression);
@@ -80,10 +80,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
     result.equations = compare(expectedNorm, actualNorm, CompareVisitor.CMP.GEQ);
     if (result.equations == null) {
-      TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression, getNames(myLocalContext));
-      expression.setWellTyped(Error(result.expression, error));
-      myErrors.add(error);
-      return null;
+      Expression fexpected = expectedNorm.getFunction(new ArrayList<Expression>());
+      if (fexpected instanceof InferHoleExpression) {
+        return new InferErrorResult((InferHoleExpression) fexpected, ((InferHoleExpression) fexpected).getError());
+      } else {
+        TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression, getNames(myLocalContext));
+        expression.setWellTyped(Error(result.expression, error));
+        myErrors.add(error);
+        return null;
+      }
     } else {
       expression.setWellTyped(result.expression);
       return result;
@@ -161,7 +166,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (resultArgs[i] instanceof OKResult) continue;
 
       if (argsImp[i] instanceof Abstract.InferHoleExpression) {
-        resultArgs[i] = new InferErrorResult(new InferHoleExpression(), new ArgInferenceError(functionArg(i + 1), fun, getNames(myLocalContext)));
+        TypeCheckingError error = new ArgInferenceError(functionArg(i + 1), fun, getNames(myLocalContext));
+        resultArgs[i] = new InferErrorResult(new InferHoleExpression(error), error);
         continue;
       }
 
@@ -209,10 +215,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     OKResult okFunction = (OKResult) function;
 
     List<TypeArgument> parameters = new ArrayList<>();
+    DataDefinition dataType = null;
     if (okFunction.expression instanceof DefCallExpression) {
       Definition def = ((DefCallExpression) okFunction.expression).getDefinition();
       if (def instanceof Constructor) {
-        parameters = new ArrayList<>(((Constructor) def).getDataType().getParameters());
+        dataType = ((Constructor) def).getDataType();
+        parameters = new ArrayList<>(dataType.getParameters());
       }
     }
     int parametersNumber = numberOfVariables(parameters);
@@ -224,7 +232,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     Abstract.Expression[] argsImp = new Abstract.Expression[signature.getArguments().size()];
     for (int i = 0; i < parametersNumber; ++i) {
-      argsImp[i] = new InferHoleExpression();
+      argsImp[i] = new InferHoleExpression(new ArgInferenceError(parameter(i), DefCall(dataType), new ArrayList<String>()));
     }
 
     int i, j;
@@ -233,7 +241,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         argsImp[i] = args.get(j).expression;
       } else
       if (args.get(j).isExplicit) {
-        argsImp[i] = new InferHoleExpression();
+        argsImp[i] = new InferHoleExpression(new ArgInferenceError(functionArg(j), fun, getNames(myLocalContext)));
         --j;
       } else {
         TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args.get(j).expression, getNames(myLocalContext));
@@ -262,7 +270,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (signature.getArgument(i).getExplicit()) {
           break;
         } else {
-          argsImp[i] = new InferHoleExpression();
+          argsImp[i] = new InferHoleExpression(new ArgInferenceError(functionArg(i), fun, getNames(myLocalContext)));
         }
       }
     }
@@ -321,7 +329,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (found < 0 || (found != argsNumber && !typeCheckArgs(argsImp, resultArgs, signature, resultEquations, found, fun))) {
           Expression resultExpr = okFunction.expression;
           for (i = parametersNumber; i < argsNumber; ++i) {
-            resultExpr = App(resultExpr, resultArgs[i] == null ? new InferHoleExpression() : resultArgs[i].expression, signature.getArgument(i).getExplicit());
+            resultExpr = App(resultExpr, resultArgs[i] == null ? new InferHoleExpression(null) : resultArgs[i].expression, signature.getArgument(i).getExplicit());
           }
           expression.setWellTyped(Error(resultExpr, myErrors.get(myErrors.size() - 1)));
           return null;
@@ -891,7 +899,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
     List<Constructor> constructors = new ArrayList<>(dataType.getConstructors());
     List<Clause> clauses = new ArrayList<>(dataType.getConstructors().size());
-    Clause otherwise = null;
     for (int i = 0; i < dataType.getConstructors().size(); ++i) {
       clauses.add(null);
     }
@@ -899,16 +906,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     clauses_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
       if (clause == null) continue;
-
-      if (clause.getName() == null) {
-        Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
-        CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myGlobalContext, myLocalContext, myErrors, side) : this;
-        Result clauseResult = visitor.typeCheck(clause.getExpression(), expectedType);
-        if (!(clauseResult instanceof OKResult)) return exprResult;
-        OKResult clauseOKResult = (OKResult) clauseResult;
-        otherwise = new Clause(null, null, clause.getArrow(), clauseOKResult.expression, null);
-        continue;
-      }
 
       int index;
       for (index = 0; index < constructors.size(); ++index) {
@@ -979,10 +976,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
       Result clauseResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, side).typeCheck(clause.getExpression(), clauseExpectedType);
-      if (!(clauseResult instanceof OKResult)) return exprResult;
-      OKResult clauseOKResult = (OKResult) clauseResult;
+      if (!(clauseResult instanceof OKResult)) return clauseResult;
 
-      clauses.set(constructor.getIndex(), new Clause(constructor, arguments, clause.getArrow(), clauseOKResult.expression, null));
+      clauses.set(constructor.getIndex(), new Clause(constructor, arguments, clause.getArrow(), clauseResult.expression, null));
     }
 
     if (!constructors.isEmpty()) {
@@ -998,6 +994,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       expr.setWellTyped(Error(null, error));
       myErrors.add(error);
       return null;
+    }
+
+    Clause otherwise = null;
+    if (expr.getOtherwise() != null) {
+      Side side = expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.RIGHT || !(expr.getOtherwise().getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) expr.getOtherwise().getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
+      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myGlobalContext, myLocalContext, myErrors, side) : this;
+      Result clauseResult = visitor.typeCheck(expr.getOtherwise().getExpression(), expectedType);
+      if (!(clauseResult instanceof OKResult)) return clauseResult;
+      otherwise = new Clause(null, null, expr.getOtherwise().getArrow(), clauseResult.expression, null);
     }
 
     ElimExpression result = Elim(expr.getElimType(), exprOKResult.expression, clauses, otherwise);
