@@ -5,8 +5,11 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.List;
 
 public class ArgInferenceError extends TypeCheckingError {
-  public ArgInferenceError(String message, Abstract.PrettyPrintableSourceNode expression, List<String> names) {
+  private final Abstract.PrettyPrintableSourceNode myWhere;
+
+  public ArgInferenceError(String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, Abstract.PrettyPrintableSourceNode where) {
     super(message, expression, names);
+    myWhere = where;
   }
 
   public static String functionArg(int index) {
@@ -14,7 +17,7 @@ public class ArgInferenceError extends TypeCheckingError {
   }
 
   public static String lambdaArg(int index) {
-    return "Cannot infer " + index + suffix(index) + " argument of lambda";
+    return "Cannot infer type of the " + index + suffix(index) + " argument of lambda";
   }
 
   public static String parameter(int index) {
@@ -39,7 +42,11 @@ public class ArgInferenceError extends TypeCheckingError {
     if (getExpression() == null) {
       return getMessage();
     } else {
-      return getMessage() + " " + getExpression();
+      String msg = getMessage();
+      if (myWhere != null) {
+        msg += " " + prettyPrint(myWhere);
+      }
+      return msg;
     }
   }
 }

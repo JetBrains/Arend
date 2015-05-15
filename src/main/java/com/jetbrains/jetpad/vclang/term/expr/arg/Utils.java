@@ -54,9 +54,13 @@ public class Utils {
 
   public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, byte prec, int indent) {
     if (argument instanceof Abstract.NameArgument) {
-      String name = renameVar(names, ((Abstract.NameArgument) argument).getName());
-      builder.append(argument.getExplicit() ? name : '{' + name + '}');
-      names.add(name);
+      String name = ((Abstract.NameArgument) argument).getName();
+      String newName = name == null ? null : renameVar(names, name);
+      names.add(newName);
+      if (newName == null) {
+        newName = "_";
+      }
+      builder.append(argument.getExplicit() ? newName : '{' + newName + '}');
     } else
     if (argument instanceof Abstract.TelescopeArgument) {
       builder.append(argument.getExplicit() ? '(' : '{');

@@ -79,6 +79,7 @@ public class ConsoleMain {
         System.err.print(position.line + ":" + position.column + ": ");
       }
       System.err.println(error);
+      System.err.println();
     }
   }
 }

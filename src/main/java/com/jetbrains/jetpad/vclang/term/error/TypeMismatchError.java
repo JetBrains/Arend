@@ -5,23 +5,23 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.util.List;
 
 public class TypeMismatchError extends TypeCheckingError {
-  private final Object expected;
-  private final Abstract.Expression actual;
+  private final Object myExpected;
+  private final Abstract.Expression myActual;
 
   public TypeMismatchError(Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
     super(null, expression, names);
-    this.expected = expected;
-    this.actual = actual;
+    myExpected = expected;
+    myActual = actual;
   }
 
   @Override
   public String toString() {
     String message = "Type mismatch:\n" +
-        "Expected type: " + (expected instanceof Abstract.Expression ? prettyPrint((Abstract.Expression) expected) : expected.toString()) + "\n" +
-        "Actual type: " + prettyPrint(actual);
+        "\tExpected type: " + (myExpected instanceof Abstract.Expression ? prettyPrint((Abstract.Expression) myExpected) : myExpected.toString()) + "\n" +
+        "\tActual type: " + prettyPrint(myActual);
     if (getExpression() != null) {
       message += "\n" +
-          "In expression: " + prettyPrint(getExpression());
+          "\tIn expression: " + prettyPrint(getExpression());
     }
     return message;
   }
