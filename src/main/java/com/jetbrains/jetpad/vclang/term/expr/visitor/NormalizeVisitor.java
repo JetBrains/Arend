@@ -148,7 +148,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0).normalize(Mode.WHNF).getFunction(constructorArgs);
         if (expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor) {
           Constructor constructor = (Constructor) ((DefCallExpression) expr).getDefinition();
-          Clause clause = ((ElimExpression) result).getClauses().get(constructor.getIndex());
+          Clause clause = constructor.getIndex() < ((ElimExpression) result).getClauses().size() ? ((ElimExpression) result).getClauses().get(constructor.getIndex()) : null;
           if (clause != null && clause.getArguments().size() == constructorArgs.size()) {
             int var = ((IndexExpression) ((ElimExpression) result).getExpression()).getIndex();
             args2.remove(var);
@@ -159,8 +159,8 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
           }
         }
         if (((ElimExpression) result).getOtherwise() != null) {
-          result = ((ElimExpression) result).getOtherwise().getExpression();
           arrow = ((ElimExpression) result).getOtherwise().getArrow();
+          result = ((ElimExpression) result).getOtherwise().getExpression();
           continue;
         }
         return applyDefCall(def, fixity, args);

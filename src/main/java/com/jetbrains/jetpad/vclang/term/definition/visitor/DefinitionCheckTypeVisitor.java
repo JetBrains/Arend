@@ -44,8 +44,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       }
 
       arguments.add(Tele(argument.getExplicit(), argument.getNames(), result.expression));
-      for (String name : argument.getNames()) {
-        localContext.add(new TypedBinding(name, result.expression));
+      for (int i = 0; i < argument.getNames().size(); ++i) {
+        localContext.add(new TypedBinding(argument.getName(i), result.expression.liftIndex(0, i)));
       }
     }
 
@@ -97,8 +97,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       }
       if (parameter instanceof Abstract.TelescopeArgument) {
         parameters.add(Tele(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
-        for (String name : ((Abstract.TelescopeArgument) parameter).getNames()) {
-          localContext.add(new TypedBinding(name, result.expression));
+        List<String> names = ((Abstract.TelescopeArgument) parameter).getNames();
+        for (int i = 0; i < names.size(); ++i) {
+          localContext.add(new TypedBinding(names.get(i), result.expression.liftIndex(0, i)));
         }
       } else {
         parameters.add(TypeArg(parameter.getExplicit(), result.expression));
@@ -188,8 +189,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
       if (argument instanceof Abstract.TelescopeArgument) {
         arguments.add(Tele(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
-        for (String name : ((Abstract.TelescopeArgument) argument).getNames()) {
-          localContext.add(new TypedBinding(name, result.expression));
+        List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
+        for (int i = 0; i < names.size(); ++i) {
+          localContext.add(new TypedBinding(names.get(i), result.expression.liftIndex(0, i)));
         }
         index += ((Abstract.TelescopeArgument) argument).getNames().size();
       } else {

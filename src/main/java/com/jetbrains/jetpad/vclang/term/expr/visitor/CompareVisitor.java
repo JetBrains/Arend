@@ -70,9 +70,9 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
 
   public static class Equation {
     public Abstract.InferHoleExpression hole;
-    public Abstract.Expression expression;
+    public Expression expression;
 
-    public Equation(Abstract.InferHoleExpression hole, Abstract.Expression expression) {
+    public Equation(Abstract.InferHoleExpression hole, Expression expression) {
       this.hole = hole;
       this.expression = expression;
     }
@@ -113,9 +113,19 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     Abstract.Expression body1 = lamArgs(expr, args1);
     List<Abstract.Expression> args2 = new ArrayList<>();
     Abstract.Expression body2 = lamArgs(other, args2);
+
+    int equationsNumber = myEquations.size();
     if (args1.size() != args2.size() || !body1.accept(this, (Expression) body2)) return false;
+    for (int i = equationsNumber; i < myEquations.size(); ++i) {
+      myEquations.get(i).expression = myEquations.get(i).expression.liftIndex(0, -args1.size());
+    }
+
     for (int i = 0; i < args1.size(); ++i) {
+      equationsNumber = myEquations.size();
       if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, (Expression) args2.get(i))) return false;
+      for (int j = equationsNumber; j < myEquations.size(); ++j) {
+        myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
+      }
     }
     return true;
   }
@@ -131,14 +141,26 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     Expression codomain2 = other.splitAt(args1.size(), args2);
     if (args1.size() != args2.size()) return false;
 
+    int equationsNumber;
+
     myCmp = not(myCmp);
     for (int i = 0; i < args1.size(); ++i) {
       if (i > 0 && args1.get(i) == args1.get(i - 1) && args2.get(i).getType() == args2.get(i - 1).getType()) continue;
+
+      equationsNumber = myEquations.size();
       if (!args1.get(i).accept(this, args2.get(i).getType())) return false;
+      for (int j = equationsNumber; j < myEquations.size(); ++j) {
+        myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
+      }
     }
     myCmp = not(myCmp);
 
-    return codomain1.accept(this, codomain2);
+    equationsNumber = myEquations.size();
+    Boolean result = codomain1.accept(this, codomain2);
+    for (int i = equationsNumber; i < myEquations.size(); ++i) {
+      myEquations.get(i).expression = myEquations.get(i).expression.liftIndex(0, -args1.size());
+    }
+    return result;
   }
 
   @Override
@@ -211,7 +233,12 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     if (args.size() != otherArgs.size()) return false;
     for (int i = 0; i < args.size(); ++i) {
       if (i > 0 && args.get(i) == args.get(i - 1) && otherArgs.get(i) == otherArgs.get(i - 1)) continue;
+
+      int equationsNumber = myEquations.size();
       if (!args.get(i).accept(this, otherArgs.get(i))) return false;
+      for (int j = equationsNumber; j < myEquations.size(); ++j) {
+        myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
+      }
     }
     return true;
   }

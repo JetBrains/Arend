@@ -71,10 +71,10 @@ public class Prelude {
     PathParameters.add(TypeArg(Apps(Index(0), DefCall(LEFT))));
     PathParameters.add(TypeArg(Apps(Index(1), DefCall(RIGHT))));
     List<Constructor> PathConstructors = new ArrayList<>(1);
-    PATH = new DataDefinition("Path", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(Universe.NO_LEVEL, Universe.Type.NOT_TRUNCATED), PathParameters, PathConstructors);
+    PATH = new DataDefinition("Path", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), PathParameters, PathConstructors);
     List<TypeArgument> pathArguments = new ArrayList<>(1);
     pathArguments.add(TypeArg(Pi("i", DefCall(INTERVAL), Apps(Index(3), Index(0)))));
-    PATH_CON = new Constructor(0, "path", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(Universe.NO_LEVEL, Universe.Type.NOT_TRUNCATED), pathArguments, PATH);
+    PATH_CON = new Constructor(0, "path", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), pathArguments, PATH);
     PathConstructors.add(PATH_CON);
 
     DEFINITIONS.put(PATH.getName(), PATH);

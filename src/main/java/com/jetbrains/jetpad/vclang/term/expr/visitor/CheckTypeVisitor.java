@@ -132,18 +132,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       for (int i = 0; i < size; ++i) {
         if (resultArgs[i] instanceof InferErrorResult && resultArgs[i].expression == equation.hole) {
           if (!(argsImp[i] instanceof Abstract.InferHoleExpression)) {
-            boolean isLess = compare(argsImp[i], (Expression) equation.expression, CompareVisitor.CMP.LEQ) != null;
-            if (isLess || compare(argsImp[i], (Expression) equation.expression, CompareVisitor.CMP.GEQ) != null) {
+            boolean isLess = compare(argsImp[i], equation.expression, CompareVisitor.CMP.LEQ) != null;
+            if (isLess || compare(argsImp[i], equation.expression, CompareVisitor.CMP.GEQ) != null) {
               if (!isLess) {
                 argsImp[i] = equation.expression;
               }
             } else {
               List<Expression> options = new ArrayList<>(2);
               options.add((Expression) argsImp[i]);
-              options.add((Expression) equation.expression);
+              options.add(equation.expression);
               for (int j = i + 1; j < size; ++j) {
                 if (resultArgs[j] instanceof InferErrorResult && resultArgs[j].expression == equation.hole) {
-                  options.add((Expression) equation.expression);
+                  options.add(equation.expression);
                 }
               }
               myErrors.add(new InferedArgumentsMismatch(i, options, fun, getNames(myLocalContext)));
@@ -564,9 +564,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (okArgResult.equations != null) {
           for (CompareVisitor.Equation equation : okArgResult.equations) {
             try {
-              if (equation.expression instanceof Expression) {
-                resultEquations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -i)));
-              }
+              resultEquations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -i)));
             } catch (LiftIndexVisitor.NegativeIndexException ignored) {
             }
           }
@@ -600,9 +598,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (okBodyResult.equations != null) {
       for (CompareVisitor.Equation equation : okBodyResult.equations) {
         try {
-          if (equation.expression instanceof Expression) {
-            resultEquations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -lambdaArgs.size())));
-          }
+          resultEquations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -lambdaArgs.size())));
         } catch (LiftIndexVisitor.NegativeIndexException ignored) {
         }
       }
@@ -640,16 +636,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (domainResults[i].equations != null) {
         for (CompareVisitor.Equation equation : domainResults[i].equations) {
           try {
-            if (equation.expression instanceof Expression) {
-              equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -numberOfVars)));
-            }
+            equations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -numberOfVars)));
           } catch (LiftIndexVisitor.NegativeIndexException ignored) {
           }
         }
       }
       if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
-        for (String name : ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames()) {
-          myLocalContext.add(new TypedBinding(name, domainResults[i].expression));
+        List<String> names = ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames();
+        for (int j = 0; j < names.size(); ++j) {
+          myLocalContext.add(new TypedBinding(names.get(j), domainResults[i].expression.liftIndex(0, j)));
           ++numberOfVars;
         }
       } else {
@@ -692,9 +687,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (okCodomainResult.equations != null) {
       for (CompareVisitor.Equation equation : okCodomainResult.equations) {
         try {
-          if (equation.expression instanceof Expression) {
-            okCodomainResult.equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -numberOfVars)));
-          }
+          okCodomainResult.equations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -numberOfVars)));
         } catch (LiftIndexVisitor.NegativeIndexException ignored) {
         }
       }
@@ -843,16 +836,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (domainResults[i].equations != null) {
         for (CompareVisitor.Equation equation : domainResults[i].equations) {
           try {
-            if (equation.expression instanceof Expression) {
-              equations.add(new CompareVisitor.Equation(equation.hole, ((Expression) equation.expression).liftIndex(0, -numberOfVars)));
-            }
+            equations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -numberOfVars)));
           } catch (LiftIndexVisitor.NegativeIndexException ignored) {
           }
         }
       }
       if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
-        for (String name : ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames()) {
-          myLocalContext.add(new TypedBinding(name, domainResults[i].expression));
+        List<String> names = ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames();
+        for (int j = 0; j < names.size(); ++j) {
+          myLocalContext.add(new TypedBinding(names.get(j), domainResults[i].expression.liftIndex(0, j)));
           ++numberOfVars;
         }
       } else {
