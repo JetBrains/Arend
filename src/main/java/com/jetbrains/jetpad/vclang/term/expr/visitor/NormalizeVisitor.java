@@ -117,9 +117,14 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
       }
       return expr;
     } else {
+      if (myMode == Mode.NF) {
+        for (int i = 0; i < args.size(); ++i) {
+          args.set(i, args.get(i).accept(this));
+        }
+      }
       Expression expr = BinOp(args.get(args.size() - 1), def, args.get(args.size() - 2));
       for (int i = args.size() - 3; i >= 0; --i) {
-        expr = Apps(expr, myMode == Mode.NF ? args.get(i).accept(this) : args.get(i));
+        expr = Apps(expr, args.get(i));
       }
       return expr;
     }

@@ -995,11 +995,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       Expression substExpr = DefCall(constructor);
       for (int j = constructorArguments.size() - 1; j >= 0; --j) {
-        substExpr = Apps(substExpr, Index(j));
+        substExpr = Apps(substExpr, Index(j + varIndex));
       }
-      List<Expression> substExprs = new ArrayList<>(1);
-      substExprs.add(substExpr);
-      Expression clauseExpectedType = expectedType.liftIndex(0, constructorArguments.size()).subst(substExprs, varIndex + constructorArguments.size());
+      Expression clauseExpectedType = expectedType.liftIndex(varIndex + 1, constructorArguments.size()).subst(substExpr, varIndex);
 
       List<Binding> localContext = new ArrayList<>(myLocalContext.size() - 1 + clause.getArguments().size());
       for (int i = 0; i < myLocalContext.size() - 1 - varIndex; ++i) {
@@ -1010,7 +1008,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       for (int i = myLocalContext.size() - varIndex; i < myLocalContext.size(); ++i) {
         int i0 = i - myLocalContext.size() + varIndex;
-        localContext.add(new TypedBinding(myLocalContext.get(i).getName(), myLocalContext.get(i).getType().liftIndex(i0 + 1, constructorArguments.size()).subst(substExprs, i0)));
+        localContext.add(new TypedBinding(myLocalContext.get(i).getName(), myLocalContext.get(i).getType().liftIndex(i0 + 1, constructorArguments.size()).subst(substExpr, i0)));
       }
 
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
