@@ -421,10 +421,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return checkResult(expectedType, new OKResult(resultExpr, resultType, resultEquations), expression);
     } else {
       TypeCheckingError error;
-      if (argIndex > parametersNumber) {
-        error = new ArgInferenceError(functionArg(argIndex - parametersNumber), fun, getNames(myLocalContext), fun);
+      if (resultArgs[argIndex - 1] instanceof InferErrorResult && resultArgs[argIndex - 1].expression instanceof InferHoleExpression) {
+        error = ((InferHoleExpression) resultArgs[argIndex - 1].expression).getError();
       } else {
-        error = new ArgInferenceError(parameter(argIndex), fun, getNames(myLocalContext), DefCall(((Constructor) ((DefCallExpression) okFunction.expression).getDefinition()).getDataType()));
+        if (argIndex > parametersNumber) {
+          error = new ArgInferenceError(functionArg(argIndex - parametersNumber), fun, getNames(myLocalContext), fun);
+        } else {
+          error = new ArgInferenceError(parameter(argIndex), fun, getNames(myLocalContext), DefCall(((Constructor) ((DefCallExpression) okFunction.expression).getDefinition()).getDataType()));
+        }
       }
       expression.setWellTyped(Error(resultExpr, error));
       myErrors.add(error);
@@ -726,8 +730,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitError(Abstract.ErrorExpression expr, Expression expectedType) {
-    myErrors.add(new GoalError(myLocalContext, expectedType, expr));
-    return null;
+    TypeCheckingError error = new GoalError(myLocalContext, expectedType.normalize(NormalizeVisitor.Mode.NF), expr);
+    return new InferErrorResult(new InferHoleExpression(error), error);
   }
 
   @Override
@@ -935,6 +939,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       clauses.add(null);
     }
 
+    int errorsNumber = myErrors.size();
+    Result errorResult = null;
+
     clauses_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
       if (clause == null) continue;
@@ -1007,9 +1014,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
       Result clauseResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, side).typeCheck(clause.getExpression(), clauseExpectedType);
-      if (!(clauseResult instanceof OKResult)) return clauseResult;
+      if (!(clauseResult instanceof OKResult)) {
+        if (errorResult == null) {
+          errorResult = clauseResult;
+        }
+      } else {
+        clauses.set(constructor.getIndex(), new Clause(constructor, arguments, clause.getArrow(), clauseResult.expression, null));
+      }
+    }
 
-      clauses.set(constructor.getIndex(), new Clause(constructor, arguments, clause.getArrow(), clauseResult.expression, null));
+    if (myErrors.size() > errorsNumber || errorResult != null) {
+      return errorResult;
     }
 
     if (!constructors.isEmpty()) {
