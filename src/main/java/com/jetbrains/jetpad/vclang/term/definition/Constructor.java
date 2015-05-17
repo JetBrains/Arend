@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -53,10 +54,10 @@ public class Constructor extends Definition implements Abstract.Constructor {
     for (int i = numberOfVariables(myDataType.getParameters()) - 1, j = 0; i >= 0; ++j) {
       if (myDataType.getParameter(j) instanceof TelescopeArgument) {
         for (String ignored : ((TelescopeArgument) myDataType.getParameter(j)).getNames()) {
-          resultType = App(resultType, Index(i-- + numberOfVars), myDataType.getParameter(j).getExplicit());
+          resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameter(j).getExplicit(), !myDataType.getParameter(j).getExplicit()));
         }
       } else {
-        resultType = App(resultType, Index(i-- + numberOfVars), myDataType.getParameter(j).getExplicit());
+        resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameter(j).getExplicit(), !myDataType.getParameter(j).getExplicit()));
       }
     }
     return myArguments.isEmpty() ? resultType : Pi(myArguments, resultType);

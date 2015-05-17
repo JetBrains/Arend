@@ -6,13 +6,11 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class AppExpression extends Expression implements Abstract.AppExpression {
   private final Expression myFunction;
-  private final Expression myArgument;
-  private final boolean myExplicit;
+  private final ArgumentExpression myArgument;
 
-  public AppExpression(Expression function, Expression argument, boolean isExplicit) {
+  public AppExpression(Expression function, ArgumentExpression argument) {
     myFunction = function;
     myArgument = argument;
-    myExplicit = isExplicit;
   }
 
   @Override
@@ -21,13 +19,8 @@ public class AppExpression extends Expression implements Abstract.AppExpression 
   }
 
   @Override
-  public Expression getArgument() {
+  public ArgumentExpression getArgument() {
     return myArgument;
-  }
-
-  @Override
-  public boolean isExplicit() {
-    return myExplicit;
   }
 
   @Override

@@ -60,7 +60,7 @@ public class ConsoleMain {
         FunctionDefinition funcDef = new DefinitionCheckTypeVisitor(context, errors).visitFunction((Concrete.FunctionDefinition) def, new ArrayList<Binding>());
         if (funcDef != null) {
           if (!(funcDef.getTerm() instanceof ElimExpression)) {
-            funcDef = new FunctionDefinition(funcDef.getName(), funcDef.getPrecedence(), funcDef.getFixity(), funcDef.getArguments(), funcDef.getResultType(), funcDef.getArrow(), funcDef.getTerm().normalize(NormalizeVisitor.Mode.NF));
+            funcDef = new FunctionDefinition(funcDef.getName(), funcDef.getPrecedence(), funcDef.getFixity(), funcDef.getArguments(), funcDef.getResultType().normalize(NormalizeVisitor.Mode.NF), funcDef.getArrow(), funcDef.getTerm().normalize(NormalizeVisitor.Mode.NF));
           }
           context.put(def.getName(), funcDef);
           def = funcDef;

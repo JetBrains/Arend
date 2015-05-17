@@ -1,10 +1,18 @@
 package com.jetbrains.jetpad.vclang.term.expr.arg;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Tele;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.TypeArg;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.vars;
 
 public class Utils {
   public static String renameVar(List<String> names, String var) {
@@ -50,6 +58,33 @@ public class Utils {
       result += numberOfVariables(argument);
     }
     return result;
+  }
+
+  private static void addArgs(TypeArgument argument, List<TypeArgument> result) {
+    if (argument instanceof TelescopeArgument) {
+      int i = 0;
+      for (String name : ((TelescopeArgument) argument).getNames()) {
+        result.add(Tele(argument.getExplicit(), vars(name), argument.getType().liftIndex(0, i++)));
+      }
+    } else {
+      result.add(TypeArg(argument.getExplicit(), argument.getType()));
+    }
+  }
+
+  public static void splitArguments(List<TypeArgument> arguments, List<TypeArgument> result) {
+    for (TypeArgument argument : arguments) {
+      addArgs(argument, result);
+    }
+  }
+
+  public static Expression splitArguments(Expression type, List<TypeArgument> result) {
+    type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    while (type instanceof PiExpression) {
+      PiExpression pi = (PiExpression) type;
+      splitArguments(pi.getArguments(), result);
+      type = pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+    }
+    return type;
   }
 
   public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, byte prec, int indent) {

@@ -92,7 +92,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     if (expr == other) return true;
     if (!(other instanceof AppExpression)) return false;
     AppExpression otherApp = (AppExpression) other;
-    return expr.getFunction().accept(this, otherApp.getFunction()) && expr.getArgument().accept(this, otherApp.getArgument());
+    return expr.getFunction().accept(this, otherApp.getFunction()) && expr.getArgument().getExpression().accept(this, otherApp.getArgument().getExpression());
   }
 
   @Override
@@ -249,7 +249,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     if (!(other instanceof BinOpExpression)) return false;
 
     BinOpExpression otherBinOp = (BinOpExpression) other;
-    return expr.getBinOp().equals(otherBinOp.getBinOp()) && expr.getLeft().accept(this, otherBinOp.getLeft()) && expr.getRight().accept(this, otherBinOp.getRight());
+    return expr.getBinOp().equals(otherBinOp.getBinOp()) && expr.getLeft().getExpression().accept(this, otherBinOp.getLeft().getExpression()) && expr.getRight().getExpression().accept(this, otherBinOp.getRight().getExpression());
   }
 
   @Override

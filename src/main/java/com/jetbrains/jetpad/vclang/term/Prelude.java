@@ -88,9 +88,12 @@ public class Prelude {
     atArguments.add(Tele(vars("i"), DefCall(INTERVAL)));
     Expression atResultType = Apps(Index(4), Index(0));
     List<Clause> atClauses = new ArrayList<>(2);
-    Clause otherwise = new Clause(null, null, Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0)), null);
-    ElimExpression atTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), atClauses, otherwise);
-    otherwise.setElimExpression(atTerm);
+    List<Clause> atOtherwiseClauses = new ArrayList<>(1);
+    ElimExpression atOtherwiseElim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), atOtherwiseClauses, null);
+    atOtherwiseClauses.add(new Clause(PATH_CON, lamArgs(Name("f")), Abstract.Definition.Arrow.RIGHT, Apps(Index(0), Index(1)), atOtherwiseElim));
+    Clause atOtherwise = new Clause(null, null, Abstract.Definition.Arrow.LEFT, atOtherwiseElim, null);
+    ElimExpression atTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), atClauses, atOtherwise);
+    atOtherwise.setElimExpression(atTerm);
     atClauses.add(new Clause(LEFT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(2), atTerm));
     atClauses.add(new Clause(RIGHT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(1), atTerm));
     AT = new FunctionDefinition("@", new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), Abstract.Definition.Fixity.INFIX, atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);

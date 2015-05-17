@@ -33,7 +33,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<Concrete.NameArgument> getVars(Concrete.Expression expr, Concrete.Position position) {
     List<Concrete.NameArgument> vars = new ArrayList<>();
     while (expr instanceof Concrete.AppExpression) {
-      Concrete.Expression arg = ((Concrete.AppExpression) expr).getArgument();
+      Concrete.Expression arg = ((Concrete.AppExpression) expr).getArgument().getExpression();
       if (arg instanceof Concrete.VarExpression) {
         vars.add(new Concrete.NameArgument(arg.getPosition(), true, ((Concrete.VarExpression) arg).getName()));
       } else {
@@ -327,7 +327,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private Concrete.Expression visitAtoms(List<AtomContext> atoms) {
     Concrete.Expression result = visitExpr(atoms.get(0));
     for (int i = 1; i < atoms.size(); ++i) {
-      result = new Concrete.AppExpression(result.getPosition(), result, visitExpr(atoms.get(i)), true);
+      result = new Concrete.AppExpression(result.getPosition(), result, new Concrete.ArgumentExpression(visitExpr(atoms.get(i)), true, false));
     }
     return result;
   }
@@ -360,7 +360,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       myErrors.add(new ParserError(position, msg));
     }
     stack.remove(stack.size() - 1);
-    pushOnStack(stack, new Concrete.BinOpExpression(position, pair.expression, pair.binOp, left), binOp, position);
+    pushOnStack(stack, new Concrete.BinOpExpression(position, new Concrete.ArgumentExpression(pair.expression, true, false), pair.binOp, new Concrete.ArgumentExpression(left, true, false)), binOp, position);
   }
 
   @Override
@@ -389,7 +389,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     Concrete.Expression result = visitAtoms(ctx.atom());
     for (int i = stack.size() - 1; i >= 0; --i) {
-      result = new Concrete.BinOpExpression(stack.get(i).expression.getPosition(), stack.get(i).expression, stack.get(i).binOp, result);
+      result = new Concrete.BinOpExpression(stack.get(i).expression.getPosition(), new Concrete.ArgumentExpression(stack.get(i).expression, true, false), stack.get(i).binOp, new Concrete.ArgumentExpression(result, true, false));
     }
     return result;
   }

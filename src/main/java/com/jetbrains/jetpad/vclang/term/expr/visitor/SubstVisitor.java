@@ -22,7 +22,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitApp(AppExpression expr) {
-    return Apps(expr.getFunction().accept(this), expr.getArgument().accept(this));
+    return Apps(expr.getFunction().accept(this), new ArgumentExpression(expr.getArgument().getExpression().accept(this), expr.getArgument().isExplicit(), expr.getArgument().isHidden()));
   }
 
   @Override
@@ -131,7 +131,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitBinOp(BinOpExpression expr) {
-    return BinOp(expr.getLeft().accept(this), expr.getBinOp(), expr.getRight().accept(this));
+    return BinOp(new ArgumentExpression(expr.getLeft().getExpression().accept(this), expr.getLeft().isExplicit(), expr.getLeft().isHidden()), expr.getBinOp(), new ArgumentExpression(expr.getRight().getExpression().accept(this), expr.getRight().isExplicit(), expr.getRight().isHidden()));
   }
 
   @Override

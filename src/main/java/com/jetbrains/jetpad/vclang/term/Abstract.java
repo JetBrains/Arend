@@ -2,8 +2,10 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
+import java.util.Collections;
 import java.util.List;
 
 public final class Abstract {
@@ -35,11 +37,25 @@ public final class Abstract {
     String getName(int index);
   }
 
+  public interface ArgumentExpression extends PrettyPrintableSourceNode {
+    Expression getExpression();
+    boolean isExplicit();
+    boolean isHidden();
+  }
+
   public interface AppExpression extends Expression {
     byte PREC = 11;
     Expression getFunction();
-    Expression getArgument();
-    boolean isExplicit();
+    ArgumentExpression getArgument();
+  }
+
+  public static Expression getFunction(Expression expr, List<ArgumentExpression> arguments) {
+    while (expr instanceof AppExpression) {
+      arguments.add(((AppExpression) expr).getArgument());
+      expr = ((AppExpression) expr).getFunction();
+    }
+    Collections.reverse(arguments);
+    return expr;
   }
 
   public interface DefCallExpression extends Expression {
@@ -80,8 +96,8 @@ public final class Abstract {
 
   public interface BinOpExpression extends Expression {
     Definition getBinOp();
-    Expression getLeft();
-    Expression getRight();
+    ArgumentExpression getLeft();
+    ArgumentExpression getRight();
   }
 
   public interface UniverseExpression extends Expression {

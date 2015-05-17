@@ -27,14 +27,14 @@ public class ImplicitArgumentsTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
-    assertEquals(Apps(App(Index(0), Nat(), false), Zero()), result.expression);
+    assertEquals(Apps(Apps(Index(0), Nat(), false, false), Zero()), result.expression);
     assertEquals(Nat(), result.type);
   }
 
   @Test
   public void unexpectedImplicit() {
     // f : N -> N |- f {0} 0 : N
-    Expression expr = Apps(App(Index(0), Zero(), false), Zero());
+    Expression expr = Apps(Apps(Index(0), Zero(), false, false), Zero());
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(Nat(), Nat())));
 
@@ -90,7 +90,7 @@ public class ImplicitArgumentsTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
-    assertEquals(Apps(App(Index(0), Nat(), false), Suc()), result.expression);
+    assertEquals(Apps(Apps(Index(0), Nat(), false, false), Suc()), result.expression);
     assertEquals(Nat(), result.type);
   }
 
@@ -104,7 +104,7 @@ public class ImplicitArgumentsTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
-    assertEquals(Apps(App(Index(0), Pi(Nat(), Nat()), false), Lam("x", Suc())), result.expression);
+    assertEquals(Apps(Apps(Index(0), Pi(Nat(), Nat()), false, false), Lam("x", Suc())), result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }
 
@@ -119,7 +119,7 @@ public class ImplicitArgumentsTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
-    assertEquals(Apps(App(Index(0), Pi(Pi(Nat(), Nat()), Nat()), false), arg), result.expression);
+    assertEquals(Apps(Apps(Index(0), Pi(Pi(Nat(), Nat()), Nat()), false, false), arg), result.expression);
     assertEquals(Pi(Pi(Nat(), Nat()), Nat()), result.type);
   }
 
@@ -133,7 +133,7 @@ public class ImplicitArgumentsTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, null, errors);
     assertEquals(0, errors.size());
-    assertEquals(Apps(App(Index(0), Nat(), false), Lam("x", Index(0)), Lam(lamArgs(Tele(vars("x"), Nat())), Index(0))), result.expression);
+    assertEquals(Apps(Apps(Index(0), Nat(), false, false), Lam("x", Index(0)), Lam(lamArgs(Tele(vars("x"), Nat())), Index(0))), result.expression);
     assertEquals(Nat(), result.type);
   }
 
@@ -147,7 +147,7 @@ public class ImplicitArgumentsTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, Pi(Nat(), Nat()), errors);
     assertEquals(0, errors.size());
-    assertEquals(Apps(App(Index(0), Nat(), false), Zero()), result.expression);
+    assertEquals(Apps(Apps(Index(0), Nat(), false, false), Zero()), result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }
 
@@ -190,7 +190,7 @@ public class ImplicitArgumentsTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(Prelude.DEFINITIONS, defs, type, errors);
     assertEquals(0, errors.size());
-    assertEquals(App(Index(0), Apps(Suc(), Zero()), false), result.expression);
+    assertEquals(Apps(Index(0), Apps(Suc(), Zero()), false, false), result.expression);
     assertEquals(type, result.type);
   }
 

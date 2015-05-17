@@ -14,7 +14,7 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitApp(AppExpression expr) {
-    return expr.getFunction().accept(this) || expr.getArgument().accept(this);
+    return expr.getFunction().accept(this) || expr.getArgument().getExpression().accept(this);
   }
 
   @Override
@@ -83,7 +83,7 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitBinOp(BinOpExpression expr) {
-    return expr.getBinOp().equals(myDef) || expr.getLeft().accept(this) || expr.getRight().accept(this);
+    return expr.getBinOp().equals(myDef) || expr.getLeft().getExpression().accept(this) || expr.getRight().getExpression().accept(this);
   }
 
   @Override

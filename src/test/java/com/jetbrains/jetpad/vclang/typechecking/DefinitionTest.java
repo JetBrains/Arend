@@ -89,8 +89,8 @@ public class DefinitionTest {
     assertNotNull(def);
     assertEquals(Pi(parameters, Universe(0)), def.getType());
     assertEquals(2, def.getConstructors().size());
-    assertEquals(Pi(arguments1, Apps(App(App(DefCall(def), Index(6), false), Index(5), false), Index(4), Index(3), Index(2))), def.getConstructor(0).getType());
-    assertEquals(Pi(arguments2, Apps(App(App(DefCall(def), Index(6), false), Index(5), false), Index(4), Index(3), Index(2))), def.getConstructor(1).getType());
+    assertEquals(Pi(arguments1, Apps(Apps(Apps(DefCall(def), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), def.getConstructor(0).getType());
+    assertEquals(Pi(arguments2, Apps(Apps(Apps(DefCall(def), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), def.getConstructor(1).getType());
   }
 
   @Test

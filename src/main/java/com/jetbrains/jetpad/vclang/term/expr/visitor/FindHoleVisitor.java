@@ -8,7 +8,7 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
   @Override
   public InferHoleExpression visitApp(AppExpression expr) {
     InferHoleExpression result = expr.getFunction().accept(this);
-    return result == null ? expr.getArgument().accept(this) : result;
+    return result == null ? expr.getArgument().getExpression().accept(this) : result;
   }
 
   @Override
@@ -84,8 +84,8 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
 
   @Override
   public InferHoleExpression visitBinOp(BinOpExpression expr) {
-    InferHoleExpression result = expr.getLeft().accept(this);
-    return result == null ? expr.getRight().accept(this) : result;
+    InferHoleExpression result = expr.getLeft().getExpression().accept(this);
+    return result == null ? expr.getRight().getExpression().accept(this) : result;
   }
 
   @Override

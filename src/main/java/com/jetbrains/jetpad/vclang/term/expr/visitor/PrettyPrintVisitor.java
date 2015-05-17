@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
@@ -18,19 +19,55 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myIndent = indent;
   }
 
+  private void visitApps(Abstract.Expression expr, List<Abstract.ArgumentExpression> args, byte prec) {
+    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX) {
+      int numberOfVisibleArgs = 0;
+      List<Abstract.Expression> visibleArgs = new ArrayList<>(2);
+      for (Abstract.ArgumentExpression arg : args) {
+        if (arg.isExplicit() || !arg.isHidden()) {
+          if (++numberOfVisibleArgs > 2) break;
+          visibleArgs.add(arg.getExpression());
+        }
+      }
+
+      if (numberOfVisibleArgs == 2) {
+        Abstract.Definition.Precedence defPrecedence = ((Abstract.DefCallExpression) expr).getDefinition().getPrecedence();
+        if (prec > defPrecedence.priority) myBuilder.append('(');
+        visibleArgs.get(0).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
+        myBuilder.append(' ').append(((Abstract.DefCallExpression) expr).getDefinition().getName()).append(' ');
+        visibleArgs.get(1).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
+        if (prec > defPrecedence.priority) myBuilder.append(')');
+        return;
+      }
+    }
+
+    if (prec > Abstract.AppExpression.PREC) myBuilder.append('(');
+    expr.accept(this, Abstract.AppExpression.PREC);
+
+    for (Abstract.ArgumentExpression arg : args) {
+      if (arg.isExplicit()) {
+        myBuilder.append(' ');
+        if (arg.isHidden()) {
+          myBuilder.append('_');
+        } else {
+          arg.getExpression().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
+        }
+      } else {
+        if (!arg.isHidden()) {
+          myBuilder.append(" {");
+          arg.getExpression().accept(this, Abstract.Expression.PREC);
+          myBuilder.append('}');
+        }
+      }
+    }
+
+    if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
+  }
+
   @Override
   public Void visitApp(Abstract.AppExpression expr, Byte prec) {
-    if (prec > Abstract.AppExpression.PREC) myBuilder.append('(');
-    expr.getFunction().accept(this, Abstract.AppExpression.PREC);
-    myBuilder.append(' ');
-    if (expr.isExplicit()) {
-      expr.getArgument().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
-    } else {
-      myBuilder.append('{');
-      expr.getArgument().accept(this, Abstract.Expression.PREC);
-      myBuilder.append('}');
-    }
-    if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
+    List<Abstract.ArgumentExpression> args = new ArrayList<>();
+    visitApps(Abstract.getFunction(expr, args), args, prec);
     return null;
   }
 
@@ -151,9 +188,21 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Byte prec) {
     if (prec > expr.getBinOp().getPrecedence().priority) myBuilder.append('(');
-    expr.getLeft().accept(this, (byte) (expr.getBinOp().getPrecedence().priority + (expr.getBinOp().getPrecedence().associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
+
+    if (expr.getLeft().isHidden()) {
+      myBuilder.append('_');
+    } else {
+      expr.getLeft().getExpression().accept(this, (byte) (expr.getBinOp().getPrecedence().priority + (expr.getBinOp().getPrecedence().associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
+    }
+
     myBuilder.append(' ').append(expr.getBinOp().getName()).append(' ');
-    expr.getRight().accept(this, (byte) (expr.getBinOp().getPrecedence().priority + (expr.getBinOp().getPrecedence().associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
+
+    if (expr.getRight().isHidden()) {
+      myBuilder.append('_');
+    } else {
+      expr.getRight().getExpression().accept(this, (byte) (expr.getBinOp().getPrecedence().priority + (expr.getBinOp().getPrecedence().associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
+    }
+
     if (prec > expr.getBinOp().getPrecedence().priority) myBuilder.append(')');
     return null;
   }

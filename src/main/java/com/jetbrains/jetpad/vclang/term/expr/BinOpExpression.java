@@ -6,23 +6,23 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class BinOpExpression extends Expression implements Abstract.BinOpExpression {
-  private final Expression myLeft;
-  private final Expression myRight;
+  private final ArgumentExpression myLeft;
+  private final ArgumentExpression myRight;
   private final Definition myBinOp;
 
-  public BinOpExpression(Expression left, Definition binOp, Expression right) {
+  public BinOpExpression(ArgumentExpression left, Definition binOp, ArgumentExpression right) {
     myLeft = left;
     myRight = right;
     myBinOp = binOp;
   }
 
   @Override
-  public Expression getLeft() {
+  public ArgumentExpression getLeft() {
     return myLeft;
   }
 
   @Override
-  public Expression getRight() {
+  public ArgumentExpression getRight() {
     return myRight;
   }
 

@@ -171,11 +171,11 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   public Boolean visitBinOp(BinOpExpression expr) {
     if (expr.getBinOp().equals(myDef)) {
       List<Expression> args = new ArrayList<>(2);
-      args.add(expr.getRight());
-      args.add(expr.getLeft());
+      args.add(expr.getRight().getExpression());
+      args.add(expr.getLeft().getExpression());
       if (isLess(args, myPatterns) != Ord.LESS) return false;
     }
-    return expr.getLeft().accept(this) && expr.getRight().accept(this);
+    return expr.getLeft().getExpression().accept(this) && expr.getRight().getExpression().accept(this);
   }
 
   @Override

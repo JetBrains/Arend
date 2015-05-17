@@ -15,15 +15,22 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ExpressionFactory {
-  public static AppExpression App(Expression function, Expression argument, boolean isExplicit) {
-    return new AppExpression(function, argument, isExplicit);
-  }
-
   public static Expression Apps(Expression expr, Expression... exprs) {
     for (Expression expr1 : exprs) {
-      expr = new AppExpression(expr, expr1, true);
+      expr = new AppExpression(expr, new ArgumentExpression(expr1, true, false));
     }
     return expr;
+  }
+
+  public static Expression Apps(Expression expr, ArgumentExpression... exprs) {
+    for (ArgumentExpression expr1 : exprs) {
+      expr = new AppExpression(expr, expr1);
+    }
+    return expr;
+  }
+
+  public static Expression Apps(Expression expr, Expression arg, boolean explicit, boolean hidden) {
+    return new AppExpression(expr, new ArgumentExpression(arg, explicit, hidden));
   }
 
   public static DefCallExpression DefCall(Definition definition) {
@@ -152,8 +159,12 @@ public class ExpressionFactory {
     return new ErrorExpression(expr, error);
   }
 
-  public static BinOpExpression BinOp(Expression left, Definition binOp, Expression right) {
+  public static BinOpExpression BinOp(ArgumentExpression left, Definition binOp, ArgumentExpression right) {
     return new BinOpExpression(left, binOp, right);
+  }
+
+  public static BinOpExpression BinOp(Expression left, Definition binOp, Expression right) {
+    return new BinOpExpression(new ArgumentExpression(left, true, false), binOp, new ArgumentExpression(right, true, false));
   }
 
   public static ElimExpression Elim(Abstract.ElimExpression.ElimType elimType, Expression expression, List<Clause> clauses, Clause otherwise) {

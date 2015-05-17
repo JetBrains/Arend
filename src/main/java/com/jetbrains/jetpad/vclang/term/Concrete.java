@@ -11,6 +11,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintClause;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
 
 public final class Concrete {
   private Concrete() {}
@@ -129,16 +130,46 @@ public final class Concrete {
     }
   }
 
+  public static class ArgumentExpression implements Abstract.ArgumentExpression {
+    private final Expression myExpression;
+    private final boolean myExplicit;
+    private final boolean myHidden;
+
+    public ArgumentExpression(Expression expression, boolean explicit, boolean hidden) {
+      myExpression = expression;
+      myExplicit = explicit;
+      myHidden = hidden;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public boolean isExplicit() {
+      return myExplicit;
+    }
+
+    @Override
+    public boolean isHidden() {
+      return myHidden;
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+      myExpression.prettyPrint(builder, names, prec);
+    }
+  }
+
   public static class AppExpression extends Expression implements Abstract.AppExpression {
     private final Expression myFunction;
-    private final Expression myArgument;
-    private final boolean myExplicit;
+    private final ArgumentExpression myArgument;
 
-    public AppExpression(Position position, Expression function, Expression argument, boolean isExplicit) {
+    public AppExpression(Position position, Expression function, ArgumentExpression argument) {
       super(position);
       myFunction = function;
       myArgument = argument;
-      myExplicit = isExplicit;
     }
 
     @Override
@@ -147,13 +178,8 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getArgument() {
+    public ArgumentExpression getArgument() {
       return myArgument;
-    }
-
-    @Override
-    public boolean isExplicit() {
-      return myExplicit;
     }
 
     @Override
@@ -163,11 +189,11 @@ public final class Concrete {
   }
 
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
-    private final Expression myLeft;
-    private final Expression myRight;
+    private final ArgumentExpression myLeft;
+    private final ArgumentExpression myRight;
     private final Abstract.Definition myBinOp;
 
-    public BinOpExpression(Position position, Expression left, Abstract.Definition binOp, Expression right) {
+    public BinOpExpression(Position position, ArgumentExpression left, Abstract.Definition binOp, ArgumentExpression right) {
       super(position);
       myLeft = left;
       myRight = right;
@@ -175,12 +201,12 @@ public final class Concrete {
     }
 
     @Override
-    public Expression getLeft() {
+    public ArgumentExpression getLeft() {
       return myLeft;
     }
 
     @Override
-    public Expression getRight() {
+    public ArgumentExpression getRight() {
       return myRight;
     }
 
