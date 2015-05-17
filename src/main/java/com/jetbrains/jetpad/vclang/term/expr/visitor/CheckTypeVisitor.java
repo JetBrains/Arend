@@ -11,13 +11,15 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
@@ -129,20 +131,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private int solveEquations(int size, Abstract.Expression[] argsImp, Result[] resultArgs, List<CompareVisitor.Equation> equations, List<CompareVisitor.Equation> resultEquations, Abstract.Expression fun) {
+  private int solveEquations(int size, Arg[] argsImp, Result[] resultArgs, List<CompareVisitor.Equation> equations, List<CompareVisitor.Equation> resultEquations, Abstract.Expression fun) {
     int found = size;
     for (CompareVisitor.Equation equation : equations) {
       for (int i = 0; i < size; ++i) {
         if (resultArgs[i] instanceof InferErrorResult && resultArgs[i].expression == equation.hole) {
-          if (!(argsImp[i] instanceof Abstract.InferHoleExpression)) {
-            boolean isLess = compare(argsImp[i], equation.expression, CompareVisitor.CMP.LEQ) != null;
-            if (isLess || compare(argsImp[i], equation.expression, CompareVisitor.CMP.GEQ) != null) {
+          if (!(argsImp[i].expression instanceof Abstract.InferHoleExpression)) {
+            boolean isLess = compare(argsImp[i].expression, equation.expression, CompareVisitor.CMP.LEQ) != null;
+            if (isLess || compare(argsImp[i].expression, equation.expression, CompareVisitor.CMP.GEQ) != null) {
               if (!isLess) {
-                argsImp[i] = equation.expression;
+                argsImp[i] = new Arg(argsImp[i].isExplicit, null, equation.expression);
               }
             } else {
               List<Expression> options = new ArrayList<>(2);
-              options.add((Expression) argsImp[i]);
+              options.add((Expression) argsImp[i].expression);
               options.add(equation.expression);
               for (int j = i + 1; j < size; ++j) {
                 if (resultArgs[j] instanceof InferErrorResult && resultArgs[j].expression == equation.hole) {
@@ -154,7 +156,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             }
           }
 
-          argsImp[i] = equation.expression;
+          argsImp[i] = new Arg(argsImp[i].isExplicit, null, equation.expression);
           found = i < found ? i : found;
           break;
         }
@@ -164,11 +166,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return found;
   }
 
-  private boolean typeCheckArgs(Abstract.Expression[] argsImp, Result[] resultArgs, List<TypeArgument> signature, List<CompareVisitor.Equation> resultEquations, int startIndex, Abstract.Expression fun) {
+  private boolean typeCheckArgs(Arg[] argsImp, Result[] resultArgs, List<TypeArgument> signature, List<CompareVisitor.Equation> resultEquations, int startIndex, Abstract.Expression fun) {
     for (int i = startIndex; i < resultArgs.length; ++i) {
       if (resultArgs[i] instanceof OKResult) continue;
 
-      if (argsImp[i] instanceof Abstract.InferHoleExpression) {
+      if (argsImp[i].expression instanceof Abstract.InferHoleExpression) {
         TypeCheckingError error = new ArgInferenceError(functionArg(i + 1), fun, getNames(myLocalContext), fun);
         resultArgs[i] = new InferErrorResult(new InferHoleExpression(error), error);
         continue;
@@ -180,11 +182,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       Expression type = signature.get(i).getType().subst(substExprs, 0);
 
-      resultArgs[i] = typeCheck(argsImp[i], type);
+      resultArgs[i] = typeCheck(argsImp[i].expression, type);
       if (resultArgs[i] == null) {
         for (int j = i + 1; j < resultArgs.length; ++j) {
-          if (!(argsImp[j] instanceof Abstract.InferHoleExpression)) {
-            typeCheck(argsImp[j], null);
+          if (!(argsImp[j].expression instanceof Abstract.InferHoleExpression)) {
+            typeCheck(argsImp[j].expression, null);
           }
         }
         return false;
@@ -223,24 +225,24 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Definition def = ((DefCallExpression) okFunction.expression).getDefinition();
       if (def instanceof Constructor) {
         dataType = ((Constructor) def).getDataType();
-        signatureArguments = new ArrayList<>(dataType.getParameters());
+        splitArguments(dataType.getParameters(), signatureArguments);
       }
     }
-    int parametersNumber = numberOfVariables(signatureArguments);
+    int parametersNumber = signatureArguments.size();
 
     Expression signatureResultType = splitArguments(okFunction.type, signatureArguments);
-    Abstract.Expression[] argsImp = new Abstract.Expression[signatureArguments.size()];
+    Arg[] argsImp = new Arg[signatureArguments.size()];
     for (int i = 0; i < parametersNumber; ++i) {
-      argsImp[i] = new InferHoleExpression(new ArgInferenceError(parameter(i), fun, new ArrayList<String>(), DefCall(dataType)));
+      argsImp[i] = new Arg(!signatureArguments.get(i).getExplicit(), null, new InferHoleExpression(new ArgInferenceError(parameter(i), fun, new ArrayList<String>(), DefCall(dataType))));
     }
 
     int i, j;
     for (i = parametersNumber, j = 0; i < signatureArguments.size() && j < args.size(); ++i, ++j) {
       if (args.get(j).isExplicit() == signatureArguments.get(i).getExplicit()) {
-        argsImp[i] = args.get(j).getExpression();
+        argsImp[i] = new Arg(args.get(j).isHidden(), null, args.get(j).getExpression());
       } else
       if (args.get(j).isExplicit()) {
-        argsImp[i] = new InferHoleExpression(new ArgInferenceError(functionArg(j), fun, getNames(myLocalContext), fun));
+        argsImp[i] = new Arg(true, null, new InferHoleExpression(new ArgInferenceError(functionArg(j), fun, getNames(myLocalContext), fun)));
         --j;
       } else {
         TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args.get(j).getExpression(), getNames(myLocalContext));
@@ -317,7 +319,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (signatureArguments.get(i).getExplicit()) {
           break;
         } else {
-          argsImp[i] = new InferHoleExpression(new ArgInferenceError(functionArg(i), fun, getNames(myLocalContext), fun));
+          argsImp[i] = new Arg(true, null, new InferHoleExpression(new ArgInferenceError(functionArg(i), fun, getNames(myLocalContext), fun)));
         }
       }
     }
@@ -363,7 +365,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (equations == null) {
           Expression resultExpr = okFunction.expression;
           for (i = parametersNumber; i < argsNumber; ++i) {
-            resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), !signatureArguments.get(i).getExplicit()));
+            resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
           }
 
           TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression, getNames(myLocalContext));
@@ -376,7 +378,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (found < 0 || (found != argsNumber && !typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, found, fun))) {
           Expression resultExpr = okFunction.expression;
           for (i = parametersNumber; i < argsNumber; ++i) {
-            resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i] == null ? new InferHoleExpression(null) : resultArgs[i].expression, signatureArguments.get(i).getExplicit(), !signatureArguments.get(i).getExplicit()));
+            resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i] == null ? new InferHoleExpression(null) : resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
           }
           expression.setWellTyped(Error(resultExpr, myErrors.get(myErrors.size() - 1)));
           return null;
@@ -412,7 +414,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Expression resultExpr = okFunction.expression;
     for (i = parametersNumber; i < argsNumber; ++i) {
-      resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), !signatureArguments.get(i).getExplicit()));
+      resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
     }
 
     if (argIndex == 0) {

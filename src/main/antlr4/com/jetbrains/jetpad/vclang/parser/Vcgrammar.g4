@@ -22,7 +22,7 @@ name  : ID                              # nameId
       | '(' BIN_OP ')'                  # nameBinOp
       ;
 
-expr  : binOpLeft* atom+                # binOp
+expr  : binOpLeft* atom argument*       # binOp
       | <assoc=right> expr '->' expr    # arr
       | '\\Pi' tele+ '->' expr          # pi
       | '\\Sigma' tele+                 # sigma
@@ -41,7 +41,7 @@ elimCase : '\\elim'                     # elim
          | '\\case'                     # case
          ;
 
-binOpLeft : atom+ infix;
+binOpLeft : atom argument* infix;
 
 infix : BIN_OP                          # infixBinOp
       | '`' ID '`'                      # infixId
@@ -50,6 +50,10 @@ infix : BIN_OP                          # infixBinOp
 atom  : '(' expr (',' expr)* ')'        # tuple
       | literal                         # atomLiteral
       ;
+
+argument : atom                         # argumentExplicit
+         | '{' expr '}'                 # argumentImplicit
+         ;
 
 literal : UNIVERSE                      # universe
         | TRUNCATED_UNIVERSE            # truncatedUniverse

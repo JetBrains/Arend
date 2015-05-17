@@ -324,10 +324,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.PiExpression(tokenPosition(ctx.getStart()), visitTeles(ctx.tele()), visitExpr(ctx.expr()));
   }
 
-  private Concrete.Expression visitAtoms(List<AtomContext> atoms) {
-    Concrete.Expression result = visitExpr(atoms.get(0));
-    for (int i = 1; i < atoms.size(); ++i) {
-      result = new Concrete.AppExpression(result.getPosition(), result, new Concrete.ArgumentExpression(visitExpr(atoms.get(i)), true, false));
+  private Concrete.Expression visitAtoms(AtomContext atom, List<ArgumentContext> arguments) {
+    Concrete.Expression result = visitExpr(atom);
+    for (ArgumentContext argument : arguments) {
+      boolean explicit = argument instanceof ArgumentExplicitContext;
+      Concrete.Expression expr;
+      if (explicit) {
+        expr = visitExpr(((ArgumentExplicitContext) argument).atom());
+      } else {
+        expr = visitExpr(((ArgumentImplicitContext) argument).expr());
+      }
+      result = new Concrete.AppExpression(result.getPosition(), result, new Concrete.ArgumentExpression(expr, explicit, false));
     }
     return result;
   }
@@ -384,10 +391,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           return null;
         }
       }
-      pushOnStack(stack, visitAtoms(leftContext.atom()), def, position);
+      pushOnStack(stack, visitAtoms(leftContext.atom(), leftContext.argument()), def, position);
     }
 
-    Concrete.Expression result = visitAtoms(ctx.atom());
+    Concrete.Expression result = visitAtoms(ctx.atom(), ctx.argument());
     for (int i = stack.size() - 1; i >= 0; --i) {
       result = new Concrete.BinOpExpression(stack.get(i).expression.getPosition(), new Concrete.ArgumentExpression(stack.get(i).expression, true, false), stack.get(i).binOp, new Concrete.ArgumentExpression(result, true, false));
     }
