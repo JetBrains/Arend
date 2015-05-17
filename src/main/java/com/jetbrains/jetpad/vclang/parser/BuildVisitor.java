@@ -450,4 +450,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private static Concrete.Position tokenPosition(Token token) {
     return new Concrete.Position(token.getLine(), token.getCharPositionInLine());
   }
+
+  @Override
+  public Concrete.ErrorExpression visitHole(HoleContext ctx) {
+    return new Concrete.ErrorExpression(tokenPosition(ctx.getStart()));
+  }
 }

@@ -726,7 +726,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitError(Abstract.ErrorExpression expr, Expression expectedType) {
-    myErrors.add(new GoalError(myLocalContext, expectedType));
+    myErrors.add(new GoalError(myLocalContext, expectedType, expr));
     return null;
   }
 

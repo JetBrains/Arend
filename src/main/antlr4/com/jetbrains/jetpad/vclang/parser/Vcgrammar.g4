@@ -61,6 +61,7 @@ literal : UNIVERSE                      # universe
         | SET                           # set
         | ID                            # id
         | '_'                           # unknown
+        | '{?}'                         # hole
         ;
 
 tele : literal                          # teleLiteral

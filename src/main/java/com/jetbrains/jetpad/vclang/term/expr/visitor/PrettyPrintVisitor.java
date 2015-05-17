@@ -151,7 +151,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitError(Abstract.ErrorExpression expr, Byte prec) {
-    myBuilder.append("{!");
+    myBuilder.append("{?");
     if (expr.getExpr() != null) {
       expr.getExpr().accept(this, Abstract.Expression.PREC);
     }
