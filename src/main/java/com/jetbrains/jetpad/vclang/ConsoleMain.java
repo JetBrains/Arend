@@ -56,23 +56,26 @@ public class ConsoleMain {
     Map<String, Definition> context = new HashMap<>(Prelude.DEFINITIONS);
     List<TypeCheckingError> errors = new ArrayList<>();
     for (Abstract.Definition def : defs) {
-      if (def instanceof Concrete.FunctionDefinition) {
-        FunctionDefinition funcDef = new DefinitionCheckTypeVisitor(context, errors).visitFunction((Concrete.FunctionDefinition) def, new ArrayList<Binding>());
-        if (funcDef != null) {
-          if (!(funcDef.getTerm() instanceof ElimExpression)) {
-            funcDef = new FunctionDefinition(funcDef.getName(), funcDef.getPrecedence(), funcDef.getFixity(), funcDef.getArguments(), funcDef.getResultType().normalize(NormalizeVisitor.Mode.NF), funcDef.getArrow(), funcDef.getTerm().normalize(NormalizeVisitor.Mode.NF));
-          }
-          context.put(def.getName(), funcDef);
-          def = funcDef;
+      Definition typedDef = def.accept(new DefinitionCheckTypeVisitor(context, errors), new ArrayList<Binding>());
+      if (typedDef != null) {
+        context.put(typedDef.getName(), typedDef);
+      }
+
+      if (typedDef instanceof FunctionDefinition) {
+        FunctionDefinition funcDef = (FunctionDefinition) typedDef;
+        if (!(funcDef.getTerm() instanceof ElimExpression)) {
+          typedDef = new FunctionDefinition(funcDef.getName(), funcDef.getPrecedence(), funcDef.getFixity(), funcDef.getArguments(), funcDef.getResultType().normalize(NormalizeVisitor.Mode.NF), funcDef.getArrow(), funcDef.getTerm().normalize(NormalizeVisitor.Mode.NF));
         }
       }
-      if (def != null) {
+
+      if (typedDef != null) {
         StringBuilder stringBuilder = new StringBuilder();
-        def.accept(new DefinitionPrettyPrintVisitor(stringBuilder, new ArrayList<String>()), Abstract.Expression.PREC);
+        typedDef.accept(new DefinitionPrettyPrintVisitor(stringBuilder, new ArrayList<String>()), Abstract.Expression.PREC);
         System.out.println(stringBuilder);
         System.out.println();
       }
     }
+
     for (TypeCheckingError error : errors) {
       if (error.getExpression() instanceof Concrete.SourceNode) {
         Concrete.Position position = ((Concrete.SourceNode) error.getExpression()).getPosition();

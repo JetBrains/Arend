@@ -33,7 +33,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitIndex(IndexExpression expr) {
     if (expr.getIndex() < myFrom) return expr;
-    if (expr.getIndex() + myOn >= 0) return Index(expr.getIndex() + myOn);
+    if (expr.getIndex() + myOn >= myFrom) return Index(expr.getIndex() + myOn);
     throw new NegativeIndexException();
   }
 

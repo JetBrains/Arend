@@ -1,7 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
@@ -25,7 +29,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   private Expression visitApps(Expression expr, List<ArgumentExpression> exprs) {
     int numberOfLambdas = 0;
     while (expr instanceof LamExpression && numberOfLambdas < exprs.size()) {
-      ++numberOfLambdas;
+      numberOfLambdas += numberOfVariables(((LamExpression) expr).getArguments());
       expr = ((LamExpression) expr).getBody().normalize(Mode.WHNF);
     }
     if (numberOfLambdas > 0) {
@@ -143,6 +147,19 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   public Expression visitDefCall(Definition def, Abstract.Definition.Fixity fixity, List<ArgumentExpression> args) {
     if (def instanceof FunctionDefinition) {
+      if (def.equals(Prelude.COERCE) && args.size() == 3) {
+        boolean ok = true;
+        try {
+          Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0)).normalize(Mode.NF).liftIndex(0, -1);
+        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+          ok = false;
+        }
+
+        if (ok) {
+          return myMode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this);
+        }
+      }
+
       List<TypeArgument> args1 = new ArrayList<>();
       splitArguments(def.getType(), args1);
       int numberOfArgs = numberOfVariables(args1);

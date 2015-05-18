@@ -19,7 +19,7 @@ public class InferedArgumentsMismatch extends TypeCheckingError {
 
   @Override
   public String toString() {
-    String msg = "Cannot infer " + myArgument + suffix(myArgument) + " to function " + getExpression() + "\n" +
+    String msg = "Cannot infer " + myArgument + suffix(myArgument) + " argument to function " + getExpression() + "\n" +
         "Posible options are:\n";
     for (Expression expression : myOptions) {
       msg += "\t" + expression + "\n";

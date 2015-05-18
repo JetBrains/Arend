@@ -431,8 +431,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
       }
       expression.setWellTyped(Error(resultExpr, error));
-      myErrors.add(error);
-      return null;
+      return new InferErrorResult(new InferHoleExpression(error), error);
     }
   }
 
