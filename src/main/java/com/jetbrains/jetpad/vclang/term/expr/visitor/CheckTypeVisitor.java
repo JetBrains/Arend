@@ -1017,6 +1017,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (!(clauseResult instanceof OKResult)) {
         if (errorResult == null) {
           errorResult = clauseResult;
+        } else
+        if (clauseResult instanceof InferErrorResult) {
+          myErrors.add(((InferErrorResult) errorResult).error);
+          errorResult = clauseResult;
         }
       } else {
         clauses.set(constructor.getIndex(), new Clause(constructor, arguments, clause.getArrow(), clauseResult.expression, null));

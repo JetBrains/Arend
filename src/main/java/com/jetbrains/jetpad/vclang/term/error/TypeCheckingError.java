@@ -38,7 +38,6 @@ public class TypeCheckingError {
     return builder.toString();
   }
 
-  // TODO: Replace myExpression.toString() with pretty printing.
   @Override
   public String toString() {
     String msg = myMessage == null ? "Type checking error" : myMessage;
