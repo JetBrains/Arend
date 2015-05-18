@@ -1,11 +1,15 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void> {
@@ -20,24 +24,44 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   private void visitApps(Abstract.Expression expr, List<Abstract.ArgumentExpression> args, byte prec) {
-    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX) {
-      int numberOfVisibleArgs = 0;
-      List<Abstract.Expression> visibleArgs = new ArrayList<>(2);
-      for (Abstract.ArgumentExpression arg : args) {
-        if (arg.isExplicit() || !arg.isHidden()) {
-          if (++numberOfVisibleArgs > 2) break;
-          visibleArgs.add(arg.getExpression());
+    if (expr instanceof Abstract.DefCallExpression) {
+      if (((Abstract.DefCallExpression) expr).getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX) {
+        int numberOfVisibleArgs = 0;
+        List<Abstract.Expression> visibleArgs = new ArrayList<>(2);
+        for (Abstract.ArgumentExpression arg : args) {
+          if (arg.isExplicit() || !arg.isHidden()) {
+            if (++numberOfVisibleArgs > 2) break;
+            visibleArgs.add(arg.getExpression());
+          }
+        }
+
+        if (numberOfVisibleArgs == 2) {
+          Abstract.Definition.Precedence defPrecedence = ((Abstract.DefCallExpression) expr).getDefinition().getPrecedence();
+          if (prec > defPrecedence.priority) myBuilder.append('(');
+          visibleArgs.get(0).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
+          myBuilder.append(' ').append(((Abstract.DefCallExpression) expr).getDefinition().getName()).append(' ');
+          visibleArgs.get(1).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
+          if (prec > defPrecedence.priority) myBuilder.append(')');
+          return;
         }
       }
 
-      if (numberOfVisibleArgs == 2) {
-        Abstract.Definition.Precedence defPrecedence = ((Abstract.DefCallExpression) expr).getDefinition().getPrecedence();
-        if (prec > defPrecedence.priority) myBuilder.append('(');
-        visibleArgs.get(0).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
-        myBuilder.append(' ').append(((Abstract.DefCallExpression) expr).getDefinition().getName()).append(' ');
-        visibleArgs.get(1).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
-        if (prec > defPrecedence.priority) myBuilder.append(')');
-        return;
+      if (((Abstract.DefCallExpression) expr).getDefinition().equals(Prelude.PATH) && args.size() == 3 && args.get(0).getExpression() instanceof Expression) {
+        boolean infix = true;
+        try {
+          Apps(((Expression) args.get(0).getExpression()).liftIndex(0, 1), Index(0)).normalize(NormalizeVisitor.Mode.NF).liftIndex(0, -1);
+        } catch (LiftIndexVisitor.NegativeIndexException e) {
+          infix = false;
+        }
+
+        if (infix) {
+          if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append('(');
+          args.get(1).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
+          myBuilder.append(" = ");
+          args.get(2).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
+          if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append(')');
+          return;
+        }
       }
     }
 
