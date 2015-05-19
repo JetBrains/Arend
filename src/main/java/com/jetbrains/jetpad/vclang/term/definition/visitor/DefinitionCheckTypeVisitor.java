@@ -65,20 +65,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     myGlobalContext.put(def.getName(), result);
     CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
     myGlobalContext.remove(def.getName());
-    if (termResult == null) {
-      trimToSize(localContext, origSize);
-      return null;
-    }
 
-    if (!termResult.expression.accept(new TerminationCheckVisitor(result))) {
+    if (termResult != null && !termResult.expression.accept(new TerminationCheckVisitor(result))) {
       myErrors.add(new TypeCheckingError("Termination check failed", termResult.expression, getNames(localContext)));
-      trimToSize(localContext, origSize);
-      return null;
+      termResult = null;
     }
 
-    result.setTerm(termResult.expression);
-    if (expectedType == null) {
-      result.setResultType(termResult.type);
+    if (termResult != null) {
+      result.setTerm(termResult.expression);
+      if (expectedType == null) {
+        result.setResultType(termResult.type);
+      }
     }
     trimToSize(localContext, origSize);
     return result;

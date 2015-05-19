@@ -176,6 +176,10 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
       }
 
       Expression result = ((FunctionDefinition) def).getTerm();
+      if (result == null) {
+        return applyDefCall(def, fixity, args);
+      }
+
       Abstract.Definition.Arrow arrow = ((FunctionDefinition) def).getArrow();
       while (result instanceof ElimExpression && ((ElimExpression) result).getElimType() == Abstract.ElimExpression.ElimType.ELIM) {
         List<Expression> constructorArgs = new ArrayList<>();

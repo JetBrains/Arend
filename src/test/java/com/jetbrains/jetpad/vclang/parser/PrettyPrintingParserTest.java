@@ -17,8 +17,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class PrettyPrintingParserTest {
   private void testExpr(Expression expected, Expression expr) throws UnsupportedEncodingException {
@@ -38,6 +37,7 @@ public class PrettyPrintingParserTest {
     }
     assertTrue(compare(expected.getResultType(), result.getResultType()));
     assertEquals(expected.getArrow(), result.getArrow());
+    assertNotNull(result.getTerm());
     assertTrue(compare(expected.getTerm(), result.getTerm()));
   }
 

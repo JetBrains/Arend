@@ -63,7 +63,7 @@ public class ConsoleMain {
 
       if (typedDef instanceof FunctionDefinition) {
         FunctionDefinition funcDef = (FunctionDefinition) typedDef;
-        if (!(funcDef.getTerm() instanceof ElimExpression)) {
+        if (funcDef.getTerm() != null && !(funcDef.getTerm() instanceof ElimExpression)) {
           typedDef = new FunctionDefinition(funcDef.getName(), funcDef.getPrecedence(), funcDef.getFixity(), funcDef.getArguments(), funcDef.getResultType().normalize(NormalizeVisitor.Mode.NF), funcDef.getArrow(), funcDef.getTerm().normalize(NormalizeVisitor.Mode.NF));
         }
       }

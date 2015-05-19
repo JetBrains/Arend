@@ -89,20 +89,20 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
   }
 
   private boolean checkPath(Abstract.Expression expr, Expression other) {
-    if (other instanceof AppExpression && ((AppExpression) other).getFunction() instanceof DefCallExpression && ((DefCallExpression) ((AppExpression) other).getFunction()).getDefinition().equals(Prelude.PATH_CON)) {
-      if (((AppExpression) other).getArgument().getExpression() instanceof LamExpression) {
-        List<Expression> args = new ArrayList<>();
-        Expression expr1 = ((LamExpression) ((AppExpression) other).getArgument().getExpression()).getBody().getFunction(args);
-        if (expr1 instanceof DefCallExpression && ((DefCallExpression) expr1).getDefinition().equals(Prelude.AT) && args.size() == 5 && args.get(0) instanceof IndexExpression && ((IndexExpression) args.get(0)).getIndex() == 0) {
-          Expression newOther = null;
-          try {
-            newOther = args.get(1).liftIndex(0, -1);
-          } catch (LiftIndexVisitor.NegativeIndexException ignored) {}
+    if (!(other instanceof AppExpression && ((AppExpression) other).getFunction() instanceof DefCallExpression && ((DefCallExpression) ((AppExpression) other).getFunction()).getDefinition().equals(Prelude.PATH_CON) && ((AppExpression) other).getArgument().getExpression() instanceof LamExpression)) {
+      return false;
+    }
 
-          if (newOther != null) {
-            return expr.accept(this, newOther);
-          }
-        }
+    List<Expression> args = new ArrayList<>();
+    Expression expr1 = ((LamExpression) ((AppExpression) other).getArgument().getExpression()).getBody().getFunction(args);
+    if (expr1 instanceof DefCallExpression && ((DefCallExpression) expr1).getDefinition().equals(Prelude.AT) && args.size() == 5 && args.get(0) instanceof IndexExpression && ((IndexExpression) args.get(0)).getIndex() == 0) {
+      Expression newOther = null;
+      try {
+        newOther = args.get(1).liftIndex(0, -1);
+      } catch (LiftIndexVisitor.NegativeIndexException ignored) {}
+
+      if (newOther != null) {
+        return expr.accept(this, newOther);
       }
     }
     return false;
@@ -112,6 +112,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
   public Boolean visitApp(Abstract.AppExpression expr, Expression other) {
     if (expr == other) return true;
     if (checkPath(expr, other)) return true;
+    if (checkLam(expr, other)) return true;
 
     if (expr.getFunction() instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr.getFunction()).getDefinition().equals(Prelude.PATH_CON)) {
       if (expr.getArgument().getExpression() instanceof Abstract.LamExpression) {
@@ -130,25 +131,50 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
 
   @Override
   public Boolean visitDefCall(Abstract.DefCallExpression expr, Expression other) {
-    return expr == other || checkPath(expr, other) || other instanceof Abstract.DefCallExpression && expr.getDefinition().equals(((Abstract.DefCallExpression) other).getDefinition());
+    return expr == other || checkPath(expr, other) || checkLam(expr, other) || other instanceof Abstract.DefCallExpression && expr.getDefinition().equals(((Abstract.DefCallExpression) other).getDefinition());
   }
 
   @Override
   public Boolean visitIndex(Abstract.IndexExpression expr, Expression other) {
-    return expr == other || checkPath(expr, other) || other instanceof Abstract.IndexExpression && expr.getIndex() == ((Abstract.IndexExpression) other).getIndex();
+    return expr == other || checkPath(expr, other) || checkLam(expr, other) || other instanceof Abstract.IndexExpression && expr.getIndex() == ((Abstract.IndexExpression) other).getIndex();
   }
 
-  @Override
-  public Boolean visitLam(Abstract.LamExpression expr, Expression other) {
-    if (expr == other) return true;
-    if (!(other instanceof Abstract.LamExpression)) return false;
+  private boolean checkLam(Abstract.Expression expr, Expression other) {
     List<Abstract.Expression> args1 = new ArrayList<>();
     Abstract.Expression body1 = lamArgs(expr, args1);
     List<Abstract.Expression> args2 = new ArrayList<>();
-    Abstract.Expression body2 = lamArgs(other, args2);
+    Expression body2 = (Expression) lamArgs(other, args2);
+
+    if (args1.size() == 0 && args2.size() == 0) return false;
+
+    if (args1.size() < args2.size()) {
+      for (int i = 0; i < args2.size() - args1.size(); ++i) {
+        if (!(body2 instanceof AppExpression && ((AppExpression) body2).getArgument().getExpression() instanceof IndexExpression && ((IndexExpression) ((AppExpression) body2).getArgument().getExpression()).getIndex() == i)) {
+          return false;
+        }
+        body2 = ((AppExpression) body2).getFunction();
+      }
+
+      try {
+        body2 = body2.liftIndex(0, args1.size() - args2.size());
+      } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+        return false;
+      }
+    }
+
+    if (args2.size() < args1.size()) {
+      for (int i = 0; i < args1.size() - args2.size(); ++i) {
+        if (!(body1 instanceof Abstract.AppExpression && ((Abstract.AppExpression) body1).getArgument().getExpression() instanceof Abstract.IndexExpression && ((Abstract.IndexExpression) ((Abstract.AppExpression) body1).getArgument().getExpression()).getIndex() == i)) {
+          return false;
+        }
+        body1 = ((Abstract.AppExpression) body1).getFunction();
+      }
+
+      body2 = body2.liftIndex(0, args1.size() - args2.size());
+    }
 
     int equationsNumber = myEquations.size();
-    if (args1.size() != args2.size() || !body1.accept(this, (Expression) body2)) return false;
+    if (!body1.accept(this, body2)) return false;
     for (int i = equationsNumber; i < myEquations.size(); ++i) {
       myEquations.get(i).expression = myEquations.get(i).expression.liftIndex(0, -args1.size());
     }
@@ -160,7 +186,13 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
         myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
       }
     }
+
     return true;
+  }
+
+  @Override
+  public Boolean visitLam(Abstract.LamExpression expr, Expression other) {
+    return expr == other || checkLam(expr, other);
   }
 
   @Override
@@ -208,7 +240,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
 
   @Override
   public Boolean visitVar(Abstract.VarExpression expr, Expression other) {
-    return expr == other || checkPath(expr, other) || other instanceof Abstract.VarExpression && expr.getName().equals(((Abstract.VarExpression) other).getName());
+    return expr == other || checkPath(expr, other) || checkLam(expr, other) || other instanceof Abstract.VarExpression && expr.getName().equals(((Abstract.VarExpression) other).getName());
   }
 
   @Override
@@ -280,6 +312,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
   public Boolean visitBinOp(Abstract.BinOpExpression expr, Expression other) {
     if (expr == other) return true;
     if (checkPath(expr, other)) return true;
+    if (checkLam(expr, other)) return true;
     if (!(other instanceof BinOpExpression)) return false;
 
     BinOpExpression otherBinOp = (BinOpExpression) other;
