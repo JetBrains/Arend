@@ -25,11 +25,11 @@ public class TupleExpression extends Expression implements Abstract.TupleExpress
 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return null;
+    return visitor.visitTuple(this);
   }
 
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return null;
+    return visitor.visitTuple(this, params);
   }
 }

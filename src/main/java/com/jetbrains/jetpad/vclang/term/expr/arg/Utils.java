@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.arg;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -10,9 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Tele;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.TypeArg;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.vars;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Utils {
   public static String renameVar(List<String> names, String var) {
@@ -103,14 +100,19 @@ public class Utils {
       for (String name : ((Abstract.TelescopeArgument) argument).getNames()) {
         String newName = name == null ? null : renameVar(names, name);
         builder.append(newName == null ? "_" : newName).append(' ');
+        names.add(newName);
         newNames.add(newName);
       }
+
+      for (String ignored : newNames) {
+        names.remove(names.size() - 1);
+      }
+
       builder.append(": ");
       ((Abstract.TypeArgument) argument).getType().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.Expression.PREC);
       builder.append(argument.getExplicit() ? ')' : '}');
-      for (String name : newNames) {
-        names.add(name);
-      }
+
+      names.addAll(newNames);
     } else
     if (argument instanceof Abstract.TypeArgument) {
       Abstract.Expression type = ((Abstract.TypeArgument) argument).getType();

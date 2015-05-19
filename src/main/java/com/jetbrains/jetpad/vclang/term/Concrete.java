@@ -11,7 +11,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintClause;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
 
 public final class Concrete {
   private Concrete() {}
@@ -349,7 +348,7 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return null;
+      return visitor.visitSigma(this, params);
     }
   }
 
@@ -373,7 +372,7 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return null;
+      return visitor.visitTuple(this, params);
     }
   }
 

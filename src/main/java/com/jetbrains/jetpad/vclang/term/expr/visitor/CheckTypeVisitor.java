@@ -784,9 +784,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         Expression type = Sigma(arguments);
         List<CompareVisitor.Equation> equations = new ArrayList<>();
         for (TypeArgument arg : expectedSigma.getArguments()) {
+          List<Expression> substExprs = new ArrayList<>(fields.size());
+          for (int j = fields.size() - 1; j >= 0; --j) {
+            substExprs.add(fields.get(j));
+          }
+
           if (arg instanceof TelescopeArgument) {
             for (String ignored : ((TelescopeArgument) arg).getNames()) {
-              Result result = typeCheck(expr.getField(i), arg.getType());
+              Result result = typeCheck(expr.getField(i), arg.getType().subst(substExprs, 0));
               if (!(result instanceof OKResult)) return result;
               OKResult okResult = (OKResult) result;
               fields.add(okResult.expression);
@@ -795,7 +800,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               ++i;
             }
           } else {
-            Result result = typeCheck(expr.getField(i), arg.getType());
+            Result result = typeCheck(expr.getField(i), arg.getType().subst(substExprs, 0));
             if (!(result instanceof OKResult)) return result;
             OKResult okResult = (OKResult) result;
             fields.add(okResult.expression);
@@ -917,7 +922,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       error = new TypeCheckingError("Not implemented yet: \\case", expr, getNames(myLocalContext));
     }
     if (expectedType == null && error == null) {
-      error = new TypeCheckingError("Cannot infer the type of the expression", expr, getNames(myLocalContext));
+      error = new TypeCheckingError("Cannot infer type of the expression", expr, getNames(myLocalContext));
     }
     if (mySide != Side.LHS && error == null) {
       error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr, getNames(myLocalContext));

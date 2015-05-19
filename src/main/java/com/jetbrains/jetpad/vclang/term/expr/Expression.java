@@ -83,7 +83,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
             TelescopeArgument teleArg = (TelescopeArgument) piType.getArgument(i);
             int j;
             for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
-              arguments.add(Tele(piType.getArgument(i).getExplicit(), vars(teleArg.getName(j)), piType.getArgument(i).getType()));
+              arguments.add(Tele(piType.getArgument(i).getExplicit(), vars(teleArg.getName(j)), piType.getArgument(i).getType().liftIndex(0, j)));
             }
             if (j < teleArg.getNames().size()) {
               List<String> names = new ArrayList<>(teleArg.getNames().size() - j);

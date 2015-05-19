@@ -115,23 +115,28 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     return result;
   }
 
-  private Boolean visitArguments(List<TypeArgument> arguments) {
+  private Boolean visitArguments(List<TypeArgument> arguments, Expression codomain) {
     int total = 0;
     for (TypeArgument argument : arguments) {
+      if (!argument.getType().accept(this)) return false;
       if (argument instanceof TelescopeArgument) {
         int on = ((TelescopeArgument) argument).getNames().size();
         total += on;
         liftPatterns(on);
+      } else {
+        liftPatterns(1);
+        ++total;
       }
-      if (!argument.getType().accept(this)) return false;
     }
+
+    boolean result = codomain != null ? codomain.accept(this) : true;
     liftPatterns(-total);
-    return true;
+    return result;
   }
 
   @Override
   public Boolean visitPi(PiExpression expr) {
-    return visitArguments(expr.getArguments()) && expr.getCodomain().accept(this);
+    return visitArguments(expr.getArguments(), expr.getCodomain());
   }
 
   @Override
@@ -164,7 +169,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitSigma(SigmaExpression expr) {
-    return visitArguments(expr.getArguments());
+    return visitArguments(expr.getArguments(), null);
   }
 
   @Override

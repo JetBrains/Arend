@@ -26,11 +26,11 @@ public class SigmaExpression extends Expression implements Abstract.SigmaExpress
 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return null;
+    return visitor.visitSigma(this);
   }
 
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return null;
+    return visitor.visitSigma(this, params);
   }
 }
