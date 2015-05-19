@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
 import java.util.Collections;
@@ -165,6 +164,11 @@ public final class Abstract {
           result += "r";
         }
         return result + " " + priority;
+      }
+
+      @Override
+      public boolean equals(Object obj) {
+        return this == obj || obj instanceof Precedence && associativity == ((Precedence) obj).associativity && priority == ((Precedence) obj).priority;
       }
     }
 

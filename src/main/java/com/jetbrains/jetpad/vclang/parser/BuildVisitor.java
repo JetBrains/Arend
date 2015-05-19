@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import org.antlr.v4.runtime.Token;
 
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Var;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
   private final List<ParserError> myErrors = new ArrayList<>();
@@ -74,7 +72,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public List<Concrete.Definition> visitDefs(DefsContext ctx) {
     List<Concrete.Definition> defs = new ArrayList<>();
     for (DefContext def : ctx.def()) {
-      defs.add(visitDef(def));
+      Concrete.Definition concDef = visitDef(def);
+      if (concDef != null) {
+        defs.add(concDef);
+      }
     }
     return defs;
   }
@@ -114,10 +115,50 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     Concrete.Expression type = visitTypeOpt(ctx.typeOpt());
     Definition.Arrow arrow = ctx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, Abstract.Definition.DEFAULT_PRECEDENCE, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null);
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, visitPrecedence(ctx.precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null);
     myLocalContext.put(name, def);
     def.setTerm(visitExpr(ctx.expr()));
     return def;
+  }
+
+  public Abstract.Definition.Precedence visitPrecedence(PrecedenceContext ctx) {
+    return (Abstract.Definition.Precedence) visit(ctx);
+  }
+
+  @Override
+  public Abstract.Definition.Precedence visitNoPrecedence(NoPrecedenceContext ctx) {
+    return Abstract.Definition.DEFAULT_PRECEDENCE;
+  }
+
+  @Override
+  public Abstract.Definition.Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
+    int priority = Integer.parseInt(ctx.NUMBER().getText());
+    if (priority < 1 || priority > 9) {
+      myErrors.add(new ParserError(tokenPosition(ctx.NUMBER().getSymbol()), "Precedence out of range: " + priority));
+
+      if (priority < 1) {
+        priority = 1;
+      } else {
+        priority = 9;
+      }
+    }
+
+    return new Abstract.Definition.Precedence((Abstract.Definition.Associativity) visit(ctx.associativity()), (byte) priority);
+  }
+
+  @Override
+  public Abstract.Definition.Associativity visitNonAssoc(NonAssocContext ctx) {
+    return Abstract.Definition.Associativity.NON_ASSOC;
+  }
+
+  @Override
+  public Abstract.Definition.Associativity visitLeftAssoc(LeftAssocContext ctx) {
+    return Abstract.Definition.Associativity.LEFT_ASSOC;
+  }
+
+  @Override
+  public Abstract.Definition.Associativity visitRightAssoc(RightAssocContext ctx) {
+    return Abstract.Definition.Associativity.RIGHT_ASSOC;
   }
 
   @Override
@@ -142,7 +183,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.Constructor> constructors = new ArrayList<>();
     Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
     Universe universe = type == null ? null : ((Concrete.UniverseExpression) type).getUniverse();
-    Concrete.DataDefinition def = new Concrete.DataDefinition(position, name, Abstract.Definition.DEFAULT_PRECEDENCE, fixity, universe, parameters, constructors);
+    Concrete.DataDefinition def = new Concrete.DataDefinition(position, name, visitPrecedence(ctx.precedence()), fixity, universe, parameters, constructors);
     myLocalContext.put(name, def);
     for (ConstructorContext constructor : ctx.constructor()) {
       isPrefix = constructor.name() instanceof NameIdContext;
@@ -153,7 +194,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         name = ((NameBinOpContext) constructor.name()).BIN_OP().getText();
         position = tokenPosition(((NameBinOpContext) constructor.name()).BIN_OP().getSymbol());
       }
-      Concrete.Constructor constructor1 = new Concrete.Constructor(position, name, Abstract.Definition.DEFAULT_PRECEDENCE, isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), visitTeles(constructor.tele()), def);
+      Concrete.Constructor constructor1 = new Concrete.Constructor(position, name, visitPrecedence(constructor.precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), visitTeles(constructor.tele()), def);
       constructors.add(constructor1);
       myLocalContext.put(name, constructor1);
     }
@@ -370,9 +411,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     pushOnStack(stack, new Concrete.BinOpExpression(position, new Concrete.ArgumentExpression(pair.expression, true, false), pair.binOp, new Concrete.ArgumentExpression(left, true, false)), binOp, position);
   }
 
+  private Concrete.Expression rollUpStack(List<Pair> stack, Concrete.Expression expr) {
+    for (int i = stack.size() - 1; i >= 0; --i) {
+      expr = new Concrete.BinOpExpression(stack.get(i).expression.getPosition(), new Concrete.ArgumentExpression(stack.get(i).expression, true, false), stack.get(i).binOp, new Concrete.ArgumentExpression(expr, true, false));
+    }
+    return expr;
+  }
+
   @Override
   public Concrete.Expression visitBinOp(BinOpContext ctx) {
     List<Pair> stack = new ArrayList<>(ctx.binOpLeft().size());
+    List<Concrete.Expression> exprs = new ArrayList<>();
     for (BinOpLeftContext leftContext : ctx.binOpLeft()) {
       String name;
       Concrete.Position position;
@@ -383,20 +432,24 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         name = ((InfixIdContext) leftContext.infix()).ID().getText();
         position = tokenPosition(((InfixIdContext) leftContext.infix()).ID().getSymbol());
       }
+
       Abstract.Definition def = myLocalContext.get(name);
       if (def == null) {
         def = myGlobalContext.get(name);
         if (def == null) {
-          myErrors.add(new ParserError(position, new NotInScopeError(Var(name), new ArrayList<String>()).toString()));
-          return null;
+          Concrete.Expression left = rollUpStack(stack, visitAtoms(leftContext.atom(), leftContext.argument()));
+          exprs.add(new Concrete.AppExpression(position, new Concrete.VarExpression(position, "(" + name + ")"), new Concrete.ArgumentExpression(left, true, false)));
+          stack = new ArrayList<>(ctx.binOpLeft().size() - stack.size());
+          continue;
         }
       }
+
       pushOnStack(stack, visitAtoms(leftContext.atom(), leftContext.argument()), def, position);
     }
 
-    Concrete.Expression result = visitAtoms(ctx.atom(), ctx.argument());
-    for (int i = stack.size() - 1; i >= 0; --i) {
-      result = new Concrete.BinOpExpression(stack.get(i).expression.getPosition(), new Concrete.ArgumentExpression(stack.get(i).expression, true, false), stack.get(i).binOp, new Concrete.ArgumentExpression(result, true, false));
+    Concrete.Expression result = rollUpStack(stack, visitAtoms(ctx.atom(), ctx.argument()));
+    for (int i = exprs.size() - 1; i >= 0; --i) {
+      result = new Concrete.AppExpression(exprs.get(i).getPosition(), exprs.get(i), new Concrete.ArgumentExpression(result, true, false));
     }
     return result;
   }

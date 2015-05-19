@@ -2,8 +2,8 @@ grammar Vcgrammar;
 
 defs  : def*;
 
-def   : '\\function' name tele* typeOpt arrow expr          # defFunction
-      | '\\data' name tele* typeOpt arrowOpt constructor*   # defData
+def   : '\\function' precedence name tele* typeOpt arrow expr          # defFunction
+      | '\\data' precedence name tele* typeOpt arrowOpt constructor*   # defData
       ;
 
 arrow : '<='                            # arrowLeft
@@ -16,7 +16,16 @@ typeOpt :                               # noType
         | ':' expr                      # withType
         ;
 
-constructor : '|' name tele*;
+constructor : '|' precedence name tele*;
+
+precedence :                            # noPrecedence
+           | associativity NUMBER       # withPrecedence
+           ;
+
+associativity : '\\infix'               # nonAssoc
+              | '\\infixl'              # leftAssoc
+              | '\\infixr'              # rightAssoc
+              ;
 
 name  : ID                              # nameId
       | '(' BIN_OP ')'                  # nameBinOp
@@ -73,6 +82,7 @@ typedExpr : expr                        # notTyped
           | expr ':' expr               # typed
           ;
 
+NUMBER : [0-9]+;
 UNIVERSE : '\\Type' [0-9]+;
 TRUNCATED_UNIVERSE : '\\' [0-9]+ '-Type' [0-9]+;
 PROP : '\\Prop';
@@ -83,5 +93,5 @@ LINE_COMMENT : '--' .*? '\r'? '\n' -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
 COLON : ':';
 LAMBDA : '\\lam';
-BIN_OP : [~!@#$%^&*-+=<>?/:|.]+;
 ARROW : '->';
+BIN_OP : [~!@#$%^&*\-+=<>?/:|.]+;

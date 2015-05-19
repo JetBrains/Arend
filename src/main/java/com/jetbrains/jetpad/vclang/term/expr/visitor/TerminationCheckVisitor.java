@@ -182,6 +182,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   public Boolean visitElim(ElimExpression expr) {
     if (!expr.getExpression().accept(this)) return false;
     for (Clause clause : expr.getClauses()) {
+      if (clause == null) continue;
       for (Argument argument : clause.getArguments()) {
         if (argument instanceof TypeArgument) {
           if (!((TypeArgument) argument).getType().accept(this)) return false;
@@ -211,7 +212,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
       if (expr.getOtherwise() != null && !expr.getExpression().accept(this)) return false;
     } else {
       for (Clause clause : expr.getClauses()) {
-        if (!clause.getExpression().accept(this)) return false;
+        if (clause != null && !clause.getExpression().accept(this)) return false;
       }
     }
 
