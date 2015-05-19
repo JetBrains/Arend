@@ -68,7 +68,7 @@ literal : UNIVERSE                      # universe
         | TRUNCATED_UNIVERSE            # truncatedUniverse
         | PROP                          # prop
         | SET                           # set
-        | ID                            # id
+        | name                          # id
         | '_'                           # unknown
         | '{?}'                         # hole
         ;

@@ -176,14 +176,22 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     int equationsNumber = myEquations.size();
     if (!body1.accept(this, body2)) return false;
     for (int i = equationsNumber; i < myEquations.size(); ++i) {
-      myEquations.get(i).expression = myEquations.get(i).expression.liftIndex(0, -args1.size());
+      try {
+        myEquations.get(i).expression = myEquations.get(i).expression.liftIndex(0, -args1.size());
+      } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+        myEquations.remove(i--);
+      }
     }
 
     for (int i = 0; i < args1.size(); ++i) {
       equationsNumber = myEquations.size();
       if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, (Expression) args2.get(i))) return false;
       for (int j = equationsNumber; j < myEquations.size(); ++j) {
-        myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
+        try {
+          myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
+        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+          myEquations.remove(j--);
+        }
       }
     }
 
@@ -215,7 +223,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
       equationsNumber = myEquations.size();
       if (!args1.get(i).accept(this, args2.get(i).getType())) return false;
       for (int j = equationsNumber; j < myEquations.size(); ++j) {
-        myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
+        try {
+          myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
+        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+          myEquations.remove(j--);
+        }
       }
     }
     myCmp = not(myCmp);
@@ -223,7 +235,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
     equationsNumber = myEquations.size();
     Boolean result = codomain1.accept(this, codomain2);
     for (int i = equationsNumber; i < myEquations.size(); ++i) {
-      myEquations.get(i).expression = myEquations.get(i).expression.liftIndex(0, -args1.size());
+      try {
+        myEquations.get(i).expression = myEquations.get(i).expression.liftIndex(0, -args1.size());
+      } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+        myEquations.remove(i--);
+      }
     }
     return result;
   }
@@ -250,7 +266,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
 
   @Override
   public Boolean visitInferHole(Abstract.InferHoleExpression expr, Expression other) {
-    myEquations.add(new Equation(expr, other));
+    myEquations.add(new Equation(expr, other.normalize(NormalizeVisitor.Mode.NF)));
     return true;
   }
 
@@ -302,7 +318,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Boo
       int equationsNumber = myEquations.size();
       if (!args.get(i).accept(this, otherArgs.get(i))) return false;
       for (int j = equationsNumber; j < myEquations.size(); ++j) {
-        myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
+        try {
+          myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
+        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+          myEquations.remove(j--);
+        }
       }
     }
     return true;

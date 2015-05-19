@@ -136,15 +136,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (CompareVisitor.Equation equation : equations) {
       for (int i = 0; i < size; ++i) {
         if (resultArgs[i] instanceof InferErrorResult && resultArgs[i].expression == equation.hole) {
-          if (!(argsImp[i].expression instanceof Abstract.InferHoleExpression)) {
-            boolean isLess = compare(argsImp[i].expression, equation.expression, CompareVisitor.CMP.LEQ) != null;
-            if (isLess || compare(argsImp[i].expression, equation.expression, CompareVisitor.CMP.GEQ) != null) {
+          if (!(argsImp[i].expression instanceof Abstract.InferHoleExpression) && argsImp[i].expression instanceof Expression) {
+            Expression expr1 = ((Expression) argsImp[i].expression).normalize(NormalizeVisitor.Mode.NF);
+            boolean isLess = compare(expr1, equation.expression, CompareVisitor.CMP.LEQ) != null;
+            if (isLess || compare(expr1, equation.expression, CompareVisitor.CMP.GEQ) != null) {
               if (!isLess) {
                 argsImp[i] = new Arg(argsImp[i].isExplicit, null, equation.expression);
               }
             } else {
-              List<Expression> options = new ArrayList<>(2);
-              options.add((Expression) argsImp[i].expression);
+              List<Abstract.Expression> options = new ArrayList<>(2);
+              options.add(argsImp[i].expression);
               options.add(equation.expression);
               for (int j = i + 1; j < size; ++j) {
                 if (resultArgs[j] instanceof InferErrorResult && resultArgs[j].expression == equation.hole) {
@@ -194,6 +195,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (resultArgs[i] instanceof InferErrorResult) {
         continue;
       }
+      argsImp[i].expression = resultArgs[i].expression;
 
       OKResult okResult = (OKResult) resultArgs[i];
       if (okResult.equations == null) continue;
@@ -280,12 +282,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
       }
 
+      InferHoleExpression inferHoleExpr = new InferHoleExpression(new ArgInferenceError(type(), args.get(0).getExpression(), getNames(myLocalContext), args.get(0).getExpression()));
       if (argExpectedType == null) {
-        argExpectedType = Pi("i", DefCall(Prelude.INTERVAL), null);
+        argExpectedType = Pi("i", DefCall(Prelude.INTERVAL), inferHoleExpr);
       }
 
       Result argResult = typeCheck(args.get(0).getExpression(), argExpectedType);
       if (!(argResult instanceof OKResult)) return argResult;
+      for (int k = 0; k < ((OKResult) argResult).equations.size(); ++k) {
+        if (((OKResult) argResult).equations.get(k).hole.equals(inferHoleExpr)) {
+          ((OKResult) argResult).equations.remove(k--);
+        }
+      }
       PiExpression piType = (PiExpression) ((OKResult) argResult).type;
 
       List<TypeArgument> arguments = new ArrayList<>(piType.getArguments().size());
@@ -306,7 +314,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (resultEquations == null) {
           resultEquations = new ArrayList<>(1);
         }
-        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam("i", type)));
+        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam("i", type.normalize(NormalizeVisitor.Mode.NF))));
       }
 
       return checkResult(expectedType, new OKResult(Apps(DefCall(Prelude.PATH_CON), argResult.expression), resultType, resultEquations), expression);
@@ -386,7 +394,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       argIndex = 0;
-      for (i = 0; i < argsNumber; ++i) {
+      for (i = argsNumber - 1; i >= 0; --i) {
         if (!(resultArgs[i] instanceof OKResult)) {
           argIndex = i + 1;
           break;
@@ -421,8 +429,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return checkResult(expectedType, new OKResult(resultExpr, resultType, resultEquations), expression);
     } else {
       TypeCheckingError error;
-      if (resultArgs[argIndex - 1] instanceof InferErrorResult && resultArgs[argIndex - 1].expression instanceof InferHoleExpression) {
-        error = ((InferHoleExpression) resultArgs[argIndex - 1].expression).getError();
+      if (resultArgs[argIndex - 1] instanceof InferErrorResult) {
+        error = ((InferErrorResult) resultArgs[argIndex - 1]).error;
       } else {
         if (argIndex > parametersNumber) {
           error = new ArgInferenceError(functionArg(argIndex - parametersNumber), fun, getNames(myLocalContext), fun);
@@ -606,7 +614,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         actualType = Pi(argumentTypes.subList(actualNumberOfPiArgs, lambdaArgs.size()), actualType);
       }
       try {
-        resultEquations.add(new CompareVisitor.Equation((Abstract.InferHoleExpression) resultType, actualType.liftIndex(0, -actualNumberOfPiArgs)));
+        resultEquations.add(new CompareVisitor.Equation((Abstract.InferHoleExpression) resultType, actualType.normalize(NormalizeVisitor.Mode.NF).liftIndex(0, -actualNumberOfPiArgs)));
       } catch (LiftIndexVisitor.NegativeIndexException ignored) {
       }
     }
@@ -707,16 +715,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitVar(Abstract.VarExpression expr, Expression expectedType) {
-    ListIterator<Binding> it = myLocalContext.listIterator(myLocalContext.size());
-    int index = 0;
-    while (it.hasPrevious()) {
-      Binding def = it.previous();
-      if (expr.getName().equals(def.getName())) {
-        return checkResultImplicit(expectedType, new OKResult(Index(index), def.getType().liftIndex(0, index + 1), null), expr);
+    String name = expr.getName().charAt(0) == '(' ? expr.getName().substring(1, expr.getName().length() - 1) : expr.getName();
+
+    if (expr.getName().charAt(0) != '(') {
+      ListIterator<Binding> it = myLocalContext.listIterator(myLocalContext.size());
+      int index = 0;
+      while (it.hasPrevious()) {
+        Binding def = it.previous();
+        if (name.equals(def.getName())) {
+          return checkResultImplicit(expectedType, new OKResult(Index(index), def.getType().liftIndex(0, index + 1), null), expr);
+        }
+        ++index;
       }
-      ++index;
     }
-    Definition def = myGlobalContext.get(expr.getName());
+
+    Definition def = myGlobalContext.get(name);
     if (def == null) {
       NotInScopeError error = new NotInScopeError(expr, getNames(myLocalContext));
       expr.setWellTyped(Error(null, error));
@@ -815,7 +828,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       equations.addAll(okResult.equations);
     }
     if (expectedTypeNorm != null) {
-      equations.add(new CompareVisitor.Equation((Abstract.InferHoleExpression) expectedTypeNorm, type));
+      equations.add(new CompareVisitor.Equation((Abstract.InferHoleExpression) expectedTypeNorm, type.normalize(NormalizeVisitor.Mode.NF)));
     }
     return new OKResult(expression, type, equations);
   }

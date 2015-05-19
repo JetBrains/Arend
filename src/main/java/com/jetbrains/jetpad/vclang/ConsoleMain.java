@@ -57,9 +57,6 @@ public class ConsoleMain {
     List<TypeCheckingError> errors = new ArrayList<>();
     for (Abstract.Definition def : defs) {
       Definition typedDef = def.accept(new DefinitionCheckTypeVisitor(context, errors), new ArrayList<Binding>());
-      if (typedDef != null) {
-        context.put(typedDef.getName(), typedDef);
-      }
 
       if (typedDef instanceof FunctionDefinition) {
         FunctionDefinition funcDef = (FunctionDefinition) typedDef;

@@ -64,7 +64,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     FunctionDefinition result = new FunctionDefinition(def.getName(), def.getPrecedence(), def.getFixity(), arguments, expectedType, def.getArrow(), null);
     myGlobalContext.put(def.getName(), result);
     CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
-    myGlobalContext.remove(def.getName());
 
     if (termResult != null && !termResult.expression.accept(new TerminationCheckVisitor(result))) {
       myErrors.add(new TypeCheckingError("Termination check failed", termResult.expression, getNames(localContext)));
@@ -150,7 +149,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       constructors.add(newConstructor);
       newConstructor.setDataType(result);
     }
-    myGlobalContext.remove(def.getName());
 
     result.setUniverse(universe);
     trimToSize(localContext, origSize);
@@ -204,6 +202,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       myErrors.add(new TypeCheckingError(error, DefCall(newConstructor), new ArrayList<String>()));
       return null;
     } else {
+      myGlobalContext.put(newConstructor.getName(), newConstructor);
       return newConstructor;
     }
   }

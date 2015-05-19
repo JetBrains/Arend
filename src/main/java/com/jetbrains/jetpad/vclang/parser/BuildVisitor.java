@@ -242,8 +242,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.Argument> arguments = new ArrayList<>(3);
     if (tele instanceof TeleLiteralContext) {
       LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
-      if (literalContext instanceof IdContext) {
-        arguments.add(new Concrete.NameArgument(tokenPosition(((IdContext) literalContext).ID().getSymbol()), true, ((IdContext) literalContext).ID().getText()));
+      if (literalContext instanceof IdContext && ((IdContext) literalContext).name() instanceof NameIdContext) {
+        arguments.add(new Concrete.NameArgument(tokenPosition(((NameIdContext) ((IdContext) literalContext).name()).ID().getSymbol()), true, ((NameIdContext) ((IdContext) literalContext).name()).ID().getText()));
       } else
       if (literalContext instanceof UnknownContext) {
         arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
@@ -295,7 +295,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitId(IdContext ctx) {
-    return new Concrete.VarExpression(tokenPosition(ctx.ID().getSymbol()), ctx.ID().getText());
+    String name = ctx.name() instanceof NameIdContext ? ((NameIdContext) ctx.name()).ID().getText() : "(" + ((NameBinOpContext) ctx.name()).BIN_OP().getText() + ")";
+    return new Concrete.VarExpression(tokenPosition(ctx.name().getStart()), name);
   }
 
   @Override

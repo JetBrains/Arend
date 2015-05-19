@@ -28,6 +28,10 @@ public class ArgInferenceError extends TypeCheckingError {
     return "Cannot infer an expression";
   }
 
+  public static String type() {
+    return "Cannot infer type of expression";
+  }
+
   public static String suffix(int n) {
     switch (n) {
       case 1: return "st";
