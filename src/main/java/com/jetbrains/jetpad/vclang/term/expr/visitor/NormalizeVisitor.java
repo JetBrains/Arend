@@ -27,11 +27,10 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   }
 
   private Expression visitApps(Expression expr, List<ArgumentExpression> exprs) {
-    int numberOfLambdas = 0;
-    while (expr instanceof LamExpression && numberOfLambdas < exprs.size()) {
-      numberOfLambdas += numberOfVariables(((LamExpression) expr).getArguments());
-      expr = ((LamExpression) expr).getBody().normalize(Mode.WHNF);
-    }
+    List<Argument> args = new ArrayList<>();
+    expr = expr.lamSplitAt(exprs.size(), args);
+    int numberOfLambdas = args.size();
+
     if (numberOfLambdas > 0) {
       if (numberOfLambdas < exprs.size()) {
         ArgumentExpression[] exprs1 = new ArgumentExpression[exprs.size() - numberOfLambdas];

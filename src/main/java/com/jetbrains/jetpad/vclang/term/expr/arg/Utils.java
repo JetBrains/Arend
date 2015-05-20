@@ -57,6 +57,12 @@ public class Utils {
     return result;
   }
 
+  public static int numberOfVariables(Expression expr) {
+    List<TypeArgument> args = new ArrayList<>();
+    splitArguments(expr, args);
+    return args.size();
+  }
+
   private static void addArgs(TypeArgument argument, List<TypeArgument> result) {
     if (argument instanceof TelescopeArgument) {
       int i = 0;

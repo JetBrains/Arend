@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
@@ -65,8 +66,55 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   public static List<CompareVisitor.Equation> compare(Abstract.Expression expr1, Expression expr2, CompareVisitor.CMP cmp) {
     CompareVisitor visitor = new CompareVisitor(cmp, new ArrayList<CompareVisitor.Equation>());
-    Boolean result = expr1.accept(visitor, expr2);
-    return result ? visitor.equations() : null;
+    CompareVisitor.Result result = expr1.accept(visitor, expr2);
+    return result.isOK() ? visitor.equations() : null;
+  }
+
+  public Expression lamSplitAt(int index, List<Argument> arguments) {
+    assert arguments.size() == 0;
+    Expression result = this;
+
+    while (arguments.size() < index) {
+      if (result instanceof LamExpression) {
+        LamExpression lamExpr = (LamExpression) result;
+        TelescopeArgument additionalArgument = null;
+        int i;
+        for (i = 0; i < lamExpr.getArguments().size() && arguments.size() < index; ++i) {
+          if (lamExpr.getArgument(i) instanceof TelescopeArgument) {
+            TelescopeArgument teleArg = (TelescopeArgument) lamExpr.getArgument(i);
+            int j;
+            for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
+              arguments.add(Tele(lamExpr.getArgument(i).getExplicit(), vars(teleArg.getName(j)), teleArg.getType()));
+            }
+            if (j < teleArg.getNames().size()) {
+              List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
+              for (; j < teleArg.getNames().size(); ++j) {
+                names.add(teleArg.getName(j));
+              }
+              additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType());
+            }
+          } else {
+            arguments.add(lamExpr.getArgument(i));
+          }
+        }
+
+        result = lamExpr.getBody();
+        if (i < lamExpr.getArguments().size() || additionalArgument != null) {
+          List<Argument> arguments1 = new ArrayList<>(lamExpr.getArguments().size() - i + (additionalArgument == null ? 0 : 1));
+          if (additionalArgument != null) {
+            arguments1.add(additionalArgument);
+          }
+          for (; i < lamExpr.getArguments().size(); ++i) {
+            arguments1.add(lamExpr.getArgument(i));
+          }
+          return Lam(arguments1, result);
+        }
+      } else {
+        break;
+      }
+    }
+
+    return result;
   }
 
   public Expression splitAt(int index, List<TypeArgument> arguments) {
@@ -83,7 +131,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
             TelescopeArgument teleArg = (TelescopeArgument) piType.getArgument(i);
             int j;
             for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
-              arguments.add(Tele(piType.getArgument(i).getExplicit(), vars(teleArg.getName(j)), piType.getArgument(i).getType().liftIndex(0, j)));
+              arguments.add(Tele(piType.getArgument(i).getExplicit(), vars(teleArg.getName(j)), teleArg.getType().liftIndex(0, j)));
             }
             if (j < teleArg.getNames().size()) {
               List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
@@ -96,6 +144,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
             arguments.add(piType.getArgument(i));
           }
         }
+
         type = piType.getCodomain();
         if (i < piType.getArguments().size() || additionalArgument != null) {
           List<TypeArgument> arguments1 = new ArrayList<>(piType.getArguments().size() - i + (additionalArgument == null ? 0 : 1));

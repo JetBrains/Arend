@@ -6,11 +6,11 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.suffix;
 
-public class InferedArgumentsMismatch extends TypeCheckingError {
+public class InferredArgumentsMismatch extends TypeCheckingError {
   private final int myArgument;
   private final List<Abstract.Expression> myOptions;
 
-  public InferedArgumentsMismatch(int argument, List<Abstract.Expression> options, Abstract.Expression expression, List<String> names) {
+  public InferredArgumentsMismatch(int argument, List<Abstract.Expression> options, Abstract.Expression expression, List<String> names) {
     super(null, expression, names);
     myArgument = argument;
     myOptions = options;
