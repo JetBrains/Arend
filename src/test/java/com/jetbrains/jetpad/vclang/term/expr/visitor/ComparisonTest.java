@@ -3,6 +3,9 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
@@ -82,13 +85,17 @@ public class ComparisonTest {
   public void compareLeq() {
     Expression expr1 = Pi("X", Universe(1), Pi(Index(0), Index(0)));
     Expression expr2 = Pi("X", Universe(0), Pi(Index(0), Index(0)));
-    assertNotNull(compare(expr1, expr2, CompareVisitor.CMP.LEQ));
+    List<CompareVisitor.Equation> equations = new ArrayList<>();
+    CompareVisitor.Result result = compare(expr1, expr2, equations);
+    assertTrue(result.isOK() == CompareVisitor.CMP.LESS || result.isOK() == CompareVisitor.CMP.EQUALS);
   }
 
   @Test
   public void compareNotLeq() {
     Expression expr1 = Pi("X", Universe(0), Pi(Index(0), Index(0)));
     Expression expr2 = Pi("X", Universe(1), Pi(Index(0), Index(0)));
-    assertNull(compare(expr1, expr2, CompareVisitor.CMP.LEQ));
+    List<CompareVisitor.Equation> equations = new ArrayList<>();
+    CompareVisitor.Result result = compare(expr1, expr2, equations);
+    assertFalse(result.isOK() == CompareVisitor.CMP.LESS || result.isOK() == CompareVisitor.CMP.EQUALS);
   }
 }

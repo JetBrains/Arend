@@ -33,8 +33,9 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   public boolean equals(Object obj) {
     if (this == obj) return true;
     if (!(obj instanceof Expression)) return false;
-    List<CompareVisitor.Equation> result = compare(this, (Expression) obj, CompareVisitor.CMP.EQ);
-    return result != null && result.size() == 0;
+    List<CompareVisitor.Equation> equations = new ArrayList<>(0);
+    CompareVisitor.Result result = compare(this, (Expression) obj, equations);
+    return result.isOK() != CompareVisitor.CMP.NOT_EQUIV && equations.size() == 0;
   }
 
   @Override
@@ -64,10 +65,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return new CheckTypeVisitor(globalContext, localContext, errors, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
   }
 
-  public static List<CompareVisitor.Equation> compare(Abstract.Expression expr1, Expression expr2, CompareVisitor.CMP cmp) {
-    CompareVisitor visitor = new CompareVisitor(cmp, new ArrayList<CompareVisitor.Equation>());
-    CompareVisitor.Result result = expr1.accept(visitor, expr2);
-    return result.isOK() ? visitor.equations() : null;
+  public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {
+    return expr1.accept(new CompareVisitor(equations), expr2);
   }
 
   public Expression lamSplitAt(int index, List<Argument> arguments) {

@@ -58,7 +58,7 @@ public class ParserTestCase {
 
   public static boolean compare(Expression expr1, Abstract.Expression expr2) {
     List<CompareVisitor.Equation> equations = new ArrayList<>();
-    CompareVisitor.Result result = expr2.accept(new CompareVisitor(CompareVisitor.CMP.EQ, equations), expr1);
-    return result.isOK() && equations.size() == 0;
+    CompareVisitor.Result result = Expression.compare(expr2, expr1, equations);
+    return result.isOK() != CompareVisitor.CMP.NOT_EQUIV && equations.size() == 0;
   }
 }

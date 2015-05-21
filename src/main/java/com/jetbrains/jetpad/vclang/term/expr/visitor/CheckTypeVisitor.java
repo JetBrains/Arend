@@ -84,8 +84,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression actualNorm = result.type.normalize(NormalizeVisitor.Mode.NF);
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
     List<CompareVisitor.Equation> equations = new ArrayList<>();
-    CompareVisitor.Result result1 = expectedNorm.accept(new CompareVisitor(CompareVisitor.CMP.GEQ, equations), actualNorm);
-    if (!result1.isOK()) {
+    CompareVisitor.Result result1 = compare(expectedNorm, actualNorm, equations);
+    if (result1.isOK() != CompareVisitor.CMP.GREATER && result1.isOK() != CompareVisitor.CMP.EQUALS) {
       if (result1 instanceof CompareVisitor.MaybeResult) {
         Abstract.Expression fexpected = ((CompareVisitor.MaybeResult) result1).getExpression();
         if (fexpected instanceof InferHoleExpression) {
@@ -144,9 +144,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (resultArgs[i] instanceof InferErrorResult && resultArgs[i].expression == equation.hole) {
           if (!(argsImp[i].expression instanceof Abstract.InferHoleExpression) && argsImp[i].expression instanceof Expression) {
             Expression expr1 = ((Expression) argsImp[i].expression).normalize(NormalizeVisitor.Mode.NF);
-            boolean isLess = compare(expr1, equation.expression, CompareVisitor.CMP.LEQ) != null;
-            if (isLess || compare(expr1, equation.expression, CompareVisitor.CMP.GEQ) != null) {
-              if (!isLess) {
+            List<CompareVisitor.Equation> equations1 = new ArrayList<>();
+            CompareVisitor.CMP cmp = compare(expr1, equation.expression, equations1).isOK();
+            if (cmp != CompareVisitor.CMP.NOT_EQUIV) {
+              if (cmp == CompareVisitor.CMP.GREATER) {
                 argsImp[i] = new Arg(argsImp[i].isExplicit, null, equation.expression);
               }
             } else {
@@ -372,9 +373,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
         Expression actualNorm = resultType.normalize(NormalizeVisitor.Mode.NF);
         List<CompareVisitor.Equation> equations = new ArrayList<>();
-        CompareVisitor.Result result = actualNorm.accept(new CompareVisitor(CompareVisitor.CMP.LEQ, equations), expectedNorm);
+        CompareVisitor.Result result = compare(actualNorm, expectedNorm, equations);
 
-        if (result instanceof CompareVisitor.JustResult && !result.isOK()) {
+        if (result instanceof CompareVisitor.JustResult && result.isOK() != CompareVisitor.CMP.LESS && result.isOK() != CompareVisitor.CMP.EQUALS) {
           Expression resultExpr = okFunction.expression;
           for (i = parametersNumber; i < argsNumber; ++i) {
             resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
@@ -582,8 +583,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (piArgs.get(i) != null) {
           Expression argExpectedType = piArgs.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
           Expression argActualType = argumentTypes.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
-          List<CompareVisitor.Equation> equations = compare(argExpectedType, argActualType, CompareVisitor.CMP.LEQ);
-          if (equations == null) {
+          List<CompareVisitor.Equation> equations = new ArrayList<>();
+          CompareVisitor.Result result = compare(argExpectedType, argActualType, equations);
+          if (result.isOK() != CompareVisitor.CMP.LESS && result.isOK() != CompareVisitor.CMP.EQUALS) {
             errors.add(new TypeMismatchError(piArgs.get(i).getType(), lambdaArgs.get(i).expression, expr, getNames(myLocalContext)));
           } else {
             resultEquations.addAll(equations);
