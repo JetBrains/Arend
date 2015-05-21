@@ -371,8 +371,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (expectedType != null && expectedType.accept(new FindHoleVisitor()) == null) {
         Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
         Expression actualNorm = resultType.normalize(NormalizeVisitor.Mode.NF);
-        List<CompareVisitor.Equation> equations = compare(actualNorm, expectedNorm, CompareVisitor.CMP.LEQ);
-        if (equations == null) {
+        List<CompareVisitor.Equation> equations = new ArrayList<>();
+        CompareVisitor.Result result = actualNorm.accept(new CompareVisitor(CompareVisitor.CMP.LEQ, equations), expectedNorm);
+
+        if (result instanceof CompareVisitor.JustResult && !result.isOK()) {
           Expression resultExpr = okFunction.expression;
           for (i = parametersNumber; i < argsNumber; ++i) {
             resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));

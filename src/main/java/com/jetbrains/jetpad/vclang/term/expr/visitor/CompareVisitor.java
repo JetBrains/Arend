@@ -93,8 +93,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       for (Abstract.Argument arg : piExpr.getArguments()) {
         if (arg instanceof Abstract.TelescopeArgument) {
           Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
-          for (String ignored : teleArg.getNames()) {
-            args.add(teleArg.getType());
+          for (int i = 0; i < teleArg.getNames().size(); ++i) {
+            args.add(teleArg.getType() instanceof Expression ? ((Expression) teleArg.getType()).liftIndex(0, i) : teleArg.getType());
           }
         } else
         if (arg instanceof Abstract.TypeArgument) {
@@ -165,6 +165,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
     List<Abstract.ArgumentExpression> args = new ArrayList<>();
     Abstract.Expression expr1 = Abstract.getFunction(expr, args);
+    if (expr1 instanceof Abstract.InferHoleExpression) {
+      return new MaybeResult(expr1);
+    }
+
     List<Expression> otherArgs = new ArrayList<>();
     Expression other1 = other.getFunction(otherArgs);
 
@@ -240,7 +244,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       }
     }
 
-    for (int i = 0; i < args1.size(); ++i) {
+    for (int i = 0; i < Math.min(args1.size(), args2.size()); ++i) {
       equationsNumber = myEquations.size();
       if (args1.get(i) != null && args2.get(i) != null && !args1.get(i).accept(this, (Expression) args2.get(i)).isOK()) return false;
       for (int j = equationsNumber; j < myEquations.size(); ++j) {
