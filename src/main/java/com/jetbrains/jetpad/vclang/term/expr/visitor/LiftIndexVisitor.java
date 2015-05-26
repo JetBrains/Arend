@@ -125,5 +125,10 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     throw new IllegalStateException();
   }
 
+  @Override
+  public Expression visitFieldAcc(FieldAccExpression expr) {
+    return FieldAcc(expr.getExpression().accept(this), expr.getDefinition(), expr.getIndex());
+  }
+
   public static class NegativeIndexException extends RuntimeException {}
 }

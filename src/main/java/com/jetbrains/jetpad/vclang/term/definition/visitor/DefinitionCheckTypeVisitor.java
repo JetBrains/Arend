@@ -212,4 +212,29 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       return newConstructor;
     }
   }
+
+  @Override
+  public ClassDefinition visitClass(Abstract.ClassDefinition def, List<Binding> localContext) {
+    List<Definition> fields = new ArrayList<>(def.getFields().size());
+    Universe universe = new Universe.Type(0, Universe.Type.PROP);
+
+    for (Abstract.Definition field : def.getFields()) {
+      Definition newField = field.accept(this, localContext);
+      if (newField == null) continue;
+
+      if (newField instanceof FunctionDefinition && ((FunctionDefinition) newField).getArrow() == null) {
+        Universe maxUniverse = universe.max(newField.getUniverse());
+        if (maxUniverse == null) {
+          String msg = "Universe " + newField.getUniverse() + " of field " + newField.getName() + " is not comparable to universe " + universe + " of previous fields";
+          myErrors.add(new TypeCheckingError(msg, null, null));
+          continue;
+        }
+        universe = maxUniverse;
+      }
+
+      fields.add(newField);
+    }
+
+    return new ClassDefinition(def.getName(), universe, fields);
+  }
 }

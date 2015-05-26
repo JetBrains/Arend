@@ -243,22 +243,38 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     if (expr.getOtherwise() != null) {
-      printIndent();
+      printIndent(myBuilder, myIndent);
       myBuilder.append("| _ ").append(expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.LEFT ? "<= " : "=> ");
       expr.getOtherwise().getExpression().accept(this, Abstract.Expression.PREC);
       myBuilder.append('\n');
     }
 
-    printIndent();
+    printIndent(myBuilder, myIndent);
     myBuilder.append(';');
     --myIndent;
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append(')');
     return null;
   }
 
-  public void printIndent() {
-    for (int i = 0; i < myIndent; ++i) {
-      myBuilder.append('\t');
+  @Override
+  public Void visitFieldAcc(Abstract.FieldAccExpression expr, Byte prec) {
+    if (prec > Abstract.FieldAccExpression.PREC) myBuilder.append('(');
+    expr.getExpression().accept(this, Abstract.FieldAccExpression.PREC);
+    myBuilder.append('.');
+    if (expr.getFixity() == Abstract.Definition.Fixity.INFIX) {
+      myBuilder.append('(');
+    }
+    myBuilder.append(expr.getName());
+    if (expr.getFixity() == Abstract.Definition.Fixity.INFIX) {
+      myBuilder.append(')');
+    }
+    if (prec > Abstract.FieldAccExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
+  public static void printIndent(StringBuilder builder, int indent) {
+    for (int i = 0; i < indent; ++i) {
+      builder.append("    ");
     }
   }
 }

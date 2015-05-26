@@ -414,6 +414,49 @@ public final class Concrete {
     }
   }
 
+  public static class FieldAccExpression extends Expression implements Abstract.FieldAccExpression {
+    private final Expression myExpression;
+    private final String myName;
+    private final Abstract.Definition.Fixity myFixity;
+
+    public FieldAccExpression(Position position, Expression expression, String name, Abstract.Definition.Fixity fixity) {
+      super(position);
+      myExpression = expression;
+      myName = name;
+      myFixity = fixity;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
+    public Abstract.Definition.Fixity getFixity() {
+      return myFixity;
+    }
+
+    @Override
+    public Definition getDefinition() {
+      return null;
+    }
+
+    @Override
+    public int getIndex() {
+      return -1;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitFieldAcc(this, params);
+    }
+  }
+
   public static class ElimExpression extends Expression implements Abstract.ElimExpression {
     private final ElimType myElimType;
     private final Expression myExpression;
@@ -554,7 +597,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
+      accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
       return builder.toString();
     }
   }
@@ -641,6 +684,30 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitData(this, params);
+    }
+  }
+
+  public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
+    private final List<Definition> myFields;
+
+    public ClassDefinition(Position position, String name, Universe universe, List<Definition> fields) {
+      super(position, name, DEFAULT_PRECEDENCE, Fixity.PREFIX, universe);
+      myFields = fields;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClass(this, params);
+    }
+
+    @Override
+    public List<Definition> getFields() {
+      return myFields;
+    }
+
+    @Override
+    public Definition getField(int index) {
+      return myFields.get(index);
     }
   }
 

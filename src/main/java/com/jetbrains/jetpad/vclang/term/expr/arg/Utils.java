@@ -136,7 +136,7 @@ public class Utils {
   public static void prettyPrintClause(Abstract.ElimExpression expr, Abstract.Clause clause, StringBuilder builder, List<String> names, int indent) {
     if (clause == null) return;
 
-    new PrettyPrintVisitor(builder, names, indent).printIndent();
+    PrettyPrintVisitor.printIndent(builder, indent);
     builder.append("| ").append(clause.getName());
     int startIndex = names.size();
     for (Abstract.Argument argument : clause.getArguments()){

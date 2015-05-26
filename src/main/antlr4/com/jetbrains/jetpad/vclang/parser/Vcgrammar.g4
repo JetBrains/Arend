@@ -2,8 +2,9 @@ grammar Vcgrammar;
 
 defs  : def*;
 
-def   : '\\function' precedence name tele* typeOpt arrow expr          # defFunction
+def   : '\\function' precedence name tele* typeOpt termOpt             # defFunction
       | '\\data' precedence name tele* typeOpt arrowOpt constructor*   # defData
+      | '\\class' ID '{' defs '}'                                      # defClass
       ;
 
 arrow : '<='                            # arrowLeft
@@ -14,6 +15,10 @@ arrowOpt : | '<=';
 
 typeOpt :                               # noType
         | ':' expr                      # withType
+        ;
+
+termOpt :                               # noTerm
+        | arrow expr                    # withTerm
         ;
 
 constructor : '|' precedence name tele*;
@@ -31,7 +36,7 @@ name  : ID                              # nameId
       | '(' BIN_OP ')'                  # nameBinOp
       ;
 
-expr  : binOpLeft* atom argument*       # binOp
+expr  : binOpLeft* atomFieldsAcc argument* # binOp
       | <assoc=right> expr '->' expr    # arr
       | '\\Pi' tele+ '->' expr          # pi
       | '\\Sigma' tele+                 # sigma
@@ -50,17 +55,22 @@ elimCase : '\\elim'                     # elim
          | '\\case'                     # case
          ;
 
-binOpLeft : atom argument* infix;
+binOpLeft : atomFieldsAcc argument* infix;
+
+fieldAcc : '.' name;
 
 infix : BIN_OP                          # infixBinOp
-      | '`' ID '`'                      # infixId
+      | '`' name fieldAcc* '`'          # infixId
       ;
 
 atom  : '(' expr (',' expr)* ')'        # tuple
       | literal                         # atomLiteral
+      | NUMBER                          # atomNumber
       ;
 
-argument : atom                         # argumentExplicit
+atomFieldsAcc : atom fieldAcc*;
+
+argument : atomFieldsAcc                # argumentExplicit
          | '{' expr '}'                 # argumentImplicit
          ;
 

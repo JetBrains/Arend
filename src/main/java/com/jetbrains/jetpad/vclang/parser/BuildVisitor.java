@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
@@ -114,10 +115,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
     Concrete.Expression type = visitTypeOpt(ctx.typeOpt());
-    Definition.Arrow arrow = ctx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
+    Definition.Arrow arrow = ctx.termOpt() instanceof NoTermContext ? null : ((WithTermContext) ctx.termOpt()).arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, visitPrecedence(ctx.precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null);
     myLocalContext.put(name, def);
-    def.setTerm(visitExpr(ctx.expr()));
+    if (ctx.termOpt() instanceof WithTermContext) {
+      def.setTerm(visitExpr(((WithTermContext) ctx.termOpt()).expr()));
+    }
     return def;
   }
 
@@ -199,6 +202,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       myLocalContext.put(name, constructor1);
     }
     return def;
+  }
+
+  @Override
+  public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
+    List<Concrete.Definition> fields = new ArrayList<>(ctx.defs().def().size());
+    for (DefContext def : ctx.defs().def()) {
+      Concrete.Definition newDef = visitDef(def);
+      if (newDef != null) {
+        fields.add(newDef);
+      }
+    }
+    return new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), new Universe.Type(), fields);
   }
 
   private Concrete.Expression visitTypeOpt(TypeOptContext ctx) {
@@ -313,7 +328,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.UniverseExpression visitProp(PropContext ctx) {
-    return new Concrete.UniverseExpression(tokenPosition(ctx.PROP().getSymbol()), new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP));
+    return new Concrete.UniverseExpression(tokenPosition(ctx.PROP().getSymbol()), new Universe.Type(0, Universe.Type.PROP));
   }
 
   @Override
@@ -357,6 +372,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public Concrete.Expression visitAtomNumber(AtomNumberContext ctx) {
+    int number = Integer.parseInt(ctx.NUMBER().getText());
+    Concrete.Position pos = tokenPosition(ctx.NUMBER().getSymbol());
+    Concrete.Expression result = new Concrete.VarExpression(pos, Prelude.ZERO.getName());
+    for (int i = 0; i < number; ++i) {
+      result = new Concrete.AppExpression(pos, new Concrete.VarExpression(pos, Prelude.SUC.getName()), new Concrete.ArgumentExpression(result, true, false));
+    }
+    return result;
+  }
+
+  @Override
   public Concrete.SigmaExpression visitSigma(SigmaContext ctx) {
     return new Concrete.SigmaExpression(tokenPosition(ctx.getStart()), visitTeles(ctx.tele()));
   }
@@ -366,19 +392,36 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.PiExpression(tokenPosition(ctx.getStart()), visitTeles(ctx.tele()), visitExpr(ctx.expr()));
   }
 
-  private Concrete.Expression visitAtoms(AtomContext atom, List<ArgumentContext> arguments) {
-    Concrete.Expression result = visitExpr(atom);
+  @Override
+  public Concrete.Expression visitAtomFieldsAcc(AtomFieldsAccContext ctx) {
+    Concrete.Expression expr = visitExpr(ctx.atom());
+    for (FieldAccContext field : ctx.fieldAcc()) {
+      String name;
+      Abstract.Definition.Fixity fixity;
+      if (field.name() instanceof NameIdContext) {
+        name = ((NameIdContext) field.name()).ID().getText();
+        fixity = Abstract.Definition.Fixity.PREFIX;
+      } else {
+        name = ((NameBinOpContext) field.name()).BIN_OP().getText();
+        fixity = Abstract.Definition.Fixity.INFIX;
+      }
+      expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name, fixity);
+    }
+    return expr;
+  }
+
+  private Concrete.Expression visitAtoms(Concrete.Expression expr, List<ArgumentContext> arguments) {
     for (ArgumentContext argument : arguments) {
       boolean explicit = argument instanceof ArgumentExplicitContext;
-      Concrete.Expression expr;
+      Concrete.Expression expr1;
       if (explicit) {
-        expr = visitExpr(((ArgumentExplicitContext) argument).atom());
+        expr1 = visitAtomFieldsAcc(((ArgumentExplicitContext) argument).atomFieldsAcc());
       } else {
-        expr = visitExpr(((ArgumentImplicitContext) argument).expr());
+        expr1 = visitExpr(((ArgumentImplicitContext) argument).expr());
       }
-      result = new Concrete.AppExpression(result.getPosition(), result, new Concrete.ArgumentExpression(expr, explicit, false));
+      expr = new Concrete.AppExpression(expr.getPosition(), expr, new Concrete.ArgumentExpression(expr1, explicit, false));
     }
-    return result;
+    return expr;
   }
 
   private class Pair {
@@ -430,25 +473,25 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         name = ((InfixBinOpContext) leftContext.infix()).BIN_OP().getText();
         position = tokenPosition(((InfixBinOpContext) leftContext.infix()).BIN_OP().getSymbol());
       } else {
-        name = ((InfixIdContext) leftContext.infix()).ID().getText();
-        position = tokenPosition(((InfixIdContext) leftContext.infix()).ID().getSymbol());
+        name = ((NameIdContext) ((InfixIdContext) leftContext.infix()).name()).ID().getText();
+        position = tokenPosition(((InfixIdContext) leftContext.infix()).name().getStart());
       }
 
       Abstract.Definition def = myLocalContext.get(name);
       if (def == null) {
         def = myGlobalContext.get(name);
         if (def == null) {
-          Concrete.Expression left = rollUpStack(stack, visitAtoms(leftContext.atom(), leftContext.argument()));
+          Concrete.Expression left = rollUpStack(stack, visitAtoms(visitAtomFieldsAcc(leftContext.atomFieldsAcc()), leftContext.argument()));
           exprs.add(new Concrete.AppExpression(position, new Concrete.VarExpression(position, "(" + name + ")"), new Concrete.ArgumentExpression(left, true, false)));
           stack = new ArrayList<>(ctx.binOpLeft().size() - stack.size());
           continue;
         }
       }
 
-      pushOnStack(stack, visitAtoms(leftContext.atom(), leftContext.argument()), def, position);
+      pushOnStack(stack, visitAtoms(visitAtomFieldsAcc(leftContext.atomFieldsAcc()), leftContext.argument()), def, position);
     }
 
-    Concrete.Expression result = rollUpStack(stack, visitAtoms(ctx.atom(), ctx.argument()));
+    Concrete.Expression result = rollUpStack(stack, visitAtoms(visitAtomFieldsAcc(ctx.atomFieldsAcc()), ctx.argument()));
     for (int i = exprs.size() - 1; i >= 0; --i) {
       result = new Concrete.AppExpression(exprs.get(i).getPosition(), exprs.get(i), new Concrete.ArgumentExpression(result, true, false));
     }

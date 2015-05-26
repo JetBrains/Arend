@@ -123,6 +123,10 @@ public class ExpressionFactory {
     return new TupleExpression(Arrays.asList(fields));
   }
 
+  public static FieldAccExpression FieldAcc(Expression expr, Definition def, int index) {
+    return new FieldAccExpression(expr, def, index);
+  }
+
   public static VarExpression Var(String name) {
     return new VarExpression(name);
   }

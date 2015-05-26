@@ -128,6 +128,15 @@ public final class Abstract {
     Clause getOtherwise();
   }
 
+  public interface FieldAccExpression extends Expression {
+    byte PREC = 12;
+    Expression getExpression();
+    String getName();
+    Definition.Fixity getFixity();
+    Definition getDefinition();
+    int getIndex();
+  }
+
   public interface Clause extends PrettyPrintableSourceNode {
     String getName();
     List<? extends Argument> getArguments();
@@ -193,6 +202,11 @@ public final class Abstract {
     TypeArgument getParameter(int index);
     List<? extends Constructor> getConstructors();
     Constructor getConstructor(int index);
+  }
+
+  public interface ClassDefinition extends Definition {
+    List<? extends Definition> getFields();
+    Definition getField(int index);
   }
 
   public interface Constructor extends Definition {

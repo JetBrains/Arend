@@ -8,17 +8,19 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
 
-public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<Byte, Void> {
+public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<Void, Void> {
   private final StringBuilder myBuilder;
   private final List<String> myNames;
+  private int myIndent;
 
-  public DefinitionPrettyPrintVisitor(StringBuilder builder, List<String> names) {
+  public DefinitionPrettyPrintVisitor(StringBuilder builder, List<String> names, int indent) {
     myBuilder = builder;
     myNames = names;
+    myIndent = indent;
   }
 
   @Override
-  public Void visitFunction(Abstract.FunctionDefinition def, Byte prec) {
+  public Void visitFunction(Abstract.FunctionDefinition def, Void ignored) {
     myBuilder.append("\\function");
     if (!def.getPrecedence().equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
       myBuilder.append(" \\infix");
@@ -28,6 +30,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<B
       myBuilder.append(def.getPrecedence().priority);
     }
     myBuilder.append('\n');
+    PrettyPrintVisitor.printIndent(myBuilder, myIndent);
 
     if (def.getFixity() == Definition.Fixity.PREFIX) {
       myBuilder.append(def.getName());
@@ -40,11 +43,13 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<B
     }
     if (def.getResultType() != null) {
       myBuilder.append(" : ");
-      def.getResultType().accept(new PrettyPrintVisitor(myBuilder, myNames, 0), Abstract.Expression.PREC);
+      def.getResultType().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
     }
-    myBuilder.append(def.getArrow() == Abstract.Definition.Arrow.RIGHT ? " => " : " <= ");
+    if (def.getArrow() != null) {
+      myBuilder.append(def.getArrow() == Abstract.Definition.Arrow.RIGHT ? " => " : " <= ");
+    }
     if (def.getTerm() != null) {
-      def.getTerm().accept(new PrettyPrintVisitor(myBuilder, myNames, 0), Abstract.Expression.PREC);
+      def.getTerm().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
     } else {
       myBuilder.append("{?}");
     }
@@ -53,7 +58,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<B
   }
 
   @Override
-  public Void visitData(Abstract.DataDefinition def, Byte params) {
+  public Void visitData(Abstract.DataDefinition def, Void ignored) {
     myBuilder.append("\\data ");
     if (def.getFixity() == Abstract.Definition.Fixity.PREFIX) {
       myBuilder.append(def.getName());
@@ -67,22 +72,41 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<B
     if (def.getUniverse() != null) {
       myBuilder.append(" : ").append(def.getUniverse());
     }
+    ++myIndent;
     for (Abstract.Constructor constructor : def.getConstructors()) {
-      myBuilder.append("\n    | ");
-      constructor.accept(this, Abstract.Expression.PREC);
+      myBuilder.append('\n');
+      PrettyPrintVisitor.printIndent(myBuilder, myIndent);
+      myBuilder.append("| ");
+      constructor.accept(this, null);
     }
+    --myIndent;
     removeFromList(myNames, def.getParameters());
     return null;
   }
 
   @Override
-  public Void visitConstructor(Abstract.Constructor def, Byte params) {
+  public Void visitConstructor(Abstract.Constructor def, Void ignored) {
     myBuilder.append(def.getName());
     for (Abstract.TypeArgument argument : def.getArguments()) {
       myBuilder.append(' ');
       argument.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
     }
     removeFromList(myNames, def.getArguments());
+    return null;
+  }
+
+  @Override
+  public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
+    myBuilder.append("\\class ").append(def.getName()).append(" {");
+    ++myIndent;
+    for (Abstract.Definition field : def.getFields()) {
+      myBuilder.append('\n');
+      PrettyPrintVisitor.printIndent(myBuilder, myIndent);
+      field.accept(this, null);
+      myBuilder.append('\n');
+    }
+    --myIndent;
+    myBuilder.append("}");
     return null;
   }
 }

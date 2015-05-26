@@ -67,7 +67,7 @@ public class ConsoleMain {
 
       if (typedDef != null) {
         StringBuilder stringBuilder = new StringBuilder();
-        typedDef.accept(new DefinitionPrettyPrintVisitor(stringBuilder, new ArrayList<String>()), Abstract.Expression.PREC);
+        typedDef.accept(new DefinitionPrettyPrintVisitor(stringBuilder, new ArrayList<String>(), 0), null);
         System.out.println(stringBuilder);
         System.out.println();
       }

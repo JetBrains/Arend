@@ -40,17 +40,14 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (o == this) return true;
-    if (!(o instanceof Definition)) return false;
-    Definition other = (Definition)o;
-    return other.myID == myID;
+  public boolean equals(Object other) {
+    return other == this || other instanceof Definition && ((Definition) other).myID == myID;
   }
 
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
+    accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
     return builder.toString();
   }
 }

@@ -223,4 +223,9 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
     return true;
   }
+
+  @Override
+  public Boolean visitFieldAcc(FieldAccExpression expr) {
+    return expr.getExpression().accept(this);
+  }
 }

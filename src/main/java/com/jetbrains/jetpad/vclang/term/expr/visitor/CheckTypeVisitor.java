@@ -468,7 +468,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Definition def = myGlobalContext.get(expr.getDefinition().getName());
     if (def == null) {
-      NotInScopeError error = new NotInScopeError(Var(expr.getDefinition().getName()), getNames(myLocalContext));
+      NotInScopeError error = new NotInScopeError(expr, expr.getDefinition().getName());
       expr.setWellTyped(Error(null, error));
       myErrors.add(error);
       return null;
@@ -737,7 +737,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Definition def = myGlobalContext.get(name);
     if (def == null) {
-      NotInScopeError error = new NotInScopeError(expr, getNames(myLocalContext));
+      NotInScopeError error = new NotInScopeError(expr, expr.getName());
       expr.setWellTyped(Error(null, error));
       myErrors.add(error);
       return null;
@@ -981,7 +981,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           }
         }
         if (index == dataType.getConstructors().size()) {
-          error = new NotInScopeError(Var(clause.getName() == null ? "" : clause.getName()), new ArrayList<String>());
+          error = new NotInScopeError(clause, clause.getName() == null ? "" : clause.getName());
         } else {
           error = new TypeCheckingError("Overlapping pattern matching: " + dataType.getConstructor(index), clause, getNames(myLocalContext));
         }
@@ -1090,5 +1090,65 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       otherwise.setElimExpression(result);
     }
     return new OKResult(result, expectedType, null);
+  }
+
+  @Override
+  public Result visitFieldAcc(Abstract.FieldAccExpression expr, Expression expectedType) {
+    Result exprResult = expr.getExpression().accept(this, null);
+    if (!(exprResult instanceof OKResult)) return exprResult;
+    OKResult okExprResult = (OKResult) exprResult;
+    Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+
+    if (type instanceof UniverseExpression) {
+      Expression exprNorm = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
+      if (exprNorm instanceof DefCallExpression && ((DefCallExpression) exprNorm).getDefinition() instanceof ClassDefinition) {
+        ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) exprNorm).getDefinition();
+        int index = classDef.findField(expr.getName());
+        if (index == -1) {
+          TypeCheckingError error = new NotInScopeError(expr, expr.getName());
+          expr.setWellTyped(Error(null, error));
+          myErrors.add(error);
+          return null;
+        }
+        return new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index), index), classDef.getField(index).getType(), okExprResult.equations);
+      }
+    }
+
+    if (type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
+      ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) type).getDefinition();
+      int index = classDef.findField(expr.getName());
+      if (index == -1) {
+        TypeCheckingError error = new NotInScopeError(expr, expr.getName());
+        expr.setWellTyped(Error(null, error));
+        myErrors.add(error);
+        return null;
+      }
+      return new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index), index), classDef.getField(index).getType(), okExprResult.equations);
+    }
+
+    if (type instanceof SigmaExpression) {
+      if (expr.getName().startsWith("proj")) {
+        Integer index = Integer.getInteger(expr.getName().substring(4));
+        if (index != null) {
+          List<TypeArgument> splitArgs = new ArrayList<>();
+          splitArguments(((SigmaExpression) type).getArguments(), splitArgs);
+          List<Expression> exprs = new ArrayList<>(index);
+          for (int i = index - 1; i >= 0; --i) {
+            exprs.add(FieldAcc(okExprResult.expression, null, i));
+          }
+          return new OKResult(FieldAcc(okExprResult.expression, null, index), splitArgs.get(index).getType().subst(exprs, 0), okExprResult.equations);
+        }
+      }
+
+      TypeCheckingError error = new NotInScopeError(expr, expr.getName());
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+
+    TypeCheckingError error = new TypeCheckingError("Expected a class or an expression of a class type", expr, getNames(myLocalContext));
+    expr.setWellTyped(Error(null, error));
+    myErrors.add(error);
+    return null;
   }
 }

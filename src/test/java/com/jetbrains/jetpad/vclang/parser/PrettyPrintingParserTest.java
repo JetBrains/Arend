@@ -29,16 +29,16 @@ public class PrettyPrintingParserTest {
 
   private void testDef(FunctionDefinition expected, FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    def.accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>()), Abstract.Expression.PREC);
+    def.accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
     Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(builder.toString());
     assertEquals(expected.getArguments().size(), result.getArguments().size());
     for (int i = 0; i < expected.getArguments().size(); ++i) {
       assertTrue(compare(expected.getArgument(i).getType(), result.getArgument(i).getType()));
     }
     assertTrue(compare(expected.getResultType(), result.getResultType()));
-    assertEquals(expected.getArrow(), result.getArrow());
     assertNotNull(result.getTerm());
     assertTrue(compare(expected.getTerm(), result.getTerm()));
+    assertEquals(expected.getArrow(), result.getArrow());
   }
 
   @Test

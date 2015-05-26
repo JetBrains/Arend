@@ -100,4 +100,9 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
     }
     return expr.getOtherwise() == null ? false : expr.getOtherwise().getExpression().accept(this);
   }
+
+  @Override
+  public Boolean visitFieldAcc(FieldAccExpression expr) {
+    return expr.getExpression().accept(this);
+  }
 }

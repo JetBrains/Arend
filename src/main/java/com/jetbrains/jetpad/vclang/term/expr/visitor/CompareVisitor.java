@@ -465,6 +465,29 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   }
 
   @Override
+  public Result visitFieldAcc(Abstract.FieldAccExpression expr, Expression other) {
+    if (expr == other) return new JustResult(CMP.EQUALS);
+    CMP cmp = checkPath(expr, other);
+    if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
+    cmp = checkLam(expr, other);
+    if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
+    if (!(other instanceof FieldAccExpression)) return new JustResult(CMP.NOT_EQUIV);
+
+    FieldAccExpression otherFieldAcc = (FieldAccExpression) other;
+    Result result = expr.getExpression().accept(this, otherFieldAcc.getExpression());
+    if (result.isOK() == CMP.NOT_EQUIV) return result;
+    if (expr.getDefinition() != null) {
+      if (!expr.getDefinition().equals(otherFieldAcc.getDefinition())) return new JustResult(CMP.NOT_EQUIV);
+    } else
+    if (expr.getIndex() != -1) {
+      if (expr.getIndex() != otherFieldAcc.getIndex()) return new JustResult(CMP.NOT_EQUIV);
+    } else {
+      if (!expr.getName().equals(otherFieldAcc.getName())) return new JustResult(CMP.NOT_EQUIV);
+    }
+    return result;
+  }
+
+  @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression other) {
     if (expr == other) return new JustResult(CMP.EQUALS);
     if (!(other instanceof ElimExpression)) return new JustResult(CMP.NOT_EQUIV);
