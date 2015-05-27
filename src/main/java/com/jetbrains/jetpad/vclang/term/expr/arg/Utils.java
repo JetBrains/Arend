@@ -74,7 +74,7 @@ public class Utils {
     }
   }
 
-  public static void splitArguments(List<TypeArgument> arguments, List<TypeArgument> result) {
+  public static void splitArguments(List<? extends TypeArgument> arguments, List<TypeArgument> result) {
     for (TypeArgument argument : arguments) {
       addArgs(argument, result);
     }

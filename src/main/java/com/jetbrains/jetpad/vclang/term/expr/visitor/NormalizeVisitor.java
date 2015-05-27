@@ -125,7 +125,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     Expression expr = defCallExpr;
     if (fixity == Abstract.Definition.Fixity.INFIX && args.size() >= 2 && args.get(0).isExplicit() && args.get(1).isExplicit()) {
       if (myMode == Mode.NF) {
-        for (int i = 0; i < args.size(); ++i) {
+        for (int i = 0; i < args.size() - 2; ++i) {
           args.set(i, new ArgumentExpression(args.get(i).getExpression().accept(this), args.get(i).isExplicit(), args.get(i).isHidden()));
         }
       }
@@ -159,24 +159,21 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         }
       }
 
+      Expression result = ((FunctionDefinition) def).getTerm();
       List<TypeArgument> args1 = new ArrayList<>();
       splitArguments(def.getType(), args1);
       int numberOfArgs = numberOfVariables(args1);
-      if (myMode == Mode.WHNF && numberOfArgs > args.size()) {
+      if (myMode == Mode.WHNF && numberOfArgs > args.size() || result == null) {
         return applyDefCall(defCallExpr, fixity, args);
       }
 
       List<Expression> args2 = new ArrayList<>(numberOfArgs);
-      for (int i = 0; i < Math.min(numberOfArgs, args.size()); ++i) {
-        args2.add(args.get(i).getExpression().liftIndex(0, numberOfArgs - args.size()));
-      }
-      for (int i = numberOfArgs - args.size() - 1; i >= 0; --i) {
+      int numberOfSubstArgs = numberOfVariables(((FunctionDefinition) def).getArguments());
+      for (int i = numberOfArgs - numberOfSubstArgs; i < numberOfArgs - args.size(); ++i) {
         args2.add(Index(i));
       }
-
-      Expression result = ((FunctionDefinition) def).getTerm();
-      if (result == null) {
-        return applyDefCall(defCallExpr, fixity, args);
+      for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()); i < args.size(); ++i) {
+        args2.add(args.get(i).getExpression().liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0));
       }
 
       Abstract.Definition.Arrow arrow = ((FunctionDefinition) def).getArrow();
@@ -204,7 +201,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         return applyDefCall(defCallExpr, fixity, args);
       }
 
-      result = result.subst(args2, 0);
+      result = result.liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0).subst(args2, 0);
       if (arrow == Abstract.Definition.Arrow.LEFT) {
         result = result.normalize(Mode.TOP);
         if (result == null) {
@@ -212,11 +209,14 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         }
       }
 
-      if (numberOfArgs <= args.size()) {
-        for (int i = numberOfArgs; i < args.size(); ++i) {
-          result = Apps(result, args.get(i));
-        }
-      } else {
+      for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()) - 1; i >= 0; --i) {
+        result = Apps(result, args.get(i));
+      }
+
+      for (int i = numberOfArgs - Math.max(numberOfSubstArgs, args.size()) - 1; i >= 0; --i) {
+        result = Apps(result, Index(i));
+      }
+      if (args.size() < numberOfArgs) {
         result = addLambdas(args1, args.size(), result);
       }
 
@@ -256,8 +256,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     for (int i = splitArguments.size() - args.size() - 1; i >= 0; --i) {
       result = Apps(result, new ArgumentExpression(Index(i), splitArguments.get(splitArguments.size() - 1 - i).getExplicit(), !splitArguments.get(splitArguments.size() - 1 - i).getExplicit()));
     }
-    result = addLambdas(arguments, args.size(), result);
-    return result;
+    return addLambdas(arguments, args.size(), result);
   }
 
   @Override
