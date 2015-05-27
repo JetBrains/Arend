@@ -535,7 +535,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       resultType = null;
       fresultType = null;
     } else {
-      resultType = expectedType.splitAt(lambdaArgs.size(), piArgs);
+      resultType = expectedType.splitAt(lambdaArgs.size(), piArgs).normalize(NormalizeVisitor.Mode.WHNF);
       fresultType = resultType.getFunction(new ArrayList<Expression>());
       actualNumberOfPiArgs = piArgs.size();
       if (fresultType instanceof InferHoleExpression) {
@@ -789,62 +789,47 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitTuple(Abstract.TupleExpression expr, Expression expectedType) {
-    Expression expectedTypeNorm = null;
     if (expectedType != null) {
-      expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+      Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
       if (expectedTypeNorm instanceof SigmaExpression) {
-        SigmaExpression expectedSigma = (SigmaExpression) expectedTypeNorm;
-        int argsNumber = 0;
-        for (TypeArgument arg : expectedSigma.getArguments()) {
-          if (arg instanceof TelescopeArgument) {
-            argsNumber += ((TelescopeArgument) arg).getNames().size();
-          } else {
-            ++argsNumber;
-          }
+        InferHoleExpression hole = expectedTypeNorm.accept(new FindHoleVisitor());
+        if (hole != null) {
+          return new InferErrorResult(hole, hole.getError(), null);
         }
 
-        if (expr.getFields().size() != argsNumber) {
-          TypeCheckingError error = new TypeCheckingError("Expected a tuple with " + argsNumber + " fields, but given " + expr.getFields().size(), expr, getNames(myLocalContext));
+        List<TypeArgument> sigmaArgs = new ArrayList<>();
+        splitArguments(((SigmaExpression) expectedTypeNorm).getArguments(), sigmaArgs);
+
+        if (expr.getFields().size() != sigmaArgs.size()) {
+          TypeCheckingError error = new TypeCheckingError("Expected a tuple with " + sigmaArgs.size() + " fields, but given " + expr.getFields().size(), expr, getNames(myLocalContext));
           expr.setWellTyped(Error(null, error));
           myErrors.add(error);
           return null;
         }
 
-        int i = 0;
         List<Expression> fields = new ArrayList<>(expr.getFields().size());
         Expression expression = Tuple(fields);
-        List<TypeArgument> arguments = new ArrayList<>(expr.getFields().size());
-        Expression type = Sigma(arguments);
         List<CompareVisitor.Equation> equations = new ArrayList<>();
-        for (TypeArgument arg : expectedSigma.getArguments()) {
+        for (int i = 0; i < sigmaArgs.size(); ++i) {
           List<Expression> substExprs = new ArrayList<>(fields.size());
           for (int j = fields.size() - 1; j >= 0; --j) {
             substExprs.add(fields.get(j));
           }
 
-          if (arg instanceof TelescopeArgument) {
-            for (String ignored : ((TelescopeArgument) arg).getNames()) {
-              Result result = typeCheck(expr.getField(i), arg.getType().subst(substExprs, 0));
-              if (!(result instanceof OKResult)) return result;
-              OKResult okResult = (OKResult) result;
-              fields.add(okResult.expression);
-              arguments.add(TypeArg(okResult.type));
-              equations.addAll(okResult.equations);
-              ++i;
-            }
-          } else {
-            Result result = typeCheck(expr.getField(i), arg.getType().subst(substExprs, 0));
-            if (!(result instanceof OKResult)) return result;
-            OKResult okResult = (OKResult) result;
-            fields.add(okResult.expression);
-            arguments.add(TypeArg(okResult.type));
-            equations.addAll(okResult.equations);
-            ++i;
-          }
+          Expression expType = sigmaArgs.get(i).getType().subst(substExprs, 0);
+          Result result = typeCheck(expr.getField(i), expType);
+          if (!(result instanceof OKResult)) return result;
+          OKResult okResult = (OKResult) result;
+          fields.add(okResult.expression);
+          equations.addAll(okResult.equations);
         }
-        return new OKResult(expression, type, equations);
-      } else
-      if (!(expectedTypeNorm instanceof Abstract.InferHoleExpression)) {
+        return new OKResult(expression, expectedType, equations);
+      } else {
+        Expression fexpectedTypeNorm = expectedTypeNorm.getFunction(new ArrayList<Expression>());
+        if (fexpectedTypeNorm instanceof InferHoleExpression) {
+          return new InferErrorResult((InferHoleExpression) fexpectedTypeNorm, ((InferHoleExpression) fexpectedTypeNorm).getError(), null);
+        }
+
         TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(args(TypeArg(Var("?")), TypeArg(Var("?")))), expr, getNames(myLocalContext));
         expr.setWellTyped(Error(null, error));
         myErrors.add(error);
@@ -864,9 +849,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       fields.add(okResult.expression);
       arguments.add(TypeArg(okResult.type));
       equations.addAll(okResult.equations);
-    }
-    if (expectedTypeNorm != null) {
-      equations.add(new CompareVisitor.Equation((Abstract.InferHoleExpression) expectedTypeNorm, type.normalize(NormalizeVisitor.Mode.NF)));
     }
     return new OKResult(expression, type, equations);
   }
