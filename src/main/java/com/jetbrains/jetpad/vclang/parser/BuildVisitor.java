@@ -135,7 +135,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Abstract.Definition.Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
-    int priority = Integer.parseInt(ctx.NUMBER().getText());
+    int priority = Integer.valueOf(ctx.NUMBER().getText());
     if (priority < 1 || priority > 9) {
       myErrors.add(new ParserError(tokenPosition(ctx.NUMBER().getSymbol()), "Precedence out of range: " + priority));
 
@@ -373,7 +373,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitAtomNumber(AtomNumberContext ctx) {
-    int number = Integer.parseInt(ctx.NUMBER().getText());
+    int number = Integer.valueOf(ctx.NUMBER().getText());
     Concrete.Position pos = tokenPosition(ctx.NUMBER().getSymbol());
     Concrete.Expression result = new Concrete.VarExpression(pos, Prelude.ZERO.getName());
     for (int i = 0; i < number; ++i) {

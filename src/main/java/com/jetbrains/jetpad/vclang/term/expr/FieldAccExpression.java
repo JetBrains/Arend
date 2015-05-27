@@ -23,7 +23,7 @@ public class FieldAccExpression extends Expression implements Abstract.FieldAccE
 
   @Override
   public String getName() {
-    return myDefinition == null ? "proj" + myIndex : myDefinition.getName();
+    return myDefinition == null ? "proj" + (myIndex + 1) : myDefinition.getName();
   }
 
   @Override

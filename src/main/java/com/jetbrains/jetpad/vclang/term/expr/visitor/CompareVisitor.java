@@ -168,8 +168,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (expr == other) return new JustResult(CMP.EQUALS);
     CMP cmp = checkPath(expr, other);
     if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
-    cmp = checkLam(expr, other);
-    if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
+    Result lamResult = checkLam(expr, other);
+    if (lamResult != null) return lamResult;
 
     if (expr.getFunction() instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr.getFunction()).getDefinition().equals(Prelude.PATH_CON)) {
       if (expr.getArgument().getExpression() instanceof Abstract.LamExpression) {
@@ -182,8 +182,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       }
     }
 
-    if (!(other instanceof AppExpression)) return new JustResult(CMP.NOT_EQUIV);
-
     List<Abstract.ArgumentExpression> args = new ArrayList<>();
     Abstract.Expression expr1 = Abstract.getFunction(expr, args);
     if (expr1 instanceof Abstract.InferHoleExpression) {
@@ -192,6 +190,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
     List<Expression> otherArgs = new ArrayList<>();
     Expression other1 = other.getFunction(otherArgs);
+    if (args.size() != otherArgs.size()) return new JustResult(CMP.NOT_EQUIV);
 
     int equationsNumber = myEquations.size();
     Result result = expr1.accept(this, other1);
@@ -202,15 +201,23 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       }
       return new MaybeResult(expr1);
     }
-    if (args.size() != otherArgs.size()) return new JustResult(CMP.NOT_EQUIV);
 
     cmp = result.isOK();
+    MaybeResult maybeResult = null;
     for (int i = 0; i < args.size(); ++i) {
       result = args.get(i).getExpression().accept(this, otherArgs.get(args.size() - 1 - i));
-      if (result.isOK() == CMP.NOT_EQUIV) return result;
+      if (result.isOK() == CMP.NOT_EQUIV) {
+        if (result instanceof MaybeResult) {
+          if (maybeResult == null) {
+            maybeResult = (MaybeResult) result;
+          }
+        } else {
+          return result;
+        }
+      }
       cmp = and(cmp, result.isOK());
     }
-    return new JustResult(cmp);
+    return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 
   @Override
@@ -218,8 +225,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (expr == other) return new JustResult(CMP.EQUALS);
     CMP cmp = checkPath(expr, other);
     if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
-    cmp = checkLam(expr, other);
-    if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
+    Result lamResult = checkLam(expr, other);
+    if (lamResult != null) return lamResult;
     return new JustResult(other instanceof Abstract.DefCallExpression && expr.getDefinition().equals(((Abstract.DefCallExpression) other).getDefinition()) ? CMP.EQUALS : CMP.NOT_EQUIV);
   }
 
@@ -228,23 +235,23 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (expr == other) return new JustResult(CMP.EQUALS);
     CMP cmp = checkPath(expr, other);
     if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
-    cmp = checkLam(expr, other);
-    if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
+    Result lamResult = checkLam(expr, other);
+    if (lamResult != null) return lamResult;
     return new JustResult(other instanceof Abstract.IndexExpression && expr.getIndex() == ((Abstract.IndexExpression) other).getIndex() ? CMP.EQUALS : CMP.NOT_EQUIV);
   }
 
-  private CMP checkLam(Abstract.Expression expr, Expression other) {
+  private Result checkLam(Abstract.Expression expr, Expression other) {
     List<Abstract.Expression> args1 = new ArrayList<>();
     Abstract.Expression body1 = lamArgs(expr, args1);
     List<Abstract.Expression> args2 = new ArrayList<>();
     Expression body2 = (Expression) lamArgs(other, args2);
 
-    if (args1.size() == 0 && args2.size() == 0) return CMP.NOT_EQUIV;
+    if (args1.size() == 0 && args2.size() == 0) return null;
 
     if (args1.size() < args2.size()) {
       for (int i = 0; i < args2.size() - args1.size(); ++i) {
         if (!(body2 instanceof AppExpression && ((AppExpression) body2).getArgument().getExpression() instanceof IndexExpression && ((IndexExpression) ((AppExpression) body2).getArgument().getExpression()).getIndex() == i)) {
-          return CMP.NOT_EQUIV;
+          return new JustResult(CMP.NOT_EQUIV);
         }
         body2 = ((AppExpression) body2).getFunction();
       }
@@ -252,14 +259,14 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       try {
         body2 = body2.liftIndex(0, args1.size() - args2.size());
       } catch (LiftIndexVisitor.NegativeIndexException ignored) {
-        return CMP.NOT_EQUIV;
+        return new JustResult(CMP.NOT_EQUIV);
       }
     }
 
     if (args2.size() < args1.size()) {
       for (int i = 0; i < args1.size() - args2.size(); ++i) {
         if (!(body1 instanceof Abstract.AppExpression && ((Abstract.AppExpression) body1).getArgument().getExpression() instanceof Abstract.IndexExpression && ((Abstract.IndexExpression) ((Abstract.AppExpression) body1).getArgument().getExpression()).getIndex() == i)) {
-          return CMP.NOT_EQUIV;
+          return new JustResult(CMP.NOT_EQUIV);
         }
         body1 = ((Abstract.AppExpression) body1).getFunction();
       }
@@ -268,8 +275,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
 
     int equationsNumber = myEquations.size();
-    CMP cmp = body1.accept(this, body2).isOK();
-    if (cmp == CMP.NOT_EQUIV) return CMP.NOT_EQUIV;
+    Result result = body1.accept(this, body2);
+    if (result.isOK() == CMP.NOT_EQUIV) return result;
     for (int i = equationsNumber; i < myEquations.size(); ++i) {
       try {
         myEquations.get(i).expression = myEquations.get(i).expression.liftIndex(0, -args1.size());
@@ -278,12 +285,22 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       }
     }
 
+    CMP cmp = result.isOK();
+    MaybeResult maybeResult = null;
     for (int i = 0; i < Math.min(args1.size(), args2.size()); ++i) {
       equationsNumber = myEquations.size();
       if (args1.get(i) != null && args2.get(i) != null) {
-        CMP cmp1 = args1.get(i).accept(this, (Expression) args2.get(i)).isOK();
-        if (cmp1 == CMP.NOT_EQUIV) return CMP.NOT_EQUIV;
-        cmp = and(cmp, cmp1);
+        Result result1 = args1.get(i).accept(this, (Expression) args2.get(i));
+        if (result1.isOK() == CMP.NOT_EQUIV) {
+          if (result1 instanceof MaybeResult) {
+            if (maybeResult == null) {
+              maybeResult = (MaybeResult) result1;
+            }
+          } else {
+            return result1;
+          }
+        }
+        cmp = and(cmp, result1.isOK());
       }
       for (int j = equationsNumber; j < myEquations.size(); ++j) {
         try {
@@ -294,12 +311,12 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       }
     }
 
-    return cmp;
+    return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 
   @Override
   public Result visitLam(Abstract.LamExpression expr, Expression other) {
-    return new JustResult(expr == other ? CMP.EQUALS : checkLam(expr, other));
+    return expr == other ? new JustResult(CMP.EQUALS) : checkLam(expr, other);
   }
 
   @Override
@@ -364,8 +381,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (expr == other) return new JustResult(CMP.EQUALS);
     CMP cmp = checkPath(expr, other);
     if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
-    cmp = checkLam(expr, other);
-    if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
+    Result lamResult = checkLam(expr, other);
+    if (lamResult != null) return lamResult;
     return new JustResult(other instanceof Abstract.VarExpression && expr.getName().equals(((Abstract.VarExpression) other).getName()) ? CMP.EQUALS : CMP.NOT_EQUIV);
   }
 
@@ -387,13 +404,23 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
     TupleExpression otherTuple = (TupleExpression) other;
     if (expr.getFields().size() != otherTuple.getFields().size()) return new JustResult(CMP.NOT_EQUIV);
+
     CMP cmp = CMP.EQUALS;
+    MaybeResult maybeResult = null;
     for (int i = 0; i < expr.getFields().size(); ++i) {
       Result result = expr.getField(i).accept(this, otherTuple.getField(i));
-      if (result.isOK() == CMP.NOT_EQUIV) return result;
+      if (result.isOK() == CMP.NOT_EQUIV) {
+        if (result instanceof MaybeResult) {
+          if (maybeResult == null) {
+            maybeResult = (MaybeResult) result;
+          }
+        } else {
+          return result;
+        }
+      }
       cmp = and(cmp, result.isOK());
     }
-    return new JustResult(cmp);
+    return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 
   @Override
@@ -426,12 +453,21 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
     if (args.size() != otherArgs.size()) return new JustResult(CMP.NOT_EQUIV);
     CMP cmp = CMP.EQUALS;
+    MaybeResult maybeResult = null;
     for (int i = 0; i < args.size(); ++i) {
       if (i > 0 && args.get(i) == args.get(i - 1) && otherArgs.get(i) == otherArgs.get(i - 1)) continue;
 
       int equationsNumber = myEquations.size();
       Result result = args.get(i).accept(this, otherArgs.get(i));
-      if (result.isOK() == CMP.NOT_EQUIV) return result;
+      if (result.isOK() == CMP.NOT_EQUIV) {
+        if (result instanceof MaybeResult) {
+          if (maybeResult == null) {
+            maybeResult = (MaybeResult) result;
+          }
+        } else {
+          return result;
+        }
+      }
       cmp = and(cmp, result.isOK());
 
       for (int j = equationsNumber; j < myEquations.size(); ++j) {
@@ -443,7 +479,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       }
     }
 
-    return new JustResult(cmp);
+    return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 
   @Override
@@ -451,8 +487,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (expr == other) return new JustResult(CMP.EQUALS);
     CMP cmp = checkPath(expr, other);
     if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
-    cmp = checkLam(expr, other);
-    if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
+    Result lamResult = checkLam(expr, other);
+    if (lamResult != null) return lamResult;
     if (!(other instanceof BinOpExpression)) return new JustResult(CMP.NOT_EQUIV);
 
     BinOpExpression otherBinOp = (BinOpExpression) other;
@@ -469,8 +505,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (expr == other) return new JustResult(CMP.EQUALS);
     CMP cmp = checkPath(expr, other);
     if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
-    cmp = checkLam(expr, other);
-    if (cmp != CMP.NOT_EQUIV) return new JustResult(cmp);
+    Result lamResult = checkLam(expr, other);
+    if (lamResult != null) return lamResult;
     if (!(other instanceof FieldAccExpression)) return new JustResult(CMP.NOT_EQUIV);
 
     FieldAccExpression otherFieldAcc = (FieldAccExpression) other;
@@ -500,16 +536,34 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (result.isOK() == CMP.NOT_EQUIV) return result;
 
     CMP cmp = result.isOK();
+    MaybeResult maybeResult = null;
     for (int i = 0; i < expr.getClauses().size(); ++i) {
       result = visitClause(expr.getClause(i), otherElim.getClause(i));
-      if (result.isOK() == CMP.NOT_EQUIV) return result;
+      if (result.isOK() == CMP.NOT_EQUIV) {
+        if (result instanceof MaybeResult) {
+          if (maybeResult == null) {
+            maybeResult = (MaybeResult) result;
+          }
+        } else {
+          return result;
+        }
+      }
       cmp = and(cmp, result.isOK());
     }
-    if (expr.getOtherwise() == otherElim.getOtherwise()) return new JustResult(cmp);
+
+    if (expr.getOtherwise() == otherElim.getOtherwise()) return maybeResult == null ? new JustResult(cmp) : maybeResult;
     if (expr.getOtherwise() == null || otherElim.getOtherwise() == null || expr.getOtherwise().getArrow() != otherElim.getOtherwise().getArrow()) return new JustResult(CMP.NOT_EQUIV);
     result = expr.getExpression().accept(this, otherElim.getOtherwise().getExpression());
-    if (result.isOK() == CMP.NOT_EQUIV) return result;
-    return new JustResult(and(cmp, result.isOK()));
+    if (result.isOK() == CMP.NOT_EQUIV) {
+      if (result instanceof MaybeResult) {
+        if (maybeResult == null) {
+          maybeResult = (MaybeResult) result;
+        }
+      } else {
+        return result;
+      }
+    }
+    return maybeResult == null ? new JustResult(and(cmp, result.isOK())) : maybeResult;
   }
 
   public Result visitClause(Abstract.Clause clause, Clause other) {
@@ -526,14 +580,23 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (result.isOK() == CMP.NOT_EQUIV) return result;
 
     CMP cmp = result.isOK();
+    MaybeResult maybeResult = null;
     for (int i = 0; i < args1.size(); ++i) {
       if (args1.get(i) != null && args2.get(i) != null) {
         result = args1.get(i).accept(this, (Expression) args2.get(i));
-        if (result.isOK() == CMP.NOT_EQUIV) return result;
+        if (result.isOK() == CMP.NOT_EQUIV) {
+          if (result instanceof MaybeResult) {
+            if (maybeResult == null) {
+              maybeResult = (MaybeResult) result;
+            }
+          } else {
+            return result;
+          }
+        }
         cmp = and(cmp, result.isOK());
       }
     }
 
-    return new JustResult(cmp);
+    return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 }

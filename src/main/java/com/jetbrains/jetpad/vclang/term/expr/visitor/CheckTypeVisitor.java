@@ -85,19 +85,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     CompareVisitor.Result result1 = compare(expectedNorm, actualNorm, equations);
-    if (result1.isOK() != CompareVisitor.CMP.GREATER && result1.isOK() != CompareVisitor.CMP.EQUALS) {
-      if (result1 instanceof CompareVisitor.MaybeResult) {
-        Abstract.Expression fexpected = ((CompareVisitor.MaybeResult) result1).getExpression();
-        if (fexpected instanceof InferHoleExpression) {
-          return new InferErrorResult((InferHoleExpression) fexpected, ((InferHoleExpression) fexpected).getError(), equations);
-        }
-      }
-
-      TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression, getNames(myLocalContext));
-      expression.setWellTyped(Error(result.expression, error));
-      myErrors.add(error);
-      return null;
-    } else {
+    if (result1 instanceof CompareVisitor.MaybeResult || result1.isOK() == CompareVisitor.CMP.GREATER || result1.isOK() == CompareVisitor.CMP.EQUALS) {
       if (result.equations != null) {
         result.equations.addAll(equations);
       } else {
@@ -105,6 +93,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       expression.setWellTyped(result.expression);
       return result;
+    } else {
+      TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression, getNames(myLocalContext));
+      expression.setWellTyped(Error(result.expression, error));
+      myErrors.add(error);
+      return null;
     }
   }
 
@@ -142,25 +135,39 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (CompareVisitor.Equation equation : equations) {
       for (int i = 0; i < size; ++i) {
         if (resultArgs[i] instanceof InferErrorResult && resultArgs[i].expression == equation.hole) {
-          if (!(argsImp[i].expression instanceof Abstract.InferHoleExpression) && argsImp[i].expression instanceof Expression) {
-            Expression expr1 = ((Expression) argsImp[i].expression).normalize(NormalizeVisitor.Mode.NF);
-            List<CompareVisitor.Equation> equations1 = new ArrayList<>();
-            CompareVisitor.CMP cmp = compare(expr1, equation.expression, equations1).isOK();
-            if (cmp != CompareVisitor.CMP.NOT_EQUIV) {
-              if (cmp == CompareVisitor.CMP.GREATER) {
-                argsImp[i] = new Arg(argsImp[i].isExplicit, null, equation.expression);
+          if (!(argsImp[i].expression instanceof Abstract.InferHoleExpression)) {
+            if (argsImp[i].expression instanceof Expression) {
+              Expression expr1 = ((Expression) argsImp[i].expression).normalize(NormalizeVisitor.Mode.NF);
+              List<CompareVisitor.Equation> equations1 = new ArrayList<>();
+              CompareVisitor.CMP cmp = compare(expr1, equation.expression, equations1).isOK();
+              if (cmp != CompareVisitor.CMP.NOT_EQUIV) {
+                if (cmp == CompareVisitor.CMP.GREATER) {
+                  argsImp[i] = new Arg(argsImp[i].isExplicit, null, equation.expression);
+                }
+              } else {
+                List<Abstract.Expression> options = new ArrayList<>(2);
+                options.add(argsImp[i].expression);
+                options.add(equation.expression);
+                for (int j = i + 1; j < size; ++j) {
+                  if (resultArgs[j] instanceof InferErrorResult && resultArgs[j].expression == equation.hole) {
+                    boolean was = false;
+                    for (Abstract.Expression option : options) {
+                      cmp = compare(option, equation.expression, equations1).isOK();
+                      if (cmp != CompareVisitor.CMP.NOT_EQUIV) {
+                        was = true;
+                        break;
+                      }
+                    }
+                    if (!was) {
+                      options.add(equation.expression);
+                    }
+                  }
+                }
+                myErrors.add(new InferredArgumentsMismatch(i + 1, options, fun, getNames(myLocalContext)));
+                return -1;
               }
             } else {
-              List<Abstract.Expression> options = new ArrayList<>(2);
-              options.add(argsImp[i].expression);
-              options.add(equation.expression);
-              for (int j = i + 1; j < size; ++j) {
-                if (resultArgs[j] instanceof InferErrorResult && resultArgs[j].expression == equation.hole) {
-                  options.add(equation.expression);
-                }
-              }
-              myErrors.add(new InferredArgumentsMismatch(i + 1, options, fun, getNames(myLocalContext)));
-              return -1;
+              break;
             }
           }
 
@@ -176,13 +183,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   private boolean typeCheckArgs(Arg[] argsImp, Result[] resultArgs, List<TypeArgument> signature, List<CompareVisitor.Equation> resultEquations, int startIndex, Abstract.Expression fun) {
     for (int i = startIndex; i < resultArgs.length; ++i) {
-      if (resultArgs[i] instanceof OKResult) continue;
-
-      if (argsImp[i].expression instanceof Abstract.InferHoleExpression) {
+      if (resultArgs[i] == null) {
         TypeCheckingError error = new ArgInferenceError(functionArg(i + 1), fun, getNames(myLocalContext), fun);
         resultArgs[i] = new InferErrorResult(new InferHoleExpression(error), error, null);
-        continue;
       }
+    }
+
+    for (int i = startIndex; i < resultArgs.length; ++i) {
+      if (resultArgs[i] instanceof OKResult || argsImp[i].expression instanceof Abstract.InferHoleExpression) continue;
 
       List<Expression> substExprs = new ArrayList<>(i);
       for (int j = i - 1; j >= 0; --j) {
@@ -190,8 +198,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       Expression type = signature.get(i).getType().subst(substExprs, 0);
 
-      resultArgs[i] = typeCheck(argsImp[i].expression, type);
-      if (resultArgs[i] == null) {
+      Result result = typeCheck(argsImp[i].expression, type);
+      if (result == null) {
         for (int j = i + 1; j < resultArgs.length; ++j) {
           if (!(argsImp[j].expression instanceof Abstract.InferHoleExpression)) {
             typeCheck(argsImp[j].expression, null);
@@ -199,8 +207,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
         return false;
       }
-      if (resultArgs[i] instanceof OKResult) {
-        argsImp[i].expression = resultArgs[i].expression;
+      if (result instanceof OKResult) {
+        resultArgs[i] = result;
+        argsImp[i].expression = result.expression;
+      } else {
+        if (resultArgs[i] != null && resultArgs[i].expression instanceof InferHoleExpression) {
+          resultArgs[i] = new InferErrorResult((InferHoleExpression) resultArgs[i].expression, ((InferErrorResult) result).error, result.equations);
+        } else {
+          resultArgs[i] = result;
+        }
       }
 
       if (resultArgs[i].equations == null) continue;
@@ -502,16 +517,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     List<TypeArgument> piArgs = new ArrayList<>();
     int actualNumberOfPiArgs;
     Expression resultType;
+    Expression fresultType;
     if (expectedType == null) {
       for (Arg ignored : lambdaArgs) {
         piArgs.add(null);
       }
       actualNumberOfPiArgs = 0;
       resultType = null;
+      fresultType = null;
     } else {
       resultType = expectedType.splitAt(lambdaArgs.size(), piArgs);
+      fresultType = resultType.getFunction(new ArrayList<Expression>());
       actualNumberOfPiArgs = piArgs.size();
-      if (resultType instanceof Abstract.InferHoleExpression) {
+      if (fresultType instanceof InferHoleExpression) {
         for (int i = piArgs.size(); i < lambdaArgs.size(); ++i) {
           piArgs.add(null);
         }
@@ -528,11 +546,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     List<TypeCheckingError> errors = new ArrayList<>(lambdaArgs.size());
     for (int i = 0; i < lambdaArgs.size(); ++i) {
       if (piArgs.get(i) == null && lambdaArgs.get(i).expression == null) {
-        errors.add(new ArgInferenceError(lambdaArg(i + 1), expr, getNames(myLocalContext), expr));
-        if (resultType instanceof InferHoleExpression) {
-          TypeCheckingError error = new ArgInferenceError(lambdaArg(i + 1), expr, getNames(myLocalContext), expr);
+        TypeCheckingError error = new ArgInferenceError(lambdaArg(i + 1), expr, getNames(myLocalContext), expr);
+        errors.add(error);
+        if (fresultType instanceof InferHoleExpression) {
           expr.setWellTyped(Error(null, error));
-          return new InferErrorResult((InferHoleExpression) resultType, error, null);
+          return new InferErrorResult((InferHoleExpression) fresultType, error, null);
         }
       } else
       if (piArgs.get(i) != null && lambdaArgs.get(i).expression == null) {
@@ -597,7 +615,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myLocalContext.add(new TypedBinding(lambdaArgs.get(i).name, argumentTypes.get(i).getType()));
     }
 
-    Result bodyResult = typeCheck(expr.getBody(), resultType instanceof Abstract.InferHoleExpression ? null : resultType);
+    Result bodyResult = typeCheck(expr.getBody(), fresultType instanceof InferHoleExpression ? null : resultType);
 
     for (int i = 0; i < lambdaArgs.size(); ++i) {
       myLocalContext.remove(myLocalContext.size() - 1);
@@ -614,13 +632,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    if (resultType instanceof Abstract.InferHoleExpression) {
+    if (resultType instanceof InferHoleExpression) {
       Expression actualType = okBodyResult.type;
       if (lambdaArgs.size() > actualNumberOfPiArgs) {
         actualType = Pi(argumentTypes.subList(actualNumberOfPiArgs, lambdaArgs.size()), actualType);
       }
       try {
-        resultEquations.add(new CompareVisitor.Equation((Abstract.InferHoleExpression) resultType, actualType.normalize(NormalizeVisitor.Mode.NF).liftIndex(0, -actualNumberOfPiArgs)));
+        resultEquations.add(new CompareVisitor.Equation((InferHoleExpression) resultType, actualType.normalize(NormalizeVisitor.Mode.NF).liftIndex(0, -actualNumberOfPiArgs)));
       } catch (LiftIndexVisitor.NegativeIndexException ignored) {
       }
     }
@@ -1110,7 +1128,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           myErrors.add(error);
           return null;
         }
-        return new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index), index), classDef.getField(index).getType(), okExprResult.equations);
+        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index), index), classDef.getField(index).getType(), okExprResult.equations), expr);
       }
     }
 
@@ -1123,20 +1141,28 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         myErrors.add(error);
         return null;
       }
-      return new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index), index), classDef.getField(index).getType(), okExprResult.equations);
+      return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index), index), classDef.getField(index).getType(), okExprResult.equations), expr);
     }
 
     if (type instanceof SigmaExpression) {
       if (expr.getName().startsWith("proj")) {
-        Integer index = Integer.getInteger(expr.getName().substring(4));
-        if (index != null) {
+        Integer Index = Integer.valueOf(expr.getName().substring(4));
+        if (Index != null) {
+          int index = Index - 1;
           List<TypeArgument> splitArgs = new ArrayList<>();
           splitArguments(((SigmaExpression) type).getArguments(), splitArgs);
+          if (index < 0 || index >= splitArgs.size()) {
+            TypeCheckingError error = new TypeCheckingError("Index " + (index + 1) + " out of range", expr, getNames(myLocalContext));
+            expr.setWellTyped(Error(null, error));
+            myErrors.add(error);
+            return null;
+          }
+
           List<Expression> exprs = new ArrayList<>(index);
           for (int i = index - 1; i >= 0; --i) {
             exprs.add(FieldAcc(okExprResult.expression, null, i));
           }
-          return new OKResult(FieldAcc(okExprResult.expression, null, index), splitArgs.get(index).getType().subst(exprs, 0), okExprResult.equations);
+          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, null, index), splitArgs.get(index).getType().subst(exprs, 0), okExprResult.equations), expr);
         }
       }
 
