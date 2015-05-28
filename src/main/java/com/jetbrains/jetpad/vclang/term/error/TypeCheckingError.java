@@ -7,10 +7,10 @@ import java.util.List;
 
 public class TypeCheckingError {
   private final String myMessage;
-  private final Abstract.PrettyPrintableSourceNode myExpression;
+  private final Abstract.SourceNode myExpression;
   private final List<String> myNames;
 
-  public TypeCheckingError(String message, Abstract.PrettyPrintableSourceNode expression, List<String> names) {
+  public TypeCheckingError(String message, Abstract.SourceNode expression, List<String> names) {
     myMessage = message;
     myExpression = expression;
     myNames = names;
@@ -24,7 +24,7 @@ public class TypeCheckingError {
     return names;
   }
 
-  public Abstract.PrettyPrintableSourceNode getExpression() {
+  public Abstract.SourceNode getExpression() {
     return myExpression;
   }
 
@@ -41,10 +41,10 @@ public class TypeCheckingError {
   @Override
   public String toString() {
     String msg = myMessage == null ? "Type checking error" : myMessage;
-    if (myExpression == null) {
-      return msg;
+    if (myExpression instanceof Abstract.PrettyPrintableSourceNode) {
+      return msg + " in " + prettyPrint((Abstract.PrettyPrintableSourceNode) myExpression);
     } else {
-      return msg + " in " + prettyPrint(myExpression);
+      return msg;
     }
   }
 }

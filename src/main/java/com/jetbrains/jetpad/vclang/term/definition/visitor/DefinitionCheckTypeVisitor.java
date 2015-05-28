@@ -32,8 +32,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     myErrors = errors;
   }
 
+  private Definition checkName(Abstract.Definition def) {
+    Definition oldDef = myGlobalContext.get(def.getName());
+    if (oldDef != null) {
+      myErrors.add(new TypeCheckingError(def.getName() + " is already defined", def, null));
+    }
+    return oldDef;
+  }
+
   @Override
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, List<Binding> localContext) {
+    Definition oldDef = checkName(def);
+
     List<TelescopeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     for (Abstract.TelescopeArgument argument : def.getArguments()) {
@@ -79,8 +89,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     trimToSize(localContext, origSize);
 
     if (termResult == null && expectedType == null) {
-      myGlobalContext.remove(def.getName());
+      if (oldDef == null) {
+        myGlobalContext.remove(def.getName());
+      } else {
+        myGlobalContext.put(def.getName(), oldDef);
+      }
       return null;
+    }
+
+    if (oldDef != null) {
+      myGlobalContext.put(def.getName(), oldDef);
     }
 
     return result;
@@ -88,6 +106,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
   @Override
   public DataDefinition visitData(Abstract.DataDefinition def, List<Binding> localContext) {
+    Definition oldDef = checkName(def);
+
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
@@ -160,7 +180,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     trimToSize(localContext, origSize);
     if (def.getUniverse() != null && !universe.lessOrEquals(def.getUniverse())) {
       myErrors.add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
-      return null;
+    }
+
+    if (oldDef != null) {
+      myGlobalContext.put(def.getName(), oldDef);
     }
 
     return result;
@@ -168,6 +191,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
   @Override
   public Constructor visitConstructor(Abstract.Constructor def, List<Binding> localContext) {
+    Definition oldDef = checkName(def);
+
     List<TypeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
@@ -208,13 +233,19 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       myErrors.add(new TypeCheckingError(error, DefCall(newConstructor), new ArrayList<String>()));
       return null;
     } else {
-      myGlobalContext.put(newConstructor.getName(), newConstructor);
-      return newConstructor;
+      if (oldDef != null) {
+        myGlobalContext.put(newConstructor.getName(), newConstructor);
+        return null;
+      } else {
+        return newConstructor;
+      }
     }
   }
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, List<Binding> localContext) {
+    Definition oldDef = checkName(def);
+
     List<Definition> fields = new ArrayList<>(def.getFields().size());
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
 
@@ -235,6 +266,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       fields.add(newField);
     }
 
-    return new ClassDefinition(def.getName(), universe, fields);
+    ClassDefinition result = new ClassDefinition(def.getName(), universe, fields);
+    if (oldDef == null) {
+      myGlobalContext.put(def.getName(), result);
+    }
+    return result;
   }
 }
