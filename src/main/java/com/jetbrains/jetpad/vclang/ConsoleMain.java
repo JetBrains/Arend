@@ -33,7 +33,7 @@ public class ConsoleMain {
     VcgrammarLexer lexer = new VcgrammarLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     VcgrammarParser parser = new VcgrammarParser(tokens);
-    BuildVisitor builder = new BuildVisitor(Prelude.DEFINITIONS);
+    BuildVisitor builder = new BuildVisitor();
     final List<ParserError> parserErrors = builder.getErrors();
     parser.removeErrorListeners();
     parser.addErrorListener(new BaseErrorListener() {

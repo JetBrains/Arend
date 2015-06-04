@@ -1,13 +1,16 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -106,13 +109,18 @@ public class ParserTest {
 
   @Test
   public void parserInfix() {
-    Map<String, Definition> definitions = new HashMap<>();
-    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Var("Nat"), Definition.Arrow.LEFT, Var("+"));
-    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Var("Nat"), Definition.Arrow.LEFT, Var("*"));
+    Map<String, Definition> definitions = Prelude.getDefinitions();
+    List<TelescopeArgument> arguments = new ArrayList<>(1);
+    arguments.add(Tele(true, vars("x", "y"), Nat()));
+    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
     definitions.put("+", plus);
     definitions.put("*", mul);
-    Concrete.Expression expr = parseExpr("a + b * c + d * (e * f) * (g + h)", definitions);
-    assertTrue(compare(BinOp(BinOp(Var("a"), plus, BinOp(Var("b"), mul, Var("c"))), plus, BinOp(BinOp(Var("d"), mul, BinOp(Var("e"), mul, Var("f"))), mul, BinOp(Var("g"), plus, Var("h")))), expr));
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.Result result = parseExpr("0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(definitions, new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
+    assertEquals(0, errors.size());
+    assertTrue(result instanceof CheckTypeVisitor.OKResult);
+    assertTrue(compare(BinOp(BinOp(Zero(), plus, BinOp(Suc(Zero()), mul, Suc(Suc(Zero())))), plus, BinOp(BinOp(Suc(Suc(Suc(Zero()))), mul, BinOp(Suc(Suc(Suc(Suc(Zero())))), mul, Suc(Suc(Suc(Suc(Suc(Zero()))))))), mul, BinOp(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), plus, Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))))))), result.expression));
   }
 
   @Test
@@ -125,14 +133,16 @@ public class ParserTest {
 
   @Test
   public void parserInfixError() {
-    Map<String, Definition> definitions = new HashMap<>();
-    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Var("Nat"), Definition.Arrow.LEFT, Var("+"));
-    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, new ArrayList<TelescopeArgument>(), Var("Nat"), Definition.Arrow.LEFT, Var("*"));
+    Map<String, Definition> definitions = Prelude.getDefinitions();
+    List<TelescopeArgument> arguments = new ArrayList<>(1);
+    arguments.add(Tele(true, vars("x", "y"), Nat()));
+    Definition plus = new FunctionDefinition("+", new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition("*", new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
     definitions.put("+", plus);
     definitions.put("*", mul);
 
-    BuildVisitor builder = new BuildVisitor(definitions);
-    builder.visitExpr(parse("a + b * c", builder.getErrors()).expr());
-    assertEquals(1, builder.getErrors().size());
+    List<TypeCheckingError> errors = new ArrayList<>();
+    parseExpr("11 + 2 * 3").accept(new CheckTypeVisitor(definitions, new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
+    assertEquals(1, errors.size());
   }
 }

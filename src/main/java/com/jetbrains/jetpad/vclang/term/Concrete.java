@@ -188,30 +188,23 @@ public final class Concrete {
   }
 
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
-    private final ArgumentExpression myLeft;
-    private final ArgumentExpression myRight;
-    private final Abstract.Definition myBinOp;
+    private final List<Expression> myArguments;
+    private final List<VarExpression> myOperators;
 
-    public BinOpExpression(Position position, ArgumentExpression left, Abstract.Definition binOp, ArgumentExpression right) {
-      super(position);
-      myLeft = left;
-      myRight = right;
-      myBinOp = binOp;
+    public BinOpExpression(List<Expression> arguments, List<VarExpression> operators) {
+      super(arguments.get(0).getPosition());
+      myArguments = arguments;
+      myOperators = operators;
     }
 
     @Override
-    public ArgumentExpression getLeft() {
-      return myLeft;
+    public List<Expression> getArguments() {
+      return myArguments;
     }
 
     @Override
-    public ArgumentExpression getRight() {
-      return myRight;
-    }
-
-    @Override
-    public Abstract.Definition getBinOp() {
-      return myBinOp;
+    public List<VarExpression> getOperators() {
+      return myOperators;
     }
 
     @Override
@@ -401,6 +394,12 @@ public final class Concrete {
     public VarExpression(Position position, String name) {
       super(position);
       myName = name;
+    }
+
+    @Override
+    public Expression makeBinOp(Abstract.Expression left, com.jetbrains.jetpad.vclang.term.definition.Definition operator, Abstract.Expression right) {
+      Expression leftCon = (Expression) left;
+      return new AppExpression(leftCon.getPosition(), new AppExpression(leftCon.getPosition(), new DefCallExpression(getPosition(), operator), new ArgumentExpression(leftCon, true, false)), new ArgumentExpression((Expression) right, true, false));
     }
 
     @Override

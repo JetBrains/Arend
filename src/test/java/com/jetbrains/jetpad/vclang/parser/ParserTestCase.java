@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
@@ -11,7 +9,6 @@ import org.antlr.v4.runtime.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -31,26 +28,22 @@ public class ParserTestCase {
     return parser;
   }
 
-  public static Concrete.Expression parseExpr(String text, Map<String, Definition> definitions) {
-    BuildVisitor builder = new BuildVisitor(definitions);
+  public static Concrete.Expression parseExpr(String text) {
+    BuildVisitor builder = new BuildVisitor();
     Concrete.Expression result = builder.visitExpr(parse(text, builder.getErrors()).expr());
     assertEquals(0, builder.getErrors().size());
     return result;
   }
 
-  public static Concrete.Expression parseExpr(String text) {
-    return parseExpr(text, Prelude.DEFINITIONS);
-  }
-
   public static Concrete.Definition parseDef(String text) {
-    BuildVisitor builder = new BuildVisitor(Prelude.DEFINITIONS);
+    BuildVisitor builder = new BuildVisitor();
     Concrete.Definition result = builder.visitDef(parse(text, builder.getErrors()).def());
     assertEquals(0, builder.getErrors().size());
     return result;
   }
 
   public static List<Concrete.Definition> parseDefs(String text) {
-    BuildVisitor builder = new BuildVisitor(Prelude.DEFINITIONS);
+    BuildVisitor builder = new BuildVisitor();
     List<Concrete.Definition> result = builder.visitDefs(parse(text, builder.getErrors()).defs());
     assertEquals(0, builder.getErrors().size());
     return result;

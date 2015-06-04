@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.*;
@@ -914,12 +913,69 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
-    List<Abstract.ArgumentExpression> args = new ArrayList<>(2);
-    args.add(expr.getLeft());
-    args.add(expr.getRight());
+    if (expr.getOperators().size() == 0) {
+      return expr.getArguments().get(0).accept(this, expectedType);
+    }
 
-    Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
-    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getBinOp()), args, expectedType, expr);
+    List<Definition> operators = new ArrayList<>(expr.getOperators().size());
+    for (Abstract.VarExpression operator : expr.getOperators()) {
+      Definition def = myGlobalContext.get(operator.getName());
+      if (def == null) {
+        myErrors.add(new NotInScopeError(expr, operator.getName()));
+      } else {
+        operators.add(def);
+      }
+    }
+    if (operators.size() < expr.getOperators().size()) {
+      expr.setWellTyped(Error(null, myErrors.get(myErrors.size() - 1)));
+      return null;
+    }
+
+    List<StackElem> stack = new ArrayList<>(operators.size());
+    for (int i = 0; i < operators.size(); ++i) {
+      pushOnStack(stack, new StackElem(expr.getArguments().get(i), operators.get(i), expr.getOperators().get(i)));
+    }
+
+    Abstract.Expression resultExpr = expr.getArguments().get(expr.getArguments().size() - 1);
+    for (int i = stack.size() - 1; i >= 0; --i) {
+      resultExpr = stack.get(i).varExpression.makeBinOp(stack.get(i).argument, stack.get(i).definition, resultExpr);
+    }
+    return resultExpr.accept(this, expectedType);
+  }
+
+  private class StackElem {
+    public Abstract.Expression argument;
+    public Definition definition;
+    public Abstract.VarExpression varExpression;
+
+    public StackElem(Abstract.Expression argument, Definition definition, Abstract.VarExpression varExpression) {
+      this.argument = argument;
+      this.definition = definition;
+      this.varExpression = varExpression;
+    }
+  }
+
+  private void pushOnStack(List<StackElem> stack, StackElem elem) {
+    if (stack.isEmpty()) {
+      stack.add(elem);
+      return;
+    }
+
+    StackElem topElem = stack.get(stack.size() - 1);
+    Definition.Precedence prec = topElem.definition.getPrecedence();
+    Definition.Precedence prec2 = elem.definition.getPrecedence();
+
+    if (prec.priority < prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.RIGHT_ASSOC && prec2.associativity == Definition.Associativity.RIGHT_ASSOC)) {
+      stack.add(elem);
+      return;
+    }
+
+    if (!(prec.priority > prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.LEFT_ASSOC && prec2.associativity == Definition.Associativity.LEFT_ASSOC))) {
+      String msg = "Precedence parsing error: cannot mix (" + topElem.definition.getName() + ") [" + prec + "] and (" + elem.definition.getName() + ") [" + prec2 + "] in the same infix expression";
+      myErrors.add(new TypeCheckingError(msg, elem.varExpression, null));
+    }
+    stack.remove(stack.size() - 1);
+    pushOnStack(stack, new StackElem(topElem.varExpression.makeBinOp(topElem.argument, topElem.definition, elem.argument), elem.definition, elem.varExpression));
   }
 
   @Override

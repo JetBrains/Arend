@@ -94,9 +94,9 @@ public final class Abstract {
   }
 
   public interface BinOpExpression extends Expression {
-    Definition getBinOp();
-    ArgumentExpression getLeft();
-    ArgumentExpression getRight();
+    byte PREC = 0;
+    List<? extends Expression> getArguments();
+    List<? extends VarExpression> getOperators();
   }
 
   public interface UniverseExpression extends Expression {
@@ -107,6 +107,7 @@ public final class Abstract {
   public interface VarExpression extends Expression {
     byte PREC = 12;
     String getName();
+    Expression makeBinOp(Expression left, com.jetbrains.jetpad.vclang.term.definition.Definition operator, Expression right);
   }
 
   public interface InferHoleExpression extends Expression {
