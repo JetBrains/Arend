@@ -22,7 +22,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,7 +52,7 @@ public class ConsoleMain {
       return;
     }
 
-    Map<String, Definition> context = new HashMap<>(Prelude.DEFINITIONS);
+    Map<String, Definition> context = Prelude.getDefinitions();
     List<TypeCheckingError> errors = new ArrayList<>();
     for (Abstract.Definition def : defs) {
       Definition typedDef = def.accept(new DefinitionCheckTypeVisitor(context, errors), new ArrayList<Binding>());

@@ -130,11 +130,6 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitBinOp(BinOpExpression expr) {
-    return BinOp(new ArgumentExpression(expr.getLeft().getExpression().accept(this), expr.getLeft().isExplicit(), expr.getLeft().isHidden()), expr.getBinOp(), new ArgumentExpression(expr.getRight().getExpression().accept(this), expr.getRight().isExplicit(), expr.getRight().isHidden()));
-  }
-
-  @Override
   public Expression visitElim(ElimExpression expr) {
     throw new IllegalStateException();
   }

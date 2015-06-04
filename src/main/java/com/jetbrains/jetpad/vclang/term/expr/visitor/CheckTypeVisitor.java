@@ -919,15 +919,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     args.add(expr.getRight());
 
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
-    Result result = typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getBinOp()), args, expectedType, expr);
-    if (!(result instanceof OKResult) || !(result.expression instanceof AppExpression)) return result;
-    AppExpression appExpr1 = (AppExpression) result.expression;
-    if (!(appExpr1.getFunction() instanceof AppExpression)) return result;
-    AppExpression appExpr2 = (AppExpression) appExpr1.getFunction();
-    if (!(appExpr2.getFunction() instanceof DefCallExpression)) return result;
-    result.expression = BinOp(appExpr2.getArgument(), ((DefCallExpression) appExpr2.getFunction()).getDefinition(), appExpr1.getArgument());
-    expr.setWellTyped(result.expression);
-    return result;
+    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getBinOp()), args, expectedType, expr);
   }
 
   @Override

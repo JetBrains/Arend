@@ -109,4 +109,8 @@ public class Prelude {
 
     DEFINITIONS.put(AT.getName(), AT);
   }
+
+  public static Map<String, Definition> getDefinitions() {
+    return new HashMap<>(DEFINITIONS);
+  }
 }

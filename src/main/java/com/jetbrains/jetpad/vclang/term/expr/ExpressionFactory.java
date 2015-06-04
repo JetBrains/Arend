@@ -163,12 +163,8 @@ public class ExpressionFactory {
     return new ErrorExpression(expr, error);
   }
 
-  public static BinOpExpression BinOp(ArgumentExpression left, Definition binOp, ArgumentExpression right) {
-    return new BinOpExpression(left, binOp, right);
-  }
-
-  public static BinOpExpression BinOp(Expression left, Definition binOp, Expression right) {
-    return new BinOpExpression(new ArgumentExpression(left, true, false), binOp, new ArgumentExpression(right, true, false));
+  public static Expression BinOp(Expression left, Definition binOp, Expression right) {
+    return Apps(DefCall(binOp), left, right);
   }
 
   public static ElimExpression Elim(Abstract.ElimExpression.ElimType elimType, Expression expression, List<Clause> clauses, Clause otherwise) {

@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +25,7 @@ public class DefinitionTest {
     // f : N => 0;
     FunctionDefinition def = new FunctionDefinition("f", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.RIGHT, Zero());
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitFunction(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(Prelude.getDefinitions(), errors).visitFunction(def, new ArrayList<Binding>());
     assertNotNull(def);
     assertEquals(0, errors.size());
   }
@@ -36,7 +35,7 @@ public class DefinitionTest {
     // f => 0;
     FunctionDefinition def = new FunctionDefinition("f", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), null, Definition.Arrow.RIGHT, Zero());
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitFunction(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(Prelude.getDefinitions(), errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Nat(), def.getType());
@@ -50,7 +49,7 @@ public class DefinitionTest {
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
     FunctionDefinition def = new FunctionDefinition("f", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, null, Definition.Arrow.RIGHT, Index(0));
     List<TypeCheckingError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(Prelude.DEFINITIONS, errors).visitFunction(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(Prelude.getDefinitions(), errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), def.getType());
@@ -78,11 +77,7 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
     constructors.add(new Constructor(1, "con2", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2, def));
 
-    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
-    definitions.put("D", def);
-    definitions.put("con1", constructors.get(0));
-    definitions.put("con2", constructors.get(1));
-
+    Map<String, Definition> definitions = Prelude.getDefinitions();
     List<TypeCheckingError> errors = new ArrayList<>();
     def = new DefinitionCheckTypeVisitor(definitions, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
@@ -112,11 +107,7 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Index(1)));
     constructors.add(new Constructor(1, "con2", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2, def));
 
-    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
-    definitions.put("D", def);
-    definitions.put("con1", constructors.get(0));
-    definitions.put("con2", constructors.get(1));
-
+    Map<String, Definition> definitions = Prelude.getDefinitions();
     List<TypeCheckingError> errors = new ArrayList<>();
     def = new DefinitionCheckTypeVisitor(definitions, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
@@ -135,7 +126,7 @@ public class DefinitionTest {
     Constructor con = new Constructor(0, "con", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     constructors.add(con);
 
-    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
+    Map<String, Definition> definitions = Prelude.getDefinitions();
     definitions.put("D", def);
     definitions.put("con", con);
 
@@ -160,7 +151,7 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DefCall(def), Pi(Nat(), Nat())), Nat())));
 
-    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
+    Map<String, Definition> definitions = Prelude.getDefinitions();
     definitions.put("D", def);
     definitions.put("con", con);
 
@@ -183,7 +174,7 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DefCall(def), Nat())), Pi(Nat(), Nat()))));
 
-    Map<String, Definition> definitions = new HashMap<>(Prelude.DEFINITIONS);
+    Map<String, Definition> definitions = Prelude.getDefinitions();
     definitions.put("D", def);
     definitions.put("con", con);
 

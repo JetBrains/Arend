@@ -54,13 +54,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
 
     if (expr instanceof DefCallExpression) {
-      return visitDefCall(((DefCallExpression) expr).getDefinition(), expr, Abstract.Definition.Fixity.PREFIX, exprs);
-    }
-    if (expr instanceof BinOpExpression) {
-      BinOpExpression binOpExpr = (BinOpExpression) expr;
-      exprs.add(binOpExpr.getRight());
-      exprs.add(binOpExpr.getLeft());
-      return visitDefCall(binOpExpr.getBinOp(), myMode == Mode.NF ? BinOp(new ArgumentExpression(binOpExpr.getLeft().getExpression().accept(this), binOpExpr.getLeft().isExplicit(), binOpExpr.getLeft().isHidden()), binOpExpr.getBinOp(), new ArgumentExpression(binOpExpr.getRight().getExpression().accept(this), binOpExpr.getRight().isExplicit(), binOpExpr.getRight().isHidden())) : binOpExpr, Abstract.Definition.Fixity.INFIX, exprs);
+      return visitDefCall(((DefCallExpression) expr).getDefinition(), expr, exprs);
     }
 
     if (myMode == Mode.TOP) return null;
@@ -119,32 +113,21 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return arguments.isEmpty() ? expr : Lam(arguments, expr);
   }
 
-  public Expression applyDefCall(Expression defCallExpr, Abstract.Definition.Fixity fixity, List<ArgumentExpression> args) {
+  public Expression applyDefCall(Expression defCallExpr, List<ArgumentExpression> args) {
     if (myMode == Mode.TOP) return null;
 
     Expression expr = defCallExpr;
-    if (fixity == Abstract.Definition.Fixity.INFIX && args.size() >= 2 && args.get(0).isExplicit() && args.get(1).isExplicit()) {
+    for (int i = args.size() - 1; i >= 0; --i) {
       if (myMode == Mode.NF) {
-        for (int i = 0; i < args.size() - 2; ++i) {
-          args.set(i, new ArgumentExpression(args.get(i).getExpression().accept(this), args.get(i).isExplicit(), args.get(i).isHidden()));
-        }
-      }
-      for (int i = args.size() - 3; i >= 0; --i) {
+        expr = Apps(expr, new ArgumentExpression(args.get(i).getExpression().accept(this), args.get(i).isExplicit(), args.get(i).isHidden()));
+      } else {
         expr = Apps(expr, args.get(i));
-      }
-    } else {
-      for (int i = args.size() - 1; i >= 0; --i) {
-        if (myMode == Mode.NF) {
-          expr = Apps(expr, new ArgumentExpression(args.get(i).getExpression().accept(this), args.get(i).isExplicit(), args.get(i).isHidden()));
-        } else {
-          expr = Apps(expr, args.get(i));
-        }
       }
     }
     return expr;
   }
 
-  public Expression visitDefCall(Definition def, Expression defCallExpr, Abstract.Definition.Fixity fixity, List<ArgumentExpression> args) {
+  public Expression visitDefCall(Definition def, Expression defCallExpr, List<ArgumentExpression> args) {
     if (def instanceof FunctionDefinition) {
       if (def.equals(Prelude.COERCE) && args.size() == 3) {
         boolean ok = true;
@@ -164,7 +147,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
       splitArguments(def.getType(), args1);
       int numberOfArgs = numberOfVariables(args1);
       if (myMode == Mode.WHNF && numberOfArgs > args.size() || result == null) {
-        return applyDefCall(defCallExpr, fixity, args);
+        return applyDefCall(defCallExpr, args);
       }
 
       List<Expression> args2 = new ArrayList<>(numberOfArgs);
@@ -198,14 +181,14 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
           result = ((ElimExpression) result).getOtherwise().getExpression();
           continue;
         }
-        return applyDefCall(defCallExpr, fixity, args);
+        return applyDefCall(defCallExpr, args);
       }
 
       result = result.liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0).subst(args2, 0);
       if (arrow == Abstract.Definition.Arrow.LEFT) {
         result = result.normalize(Mode.TOP);
         if (result == null) {
-          return applyDefCall(defCallExpr, fixity, args);
+          return applyDefCall(defCallExpr, args);
         }
       }
 
@@ -238,12 +221,11 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     List<TypeArgument> splitArguments = new ArrayList<>();
     splitArguments(arguments, splitArguments);
     if (myMode == Mode.WHNF && splitArguments.size() >= args.size()) {
-      return applyDefCall(defCallExpr, fixity, args);
+      return applyDefCall(defCallExpr, args);
     }
 
-    int argsSize = fixity == Abstract.Definition.Fixity.PREFIX ? args.size() : args.size() - 2;
     Expression result = defCallExpr;
-    for (int i = argsSize - 1; i >= 0; --i) {
+    for (int i = args.size() - 1; i >= 0; --i) {
       Expression arg = args.get(i).getExpression();
       if (myMode == Mode.NF) {
         arg = arg.accept(this);
@@ -261,7 +243,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return visitDefCall(expr.getDefinition(), expr, Abstract.Definition.Fixity.PREFIX, new ArrayList<ArgumentExpression>());
+    return visitDefCall(expr.getDefinition(), expr, new ArrayList<ArgumentExpression>());
   }
 
   @Override
@@ -344,14 +326,6 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitBinOp(BinOpExpression expr) {
-    List<ArgumentExpression> args = new ArrayList<>(2);
-    args.add(expr.getRight());
-    args.add(expr.getLeft());
-    return visitDefCall(expr.getBinOp(), myMode == Mode.NF ? BinOp(new ArgumentExpression(expr.getLeft().getExpression().accept(this), expr.getLeft().isExplicit(), expr.getLeft().isHidden()), expr.getBinOp(), new ArgumentExpression(expr.getRight().getExpression().accept(this), expr.getRight().isExplicit(), expr.getRight().isHidden())) : expr, Abstract.Definition.Fixity.INFIX, args);
-  }
-
-  @Override
   public Expression visitElim(ElimExpression expr) {
     throw new IllegalStateException();
   }
@@ -367,7 +341,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     if (expr.getDefinition() == null) {
       return myMode == Mode.TOP ? null : myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getDefinition(), expr.getIndex()) : expr;
     } else {
-      return visitDefCall(expr.getDefinition(), myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getDefinition(), expr.getIndex()) : expr, Abstract.Definition.Fixity.PREFIX, new ArrayList<ArgumentExpression>());
+      return visitDefCall(expr.getDefinition(), myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getDefinition(), expr.getIndex()) : expr, new ArrayList<ArgumentExpression>());
     }
   }
 

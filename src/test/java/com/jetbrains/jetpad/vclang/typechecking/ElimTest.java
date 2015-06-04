@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -75,7 +74,7 @@ public class ElimTest {
     clauses4.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(7), term4));
     FunctionDefinition function = new FunctionDefinition("fun", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
 
-    Map<String, Definition> globalContext = new HashMap<>(Prelude.DEFINITIONS);
+    Map<String, Definition> globalContext = Prelude.getDefinitions();
     globalContext.put("D", dataType);
     globalContext.put("P", pFunction);
     globalContext.put("con1", constructors.get(0));

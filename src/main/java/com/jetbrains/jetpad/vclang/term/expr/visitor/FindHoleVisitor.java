@@ -83,12 +83,6 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
   }
 
   @Override
-  public InferHoleExpression visitBinOp(BinOpExpression expr) {
-    InferHoleExpression result = expr.getLeft().getExpression().accept(this);
-    return result == null ? expr.getRight().getExpression().accept(this) : result;
-  }
-
-  @Override
   public InferHoleExpression visitElim(ElimExpression expr) {
     InferHoleExpression result = expr.getExpression().accept(this);
     if (result != null) return result;

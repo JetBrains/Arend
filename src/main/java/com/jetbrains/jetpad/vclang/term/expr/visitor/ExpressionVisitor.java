@@ -14,7 +14,6 @@ public interface ExpressionVisitor<T> {
   T visitError(ErrorExpression expr);
   T visitTuple(TupleExpression expr);
   T visitSigma(SigmaExpression expr);
-  T visitBinOp(BinOpExpression expr);
   T visitElim(ElimExpression expr);
   T visitFieldAcc(FieldAccExpression expr);
 }
