@@ -234,9 +234,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       return null;
     } else {
       if (oldDef != null) {
-        myGlobalContext.put(newConstructor.getName(), newConstructor);
         return null;
       } else {
+        myGlobalContext.put(newConstructor.getName(), newConstructor);
         return newConstructor;
       }
     }
@@ -244,7 +244,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, List<Binding> localContext) {
-    Definition oldDef = checkName(def);
+    Definition oldDef = def.getName() == null ? null : checkName(def);
 
     List<Definition> fields = new ArrayList<>(def.getFields().size());
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
@@ -267,7 +267,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     ClassDefinition result = new ClassDefinition(def.getName(), universe, fields);
-    if (oldDef == null) {
+    if (def.getName() != null && oldDef == null) {
       myGlobalContext.put(def.getName(), result);
     }
     return result;
