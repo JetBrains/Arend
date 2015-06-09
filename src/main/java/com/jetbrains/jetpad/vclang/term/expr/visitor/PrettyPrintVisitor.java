@@ -46,22 +46,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         }
       }
 
-      if (((Abstract.DefCallExpression) expr).getDefinition().equals(Prelude.PATH) && args.size() == 3 && args.get(0).getExpression() instanceof Expression) {
-        boolean infix = true;
-        try {
-          Apps(((Expression) args.get(0).getExpression()).liftIndex(0, 1), Index(0)).normalize(NormalizeVisitor.Mode.NF).liftIndex(0, -1);
-        } catch (LiftIndexVisitor.NegativeIndexException e) {
-          infix = false;
-        }
-
-        if (infix) {
-          if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append('(');
-          args.get(1).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
-          myBuilder.append(" = ");
-          args.get(2).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
-          if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append(')');
-          return;
-        }
+      if (((Abstract.DefCallExpression) expr).getDefinition().equals(Prelude.PATH) && args.size() == 3 && args.get(0).getExpression() instanceof Expression && Apps(((Expression) args.get(0).getExpression()).liftIndex(0, 1), Index(0)).normalize(NormalizeVisitor.Mode.NF).liftIndex(0, -1) != null) {
+        if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append('(');
+        args.get(1).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
+        myBuilder.append(" = ");
+        args.get(2).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
+        if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append(')');
+        return;
       }
     }
 

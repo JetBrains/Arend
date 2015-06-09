@@ -22,7 +22,11 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitApp(AppExpression expr) {
-    return Apps(expr.getFunction().accept(this), new ArgumentExpression(expr.getArgument().getExpression().accept(this), expr.getArgument().isExplicit(), expr.getArgument().isHidden()));
+    Expression fun = expr.getFunction().accept(this);
+    if (fun == null) return null;
+    Expression arg = expr.getArgument().getExpression().accept(this);
+    if (arg == null) return null;
+    return Apps(fun, new ArgumentExpression(arg, expr.getArgument().isExplicit(), expr.getArgument().isHidden()));
   }
 
   @Override
@@ -34,7 +38,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   public Expression visitIndex(IndexExpression expr) {
     if (expr.getIndex() < myFrom) return expr;
     if (expr.getIndex() + myOn >= myFrom) return Index(expr.getIndex() + myOn);
-    throw new NegativeIndexException();
+    return null;
   }
 
   @Override
@@ -48,13 +52,16 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
       } else
       if (argument instanceof TelescopeArgument) {
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(from, myOn)));
+        Expression arg = teleArgument.getType().liftIndex(from, myOn);
+        if (arg == null) return null;
+        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), arg));
         from += teleArgument.getNames().size();
       } else {
         throw new IllegalStateException();
       }
     }
-    return Lam(arguments, expr.getBody().liftIndex(from, myOn));
+    Expression body = expr.getBody().liftIndex(from, myOn);
+    return body == null ? null : Lam(arguments, body);
   }
 
   private int visitArguments(List<TypeArgument> arguments, List<TypeArgument> result) {
@@ -62,10 +69,14 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     for (TypeArgument argument : arguments) {
       if (argument instanceof TelescopeArgument) {
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        result.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().liftIndex(from, myOn)));
+        Expression arg = teleArgument.getType().liftIndex(from, myOn);
+        if (arg == null) return -1;
+        result.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), arg));
         from += teleArgument.getNames().size();
       } else {
-        result.add(new TypeArgument(argument.getExplicit(), argument.getType().liftIndex(from, myOn)));
+        Expression arg = argument.getType().liftIndex(from, myOn);
+        if (arg == null) return -1;
+        result.add(new TypeArgument(argument.getExplicit(), arg));
         ++from;
       }
     }
@@ -76,7 +87,9 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   public Expression visitPi(PiExpression expr) {
     List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
     int from = visitArguments(expr.getArguments(), result);
-    return Pi(result, expr.getCodomain().liftIndex(from, myOn));
+    if (from < 0) return null;
+    Expression codomain = expr.getCodomain().liftIndex(from, myOn);
+    return codomain == null ? null : Pi(result, codomain);
   }
 
   @Override
@@ -91,7 +104,9 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitError(ErrorExpression expr) {
-    return expr.getExpr() == null ? expr : new ErrorExpression(expr.accept(this), expr.getError());
+    if (expr.getExpr() == null) return expr;
+    Expression expr1 = expr.accept(this);
+    return expr1 == null ? null : new ErrorExpression(expr1, expr.getError());
   }
 
   @Override
@@ -103,7 +118,9 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   public Expression visitTuple(TupleExpression expr) {
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
-      fields.add(field.accept(this));
+      Expression expr1 = field.accept(this);
+      if (expr1 == null) return null;
+      fields.add(expr1);
     }
     return Tuple(fields);
   }
@@ -111,8 +128,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitSigma(SigmaExpression expr) {
     List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
-    visitArguments(expr.getArguments(), result);
-    return Sigma(result);
+    return visitArguments(expr.getArguments(), result) < 0 ? null : Sigma(result);
   }
 
   @Override
@@ -122,8 +138,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitFieldAcc(FieldAccExpression expr) {
-    return FieldAcc(expr.getExpression().accept(this), expr.getClassDefinition(), expr.getIndex());
+    Expression expr1 = expr.getExpression().accept(this);
+    return expr1 == null ? null : FieldAcc(expr1, expr.getClassDefinition(), expr.getIndex());
   }
-
-  public static class NegativeIndexException extends RuntimeException {}
 }

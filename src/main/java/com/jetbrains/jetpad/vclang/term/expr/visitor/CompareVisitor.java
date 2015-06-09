@@ -151,11 +151,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     List<Expression> args = new ArrayList<>();
     Expression expr1 = ((LamExpression) ((AppExpression) other).getArgument().getExpression()).getBody().getFunction(args);
     if (expr1 instanceof DefCallExpression && ((DefCallExpression) expr1).getDefinition().equals(Prelude.AT) && args.size() == 5 && args.get(0) instanceof IndexExpression && ((IndexExpression) args.get(0)).getIndex() == 0) {
-      Expression newOther = null;
-      try {
-        newOther = args.get(1).liftIndex(0, -1);
-      } catch (LiftIndexVisitor.NegativeIndexException ignored) {}
-
+      Expression newOther = args.get(1).liftIndex(0, -1);
       if (newOther != null) {
         List<Equation> equations = new ArrayList<>();
         Result result = expr.accept(new CompareVisitor(equations), newOther);
@@ -273,9 +269,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         body2 = ((AppExpression) body2).getFunction();
       }
 
-      try {
-        body2 = body2.liftIndex(0, args1.size() - args2.size());
-      } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+      body2 = body2.liftIndex(0, args1.size() - args2.size());
+      if (body2 == null) {
         return new JustResult(CMP.NOT_EQUIV);
       }
     }
@@ -296,9 +291,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     Result result = body1.accept(visitor, body2);
     if (result.isOK() == CMP.NOT_EQUIV && result instanceof JustResult) return result;
     for (int i = 0; i < equations.size(); ++i) {
-      try {
-        equations.get(i).expression = equations.get(i).expression.liftIndex(0, -args1.size());
-      } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+      Expression expr1 = equations.get(i).expression.liftIndex(0, -args1.size());
+      if (expr1 != null) {
+        equations.get(i).expression = expr1;
+      } else {
         equations.remove(i--);
       }
     }
@@ -321,9 +317,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         cmp = and(cmp, result1.isOK());
       }
       for (int j = equationsNumber; j < equations.size(); ++j) {
-        try {
-          equations.get(j).expression = equations.get(j).expression.liftIndex(0, -i);
-        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+        Expression expr1 = equations.get(j).expression.liftIndex(0, -i);
+        if (expr1 != null) {
+          equations.get(j).expression = expr1;
+        } else {
           equations.remove(j--);
         }
       }
@@ -363,9 +360,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       if (result.isOK() == CMP.NOT_EQUIV) return result;
       cmp = and(cmp, result.isOK());
       for (int j = equationsNumber; j < myEquations.size(); ++j) {
-        try {
-          myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
-        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+        Expression expr1 = myEquations.get(j).expression.liftIndex(0, -i);
+        if (expr1 != null) {
+          myEquations.get(j).expression = expr1;
+        } else {
           myEquations.remove(j--);
         }
       }
@@ -374,9 +372,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     equationsNumber = myEquations.size();
     Result result = codomain1.accept(this, codomain2);
     for (int i = equationsNumber; i < myEquations.size(); ++i) {
-      try {
-        myEquations.get(i).expression = myEquations.get(i).expression.liftIndex(0, -args1.size());
-      } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+      Expression expr1 = myEquations.get(i).expression.liftIndex(0, -args1.size());
+      if (expr1 != null) {
+        myEquations.get(i).expression = expr1;
+      } else {
         myEquations.remove(i--);
       }
     }
@@ -549,9 +548,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       cmp = and(cmp, result.isOK());
 
       for (int j = equationsNumber; j < myEquations.size(); ++j) {
-        try {
-          myEquations.get(j).expression = myEquations.get(j).expression.liftIndex(0, -i);
-        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+        Expression expr1 = myEquations.get(j).expression.liftIndex(0, -i);
+        if (expr1 != null) {
+          myEquations.get(j).expression = expr1;
+        } else {
           myEquations.remove(j--);
         }
       }

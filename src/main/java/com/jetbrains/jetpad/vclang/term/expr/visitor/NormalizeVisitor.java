@@ -129,17 +129,8 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   public Expression visitDefCall(Definition def, Expression defCallExpr, List<ArgumentExpression> args) {
     if (def instanceof FunctionDefinition) {
-      if (def.equals(Prelude.COERCE) && args.size() == 3) {
-        boolean ok = true;
-        try {
-          Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0)).normalize(Mode.NF).liftIndex(0, -1);
-        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
-          ok = false;
-        }
-
-        if (ok) {
-          return myMode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this);
-        }
+      if (def.equals(Prelude.COERCE) && args.size() == 3 && Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0)).normalize(Mode.NF).liftIndex(0, -1) != null) {
+        return myMode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this);
       }
 
       Expression result = ((FunctionDefinition) def).getTerm();

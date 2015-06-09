@@ -598,9 +598,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         OKResult okArgResult = (OKResult) argResult;
         if (okArgResult.equations != null) {
           for (CompareVisitor.Equation equation : okArgResult.equations) {
-            try {
-              resultEquations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -i)));
-            } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+            Expression expr1 = equation.expression.liftIndex(0, -i);
+            if (expr1 != null) {
+              resultEquations.add(new CompareVisitor.Equation(equation.hole, expr1));
             }
           }
         }
@@ -633,9 +633,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     OKResult okBodyResult = (OKResult) bodyResult;
     if (okBodyResult.equations != null) {
       for (CompareVisitor.Equation equation : okBodyResult.equations) {
-        try {
-          resultEquations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -lambdaArgs.size())));
-        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+        Expression expr1 = equation.expression.liftIndex(0, -lambdaArgs.size());
+        if (expr1 != null) {
+          resultEquations.add(new CompareVisitor.Equation(equation.hole, expr1));
         }
       }
     }
@@ -645,9 +645,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (lambdaArgs.size() > actualNumberOfPiArgs) {
         actualType = Pi(argumentTypes.subList(actualNumberOfPiArgs, lambdaArgs.size()), actualType);
       }
-      try {
-        resultEquations.add(new CompareVisitor.Equation((InferHoleExpression) resultType, actualType.normalize(NormalizeVisitor.Mode.NF).liftIndex(0, -actualNumberOfPiArgs)));
-      } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+      Expression expr1 = actualType.normalize(NormalizeVisitor.Mode.NF).liftIndex(0, -actualNumberOfPiArgs);
+      if (expr1 != null) {
+        resultEquations.add(new CompareVisitor.Equation((InferHoleExpression) resultType, expr1));
       }
     }
 
@@ -671,9 +671,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       domainResults[i] = (OKResult) result;
       if (domainResults[i].equations != null) {
         for (CompareVisitor.Equation equation : domainResults[i].equations) {
-          try {
-            equations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -numberOfVars)));
-          } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+          Expression expr1 = equation.expression.liftIndex(0, -numberOfVars);
+          if (expr1 != null) {
+            equations.add(new CompareVisitor.Equation(equation.hole, expr1));
           }
         }
       }
@@ -722,9 +722,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (okCodomainResult.equations != null) {
       for (CompareVisitor.Equation equation : okCodomainResult.equations) {
-        try {
-          equations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -numberOfVars)));
-        } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+        Expression expr1 = equation.expression.liftIndex(0, -numberOfVars);
+        if (expr1 != null) {
+          equations.add(new CompareVisitor.Equation(equation.hole, expr1));
         }
       }
     }
@@ -863,9 +863,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       domainResults[i] = (OKResult) result;
       if (domainResults[i].equations != null) {
         for (CompareVisitor.Equation equation : domainResults[i].equations) {
-          try {
-            equations.add(new CompareVisitor.Equation(equation.hole, equation.expression.liftIndex(0, -numberOfVars)));
-          } catch (LiftIndexVisitor.NegativeIndexException ignored) {
+          Expression expr1 = equation.expression.liftIndex(0, -numberOfVars);
+          if (expr1 != null) {
+            equations.add(new CompareVisitor.Equation(equation.hole, expr1));
           }
         }
       }
