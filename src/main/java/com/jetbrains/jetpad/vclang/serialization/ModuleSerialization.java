@@ -1,38 +1,73 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ModuleSerialization {
   static private final byte[] SIGNATURE = { 'c', 'v', 0x0b, (byte) 0xb1 };
   static private final int VERSION = 0;
 
-  static private List<Definition> expressionDefinitions(Expression expression) {
-    DefCallListVisitor visitor = new DefCallListVisitor();
-    expression.accept(visitor);
-    List<Definition> definitions = new ArrayList<>(visitor.getDefinitions());
-    for (int i = 0; i < definitions.size(); ++i) {
-
-    }
-    return definitions;
-  }
-
-  static public void writeClass(ClassDefinition def, Path outputDir) throws IOException {
+  static public void writeFile(ClassDefinition def, Path outputDir) throws IOException {
     Files.createDirectories(outputDir);
-    DataOutputStream stream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputDir.resolve(def.getName() + ".vcc").toFile())));
-    stream.write(SIGNATURE);
-    stream.writeInt(VERSION);
-    stream.close();
+    ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
+    DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
+    DefinitionsIndices definitionsIndices = new DefinitionsIndices();
+    int errors = serializeClassDefinition(definitionsIndices, byteArrayStream, dataStream, def);
+
+    DataOutputStream fileStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputDir.resolve(def.getName() + ".vcc").toFile())));
+    fileStream.write(SIGNATURE);
+    fileStream.writeInt(VERSION);
+    fileStream.writeInt(errors);
+    definitionsIndices.serialize(fileStream);
+    byteArrayStream.writeTo(fileStream);
+    fileStream.close();
   }
 
-  static public ClassDefinition readClass(Path file) throws IOException, IncorrectFormat {
+  static private int serializeDefinition(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, Definition definition) {
+    if (definition instanceof FunctionDefinition) {
+      stream.write(0);
+      return serializeFunctionDefinition(definitionsIndices, stream, dataStream, (FunctionDefinition) definition);
+    } else
+    if (definition instanceof DataDefinition) {
+      stream.write(1);
+      return serializeDataDefinition(definitionsIndices, stream, dataStream, (DataDefinition) definition);
+    } else
+    if (definition instanceof ClassDefinition) {
+      stream.write(2);
+      return serializeClassDefinition(definitionsIndices, stream, dataStream, (ClassDefinition) definition);
+    } else
+    if (definition instanceof Constructor) {
+      stream.write(3);
+      return serializeConstructor(definitionsIndices, stream, dataStream, (Constructor) definition);
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
+  static private int serializeFunctionDefinition(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, FunctionDefinition definition) {
+    return 0;
+  }
+
+  static private int serializeDataDefinition(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, DataDefinition definition) {
+    return 0;
+  }
+
+  static private int serializeClassDefinition(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, ClassDefinition definition) {
+    int count = 0;
+    for (Definition field : definition.getFields()) {
+      count += serializeDefinition(definitionsIndices, stream, dataStream, field);
+    }
+    return count;
+  }
+
+  static private int serializeConstructor(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, Constructor definition) {
+    return 0;
+  }
+
+  static public ClassDefinition readFile(Path file) throws IOException, IncorrectFormat {
     DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file.toFile())));
     byte[] signature = new byte[4];
     stream.readFully(signature);

@@ -54,16 +54,13 @@ public abstract class Universe {
       myTruncated = NOT_TRUNCATED;
     }
 
-    int getTruncated() {
+    public int getTruncated() {
       return myTruncated;
     }
 
     @Override
     public boolean equals(Object other) {
-      if (this == other) return true;
-      if (!(other instanceof Type)) return false;
-      if (myTruncated == PROP && ((Type) other).myTruncated == PROP) return true;
-      return myTruncated == ((Type) other).myTruncated && getLevel() == ((Type) other).getLevel();
+      return this == other || other instanceof Type && (myTruncated == PROP && ((Type) other).myTruncated == PROP || myTruncated == ((Type) other).myTruncated && getLevel() == ((Type) other).getLevel());
     }
 
     @Override

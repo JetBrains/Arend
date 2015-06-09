@@ -172,7 +172,7 @@ public class ConsoleMain {
     ClassDefinition typedClassDef = new DefinitionCheckTypeVisitor(getModule(moduleNames), context, errors).visitClass(classDef, new ArrayList<Binding>());
 
     try {
-      ModuleSerialization.writeClass(typedClassDef, outputDir);
+      ModuleSerialization.writeFile(typedClassDef, outputDir);
     } catch (IOException e) {
       System.err.println("I/O error: " + e.getMessage());
     }
