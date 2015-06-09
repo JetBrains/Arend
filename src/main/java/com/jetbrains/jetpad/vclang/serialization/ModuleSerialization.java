@@ -1,14 +1,28 @@
-package com.jetbrains.jetpad.vclang;
+package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ModuleSerialization {
-  static private final byte[] SIGNATURE = { 0x00, (byte) 0xb1, (byte) 0xce, (byte) 0xd1 };
+  static private final byte[] SIGNATURE = { 'c', 'v', 0x0b, (byte) 0xb1 };
   static private final int VERSION = 0;
+
+  static private List<Definition> expressionDefinitions(Expression expression) {
+    DefCallListVisitor visitor = new DefCallListVisitor();
+    expression.accept(visitor);
+    List<Definition> definitions = new ArrayList<>(visitor.getDefinitions());
+    for (int i = 0; i < definitions.size(); ++i) {
+
+    }
+    return definitions;
+  }
 
   static public void writeClass(ClassDefinition def, Path outputDir) throws IOException {
     Files.createDirectories(outputDir);

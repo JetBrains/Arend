@@ -339,9 +339,9 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
 
     if (expr.getDefinition() == null) {
-      return myMode == Mode.TOP ? null : myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getDefinition(), expr.getIndex()) : expr;
+      return myMode == Mode.TOP ? null : myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getClassDefinition(), expr.getIndex()) : expr;
     } else {
-      return visitDefCall(expr.getDefinition(), myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getDefinition(), expr.getIndex()) : expr, new ArrayList<ArgumentExpression>());
+      return visitDefCall(expr.getDefinition(), myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getClassDefinition(), expr.getIndex()) : expr, new ArrayList<ArgumentExpression>());
     }
   }
 

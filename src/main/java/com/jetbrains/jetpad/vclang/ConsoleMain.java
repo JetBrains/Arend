@@ -3,12 +3,10 @@ package com.jetbrains.jetpad.vclang;
 import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
+import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -115,12 +113,18 @@ public class ConsoleMain {
     return names;
   }
 
+  static private Module getModule(List<String> moduleNames) {
+    // TODO
+    return null;
+  }
+
   static private void processFile(Path fileName, Path sourceDir, Path outputDir) {
     Path relativePath = null;
     String moduleName = null;
+    List<String> moduleNames = null;
     if (fileName.startsWith(sourceDir)) {
       relativePath = sourceDir.relativize(fileName);
-      List<String> moduleNames = getNames(relativePath);
+      moduleNames = getNames(relativePath);
       if (moduleNames == null || moduleNames.size() == 0) {
         relativePath = null;
       } else {
@@ -165,7 +169,7 @@ public class ConsoleMain {
     Map<String, Definition> context = Prelude.getDefinitions();
     List<TypeCheckingError> errors = new ArrayList<>();
     Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(new Concrete.Position(0, 0), moduleName, new Universe.Type(), defs);
-    ClassDefinition typedClassDef = new DefinitionCheckTypeVisitor(context, errors).visitClass(classDef, new ArrayList<Binding>());
+    ClassDefinition typedClassDef = new DefinitionCheckTypeVisitor(getModule(moduleNames), context, errors).visitClass(classDef, new ArrayList<Binding>());
 
     try {
       ModuleSerialization.writeClass(typedClassDef, outputDir);

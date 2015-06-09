@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -123,7 +124,7 @@ public class ExpressionFactory {
     return new TupleExpression(Arrays.asList(fields));
   }
 
-  public static FieldAccExpression FieldAcc(Expression expr, Definition def, int index) {
+  public static FieldAccExpression FieldAcc(Expression expr, ClassDefinition def, int index) {
     return new FieldAccExpression(expr, def, index);
   }
 

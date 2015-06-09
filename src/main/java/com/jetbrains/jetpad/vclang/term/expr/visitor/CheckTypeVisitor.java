@@ -1155,32 +1155,27 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (!(exprResult instanceof OKResult)) return exprResult;
     OKResult okExprResult = (OKResult) exprResult;
     Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+    boolean notInScope = false;
 
     if (type instanceof UniverseExpression) {
       Expression exprNorm = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
       if (exprNorm instanceof DefCallExpression && ((DefCallExpression) exprNorm).getDefinition() instanceof ClassDefinition) {
         ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) exprNorm).getDefinition();
         int index = classDef.findField(expr.getName());
-        if (index == -1) {
-          TypeCheckingError error = new NotInScopeError(expr, expr.getName());
-          expr.setWellTyped(Error(null, error));
-          myErrors.add(error);
-          return null;
+        if (index >= 0) {
+          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef, index), classDef.getField(index).getType(), okExprResult.equations), expr);
         }
-        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index), index), classDef.getField(index).getType(), okExprResult.equations), expr);
+        notInScope = true;
       }
     }
 
     if (type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
       ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) type).getDefinition();
       int index = classDef.findField(expr.getName());
-      if (index == -1) {
-        TypeCheckingError error = new NotInScopeError(expr, expr.getName());
-        expr.setWellTyped(Error(null, error));
-        myErrors.add(error);
-        return null;
+      if (index >= 0) {
+        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef, index), classDef.getField(index).getType(), okExprResult.equations), expr);
       }
-      return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index), index), classDef.getField(index).getType(), okExprResult.equations), expr);
+      notInScope = true;
     }
 
     if (type instanceof SigmaExpression) {
@@ -1204,14 +1199,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, null, index), splitArgs.get(index).getType().subst(exprs, 0), okExprResult.equations), expr);
         }
       }
-
-      TypeCheckingError error = new NotInScopeError(expr, expr.getName());
-      expr.setWellTyped(Error(null, error));
-      myErrors.add(error);
-      return null;
+      notInScope = true;
     }
 
-    TypeCheckingError error = new TypeCheckingError("Expected a class or an expression of a class type", expr, getNames(myLocalContext));
+    TypeCheckingError error;
+    if (notInScope) {
+      error = new NotInScopeError(expr, expr.getName());
+    } else {
+      error = new TypeCheckingError("Expected a class or an expression of a class type", expr, getNames(myLocalContext));
+    }
     expr.setWellTyped(Error(null, error));
     myErrors.add(error);
     return null;

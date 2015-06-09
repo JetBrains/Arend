@@ -1,16 +1,17 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class FieldAccExpression extends Expression implements Abstract.FieldAccExpression {
   private final Expression myExpression;
-  private final Definition myDefinition;
+  private final ClassDefinition myDefinition;
   private final int myIndex;
 
-  public FieldAccExpression(Expression expression, Definition definition, int index) {
+  public FieldAccExpression(Expression expression, ClassDefinition definition, int index) {
     myExpression = expression;
     myDefinition = definition;
     myIndex = index;
@@ -23,17 +24,21 @@ public class FieldAccExpression extends Expression implements Abstract.FieldAccE
 
   @Override
   public String getName() {
-    return myDefinition == null ? "proj" + (myIndex + 1) : myDefinition.getName();
+    return myDefinition == null ? "proj" + (myIndex + 1) : getDefinition().getName();
   }
 
   @Override
   public Abstract.Definition.Fixity getFixity() {
-    return myDefinition == null ? Abstract.Definition.Fixity.PREFIX : myDefinition.getFixity();
+    return myDefinition == null ? Abstract.Definition.Fixity.PREFIX : getDefinition().getFixity();
+  }
+
+  public ClassDefinition getClassDefinition() {
+    return myDefinition;
   }
 
   @Override
   public Definition getDefinition() {
-    return myDefinition;
+    return myDefinition == null ? null : myDefinition.getField(myIndex);
   }
 
   @Override

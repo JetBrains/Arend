@@ -10,8 +10,8 @@ import java.util.List;
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
   private final List<Definition> myFields;
 
-  public ClassDefinition(String name, Universe universe, List<Definition> fields) {
-    super(name, DEFAULT_PRECEDENCE, Fixity.PREFIX, universe);
+  public ClassDefinition(String name, Module module, Universe universe, List<Definition> fields) {
+    super(name, module, DEFAULT_PRECEDENCE, Fixity.PREFIX, universe);
     myFields = fields;
   }
 

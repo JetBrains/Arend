@@ -16,7 +16,7 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Prelude {
-  public final static Map<String, Definition> DEFINITIONS = new HashMap<>();
+  public final static Module PRELUDE;
 
   public final static DataDefinition NAT;
   public final static Constructor ZERO, SUC;
@@ -33,28 +33,31 @@ public class Prelude {
   public final static FunctionDefinition AT;
 
   static {
+    List<Definition> definitions = new ArrayList<>();
+    PRELUDE = new Module(null, new ClassDefinition("Prelude", null, new Universe.Type(0), definitions));
+
     List<Constructor> natConstructors = new ArrayList<>(2);
-    NAT = new DataDefinition("Nat", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>(), natConstructors);
-    ZERO = new Constructor(0, "zero", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), NAT);
-    SUC = new Constructor(1, "suc", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), args(TypeArg(DefCall(NAT))), NAT);
+    NAT = new DataDefinition("Nat", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>(), natConstructors);
+    ZERO = new Constructor(0, "zero", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), NAT);
+    SUC = new Constructor(1, "suc", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), args(TypeArg(DefCall(NAT))), NAT);
     natConstructors.add(ZERO);
     natConstructors.add(SUC);
 
-    DEFINITIONS.put(NAT.getName(), NAT);
-    DEFINITIONS.put(ZERO.getName(), ZERO);
-    DEFINITIONS.put(SUC.getName(), SUC);
+    definitions.add(NAT);
+    definitions.add(ZERO);
+    definitions.add(SUC);
 
     List<Constructor> intervalConstructors = new ArrayList<>(3);
-    INTERVAL = new DataDefinition("I", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), intervalConstructors);
-    LEFT = new Constructor(0, "left", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), INTERVAL);
-    RIGHT = new Constructor(1, "right", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), INTERVAL);
+    INTERVAL = new DataDefinition("I", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), intervalConstructors);
+    LEFT = new Constructor(0, "left", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), INTERVAL);
+    RIGHT = new Constructor(1, "right", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), INTERVAL);
     intervalConstructors.add(LEFT);
     intervalConstructors.add(RIGHT);
-    intervalConstructors.add(new Constructor(2, "<abstract>", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), INTERVAL));
+    intervalConstructors.add(new Constructor(2, "<abstract>", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), INTERVAL));
 
-    DEFINITIONS.put(INTERVAL.getName(), INTERVAL);
-    DEFINITIONS.put(LEFT.getName(), LEFT);
-    DEFINITIONS.put(RIGHT.getName(), RIGHT);
+    definitions.add(INTERVAL);
+    definitions.add(LEFT);
+    definitions.add(RIGHT);
 
     List<TelescopeArgument> coerceArguments = new ArrayList<>(3);
     coerceArguments.add(Tele(vars("type"), Pi(DefCall(INTERVAL), Universe(Universe.NO_LEVEL))));
@@ -63,31 +66,31 @@ public class Prelude {
     List<Clause> coerceClauses = new ArrayList<>(1);
     ElimExpression coerceTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), coerceClauses, null);
     coerceClauses.add(new Clause(LEFT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(0), coerceTerm));
-    COERCE = new FunctionDefinition("coe", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, coerceArguments, Apps(Index(2), Index(0)), Abstract.Definition.Arrow.LEFT, coerceTerm);
+    COERCE = new FunctionDefinition("coe", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, coerceArguments, Apps(Index(2), Index(0)), Abstract.Definition.Arrow.LEFT, coerceTerm);
 
-    DEFINITIONS.put(COERCE.getName(), COERCE);
+    definitions.add(COERCE);
 
     List<TypeArgument> PathParameters = new ArrayList<>(3);
     PathParameters.add(Tele(vars("A"), Pi(DefCall(INTERVAL), Universe(Universe.NO_LEVEL, Universe.Type.NOT_TRUNCATED))));
     PathParameters.add(TypeArg(Apps(Index(0), DefCall(LEFT))));
     PathParameters.add(TypeArg(Apps(Index(1), DefCall(RIGHT))));
     List<Constructor> PathConstructors = new ArrayList<>(1);
-    PATH = new DataDefinition("Path", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), PathParameters, PathConstructors);
+    PATH = new DataDefinition("Path", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), PathParameters, PathConstructors);
     List<TypeArgument> pathArguments = new ArrayList<>(1);
     pathArguments.add(TypeArg(Pi("i", DefCall(INTERVAL), Apps(Index(3), Index(0)))));
-    PATH_CON = new Constructor(0, "path", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), pathArguments, PATH);
+    PATH_CON = new Constructor(0, "path", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), pathArguments, PATH);
     PathConstructors.add(PATH_CON);
 
-    DEFINITIONS.put(PATH.getName(), PATH);
-    DEFINITIONS.put(PATH_CON.getName(), PATH_CON);
+    definitions.add(PATH);
+    definitions.add(PATH_CON);
 
     List<TelescopeArgument> pathInfixArguments = new ArrayList<>(3);
     pathInfixArguments.add(Tele(false, vars("A"), Universe(0)));
     pathInfixArguments.add(Tele(vars("a", "a'"), Index(0)));
     Expression pathInfixTerm = Apps(DefCall(PATH), Lam("_", Index(3)), Index(1), Index(0));
-    PATH_INFIX = new FunctionDefinition("=", new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), Abstract.Definition.Fixity.INFIX, pathInfixArguments, Universe(0), Abstract.Definition.Arrow.RIGHT, pathInfixTerm);
+    PATH_INFIX = new FunctionDefinition("=", PRELUDE, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), Abstract.Definition.Fixity.INFIX, pathInfixArguments, Universe(0), Abstract.Definition.Arrow.RIGHT, pathInfixTerm);
 
-    DEFINITIONS.put(PATH_INFIX.getName(), PATH_INFIX);
+    definitions.add(PATH_INFIX);
 
     List<TelescopeArgument> atArguments = new ArrayList<>(5);
     atArguments.add(Tele(false, vars("A"), PathParameters.get(0).getType()));
@@ -105,12 +108,16 @@ public class Prelude {
     atOtherwise.setElimExpression(atTerm);
     atClauses.add(new Clause(LEFT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(2), atTerm));
     atClauses.add(new Clause(RIGHT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(1), atTerm));
-    AT = new FunctionDefinition("@", new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), Abstract.Definition.Fixity.INFIX, atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);
+    AT = new FunctionDefinition("@", PRELUDE, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), Abstract.Definition.Fixity.INFIX, atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);
 
-    DEFINITIONS.put(AT.getName(), AT);
+    definitions.add(AT);
   }
 
   public static Map<String, Definition> getDefinitions() {
-    return new HashMap<>(DEFINITIONS);
+    Map<String, Definition> result = new HashMap<>();
+    for (Definition def : PRELUDE.getClassDef().getFields()) {
+      result.put(def.getName(), def);
+    }
+    return result;
   }
 }
