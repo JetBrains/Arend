@@ -1,18 +1,15 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.serialization.ModuleSerialization.writeArguments;
+import static com.jetbrains.jetpad.vclang.serialization.ModuleSerialization.writeUniverse;
 
 public class SerializeVisitor implements ExpressionVisitor<Void> {
   private int myErrors = 0;
@@ -28,6 +25,10 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   public int getErrors() {
     return myErrors;
+  }
+
+  public DataOutputStream getDataStream() {
+    return myDataStream;
   }
 
   @Override
@@ -67,51 +68,22 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitLam(LamExpression expr) {
     myStream.write(4);
     expr.getBody().accept(this);
-    visitArguments(expr.getArguments());
+    try {
+      writeArguments(this, expr.getArguments());
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
     return null;
-  }
-
-  private void visitArguments(List<? extends Argument> arguments) {
-    try {
-      myDataStream.writeInt(arguments.size());
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
-    for (Argument argument : arguments) {
-      visitArgument(argument);
-    }
-  }
-
-  private void visitArgument(Argument argument) {
-    myStream.write(argument.getExplicit() ? 1 : 0);
-    try {
-      if (argument instanceof TelescopeArgument) {
-        myStream.write(0);
-        myDataStream.writeInt(((TelescopeArgument) argument).getNames().size());
-        for (String name : ((TelescopeArgument) argument).getNames()) {
-          myDataStream.writeBytes(name);
-        }
-        ((TypeArgument) argument).getType().accept(this);
-      } else
-      if (argument instanceof TypeArgument) {
-        myStream.write(1);
-        ((TypeArgument) argument).getType().accept(this);
-      }
-      if (argument instanceof NameArgument) {
-        myStream.write(2);
-        myDataStream.writeBytes(((NameArgument) argument).getName());
-      } else {
-        throw new IllegalStateException();
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
   }
 
   @Override
   public Void visitPi(PiExpression expr) {
     myStream.write(5);
-    visitArguments(expr.getArguments());
+    try {
+      writeArguments(this, expr.getArguments());
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
     expr.getCodomain().accept(this);
     return null;
   }
@@ -120,12 +92,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitUniverse(UniverseExpression expr) {
     myStream.write(6);
     try {
-      myDataStream.writeInt(expr.getUniverse().getLevel());
-      if (expr.getUniverse() instanceof Universe.Type) {
-        myDataStream.writeInt(((Universe.Type) expr.getUniverse()).getTruncated());
-      } else {
-        throw new IllegalStateException();
-      }
+      writeUniverse(myDataStream, expr.getUniverse());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -170,7 +137,11 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   @Override
   public Void visitSigma(SigmaExpression expr) {
     myStream.write(10);
-    visitArguments(expr.getArguments());
+    try {
+      writeArguments(this, expr.getArguments());
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
     return null;
   }
 
@@ -197,10 +168,10 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   private void visitClause(Clause clause) {
     try {
       myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(clause.getConstructor()));
+      writeArguments(this, clause.getArguments());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
-    visitArguments(clause.getArguments());
     myStream.write(clause.getArrow() == Abstract.Definition.Arrow.LEFT ? 0 : 1);
     clause.getExpression().accept(this);
   }

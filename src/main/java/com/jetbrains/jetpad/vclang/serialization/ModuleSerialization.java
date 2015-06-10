@@ -1,10 +1,16 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 public class ModuleSerialization {
   static private final byte[] SIGNATURE = { 'c', 'v', 0x0b, (byte) 0xb1 };
@@ -15,56 +21,103 @@ public class ModuleSerialization {
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
     DefinitionsIndices definitionsIndices = new DefinitionsIndices();
-    int errors = serializeClassDefinition(definitionsIndices, byteArrayStream, dataStream, def);
+    SerializeVisitor visitor = new SerializeVisitor(definitionsIndices, byteArrayStream, dataStream);
+    serializeClassDefinition(visitor, def);
 
     DataOutputStream fileStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputDir.resolve(def.getName() + ".vcc").toFile())));
     fileStream.write(SIGNATURE);
     fileStream.writeInt(VERSION);
-    fileStream.writeInt(errors);
+    fileStream.writeInt(visitor.getErrors());
     definitionsIndices.serialize(fileStream);
     byteArrayStream.writeTo(fileStream);
     fileStream.close();
   }
 
-  static private int serializeDefinition(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, Definition definition) {
+  static private void serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
     if (definition instanceof FunctionDefinition) {
-      stream.write(0);
-      return serializeFunctionDefinition(definitionsIndices, stream, dataStream, (FunctionDefinition) definition);
+      visitor.getDataStream().write(0);
+      serializeFunctionDefinition(visitor, (FunctionDefinition) definition);
     } else
     if (definition instanceof DataDefinition) {
-      stream.write(1);
-      return serializeDataDefinition(definitionsIndices, stream, dataStream, (DataDefinition) definition);
+      visitor.getDataStream().write(1);
+      serializeDataDefinition(visitor, (DataDefinition) definition);
     } else
     if (definition instanceof ClassDefinition) {
-      stream.write(2);
-      return serializeClassDefinition(definitionsIndices, stream, dataStream, (ClassDefinition) definition);
+      visitor.getDataStream().write(2);
+      serializeClassDefinition(visitor, (ClassDefinition) definition);
     } else
-    if (definition instanceof Constructor) {
-      stream.write(3);
-      return serializeConstructor(definitionsIndices, stream, dataStream, (Constructor) definition);
+    if (!(definition instanceof Constructor)) {
+      throw new IllegalStateException();
+    }
+  }
+
+  static private void serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
+    writeDefinition(visitor.getDataStream(), definition);
+    writeArguments(visitor, definition.getArguments());
+    definition.getResultType().accept(visitor);
+    visitor.getDataStream().write(definition.getArrow() == Abstract.Definition.Arrow.LEFT ? 0 : 1);
+    definition.getTerm().accept(visitor);
+  }
+
+  static private void serializeDataDefinition(SerializeVisitor visitor, DataDefinition definition) throws IOException {
+    writeDefinition(visitor.getDataStream(), definition);
+    writeArguments(visitor, definition.getParameters());
+    visitor.getDataStream().writeInt(definition.getConstructors().size());
+    for (Constructor constructor : definition.getConstructors()) {
+      writeArguments(visitor, constructor.getArguments());
+    }
+  }
+
+  static private void serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
+    writeUniverse(visitor.getDataStream(), definition.getUniverse());
+    for (Definition field : definition.getFields()) {
+      serializeDefinition(visitor, field);
+    }
+  }
+
+  static private void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
+    stream.write(definition.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 1 : 2);
+    stream.write(definition.getPrecedence().priority);
+    stream.write(definition.getFixity() == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
+    writeUniverse(stream, definition.getUniverse());
+  }
+
+  static public void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {
+    stream.writeInt(universe.getLevel());
+    if (universe instanceof Universe.Type) {
+      stream.writeInt(((Universe.Type) universe).getTruncated());
     } else {
       throw new IllegalStateException();
     }
   }
 
-  static private int serializeFunctionDefinition(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, FunctionDefinition definition) {
-    return 0;
-  }
-
-  static private int serializeDataDefinition(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, DataDefinition definition) {
-    return 0;
-  }
-
-  static private int serializeClassDefinition(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, ClassDefinition definition) {
-    int count = 0;
-    for (Definition field : definition.getFields()) {
-      count += serializeDefinition(definitionsIndices, stream, dataStream, field);
+  static public void writeArguments(SerializeVisitor visitor, List<? extends Argument> arguments) throws IOException {
+    visitor.getDataStream().writeInt(arguments.size());
+    for (Argument argument : arguments) {
+      writeArgument(visitor, argument);
     }
-    return count;
   }
 
-  static private int serializeConstructor(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, Constructor definition) {
-    return 0;
+  static public void writeArgument(SerializeVisitor visitor, Argument argument) throws IOException {
+    visitor.getDataStream().write(argument.getExplicit() ? 1 : 0);
+    if (argument instanceof TelescopeArgument) {
+      visitor.getDataStream().write(0);
+      visitor.getDataStream().writeInt(((TelescopeArgument) argument).getNames().size());
+      for (String name : ((TelescopeArgument) argument).getNames()) {
+        visitor.getDataStream().writeBytes(name);
+      }
+      ((TypeArgument) argument).getType().accept(visitor);
+    } else
+    if (argument instanceof TypeArgument) {
+      visitor.getDataStream().write(1);
+      ((TypeArgument) argument).getType().accept(visitor);
+    }
+    if (argument instanceof NameArgument) {
+      visitor.getDataStream().write(2);
+      visitor.getDataStream().writeBytes(((NameArgument) argument).getName());
+    } else {
+      throw new IllegalStateException();
+    }
   }
 
   static public ClassDefinition readFile(Path file) throws IOException, IncorrectFormat {
