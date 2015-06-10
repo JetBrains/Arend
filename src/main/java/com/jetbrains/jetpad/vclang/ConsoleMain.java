@@ -6,7 +6,10 @@ import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -113,7 +116,7 @@ public class ConsoleMain {
     return names;
   }
 
-  static private Module getModule(List<String> moduleNames) {
+  static private ClassDefinition getModule(List<String> moduleNames) {
     // TODO
     return null;
   }

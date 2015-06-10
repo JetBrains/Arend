@@ -16,7 +16,7 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Prelude {
-  public final static Module PRELUDE;
+  public final static ClassDefinition PRELUDE;
 
   public final static DataDefinition NAT;
   public final static Constructor ZERO, SUC;
@@ -34,7 +34,7 @@ public class Prelude {
 
   static {
     List<Definition> definitions = new ArrayList<>();
-    PRELUDE = new Module(null, new ClassDefinition("Prelude", null, new Universe.Type(0), definitions));
+    PRELUDE = new ClassDefinition("Prelude", null, new Universe.Type(0), definitions);
 
     List<Constructor> natConstructors = new ArrayList<>(2);
     NAT = new DataDefinition("Nat", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>(), natConstructors);
@@ -115,7 +115,7 @@ public class Prelude {
 
   public static Map<String, Definition> getDefinitions() {
     Map<String, Definition> result = new HashMap<>();
-    for (Definition def : PRELUDE.getClassDef().getFields()) {
+    for (Definition def : PRELUDE.getFields()) {
       result.put(def.getName(), def);
     }
     return result;

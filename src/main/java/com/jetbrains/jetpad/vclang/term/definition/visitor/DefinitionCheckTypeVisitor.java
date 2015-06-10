@@ -24,11 +24,11 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<List<Binding>, Definition> {
-  private final Module myModule;
+  private final ClassDefinition myModule;
   private final Map<String, Definition> myGlobalContext;
   private final List<TypeCheckingError> myErrors;
 
-  public DefinitionCheckTypeVisitor(Module module, Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
+  public DefinitionCheckTypeVisitor(ClassDefinition module, Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
     myModule = module;
     myGlobalContext = globalContext;
     myErrors = errors;
@@ -253,7 +253,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     ClassDefinition result = new ClassDefinition(def.getName(), myModule, universe, fields);
 
     for (Abstract.Definition field : def.getFields()) {
-      Definition newField = field.accept(new DefinitionCheckTypeVisitor(new Module(myModule, result), myGlobalContext, myErrors), localContext);
+      Definition newField = field.accept(new DefinitionCheckTypeVisitor(result, myGlobalContext, myErrors), localContext);
       if (newField == null) continue;
 
       if (newField instanceof FunctionDefinition && ((FunctionDefinition) newField).getArrow() == null) {

@@ -17,7 +17,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   private Expression myResultType;
   private Expression myTerm;
 
-  public FunctionDefinition(String name, Module module, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+  public FunctionDefinition(String name, ClassDefinition module, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
     super(name, module, precedence, fixity, null);
     myArguments = arguments;
     myResultType = resultType;
