@@ -17,8 +17,8 @@ public class Constructor extends Definition implements Abstract.Constructor {
   private final List<TypeArgument> myArguments;
   private final int myIndex;
 
-  public Constructor(int index, String name, ClassDefinition module, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
-    super(name, module, precedence, fixity, universe);
+  public Constructor(int index, String name, ClassDefinition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
+    super(name, parent, precedence, fixity, universe);
     myArguments = arguments;
     myDataType = dataType;
     myIndex = index;

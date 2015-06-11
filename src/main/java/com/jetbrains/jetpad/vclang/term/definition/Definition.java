@@ -6,21 +6,21 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrint
 import java.util.ArrayList;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
-  private final ClassDefinition myModule;
+  private final ClassDefinition myParent;
   private final Precedence myPrecedence;
   private final Fixity myFixity;
   private Universe myUniverse;
 
-  public Definition(String name, ClassDefinition module, Precedence precedence, Fixity fixity, Universe universe) {
+  public Definition(String name, ClassDefinition parent, Precedence precedence, Fixity fixity, Universe universe) {
     super(name);
-    myModule = module;
+    myParent = parent;
     myPrecedence = precedence;
     myFixity = fixity;
     myUniverse = universe;
   }
 
-  public ClassDefinition getModule() {
-    return myModule;
+  public ClassDefinition getParent() {
+    return myParent;
   }
 
   @Override

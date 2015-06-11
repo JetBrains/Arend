@@ -6,16 +6,18 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.serialization.ModuleSerialization.getDefinitionCode;
+
 public class DefinitionsIndices {
   final private Map<Definition, Integer> myDefinitions = new HashMap<>();
   final private List<Map.Entry<Definition, Integer>> myDefinitionsList = new ArrayList<>();
-  private int myCounter = 2;
+  private int myCounter = 1;
 
   public int getDefinitionIndex(Definition definition) {
     if (definition == null) return -1;
     Integer index = myDefinitions.get(definition);
     if (index == null) {
-      getDefinitionIndex(definition.getModule());
+      getDefinitionIndex(definition.getParent());
       myDefinitionsList.add(new AbstractMap.SimpleEntry<>(definition, myCounter));
       myDefinitions.put(definition, myCounter++);
       return myCounter - 1;
@@ -25,18 +27,12 @@ public class DefinitionsIndices {
   }
 
   public void serialize(DataOutputStream stream) throws IOException {
+    stream.writeInt(myDefinitionsList.size());
     for (Map.Entry<Definition, Integer> entry : myDefinitionsList) {
       stream.writeInt(entry.getValue());
-      writeDefinition(stream, entry.getKey().getModule());
-      stream.writeInt(0);
-      stream.writeInt(entry.getKey().getName().length());
-      stream.write(entry.getKey().getName().getBytes());
+      stream.writeInt(entry.getKey().getParent() == null ? 0 : myDefinitions.get(entry.getKey().getParent()));
+      stream.writeUTF(entry.getKey().getName());
+      stream.write(getDefinitionCode(entry.getKey()));
     }
-  }
-
-  private void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
-    if (definition == null) return;
-    writeDefinition(stream, definition.getModule());
-    stream.writeInt(myDefinitions.get(definition));
   }
 }

@@ -14,8 +14,8 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   private final List<Constructor> myConstructors;
   private final List<TypeArgument> myParameters;
 
-  public DataDefinition(String name, ClassDefinition module, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
-    super(name, module, precedence, fixity, universe);
+  public DataDefinition(String name, ClassDefinition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+    super(name, parent, precedence, fixity, universe);
     myParameters = parameters;
     myConstructors = constructors;
   }

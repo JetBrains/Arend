@@ -46,8 +46,10 @@ public class ConsoleMain {
       new HelpFormatter().printHelp("vclang [FILES]", cmdOptions);
     }
 
-    final Path sourceDir = Paths.get(cmdLine.getOptionValue("s"));
-    final Path outputDir = Paths.get(cmdLine.getOptionValue("o"));
+    String sourceDirStr = cmdLine.getOptionValue("s");
+    final Path sourceDir = sourceDirStr == null ? null : Paths.get(sourceDirStr);
+    String outputDirStr = cmdLine.getOptionValue("o");
+    final Path outputDir = outputDirStr == null ? null : Paths.get(outputDirStr);
     boolean recompile = cmdLine.hasOption("recompile");
 
     List<File> libDirs = new ArrayList<>();
@@ -71,6 +73,7 @@ public class ConsoleMain {
     }
 
     if (cmdLine.getArgList().isEmpty()) {
+      if (sourceDir == null) return;
       try {
         Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
           @Override
@@ -125,16 +128,20 @@ public class ConsoleMain {
     Path relativePath = null;
     String moduleName = null;
     List<String> moduleNames = null;
-    if (fileName.startsWith(sourceDir)) {
+    Path outputFile = null;
+    if (sourceDir != null && fileName.startsWith(sourceDir)) {
       relativePath = sourceDir.relativize(fileName);
       moduleNames = getNames(relativePath);
       if (moduleNames == null || moduleNames.size() == 0) {
         relativePath = null;
       } else {
         moduleName = moduleNames.get(moduleNames.size() - 1);
-        moduleNames.set(moduleNames.size() - 1, moduleName + ".vcc");
-        for (int i = 0; i < moduleNames.size() - 1; ++i) {
-          outputDir = outputDir.resolve(moduleNames.get(i));
+        if (outputDir != null) {
+          outputFile = outputDir;
+          for (int i = 0; i < moduleNames.size() - 1; ++i) {
+            outputFile = outputFile.resolve(moduleNames.get(i));
+          }
+          outputFile = outputFile.resolve(moduleName + ".vcc");
         }
       }
     }
@@ -174,10 +181,12 @@ public class ConsoleMain {
     Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(new Concrete.Position(0, 0), moduleName, new Universe.Type(), defs);
     ClassDefinition typedClassDef = new DefinitionCheckTypeVisitor(getModule(moduleNames), context, errors).visitClass(classDef, new ArrayList<Binding>());
 
-    try {
-      ModuleSerialization.writeFile(typedClassDef, outputDir);
-    } catch (IOException e) {
-      System.err.println("I/O error: " + e.getMessage());
+    if (outputFile != null) {
+      try {
+        ModuleSerialization.writeFile(typedClassDef, outputDir);
+      } catch (IOException e) {
+        System.err.println("I/O error: " + e.getMessage());
+      }
     }
 
     for (TypeCheckingError error : errors) {

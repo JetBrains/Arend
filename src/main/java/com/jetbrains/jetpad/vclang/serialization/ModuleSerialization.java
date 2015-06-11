@@ -10,10 +10,13 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ModuleSerialization {
-  static private final byte[] SIGNATURE = { 'c', 'v', 0x0b, (byte) 0xb1 };
+  static private final byte[] SIGNATURE = { 'v', 'c', (byte) 0xb1, 0x0b };
   static private final int VERSION = 0;
 
   static public void writeFile(ClassDefinition def, Path outputDir) throws IOException {
@@ -33,53 +36,146 @@ public class ModuleSerialization {
     fileStream.close();
   }
 
+  static public ClassDefinition readFile(String className, ClassDefinition parentClass, Path file, ClassDefinition root, List<Definition> toLoad) throws IOException, IncorrectFormat {
+    DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file.toFile())));
+    byte[] signature = new byte[4];
+    stream.readFully(signature);
+    if (signature != SIGNATURE) {
+      throw new IncorrectFormat();
+    }
+    int version = stream.readInt();
+    if (version != VERSION) {
+      throw new WrongVersion(version);
+    }
+    stream.readInt();
+
+    Map<Integer, Definition> definitionMap = new HashMap<>();
+    definitionMap.put(0, root);
+    int size = stream.readInt();
+    for (int i = 0; i < size; ++i) {
+      int index = stream.readInt();
+      int parentIndex = stream.readInt();
+      String name = stream.readUTF();
+      int code = stream.read();
+      Definition parent = definitionMap.get(parentIndex);
+      if (!(parent instanceof ClassDefinition)) {
+        throw new IncorrectFormat();
+      }
+      ClassDefinition classParent = (ClassDefinition) parent;
+      int fieldIndex = classParent.findField(name);
+      if (fieldIndex < 0) {
+        Definition definition = newDefinition(code, name, classParent);
+        definitionMap.put(index, definition);
+        toLoad.add(definition);
+      } else {
+        definitionMap.put(index, classParent.getField(fieldIndex));
+      }
+    }
+
+    return deserializeClassDefinition(className, parentClass, stream);
+  }
+
+  static public int getDefinitionCode(Definition definition) {
+    if (definition instanceof FunctionDefinition) return 0;
+    if (definition instanceof DataDefinition) return 1;
+    if (definition instanceof ClassDefinition) return 2;
+    if (definition instanceof Constructor) return 3;
+    throw new IllegalStateException();
+  }
+
+  static private Definition newDefinition(int code, String name, ClassDefinition parent) throws IncorrectFormat {
+    if (code == 0) return new FunctionDefinition(name, parent, null, null, null, null, null, null);
+    if (code == 1) return new DataDefinition(name, parent, null, null, null, null, null);
+    if (code == 2) return new ClassDefinition(name, parent, null, null);
+    if (code == 3) return new Constructor(-1, name, parent, null, null, null, null, null);
+    throw new IncorrectFormat();
+  }
+
   static private void serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
+    if (definition instanceof Constructor) return;
+    visitor.getDataStream().write(getDefinitionCode(definition));
+    visitor.getDataStream().writeUTF(definition.getName());
+
     if (definition instanceof FunctionDefinition) {
-      visitor.getDataStream().write(0);
-      serializeFunctionDefinition(visitor, (FunctionDefinition) definition);
+      FunctionDefinition functionDefinition = (FunctionDefinition) definition;
+      writeDefinition(visitor.getDataStream(), definition);
+      writeArguments(visitor, functionDefinition.getArguments());
+      functionDefinition.getResultType().accept(visitor);
+      visitor.getDataStream().write(functionDefinition.getArrow() == Abstract.Definition.Arrow.LEFT ? 0 : 1);
+      functionDefinition.getTerm().accept(visitor);
     } else
     if (definition instanceof DataDefinition) {
-      visitor.getDataStream().write(1);
-      serializeDataDefinition(visitor, (DataDefinition) definition);
+      DataDefinition dataDefinition = (DataDefinition) definition;
+      writeDefinition(visitor.getDataStream(), definition);
+      writeUniverse(visitor.getDataStream(), definition.getUniverse());
+      writeArguments(visitor, dataDefinition.getParameters());
+      visitor.getDataStream().writeInt(dataDefinition.getConstructors().size());
+      for (Constructor constructor : dataDefinition.getConstructors()) {
+        writeArguments(visitor, constructor.getArguments());
+      }
     } else
     if (definition instanceof ClassDefinition) {
-      visitor.getDataStream().write(2);
       serializeClassDefinition(visitor, (ClassDefinition) definition);
-    } else
-    if (!(definition instanceof Constructor)) {
+    } else {
       throw new IllegalStateException();
     }
   }
 
-  static private void serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
-    writeDefinition(visitor.getDataStream(), definition);
-    writeArguments(visitor, definition.getArguments());
-    definition.getResultType().accept(visitor);
-    visitor.getDataStream().write(definition.getArrow() == Abstract.Definition.Arrow.LEFT ? 0 : 1);
-    definition.getTerm().accept(visitor);
-  }
-
-  static private void serializeDataDefinition(SerializeVisitor visitor, DataDefinition definition) throws IOException {
-    writeDefinition(visitor.getDataStream(), definition);
-    writeArguments(visitor, definition.getParameters());
-    visitor.getDataStream().writeInt(definition.getConstructors().size());
-    for (Constructor constructor : definition.getConstructors()) {
-      writeArguments(visitor, constructor.getArguments());
+  static private Definition deserializeDefinition(ClassDefinition parent, DataInputStream stream) throws IOException, IncorrectFormat {
+    int code = stream.read();
+    String name = stream.readUTF();
+    if (code == 0) {
+      return null;
+    } else
+    if (code == 1) {
+      return null;
+    } else
+    if (code == 2) {
+      deserializeClassDefinition(name, parent, stream);
+      return null;
+    } else {
+      throw new IncorrectFormat();
     }
   }
 
   static private void serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
+    visitor.getDataStream().writeInt(definition.getFields().size());
     for (Definition field : definition.getFields()) {
       serializeDefinition(visitor, field);
     }
+  }
+
+  static private ClassDefinition deserializeClassDefinition(String name, ClassDefinition parent, DataInputStream stream) throws IOException, IncorrectFormat {
+    Universe universe = readUniverse(stream);
+    int size = stream.readInt();
+    List<Definition> fields = new ArrayList<>(size);
+
+    int fieldIndex = parent.findField(name);
+    ClassDefinition result;
+    if (fieldIndex < 0) {
+      result = new ClassDefinition(name, parent, universe, fields);
+      parent.getFields().add(result);
+    } else {
+      Definition field = parent.getField(fieldIndex);
+      if (field instanceof ClassDefinition) {
+        result = (ClassDefinition) field;
+        result.setUniverse(universe);
+      } else {
+        throw new IncorrectFormat();
+      }
+    }
+
+    for (int i = 0; i < size; ++i) {
+      fields.add(deserializeDefinition(result, stream));
+    }
+    return result;
   }
 
   static private void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
     stream.write(definition.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 1 : 2);
     stream.write(definition.getPrecedence().priority);
     stream.write(definition.getFixity() == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
-    writeUniverse(stream, definition.getUniverse());
   }
 
   static public void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {
@@ -89,6 +185,12 @@ public class ModuleSerialization {
     } else {
       throw new IllegalStateException();
     }
+  }
+
+  static public Universe readUniverse(DataInputStream stream) throws IOException {
+    int level = stream.readInt();
+    int truncated = stream.readInt();
+    return new Universe.Type(level, truncated);
   }
 
   static public void writeArguments(SerializeVisitor visitor, List<? extends Argument> arguments) throws IOException {
@@ -104,34 +206,27 @@ public class ModuleSerialization {
       visitor.getDataStream().write(0);
       visitor.getDataStream().writeInt(((TelescopeArgument) argument).getNames().size());
       for (String name : ((TelescopeArgument) argument).getNames()) {
-        visitor.getDataStream().writeBytes(name);
+        visitor.getDataStream().write(name == null ? 0 : 1);
+        if (name != null) {
+          visitor.getDataStream().writeUTF(name);
+        }
       }
       ((TypeArgument) argument).getType().accept(visitor);
     } else
     if (argument instanceof TypeArgument) {
       visitor.getDataStream().write(1);
       ((TypeArgument) argument).getType().accept(visitor);
-    }
+    } else
     if (argument instanceof NameArgument) {
       visitor.getDataStream().write(2);
-      visitor.getDataStream().writeBytes(((NameArgument) argument).getName());
+      String name = ((NameArgument) argument).getName();
+      visitor.getDataStream().write(name == null ? 0 : 1);
+      if (name != null) {
+        visitor.getDataStream().writeUTF(name);
+      }
     } else {
       throw new IllegalStateException();
     }
-  }
-
-  static public ClassDefinition readFile(Path file) throws IOException, IncorrectFormat {
-    DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file.toFile())));
-    byte[] signature = new byte[4];
-    stream.readFully(signature);
-    if (signature != SIGNATURE) {
-      throw new IncorrectFormat();
-    }
-    int version = stream.readInt();
-    if (version != VERSION) {
-      throw new WrongVersion(version);
-    }
-    return null;
   }
 
   static class IncorrectFormat extends Exception {
