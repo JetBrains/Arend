@@ -24,12 +24,12 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<List<Binding>, Definition> {
-  private final ClassDefinition myModule;
+  private final ClassDefinition myParent;
   private final Map<String, Definition> myGlobalContext;
   private final List<TypeCheckingError> myErrors;
 
-  public DefinitionCheckTypeVisitor(ClassDefinition module, Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
-    myModule = module;
+  public DefinitionCheckTypeVisitor(ClassDefinition parent, Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
+    myParent = parent;
     myGlobalContext = globalContext;
     myErrors = errors;
   }
@@ -73,7 +73,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       expectedType = null;
     }
 
-    FunctionDefinition result = new FunctionDefinition(def.getName(), myModule, def.getPrecedence(), def.getFixity(), arguments, expectedType, def.getArrow(), null);
+    FunctionDefinition result = new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), arguments, expectedType, def.getArrow(), null);
     myGlobalContext.put(def.getName(), result);
     CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
 
@@ -132,7 +132,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     List<Constructor> constructors = new ArrayList<>(def.getConstructors().size());
-    DataDefinition result = new DataDefinition(def.getName(), myModule, def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : universe, parameters, constructors);
+    DataDefinition result = new DataDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : universe, parameters, constructors);
 
     myGlobalContext.put(def.getName(), result);
     constructors_loop:
@@ -230,7 +230,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     trimToSize(localContext, origSize);
-    Constructor newConstructor = new Constructor(def.getDataType().getConstructors().indexOf(def), def.getName(), myModule, def.getPrecedence(), def.getFixity(), universe, arguments, null);
+    Constructor newConstructor = new Constructor(def.getDataType().getConstructors().indexOf(def), def.getName(), myParent, def.getPrecedence(), def.getFixity(), universe, arguments, null);
     if (error != null) {
       myErrors.add(new TypeCheckingError(error, DefCall(newConstructor), new ArrayList<String>()));
       return null;
@@ -250,7 +250,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
     List<Definition> fields = new ArrayList<>(def.getFields().size());
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
-    ClassDefinition result = new ClassDefinition(def.getName(), myModule, universe, fields);
+    ClassDefinition result = new ClassDefinition(def.getName(), myParent, universe, fields);
 
     for (Abstract.Definition field : def.getFields()) {
       Definition newField = field.accept(new DefinitionCheckTypeVisitor(result, myGlobalContext, myErrors), localContext);

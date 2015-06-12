@@ -19,15 +19,15 @@ public class ModuleSerialization {
   static private final byte[] SIGNATURE = { 'v', 'c', (byte) 0xb1, 0x0b };
   static private final int VERSION = 0;
 
-  static public void writeFile(ClassDefinition def, Path outputDir) throws IOException {
-    Files.createDirectories(outputDir);
+  static public void writeFile(ClassDefinition def, File outputFile) throws IOException {
+    Files.createDirectories(outputFile.getParentFile().toPath());
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
     DefinitionsIndices definitionsIndices = new DefinitionsIndices();
     SerializeVisitor visitor = new SerializeVisitor(definitionsIndices, byteArrayStream, dataStream);
     serializeClassDefinition(visitor, def);
 
-    DataOutputStream fileStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputDir.resolve(def.getName() + ".vcc").toFile())));
+    DataOutputStream fileStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
     fileStream.write(SIGNATURE);
     fileStream.writeInt(VERSION);
     fileStream.writeInt(visitor.getErrors());

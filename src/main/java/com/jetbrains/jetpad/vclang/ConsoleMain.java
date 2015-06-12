@@ -1,29 +1,19 @@
 package com.jetbrains.jetpad.vclang;
 
-import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
-import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
-import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
-import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
+import com.jetbrains.jetpad.vclang.module.Module;
+import com.jetbrains.jetpad.vclang.module.ModuleError;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
-import org.antlr.v4.runtime.*;
 import org.apache.commons.cli.*;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ConsoleMain {
   public static void main(String[] args) {
@@ -47,9 +37,9 @@ public class ConsoleMain {
     }
 
     String sourceDirStr = cmdLine.getOptionValue("s");
-    final Path sourceDir = sourceDirStr == null ? null : Paths.get(sourceDirStr);
+    final File sourceDir = sourceDirStr == null ? null : new File(sourceDirStr);
     String outputDirStr = cmdLine.getOptionValue("o");
-    final Path outputDir = outputDirStr == null ? null : Paths.get(outputDirStr);
+    File outputDir = outputDirStr == null ? null : new File(outputDirStr);
     boolean recompile = cmdLine.hasOption("recompile");
 
     List<File> libDirs = new ArrayList<>();
@@ -72,14 +62,15 @@ public class ConsoleMain {
       libDirs.add(new File(workingPath, "lib"));
     }
 
+    final ModuleLoader moduleLoader = new ModuleLoader(sourceDir, outputDir, libDirs, recompile);
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDir == null) return;
       try {
-        Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(sourceDir.toPath(), new SimpleFileVisitor<Path>() {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
             if (path.getFileName().toString().endsWith(".vc")) {
-              processFile(path, sourceDir, outputDir);
+              processFile(moduleLoader, path, sourceDir);
             }
             return FileVisitResult.CONTINUE;
           }
@@ -95,13 +86,14 @@ public class ConsoleMain {
       }
     } else {
       for (String fileName : cmdLine.getArgList()) {
-        processFile(Paths.get(fileName), sourceDir, outputDir);
+        processFile(moduleLoader, Paths.get(fileName), sourceDir);
       }
     }
   }
 
-  static private List<String> getNames(Path file) {
+  static private Module getModule(Path file) {
     int nameCount = file.getNameCount();
+    if (nameCount < 1) return null;
     List<String> names = new ArrayList<>(nameCount);
     for (int i = 0; i < nameCount; ++i) {
       String name = file.getName(i).toString();
@@ -116,79 +108,32 @@ public class ConsoleMain {
       }
       names.add(name);
     }
-    return names;
+    return new Module(names);
   }
 
-  static private ClassDefinition getModule(List<String> moduleNames) {
-    // TODO
-    return null;
-  }
-
-  static private void processFile(Path fileName, Path sourceDir, Path outputDir) {
-    Path relativePath = null;
-    String moduleName = null;
-    List<String> moduleNames = null;
-    Path outputFile = null;
-    if (sourceDir != null && fileName.startsWith(sourceDir)) {
-      relativePath = sourceDir.relativize(fileName);
-      moduleNames = getNames(relativePath);
-      if (moduleNames == null || moduleNames.size() == 0) {
-        relativePath = null;
-      } else {
-        moduleName = moduleNames.get(moduleNames.size() - 1);
-        if (outputDir != null) {
-          outputFile = outputDir;
-          for (int i = 0; i < moduleNames.size() - 1; ++i) {
-            outputFile = outputFile.resolve(moduleNames.get(i));
-          }
-          outputFile = outputFile.resolve(moduleName + ".vcc");
-        }
-      }
+  static private void processFile(ModuleLoader moduleLoader, Path fileName, File sourceDir) {
+    Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName.getFileName();
+    Module module = getModule(relativePath);
+    if (module == null) {
+      System.err.println(fileName + ": incorrect file name");
+      return;
     }
 
-    ANTLRInputStream input;
+    List<ModuleError> moduleErrors = new ArrayList<>(1);
+    List<ParserError> parserErrors = new ArrayList<>();
+    List<TypeCheckingError> errors = new ArrayList<>();
     try {
-      input = new ANTLRInputStream(new FileInputStream(fileName.toFile()));
+      moduleLoader.loadModule(module, moduleErrors, parserErrors, errors);
     } catch (IOException e) {
       System.err.println("I/O error: " + e.getMessage());
-      return;
     }
 
-    VcgrammarLexer lexer = new VcgrammarLexer(input);
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    VcgrammarParser parser = new VcgrammarParser(tokens);
-    BuildVisitor builder = new BuildVisitor();
-    final List<ParserError> parserErrors = builder.getErrors();
-    parser.removeErrorListeners();
-    parser.addErrorListener(new BaseErrorListener() {
-      @Override
-      public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        parserErrors.add(new ParserError(new Concrete.Position(line, pos), msg));
-      }
-    });
-
-    VcgrammarParser.DefsContext tree = parser.defs();
-    List<Concrete.Definition> defs = parserErrors.isEmpty() ? builder.visitDefs(tree) : null;
-    if (!parserErrors.isEmpty()) {
-      for (ParserError error : parserErrors) {
-        System.err.println(error);
-      }
-      return;
+    for (ModuleError error : moduleErrors) {
+      System.err.println(error);
     }
-
-    Map<String, Definition> context = Prelude.getDefinitions();
-    List<TypeCheckingError> errors = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(new Concrete.Position(0, 0), moduleName, new Universe.Type(), defs);
-    ClassDefinition typedClassDef = new DefinitionCheckTypeVisitor(getModule(moduleNames), context, errors).visitClass(classDef, new ArrayList<Binding>());
-
-    if (outputFile != null) {
-      try {
-        ModuleSerialization.writeFile(typedClassDef, outputDir);
-      } catch (IOException e) {
-        System.err.println("I/O error: " + e.getMessage());
-      }
+    for (ParserError error : parserErrors) {
+      System.err.println(error);
     }
-
     for (TypeCheckingError error : errors) {
       System.err.print((relativePath != null ? relativePath : fileName) + ": ");
       if (error.getExpression() instanceof Concrete.SourceNode) {
@@ -198,7 +143,7 @@ public class ConsoleMain {
       System.err.println(error);
     }
 
-    if (errors.isEmpty()) {
+    if (moduleErrors.isEmpty() && parserErrors.isEmpty() && errors.isEmpty()) {
       System.out.println("[OK] " + (relativePath != null ? relativePath : fileName));
     }
   }
