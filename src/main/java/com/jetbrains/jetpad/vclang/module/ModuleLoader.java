@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
+import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
@@ -11,8 +13,6 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.error.ParserError;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.antlr.v4.runtime.*;
 
 import java.io.File;
@@ -23,32 +23,36 @@ import java.util.List;
 import java.util.Map;
 
 public class ModuleLoader {
-  private final ClassDefinition myRoot = new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>());
-  private final List<Module> myLoadingModules = new ArrayList<>();
-  private final File mySourceDir;
-  private final File myOutputDir;
-  private final List<File> myLibDirs;
-  private final boolean myRecompile;
+  private final static ClassDefinition myRoot = new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>());
+  private final static List<Module> myLoadingModules = new ArrayList<>();
+  private static File mySourceDir;
+  private static File myOutputDir;
+  private static List<File> myLibDirs;
+  private static boolean myRecompile;
 
-  public ModuleLoader(File sourceDir, File outputDir, List<File> libDirs, boolean recompile) {
+  public static void init(File sourceDir, File outputDir, List<File> libDirs, boolean recompile) {
     mySourceDir = sourceDir;
     myOutputDir = outputDir;
     myLibDirs = libDirs;
     myRecompile = recompile;
   }
 
-  private ClassDefinition loadSource(ClassDefinition parent, String moduleName, File sourceFile, File outputFile, final List<ParserError> parserErrors, List<TypeCheckingError> errors) throws IOException {
+  private ModuleLoader() {}
+
+  private static ClassDefinition loadSource(ClassDefinition parent, String moduleName, File sourceFile, File outputFile, final List<VcError> errors) throws IOException {
     VcgrammarParser parser = new VcgrammarParser(new CommonTokenStream(new VcgrammarLexer(new ANTLRInputStream(new FileInputStream(sourceFile)))));
     parser.removeErrorListeners();
+    int errorsCount = errors.size();
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        parserErrors.add(new ParserError(new Concrete.Position(line, pos), msg));
+        errors.add(new ParserError(new Concrete.Position(line, pos), msg));
       }
     });
     VcgrammarParser.DefsContext tree = parser.defs();
-    List<Concrete.Definition> defs = parserErrors.isEmpty() ? new BuildVisitor().visitDefs(tree) : null;
-    if (!parserErrors.isEmpty()) return null;
+    if (errorsCount != errors.size()) return null;
+    List<Concrete.Definition> defs = new BuildVisitor(errors).visitDefs(tree);
+    if (errorsCount != errors.size()) return null;
 
     Map<String, Definition> context = Prelude.getDefinitions();
     Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(new Concrete.Position(0, 0), moduleName, new Universe.Type(), defs);
@@ -61,20 +65,20 @@ public class ModuleLoader {
     return result;
   }
 
-  private ClassDefinition loadCompiled(File file) {
+  private static ClassDefinition loadCompiled(File file) {
     return null;
   }
 
-  public ClassDefinition loadModule(Module module, List<ModuleError> moduleErrors, List<ParserError> parserErrors, List<TypeCheckingError> errors) throws IOException {
+  public static ClassDefinition loadModule(Module module, List<VcError> errors) {
     if (myLoadingModules.contains(module)) {
-      moduleErrors.add(new ModuleError(module, "modules dependencies form a cycle"));
+      errors.add(new ModuleError(module, "modules dependencies form a cycle"));
       return null;
     }
     myLoadingModules.add(module);
     Module parentModule = module.getParent();
     ClassDefinition parent = myRoot;
     if (parentModule != null) {
-      parent = loadModule(parentModule, moduleErrors, parserErrors, errors);
+      parent = loadModule(parentModule, errors);
       if (parent == null) return null;
     }
 
@@ -91,13 +95,18 @@ public class ModuleLoader {
         outputFile = module.getFile(libDir, ".vcc");
       }
       if (outputFile == null || !outputFile.exists()) {
-        moduleErrors.add(new ModuleError(module, "cannot find module"));
+        errors.add(new ModuleError(module, "cannot find module"));
         return null;
       }
       compile = false;
     }
 
-    ClassDefinition result = compile ? loadSource(parent, module.getName(), sourceFile, outputFile, parserErrors, errors) : loadCompiled(outputFile);
+    ClassDefinition result = null;
+    try {
+      result = compile ? loadSource(parent, module.getName(), sourceFile, outputFile, errors) : loadCompiled(outputFile);
+    } catch (IOException e) {
+      errors.add(new VcError(VcError.ioError(e)));
+    }
     myLoadingModules.remove(myLoadingModules.size() - 1);
     return result;
   }

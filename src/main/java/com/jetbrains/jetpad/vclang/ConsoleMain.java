@@ -1,11 +1,7 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.module.Module;
-import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.error.ParserError;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -62,7 +58,7 @@ public class ConsoleMain {
       libDirs.add(new File(workingPath, "lib"));
     }
 
-    final ModuleLoader moduleLoader = new ModuleLoader(sourceDir, outputDir, libDirs, recompile);
+    ModuleLoader.init(sourceDir, outputDir, libDirs, recompile);
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDir == null) return;
       try {
@@ -70,23 +66,23 @@ public class ConsoleMain {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
             if (path.getFileName().toString().endsWith(".vc")) {
-              processFile(moduleLoader, path, sourceDir);
+              processFile(path, sourceDir);
             }
             return FileVisitResult.CONTINUE;
           }
 
           @Override
           public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
-            System.err.println("I/O error: " + e.getMessage());
+            System.err.println(VcError.ioError(e));
             return FileVisitResult.CONTINUE;
           }
         });
       } catch (IOException e) {
-        System.err.println("I/O error: " + e.getMessage());
+        System.err.println(VcError.ioError(e));
       }
     } else {
       for (String fileName : cmdLine.getArgList()) {
-        processFile(moduleLoader, Paths.get(fileName), sourceDir);
+        processFile(Paths.get(fileName), sourceDir);
       }
     }
   }
@@ -111,7 +107,7 @@ public class ConsoleMain {
     return new Module(names);
   }
 
-  static private void processFile(ModuleLoader moduleLoader, Path fileName, File sourceDir) {
+  static private void processFile(Path fileName, File sourceDir) {
     Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName.getFileName();
     Module module = getModule(relativePath);
     if (module == null) {
@@ -119,31 +115,15 @@ public class ConsoleMain {
       return;
     }
 
-    List<ModuleError> moduleErrors = new ArrayList<>(1);
-    List<ParserError> parserErrors = new ArrayList<>();
-    List<TypeCheckingError> errors = new ArrayList<>();
-    try {
-      moduleLoader.loadModule(module, moduleErrors, parserErrors, errors);
-    } catch (IOException e) {
-      System.err.println("I/O error: " + e.getMessage());
-    }
+    List<VcError> errors = new ArrayList<>();
+    ModuleLoader.loadModule(module, errors);
 
-    for (ModuleError error : moduleErrors) {
-      System.err.println(error);
-    }
-    for (ParserError error : parserErrors) {
-      System.err.println(error);
-    }
-    for (TypeCheckingError error : errors) {
+    for (VcError error : errors) {
       System.err.print((relativePath != null ? relativePath : fileName) + ": ");
-      if (error.getExpression() instanceof Concrete.SourceNode) {
-        Concrete.Position position = ((Concrete.SourceNode) error.getExpression()).getPosition();
-        System.err.print(position.line + ":" + position.column + ": ");
-      }
       System.err.println(error);
     }
 
-    if (moduleErrors.isEmpty() && parserErrors.isEmpty() && errors.isEmpty()) {
+    if (errors.isEmpty()) {
       System.out.println("[OK] " + (relativePath != null ? relativePath : fileName));
     }
   }

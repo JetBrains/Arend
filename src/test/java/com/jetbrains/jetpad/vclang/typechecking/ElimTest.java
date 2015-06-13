@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -79,7 +79,7 @@ public class ElimTest {
     globalContext.put("P", pFunction);
     globalContext.put("con1", constructors.get(0));
     globalContext.put("con2", constructors.get(1));
-    List<TypeCheckingError> errors = new ArrayList<>();
+    List<VcError> errors = new ArrayList<>();
     Definition result = function.accept(new DefinitionCheckTypeVisitor(null, globalContext, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(result);

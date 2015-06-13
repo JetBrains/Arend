@@ -1,16 +1,17 @@
 package com.jetbrains.jetpad.vclang.module;
 
-public class ModuleError {
+import com.jetbrains.jetpad.vclang.VcError;
+
+public class ModuleError extends VcError {
   private final Module myModule;
-  private final String myMessage;
 
   public ModuleError(Module module, String message) {
+    super(message);
     myModule = module;
-    myMessage = message;
   }
 
   @Override
   public String toString() {
-    return myModule + ": " + myMessage;
+    return myModule + ": " + (getMessage() == null ? "Unknown error" : getMessage());
   }
 }

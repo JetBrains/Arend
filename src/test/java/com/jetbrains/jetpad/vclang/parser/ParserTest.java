@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -116,7 +116,7 @@ public class ParserTest {
     Definition mul = new FunctionDefinition("*", null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
     definitions.put("+", plus);
     definitions.put("*", mul);
-    List<TypeCheckingError> errors = new ArrayList<>();
+    List<VcError> errors = new ArrayList<>();
     CheckTypeVisitor.Result result = parseExpr("0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(definitions, new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, errors.size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
@@ -141,7 +141,7 @@ public class ParserTest {
     definitions.put("+", plus);
     definitions.put("*", mul);
 
-    List<TypeCheckingError> errors = new ArrayList<>();
+    List<VcError> errors = new ArrayList<>();
     parseExpr("11 + 2 * 3").accept(new CheckTypeVisitor(definitions, new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(1, errors.size());
   }

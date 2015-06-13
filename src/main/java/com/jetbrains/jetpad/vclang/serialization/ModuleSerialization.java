@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -36,7 +37,7 @@ public class ModuleSerialization {
     fileStream.close();
   }
 
-  static public ClassDefinition readFile(String className, ClassDefinition parentClass, Path file, ClassDefinition root, List<Definition> toLoad) throws IOException, IncorrectFormat {
+  static public ClassDefinition readFile(String className, ClassDefinition parentClass, Path file, ClassDefinition root, List<Definition> toLoad, List<VcError> errors) throws IOException, IncorrectFormat {
     DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file.toFile())));
     byte[] signature = new byte[4];
     stream.readFully(signature);
@@ -62,7 +63,7 @@ public class ModuleSerialization {
         throw new IncorrectFormat();
       }
       ClassDefinition classParent = (ClassDefinition) parent;
-      int fieldIndex = classParent.findField(name);
+      int fieldIndex = classParent.findField(name, errors);
       if (fieldIndex < 0) {
         Definition definition = newDefinition(code, name, classParent);
         definitionMap.put(index, definition);
@@ -72,7 +73,7 @@ public class ModuleSerialization {
       }
     }
 
-    return deserializeClassDefinition(className, parentClass, stream);
+    return deserializeClassDefinition(className, parentClass, stream, errors);
   }
 
   static public int getDefinitionCode(Definition definition) {
@@ -121,7 +122,7 @@ public class ModuleSerialization {
     }
   }
 
-  static private Definition deserializeDefinition(ClassDefinition parent, DataInputStream stream) throws IOException, IncorrectFormat {
+  static private Definition deserializeDefinition(ClassDefinition parent, DataInputStream stream, List<VcError> errors) throws IOException, IncorrectFormat {
     int code = stream.read();
     String name = stream.readUTF();
     if (code == 0) {
@@ -131,7 +132,7 @@ public class ModuleSerialization {
       return null;
     } else
     if (code == 2) {
-      deserializeClassDefinition(name, parent, stream);
+      deserializeClassDefinition(name, parent, stream, errors);
       return null;
     } else {
       throw new IncorrectFormat();
@@ -146,12 +147,12 @@ public class ModuleSerialization {
     }
   }
 
-  static private ClassDefinition deserializeClassDefinition(String name, ClassDefinition parent, DataInputStream stream) throws IOException, IncorrectFormat {
+  static private ClassDefinition deserializeClassDefinition(String name, ClassDefinition parent, DataInputStream stream, List<VcError> errors) throws IOException, IncorrectFormat {
     Universe universe = readUniverse(stream);
     int size = stream.readInt();
     List<Definition> fields = new ArrayList<>(size);
 
-    int fieldIndex = parent.findField(name);
+    int fieldIndex = parent.findField(name, errors);
     ClassDefinition result;
     if (fieldIndex < 0) {
       result = new ClassDefinition(name, parent, universe, fields);
@@ -167,7 +168,7 @@ public class ModuleSerialization {
     }
 
     for (int i = 0; i < size; ++i) {
-      fields.add(deserializeDefinition(result, stream));
+      fields.add(deserializeDefinition(result, stream, errors));
     }
     return result;
   }

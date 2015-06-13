@@ -1,17 +1,18 @@
 package com.jetbrains.jetpad.vclang.term.error;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TypeCheckingError {
-  private final String myMessage;
+public class TypeCheckingError extends VcError {
   private final Abstract.SourceNode myExpression;
   private final List<String> myNames;
 
   public TypeCheckingError(String message, Abstract.SourceNode expression, List<String> names) {
-    myMessage = message;
+    super(message);
     myExpression = expression;
     myNames = names;
   }
@@ -28,10 +29,6 @@ public class TypeCheckingError {
     return myExpression;
   }
 
-  public String getMessage() {
-    return myMessage;
-  }
-
   protected String prettyPrint(Abstract.PrettyPrintableSourceNode expression) {
     StringBuilder builder = new StringBuilder();
     expression.prettyPrint(builder, myNames, Abstract.Expression.PREC);
@@ -40,7 +37,15 @@ public class TypeCheckingError {
 
   @Override
   public String toString() {
-    String msg = myMessage == null ? "Type checking error" : myMessage;
+    String msg;
+    if (myExpression instanceof Concrete.SourceNode) {
+      Concrete.Position position = ((Concrete.SourceNode) myExpression).getPosition();
+      msg = position.line + ":" + position.column + ": ";
+    } else {
+      msg = "";
+    }
+
+    msg += getMessage() == null ? "Type checking error" : getMessage();
     if (myExpression instanceof Abstract.PrettyPrintableSourceNode) {
       return msg + " in " + prettyPrint((Abstract.PrettyPrintableSourceNode) myExpression);
     } else {

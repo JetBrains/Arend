@@ -1,10 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.VcError;
+import com.jetbrains.jetpad.vclang.module.Module;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
@@ -35,12 +39,23 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myFields.get(index);
   }
 
-  public int findField(String name) {
+  public int findField(String name, List<VcError> errors) {
     for (int i = 0; i < myFields.size(); ++i) {
       if (name.equals(myFields.get(i).getName())) {
         return i;
       }
     }
-    return -1;
+
+    List<String> module = new ArrayList<>();
+    getModule(module);
+    ClassDefinition result = ModuleLoader.loadModule(new Module(module), errors);
+    return result == null ? -1 : findField(name, errors);
+  }
+
+  private void getModule(List<String> module) {
+    if (getParent() != null) {
+      getParent().getModule(module);
+    }
+    module.add(getName());
   }
 }

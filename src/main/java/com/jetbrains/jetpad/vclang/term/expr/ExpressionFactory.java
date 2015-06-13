@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
@@ -160,7 +160,7 @@ public class ExpressionFactory {
     return new UniverseExpression(new Universe.Type(level, truncated));
   }
 
-  public static ErrorExpression Error(Expression expr, TypeCheckingError error) {
+  public static ErrorExpression Error(Expression expr, VcError error) {
     return new ErrorExpression(expr, error);
   }
 

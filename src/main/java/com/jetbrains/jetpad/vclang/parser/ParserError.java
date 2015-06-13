@@ -1,21 +1,21 @@
-package com.jetbrains.jetpad.vclang.term.error;
+package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
-public class ParserError {
+public class ParserError extends VcError {
   private final Concrete.Position myPosition;
-  private final String myMessage;
 
   public ParserError(Concrete.Position position, String message) {
+    super(message);
     myPosition = position;
-    myMessage = message;
   }
 
   @Override
   public String toString() {
     String msg = myPosition.line + ":" + myPosition.column + ": Parser error";
-    if (myMessage != null) {
-      msg += ": " + myMessage;
+    if (getMessage() != null) {
+      msg += ": " + getMessage();
     }
     return msg;
   }

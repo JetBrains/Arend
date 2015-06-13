@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import org.antlr.v4.runtime.*;
@@ -13,7 +13,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class ParserTestCase {
-  public static VcgrammarParser parse(String text, final List<ParserError> errors) {
+  public static VcgrammarParser parse(String text, final List<VcError> errors) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -29,23 +29,23 @@ public class ParserTestCase {
   }
 
   public static Concrete.Expression parseExpr(String text) {
-    BuildVisitor builder = new BuildVisitor();
-    Concrete.Expression result = builder.visitExpr(parse(text, builder.getErrors()).expr());
-    assertEquals(0, builder.getErrors().size());
+    List<VcError> errors = new ArrayList<>();
+    Concrete.Expression result = new BuildVisitor(errors).visitExpr(parse(text, errors).expr());
+    assertEquals(0, errors.size());
     return result;
   }
 
   public static Concrete.Definition parseDef(String text) {
-    BuildVisitor builder = new BuildVisitor();
-    Concrete.Definition result = builder.visitDef(parse(text, builder.getErrors()).def());
-    assertEquals(0, builder.getErrors().size());
+    List<VcError> errors = new ArrayList<>();
+    Concrete.Definition result = new BuildVisitor(errors).visitDef(parse(text, errors).def());
+    assertEquals(0, errors.size());
     return result;
   }
 
   public static List<Concrete.Definition> parseDefs(String text) {
-    BuildVisitor builder = new BuildVisitor();
-    List<Concrete.Definition> result = builder.visitDefs(parse(text, builder.getErrors()).defs());
-    assertEquals(0, builder.getErrors().size());
+    List<VcError> errors = new ArrayList<>();
+    List<Concrete.Definition> result = new BuildVisitor(errors).visitDefs(parse(text, errors).defs());
+    assertEquals(0, errors.size());
     return result;
   }
 

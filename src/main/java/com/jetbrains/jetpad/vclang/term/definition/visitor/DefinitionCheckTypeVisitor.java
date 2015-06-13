@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -26,9 +27,9 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<List<Binding>, Definition> {
   private final ClassDefinition myParent;
   private final Map<String, Definition> myGlobalContext;
-  private final List<TypeCheckingError> myErrors;
+  private final List<VcError> myErrors;
 
-  public DefinitionCheckTypeVisitor(ClassDefinition parent, Map<String, Definition> globalContext, List<TypeCheckingError> errors) {
+  public DefinitionCheckTypeVisitor(ClassDefinition parent, Map<String, Definition> globalContext, List<VcError> errors) {
     myParent = parent;
     myGlobalContext = globalContext;
     myErrors = errors;

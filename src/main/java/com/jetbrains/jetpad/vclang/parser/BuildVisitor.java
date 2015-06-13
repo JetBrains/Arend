@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.error.ParserError;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
@@ -14,10 +14,10 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
-  private final List<ParserError> myErrors = new ArrayList<>();
+  private final List<VcError> myErrors;
 
-  public List<ParserError> getErrors() {
-    return myErrors;
+  public BuildVisitor(List<VcError> errors) {
+    myErrors = errors;
   }
 
   private class ParserException extends RuntimeException {}

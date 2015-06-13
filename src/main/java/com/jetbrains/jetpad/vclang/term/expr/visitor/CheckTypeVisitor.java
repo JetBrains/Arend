@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -25,7 +26,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Map<String, Definition> myGlobalContext;
   private final List<Binding> myLocalContext;
-  private final List<TypeCheckingError> myErrors;
+  private final List<VcError> myErrors;
   private final Side mySide;
 
   private static class Arg {
@@ -67,7 +68,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public enum Side { LHS, RHS }
 
-  public CheckTypeVisitor(Map<String, Definition> globalContext, List<Binding> localContext, List<TypeCheckingError> errors, Side side) {
+  public CheckTypeVisitor(Map<String, Definition> globalContext, List<Binding> localContext, List<VcError> errors, Side side) {
     myGlobalContext = globalContext;
     myLocalContext = localContext;
     myErrors = errors;
@@ -1161,7 +1162,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression exprNorm = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
       if (exprNorm instanceof DefCallExpression && ((DefCallExpression) exprNorm).getDefinition() instanceof ClassDefinition) {
         ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) exprNorm).getDefinition();
-        int index = classDef.findField(expr.getName());
+        int index = classDef.findField(expr.getName(), myErrors);
         if (index >= 0) {
           return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef, index), classDef.getField(index).getType(), okExprResult.equations), expr);
         }
@@ -1171,7 +1172,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
       ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) type).getDefinition();
-      int index = classDef.findField(expr.getName());
+      int index = classDef.findField(expr.getName(), myErrors);
       if (index >= 0) {
         return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef, index), classDef.getField(index).getType(), okExprResult.equations), expr);
       }
