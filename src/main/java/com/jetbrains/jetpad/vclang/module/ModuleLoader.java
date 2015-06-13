@@ -30,6 +30,8 @@ public class ModuleLoader {
   private static List<File> myLibDirs;
   private static boolean myRecompile;
 
+  private ModuleLoader() {}
+
   public static void init(File sourceDir, File outputDir, List<File> libDirs, boolean recompile) {
     mySourceDir = sourceDir;
     myOutputDir = outputDir;
@@ -37,7 +39,9 @@ public class ModuleLoader {
     myRecompile = recompile;
   }
 
-  private ModuleLoader() {}
+  public static ClassDefinition rootModule() {
+    return myRoot;
+  }
 
   private static ClassDefinition loadSource(ClassDefinition parent, String moduleName, File sourceFile, File outputFile, final List<VcError> errors) throws IOException {
     VcgrammarParser parser = new VcgrammarParser(new CommonTokenStream(new VcgrammarLexer(new ANTLRInputStream(new FileInputStream(sourceFile)))));
@@ -75,12 +79,7 @@ public class ModuleLoader {
       return null;
     }
     myLoadingModules.add(module);
-    Module parentModule = module.getParent();
-    ClassDefinition parent = myRoot;
-    if (parentModule != null) {
-      parent = loadModule(parentModule, errors);
-      if (parent == null) return null;
-    }
+    ClassDefinition parent = module.getParent();
 
     File sourceFile = mySourceDir == null ? null : module.getFile(mySourceDir, ".vc");
     File outputFile = myOutputDir == null ? null : module.getFile(myOutputDir, ".vcc");

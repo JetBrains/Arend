@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVis
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
@@ -46,16 +45,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       }
     }
 
-    List<String> module = new ArrayList<>();
-    getModule(module);
-    ClassDefinition result = ModuleLoader.loadModule(new Module(module), errors);
+    ClassDefinition result = ModuleLoader.loadModule(new Module(this, name), errors);
     return result == null ? -1 : findField(name, errors);
-  }
-
-  private void getModule(List<String> module) {
-    if (getParent() != null) {
-      getParent().getModule(module);
-    }
-    module.add(getName());
   }
 }

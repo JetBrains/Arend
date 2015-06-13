@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -87,7 +88,7 @@ public class ConsoleMain {
     }
   }
 
-  static private Module getModule(Path file) {
+  static private List<String> getModule(Path file) {
     int nameCount = file.getNameCount();
     if (nameCount < 1) return null;
     List<String> names = new ArrayList<>(nameCount);
@@ -104,19 +105,25 @@ public class ConsoleMain {
       }
       names.add(name);
     }
-    return new Module(names);
+    return names;
   }
 
   static private void processFile(Path fileName, File sourceDir) {
     Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName.getFileName();
-    Module module = getModule(relativePath);
-    if (module == null) {
+    List<String> moduleNames = getModule(relativePath);
+    if (moduleNames == null) {
       System.err.println(fileName + ": incorrect file name");
       return;
     }
 
     List<VcError> errors = new ArrayList<>();
-    ModuleLoader.loadModule(module, errors);
+    ClassDefinition module = ModuleLoader.rootModule();
+    for (String name : moduleNames) {
+      module = ModuleLoader.loadModule(new Module(module, name), errors);
+      if (module == null) {
+        break;
+      }
+    }
 
     for (VcError error : errors) {
       System.err.print((relativePath != null ? relativePath : fileName) + ": ");
