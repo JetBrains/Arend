@@ -57,7 +57,9 @@ elimCase : '\\elim'                     # elim
 
 binOpLeft : atomFieldsAcc argument* infix;
 
-fieldAcc : '.' name;
+fieldAcc : '.' name                     # classField
+         | '.' NUMBER                   # sigmaField
+         ;
 
 infix : BIN_OP                          # infixBinOp
       | '`' name fieldAcc* '`'          # infixId

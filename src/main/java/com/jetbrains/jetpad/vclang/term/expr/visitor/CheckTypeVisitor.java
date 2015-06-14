@@ -490,15 +490,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    Definition def = myGlobalContext.get(expr.getDefinition().getName());
-    if (def == null) {
-      NotInScopeError error = new NotInScopeError(expr, expr.getDefinition().getName());
-      expr.setWellTyped(Error(null, error));
-      myErrors.add(error);
-      return null;
-    } else {
-      return checkResultImplicit(expectedType, new OKResult(DefCall(def), def.getType(), null), expr);
-    }
+    return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
   }
 
   @Override
@@ -912,6 +904,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new OKResult(Sigma(resultArguments), actualType, equations), expr);
   }
 
+  private Definition getDefinition(Abstract.Expression expr) {
+    String name;
+    if (expr instanceof Abstract.FieldAccExpression) {
+      name = ((Abstract.FieldAccExpression) expr).getName();
+    } else
+    if (expr instanceof Abstract.VarExpression) {
+      name = ((Abstract.VarExpression) expr).getName();
+    } else {
+      return null;
+    }
+    return myGlobalContext.get(name);
+  }
+
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
     if (expr.getOperators().size() == 0) {
@@ -919,10 +924,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     List<Definition> operators = new ArrayList<>(expr.getOperators().size());
-    for (Abstract.VarExpression operator : expr.getOperators()) {
-      Definition def = myGlobalContext.get(operator.getName());
+    for (Abstract.Expression operator : expr.getOperators()) {
+      Definition def = getDefinition(operator);
       if (def == null) {
-        myErrors.add(new NotInScopeError(expr, operator.getName()));
+        myErrors.add(new NotInScopeError(expr, "TODO")); // TODO
       } else {
         operators.add(def);
       }
@@ -939,7 +944,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Abstract.Expression resultExpr = expr.getArguments().get(expr.getArguments().size() - 1);
     for (int i = stack.size() - 1; i >= 0; --i) {
-      resultExpr = stack.get(i).varExpression.makeBinOp(stack.get(i).argument, stack.get(i).definition, resultExpr);
+      resultExpr = stack.get(i).expression.makeBinOp(stack.get(i).argument, stack.get(i).definition, resultExpr);
     }
     return resultExpr.accept(this, expectedType);
   }
@@ -947,12 +952,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private class StackElem {
     public Abstract.Expression argument;
     public Definition definition;
-    public Abstract.VarExpression varExpression;
+    public Abstract.Expression expression;
 
-    public StackElem(Abstract.Expression argument, Definition definition, Abstract.VarExpression varExpression) {
+    public StackElem(Abstract.Expression argument, Definition definition, Abstract.Expression expression) {
       this.argument = argument;
       this.definition = definition;
-      this.varExpression = varExpression;
+      this.expression = expression;
     }
   }
 
@@ -973,10 +978,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (!(prec.priority > prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.LEFT_ASSOC && prec2.associativity == Definition.Associativity.LEFT_ASSOC))) {
       String msg = "Precedence parsing error: cannot mix (" + topElem.definition.getName() + ") [" + prec + "] and (" + elem.definition.getName() + ") [" + prec2 + "] in the same infix expression";
-      myErrors.add(new TypeCheckingError(msg, elem.varExpression, null));
+      myErrors.add(new TypeCheckingError(msg, elem.expression, null));
     }
     stack.remove(stack.size() - 1);
-    pushOnStack(stack, new StackElem(topElem.varExpression.makeBinOp(topElem.argument, topElem.definition, elem.argument), elem.definition, elem.varExpression));
+    pushOnStack(stack, new StackElem(topElem.expression.makeBinOp(topElem.argument, topElem.definition, elem.argument), elem.definition, elem.expression));
   }
 
   @Override
@@ -1164,7 +1169,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) exprNorm).getDefinition();
         int index = classDef.findField(expr.getName(), myErrors);
         if (index >= 0) {
-          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef, index), classDef.getField(index).getType(), okExprResult.equations), expr);
+          return checkResult(expectedType, new OKResult(DefCall(classDef.getField(index)), classDef.getField(index).getType(), okExprResult.equations), expr);
         }
         notInScope = true;
       }
@@ -1174,31 +1179,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) type).getDefinition();
       int index = classDef.findField(expr.getName(), myErrors);
       if (index >= 0) {
-        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef, index), classDef.getField(index).getType(), okExprResult.equations), expr);
-      }
-      notInScope = true;
-    }
-
-    if (type instanceof SigmaExpression) {
-      if (expr.getName().startsWith("proj")) {
-        Integer Index = Integer.valueOf(expr.getName().substring(4));
-        if (Index != null) {
-          int index = Index - 1;
-          List<TypeArgument> splitArgs = new ArrayList<>();
-          splitArguments(((SigmaExpression) type).getArguments(), splitArgs);
-          if (index < 0 || index >= splitArgs.size()) {
-            TypeCheckingError error = new TypeCheckingError("Index " + (index + 1) + " out of range", expr, getNames(myLocalContext));
-            expr.setWellTyped(Error(null, error));
-            myErrors.add(error);
-            return null;
-          }
-
-          List<Expression> exprs = new ArrayList<>(index);
-          for (int i = index - 1; i >= 0; --i) {
-            exprs.add(FieldAcc(okExprResult.expression, null, i));
-          }
-          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, null, index), splitArgs.get(index).getType().subst(exprs, 0), okExprResult.equations), expr);
-        }
+        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index)), classDef.getField(index).getType(), okExprResult.equations), expr);
       }
       notInScope = true;
     }
@@ -1207,10 +1188,39 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (notInScope) {
       error = new NotInScopeError(expr, expr.getName());
     } else {
-      error = new TypeCheckingError("Expected a class or an expression of a class type", expr, getNames(myLocalContext));
+      error = new TypeCheckingError("Expected a class or an expression of a class type", expr.getExpression(), getNames(myLocalContext));
     }
     expr.setWellTyped(Error(null, error));
     myErrors.add(error);
     return null;
+  }
+
+  @Override
+  public Result visitProj(Abstract.ProjExpression expr, Expression expectedType) {
+    Result exprResult = expr.getExpression().accept(this, null);
+    if (!(exprResult instanceof OKResult)) return exprResult;
+    OKResult okExprResult = (OKResult) exprResult;
+    Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+    if (!(type instanceof SigmaExpression)) {
+      TypeCheckingError error = new TypeCheckingError("Expected an expression of a sigma type", expr, getNames(myLocalContext));
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+
+    List<TypeArgument> splitArgs = new ArrayList<>();
+    splitArguments(((SigmaExpression) type).getArguments(), splitArgs);
+    if (expr.getField() < 0 || expr.getField() >= splitArgs.size()) {
+      TypeCheckingError error = new TypeCheckingError("Index " + (expr.getField() + 1) + " out of range", expr, getNames(myLocalContext));
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+
+    List<Expression> exprs = new ArrayList<>(expr.getField());
+    for (int i = expr.getField() - 1; i >= 0; --i) {
+      exprs.add(Proj(okExprResult.expression, i));
+    }
+    return checkResult(expectedType, new OKResult(Proj(okExprResult.expression, expr.getField()), splitArgs.get(expr.getField()).getType().subst(exprs, 0), okExprResult.equations), expr);
   }
 }

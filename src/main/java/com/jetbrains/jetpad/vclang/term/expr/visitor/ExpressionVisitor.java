@@ -16,4 +16,5 @@ public interface ExpressionVisitor<T> {
   T visitSigma(SigmaExpression expr);
   T visitElim(ElimExpression expr);
   T visitFieldAcc(FieldAccExpression expr);
+  T visitProj(ProjExpression expr);
 }

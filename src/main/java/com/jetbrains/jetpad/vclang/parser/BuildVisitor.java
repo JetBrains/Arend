@@ -387,22 +387,30 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.PiExpression(tokenPosition(ctx.getStart()), visitTeles(ctx.tele()), visitExpr(ctx.expr()));
   }
 
-  @Override
-  public Concrete.Expression visitAtomFieldsAcc(AtomFieldsAccContext ctx) {
-    Concrete.Expression expr = visitExpr(ctx.atom());
-    for (FieldAccContext field : ctx.fieldAcc()) {
-      String name;
-      Abstract.Definition.Fixity fixity;
-      if (field.name() instanceof NameIdContext) {
-        name = ((NameIdContext) field.name()).ID().getText();
-        fixity = Abstract.Definition.Fixity.PREFIX;
+  private Concrete.Expression visitFieldsAcc(Concrete.Expression expr, List<FieldAccContext> fieldAccs) {
+    for (FieldAccContext field : fieldAccs) {
+      if (field instanceof ClassFieldContext) {
+        String name;
+        Abstract.Definition.Fixity fixity;
+        NameContext nameCtx = ((ClassFieldContext) field).name();
+        if (nameCtx instanceof NameIdContext) {
+          name = ((NameIdContext) nameCtx).ID().getText();
+          fixity = Abstract.Definition.Fixity.PREFIX;
+        } else {
+          name = ((NameBinOpContext) nameCtx).BIN_OP().getText();
+          fixity = Abstract.Definition.Fixity.INFIX;
+        }
+        expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name, fixity);
       } else {
-        name = ((NameBinOpContext) field.name()).BIN_OP().getText();
-        fixity = Abstract.Definition.Fixity.INFIX;
+        expr = new Concrete.ProjExpression(expr.getPosition(), expr, Integer.valueOf(((SigmaFieldContext) field).NUMBER().getText()) - 1);
       }
-      expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name, fixity);
     }
     return expr;
+  }
+
+  @Override
+  public Concrete.Expression visitAtomFieldsAcc(AtomFieldsAccContext ctx) {
+    return visitFieldsAcc(visitExpr(ctx.atom()), ctx.fieldAcc());
   }
 
   private Concrete.Expression visitAtoms(Concrete.Expression expr, List<ArgumentContext> arguments) {
@@ -426,13 +434,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     List<Concrete.Expression> arguments = new ArrayList<>(ctx.binOpLeft().size() + 1);
-    List<Concrete.VarExpression> operators = new ArrayList<>(ctx.binOpLeft().size());
+    List<Concrete.Expression> operators = new ArrayList<>(ctx.binOpLeft().size());
 
     for (BinOpLeftContext leftContext : ctx.binOpLeft()) {
       if (leftContext.infix() instanceof InfixBinOpContext) {
         operators.add(new Concrete.VarExpression(tokenPosition(((InfixBinOpContext) leftContext.infix()).BIN_OP().getSymbol()), ((InfixBinOpContext) leftContext.infix()).BIN_OP().getText()));
       } else {
-        operators.add(new Concrete.VarExpression(tokenPosition(((InfixIdContext) leftContext.infix()).name().getStart()), ((NameIdContext) ((InfixIdContext) leftContext.infix()).name()).ID().getText()));
+        InfixIdContext infixId = (InfixIdContext) leftContext.infix();
+        operators.add(visitFieldsAcc(new Concrete.VarExpression(tokenPosition(infixId.name().getStart()), ((NameIdContext) infixId.name()).ID().getText()), infixId.fieldAcc()));
       }
       arguments.add(visitAtoms(visitAtomFieldsAcc(leftContext.atomFieldsAcc()), leftContext.argument()));
     }

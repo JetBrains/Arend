@@ -139,6 +139,12 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitFieldAcc(FieldAccExpression expr) {
     Expression expr1 = expr.getExpression().accept(this);
-    return expr1 == null ? null : FieldAcc(expr1, expr.getClassDefinition(), expr.getIndex());
+    return expr1 == null ? null : FieldAcc(expr1, expr.getField());
+  }
+
+  @Override
+  public Expression visitProj(ProjExpression expr) {
+    Expression expr1 = expr.getExpression().accept(this);
+    return expr1 == null ? null : Proj(expr1, expr.getField());
   }
 }

@@ -1,15 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-public class FieldAccExpression extends Expression implements Abstract.FieldAccExpression {
+public class ProjExpression extends Expression implements Abstract.ProjExpression {
   private final Expression myExpression;
-  private final Definition myField;
+  private final int myField;
 
-  public FieldAccExpression(Expression expression, Definition field) {
+  public ProjExpression(Expression expression, int field) {
     myExpression = expression;
     myField = field;
   }
@@ -20,27 +19,17 @@ public class FieldAccExpression extends Expression implements Abstract.FieldAccE
   }
 
   @Override
-  public String getName() {
-    return myField.getName();
-  }
-
-  @Override
-  public Abstract.Definition.Fixity getFixity() {
-    return myField.getFixity();
-  }
-
-  @Override
-  public Definition getField() {
+  public int getField() {
     return myField;
   }
 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitFieldAcc(this);
+    return visitor.visitProj(this);
   }
 
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitFieldAcc(this, params);
+    return visitor.visitProj(this, params);
   }
 }

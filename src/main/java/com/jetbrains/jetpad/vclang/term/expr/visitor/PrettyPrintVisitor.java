@@ -255,6 +255,15 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  @Override
+  public Void visitProj(Abstract.ProjExpression expr, Byte prec) {
+    if (prec > Abstract.ProjExpression.PREC) myBuilder.append('(');
+    expr.getExpression().accept(this, Abstract.ProjExpression.PREC);
+    myBuilder.append('.').append(expr.getField());
+    if (prec > Abstract.ProjExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
   public static void printIndent(StringBuilder builder, int indent) {
     for (int i = 0; i < indent; ++i) {
       builder.append("    ");

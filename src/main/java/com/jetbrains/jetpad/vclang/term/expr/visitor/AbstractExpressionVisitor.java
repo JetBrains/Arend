@@ -17,4 +17,5 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitBinOp(Abstract.BinOpExpression expr, P params);
   R visitElim(Abstract.ElimExpression expr, P params);
   R visitFieldAcc(Abstract.FieldAccExpression expr, P params);
+  R visitProj(Abstract.ProjExpression expr, P params);
 }

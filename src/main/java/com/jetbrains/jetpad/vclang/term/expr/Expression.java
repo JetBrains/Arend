@@ -23,6 +23,11 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   public void setWellTyped(Expression wellTyped) {}
 
   @Override
+  public Abstract.Expression makeBinOp(Abstract.Expression left, Definition operator, Abstract.Expression right) {
+    return Apps(DefCall(operator), (Expression) left, (Expression) right);
+  }
+
+  @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
     accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);

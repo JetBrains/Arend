@@ -136,6 +136,11 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitFieldAcc(FieldAccExpression expr) {
-    return FieldAcc(expr.getExpression().accept(this), expr.getClassDefinition(), expr.getIndex());
+    return FieldAcc(expr.getExpression().accept(this), expr.getField());
+  }
+
+  @Override
+  public Expression visitProj(ProjExpression expr) {
+    return Proj(expr.getExpression().accept(this), expr.getField());
   }
 }

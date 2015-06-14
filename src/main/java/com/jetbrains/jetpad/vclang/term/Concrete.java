@@ -47,6 +47,12 @@ public final class Concrete {
     }
 
     @Override
+    public Expression makeBinOp(Abstract.Expression left, com.jetbrains.jetpad.vclang.term.definition.Definition operator, Abstract.Expression right) {
+      Expression leftCon = (Expression) left;
+      return new AppExpression(leftCon.getPosition(), new AppExpression(leftCon.getPosition(), new DefCallExpression(getPosition(), operator), new ArgumentExpression(leftCon, true, false)), new ArgumentExpression((Expression) right, true, false));
+    }
+
+    @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
       accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
@@ -189,9 +195,9 @@ public final class Concrete {
 
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
     private final List<Expression> myArguments;
-    private final List<VarExpression> myOperators;
+    private final List<Expression> myOperators;
 
-    public BinOpExpression(List<Expression> arguments, List<VarExpression> operators) {
+    public BinOpExpression(List<Expression> arguments, List<Expression> operators) {
       super(arguments.get(0).getPosition());
       myArguments = arguments;
       myOperators = operators;
@@ -203,7 +209,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<VarExpression> getOperators() {
+    public List<Expression> getOperators() {
       return myOperators;
     }
 
@@ -214,15 +220,15 @@ public final class Concrete {
   }
 
   public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
-    private final Abstract.Definition myDefinition;
+    private final com.jetbrains.jetpad.vclang.term.definition.Definition myDefinition;
 
-    public DefCallExpression(Position position, Abstract.Definition definition) {
+    public DefCallExpression(Position position, com.jetbrains.jetpad.vclang.term.definition.Definition definition) {
       super(position);
       myDefinition = definition;
     }
 
     @Override
-    public Abstract.Definition getDefinition() {
+    public com.jetbrains.jetpad.vclang.term.definition.Definition getDefinition() {
       return myDefinition;
     }
 
@@ -397,12 +403,6 @@ public final class Concrete {
     }
 
     @Override
-    public Expression makeBinOp(Abstract.Expression left, com.jetbrains.jetpad.vclang.term.definition.Definition operator, Abstract.Expression right) {
-      Expression leftCon = (Expression) left;
-      return new AppExpression(leftCon.getPosition(), new AppExpression(leftCon.getPosition(), new DefCallExpression(getPosition(), operator), new ArgumentExpression(leftCon, true, false)), new ArgumentExpression((Expression) right, true, false));
-    }
-
-    @Override
     public String getName() {
       return myName;
     }
@@ -441,18 +441,39 @@ public final class Concrete {
     }
 
     @Override
-    public Definition getDefinition() {
+    public Definition getField() {
       return null;
-    }
-
-    @Override
-    public int getIndex() {
-      return -1;
     }
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitFieldAcc(this, params);
+    }
+  }
+
+  public static class ProjExpression extends Expression implements Abstract.ProjExpression {
+    private final Expression myExpression;
+    private final int myField;
+
+    public ProjExpression(Position position, Expression expression, int field) {
+      super(position);
+      myExpression = expression;
+      myField = field;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public int getField() {
+      return myField;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitProj(this, params);
     }
   }
 

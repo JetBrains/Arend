@@ -17,6 +17,7 @@ public final class Abstract {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
     void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
+    Expression makeBinOp(Expression left, com.jetbrains.jetpad.vclang.term.definition.Definition operator, Expression right);
   }
 
   public interface Argument extends PrettyPrintableSourceNode {
@@ -59,7 +60,7 @@ public final class Abstract {
 
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
-    Definition getDefinition();
+    com.jetbrains.jetpad.vclang.term.definition.Definition getDefinition();
   }
 
   public interface IndexExpression extends Expression {
@@ -96,7 +97,7 @@ public final class Abstract {
   public interface BinOpExpression extends Expression {
     byte PREC = 0;
     List<? extends Expression> getArguments();
-    List<? extends VarExpression> getOperators();
+    List<? extends Expression> getOperators();
   }
 
   public interface UniverseExpression extends Expression {
@@ -107,7 +108,6 @@ public final class Abstract {
   public interface VarExpression extends Expression {
     byte PREC = 12;
     String getName();
-    Expression makeBinOp(Expression left, com.jetbrains.jetpad.vclang.term.definition.Definition operator, Expression right);
   }
 
   public interface InferHoleExpression extends Expression {
@@ -134,8 +134,13 @@ public final class Abstract {
     Expression getExpression();
     String getName();
     Definition.Fixity getFixity();
-    Definition getDefinition();
-    int getIndex();
+    Definition getField();
+  }
+
+  public interface ProjExpression extends Expression {
+    byte PREC = 12;
+    Expression getExpression();
+    int getField();
   }
 
   public interface Clause extends PrettyPrintableSourceNode {

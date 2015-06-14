@@ -181,7 +181,19 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     myStream.write(12);
     expr.getExpression().accept(this);
     try {
-      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getDefinition()));
+      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getField()));
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitProj(ProjExpression expr) {
+    myStream.write(13);
+    expr.getExpression().accept(this);
+    try {
+      myDataStream.writeInt(expr.getField());
     } catch (IOException e) {
       throw new IllegalStateException();
     }

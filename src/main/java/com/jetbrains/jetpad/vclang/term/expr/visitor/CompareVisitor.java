@@ -102,10 +102,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     myEquations = equations;
   }
 
-  public List<Equation> equations() {
-    return myEquations;
-  }
-
   private CMP and(CMP cmp1, CMP cmp2) {
     if (cmp2 == CMP.NOT_EQUIV) return CMP.NOT_EQUIV;
     switch (cmp1) {
@@ -429,8 +425,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     CMP cmp = CMP.EQUALS;
     MaybeResult maybeResult = null;
     for (int i = 0; i < otherTuple.getFields().size(); ++i) {
-      if (otherTuple.getField(i) instanceof FieldAccExpression && ((FieldAccExpression) otherTuple.getField(i)).getIndex() == i) {
-        Result result = expr.accept(visitor, ((FieldAccExpression) otherTuple.getField(i)).getExpression());
+      if (otherTuple.getField(i) instanceof ProjExpression && ((ProjExpression) otherTuple.getField(i)).getField() == i) {
+        Result result = expr.accept(visitor, ((ProjExpression) otherTuple.getField(i)).getExpression());
         if (result.isOK() == CMP.NOT_EQUIV) {
           if (result instanceof MaybeResult) {
             if (maybeResult == null) {
@@ -460,8 +456,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       CMP cmp = CMP.EQUALS;
       MaybeResult maybeResult = null;
       for (int i = 0; i < expr.getFields().size(); ++i) {
-        if (expr.getField(i) instanceof Abstract.FieldAccExpression && ((Abstract.FieldAccExpression) expr.getField(i)).getIndex() == i) {
-          Result result = ((Abstract.FieldAccExpression) expr.getField(i)).getExpression().accept(this, other);
+        if (expr.getField(i) instanceof Abstract.ProjExpression && ((Abstract.ProjExpression) expr.getField(i)).getField() == i) {
+          Result result = ((Abstract.ProjExpression) expr.getField(i)).getExpression().accept(this, other);
           if (result.isOK() == CMP.NOT_EQUIV) {
             if (result instanceof MaybeResult) {
               if (maybeResult == null) {
@@ -577,7 +573,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (!(otherApp2.getFunction() instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
     DefCallExpression otherDefCall = (DefCallExpression) otherApp2.getFunction();
 
-    if (!expr.getBinOp().equals(otherDefCall.getDefinition())) return new JustResult(CMP.NOT_EQUIV);
+    if (!expr.getBinOp().equals(otherDefCall.getField())) return new JustResult(CMP.NOT_EQUIV);
     Result result = expr.getLeft().getExpression().accept(this, otherApp2.getArgument().getExpression());
     if (result.isOK() == CMP.NOT_EQUIV) return result;
     Result result1 = expr.getRight().getExpression().accept(this, otherApp1.getArgument().getExpression());
@@ -599,17 +595,28 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (!(other instanceof FieldAccExpression)) return new JustResult(CMP.NOT_EQUIV);
 
     FieldAccExpression otherFieldAcc = (FieldAccExpression) other;
-    Result result = expr.getExpression().accept(this, otherFieldAcc.getExpression());
-    if (result.isOK() == CMP.NOT_EQUIV) return result;
-    if (expr.getDefinition() != null) {
-      if (!expr.getDefinition().equals(otherFieldAcc.getDefinition())) return new JustResult(CMP.NOT_EQUIV);
-    } else
-    if (expr.getIndex() != -1) {
-      if (expr.getIndex() != otherFieldAcc.getIndex()) return new JustResult(CMP.NOT_EQUIV);
-    } else {
+    if (expr.getField() == null) {
       if (!expr.getName().equals(otherFieldAcc.getName())) return new JustResult(CMP.NOT_EQUIV);
+    } else {
+      if (expr.getField() != otherFieldAcc.getField()) return new JustResult(CMP.NOT_EQUIV);
     }
-    return result;
+    return expr.getExpression().accept(this, otherFieldAcc.getExpression());
+  }
+
+  @Override
+  public Result visitProj(Abstract.ProjExpression expr, Expression other) {
+    if (expr == other) return new JustResult(CMP.EQUALS);
+    Result pathResult = checkPath(expr, other);
+    if (pathResult != null) return pathResult;
+    Result tupleResult = checkTuple(expr, other);
+    if (tupleResult != null) return tupleResult;
+    Result lamResult = checkLam(expr, other);
+    if (lamResult != null) return lamResult;
+    if (!(other instanceof ProjExpression)) return new JustResult(CMP.NOT_EQUIV);
+
+    ProjExpression otherProj = (ProjExpression) other;
+    if (expr.getField() != otherProj.getField()) return new JustResult(CMP.NOT_EQUIV);
+    return expr.getExpression().accept(this, otherProj.getExpression());
   }
 
   @Override

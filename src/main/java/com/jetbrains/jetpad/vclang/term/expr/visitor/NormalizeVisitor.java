@@ -20,6 +20,8 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class NormalizeVisitor implements ExpressionVisitor<Expression> {
+  public enum Mode { WHNF, NF, TOP }
+
   private final Mode myMode;
 
   public NormalizeVisitor(Mode mode) {
@@ -323,18 +325,17 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitFieldAcc(FieldAccExpression expr) {
-    Expression exprNorm = expr.getExpression().normalize(Mode.WHNF);
-    if (exprNorm instanceof TupleExpression) {
-      Expression result = ((TupleExpression) exprNorm).getField(expr.getIndex());
-      return myMode == Mode.TOP ? result : result.accept(this);
-    }
-
-    if (expr.getDefinition() == null) {
-      return myMode == Mode.TOP ? null : myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getClassDefinition(), expr.getIndex()) : expr;
-    } else {
-      return visitDefCall(expr.getDefinition(), myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getClassDefinition(), expr.getIndex()) : expr, new ArrayList<ArgumentExpression>());
-    }
+    return myMode == Mode.TOP ? null : myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getField()) : expr;
   }
 
-  public enum Mode { WHNF, NF, TOP }
+  @Override
+  public Expression visitProj(ProjExpression expr) {
+    Expression exprNorm = expr.getExpression().normalize(Mode.WHNF);
+    if (exprNorm instanceof TupleExpression) {
+      Expression result = ((TupleExpression) exprNorm).getField(expr.getField());
+      return myMode == Mode.TOP ? result : result.accept(this);
+    } else {
+      return myMode == Mode.TOP ? null : myMode == Mode.NF ? Proj(expr.getExpression().accept(this), expr.getField()) : expr;
+    }
+  }
 }
