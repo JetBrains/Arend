@@ -128,11 +128,6 @@ public final class Concrete {
     public List<String> getNames() {
       return myNames;
     }
-
-    @Override
-    public String getName(int index) {
-      return myNames.get(index);
-    }
   }
 
   public static class ArgumentExpression implements Abstract.ArgumentExpression {
@@ -281,11 +276,6 @@ public final class Concrete {
     }
 
     @Override
-    public Argument getArgument(int index) {
-      return myArguments.get(index);
-    }
-
-    @Override
     public Expression getBody() {
       return myBody;
     }
@@ -309,11 +299,6 @@ public final class Concrete {
     @Override
     public List<TypeArgument> getArguments() {
       return myArguments;
-    }
-
-    @Override
-    public TypeArgument getArgument(int index) {
-      return myArguments.get(index);
     }
 
     @Override
@@ -341,11 +326,6 @@ public final class Concrete {
     }
 
     @Override
-    public TypeArgument getArgument(int index) {
-      return myArguments.get(index);
-    }
-
-    @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitSigma(this, params);
     }
@@ -362,11 +342,6 @@ public final class Concrete {
     @Override
     public List<Expression> getFields() {
       return myFields;
-    }
-
-    @Override
-    public Expression getField(int index) {
-      return myFields.get(index);
     }
 
     @Override
@@ -507,11 +482,6 @@ public final class Concrete {
     }
 
     @Override
-    public Clause getClause(int index) {
-      return myClauses.get(index);
-    }
-
-    @Override
     public Clause getOtherwise() {
       return myOtherwise;
     }
@@ -550,11 +520,6 @@ public final class Concrete {
     @Override
     public List<Argument> getArguments() {
       return myArguments;
-    }
-
-    @Override
-    public Argument getArgument(int index) {
-      return myArguments.get(index);
     }
 
     @Override
@@ -656,11 +621,6 @@ public final class Concrete {
     }
 
     @Override
-    public TelescopeArgument getArgument(int index) {
-      return myArguments.get(index);
-    }
-
-    @Override
     public Expression getResultType() {
       return myResultType;
     }
@@ -687,18 +647,8 @@ public final class Concrete {
     }
 
     @Override
-    public TypeArgument getParameter(int index) {
-      return myParameters.get(index);
-    }
-
-    @Override
     public List<Constructor> getConstructors() {
       return myConstructors;
-    }
-
-    @Override
-    public Constructor getConstructor(int index) {
-      return myConstructors.get(index);
     }
 
     @Override
@@ -724,11 +674,6 @@ public final class Concrete {
     public List<Definition> getFields() {
       return myFields;
     }
-
-    @Override
-    public Definition getField(int index) {
-      return myFields.get(index);
-    }
   }
 
   public static class Constructor extends Definition implements Abstract.Constructor {
@@ -744,11 +689,6 @@ public final class Concrete {
     @Override
     public List<? extends Abstract.TypeArgument> getArguments() {
       return myArguments;
-    }
-
-    @Override
-    public Abstract.TypeArgument getArgument(int index) {
-      return myArguments.get(index);
     }
 
     @Override

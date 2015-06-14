@@ -128,8 +128,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitPi(Abstract.PiExpression expr, Byte prec) {
     if (prec > Abstract.PiExpression.PREC) myBuilder.append('(');
     byte domPrec = (byte) (expr.getArguments().size() > 1 ? Abstract.AppExpression.PREC + 1 : Abstract.PiExpression.PREC + 1);
-    if (expr.getArguments().size() == 1 && !(expr.getArgument(0) instanceof Abstract.TelescopeArgument)) {
-      expr.getArgument(0).getType().accept(this, (byte) (Abstract.PiExpression.PREC + 1));
+    if (expr.getArguments().size() == 1 && !(expr.getArguments().get(0) instanceof Abstract.TelescopeArgument)) {
+      expr.getArguments().get(0).getType().accept(this, (byte) (Abstract.PiExpression.PREC + 1));
       myBuilder.append(' ');
       myNames.add(null);
     } else {
@@ -178,7 +178,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitTuple(Abstract.TupleExpression expr, Byte prec) {
     myBuilder.append('(');
     for (int i = 0; i < expr.getFields().size(); ++i) {
-      expr.getField(i).accept(this, Abstract.Expression.PREC);
+      expr.getFields().get(i).accept(this, Abstract.Expression.PREC);
       if (i < expr.getFields().size() - 1) {
         myBuilder.append(", ");
       }

@@ -81,14 +81,14 @@ public class ParserTest {
   public void parserImplicit() {
     Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} : Nat x y z w t r => Nat");
     assertEquals(4, def.getArguments().size());
-    assertTrue(def.getArgument(0).getExplicit());
-    assertFalse(def.getArgument(1).getExplicit());
-    assertTrue(def.getArgument(2).getExplicit());
-    assertFalse(def.getArgument(3).getExplicit());
-    assertTrue(compare(Var("Nat"), def.getArgument(0).getType()));
-    assertTrue(compare(Var("Nat"), def.getArgument(1).getType()));
-    assertTrue(compare(Var("Nat"), def.getArgument(2).getType()));
-    assertTrue(compare(Var("Nat"), def.getArgument(3).getType()));
+    assertTrue(def.getArguments().get(0).getExplicit());
+    assertFalse(def.getArguments().get(1).getExplicit());
+    assertTrue(def.getArguments().get(2).getExplicit());
+    assertFalse(def.getArguments().get(3).getExplicit());
+    assertTrue(compare(Var("Nat"), def.getArguments().get(0).getType()));
+    assertTrue(compare(Var("Nat"), def.getArguments().get(1).getType()));
+    assertTrue(compare(Var("Nat"), def.getArguments().get(2).getType()));
+    assertTrue(compare(Var("Nat"), def.getArguments().get(3).getType()));
     assertTrue(compare(Apps(Var("Nat"), Var("x"), Var("y"), Var("z"), Var("w"), Var("t"), Var("r")), def.getResultType()));
   }
 
@@ -96,14 +96,14 @@ public class ParserTest {
   public void parserImplicit2() {
     Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f {x : Nat} (_ : Nat) {y z : Nat} (_ : Nat x y z) : Nat => Nat");
     assertEquals(4, def.getArguments().size());
-    assertFalse(def.getArgument(0).getExplicit());
-    assertTrue(def.getArgument(1).getExplicit());
-    assertFalse(def.getArgument(2).getExplicit());
-    assertTrue(def.getArgument(3).getExplicit());
-    assertTrue(compare(Var("Nat"), def.getArgument(0).getType()));
-    assertTrue(compare(Var("Nat"), def.getArgument(1).getType()));
-    assertTrue(compare(Var("Nat"), def.getArgument(2).getType()));
-    assertTrue(compare(Apps(Var("Nat"), Var("x"), Var("y"), Var("z")), def.getArgument(3).getType()));
+    assertFalse(def.getArguments().get(0).getExplicit());
+    assertTrue(def.getArguments().get(1).getExplicit());
+    assertFalse(def.getArguments().get(2).getExplicit());
+    assertTrue(def.getArguments().get(3).getExplicit());
+    assertTrue(compare(Var("Nat"), def.getArguments().get(0).getType()));
+    assertTrue(compare(Var("Nat"), def.getArguments().get(1).getType()));
+    assertTrue(compare(Var("Nat"), def.getArguments().get(2).getType()));
+    assertTrue(compare(Apps(Var("Nat"), Var("x"), Var("y"), Var("z")), def.getArguments().get(3).getType()));
     assertTrue(compare(Var("Nat"), def.getResultType()));
   }
 

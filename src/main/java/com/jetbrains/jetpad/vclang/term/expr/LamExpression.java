@@ -22,11 +22,6 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
   }
 
   @Override
-  public Argument getArgument(int index) {
-    return myArguments.get(index);
-  }
-
-  @Override
   public Expression getBody() {
     return myBody;
   }

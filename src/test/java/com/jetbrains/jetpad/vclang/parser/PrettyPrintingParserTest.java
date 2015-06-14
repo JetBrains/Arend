@@ -33,7 +33,7 @@ public class PrettyPrintingParserTest {
     Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(builder.toString());
     assertEquals(expected.getArguments().size(), result.getArguments().size());
     for (int i = 0; i < expected.getArguments().size(); ++i) {
-      assertTrue(compare(expected.getArgument(i).getType(), result.getArgument(i).getType()));
+      assertTrue(compare(expected.getArguments().get(i).getType(), result.getArguments().get(i).getType()));
     }
     assertTrue(compare(expected.getResultType(), result.getResultType()));
     assertNotNull(result.getTerm());

@@ -28,11 +28,6 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
   }
 
   @Override
-  public TypeArgument getArgument(int index) {
-    return myArguments.get(index);
-  }
-
-  @Override
   public Expression getCodomain() {
     return myCodomain;
   }

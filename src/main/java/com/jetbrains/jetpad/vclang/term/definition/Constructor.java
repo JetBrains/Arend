@@ -30,11 +30,6 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public TypeArgument getArgument(int index) {
-    return myArguments.get(index);
-  }
-
-  @Override
   public DataDefinition getDataType() {
     return myDataType;
   }
@@ -52,12 +47,12 @@ public class Constructor extends Definition implements Abstract.Constructor {
     Expression resultType = DefCall(myDataType);
     int numberOfVars = numberOfVariables(myArguments);
     for (int i = numberOfVariables(myDataType.getParameters()) - 1, j = 0; i >= 0; ++j) {
-      if (myDataType.getParameter(j) instanceof TelescopeArgument) {
-        for (String ignored : ((TelescopeArgument) myDataType.getParameter(j)).getNames()) {
-          resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameter(j).getExplicit(), !myDataType.getParameter(j).getExplicit()));
+      if (myDataType.getParameters().get(j) instanceof TelescopeArgument) {
+        for (String ignored : ((TelescopeArgument) myDataType.getParameters().get(j)).getNames()) {
+          resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameters().get(j).getExplicit(), !myDataType.getParameters().get(j).getExplicit()));
         }
       } else {
-        resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameter(j).getExplicit(), !myDataType.getParameter(j).getExplicit()));
+        resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameters().get(j).getExplicit(), !myDataType.getParameters().get(j).getExplicit()));
       }
     }
     return myArguments.isEmpty() ? resultType : Pi(myArguments, resultType);

@@ -332,7 +332,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   public Expression visitProj(ProjExpression expr) {
     Expression exprNorm = expr.getExpression().normalize(Mode.WHNF);
     if (exprNorm instanceof TupleExpression) {
-      Expression result = ((TupleExpression) exprNorm).getField(expr.getField());
+      Expression result = ((TupleExpression) exprNorm).getFields().get(expr.getField());
       return myMode == Mode.TOP ? result : result.accept(this);
     } else {
       return myMode == Mode.TOP ? null : myMode == Mode.NF ? Proj(expr.getExpression().accept(this), expr.getField()) : expr;

@@ -320,10 +320,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       PiExpression piType = (PiExpression) ((OKResult) argResult).type;
 
       List<TypeArgument> arguments = new ArrayList<>(piType.getArguments().size());
-      if (piType.getArgument(0) instanceof TelescopeArgument) {
-        List<String> names = ((TelescopeArgument) piType.getArgument(0)).getNames();
+      if (piType.getArguments().get(0) instanceof TelescopeArgument) {
+        List<String> names = ((TelescopeArgument) piType.getArguments().get(0)).getNames();
         if (names.size() > 1) {
-          arguments.add(Tele(piType.getArgument(0).getExplicit(), names.subList(1, names.size()), piType.getArgument(0).getType()));
+          arguments.add(Tele(piType.getArguments().get(0).getExplicit(), names.subList(1, names.size()), piType.getArguments().get(0).getType()));
         }
       }
       if (piType.getArguments().size() > 1) {
@@ -659,7 +659,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int numberOfVars = 0;
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     for (int i = 0; i < domainResults.length; ++i) {
-      Result result = typeCheck(expr.getArgument(i).getType(), Universe());
+      Result result = typeCheck(expr.getArguments().get(i).getType(), Universe());
       if (!(result instanceof OKResult)) return result;
       domainResults[i] = (OKResult) result;
       if (domainResults[i].equations != null) {
@@ -670,8 +670,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           }
         }
       }
-      if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
-        List<String> names = ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames();
+      if (expr.getArguments().get(i) instanceof Abstract.TelescopeArgument) {
+        List<String> names = ((Abstract.TelescopeArgument) expr.getArguments().get(i)).getNames();
         for (int j = 0; j < names.size(); ++j) {
           myLocalContext.add(new TypedBinding(names.get(j), domainResults[i].expression.liftIndex(0, j)));
           ++numberOfVars;
@@ -724,10 +724,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<TypeArgument> resultArguments = new ArrayList<>(domainResults.length);
     for (int i = 0; i < domainResults.length; ++i) {
-      if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
-        resultArguments.add(new TelescopeArgument(expr.getArgument(i).getExplicit(), ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames(), domainResults[i].expression));
+      if (expr.getArguments().get(i) instanceof Abstract.TelescopeArgument) {
+        resultArguments.add(new TelescopeArgument(expr.getArguments().get(i).getExplicit(), ((Abstract.TelescopeArgument) expr.getArguments().get(i)).getNames(), domainResults[i].expression));
       } else {
-        resultArguments.add(new TypeArgument(expr.getArgument(i).getExplicit(), domainResults[i].expression));
+        resultArguments.add(new TypeArgument(expr.getArguments().get(i).getExplicit(), domainResults[i].expression));
       }
     }
     return checkResult(expectedType, new OKResult(Pi(resultArguments, okCodomainResult.expression), actualType, equations), expr);
@@ -809,7 +809,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           }
 
           Expression expType = sigmaArgs.get(i).getType().subst(substExprs, 0);
-          Result result = typeCheck(expr.getField(i), expType);
+          Result result = typeCheck(expr.getFields().get(i), expType);
           if (!(result instanceof OKResult)) return result;
           OKResult okResult = (OKResult) result;
           fields.add(okResult.expression);
@@ -851,7 +851,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int numberOfVars = 0;
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     for (int i = 0; i < domainResults.length; ++i) {
-      Result result = typeCheck(expr.getArgument(i).getType(), Universe());
+      Result result = typeCheck(expr.getArguments().get(i).getType(), Universe());
       if (!(result instanceof OKResult)) return result;
       domainResults[i] = (OKResult) result;
       if (domainResults[i].equations != null) {
@@ -862,8 +862,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           }
         }
       }
-      if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
-        List<String> names = ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames();
+      if (expr.getArguments().get(i) instanceof Abstract.TelescopeArgument) {
+        List<String> names = ((Abstract.TelescopeArgument) expr.getArguments().get(i)).getNames();
         for (int j = 0; j < names.size(); ++j) {
           myLocalContext.add(new TypedBinding(names.get(j), domainResults[i].expression.liftIndex(0, j)));
           ++numberOfVars;
@@ -895,10 +895,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<TypeArgument> resultArguments = new ArrayList<>(domainResults.length);
     for (int i = 0; i < domainResults.length; ++i) {
-      if (expr.getArgument(i) instanceof Abstract.TelescopeArgument) {
-        resultArguments.add(new TelescopeArgument(expr.getArgument(i).getExplicit(), ((Abstract.TelescopeArgument) expr.getArgument(i)).getNames(), domainResults[i].expression));
+      if (expr.getArguments().get(i) instanceof Abstract.TelescopeArgument) {
+        resultArguments.add(new TelescopeArgument(expr.getArguments().get(i).getExplicit(), ((Abstract.TelescopeArgument) expr.getArguments().get(i)).getNames(), domainResults[i].expression));
       } else {
-        resultArguments.add(new TypeArgument(expr.getArgument(i).getExplicit(), domainResults[i].expression));
+        resultArguments.add(new TypeArgument(expr.getArguments().get(i).getExplicit(), domainResults[i].expression));
       }
     }
     return checkResult(expectedType, new OKResult(Sigma(resultArguments), actualType, equations), expr);
@@ -1039,14 +1039,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       if (index == constructors.size()) {
         for (index = 0; index < dataType.getConstructors().size(); ++index) {
-          if (dataType.getConstructor(index).getName().equals(clause.getName())) {
+          if (dataType.getConstructors().get(index).getName().equals(clause.getName())) {
             break;
           }
         }
         if (index == dataType.getConstructors().size()) {
           error = new NotInScopeError(clause, clause.getName() == null ? "" : clause.getName());
         } else {
-          error = new TypeCheckingError("Overlapping pattern matching: " + dataType.getConstructor(index), clause, getNames(myLocalContext));
+          error = new TypeCheckingError("Overlapping pattern matching: " + dataType.getConstructors().get(index), clause, getNames(myLocalContext));
         }
         expr.setWellTyped(Error(null, error));
         myErrors.add(error);
@@ -1076,7 +1076,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       List<Argument> arguments = new ArrayList<>(clause.getArguments().size());
       for (int i = 0; i < clause.getArguments().size(); ++i) {
-        arguments.add(new NameArgument(clause.getArgument(i).getExplicit(), ((Abstract.NameArgument) clause.getArgument(i)).getName()));
+        arguments.add(new NameArgument(clause.getArguments().get(i).getExplicit(), ((Abstract.NameArgument) clause.getArguments().get(i)).getName()));
       }
 
       Expression substExpr = DefCall(constructor);
@@ -1169,7 +1169,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) exprNorm).getDefinition();
         int index = classDef.findField(expr.getName(), myErrors);
         if (index >= 0) {
-          return checkResult(expectedType, new OKResult(DefCall(classDef.getField(index)), classDef.getField(index).getType(), okExprResult.equations), expr);
+          return checkResult(expectedType, new OKResult(DefCall(classDef.getFields().get(index)), classDef.getFields().get(index).getType(), okExprResult.equations), expr);
         }
         notInScope = true;
       }
@@ -1179,7 +1179,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) type).getDefinition();
       int index = classDef.findField(expr.getName(), myErrors);
       if (index >= 0) {
-        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef.getField(index)), classDef.getField(index).getType(), okExprResult.equations), expr);
+        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef.getFields().get(index)), classDef.getFields().get(index).getType(), okExprResult.equations), expr);
       }
       notInScope = true;
     }

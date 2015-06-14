@@ -45,11 +45,6 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
-  public TelescopeArgument getArgument(int index) {
-    return myArguments.get(index);
-  }
-
-  @Override
   public Expression getResultType() {
     return myResultType;
   }

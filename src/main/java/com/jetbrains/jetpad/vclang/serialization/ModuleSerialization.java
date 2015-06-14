@@ -69,7 +69,7 @@ public class ModuleSerialization {
         definitionMap.put(index, definition);
         toLoad.add(definition);
       } else {
-        definitionMap.put(index, classParent.getField(fieldIndex));
+        definitionMap.put(index, classParent.getFields().get(fieldIndex));
       }
     }
 
@@ -158,7 +158,7 @@ public class ModuleSerialization {
       result = new ClassDefinition(name, parent, universe, fields);
       parent.getFields().add(result);
     } else {
-      Definition field = parent.getField(fieldIndex);
+      Definition field = parent.getFields().get(fieldIndex);
       if (field instanceof ClassDefinition) {
         result = (ClassDefinition) field;
         result.setUniverse(universe);

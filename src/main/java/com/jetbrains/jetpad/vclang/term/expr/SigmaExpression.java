@@ -20,11 +20,6 @@ public class SigmaExpression extends Expression implements Abstract.SigmaExpress
   }
 
   @Override
-  public TypeArgument getArgument(int index) {
-    return myArguments.get(index);
-  }
-
-  @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitSigma(this);
   }

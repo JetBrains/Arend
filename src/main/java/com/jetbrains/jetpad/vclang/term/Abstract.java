@@ -34,7 +34,6 @@ public final class Abstract {
 
   public interface TelescopeArgument extends TypeArgument {
     List<String> getNames();
-    String getName(int index);
   }
 
   public interface ArgumentExpression extends PrettyPrintableSourceNode {
@@ -71,26 +70,22 @@ public final class Abstract {
   public interface LamExpression extends Expression {
     byte PREC = -5;
     List<? extends Argument> getArguments();
-    Argument getArgument(int index);
     Expression getBody();
   }
 
   public interface TupleExpression extends Expression {
     byte PREC = 12;
     List<? extends Expression> getFields();
-    Expression getField(int index);
   }
 
   public interface SigmaExpression extends Expression {
     byte PREC = -3;
     List<? extends TypeArgument> getArguments();
-    TypeArgument getArgument(int index);
   }
 
   public interface PiExpression extends Expression {
     byte PREC = -4;
     List<? extends TypeArgument> getArguments();
-    TypeArgument getArgument(int index);
     Expression getCodomain();
   }
 
@@ -125,7 +120,6 @@ public final class Abstract {
     ElimType getElimType();
     Expression getExpression();
     List<? extends Clause> getClauses();
-    Clause getClause(int index);
     Clause getOtherwise();
   }
 
@@ -146,7 +140,6 @@ public final class Abstract {
   public interface Clause extends PrettyPrintableSourceNode {
     String getName();
     List<? extends Argument> getArguments();
-    Argument getArgument(int index);
     Definition.Arrow getArrow();
     Expression getExpression();
   }
@@ -199,25 +192,20 @@ public final class Abstract {
     Definition.Arrow getArrow();
     Expression getTerm();
     List<? extends TelescopeArgument> getArguments();
-    TelescopeArgument getArgument(int index);
     Expression getResultType();
   }
 
   public interface DataDefinition extends Definition {
     List<? extends TypeArgument> getParameters();
-    TypeArgument getParameter(int index);
     List<? extends Constructor> getConstructors();
-    Constructor getConstructor(int index);
   }
 
   public interface ClassDefinition extends Definition {
     List<? extends Definition> getFields();
-    Definition getField(int index);
   }
 
   public interface Constructor extends Definition {
     List<? extends TypeArgument> getArguments();
-    TypeArgument getArgument(int index);
     DataDefinition getDataType();
   }
 }

@@ -58,7 +58,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
       arguments.add(Tele(argument.getExplicit(), argument.getNames(), result.expression));
       for (int i = 0; i < argument.getNames().size(); ++i) {
-        localContext.add(new TypedBinding(argument.getName(i), result.expression.liftIndex(0, i)));
+        localContext.add(new TypedBinding(argument.getNames().get(i), result.expression.liftIndex(0, i)));
       }
     }
 
@@ -144,12 +144,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       }
 
       for (int i = 0; i < newConstructor.getArguments().size(); ++i) {
-        Expression type = newConstructor.getArgument(i).getType().normalize(NormalizeVisitor.Mode.WHNF);
+        Expression type = newConstructor.getArguments().get(i).getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
             if (argument1.getType().accept(new FindDefCallVisitor(result))) {
               String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
-              myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType(), getNames(localContext)));
+              myErrors.add(new TypeCheckingError(msg, constructor.getArguments().get(i).getType(), getNames(localContext)));
               continue constructors_loop;
             }
           }
@@ -161,7 +161,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         for (Expression expr : exprs) {
           if (expr.accept(new FindDefCallVisitor(result))) {
             String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
-            myErrors.add(new TypeCheckingError(msg, constructor.getArgument(i).getType(), getNames(localContext)));
+            myErrors.add(new TypeCheckingError(msg, constructor.getArguments().get(i).getType(), getNames(localContext)));
             continue constructors_loop;
           }
         }

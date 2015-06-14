@@ -84,21 +84,21 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
         TelescopeArgument additionalArgument = null;
         int i;
         for (i = 0; i < lamExpr.getArguments().size() && arguments.size() < index; ++i) {
-          if (lamExpr.getArgument(i) instanceof TelescopeArgument) {
-            TelescopeArgument teleArg = (TelescopeArgument) lamExpr.getArgument(i);
+          if (lamExpr.getArguments().get(i) instanceof TelescopeArgument) {
+            TelescopeArgument teleArg = (TelescopeArgument) lamExpr.getArguments().get(i);
             int j;
             for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
-              arguments.add(Tele(lamExpr.getArgument(i).getExplicit(), vars(teleArg.getName(j)), teleArg.getType()));
+              arguments.add(Tele(lamExpr.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType()));
             }
             if (j < teleArg.getNames().size()) {
               List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
               for (; j < teleArg.getNames().size(); ++j) {
-                names.add(teleArg.getName(j));
+                names.add(teleArg.getNames().get(j));
               }
               additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType());
             }
           } else {
-            arguments.add(lamExpr.getArgument(i));
+            arguments.add(lamExpr.getArguments().get(i));
           }
         }
 
@@ -109,7 +109,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
             arguments1.add(additionalArgument);
           }
           for (; i < lamExpr.getArguments().size(); ++i) {
-            arguments1.add(lamExpr.getArgument(i));
+            arguments1.add(lamExpr.getArguments().get(i));
           }
           return Lam(arguments1, result);
         }
@@ -131,21 +131,21 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
         TelescopeArgument additionalArgument = null;
         int i;
         for (i = 0; i < piType.getArguments().size() && arguments.size() < index; ++i) {
-          if (piType.getArgument(i) instanceof TelescopeArgument) {
-            TelescopeArgument teleArg = (TelescopeArgument) piType.getArgument(i);
+          if (piType.getArguments().get(i) instanceof TelescopeArgument) {
+            TelescopeArgument teleArg = (TelescopeArgument) piType.getArguments().get(i);
             int j;
             for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
-              arguments.add(Tele(piType.getArgument(i).getExplicit(), vars(teleArg.getName(j)), teleArg.getType().liftIndex(0, j)));
+              arguments.add(Tele(piType.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType().liftIndex(0, j)));
             }
             if (j < teleArg.getNames().size()) {
               List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
               for (; j < teleArg.getNames().size(); ++j) {
-                names.add(teleArg.getName(j));
+                names.add(teleArg.getNames().get(j));
               }
               additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType());
             }
           } else {
-            arguments.add(piType.getArgument(i));
+            arguments.add(piType.getArguments().get(i));
           }
         }
 
@@ -156,7 +156,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
             arguments1.add(additionalArgument);
           }
           for (; i < piType.getArguments().size(); ++i) {
-            arguments1.add(piType.getArgument(i));
+            arguments1.add(piType.getArguments().get(i));
           }
           return Pi(arguments1, type);
         }

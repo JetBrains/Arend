@@ -26,18 +26,8 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   }
 
   @Override
-  public TypeArgument getParameter(int index) {
-    return myParameters.get(index);
-  }
-
-  @Override
   public List<Constructor> getConstructors() {
     return myConstructors;
-  }
-
-  @Override
-  public Constructor getConstructor(int index) {
-    return myConstructors.get(index);
   }
 
   @Override

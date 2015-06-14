@@ -19,11 +19,6 @@ public class TupleExpression extends Expression implements Abstract.TupleExpress
   }
 
   @Override
-  public Expression getField(int index) {
-    return myFields.get(index);
-  }
-
-  @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitTuple(this);
   }

@@ -84,8 +84,8 @@ public class DefinitionTest {
     assertNotNull(def);
     assertEquals(Pi(parameters, Universe(0)), def.getType());
     assertEquals(2, def.getConstructors().size());
-    assertEquals(Pi(arguments1, Apps(Apps(Apps(DefCall(def), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), def.getConstructor(0).getType());
-    assertEquals(Pi(arguments2, Apps(Apps(Apps(DefCall(def), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), def.getConstructor(1).getType());
+    assertEquals(Pi(arguments1, Apps(Apps(Apps(DefCall(def), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), def.getConstructors().get(0).getType());
+    assertEquals(Pi(arguments2, Apps(Apps(Apps(DefCall(def), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), def.getConstructors().get(1).getType());
   }
 
   @Test
@@ -114,8 +114,8 @@ public class DefinitionTest {
     assertNotNull(def);
     assertEquals(Pi(parameters, Universe(6, 7)), def.getType());
     assertEquals(2, def.getConstructors().size());
-    assertEquals(Pi(arguments1, Apps(DefCall(def), Index(2))), def.getConstructor(0).getType());
-    assertEquals(Pi(arguments2, Apps(DefCall(def), Index(3))), def.getConstructor(1).getType());
+    assertEquals(Pi(arguments1, Apps(DefCall(def), Index(2))), def.getConstructors().get(0).getType());
+    assertEquals(Pi(arguments2, Apps(DefCall(def), Index(3))), def.getConstructors().get(1).getType());
   }
 
   @Test

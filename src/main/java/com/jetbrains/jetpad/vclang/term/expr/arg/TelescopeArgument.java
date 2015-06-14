@@ -17,9 +17,4 @@ public class TelescopeArgument extends TypeArgument implements Abstract.Telescop
   public List<String> getNames() {
     return myNames;
   }
-
-  @Override
-  public String getName(int index) {
-    return myNames.get(index);
-  }
 }

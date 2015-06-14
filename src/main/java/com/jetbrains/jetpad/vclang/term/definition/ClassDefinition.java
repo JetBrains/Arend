@@ -33,11 +33,6 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myFields;
   }
 
-  @Override
-  public Definition getField(int index) {
-    return myFields.get(index);
-  }
-
   public int findField(String name, List<VcError> errors) {
     for (int i = 0; i < myFields.size(); ++i) {
       if (name.equals(myFields.get(i).getName())) {

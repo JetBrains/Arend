@@ -35,11 +35,6 @@ public class ElimExpression extends Expression implements Abstract.ElimExpressio
   }
 
   @Override
-  public Clause getClause(int index) {
-    return myClauses.get(index);
-  }
-
-  @Override
   public Clause getOtherwise() {
     return myOtherwise;
   }

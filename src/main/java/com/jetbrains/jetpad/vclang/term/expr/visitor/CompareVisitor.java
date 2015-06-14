@@ -425,8 +425,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     CMP cmp = CMP.EQUALS;
     MaybeResult maybeResult = null;
     for (int i = 0; i < otherTuple.getFields().size(); ++i) {
-      if (otherTuple.getField(i) instanceof ProjExpression && ((ProjExpression) otherTuple.getField(i)).getField() == i) {
-        Result result = expr.accept(visitor, ((ProjExpression) otherTuple.getField(i)).getExpression());
+      if (otherTuple.getFields().get(i) instanceof ProjExpression && ((ProjExpression) otherTuple.getFields().get(i)).getField() == i) {
+        Result result = expr.accept(visitor, ((ProjExpression) otherTuple.getFields().get(i)).getExpression());
         if (result.isOK() == CMP.NOT_EQUIV) {
           if (result instanceof MaybeResult) {
             if (maybeResult == null) {
@@ -456,8 +456,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       CMP cmp = CMP.EQUALS;
       MaybeResult maybeResult = null;
       for (int i = 0; i < expr.getFields().size(); ++i) {
-        if (expr.getField(i) instanceof Abstract.ProjExpression && ((Abstract.ProjExpression) expr.getField(i)).getField() == i) {
-          Result result = ((Abstract.ProjExpression) expr.getField(i)).getExpression().accept(this, other);
+        if (expr.getFields().get(i) instanceof Abstract.ProjExpression && ((Abstract.ProjExpression) expr.getFields().get(i)).getField() == i) {
+          Result result = ((Abstract.ProjExpression) expr.getFields().get(i)).getExpression().accept(this, other);
           if (result.isOK() == CMP.NOT_EQUIV) {
             if (result instanceof MaybeResult) {
               if (maybeResult == null) {
@@ -481,7 +481,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     CMP cmp = CMP.EQUALS;
     MaybeResult maybeResult = null;
     for (int i = 0; i < expr.getFields().size(); ++i) {
-      Result result = expr.getField(i).accept(this, otherTuple.getField(i));
+      Result result = expr.getFields().get(i).accept(this, otherTuple.getFields().get(i));
       if (result.isOK() == CMP.NOT_EQUIV) {
         if (result instanceof MaybeResult) {
           if (maybeResult == null) {
@@ -634,7 +634,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     CMP cmp = result.isOK();
     MaybeResult maybeResult = null;
     for (int i = 0; i < expr.getClauses().size(); ++i) {
-      result = visitClause(expr.getClause(i), otherElim.getClause(i));
+      result = visitClause(expr.getClauses().get(i), otherElim.getClauses().get(i));
       if (result.isOK() == CMP.NOT_EQUIV) {
         if (result instanceof MaybeResult) {
           if (maybeResult == null) {

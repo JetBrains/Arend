@@ -43,11 +43,6 @@ public class Clause implements Abstract.Clause {
   }
 
   @Override
-  public Argument getArgument(int index) {
-    return myArguments.get(index);
-  }
-
-  @Override
   public Abstract.Definition.Arrow getArrow() {
     return myArrow;
   }
