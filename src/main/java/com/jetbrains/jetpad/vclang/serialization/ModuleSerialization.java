@@ -88,7 +88,7 @@ public class ModuleSerialization {
     if (code == 0) return new FunctionDefinition(name, parent, null, null, null, null, null, null);
     if (code == 1) return new DataDefinition(name, parent, null, null, null, null, null);
     if (code == 2) return new ClassDefinition(name, parent, null, null);
-    if (code == 3) return new Constructor(-1, name, parent, null, null, null, null, null);
+    if (code == 3) return new Constructor(-1, name, new DataDefinition(name, parent, null, null, null, null, null), null, null, null, null);
     throw new IncorrectFormat();
   }
 

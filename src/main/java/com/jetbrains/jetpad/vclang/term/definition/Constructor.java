@@ -13,14 +13,12 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class Constructor extends Definition implements Abstract.Constructor {
-  private DataDefinition myDataType;
   private final List<TypeArgument> myArguments;
   private final int myIndex;
 
-  public Constructor(int index, String name, ClassDefinition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
-    super(name, parent, precedence, fixity, universe);
+  public Constructor(int index, String name, DataDefinition dataType, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments) {
+    super(name, dataType, precedence, fixity, universe);
     myArguments = arguments;
-    myDataType = dataType;
     myIndex = index;
   }
 
@@ -31,11 +29,11 @@ public class Constructor extends Definition implements Abstract.Constructor {
 
   @Override
   public DataDefinition getDataType() {
-    return myDataType;
+    return (DataDefinition) super.getParent();
   }
 
-  public void setDataType(DataDefinition dataType) {
-    myDataType = dataType;
+  public void setDataType(DataDefinition parent) {
+    super.setParent(parent);
   }
 
   public int getIndex() {
@@ -44,15 +42,15 @@ public class Constructor extends Definition implements Abstract.Constructor {
 
   @Override
   public Expression getType() {
-    Expression resultType = DefCall(myDataType);
+    Expression resultType = DefCall(getParent());
     int numberOfVars = numberOfVariables(myArguments);
-    for (int i = numberOfVariables(myDataType.getParameters()) - 1, j = 0; i >= 0; ++j) {
-      if (myDataType.getParameters().get(j) instanceof TelescopeArgument) {
-        for (String ignored : ((TelescopeArgument) myDataType.getParameters().get(j)).getNames()) {
-          resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameters().get(j).getExplicit(), !myDataType.getParameters().get(j).getExplicit()));
+    for (int i = numberOfVariables(getDataType().getParameters()) - 1, j = 0; i >= 0; ++j) {
+      if (getDataType().getParameters().get(j) instanceof TelescopeArgument) {
+        for (String ignored : ((TelescopeArgument) getDataType().getParameters().get(j)).getNames()) {
+          resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
         }
       } else {
-        resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameters().get(j).getExplicit(), !myDataType.getParameters().get(j).getExplicit()));
+        resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
       }
     }
     return myArguments.isEmpty() ? resultType : Pi(myArguments, resultType);

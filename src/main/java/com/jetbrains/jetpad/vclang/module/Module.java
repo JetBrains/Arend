@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.io.File;
 
@@ -13,7 +14,7 @@ public class Module {
     myName = name;
   }
 
-  private File getFile(File dir, ClassDefinition def) {
+  private File getFile(File dir, Definition def) {
     return def == ModuleLoader.rootModule() ? dir : new File(getFile(dir, def.getParent()), def.getName());
   }
 
@@ -34,7 +35,7 @@ public class Module {
     return this == other || other instanceof Module && myParent == ((Module) other).myParent && myName.equals(((Module) other).myName);
   }
 
-  private String toString(ClassDefinition def) {
+  private String toString(Definition def) {
     return def == ModuleLoader.rootModule() ? "" : toString(def.getParent()) + def.getName() + ".";
   }
 

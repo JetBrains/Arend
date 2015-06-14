@@ -70,12 +70,12 @@ public class DefinitionTest {
     List<TypeArgument> arguments1 = new ArrayList<>(2);
     arguments1.add(Tele(vars("x"), Index(4)));
     arguments1.add(TypeArg(Apps(Index(3), Index(0), Index(1))));
-    constructors.add(new Constructor(0, "con1", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments1, def));
+    constructors.add(new Constructor(0, "con1", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments1));
 
     List<TypeArgument> arguments2 = new ArrayList<>(2);
     arguments2.add(Tele(false, vars("y"), Index(3)));
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
-    constructors.add(new Constructor(1, "con2", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2, def));
+    constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
     Map<String, Definition> definitions = Prelude.getDefinitions();
     List<VcError> errors = new ArrayList<>();
@@ -99,13 +99,13 @@ public class DefinitionTest {
     List<TypeArgument> arguments1 = new ArrayList<>(2);
     arguments1.add(Tele(vars("X"), Universe(5, 1)));
     arguments1.add(TypeArg(Index(0)));
-    constructors.add(new Constructor(0, "con1", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments1, def));
+    constructors.add(new Constructor(0, "con1", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments1));
 
     List<TypeArgument> arguments2 = new ArrayList<>(3);
     arguments2.add(Tele(vars("Y"), Universe(3, 2)));
     arguments2.add(TypeArg(Index(1)));
     arguments2.add(TypeArg(Index(1)));
-    constructors.add(new Constructor(1, "con2", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2, def));
+    constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
     Map<String, Definition> definitions = Prelude.getDefinitions();
     List<VcError> errors = new ArrayList<>();
@@ -123,7 +123,7 @@ public class DefinitionTest {
     // \data D (A : \Type0) = con (B : \Type1) A B |- con Nat zero zero : D Nat
     List<Constructor> constructors = new ArrayList<>(1);
     DataDefinition def = new DataDefinition("D", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("A"), Universe(0))), constructors);
-    Constructor con = new Constructor(0, "con", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))));
     constructors.add(con);
 
     Map<String, Definition> definitions = Prelude.getDefinitions();
@@ -143,7 +143,7 @@ public class DefinitionTest {
     // \data D (A : \Type0) = con (B : \Type1) A B, f : D (Nat -> Nat) -> Nat |- f (con Nat (\lam x => x) zero) : Nat
     List<Constructor> constructors = new ArrayList<>(1);
     DataDefinition def = new DataDefinition("D", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("A"), Universe(0))), constructors);
-    Constructor con = new Constructor(0, "con", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))));
     constructors.add(con);
 
     Expression expr = Apps(Index(0), Apps(DefCall(con), Nat(), Lam("x", Index(0)), Zero()));
@@ -166,7 +166,7 @@ public class DefinitionTest {
     // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
     List<Constructor> constructors = new ArrayList<>(1);
     DataDefinition def = new DataDefinition("D", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("A"), Universe(0))), constructors);
-    Constructor con = new Constructor(0, "con", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(TypeArg(Index(0))), def);
+    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(TypeArg(Index(0))));
     constructors.add(con);
 
     Expression expr = Apps(Index(0), DefCall(con));

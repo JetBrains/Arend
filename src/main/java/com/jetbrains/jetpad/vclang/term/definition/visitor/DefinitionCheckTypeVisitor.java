@@ -231,7 +231,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     trimToSize(localContext, origSize);
-    Constructor newConstructor = new Constructor(def.getDataType().getConstructors().indexOf(def), def.getName(), myParent, def.getPrecedence(), def.getFixity(), universe, arguments, null);
+    Constructor newConstructor = new Constructor(def.getDataType().getConstructors().indexOf(def), def.getName(), null, def.getPrecedence(), def.getFixity(), universe, arguments);
     if (error != null) {
       myErrors.add(new TypeCheckingError(error, DefCall(newConstructor), new ArrayList<String>()));
       return null;

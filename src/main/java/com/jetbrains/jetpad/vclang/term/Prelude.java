@@ -38,8 +38,8 @@ public class Prelude {
 
     List<Constructor> natConstructors = new ArrayList<>(2);
     NAT = new DataDefinition("Nat", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>(), natConstructors);
-    ZERO = new Constructor(0, "zero", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), NAT);
-    SUC = new Constructor(1, "suc", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), args(TypeArg(DefCall(NAT))), NAT);
+    ZERO = new Constructor(0, "zero", NAT, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>());
+    SUC = new Constructor(1, "suc", NAT, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), args(TypeArg(DefCall(NAT))));
     natConstructors.add(ZERO);
     natConstructors.add(SUC);
 
@@ -49,11 +49,11 @@ public class Prelude {
 
     List<Constructor> intervalConstructors = new ArrayList<>(3);
     INTERVAL = new DataDefinition("I", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), intervalConstructors);
-    LEFT = new Constructor(0, "left", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), INTERVAL);
-    RIGHT = new Constructor(1, "right", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), INTERVAL);
+    LEFT = new Constructor(0, "left", INTERVAL, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>());
+    RIGHT = new Constructor(1, "right", INTERVAL, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>());
     intervalConstructors.add(LEFT);
     intervalConstructors.add(RIGHT);
-    intervalConstructors.add(new Constructor(2, "<abstract>", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>(), INTERVAL));
+    intervalConstructors.add(new Constructor(2, "<abstract>", INTERVAL, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>()));
 
     definitions.add(INTERVAL);
     definitions.add(LEFT);
@@ -78,7 +78,7 @@ public class Prelude {
     PATH = new DataDefinition("Path", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), PathParameters, PathConstructors);
     List<TypeArgument> pathArguments = new ArrayList<>(1);
     pathArguments.add(TypeArg(Pi("i", DefCall(INTERVAL), Apps(Index(3), Index(0)))));
-    PATH_CON = new Constructor(0, "path", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), pathArguments, PATH);
+    PATH_CON = new Constructor(0, "path", PATH, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), pathArguments);
     PathConstructors.add(PATH_CON);
 
     definitions.add(PATH);

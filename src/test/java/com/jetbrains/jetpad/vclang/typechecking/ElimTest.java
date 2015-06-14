@@ -34,8 +34,8 @@ public class ElimTest {
     arguments2.add(TypeArg(Pi(Nat(), Nat())));
     arguments2.add(Tele(vars("a", "b", "c"), Nat()));
     DataDefinition dataType = new DataDefinition("D", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(Universe.NO_LEVEL), parameters, constructors);
-    constructors.add(new Constructor(0, "con1", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(Universe.NO_LEVEL), arguments1, dataType));
-    constructors.add(new Constructor(1, "con2", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(Universe.NO_LEVEL), arguments2, dataType));
+    constructors.add(new Constructor(0, "con1", dataType, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(Universe.NO_LEVEL), arguments1));
+    constructors.add(new Constructor(1, "con2", dataType, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(Universe.NO_LEVEL), arguments2));
 
     List<TelescopeArgument> arguments3 = new ArrayList<>(4);
     arguments3.add(Tele(vars("a1", "b1", "c1"), Nat()));
