@@ -1166,20 +1166,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (type instanceof UniverseExpression) {
       Expression exprNorm = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
       if (exprNorm instanceof DefCallExpression && ((DefCallExpression) exprNorm).getDefinition() instanceof ClassDefinition) {
-        ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) exprNorm).getDefinition();
-        int index = classDef.findField(expr.getName(), myErrors);
-        if (index >= 0) {
-          return checkResult(expectedType, new OKResult(DefCall(classDef.getFields().get(index)), classDef.getFields().get(index).getType(), okExprResult.equations), expr);
+        Definition field = ((ClassDefinition) ((DefCallExpression) exprNorm).getDefinition()).findField(expr.getName(), myErrors);
+        if (field != null) {
+          return checkResult(expectedType, new OKResult(DefCall(field), field.getType(), okExprResult.equations), expr);
         }
         notInScope = true;
       }
     }
 
     if (type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
-      ClassDefinition classDef = (ClassDefinition) ((DefCallExpression) type).getDefinition();
-      int index = classDef.findField(expr.getName(), myErrors);
-      if (index >= 0) {
-        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, classDef.getFields().get(index)), classDef.getFields().get(index).getType(), okExprResult.equations), expr);
+      Definition field = ((ClassDefinition) ((DefCallExpression) type).getDefinition()).findField(expr.getName(), myErrors);
+      if (field != null) {
+        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, field), field.getType(), okExprResult.equations), expr);
       }
       notInScope = true;
     }

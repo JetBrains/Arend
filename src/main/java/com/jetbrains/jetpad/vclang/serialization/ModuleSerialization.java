@@ -63,13 +63,13 @@ public class ModuleSerialization {
         throw new IncorrectFormat();
       }
       ClassDefinition classParent = (ClassDefinition) parent;
-      int fieldIndex = classParent.findField(name, errors);
-      if (fieldIndex < 0) {
+      Definition field = classParent.findField(name, errors);
+      if (field == null) {
         Definition definition = newDefinition(code, name, classParent);
         definitionMap.put(index, definition);
         toLoad.add(definition);
       } else {
-        definitionMap.put(index, classParent.getFields().get(fieldIndex));
+        definitionMap.put(index, field);
       }
     }
 
@@ -152,13 +152,12 @@ public class ModuleSerialization {
     int size = stream.readInt();
     List<Definition> fields = new ArrayList<>(size);
 
-    int fieldIndex = parent.findField(name, errors);
+    Definition field = parent.findField(name, errors);
     ClassDefinition result;
-    if (fieldIndex < 0) {
+    if (field == null) {
       result = new ClassDefinition(name, parent, universe, fields);
       parent.getFields().add(result);
     } else {
-      Definition field = parent.getFields().get(fieldIndex);
       if (field instanceof ClassDefinition) {
         result = (ClassDefinition) field;
         result.setUniverse(universe);

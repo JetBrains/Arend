@@ -33,14 +33,13 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myFields;
   }
 
-  public int findField(String name, List<VcError> errors) {
-    for (int i = 0; i < myFields.size(); ++i) {
-      if (name.equals(myFields.get(i).getName())) {
-        return i;
+  public Definition findField(String name, List<VcError> errors) {
+    for (Definition field : myFields) {
+      if (name.equals(field.getName())) {
+        return field;
       }
     }
 
-    ClassDefinition result = ModuleLoader.loadModule(new Module(this, name), errors);
-    return result == null ? -1 : findField(name, errors);
+    return ModuleLoader.loadModule(new Module(this, name), errors);
   }
 }
