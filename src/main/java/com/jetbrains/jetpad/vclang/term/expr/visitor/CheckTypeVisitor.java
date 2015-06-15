@@ -1143,7 +1143,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    ElimExpression result = Elim(expr.getElimType(), exprOKResult.expression, clauses, otherwise);
+    ElimExpression result = Elim(expr.getElimType(), (IndexExpression) exprOKResult.expression, clauses, otherwise);
     for (Clause clause : clauses) {
       if (clause != null) {
         clause.setElimExpression(result);
@@ -1166,7 +1166,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (type instanceof UniverseExpression) {
       Expression exprNorm = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
       if (exprNorm instanceof DefCallExpression && ((DefCallExpression) exprNorm).getDefinition() instanceof ClassDefinition) {
-        Definition field = ((ClassDefinition) ((DefCallExpression) exprNorm).getDefinition()).findField(expr.getName(), myErrors);
+        Definition field = ((ClassDefinition) ((DefCallExpression) exprNorm).getDefinition()).findField(expr.getName());
         if (field != null) {
           return checkResult(expectedType, new OKResult(DefCall(field), field.getType(), okExprResult.equations), expr);
         }
@@ -1175,7 +1175,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
-      Definition field = ((ClassDefinition) ((DefCallExpression) type).getDefinition()).findField(expr.getName(), myErrors);
+      Definition field = ((ClassDefinition) ((DefCallExpression) type).getDefinition()).findField(expr.getName());
       if (field != null) {
         return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, field), field.getType(), okExprResult.equations), expr);
       }

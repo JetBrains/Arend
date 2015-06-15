@@ -8,11 +8,11 @@ import java.util.List;
 
 public class ElimExpression extends Expression implements Abstract.ElimExpression {
   private final ElimType myElimType;
-  private final Expression myExpression;
+  private final IndexExpression myExpression;
   private final List<Clause> myClauses;
   private final Clause myOtherwise;
 
-  public ElimExpression(ElimType elimType, Expression expression, List<Clause> clauses, Clause otherwise) {
+  public ElimExpression(ElimType elimType, IndexExpression expression, List<Clause> clauses, Clause otherwise) {
     myElimType = elimType;
     myExpression = expression;
     myClauses = clauses;
@@ -25,7 +25,7 @@ public class ElimExpression extends Expression implements Abstract.ElimExpressio
   }
 
   @Override
-  public Expression getExpression() {
+  public IndexExpression getExpression() {
     return myExpression;
   }
 

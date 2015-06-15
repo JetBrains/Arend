@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import org.antlr.v4.runtime.Token;
@@ -12,11 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
+  private final ClassDefinition myParent;
+  private List<String> myContext = new ArrayList<>();
   private final List<VcError> myErrors;
 
-  public BuildVisitor(List<VcError> errors) {
+  public BuildVisitor(ClassDefinition parent, List<VcError> errors) {
+    myParent = parent;
     myErrors = errors;
   }
 
@@ -75,6 +80,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   public Concrete.Definition visitDef(DefContext ctx) {
+    myContext.clear();
     if (ctx instanceof DefFunctionContext) {
       return visitDefFunction((DefFunctionContext) ctx);
     }
@@ -191,7 +197,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         position = tokenPosition(((NameBinOpContext) constructor.name()).BIN_OP().getSymbol());
       }
       try {
+        int size = myContext.size();
         constructors.add(new Concrete.Constructor(position, name, visitPrecedence(constructor.precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), visitTeles(constructor.tele()), def));
+        trimToSize(myContext, size);
       } catch (ParserException ignored) {}
     }
     return def;
@@ -229,7 +237,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression domain = visitExpr(ctx.expr(0));
     List<Concrete.TypeArgument> arguments = new ArrayList<>(1);
     arguments.add(new Concrete.TypeArgument(domain.getPosition(), true, domain));
+    myContext.add("_");
     Concrete.Expression codomain = visitExpr(ctx.expr(1));
+    myContext.remove(myContext.size() - 1);
     return new Concrete.PiExpression(tokenPosition(ctx.getToken(ARROW, 0).getSymbol()), arguments, codomain);
   }
 
@@ -251,10 +261,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (tele instanceof TeleLiteralContext) {
       LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
       if (literalContext instanceof IdContext && ((IdContext) literalContext).name() instanceof NameIdContext) {
-        arguments.add(new Concrete.NameArgument(tokenPosition(((NameIdContext) ((IdContext) literalContext).name()).ID().getSymbol()), true, ((NameIdContext) ((IdContext) literalContext).name()).ID().getText()));
+        String name = ((NameIdContext) ((IdContext) literalContext).name()).ID().getText();
+        arguments.add(new Concrete.NameArgument(tokenPosition(((NameIdContext) ((IdContext) literalContext).name()).ID().getSymbol()), true, name));
+        myContext.add(name);
       } else
       if (literalContext instanceof UnknownContext) {
-        arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
+        arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, "_"));
+        myContext.add("_");
       } else {
         myErrors.add(new ParserError(tokenPosition(literalContext.getStart()), "Unexpected token. Expected an identifier."));
         throw new ParserException();
@@ -274,10 +287,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       List<Concrete.NameArgument> vars = getVars(varsExpr, tokenPosition(typedExpr.getStart()));
       if (typeExpr == null) {
         arguments.addAll(vars);
+        for (Concrete.NameArgument var : vars) {
+          myContext.add(var.getName());
+        }
       } else {
         List<String> args = new ArrayList<>(vars.size());
         for (Concrete.NameArgument var : vars) {
           args.add(var.getName());
+          myContext.add(var.getName());
         }
         arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, args, typeExpr));
       }
@@ -295,7 +312,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitLam(LamContext ctx) {
-    return new Concrete.LamExpression(tokenPosition(ctx.getStart()), visitLamTeles(ctx.tele()), visitExpr(ctx.expr()));
+    int size = myContext.size();
+    List<Concrete.Argument> args = visitLamTeles(ctx.tele());
+    Concrete.Expression body = visitExpr(ctx.expr());
+    trimToSize(myContext, size);
+    return new Concrete.LamExpression(tokenPosition(ctx.getStart()), args, body);
   }
 
   @Override
@@ -336,20 +357,24 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           typedExpr = ((ExplicitContext) tele).typedExpr();
         } else {
           arguments.add(new Concrete.TypeArgument(true, visitExpr(((TeleLiteralContext) tele).literal())));
+          myContext.add("_");
           continue;
         }
       } else {
         typedExpr = ((ImplicitContext) tele).typedExpr();
       }
       if (typedExpr instanceof TypedContext) {
+        Concrete.Expression type = visitExpr(((TypedContext) typedExpr).expr(1));
         List<Concrete.NameArgument> args = getVars(visitExpr(((TypedContext) typedExpr).expr(0)), tokenPosition(typedExpr.getStart()));
         List<String> vars = new ArrayList<>(args.size());
         for (Concrete.NameArgument arg : args) {
           vars.add(arg.getName());
+          myContext.add("_");
         }
-        arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, vars, visitExpr(((TypedContext) typedExpr).expr(1))));
+        arguments.add(new Concrete.TelescopeArgument(tokenPosition(tele.getStart()), explicit, vars, type));
       } else {
         arguments.add(new Concrete.TypeArgument(explicit, visitExpr(((NotTypedContext) typedExpr).expr())));
+        myContext.add("_");
       }
     }
     return arguments;
@@ -373,7 +398,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.SigmaExpression visitSigma(SigmaContext ctx) {
+    int size = myContext.size();
     List<Concrete.TypeArgument> args = visitTeles(ctx.tele());
+    trimToSize(myContext, size);
     for (Concrete.TypeArgument arg : args) {
       if (!arg.getExplicit()) {
         myErrors.add(new ParserError(arg.getPosition(), "Fields in sigma types must be explicit"));
@@ -384,7 +411,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.PiExpression visitPi(PiContext ctx) {
-    return new Concrete.PiExpression(tokenPosition(ctx.getStart()), visitTeles(ctx.tele()), visitExpr(ctx.expr()));
+    int size = myContext.size();
+    List<Concrete.TypeArgument> args = visitTeles(ctx.tele());
+    Concrete.Expression codomain = visitExpr(ctx.expr());
+    trimToSize(myContext, size);
+    return new Concrete.PiExpression(tokenPosition(ctx.getStart()), args, codomain);
   }
 
   private Concrete.Expression visitFieldsAcc(Concrete.Expression expr, List<FieldAccContext> fieldAccs) {
@@ -454,8 +485,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Expression visitExprElim(ExprElimContext ctx) {
     List<Concrete.Clause> clauses = new ArrayList<>(ctx.clause().size());
     Concrete.Clause otherwise = null;
+    List<String> oldContext = new ArrayList<>(myContext);
     for (ClauseContext clauseCtx : ctx.clause()) {
       Concrete.Clause clause = visitClause(clauseCtx);
+      myContext = new ArrayList<>(oldContext);
       if (clause.getName() == null) {
         if (otherwise != null) {
           myErrors.add(new ParserError(tokenPosition(clauseCtx.clauseName().getStart()), "Overlapping pattern matching"));
@@ -492,8 +525,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Clause visitClause(ClauseContext ctx) {
     String name = (String) visit(ctx.clauseName());
     Definition.Arrow arrow = ctx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
+    int size = myContext.size();
     List<Concrete.Argument> arguments = ctx.clauseName() instanceof ClauseNameArgsContext ? visitLamTeles(((ClauseNameArgsContext) ctx.clauseName()).tele()) : null;
-    return new Concrete.Clause(tokenPosition(ctx.getStart()), name, arguments, arrow, visitExpr(ctx.expr()), null);
+    Concrete.Expression expr = visitExpr(ctx.expr());
+    return new Concrete.Clause(tokenPosition(ctx.getStart()), name, arguments, arrow, expr, null);
   }
 
   private static Concrete.Position tokenPosition(Token token) {

@@ -1,8 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.VcError;
-import com.jetbrains.jetpad.vclang.module.Module;
-import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -33,13 +30,13 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myFields;
   }
 
-  public Definition findField(String name, List<VcError> errors) {
+  public Definition findField(String name) {
     for (Definition field : myFields) {
       if (name.equals(field.getName())) {
         return field;
       }
     }
 
-    return ModuleLoader.loadModule(new Module(this, name), errors);
+    return null;
   }
 }

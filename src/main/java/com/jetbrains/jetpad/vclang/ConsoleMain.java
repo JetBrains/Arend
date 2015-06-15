@@ -116,14 +116,13 @@ public class ConsoleMain {
       return;
     }
 
+    List<ModuleLoader.TypeCheckingUnit> units = new ArrayList<>();
     List<VcError> errors = new ArrayList<>();
     ClassDefinition module = ModuleLoader.rootModule();
-    for (String name : moduleNames) {
-      module = ModuleLoader.loadModule(new Module(module, name), errors);
-      if (module == null) {
-        break;
-      }
+    for (int i = 0; i < moduleNames.size() - 1; ++i) {
+      module = ModuleLoader.getModule(module, moduleNames.get(i), errors);
     }
+    ModuleLoader.loadModule(new Module(module, moduleNames.get(moduleNames.size() - 1)), units, errors);
 
     for (VcError error : errors) {
       System.err.print((relativePath != null ? relativePath : fileName) + ": ");

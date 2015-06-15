@@ -98,10 +98,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitIndex(Abstract.IndexExpression expr, Byte prec) {
     if (expr.getIndex() < myNames.size()) {
       String var = myNames.get(myNames.size() - 1 - expr.getIndex());
-      if (var != null) {
-        myBuilder.append(var);
-        return null;
-      }
+      myBuilder.append(var);
     }
     myBuilder.append('<').append(expr.getIndex()).append('>');
     return null;
@@ -131,7 +128,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (expr.getArguments().size() == 1 && !(expr.getArguments().get(0) instanceof Abstract.TelescopeArgument)) {
       expr.getArguments().get(0).getType().accept(this, (byte) (Abstract.PiExpression.PREC + 1));
       myBuilder.append(' ');
-      myNames.add(null);
+      myNames.add("_");
     } else {
       myBuilder.append("\\Pi ");
       for (Abstract.Argument argument : expr.getArguments()) {

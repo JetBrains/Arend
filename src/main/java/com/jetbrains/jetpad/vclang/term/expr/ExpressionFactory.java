@@ -171,7 +171,7 @@ public class ExpressionFactory {
     return Apps(DefCall(binOp), left, right);
   }
 
-  public static ElimExpression Elim(Abstract.ElimExpression.ElimType elimType, Expression expression, List<Clause> clauses, Clause otherwise) {
+  public static ElimExpression Elim(Abstract.ElimExpression.ElimType elimType, IndexExpression expression, List<Clause> clauses, Clause otherwise) {
     return new ElimExpression(elimType, expression, clauses, otherwise);
   }
 }
