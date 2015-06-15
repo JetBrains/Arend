@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.term.error.TypeCheckingError.getNames;
@@ -26,31 +25,19 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<List<Binding>, Definition> {
   private final ClassDefinition myParent;
-  private final Map<String, Definition> myGlobalContext;
   private final List<VcError> myErrors;
 
-  public DefinitionCheckTypeVisitor(ClassDefinition parent, Map<String, Definition> globalContext, List<VcError> errors) {
+  public DefinitionCheckTypeVisitor(ClassDefinition parent, List<VcError> errors) {
     myParent = parent;
-    myGlobalContext = globalContext;
     myErrors = errors;
-  }
-
-  private Definition checkName(Abstract.Definition def) {
-    Definition oldDef = myGlobalContext.get(def.getName());
-    if (oldDef != null) {
-      myErrors.add(new TypeCheckingError(def.getName() + " is already defined", def, null));
-    }
-    return oldDef;
   }
 
   @Override
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, List<Binding> localContext) {
-    Definition oldDef = checkName(def);
-
     List<TelescopeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     for (Abstract.TelescopeArgument argument : def.getArguments()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -64,7 +51,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
     Expression expectedType;
     if (def.getResultType() != null) {
-      CheckTypeVisitor.OKResult typeResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(def.getResultType(), Universe());
+      CheckTypeVisitor.OKResult typeResult = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(def.getResultType(), Universe());
       if (typeResult == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -75,8 +62,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     FunctionDefinition result = new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), arguments, expectedType, def.getArrow(), null);
-    myGlobalContext.put(def.getName(), result);
-    CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
+    CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
 
     if (termResult != null && !termResult.expression.accept(new TerminationCheckVisitor(result))) {
       myErrors.add(new TypeCheckingError("Termination check failed", def.getTerm(), getNames(localContext)));
@@ -91,31 +77,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
     trimToSize(localContext, origSize);
 
-    if (termResult == null && expectedType == null) {
-      if (oldDef == null) {
-        myGlobalContext.remove(def.getName());
-      } else {
-        myGlobalContext.put(def.getName(), oldDef);
-      }
-      return null;
-    }
-
-    if (oldDef != null) {
-      myGlobalContext.put(def.getName(), oldDef);
-    }
-
-    return result;
+    return termResult == null && expectedType == null ? null : result;
   }
 
   @Override
   public DataDefinition visitData(Abstract.DataDefinition def, List<Binding> localContext) {
-    Definition oldDef = checkName(def);
-
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(parameter.getType(), Universe());
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(parameter.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -135,7 +106,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     List<Constructor> constructors = new ArrayList<>(def.getConstructors().size());
     DataDefinition result = new DataDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : universe, parameters, constructors);
 
-    myGlobalContext.put(def.getName(), result);
     constructors_loop:
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor newConstructor = visitConstructor(constructor, localContext);
@@ -185,24 +155,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       myErrors.add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
     }
 
-    if (oldDef != null) {
-      myGlobalContext.put(def.getName(), oldDef);
-    }
-
     return result;
   }
 
   @Override
   public Constructor visitConstructor(Abstract.Constructor def, List<Binding> localContext) {
-    Definition oldDef = checkName(def);
-
     List<TypeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     int index = 1;
     String error = null;
     for (Abstract.TypeArgument argument : def.getArguments()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -236,25 +200,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       myErrors.add(new TypeCheckingError(error, DefCall(newConstructor), new ArrayList<String>()));
       return null;
     } else {
-      if (oldDef != null) {
-        return null;
-      } else {
-        myGlobalContext.put(newConstructor.getName(), newConstructor);
-        return newConstructor;
-      }
+      return newConstructor;
     }
   }
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, List<Binding> localContext) {
-    Definition oldDef = def.getName() == null ? null : checkName(def);
-
     List<Definition> fields = new ArrayList<>(def.getFields().size());
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     ClassDefinition result = new ClassDefinition(def.getName(), myParent, universe, fields);
 
     for (Abstract.Definition field : def.getFields()) {
-      Definition newField = field.accept(new DefinitionCheckTypeVisitor(result, myGlobalContext, myErrors), localContext);
+      Definition newField = field.accept(new DefinitionCheckTypeVisitor(result, myErrors), localContext);
       if (newField == null) continue;
 
       if (newField instanceof FunctionDefinition && ((FunctionDefinition) newField).getArrow() == null) {
@@ -271,9 +228,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     result.setUniverse(universe);
-    if (def.getName() != null && oldDef == null) {
-      myGlobalContext.put(def.getName(), result);
-    }
     return result;
   }
 }

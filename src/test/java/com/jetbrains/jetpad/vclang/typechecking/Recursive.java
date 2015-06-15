@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
@@ -20,7 +19,7 @@ public class Recursive {
   public void list() {
     Concrete.Definition def = parseDef("\\data List (A : \\Type0) | nil | cons A (List A)");
     List<VcError> errors = new ArrayList<>();
-    Definition newDef = def.accept(new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors), new ArrayList<Binding>());
+    Definition newDef = def.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(newDef);
   }
@@ -29,7 +28,7 @@ public class Recursive {
   public void dataLeftError() {
     Concrete.Definition def = parseDef("\\data List (A : \\Type0) | nil | cons (List A -> A)");
     List<VcError> errors = new ArrayList<>();
-    def.accept(new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors), new ArrayList<Binding>());
+    def.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
     assertEquals(1, errors.size());
   }
 
@@ -37,7 +36,7 @@ public class Recursive {
   public void dataRightError() {
     Concrete.Definition def = parseDef("\\data List (B : \\Type0 -> \\Type0) (A : \\Type0) | nil | cons (B (List B A))");
     List<VcError> errors = new ArrayList<>();
-    def.accept(new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors), new ArrayList<Binding>());
+    def.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
     assertEquals(1, errors.size());
   }
 
@@ -45,7 +44,7 @@ public class Recursive {
   public void plus() {
     Concrete.Definition plus = parseDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => suc (x' + y)");
     List<VcError> errors = new ArrayList<>();
-    Definition newPlus = plus.accept(new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors), new ArrayList<Binding>());
+    Definition newPlus = plus.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(newPlus);
   }
@@ -54,7 +53,7 @@ public class Recursive {
   public void doubleRec() {
     Concrete.Definition foo = parseDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => suc x'' + (x'' + y)");
     List<VcError> errors = new ArrayList<>();
-    Definition newFoo = foo.accept(new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors), new ArrayList<Binding>());
+    Definition newFoo = foo.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(newFoo);
   }
@@ -63,7 +62,7 @@ public class Recursive {
   public void functionError() {
     Concrete.Definition foo = parseDef("\\function (+) (x y : Nat) : Nat <= x + y");
     List<VcError> errors = new ArrayList<>();
-    foo.accept(new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors), new ArrayList<Binding>());
+    foo.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
     assertEquals(1, errors.size());
   }
 
@@ -71,7 +70,7 @@ public class Recursive {
   public void functionError2() {
     Concrete.Definition foo = parseDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => y + y");
     List<VcError> errors = new ArrayList<>();
-    foo.accept(new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors), new ArrayList<Binding>());
+    foo.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
     assertEquals(1, errors.size());
   }
 
@@ -79,7 +78,7 @@ public class Recursive {
   public void functionPartiallyApplied() {
     Concrete.Definition foo = parseDef("\\function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => z (foo z x')");
     List<VcError> errors = new ArrayList<>();
-    Definition newFoo = foo.accept(new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors), new ArrayList<Binding>());
+    Definition newFoo = foo.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(newFoo);
   }

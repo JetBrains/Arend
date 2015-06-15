@@ -139,7 +139,7 @@ public final class Abstract {
 
   public interface Clause extends PrettyPrintableSourceNode {
     String getName();
-    List<? extends Argument> getArguments();
+    List<? extends NameArgument> getArguments();
     Definition.Arrow getArrow();
     Expression getExpression();
   }

@@ -21,13 +21,13 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   }
 
   @Override
-  public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitClass(this, params);
+  public List<Definition> getFields() {
+    return myFields;
   }
 
   @Override
-  public List<Definition> getFields() {
-    return myFields;
+  public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitClass(this, params);
   }
 
   public Definition findField(String name) {

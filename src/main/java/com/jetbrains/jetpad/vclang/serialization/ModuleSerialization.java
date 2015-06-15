@@ -63,7 +63,7 @@ public class ModuleSerialization {
         throw new IncorrectFormat();
       }
       ClassDefinition classParent = (ClassDefinition) parent;
-      Definition field = classParent.findField(name, errors);
+      Definition field = classParent.findField(name);
       if (field == null) {
         Definition definition = newDefinition(code, name, classParent);
         definitionMap.put(index, definition);
@@ -152,7 +152,7 @@ public class ModuleSerialization {
     int size = stream.readInt();
     List<Definition> fields = new ArrayList<>(size);
 
-    Definition field = parent.findField(name, errors);
+    Definition field = parent.findField(name);
     ClassDefinition result;
     if (field == null) {
       result = new ClassDefinition(name, parent, universe, fields);

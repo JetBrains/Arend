@@ -2,20 +2,18 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
@@ -42,8 +40,8 @@ public class ElimTest {
     arguments3.add(Tele(vars("d1"), Apps(DefCall(dataType), Index(2), Index(1), Index(0))));
     arguments3.add(Tele(vars("a2", "b2", "c2"), Nat()));
     arguments3.add(Tele(vars("d2"), Apps(DefCall(dataType), Index(2), Index(1), Index(0))));
-    List<Argument> arguments11 = new ArrayList<>(1);
-    List<Argument> arguments12 = new ArrayList<>(4);
+    List<NameArgument> arguments11 = new ArrayList<>(1);
+    List<NameArgument> arguments12 = new ArrayList<>(4);
     arguments11.add(Name("s"));
     arguments12.add(Name("x"));
     arguments12.add(Name("y"));
@@ -63,9 +61,9 @@ public class ElimTest {
     List<Clause> clauses2 = new ArrayList<>();
     List<Clause> clauses3 = new ArrayList<>();
     List<Clause> clauses4 = new ArrayList<>();
-    ElimExpression term2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Var("r"), clauses2, null);
-    ElimExpression term3 = Elim(Abstract.ElimExpression.ElimType.ELIM, Var("e"), clauses3, null);
-    ElimExpression term4 = Elim(Abstract.ElimExpression.ElimType.ELIM, Var("e"), clauses4, null);
+    ElimExpression term2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0) /* r */, clauses2, null);
+    ElimExpression term3 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1) /* e */, clauses3, null);
+    ElimExpression term4 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(4) /* e */, clauses4, null);
     clauses2.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.LEFT, term4, term2));
     clauses2.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.LEFT, term3, term2));
     clauses3.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Var("x"), term3));
@@ -74,13 +72,8 @@ public class ElimTest {
     clauses4.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(7), term4));
     FunctionDefinition function = new FunctionDefinition("fun", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
 
-    Map<String, Definition> globalContext = Prelude.getDefinitions();
-    globalContext.put("D", dataType);
-    globalContext.put("P", pFunction);
-    globalContext.put("con1", constructors.get(0));
-    globalContext.put("con2", constructors.get(1));
     List<VcError> errors = new ArrayList<>();
-    Definition result = function.accept(new DefinitionCheckTypeVisitor(null, globalContext, errors), new ArrayList<Binding>());
+    Definition result = function.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(result);
   }

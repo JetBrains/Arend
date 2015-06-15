@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
@@ -12,7 +11,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -109,15 +107,15 @@ public class ParserTest {
 
   @Test
   public void parserInfix() {
-    Map<String, Definition> definitions = Prelude.getDefinitions();
     List<TelescopeArgument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
     Definition plus = new FunctionDefinition("+", null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
     Definition mul = new FunctionDefinition("*", null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
-    definitions.put("+", plus);
-    definitions.put("*", mul);
+    List<Definition> definitions = new ArrayList<>(2);
+    definitions.add(plus);
+    definitions.add(mul);
     List<VcError> errors = new ArrayList<>();
-    CheckTypeVisitor.Result result = parseExpr("0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(definitions, new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
+    CheckTypeVisitor.Result result = parseExpr(definitions, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, errors.size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
     assertTrue(compare(BinOp(BinOp(Zero(), plus, BinOp(Suc(Zero()), mul, Suc(Suc(Zero())))), plus, BinOp(BinOp(Suc(Suc(Suc(Zero()))), mul, BinOp(Suc(Suc(Suc(Suc(Zero())))), mul, Suc(Suc(Suc(Suc(Suc(Zero()))))))), mul, BinOp(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), plus, Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))))))), result.expression));
@@ -133,16 +131,16 @@ public class ParserTest {
 
   @Test
   public void parserInfixError() {
-    Map<String, Definition> definitions = Prelude.getDefinitions();
     List<TelescopeArgument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
     Definition plus = new FunctionDefinition("+", null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
     Definition mul = new FunctionDefinition("*", null, new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
-    definitions.put("+", plus);
-    definitions.put("*", mul);
+    List<Definition> definitions = new ArrayList<>(2);
+    definitions.add(plus);
+    definitions.add(mul);
 
     List<VcError> errors = new ArrayList<>();
-    parseExpr("11 + 2 * 3").accept(new CheckTypeVisitor(definitions, new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
+    parseExpr(definitions, "11 + 2 * 3").accept(new CheckTypeVisitor(new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(1, errors.size());
   }
 }

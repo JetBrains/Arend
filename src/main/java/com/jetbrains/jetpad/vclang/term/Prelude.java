@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
@@ -65,7 +65,7 @@ public class Prelude {
     coerceArguments.add(Tele(vars("point"), DefCall(INTERVAL)));
     List<Clause> coerceClauses = new ArrayList<>(1);
     ElimExpression coerceTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), coerceClauses, null);
-    coerceClauses.add(new Clause(LEFT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(0), coerceTerm));
+    coerceClauses.add(new Clause(LEFT, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(0), coerceTerm));
     COERCE = new FunctionDefinition("coe", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, coerceArguments, Apps(Index(2), Index(0)), Abstract.Definition.Arrow.LEFT, coerceTerm);
 
     definitions.add(COERCE);
@@ -102,12 +102,12 @@ public class Prelude {
     List<Clause> atClauses = new ArrayList<>(2);
     List<Clause> atOtherwiseClauses = new ArrayList<>(1);
     ElimExpression atOtherwiseElim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), atOtherwiseClauses, null);
-    atOtherwiseClauses.add(new Clause(PATH_CON, lamArgs(Name("f")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0)), atOtherwiseElim));
+    atOtherwiseClauses.add(new Clause(PATH_CON, nameArgs(Name("f")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0)), atOtherwiseElim));
     Clause atOtherwise = new Clause(null, null, Abstract.Definition.Arrow.LEFT, atOtherwiseElim, null);
     ElimExpression atTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), atClauses, atOtherwise);
     atOtherwise.setElimExpression(atTerm);
-    atClauses.add(new Clause(LEFT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(2), atTerm));
-    atClauses.add(new Clause(RIGHT, new ArrayList<Argument>(), Abstract.Definition.Arrow.RIGHT, Index(1), atTerm));
+    atClauses.add(new Clause(LEFT, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(2), atTerm));
+    atClauses.add(new Clause(RIGHT, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(1), atTerm));
     AT = new FunctionDefinition("@", PRELUDE, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), Abstract.Definition.Fixity.INFIX, atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);
 
     definitions.add(AT);

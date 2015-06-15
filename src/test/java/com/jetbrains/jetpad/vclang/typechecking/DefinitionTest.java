@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -13,7 +12,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
@@ -25,7 +23,7 @@ public class DefinitionTest {
     // f : N => 0;
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.RIGHT, Zero());
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors).visitFunction(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(null, errors).visitFunction(def, new ArrayList<Binding>());
     assertNotNull(def);
     assertEquals(0, errors.size());
   }
@@ -35,7 +33,7 @@ public class DefinitionTest {
     // f => 0;
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), null, Definition.Arrow.RIGHT, Zero());
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors).visitFunction(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(null, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Nat(), def.getType());
@@ -49,7 +47,7 @@ public class DefinitionTest {
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, null, Definition.Arrow.RIGHT, Index(0));
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, Prelude.getDefinitions(), errors).visitFunction(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(null, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), def.getType());
@@ -77,9 +75,8 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
     constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
-    Map<String, Definition> definitions = Prelude.getDefinitions();
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, definitions, errors).visitData(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(null, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Pi(parameters, Universe(0)), def.getType());
@@ -107,9 +104,8 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Index(1)));
     constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
-    Map<String, Definition> definitions = Prelude.getDefinitions();
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, definitions, errors).visitData(def, new ArrayList<Binding>());
+    def = new DefinitionCheckTypeVisitor(null, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertNotNull(def);
     assertEquals(Pi(parameters, Universe(6, 7)), def.getType());
@@ -126,13 +122,9 @@ public class DefinitionTest {
     Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))));
     constructors.add(con);
 
-    Map<String, Definition> definitions = Prelude.getDefinitions();
-    definitions.put("D", def);
-    definitions.put("con", con);
-
     Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
     List<VcError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(definitions, new ArrayList<Binding>(), null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
     assertEquals(Apps(DefCall(def), Nat()), result.type);
@@ -151,11 +143,7 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DefCall(def), Pi(Nat(), Nat())), Nat())));
 
-    Map<String, Definition> definitions = Prelude.getDefinitions();
-    definitions.put("D", def);
-    definitions.put("con", con);
-
-    CheckTypeVisitor.OKResult result = expr.checkType(definitions, localContext, null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
     assertEquals(Nat(), result.type);
@@ -174,11 +162,7 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DefCall(def), Nat())), Pi(Nat(), Nat()))));
 
-    Map<String, Definition> definitions = Prelude.getDefinitions();
-    definitions.put("D", def);
-    definitions.put("con", con);
-
-    CheckTypeVisitor.OKResult result = expr.checkType(definitions, localContext, null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);

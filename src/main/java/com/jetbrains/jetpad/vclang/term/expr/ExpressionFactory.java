@@ -63,6 +63,10 @@ public class ExpressionFactory {
     return Arrays.asList(args);
   }
 
+  public static List<NameArgument> nameArgs(NameArgument... args) {
+    return Arrays.asList(args);
+  }
+
   public static List<Argument> lamArgs(Argument... args) {
     return Arrays.asList(args);
   }

@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
@@ -24,7 +23,6 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
-  private final Map<String, Definition> myGlobalContext;
   private final List<Binding> myLocalContext;
   private final List<VcError> myErrors;
   private final Side mySide;
@@ -68,8 +66,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public enum Side { LHS, RHS }
 
-  public CheckTypeVisitor(Map<String, Definition> globalContext, List<Binding> localContext, List<VcError> errors, Side side) {
-    myGlobalContext = globalContext;
+  public CheckTypeVisitor(List<Binding> localContext, List<VcError> errors, Side side) {
     myLocalContext = localContext;
     myErrors = errors;
     mySide = side;
@@ -740,29 +737,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitVar(Abstract.VarExpression expr, Expression expectedType) {
-    String name = expr.getName().charAt(0) == '(' ? expr.getName().substring(1, expr.getName().length() - 1) : expr.getName();
-
-    if (expr.getName().charAt(0) != '(') {
-      ListIterator<Binding> it = myLocalContext.listIterator(myLocalContext.size());
-      int index = 0;
-      while (it.hasPrevious()) {
-        Binding def = it.previous();
-        if (name.equals(def.getName())) {
-          return checkResultImplicit(expectedType, new OKResult(Index(index), def.getType().liftIndex(0, index + 1), null), expr);
-        }
-        ++index;
+    ListIterator<Binding> it = myLocalContext.listIterator(myLocalContext.size());
+    int index = 0;
+    while (it.hasPrevious()) {
+      Binding def = it.previous();
+      if (expr.getName().equals(def.getName())) {
+        return checkResultImplicit(expectedType, new OKResult(Index(index), def.getType().liftIndex(0, index + 1), null), expr);
       }
+      ++index;
     }
 
-    Definition def = myGlobalContext.get(name);
-    if (def == null) {
-      NotInScopeError error = new NotInScopeError(expr, expr.getName());
-      expr.setWellTyped(Error(null, error));
-      myErrors.add(error);
-      return null;
-    } else {
-      return checkResultImplicit(expectedType, new OKResult(DefCall(def), def.getType(), null), expr);
-    }
+    NotInScopeError error = new NotInScopeError(expr, expr.getName());
+    expr.setWellTyped(Error(null, error));
+    myErrors.add(error);
+    return null;
   }
 
   @Override
@@ -914,7 +902,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     } else {
       return null;
     }
-    return myGlobalContext.get(name);
+    return null; // myGlobalContext.get(name);
   }
 
   @Override
@@ -1027,7 +1015,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Result errorResult = null;
 
-    clauses_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
       if (clause == null) continue;
 
@@ -1056,14 +1043,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Constructor constructor = constructors.get(index);
       constructors.remove(index);
 
-      for (Abstract.Argument argument : clause.getArguments()) {
-        if (!(argument instanceof Abstract.NameArgument)) {
-          error = new TypeCheckingError("Expected a variable", argument, getNames(myLocalContext));
-          expr.setWellTyped(Error(null, error));
-          myErrors.add(error);
-          continue clauses_loop;
-        }
-      }
       List<TypeArgument> constructorArguments = new ArrayList<>();
       splitArguments(constructor.getType(), constructorArguments);
       if (clause.getArguments().size() != constructorArguments.size()) {
@@ -1074,9 +1053,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         continue;
       }
 
-      List<Argument> arguments = new ArrayList<>(clause.getArguments().size());
+      List<NameArgument> arguments = new ArrayList<>(clause.getArguments().size());
       for (int i = 0; i < clause.getArguments().size(); ++i) {
-        arguments.add(new NameArgument(clause.getArguments().get(i).getExplicit(), ((Abstract.NameArgument) clause.getArguments().get(i)).getName()));
+        arguments.add(new NameArgument(clause.getArguments().get(i).getExplicit(), clause.getArguments().get(i).getName()));
       }
 
       Expression substExpr = DefCall(constructor);
@@ -1090,7 +1069,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         localContext.add(myLocalContext.get(i));
       }
       for (int i = 0; i < constructorArguments.size(); ++i) {
-        localContext.add(new TypedBinding(((NameArgument) arguments.get(i)).getName(), constructorArguments.get(i).getType().subst(parameters, 0)));
+        localContext.add(new TypedBinding(arguments.get(i).getName(), constructorArguments.get(i).getType().subst(parameters, 0)));
       }
       for (int i = myLocalContext.size() - varIndex; i < myLocalContext.size(); ++i) {
         int i0 = i - myLocalContext.size() + varIndex;
@@ -1098,7 +1077,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
-      Result clauseResult = new CheckTypeVisitor(myGlobalContext, localContext, myErrors, side).typeCheck(clause.getExpression(), clauseExpectedType);
+      Result clauseResult = new CheckTypeVisitor(localContext, myErrors, side).typeCheck(clause.getExpression(), clauseExpectedType);
       if (!(clauseResult instanceof OKResult)) {
         if (errorResult == null) {
           errorResult = clauseResult;
@@ -1133,7 +1112,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Clause otherwise = null;
     if (expr.getOtherwise() != null) {
       Side side = expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.RIGHT || !(expr.getOtherwise().getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) expr.getOtherwise().getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
-      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myGlobalContext, myLocalContext, myErrors, side) : this;
+      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myLocalContext, myErrors, side) : this;
       Result clauseResult = visitor.typeCheck(expr.getOtherwise().getExpression(), expectedType);
       if (clauseResult instanceof InferErrorResult) {
         return clauseResult;

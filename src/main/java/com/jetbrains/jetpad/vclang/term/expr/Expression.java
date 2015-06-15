@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -66,8 +65,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return accept(new NormalizeVisitor(mode));
   }
 
-  public final CheckTypeVisitor.OKResult checkType(Map<String, Definition> globalContext, List<Binding> localContext, Expression expectedType, List<VcError> errors) {
-    return new CheckTypeVisitor(globalContext, localContext, errors, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
+  public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, List<VcError> errors) {
+    return new CheckTypeVisitor(localContext, errors, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
   }
 
   public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {

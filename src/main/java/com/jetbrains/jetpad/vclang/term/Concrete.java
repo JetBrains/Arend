@@ -66,7 +66,7 @@ public final class Concrete {
   }
 
   public static class Argument extends SourceNode implements Abstract.Argument {
-    private final boolean myExplicit;
+    private boolean myExplicit;
 
     public Argument(Position position, boolean explicit) {
       super(position);
@@ -76,6 +76,10 @@ public final class Concrete {
     @Override
     public boolean getExplicit() {
       return myExplicit;
+    }
+
+    public void setExplicit(boolean explicit) {
+      myExplicit = explicit;
     }
 
     @Override
@@ -388,6 +392,25 @@ public final class Concrete {
     }
   }
 
+  public static class IndexExpression extends Expression implements Abstract.IndexExpression {
+    private final int myIndex;
+
+    public IndexExpression(Position position, int index) {
+      super(position);
+      myIndex = index;
+    }
+
+    @Override
+    public int getIndex() {
+      return myIndex;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitIndex(this, params);
+    }
+  }
+
   public static class FieldAccExpression extends Expression implements Abstract.FieldAccExpression {
     private final Expression myExpression;
     private final String myName;
@@ -494,12 +517,12 @@ public final class Concrete {
 
   public static class Clause extends SourceNode implements Abstract.Clause {
     private final String myName;
-    private final List<Argument> myArguments;
+    private final List<NameArgument> myArguments;
     private final Definition.Arrow myArrow;
     private final Expression myExpression;
     private ElimExpression myElimExpression;
 
-    public Clause(Position position, String name, List<Argument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
+    public Clause(Position position, String name, List<NameArgument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
       super(position);
       myName = name;
       myArguments = arguments;
@@ -518,7 +541,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Argument> getArguments() {
+    public List<NameArgument> getArguments() {
       return myArguments;
     }
 
