@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.antlr.v4.runtime.*;
 
@@ -19,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ModuleLoader {
-  private final static ClassDefinition myRoot = new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>());
+  private final static ClassDefinition myRoot = new ClassDefinition("\\root", null, new ArrayList<Definition>());
   private final static List<Module> myLoadingModules = new ArrayList<>();
   private static File mySourceDir;
   private static File myOutputDir;
@@ -63,7 +62,7 @@ public class ModuleLoader {
   public static ClassDefinition getModule(ClassDefinition parent, String name, List<VcError> errors) {
     Definition definition = parent.findField(name);
     if (definition == null) {
-      ClassDefinition result = new ClassDefinition(name, parent, new Universe.Type(0), new ArrayList<Definition>());
+      ClassDefinition result = new ClassDefinition(name, parent, new ArrayList<Definition>());
       parent.getFields().add(result);
       return result;
     } else {

@@ -34,7 +34,7 @@ public class Prelude {
 
   static {
     List<Definition> definitions = new ArrayList<>();
-    PRELUDE = new ClassDefinition("Prelude", null, new Universe.Type(0), definitions);
+    PRELUDE = new ClassDefinition("Prelude", null, definitions);
 
     List<Constructor> natConstructors = new ArrayList<>(2);
     NAT = new DataDefinition("Nat", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>(), natConstructors);

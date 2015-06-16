@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
@@ -32,7 +31,7 @@ public class PrettyPrintingParserTest {
   private void testDef(ClassDefinition root, FunctionDefinition expected, FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     def.accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
-    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(root, builder.toString());
+    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(root, builder.toString()).rawDefinition;
     assertEquals(expected.getArguments().size(), result.getArguments().size());
     for (int i = 0; i < expected.getArguments().size(); ++i) {
       assertTrue(compare(expected.getArguments().get(i).getType(), result.getArguments().get(i).getType()));
@@ -67,7 +66,7 @@ public class PrettyPrintingParserTest {
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
     // f (x : Nat) : Nat x => \y z. y z;
-    ClassDefinition root = new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>(0));
+    ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>(0));
     FunctionDefinition def = new FunctionDefinition("f", root, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("x"), Nat())), Apps(Nat(), Index(0)), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Index(1), Index(0))));
     testDef(root, def, def);
   }
@@ -75,7 +74,7 @@ public class PrettyPrintingParserTest {
   @Test
   public void prettyPrintingParserElim() throws UnsupportedEncodingException {
     // \function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \elim x | zero => y | suc x' => z (foo z x')
-    ClassDefinition root = new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>(0));
+    ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>(0));
 
     List<Clause> fooClausesActual = new ArrayList<>();
     ElimExpression fooTermActual = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), fooClausesActual, null);

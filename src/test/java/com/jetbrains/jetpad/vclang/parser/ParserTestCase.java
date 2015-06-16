@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import org.antlr.v4.runtime.*;
@@ -34,7 +33,7 @@ public class ParserTestCase {
 
   public static Concrete.Expression parseExpr(List<Definition> definitions, String text) {
     List<VcError> errors = new ArrayList<>();
-    ClassDefinition root = new ClassDefinition("\\root", null, new Universe.Type(0), definitions);
+    ClassDefinition root = new ClassDefinition("\\root", null, definitions);
     Concrete.Expression result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitExpr(parse(text, errors).expr());
     assertEquals(0, errors.size());
     return result;
@@ -44,20 +43,20 @@ public class ParserTestCase {
     return parseExpr(new ArrayList<Definition>(0), text);
   }
 
-  public static Concrete.Definition parseDef(ClassDefinition root, String text) {
+  public static ModuleLoader.TypeCheckingUnit parseDef(ClassDefinition root, String text) {
     List<VcError> errors = new ArrayList<>();
-    Concrete.Definition result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitDef(parse(text, errors).def()).rawDefinition;
+    ModuleLoader.TypeCheckingUnit result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitDef(parse(text, errors).def());
     assertEquals(0, errors.size());
     return result;
   }
 
-  public static Concrete.Definition parseDef(String text) {
-    return parseDef(new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>(0)), text);
+  public static ModuleLoader.TypeCheckingUnit parseDef(String text) {
+    return parseDef(new ClassDefinition("\\root", null, new ArrayList<Definition>(0)), text);
   }
 
   public static List<Concrete.Definition> parseDefs(String text) {
     List<VcError> errors = new ArrayList<>();
-    ClassDefinition root = new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>(0));
+    ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>(0));
     List<Concrete.Definition> result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitDefs(parse(text, errors).defs());
     assertEquals(0, errors.size());
     return result;

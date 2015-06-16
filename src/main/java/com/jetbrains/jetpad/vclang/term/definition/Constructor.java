@@ -13,11 +13,18 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class Constructor extends Definition implements Abstract.Constructor {
-  private final List<TypeArgument> myArguments;
-  private int myIndex;
+  private List<TypeArgument> myArguments;
+  private final int myIndex;
 
-  public Constructor(int index, String name, DataDefinition dataType, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments) {
-    super(name, dataType, precedence, fixity, universe);
+  public Constructor(int index, String name, Definition parent, Precedence precedence, Fixity fixity) {
+    super(name, parent, precedence, fixity);
+    myIndex = index;
+  }
+
+  public Constructor(int index, String name, Definition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments) {
+    super(name, parent, precedence, fixity);
+    setUniverse(universe);
+    hasErrors(false);
     myArguments = arguments;
     myIndex = index;
   }
@@ -27,21 +34,17 @@ public class Constructor extends Definition implements Abstract.Constructor {
     return myArguments;
   }
 
+  public void setArguments(List<TypeArgument> arguments) {
+    myArguments = arguments;
+  }
+
   @Override
   public DataDefinition getDataType() {
     return (DataDefinition) super.getParent();
   }
 
-  public void setDataType(DataDefinition parent) {
-    super.setParent(parent);
-  }
-
   public int getIndex() {
     return myIndex;
-  }
-
-  public void setIndex(int index) {
-    myIndex = index;
   }
 
   @Override

@@ -4,7 +4,10 @@ import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -50,7 +53,7 @@ public class ParserTest {
   @Test
   public void parserLamOpenError() {
     List<VcError> errors = new ArrayList<>();
-    ClassDefinition root = new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>());
+    ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>());
     Concrete.Expression result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitExpr(parse("\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y", errors).expr());
     assertEquals(1, errors.size());
     assertNull(result);
@@ -59,7 +62,7 @@ public class ParserTest {
   @Test
   public void parserPiOpenError() {
     List<VcError> errors = new ArrayList<>();
-    ClassDefinition root = new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>());
+    ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>());
     Concrete.Expression result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitExpr(parse("\\Pi (a b : Nat a) -> Nat a b", errors).expr());
     assertEquals(1, errors.size());
     assertNull(result);
@@ -83,7 +86,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} : Nat x y z w t r => Nat");
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} : Nat x y z w t r => Nat").rawDefinition;
     assertEquals(4, def.getArguments().size());
     assertTrue(def.getArguments().get(0).getExplicit());
     assertFalse(def.getArguments().get(1).getExplicit());
@@ -98,7 +101,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit2() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f {x : Nat} (_ : Nat) {y z : Nat} (_ : Nat x y z) : Nat => Nat");
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f {x : Nat} (_ : Nat) {y z : Nat} (_ : Nat x y z) : Nat => Nat").rawDefinition;
     assertEquals(4, def.getArguments().size());
     assertFalse(def.getArguments().get(0).getExplicit());
     assertTrue(def.getArguments().get(1).getExplicit());

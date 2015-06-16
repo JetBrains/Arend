@@ -94,32 +94,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.Expression) visit(expr);
   }
 
-  private Definition getDefinition(Concrete.Definition concreteDef) {
+  private Definition getDefinition(Concrete.Definition concreteDef, Definition defaultResult) {
     Definition typedDef = myParent.findField(concreteDef.getName());
-    if (typedDef != null) {
-      if (!(typedDef instanceof ClassDefinition)) {
-        myErrors.add(new ParserError(concreteDef.getPosition(), concreteDef.getName() + " is already defined"));
-        return null;
-      }
+    if (typedDef == null) return defaultResult;
+    if (!(typedDef instanceof ClassDefinition) || !(concreteDef instanceof Concrete.ClassDefinition)) {
+      myErrors.add(new ParserError(concreteDef.getPosition(), concreteDef.getName() + " is already defined"));
+      return null;
     } else {
-      if (concreteDef instanceof Concrete.FunctionDefinition) {
-        typedDef = new FunctionDefinition(concreteDef.getName(), myParent, concreteDef.getPrecedence(), concreteDef.getFixity(), null, null, ((Concrete.FunctionDefinition) concreteDef).getArrow(), null);
-      } else
-      if (concreteDef instanceof Concrete.DataDefinition) {
-        List<Constructor> constructors = new ArrayList<>();
-        typedDef = new DataDefinition(concreteDef.getName(), myParent, concreteDef.getPrecedence(), concreteDef.getFixity(), null, null, constructors);
-      } else
-      if (concreteDef instanceof Concrete.ClassDefinition) {
-        typedDef = new ClassDefinition(concreteDef.getName(), myParent, new Universe.Type(0), new ArrayList<Definition>());
-      } else
-      if (concreteDef instanceof Concrete.Constructor) {
-        typedDef = new Constructor(-1, concreteDef.getName(), null, concreteDef.getPrecedence(), concreteDef.getFixity(), null, null);
-      } else {
-        throw new IllegalStateException();
-      }
+      return typedDef;
     }
-
-    return typedDef;
   }
 
   @Override
@@ -144,8 +127,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return visitDefData((DefDataContext) ctx);
     }
     if (ctx instanceof DefClassContext) {
-      Concrete.Definition concreteDef = visitDefClass((DefClassContext) ctx);
-      Definition typedDef = getDefinition(concreteDef);
+      Concrete.ClassDefinition concreteDef = visitDefClass((DefClassContext) ctx);
+      Definition typedDef = getDefinition(concreteDef, new ClassDefinition(concreteDef.getName(), myParent, new ArrayList<Definition>()));
+      if (typedDef == null) return null;
       myParent.getFields().add(typedDef);
       return new ModuleLoader.TypeCheckingUnit(concreteDef, typedDef);
     }
@@ -180,7 +164,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Definition.Arrow arrow = ctx.termOpt() instanceof NoTermContext ? null : ((WithTermContext) ctx.termOpt()).arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, visitPrecedence(ctx.precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null);
 
-    Definition typedDef = getDefinition(def);
+    Definition typedDef = getDefinition(def, new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow()));
+    if (typedDef == null) return null;
     myParent.getFields().add(typedDef);
     if (ctx.termOpt() instanceof WithTermContext) {
       def.setTerm(visitExpr(((WithTermContext) ctx.termOpt()).expr()));
@@ -254,7 +239,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Universe universe = type == null ? null : ((Concrete.UniverseExpression) type).getUniverse();
     Concrete.DataDefinition def = new Concrete.DataDefinition(position, name, visitPrecedence(ctx.precedence()), fixity, universe, parameters, constructors);
 
-    Definition typedDef = getDefinition(def);
+    DataDefinition typedDef = (DataDefinition) getDefinition(def, new DataDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), new ArrayList<Constructor>()));
+    if (typedDef == null) return null;
     myParent.getFields().add(typedDef);
 
     for (int i = 0; i < ctx.constructor().size(); ++i) {
@@ -269,18 +255,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       int size = myContext.size();
       List<Concrete.TypeArgument> arguments = visitTeles(ctx.constructor(i).tele());
-      if (arguments == null) return null;
-      Concrete.Constructor concreteConstructor = new Concrete.Constructor(position, name, visitPrecedence(ctx.constructor(i).precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), arguments, def);
       trimToSize(myContext, size);
+      if (arguments == null) continue;
+      Concrete.Constructor concreteConstructor = new Concrete.Constructor(position, name, visitPrecedence(ctx.constructor(i).precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), arguments, def);
 
+      Constructor typedConstructor = (Constructor) getDefinition(concreteConstructor, new Constructor(i, concreteConstructor.getName(), typedDef, concreteConstructor.getPrecedence(), concreteConstructor.getFixity()));
+      if (typedConstructor == null) continue;
       constructors.add(concreteConstructor);
-      Constructor typedConstructor = (Constructor) getDefinition(concreteConstructor);
-      if (typedConstructor != null) {
-        ((DataDefinition) typedDef).getConstructors().add(typedConstructor);
-        typedConstructor.setDataType((DataDefinition) typedDef);
-        typedConstructor.setIndex(i);
-        myParent.getFields().add(typedConstructor);
-      }
+      typedDef.getConstructors().add(typedConstructor);
+      myParent.getFields().add(typedConstructor);
     }
 
     return new ModuleLoader.TypeCheckingUnit(def, typedDef);

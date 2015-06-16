@@ -6,25 +6,23 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrint
 import java.util.ArrayList;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
-  private Definition myParent;
+  private final Definition myParent;
   private final Precedence myPrecedence;
   private final Fixity myFixity;
   private Universe myUniverse;
+  private boolean myHasErrors;
 
-  public Definition(String name, Definition parent, Precedence precedence, Fixity fixity, Universe universe) {
+  public Definition(String name, Definition parent, Precedence precedence, Fixity fixity) {
     super(name);
     myParent = parent;
     myPrecedence = precedence;
     myFixity = fixity;
-    myUniverse = universe;
+    myUniverse = new Universe.Type(0, Universe.Type.PROP);
+    myHasErrors = true;
   }
 
   public Definition getParent() {
     return myParent;
-  }
-
-  protected void setParent(Definition parent) {
-    myParent = parent;
   }
 
   @Override
@@ -44,6 +42,14 @@ public abstract class Definition extends Binding implements Abstract.Definition 
 
   public void setUniverse(Universe universe) {
     myUniverse = universe;
+  }
+
+  public boolean hasErrors() {
+    return myHasErrors;
+  }
+
+  public void hasErrors(boolean has) {
+    myHasErrors = has;
   }
 
   @Override

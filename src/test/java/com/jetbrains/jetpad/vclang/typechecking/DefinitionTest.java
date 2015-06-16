@@ -14,8 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class DefinitionTest {
   @Test
@@ -23,9 +22,9 @@ public class DefinitionTest {
     // f : N => 0;
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.RIGHT, Zero());
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, errors).visitFunction(def, new ArrayList<Binding>());
-    assertNotNull(def);
+    new DefinitionCheckTypeVisitor(null, def, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
+    assertFalse(def.hasErrors());
   }
 
   @Test
@@ -33,9 +32,9 @@ public class DefinitionTest {
     // f => 0;
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), null, Definition.Arrow.RIGHT, Zero());
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, errors).visitFunction(def, new ArrayList<Binding>());
+    new DefinitionCheckTypeVisitor(null, def, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
-    assertNotNull(def);
+    assertFalse(def.hasErrors());
     assertEquals(Nat(), def.getType());
   }
 
@@ -47,9 +46,9 @@ public class DefinitionTest {
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, null, Definition.Arrow.RIGHT, Index(0));
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, errors).visitFunction(def, new ArrayList<Binding>());
+    new DefinitionCheckTypeVisitor(null, def, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
-    assertNotNull(def);
+    assertFalse(def.hasErrors());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), def.getType());
   }
 
@@ -76,9 +75,9 @@ public class DefinitionTest {
     constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, errors).visitData(def, new ArrayList<Binding>());
+    new DefinitionCheckTypeVisitor(null, def, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
-    assertNotNull(def);
+    assertFalse(def.hasErrors());
     assertEquals(Pi(parameters, Universe(0)), def.getType());
     assertEquals(2, def.getConstructors().size());
     assertEquals(Pi(arguments1, Apps(Apps(Apps(DefCall(def), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), def.getConstructors().get(0).getType());
@@ -105,9 +104,9 @@ public class DefinitionTest {
     constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
     List<VcError> errors = new ArrayList<>();
-    def = new DefinitionCheckTypeVisitor(null, errors).visitData(def, new ArrayList<Binding>());
+    new DefinitionCheckTypeVisitor(null, def, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
-    assertNotNull(def);
+    assertFalse(def.hasErrors());
     assertEquals(Pi(parameters, Universe(6, 7)), def.getType());
     assertEquals(2, def.getConstructors().size());
     assertEquals(Pi(arguments1, Apps(DefCall(def), Index(2))), def.getConstructors().get(0).getType());

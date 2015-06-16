@@ -487,7 +487,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
+    if (expr.getDefinition().hasErrors()) {
+      TypeCheckingError error = new TypeCheckingError(expr.getDefinition().getName() + " has errors", expr, null);
+      expr.setWellTyped(Error(DefCall(expr.getDefinition()), error));
+      myErrors.add(error);
+      return null;
+    } else {
+      return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
+    }
   }
 
   @Override
@@ -1043,12 +1050,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Constructor constructor = constructors.get(index);
       constructors.remove(index);
 
+      if (constructor.hasErrors()) {
+        String msg = constructor.getName() + " has errors";
+        error = new TypeCheckingError(msg, clause, getNames(myLocalContext));
+        clause.getExpression().setWellTyped(Error(null, error));
+        myErrors.add(error);
+        continue;
+      }
+
       List<TypeArgument> constructorArguments = new ArrayList<>();
       splitArguments(constructor.getType(), constructorArguments);
       if (clause.getArguments().size() != constructorArguments.size()) {
         String msg = "Expected " + constructorArguments.size() + " arguments to " + constructor.getName() + ", but given " + clause.getArguments().size();
         error = new TypeCheckingError(msg, clause, getNames(myLocalContext));
-        expr.setWellTyped(Error(null, error));
+        clause.getExpression().setWellTyped(Error(null, error));
         myErrors.add(error);
         continue;
       }
@@ -1147,7 +1162,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (exprNorm instanceof DefCallExpression && ((DefCallExpression) exprNorm).getDefinition() instanceof ClassDefinition) {
         Definition field = ((ClassDefinition) ((DefCallExpression) exprNorm).getDefinition()).findField(expr.getName());
         if (field != null) {
-          return checkResult(expectedType, new OKResult(DefCall(field), field.getType(), okExprResult.equations), expr);
+          if (field.hasErrors()) {
+            TypeCheckingError error = new TypeCheckingError(field.getName() + " has errors", expr, null);
+            expr.setWellTyped(Error(DefCall(field), error));
+            myErrors.add(error);
+            return null;
+          } else {
+            return checkResult(expectedType, new OKResult(DefCall(field), field.getType(), okExprResult.equations), expr);
+          }
         }
         notInScope = true;
       }
@@ -1156,7 +1178,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
       Definition field = ((ClassDefinition) ((DefCallExpression) type).getDefinition()).findField(expr.getName());
       if (field != null) {
-        return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, field), field.getType(), okExprResult.equations), expr);
+        if (field.hasErrors()) {
+          TypeCheckingError error = new TypeCheckingError(field.getName() + " has errors", expr, null);
+          expr.setWellTyped(Error(DefCall(field), error));
+          myErrors.add(error);
+          return null;
+        } else {
+          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, field), field.getType(), okExprResult.equations), expr);
+        }
       }
       notInScope = true;
     }

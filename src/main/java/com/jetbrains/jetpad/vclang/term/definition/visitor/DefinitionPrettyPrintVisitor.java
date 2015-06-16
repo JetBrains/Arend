@@ -37,10 +37,16 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
     } else {
       myBuilder.append('(').append(def.getName()).append(')');
     }
-    for (Abstract.TelescopeArgument argument : def.getArguments()) {
-      myBuilder.append(' ');
-      argument.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+
+    if (def.getArguments() != null) {
+      for (Abstract.TelescopeArgument argument : def.getArguments()) {
+        myBuilder.append(' ');
+        argument.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+      }
+    } else {
+      myBuilder.append("{!error}");
     }
+
     if (def.getResultType() != null) {
       myBuilder.append(" : ");
       def.getResultType().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
@@ -51,9 +57,12 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
     if (def.getTerm() != null) {
       def.getTerm().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
     } else {
-      myBuilder.append("{?}");
+      myBuilder.append("{!error}");
     }
-    removeFromList(myNames, def.getArguments());
+
+    if (def.getArguments() != null) {
+      removeFromList(myNames, def.getArguments());
+    }
     return null;
   }
 
@@ -65,10 +74,16 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
     } else {
       myBuilder.append('(').append(def.getName()).append(')');
     }
-    for (Abstract.TypeArgument parameter : def.getParameters()) {
-      myBuilder.append(' ');
-      parameter.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+
+    if (def.getParameters() != null) {
+      for (Abstract.TypeArgument parameter : def.getParameters()) {
+        myBuilder.append(' ');
+        parameter.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+      }
+    } else {
+      myBuilder.append("{!error}");
     }
+
     if (def.getUniverse() != null) {
       myBuilder.append(" : ").append(def.getUniverse());
     }
@@ -80,18 +95,24 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
       constructor.accept(this, null);
     }
     --myIndent;
-    removeFromList(myNames, def.getParameters());
+    if (def.getParameters() != null) {
+      removeFromList(myNames, def.getParameters());
+    }
     return null;
   }
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, Void ignored) {
     myBuilder.append(def.getName());
-    for (Abstract.TypeArgument argument : def.getArguments()) {
-      myBuilder.append(' ');
-      argument.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+    if (def.getArguments() == null) {
+      myBuilder.append("{!error}");
+    } else {
+      for (Abstract.TypeArgument argument : def.getArguments()) {
+        myBuilder.append(' ');
+        argument.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+      }
+      removeFromList(myNames, def.getArguments());
     }
-    removeFromList(myNames, def.getArguments());
     return null;
   }
 

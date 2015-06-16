@@ -130,6 +130,10 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   }
 
   public Expression visitDefCall(Definition def, Expression defCallExpr, List<ArgumentExpression> args) {
+    if (def.hasErrors()) {
+      return myMode == Mode.TOP ? null : applyDefCall(defCallExpr, args);
+    }
+
     if (def instanceof FunctionDefinition) {
       if (def.equals(Prelude.COERCE) && args.size() == 3 && Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0)).normalize(Mode.NF).liftIndex(0, -1) != null) {
         return myMode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this);
@@ -160,7 +164,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
           Constructor constructor = (Constructor) ((DefCallExpression) expr).getDefinition();
           Clause clause = constructor.getIndex() < ((ElimExpression) result).getClauses().size() ? ((ElimExpression) result).getClauses().get(constructor.getIndex()) : null;
           if (clause != null && clause.getArguments().size() == constructorArgs.size()) {
-            int var = ((IndexExpression) ((ElimExpression) result).getExpression()).getIndex();
+            int var = ((ElimExpression) result).getExpression().getIndex();
             args2.remove(var);
             Collections.reverse(constructorArgs);
             args2.addAll(var, constructorArgs);

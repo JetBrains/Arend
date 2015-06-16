@@ -85,10 +85,10 @@ public class ModuleSerialization {
   }
 
   static private Definition newDefinition(int code, String name, ClassDefinition parent) throws IncorrectFormat {
-    if (code == 0) return new FunctionDefinition(name, parent, null, null, null, null, null, null);
-    if (code == 1) return new DataDefinition(name, parent, null, null, null, null, null);
-    if (code == 2) return new ClassDefinition(name, parent, null, null);
-    if (code == 3) return new Constructor(-1, name, new DataDefinition(name, parent, null, null, null, null, null), null, null, null, null);
+    if (code == 0) return new FunctionDefinition(name, parent, null, null, null);
+    if (code == 1) return new DataDefinition(name, parent, null, null, null);
+    if (code == 2) return new ClassDefinition(name, parent, new ArrayList<Definition>());
+    if (code == 3) return new Constructor(-1, name, new DataDefinition(name, parent, null, null, null), null, null);
     throw new IncorrectFormat();
   }
 
@@ -155,7 +155,8 @@ public class ModuleSerialization {
     Definition field = parent.findField(name);
     ClassDefinition result;
     if (field == null) {
-      result = new ClassDefinition(name, parent, universe, fields);
+      result = new ClassDefinition(name, parent, fields);
+      result.setUniverse(universe);
       parent.getFields().add(result);
     } else {
       if (field instanceof ClassDefinition) {

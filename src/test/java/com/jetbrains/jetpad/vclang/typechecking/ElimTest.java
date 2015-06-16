@@ -17,7 +17,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
 
 public class ElimTest {
   @Test
@@ -73,8 +73,8 @@ public class ElimTest {
     FunctionDefinition function = new FunctionDefinition("fun", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
 
     List<VcError> errors = new ArrayList<>();
-    Definition result = function.accept(new DefinitionCheckTypeVisitor(null, errors), new ArrayList<Binding>());
+    function.accept(new DefinitionCheckTypeVisitor(null, function, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
-    assertNotNull(result);
+    assertFalse(function.hasErrors());
   }
 }

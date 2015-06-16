@@ -12,17 +12,28 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class DataDefinition extends Definition implements Abstract.DataDefinition {
   private final List<Constructor> myConstructors;
-  private final List<TypeArgument> myParameters;
+  private List<TypeArgument> myParameters;
 
-  public DataDefinition(String name, ClassDefinition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
-    super(name, parent, precedence, fixity, universe);
-    myParameters = parameters;
+  public DataDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<Constructor> constructors) {
+    super(name, parent, precedence, fixity);
     myConstructors = constructors;
+  }
+
+  public DataDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+    super(name, parent, precedence, fixity);
+    setUniverse(universe);
+    hasErrors(false);
+    myConstructors = constructors;
+    myParameters = parameters;
   }
 
   @Override
   public List<TypeArgument> getParameters() {
     return myParameters;
+  }
+
+  public void setParameters(List<TypeArgument> arguments) {
+    myParameters = arguments;
   }
 
   @Override

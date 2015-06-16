@@ -13,15 +13,25 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition {
   private final Abstract.Definition.Arrow myArrow;
-  private final List<TelescopeArgument> myArguments;
+  private List<TelescopeArgument> myArguments;
   private Expression myResultType;
   private Expression myTerm;
+  private boolean myTypeHasErrors;
 
-  public FunctionDefinition(String name, ClassDefinition parent, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
-    super(name, parent, precedence, fixity, null);
+  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Abstract.Definition.Arrow arrow) {
+    super(name, parent, precedence, fixity);
+    myArrow = arrow;
+    myTypeHasErrors = true;
+  }
+
+  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+    super(name, parent, precedence, fixity);
+    setUniverse(new Universe.Type(0, Universe.Type.PROP));
+    hasErrors(false);
     myArguments = arguments;
     myResultType = resultType;
     myArrow = arrow;
+    myTypeHasErrors = true;
     myTerm = term;
   }
 
@@ -44,6 +54,10 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
     return myArguments;
   }
 
+  public void setArguments(List<TelescopeArgument> arguments) {
+    myArguments = arguments;
+  }
+
   @Override
   public Expression getResultType() {
     return myResultType;
@@ -51,6 +65,14 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
 
   public void setResultType(Expression resultType) {
     myResultType = resultType;
+  }
+
+  public boolean typeHasErrors() {
+    return myTypeHasErrors;
+  }
+
+  public void typeHasErrors(boolean has) {
+    myTypeHasErrors = has;
   }
 
   @Override

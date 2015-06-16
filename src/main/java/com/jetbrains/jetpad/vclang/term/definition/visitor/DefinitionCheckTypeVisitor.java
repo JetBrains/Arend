@@ -23,17 +23,20 @@ import static com.jetbrains.jetpad.vclang.term.error.TypeCheckingError.getNames;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
-public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<List<Binding>, Definition> {
-  private final ClassDefinition myParent;
+public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<List<Binding>, Void> {
+  private final Definition myParent;
+  private final Definition myResult;
   private final List<VcError> myErrors;
 
-  public DefinitionCheckTypeVisitor(ClassDefinition parent, List<VcError> errors) {
+  public DefinitionCheckTypeVisitor(Definition parent, Definition result, List<VcError> errors) {
     myParent = parent;
+    myResult = result;
     myErrors = errors;
   }
 
   @Override
-  public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, List<Binding> localContext) {
+  public Void visitFunction(Abstract.FunctionDefinition def, List<Binding> localContext) {
+    FunctionDefinition functionResult = (FunctionDefinition) myResult;
     List<TelescopeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     for (Abstract.TelescopeArgument argument : def.getArguments()) {
@@ -49,39 +52,48 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       }
     }
 
-    Expression expectedType;
+    Expression expectedType = null;
     if (def.getResultType() != null) {
       CheckTypeVisitor.OKResult typeResult = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(def.getResultType(), Universe());
-      if (typeResult == null) {
-        trimToSize(localContext, origSize);
-        return null;
+      if (typeResult != null) {
+        expectedType = typeResult.expression;
       }
-      expectedType = typeResult.expression;
-    } else {
-      expectedType = null;
     }
 
-    FunctionDefinition result = new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), arguments, expectedType, def.getArrow(), null);
+    functionResult.setArguments(arguments);
+    functionResult.setResultType(expectedType);
+    functionResult.typeHasErrors(false);
+    functionResult.hasErrors(false);
     CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
 
-    if (termResult != null && !termResult.expression.accept(new TerminationCheckVisitor(result))) {
-      myErrors.add(new TypeCheckingError("Termination check failed", def.getTerm(), getNames(localContext)));
-      termResult = null;
+    if (termResult != null) {
+      functionResult.setTerm(termResult.expression);
+      functionResult.setResultType(termResult.type);
+      functionResult.typeHasErrors(false);
+      functionResult.hasErrors(false);
+
+      if (!termResult.expression.accept(new TerminationCheckVisitor(functionResult))) {
+        myErrors.add(new TypeCheckingError("Termination check failed", def.getTerm(), getNames(localContext)));
+        termResult = null;
+      }
+    } else {
+      if (functionResult.getResultType() == null) {
+        functionResult.typeHasErrors(true);
+      }
     }
 
-    if (termResult != null) {
-      result.setTerm(termResult.expression);
-      if (expectedType == null) {
-        result.setResultType(termResult.type);
-      }
+    if (termResult == null) {
+      functionResult.setTerm(null);
+      functionResult.hasErrors(true);
     }
     trimToSize(localContext, origSize);
 
-    return termResult == null && expectedType == null ? null : result;
+    return null;
   }
 
   @Override
-  public DataDefinition visitData(Abstract.DataDefinition def, List<Binding> localContext) {
+  public Void visitData(Abstract.DataDefinition def, List<Binding> localContext) {
+    DataDefinition dataResult = (DataDefinition) myResult;
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
@@ -103,23 +115,24 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       }
     }
 
-    List<Constructor> constructors = new ArrayList<>(def.getConstructors().size());
-    DataDefinition result = new DataDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : universe, parameters, constructors);
+    dataResult.setUniverse(def.getUniverse() != null ? def.getUniverse() : universe);
+    dataResult.setParameters(parameters);
+    dataResult.hasErrors(false);
 
     constructors_loop:
-    for (Abstract.Constructor constructor : def.getConstructors()) {
-      Constructor newConstructor = visitConstructor(constructor, localContext);
-      if (newConstructor == null) {
+    for (int i = 0; i < def.getConstructors().size(); ++i) {
+      new DefinitionCheckTypeVisitor(dataResult, dataResult.getConstructors().get(i), myErrors).visitConstructor(def.getConstructors().get(i), localContext);
+      if (dataResult.getConstructors().get(i).hasErrors()) {
         continue;
       }
 
-      for (int i = 0; i < newConstructor.getArguments().size(); ++i) {
-        Expression type = newConstructor.getArguments().get(i).getType().normalize(NormalizeVisitor.Mode.WHNF);
+      for (int j = 0; j < dataResult.getConstructors().get(i).getArguments().size(); ++j) {
+        Expression type = dataResult.getConstructors().get(i).getArguments().get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
-            if (argument1.getType().accept(new FindDefCallVisitor(result))) {
-              String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
-              myErrors.add(new TypeCheckingError(msg, constructor.getArguments().get(i).getType(), getNames(localContext)));
+            if (argument1.getType().accept(new FindDefCallVisitor(dataResult))) {
+              String msg = "Non-positive recursive occurrence of data type " + dataResult.getName() + " in constructor " + dataResult.getConstructors().get(i).getName();
+              myErrors.add(new TypeCheckingError(msg, def.getConstructors().get(i).getArguments().get(j).getType(), getNames(localContext)));
               continue constructors_loop;
             }
           }
@@ -129,37 +142,34 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         List<Expression> exprs = new ArrayList<>();
         type.getFunction(exprs);
         for (Expression expr : exprs) {
-          if (expr.accept(new FindDefCallVisitor(result))) {
-            String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + newConstructor.getName();
-            myErrors.add(new TypeCheckingError(msg, constructor.getArguments().get(i).getType(), getNames(localContext)));
+          if (expr.accept(new FindDefCallVisitor(dataResult))) {
+            String msg = "Non-positive recursive occurrence of data type " + dataResult.getName() + " in constructor " + dataResult.getConstructors().get(i).getName();
+            myErrors.add(new TypeCheckingError(msg, def.getConstructors().get(i).getArguments().get(j).getType(), getNames(localContext)));
             continue constructors_loop;
           }
         }
       }
 
-      Universe maxUniverse = universe.max(newConstructor.getUniverse());
+      Universe maxUniverse = universe.max(dataResult.getConstructors().get(i).getUniverse());
       if (maxUniverse == null) {
-        String msg = "Universe " + newConstructor.getUniverse() + " of constructor " + newConstructor.getName() + " is not comparable to universe " + universe + " of previous constructors";
+        String msg = "Universe " + dataResult.getConstructors().get(i).getUniverse() + " of constructor " + dataResult.getConstructors().get(i).getName() + " is not comparable to universe " + universe + " of previous constructors";
         myErrors.add(new TypeCheckingError(msg, null, null));
         continue;
       }
       universe = maxUniverse;
-
-      constructors.add(newConstructor);
-      newConstructor.setDataType(result);
     }
 
-    result.setUniverse(universe);
+    dataResult.setUniverse(universe);
     trimToSize(localContext, origSize);
     if (def.getUniverse() != null && !universe.lessOrEquals(def.getUniverse())) {
       myErrors.add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
     }
 
-    return result;
+    return null;
   }
 
   @Override
-  public Constructor visitConstructor(Abstract.Constructor def, List<Binding> localContext) {
+  public Void visitConstructor(Abstract.Constructor def, List<Binding> localContext) {
     List<TypeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
@@ -195,39 +205,36 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     trimToSize(localContext, origSize);
-    Constructor newConstructor = new Constructor(def.getDataType().getConstructors().indexOf(def), def.getName(), null, def.getPrecedence(), def.getFixity(), universe, arguments);
+    myResult.setUniverse(universe);
+    ((Constructor) myResult).setArguments(arguments);
+    myResult.hasErrors(false);
     if (error != null) {
-      myErrors.add(new TypeCheckingError(error, DefCall(newConstructor), new ArrayList<String>()));
-      return null;
-    } else {
-      return newConstructor;
+      myErrors.add(new TypeCheckingError(error, DefCall(myResult), new ArrayList<String>()));
     }
+    return null;
   }
 
   @Override
-  public ClassDefinition visitClass(Abstract.ClassDefinition def, List<Binding> localContext) {
-    List<Definition> fields = new ArrayList<>(def.getFields().size());
+  public Void visitClass(Abstract.ClassDefinition def, List<Binding> localContext) {
+    TypeCheckingError error = null;
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
-    ClassDefinition result = new ClassDefinition(def.getName(), myParent, universe, fields);
-
-    for (Abstract.Definition field : def.getFields()) {
-      Definition newField = field.accept(new DefinitionCheckTypeVisitor(result, myErrors), localContext);
-      if (newField == null) continue;
-
-      if (newField instanceof FunctionDefinition && ((FunctionDefinition) newField).getArrow() == null) {
-        Universe maxUniverse = universe.max(newField.getUniverse());
+    for (Definition field : ((ClassDefinition) myResult).getFields()) {
+      if (field instanceof FunctionDefinition && ((FunctionDefinition) field).getArrow() == null) {
+        Universe maxUniverse = universe.max(field.getUniverse());
         if (maxUniverse == null) {
-          String msg = "Universe " + newField.getUniverse() + " of field " + newField.getName() + " is not comparable to universe " + universe + " of previous fields";
-          myErrors.add(new TypeCheckingError(msg, null, null));
-          continue;
+          String msg = "Universe " + field.getUniverse() + " of field " + field.getName() + " is not comparable to universe " + universe + " of previous fields";
+          error = new TypeCheckingError(msg, null, null);
+        } else {
+          universe = maxUniverse;
         }
-        universe = maxUniverse;
       }
-
-      fields.add(newField);
     }
 
-    result.setUniverse(universe);
-    return result;
+    if (error != null) {
+      myErrors.add(error);
+    }
+    myResult.setUniverse(universe);
+    myResult.hasErrors(false);
+    return null;
   }
 }
