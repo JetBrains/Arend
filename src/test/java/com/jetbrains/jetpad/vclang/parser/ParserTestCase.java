@@ -44,12 +44,15 @@ public class ParserTestCase {
     return parseExpr(new ArrayList<Definition>(0), text);
   }
 
-  public static Concrete.Definition parseDef(String text) {
+  public static Concrete.Definition parseDef(ClassDefinition root, String text) {
     List<VcError> errors = new ArrayList<>();
-    ClassDefinition root = new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>(0));
     Concrete.Definition result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitDef(parse(text, errors).def()).rawDefinition;
     assertEquals(0, errors.size());
     return result;
+  }
+
+  public static Concrete.Definition parseDef(String text) {
+    return parseDef(new ClassDefinition("\\root", null, new Universe.Type(0), new ArrayList<Definition>(0)), text);
   }
 
   public static List<Concrete.Definition> parseDefs(String text) {
