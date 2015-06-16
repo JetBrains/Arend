@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 
@@ -57,5 +58,9 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     StringBuilder builder = new StringBuilder();
     accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
     return builder.toString();
+  }
+
+  public String getFullName() {
+    return myParent == null || myParent.equals(ModuleLoader.rootModule()) ? getName() : myParent.getFullName() + "." + getName();
   }
 }

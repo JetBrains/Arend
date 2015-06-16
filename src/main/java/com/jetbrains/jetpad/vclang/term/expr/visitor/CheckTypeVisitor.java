@@ -1088,24 +1088,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
     boolean notInScope = false;
 
-    if (type instanceof UniverseExpression) {
-      Expression exprNorm = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
-      if (exprNorm instanceof DefCallExpression && ((DefCallExpression) exprNorm).getDefinition() instanceof ClassDefinition) {
-        Definition field = ((ClassDefinition) ((DefCallExpression) exprNorm).getDefinition()).findField(expr.getName());
-        if (field != null) {
-          if (field.hasErrors()) {
-            TypeCheckingError error = new TypeCheckingError(field.getName() + " has errors", expr, null);
-            expr.setWellTyped(Error(DefCall(field), error));
-            myErrors.add(error);
-            return null;
-          } else {
-            return checkResult(expectedType, new OKResult(DefCall(field), field.getType(), okExprResult.equations), expr);
-          }
-        }
-        notInScope = true;
-      }
-    }
-
     if (type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
       Definition field = ((ClassDefinition) ((DefCallExpression) type).getDefinition()).findField(expr.getName());
       if (field != null) {

@@ -548,6 +548,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           name = ((NameBinOpContext) nameCtx).BIN_OP().getText();
           fixity = Abstract.Definition.Fixity.INFIX;
         }
+        if (expr instanceof Concrete.DefCallExpression) {
+          Definition definition = ((Concrete.DefCallExpression) expr).getDefinition();
+          if (definition instanceof ClassDefinition) {
+            Definition classField = ((ClassDefinition) definition).findField(name);
+            if (classField == null) {
+              myErrors.add(new ParserError(tokenPosition(nameCtx.getStart()), name + " is not defined in " + definition.getFullName()));
+              return null;
+            }
+            expr = new Concrete.DefCallExpression(expr.getPosition(), classField);
+            continue;
+          }
+        }
         expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name, fixity);
       } else {
         expr = new Concrete.ProjExpression(expr.getPosition(), expr, Integer.valueOf(((SigmaFieldContext) field).NUMBER().getText()) - 1);
@@ -660,7 +672,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Definition visitInfixId(InfixIdContext ctx) {
-    return null;
+    boolean binOp = ctx.name() instanceof NameBinOpContext;
+    String name = binOp ? ((NameBinOpContext) ctx.name()).BIN_OP().getText() : ((NameIdContext) ctx.name()).ID().getText();
+    Concrete.Expression expr = findId(name, binOp, tokenPosition(ctx.name().getStart()));
+    if (!(expr instanceof Concrete.DefCallExpression)) {
+      myErrors.add(new ParserError(tokenPosition(ctx.getStart()), "Infix notation cannot be used with local variables"));
+      return null;
+    }
+
+    expr = visitFieldsAcc(expr, ctx.fieldAcc());
+    if (!(expr instanceof Concrete.DefCallExpression)) {
+      myErrors.add(new ParserError(tokenPosition(ctx.getStart()), "Infix notation can be used only with global definitions"));
+      return null;
+    }
+
+    return ((Concrete.DefCallExpression) expr).getDefinition();
   }
 
   @Override
