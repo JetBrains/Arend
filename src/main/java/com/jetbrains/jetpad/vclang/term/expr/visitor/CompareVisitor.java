@@ -558,7 +558,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression other) {
-    /*
     if (expr == other) return new JustResult(CMP.EQUALS);
     Result pathResult = checkPath(expr, other);
     if (pathResult != null) return pathResult;
@@ -573,14 +572,12 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (!(otherApp2.getFunction() instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
     DefCallExpression otherDefCall = (DefCallExpression) otherApp2.getFunction();
 
-    if (!expr.getBinOp().equals(otherDefCall.getField())) return new JustResult(CMP.NOT_EQUIV);
+    if (!expr.getBinOp().equals(otherDefCall.getDefinition())) return new JustResult(CMP.NOT_EQUIV);
     Result result = expr.getLeft().getExpression().accept(this, otherApp2.getArgument().getExpression());
     if (result.isOK() == CMP.NOT_EQUIV) return result;
     Result result1 = expr.getRight().getExpression().accept(this, otherApp1.getArgument().getExpression());
     if (result1.isOK() == CMP.NOT_EQUIV) return result1;
     return new JustResult(and(result.isOK(), result1.isOK()));
-    */
-    return new JustResult(CMP.NOT_EQUIV);
   }
 
   @Override

@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -20,11 +19,6 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   @Override
   public void setWellTyped(Expression wellTyped) {}
-
-  @Override
-  public Abstract.Expression makeBinOp(Abstract.Expression left, Definition operator, Abstract.Expression right) {
-    return Apps(DefCall(operator), (Expression) left, (Expression) right);
-  }
 
   @Override
   public String toString() {

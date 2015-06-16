@@ -399,8 +399,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Expression visitId(IdContext ctx) {
     boolean binOp = ctx.name() instanceof NameBinOpContext;
     String name = binOp ? ((NameBinOpContext) ctx.name()).BIN_OP().getText() : ((NameIdContext) ctx.name()).ID().getText();
-    Concrete.Position position = tokenPosition(ctx.name().getStart());
+    return findId(name, binOp, tokenPosition(ctx.name().getStart()));
+  }
 
+  private Concrete.Expression findId(String name, boolean binOp, Concrete.Position position) {
     Definition field = Prelude.PRELUDE.findField(name);
     if (field != null) {
       return new Concrete.DefCallExpression(position, field);
@@ -575,36 +577,90 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return expr;
   }
 
+  private class StackElem {
+    public Concrete.Expression argument;
+    public Definition definition;
+
+    public StackElem(Concrete.Expression argument, Definition definition) {
+      this.argument = argument;
+      this.definition = definition;
+    }
+  }
+
+  private void pushOnStack(List<StackElem> stack, StackElem elem, Concrete.Position position) {
+    if (stack.isEmpty()) {
+      stack.add(elem);
+      return;
+    }
+
+    StackElem topElem = stack.get(stack.size() - 1);
+    Definition.Precedence prec = topElem.definition.getPrecedence();
+    Definition.Precedence prec2 = elem.definition.getPrecedence();
+
+    if (prec.priority < prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.RIGHT_ASSOC && prec2.associativity == Definition.Associativity.RIGHT_ASSOC)) {
+      stack.add(elem);
+      return;
+    }
+
+    if (!(prec.priority > prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.LEFT_ASSOC && prec2.associativity == Definition.Associativity.LEFT_ASSOC))) {
+      String msg = "Precedence parsing error: cannot mix (" + topElem.definition.getName() + ") [" + prec + "] and (" + elem.definition.getName() + ") [" + prec2 + "] in the same infix expression";
+      myErrors.add(new ParserError(position, msg));
+    }
+    stack.remove(stack.size() - 1);
+    pushOnStack(stack, new StackElem(new Concrete.BinOpExpression(position, new Concrete.ArgumentExpression(topElem.argument, true, false), topElem.definition, new Concrete.ArgumentExpression(elem.argument, true, false)), elem.definition), position);
+  }
+
+  private Concrete.Expression rollUpStack(List<StackElem> stack, Concrete.Expression expr) {
+    for (int i = stack.size() - 1; i >= 0; --i) {
+      expr = new Concrete.BinOpExpression(stack.get(i).argument.getPosition(), new Concrete.ArgumentExpression(stack.get(i).argument, true, false), stack.get(i).definition, new Concrete.ArgumentExpression(expr, true, false));
+    }
+    return expr;
+  }
+
   @Override
   public Concrete.Expression visitBinOp(BinOpContext ctx) {
-    if (ctx.binOpLeft().size() == 0) {
-      Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
-      return expr == null ? null : visitAtoms(expr, ctx.argument());
-    }
-
-    List<Concrete.Expression> arguments = new ArrayList<>(ctx.binOpLeft().size() + 1);
-    List<Concrete.Expression> operators = new ArrayList<>(ctx.binOpLeft().size());
-
+    List<StackElem> stack = new ArrayList<>(ctx.binOpLeft().size());
     for (BinOpLeftContext leftContext : ctx.binOpLeft()) {
+      Concrete.Position position = tokenPosition(leftContext.infix().getStart());
+      Definition def;
       if (leftContext.infix() instanceof InfixBinOpContext) {
-        operators.add(new Concrete.VarExpression(tokenPosition(((InfixBinOpContext) leftContext.infix()).BIN_OP().getSymbol()), ((InfixBinOpContext) leftContext.infix()).BIN_OP().getText()));
+        def = visitInfixBinOp((InfixBinOpContext) leftContext.infix());
       } else {
-        InfixIdContext infixId = (InfixIdContext) leftContext.infix();
-        operators.add(visitFieldsAcc(new Concrete.VarExpression(tokenPosition(infixId.name().getStart()), ((NameIdContext) infixId.name()).ID().getText()), infixId.fieldAcc()));
+        def = visitInfixId((InfixIdContext) leftContext.infix());
       }
+
       Concrete.Expression expr = visitAtomFieldsAcc(leftContext.atomFieldsAcc());
-      if (expr == null) return null;
+      if (expr == null) continue;
       expr = visitAtoms(expr, leftContext.argument());
-      if (expr == null) return null;
-      arguments.add(expr);
+      if (expr == null) continue;
+
+      if (def == null) {
+        stack = new ArrayList<>(ctx.binOpLeft().size() - stack.size());
+        continue;
+      }
+
+      pushOnStack(stack, new StackElem(expr, def), position);
     }
 
-    Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
-    if (expr == null) return null;
-    expr = visitAtoms(expr, ctx.argument());
-    if (expr == null) return null;
-    arguments.add(expr);
-    return new Concrete.BinOpExpression(arguments, operators);
+    return rollUpStack(stack, visitAtoms(visitAtomFieldsAcc(ctx.atomFieldsAcc()), ctx.argument()));
+  }
+
+  @Override
+  public Definition visitInfixBinOp(InfixBinOpContext ctx) {
+    String name = ctx.BIN_OP().getText();
+    Concrete.Position position = tokenPosition(ctx.BIN_OP().getSymbol());
+    Concrete.Expression expr = findId(name, true, position);
+    if (!(expr instanceof Concrete.DefCallExpression)) {
+      myErrors.add(new ParserError(position, "Infix notation cannot be used with local variables"));
+      return null;
+    }
+
+    return ((Concrete.DefCallExpression) expr).getDefinition();
+  }
+
+  @Override
+  public Definition visitInfixId(InfixIdContext ctx) {
+    return null;
   }
 
   @Override

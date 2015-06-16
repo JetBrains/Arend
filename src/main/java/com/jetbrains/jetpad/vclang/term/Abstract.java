@@ -17,7 +17,6 @@ public final class Abstract {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
     void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
-    Expression makeBinOp(Expression left, com.jetbrains.jetpad.vclang.term.definition.Definition operator, Expression right);
   }
 
   public interface Argument extends PrettyPrintableSourceNode {
@@ -90,9 +89,9 @@ public final class Abstract {
   }
 
   public interface BinOpExpression extends Expression {
-    byte PREC = 0;
-    List<? extends Expression> getArguments();
-    List<? extends Expression> getOperators();
+    com.jetbrains.jetpad.vclang.term.definition.Definition getBinOp();
+    ArgumentExpression getLeft();
+    ArgumentExpression getRight();
   }
 
   public interface UniverseExpression extends Expression {

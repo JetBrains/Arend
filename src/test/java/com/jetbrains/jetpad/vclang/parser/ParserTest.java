@@ -149,7 +149,8 @@ public class ParserTest {
     definitions.add(mul);
 
     List<VcError> errors = new ArrayList<>();
-    parseExpr(definitions, "11 + 2 * 3").accept(new CheckTypeVisitor(new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
+    ClassDefinition root = new ClassDefinition("\\root", null, definitions);
+    new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitExpr(parse("11 + 2 * 3", errors).expr()).accept(new CheckTypeVisitor(new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(1, errors.size());
   }
 }

@@ -47,12 +47,6 @@ public final class Concrete {
     }
 
     @Override
-    public Expression makeBinOp(Abstract.Expression left, com.jetbrains.jetpad.vclang.term.definition.Definition operator, Abstract.Expression right) {
-      Expression leftCon = (Expression) left;
-      return new AppExpression(leftCon.getPosition(), new AppExpression(leftCon.getPosition(), new DefCallExpression(getPosition(), operator), new ArgumentExpression(leftCon, true, false)), new ArgumentExpression((Expression) right, true, false));
-    }
-
-    @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
       accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
@@ -193,23 +187,30 @@ public final class Concrete {
   }
 
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
-    private final List<Expression> myArguments;
-    private final List<Expression> myOperators;
+    private final ArgumentExpression myLeft;
+    private final ArgumentExpression myRight;
+    private final com.jetbrains.jetpad.vclang.term.definition.Definition myBinOp;
 
-    public BinOpExpression(List<Expression> arguments, List<Expression> operators) {
-      super(arguments.get(0).getPosition());
-      myArguments = arguments;
-      myOperators = operators;
+    public BinOpExpression(Position position, ArgumentExpression left, com.jetbrains.jetpad.vclang.term.definition.Definition binOp, ArgumentExpression right) {
+      super(position);
+      myLeft = left;
+      myRight = right;
+      myBinOp = binOp;
     }
 
     @Override
-    public List<Expression> getArguments() {
-      return myArguments;
+    public ArgumentExpression getLeft() {
+      return myLeft;
     }
 
     @Override
-    public List<Expression> getOperators() {
-      return myOperators;
+    public ArgumentExpression getRight() {
+      return myRight;
+    }
+
+    @Override
+    public com.jetbrains.jetpad.vclang.term.definition.Definition getBinOp() {
+      return myBinOp;
     }
 
     @Override
