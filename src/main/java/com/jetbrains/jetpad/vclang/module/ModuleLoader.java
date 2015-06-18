@@ -6,8 +6,10 @@ import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.antlr.v4.runtime.*;
 
@@ -131,11 +133,10 @@ public class ModuleLoader {
     }
   }
 
-  public static void typeCheck(List<TypeCheckingUnit> units, List<TypeCheckingError> errors) throws IOException {
-    /*
+  public static void typeCheck(List<TypeCheckingUnit> units, List<TypeCheckingError> errors) {
     for (TypeCheckingUnit unit : units) {
-      ModuleSerialization.writeFile((ClassDefinition) unit.typedDefinition, unit.outputFile);
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+      // ModuleSerialization.writeFile((ClassDefinition) unit.typedDefinition, unit.outputFile);
     }
-    */
   }
 }

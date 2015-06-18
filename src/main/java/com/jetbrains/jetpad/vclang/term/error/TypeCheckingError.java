@@ -35,16 +35,18 @@ public class TypeCheckingError extends VcError {
     return builder.toString();
   }
 
-  @Override
-  public String toString() {
-    String msg;
+  protected String printPosition() {
     if (myExpression instanceof Concrete.SourceNode) {
       Concrete.Position position = ((Concrete.SourceNode) myExpression).getPosition();
-      msg = position.line + ":" + position.column + ": ";
+      return position.line + ":" + position.column + ": ";
     } else {
-      msg = "";
+      return "";
     }
+  }
 
+  @Override
+  public String toString() {
+    String msg = printPosition();
     msg += getMessage() == null ? "Type checking error" : getMessage();
     if (myExpression instanceof Abstract.PrettyPrintableSourceNode) {
       return msg + " in " + prettyPrint((Abstract.PrettyPrintableSourceNode) myExpression);

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang;
 import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -117,19 +118,27 @@ public class ConsoleMain {
     }
 
     List<ModuleLoader.TypeCheckingUnit> units = new ArrayList<>();
-    List<VcError> errors = new ArrayList<>();
+    List<VcError> vcErrors = new ArrayList<>();
     ClassDefinition module = ModuleLoader.rootModule();
     for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      module = ModuleLoader.getModule(module, moduleNames.get(i), errors);
+      module = ModuleLoader.getModule(module, moduleNames.get(i), vcErrors);
     }
-    ModuleLoader.loadModule(new Module(module, moduleNames.get(moduleNames.size() - 1)), units, errors);
+    ModuleLoader.loadModule(new Module(module, moduleNames.get(moduleNames.size() - 1)), units, vcErrors);
 
-    for (VcError error : errors) {
+    for (VcError vcError : vcErrors) {
       System.err.print((relativePath != null ? relativePath : fileName) + ": ");
+      System.err.println(vcError);
+    }
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    ModuleLoader.typeCheck(units, errors);
+
+    for (TypeCheckingError error : errors) {
+      System.err.print((relativePath != null ? relativePath : fileName) + ":");
       System.err.println(error);
     }
 
-    if (errors.isEmpty()) {
+    if (vcErrors.isEmpty() && errors.isEmpty()) {
       System.out.println("[OK] " + (relativePath != null ? relativePath : fileName));
     }
   }

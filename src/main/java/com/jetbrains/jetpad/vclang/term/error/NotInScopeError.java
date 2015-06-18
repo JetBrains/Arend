@@ -12,6 +12,6 @@ public class NotInScopeError extends TypeCheckingError {
 
   @Override
   public String toString() {
-    return getMessage() + ": " + myName;
+    return printPosition() + getMessage() + ": " + myName;
   }
 }

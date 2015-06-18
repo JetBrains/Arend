@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -25,7 +24,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final List<Binding> myLocalContext;
-  private final List<VcError> myErrors;
+  private final List<TypeCheckingError> myErrors;
   private final Side mySide;
 
   private static class Arg {
@@ -67,7 +66,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public enum Side { LHS, RHS }
 
-  public CheckTypeVisitor(List<Binding> localContext, List<VcError> errors, Side side) {
+  public CheckTypeVisitor(List<Binding> localContext, List<TypeCheckingError> errors, Side side) {
     myLocalContext = localContext;
     myErrors = errors;
     mySide = side;
@@ -489,7 +488,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     if (expr.getDefinition().hasErrors()) {
-      TypeCheckingError error = new TypeCheckingError(expr.getDefinition().getName() + " has errors", expr, null);
+      TypeCheckingError error = new HasErrors(expr.getDefinition().getName(), expr);
       expr.setWellTyped(Error(DefCall(expr.getDefinition()), error));
       myErrors.add(error);
       return null;
@@ -982,8 +981,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       constructors.remove(index);
 
       if (constructor.hasErrors()) {
-        String msg = constructor.getName() + " has errors";
-        error = new TypeCheckingError(msg, clause, getNames(myLocalContext));
+        error = new HasErrors(constructor.getName(), clause);
         clause.getExpression().setWellTyped(Error(null, error));
         myErrors.add(error);
         continue;
@@ -1092,7 +1090,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Definition field = ((ClassDefinition) ((DefCallExpression) type).getDefinition()).findField(expr.getName());
       if (field != null) {
         if (field.hasErrors()) {
-          TypeCheckingError error = new TypeCheckingError(field.getName() + " has errors", expr, null);
+          TypeCheckingError error = new HasErrors(field.getName(), expr);
           expr.setWellTyped(Error(DefCall(field), error));
           myErrors.add(error);
           return null;

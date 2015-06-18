@@ -1,15 +1,15 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class ErrorExpression extends Expression implements Abstract.ErrorExpression {
   private final Expression myExpr;
-  private final VcError myError;
+  private final TypeCheckingError myError;
 
-  public ErrorExpression(Expression expr, VcError error) {
+  public ErrorExpression(Expression expr, TypeCheckingError error) {
     myExpr = expr;
     myError = error;
   }
@@ -19,7 +19,7 @@ public class ErrorExpression extends Expression implements Abstract.ErrorExpress
     return myExpr;
   }
 
-  public VcError getError() {
+  public TypeCheckingError getError() {
     return myError;
   }
 

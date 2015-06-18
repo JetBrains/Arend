@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -123,7 +124,7 @@ public class ParserTest {
     List<Definition> definitions = new ArrayList<>(2);
     definitions.add(plus);
     definitions.add(mul);
-    List<VcError> errors = new ArrayList<>();
+    List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.Result result = parseExpr(definitions, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, errors.size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
@@ -148,9 +149,11 @@ public class ParserTest {
     definitions.add(plus);
     definitions.add(mul);
 
-    List<VcError> errors = new ArrayList<>();
+    List<VcError> vcErrors = new ArrayList<>();
+    List<TypeCheckingError> errors = new ArrayList<>();
     ClassDefinition root = new ClassDefinition("\\root", null, definitions);
-    new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitExpr(parse("11 + 2 * 3", errors).expr()).accept(new CheckTypeVisitor(new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
-    assertEquals(1, errors.size());
+    new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), vcErrors).visitExpr(parse("11 + 2 * 3", vcErrors).expr()).accept(new CheckTypeVisitor(new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
+    assertEquals(1, vcErrors.size());
+    assertEquals(0, errors.size());
   }
 }

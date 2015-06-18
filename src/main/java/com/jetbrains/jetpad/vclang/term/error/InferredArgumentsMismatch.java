@@ -18,7 +18,8 @@ public class InferredArgumentsMismatch extends TypeCheckingError {
 
   @Override
   public String toString() {
-    String msg = "Cannot infer " + myArgument + suffix(myArgument) + " argument";
+    String msg = printPosition();
+    msg += "Cannot infer " + myArgument + suffix(myArgument) + " argument";
     msg += getExpression() instanceof Abstract.PrettyPrintableSourceNode ? " to function " + prettyPrint((Abstract.PrettyPrintableSourceNode) getExpression()) : "";
     msg += "\nPossible options are:";
     for (Abstract.Expression expression : myOptions) {

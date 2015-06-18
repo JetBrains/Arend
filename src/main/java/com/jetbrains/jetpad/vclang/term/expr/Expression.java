@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -59,7 +59,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return accept(new NormalizeVisitor(mode));
   }
 
-  public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, List<VcError> errors) {
+  public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, List<TypeCheckingError> errors) {
     return new CheckTypeVisitor(localContext, errors, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
   }
 

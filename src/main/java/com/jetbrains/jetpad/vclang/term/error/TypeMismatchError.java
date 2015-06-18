@@ -16,7 +16,8 @@ public class TypeMismatchError extends TypeCheckingError {
 
   @Override
   public String toString() {
-    String message = "Type mismatch:\n" +
+    String message = printPosition();
+    message += "Type mismatch:\n" +
         "\tExpected type: " + (myExpected instanceof Abstract.Expression ? prettyPrint((Abstract.Expression) myExpected) : myExpected.toString()) + "\n" +
         "\tActual type: " + prettyPrint(myActual);
     if (getExpression() instanceof Abstract.PrettyPrintableSourceNode) {

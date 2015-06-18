@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -21,8 +21,8 @@ public class DefinitionTest {
   public void function() {
     // f : N => 0;
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.RIGHT, Zero());
-    List<VcError> errors = new ArrayList<>();
-    new DefinitionCheckTypeVisitor(null, def, errors).visitFunction(def, new ArrayList<Binding>());
+    List<TypeCheckingError> errors = new ArrayList<>();
+    new DefinitionCheckTypeVisitor(def, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertFalse(def.hasErrors());
   }
@@ -31,8 +31,8 @@ public class DefinitionTest {
   public void functionUntyped() {
     // f => 0;
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), null, Definition.Arrow.RIGHT, Zero());
-    List<VcError> errors = new ArrayList<>();
-    new DefinitionCheckTypeVisitor(null, def, errors).visitFunction(def, new ArrayList<Binding>());
+    List<TypeCheckingError> errors = new ArrayList<>();
+    new DefinitionCheckTypeVisitor(def, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertFalse(def.hasErrors());
     assertEquals(Nat(), def.getType());
@@ -45,8 +45,8 @@ public class DefinitionTest {
     arguments.add(Tele(vars("x"), Nat()));
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, null, Definition.Arrow.RIGHT, Index(0));
-    List<VcError> errors = new ArrayList<>();
-    new DefinitionCheckTypeVisitor(null, def, errors).visitFunction(def, new ArrayList<Binding>());
+    List<TypeCheckingError> errors = new ArrayList<>();
+    new DefinitionCheckTypeVisitor(def, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertFalse(def.hasErrors());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), def.getType());
@@ -74,8 +74,8 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
     constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
-    List<VcError> errors = new ArrayList<>();
-    new DefinitionCheckTypeVisitor(null, def, errors).visitData(def, new ArrayList<Binding>());
+    List<TypeCheckingError> errors = new ArrayList<>();
+    new DefinitionCheckTypeVisitor(def, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertFalse(def.hasErrors());
     assertEquals(Pi(parameters, Universe(0)), def.getType());
@@ -103,8 +103,8 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Index(1)));
     constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
-    List<VcError> errors = new ArrayList<>();
-    new DefinitionCheckTypeVisitor(null, def, errors).visitData(def, new ArrayList<Binding>());
+    List<TypeCheckingError> errors = new ArrayList<>();
+    new DefinitionCheckTypeVisitor(def, errors).visitData(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
     assertFalse(def.hasErrors());
     assertEquals(Pi(parameters, Universe(6, 7)), def.getType());
@@ -122,7 +122,7 @@ public class DefinitionTest {
     constructors.add(con);
 
     Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
-    List<VcError> errors = new ArrayList<>();
+    List<TypeCheckingError> errors = new ArrayList<>();
     CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
@@ -138,7 +138,7 @@ public class DefinitionTest {
     constructors.add(con);
 
     Expression expr = Apps(Index(0), Apps(DefCall(con), Nat(), Lam("x", Index(0)), Zero()));
-    List<VcError> errors = new ArrayList<>();
+    List<TypeCheckingError> errors = new ArrayList<>();
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DefCall(def), Pi(Nat(), Nat())), Nat())));
 
@@ -157,7 +157,7 @@ public class DefinitionTest {
     constructors.add(con);
 
     Expression expr = Apps(Index(0), DefCall(con));
-    List<VcError> errors = new ArrayList<>();
+    List<TypeCheckingError> errors = new ArrayList<>();
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DefCall(def), Nat())), Pi(Nat(), Nat()))));
 

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
-import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -24,12 +23,10 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<List<Binding>, Void> {
-  private final Definition myParent;
   private final Definition myResult;
-  private final List<VcError> myErrors;
+  private final List<TypeCheckingError> myErrors;
 
-  public DefinitionCheckTypeVisitor(Definition parent, Definition result, List<VcError> errors) {
-    myParent = parent;
+  public DefinitionCheckTypeVisitor(Definition result, List<TypeCheckingError> errors) {
     myResult = result;
     myErrors = errors;
   }
@@ -121,7 +118,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
     constructors_loop:
     for (int i = 0; i < def.getConstructors().size(); ++i) {
-      new DefinitionCheckTypeVisitor(dataResult, dataResult.getConstructors().get(i), myErrors).visitConstructor(def.getConstructors().get(i), localContext);
+      new DefinitionCheckTypeVisitor(dataResult.getConstructors().get(i), myErrors).visitConstructor(def.getConstructors().get(i), localContext);
       if (dataResult.getConstructors().get(i).hasErrors()) {
         continue;
       }
