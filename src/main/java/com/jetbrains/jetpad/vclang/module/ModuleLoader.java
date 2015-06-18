@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import org.antlr.v4.runtime.*;
@@ -28,6 +29,7 @@ public class ModuleLoader {
   private ModuleLoader() {}
 
   public static void init(File sourceDir, File outputDir, List<File> libDirs, boolean recompile) {
+    ModuleLoader.rootModule().getFields().add(Prelude.PRELUDE);
     mySourceDir = sourceDir;
     myOutputDir = outputDir;
     myLibDirs = libDirs;
@@ -134,6 +136,7 @@ public class ModuleLoader {
       errors.add(new VcError(VcError.ioError(e)));
     } catch (ModuleSerialization.DeserializationException e) {
       errors.add(new VcError(e.toString()));
+      e.printStackTrace();
     }
     myLoadingModules.remove(myLoadingModules.size() - 1);
 

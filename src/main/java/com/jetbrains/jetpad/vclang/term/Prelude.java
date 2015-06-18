@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
@@ -34,7 +35,7 @@ public class Prelude {
 
   static {
     List<Definition> definitions = new ArrayList<>();
-    PRELUDE = new ClassDefinition("Prelude", null, definitions);
+    PRELUDE = new ClassDefinition("Prelude", ModuleLoader.rootModule(), definitions);
 
     List<Constructor> natConstructors = new ArrayList<>(2);
     NAT = new DataDefinition("Nat", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>(), natConstructors);

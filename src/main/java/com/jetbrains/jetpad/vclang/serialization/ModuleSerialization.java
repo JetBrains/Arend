@@ -14,10 +14,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
@@ -47,7 +44,7 @@ public class ModuleSerialization {
     DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
     byte[] signature = new byte[4];
     stream.readFully(signature);
-    if (signature != SIGNATURE) {
+    if (!Arrays.equals(signature, SIGNATURE)) {
       throw new IncorrectFormat();
     }
     int version = stream.readInt();
@@ -61,19 +58,29 @@ public class ModuleSerialization {
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       int index = stream.readInt();
-      int parentIndex = stream.readInt();
-      String name = stream.readUTF();
-      Definition parent = definitionMap.get(parentIndex);
-      Definition child = parent.findChild(name);
-      if (child == null) {
-        if (parent instanceof ClassDefinition) {
-          child = ModuleLoader.loadModule(new Module((ClassDefinition) parent, name), typeCheckingUnits, outputUnits, errors);
+      Definition childModule;
+      if (index == 0) {
+        childModule = ModuleLoader.rootModule();
+      } else {
+        int parentIndex = stream.readInt();
+        String name = stream.readUTF();
+        Definition parent = definitionMap.get(parentIndex);
+        if (parent == null) {
+          throw new IncorrectFormat();
         }
-        if (child == null) {
-          throw new DeserializationException(name + " is not defined in " + parent.getFullName());
+        childModule = parent.findChild(name);
+
+        if (childModule == null) {
+          if (parent instanceof ClassDefinition) {
+            childModule = ModuleLoader.loadModule(new Module((ClassDefinition) parent, name), typeCheckingUnits, outputUnits, errors);
+          }
+          if (childModule == null) {
+            throw new DeserializationException(name + " is not defined in " + parent.getFullName());
+          }
         }
       }
-      definitionMap.put(index, child);
+
+      definitionMap.put(index, childModule);
     }
 
     deserializeClassDefinition(stream, definitionMap, module, errors);
