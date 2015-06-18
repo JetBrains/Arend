@@ -13,6 +13,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   public ClassDefinition(String name, Definition parent, List<Definition> fields) {
     super(name, parent, DEFAULT_PRECEDENCE, Fixity.PREFIX);
     myFields = fields;
+    hasErrors(false);
   }
 
   @Override
@@ -30,7 +31,8 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return visitor.visitClass(this, params);
   }
 
-  public Definition findField(String name) {
+  @Override
+  public Definition findChild(String name) {
     for (Definition field : myFields) {
       if (name.equals(field.getName())) {
         return field;

@@ -26,6 +26,14 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return myParent;
   }
 
+  public boolean isDescendantOf(Definition definition) {
+    return this == definition || myParent != null && myParent.isDescendantOf(definition);
+  }
+
+  public Definition findChild(String name) {
+    return null;
+  }
+
   @Override
   public Precedence getPrecedence() {
     return myPrecedence;

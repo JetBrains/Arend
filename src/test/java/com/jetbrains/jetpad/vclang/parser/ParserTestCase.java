@@ -34,7 +34,7 @@ public class ParserTestCase {
   public static Concrete.Expression parseExpr(List<Definition> definitions, String text) {
     List<VcError> errors = new ArrayList<>();
     ClassDefinition root = new ClassDefinition("\\root", null, definitions);
-    Concrete.Expression result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitExpr(parse(text, errors).expr());
+    Concrete.Expression result = new BuildVisitor(root, null, null, errors).visitExpr(parse(text, errors).expr());
     assertEquals(0, errors.size());
     return result;
   }
@@ -45,7 +45,7 @@ public class ParserTestCase {
 
   public static ModuleLoader.TypeCheckingUnit parseDef(ClassDefinition root, String text) {
     List<VcError> errors = new ArrayList<>();
-    ModuleLoader.TypeCheckingUnit result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitDef(parse(text, errors).def());
+    ModuleLoader.TypeCheckingUnit result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), null, errors).visitDef(parse(text, errors).def());
     assertEquals(0, errors.size());
     return result;
   }
@@ -57,7 +57,7 @@ public class ParserTestCase {
   public static List<Concrete.Definition> parseDefs(String text) {
     List<VcError> errors = new ArrayList<>();
     ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>(0));
-    List<Concrete.Definition> result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitDefs(parse(text, errors).defs());
+    List<Concrete.Definition> result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), null, errors).visitDefs(parse(text, errors).defs());
     assertEquals(0, errors.size());
     return result;
   }

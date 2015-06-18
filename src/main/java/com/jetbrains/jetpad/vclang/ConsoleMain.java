@@ -2,7 +2,10 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.apache.commons.cli.*;
 
@@ -117,13 +120,14 @@ public class ConsoleMain {
       return;
     }
 
-    List<ModuleLoader.TypeCheckingUnit> units = new ArrayList<>();
+    List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits = new ArrayList<>();
+    List<ModuleLoader.OutputUnit> outputUnits = new ArrayList<>();
     List<VcError> vcErrors = new ArrayList<>();
     ClassDefinition module = ModuleLoader.rootModule();
     for (int i = 0; i < moduleNames.size() - 1; ++i) {
       module = ModuleLoader.getModule(module, moduleNames.get(i), vcErrors);
     }
-    ModuleLoader.loadModule(new Module(module, moduleNames.get(moduleNames.size() - 1)), units, vcErrors);
+    ModuleLoader.loadModule(new Module(module, moduleNames.get(moduleNames.size() - 1)), typeCheckingUnits, outputUnits, vcErrors);
 
     for (VcError vcError : vcErrors) {
       System.err.print((relativePath != null ? relativePath : fileName) + ": ");
@@ -131,7 +135,9 @@ public class ConsoleMain {
     }
 
     List<TypeCheckingError> errors = new ArrayList<>();
-    ModuleLoader.typeCheck(units, errors);
+    for (ModuleLoader.TypeCheckingUnit unit : typeCheckingUnits) {
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    }
 
     for (TypeCheckingError error : errors) {
       System.err.print((relativePath != null ? relativePath : fileName) + ":");
@@ -140,6 +146,14 @@ public class ConsoleMain {
 
     if (vcErrors.isEmpty() && errors.isEmpty()) {
       System.out.println("[OK] " + (relativePath != null ? relativePath : fileName));
+    }
+
+    for (ModuleLoader.OutputUnit unit : outputUnits) {
+      try {
+        ModuleSerialization.writeFile(unit.module, unit.file);
+      } catch (IOException e) {
+        System.err.println(VcError.ioError(e));
+      }
     }
   }
 }

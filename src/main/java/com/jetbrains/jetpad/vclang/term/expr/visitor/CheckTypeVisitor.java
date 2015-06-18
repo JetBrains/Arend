@@ -1087,15 +1087,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     boolean notInScope = false;
 
     if (type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
-      Definition field = ((ClassDefinition) ((DefCallExpression) type).getDefinition()).findField(expr.getName());
-      if (field != null) {
-        if (field.hasErrors()) {
-          TypeCheckingError error = new HasErrors(field.getName(), expr);
-          expr.setWellTyped(Error(DefCall(field), error));
+      Definition child = ((DefCallExpression) type).getDefinition().findChild(expr.getName());
+      if (child != null) {
+        if (child.hasErrors()) {
+          TypeCheckingError error = new HasErrors(child.getName(), expr);
+          expr.setWellTyped(Error(DefCall(child), error));
           myErrors.add(error);
           return null;
         } else {
-          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, field), field.getType(), okExprResult.equations), expr);
+          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, child), child.getType(), okExprResult.equations), expr);
         }
       }
       notInScope = true;

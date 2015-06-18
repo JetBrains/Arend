@@ -35,8 +35,12 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitApp(AppExpression expr) {
     myStream.write(1);
     expr.getFunction().accept(this);
-    myStream.write(expr.getArgument().isExplicit() ? 1 : 0);
-    myStream.write(expr.getArgument().isHidden() ? 1 : 0);
+    try {
+      myDataStream.writeBoolean(expr.getArgument().isExplicit());
+      myDataStream.writeBoolean(expr.getArgument().isHidden());
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
     expr.getArgument().getExpression().accept(this);
     return null;
   }
@@ -113,7 +117,11 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitError(ErrorExpression expr) {
     ++myErrors;
     myStream.write(9);
-    myStream.write(expr.getExpr() == null ? 0 : 1);
+    try {
+      myDataStream.writeBoolean(expr.getExpr() != null);
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
     if (expr.getExpr() != null) {
       expr.getExpr().accept(this);
     }
@@ -122,7 +130,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   @Override
   public Void visitTuple(TupleExpression expr) {
-    myStream.write(9);
+    myStream.write(10);
     try {
       myDataStream.writeInt(expr.getFields().size());
     } catch (IOException e) {
@@ -136,7 +144,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   @Override
   public Void visitSigma(SigmaExpression expr) {
-    myStream.write(10);
+    myStream.write(11);
     try {
       writeArguments(this, expr.getArguments());
     } catch (IOException e) {
@@ -147,9 +155,13 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   @Override
   public Void visitElim(ElimExpression expr) {
-    myStream.write(11);
-    myStream.write(expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM ? 0 : 1);
-    expr.getExpression().accept(this);
+    myStream.write(12);
+    try {
+      myDataStream.writeBoolean(expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM);
+      myDataStream.writeInt(expr.getExpression().getIndex());
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
     try {
       myDataStream.writeInt(expr.getClauses().size());
     } catch (IOException e) {
@@ -158,7 +170,11 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     for (Clause clause : expr.getClauses()) {
       visitClause(clause);
     }
-    myStream.write(expr.getOtherwise() == null ? 0 : 1);
+    try {
+      myDataStream.writeBoolean(expr.getOtherwise() != null);
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
     if (expr.getOtherwise() != null) {
       visitClause(expr.getOtherwise());
     }
@@ -169,16 +185,16 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     try {
       myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(clause.getConstructor()));
       writeArguments(this, clause.getArguments());
+      myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
     } catch (IOException e) {
       throw new IllegalStateException();
     }
-    myStream.write(clause.getArrow() == Abstract.Definition.Arrow.LEFT ? 0 : 1);
     clause.getExpression().accept(this);
   }
 
   @Override
   public Void visitFieldAcc(FieldAccExpression expr) {
-    myStream.write(12);
+    myStream.write(13);
     expr.getExpression().accept(this);
     try {
       myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getField()));
@@ -190,7 +206,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   @Override
   public Void visitProj(ProjExpression expr) {
-    myStream.write(13);
+    myStream.write(14);
     expr.getExpression().accept(this);
     try {
       myDataStream.writeInt(expr.getField());

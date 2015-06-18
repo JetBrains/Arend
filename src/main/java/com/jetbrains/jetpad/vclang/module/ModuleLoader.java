@@ -5,12 +5,10 @@ import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
+import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.antlr.v4.runtime.*;
 
 import java.io.File;
@@ -40,7 +38,7 @@ public class ModuleLoader {
     return myRoot;
   }
 
-  public static Concrete.ClassDefinition loadSource(Module module, ClassDefinition moduleDef, File sourceFile, List<TypeCheckingUnit> units, final List<VcError> errors) throws IOException {
+  public static Concrete.ClassDefinition loadSource(Module module, ClassDefinition moduleDef, File sourceFile, List<TypeCheckingUnit> typeCheckingUnits, List<OutputUnit> outputUnits, final List<VcError> errors) throws IOException {
     VcgrammarParser parser = new VcgrammarParser(new CommonTokenStream(new VcgrammarLexer(new ANTLRInputStream(new FileInputStream(sourceFile)))));
     parser.removeErrorListeners();
     int errorsCount = errors.size();
@@ -53,23 +51,21 @@ public class ModuleLoader {
 
     VcgrammarParser.DefsContext tree = parser.defs();
     if (errorsCount != errors.size()) return null;
-    List<Concrete.Definition> defs = new BuildVisitor(moduleDef, units, errors).visitDefs(tree);
+    List<Concrete.Definition> defs = new BuildVisitor(moduleDef, typeCheckingUnits, outputUnits, errors).visitDefs(tree);
     if (errorsCount != errors.size()) return null;
     return new Concrete.ClassDefinition(new Concrete.Position(0, 0), module.getName(), null, defs);
   }
 
-  public static void loadCompiled(File file, ClassDefinition module) {
-  }
-
   public static ClassDefinition getModule(ClassDefinition parent, String name, List<VcError> errors) {
-    Definition definition = parent.findField(name);
+    Definition definition = parent.findChild(name);
     if (definition == null) {
       ClassDefinition result = new ClassDefinition(name, parent, new ArrayList<Definition>());
       parent.getFields().add(result);
+      result.hasErrors(true);
       return result;
     } else {
       if (definition instanceof ClassDefinition) {
-        return  (ClassDefinition) definition;
+        return (ClassDefinition) definition;
       } else {
         errors.add(new VcError(name + " is already defined"));
         return null;
@@ -77,7 +73,7 @@ public class ModuleLoader {
     }
   }
 
-  public static ClassDefinition loadModule(Module module, List<TypeCheckingUnit> units, List<VcError> errors) {
+  public static ClassDefinition loadModule(Module module, List<TypeCheckingUnit> typeCheckingUnits, List<OutputUnit> outputUnits, List<VcError> errors) {
     if (myLoadingModules.contains(module)) {
       errors.add(new ModuleError(module, "modules dependencies form a cycle"));
       return null;
@@ -101,6 +97,9 @@ public class ModuleLoader {
       }
       if (outputFile == null || !outputFile.exists()) {
         errors.add(new ModuleError(module, "cannot find module"));
+        if (moduleDefinition.hasErrors()) {
+          module.getParent().getFields().remove(moduleDefinition);
+        }
         return null;
       }
       compile = false;
@@ -109,18 +108,51 @@ public class ModuleLoader {
     myLoadingModules.add(module);
     try {
       if (compile) {
-        Concrete.ClassDefinition rawClass = loadSource(module, moduleDefinition, sourceFile, units, errors);
+        Concrete.ClassDefinition rawClass = loadSource(module, moduleDefinition, sourceFile, typeCheckingUnits, outputUnits, errors);
         if (rawClass != null) {
-          units.add(new TypeCheckingUnit(rawClass, moduleDefinition));
+          typeCheckingUnits.add(new TypeCheckingUnit(rawClass, moduleDefinition));
+          moduleDefinition.hasErrors(false);
+          if (outputFile != null) {
+            for (int i = 0; i < outputUnits.size(); ++i) {
+              if (moduleDefinition.isDescendantOf(outputUnits.get(i).module)) {
+                outputFile = null;
+                break;
+              }
+              if (outputUnits.get(i).module.isDescendantOf(moduleDefinition)) {
+                outputUnits.remove(i--);
+              }
+            }
+            if (outputFile != null) {
+              outputUnits.add(new OutputUnit(moduleDefinition, outputFile));
+            }
+          }
         }
       } else {
-        loadCompiled(outputFile, moduleDefinition);
+        ModuleSerialization.readFile(outputFile, moduleDefinition, typeCheckingUnits, outputUnits, errors);
       }
     } catch (IOException e) {
       errors.add(new VcError(VcError.ioError(e)));
+    } catch (ModuleSerialization.DeserializationException e) {
+      errors.add(new VcError(e.toString()));
     }
     myLoadingModules.remove(myLoadingModules.size() - 1);
-    return moduleDefinition;
+
+    if (moduleDefinition.hasErrors()) {
+      module.getParent().getFields().remove(moduleDefinition);
+      return null;
+    } else {
+      return moduleDefinition;
+    }
+  }
+
+  public static class OutputUnit {
+    public ClassDefinition module;
+    public File file;
+
+    public OutputUnit(ClassDefinition module, File file) {
+      this.module = module;
+      this.file = file;
+    }
   }
 
   public static class TypeCheckingUnit {
@@ -130,13 +162,6 @@ public class ModuleLoader {
     public TypeCheckingUnit(Concrete.Definition rawDefinition, Definition typedDefinition) {
       this.rawDefinition = rawDefinition;
       this.typedDefinition = typedDefinition;
-    }
-  }
-
-  public static void typeCheck(List<TypeCheckingUnit> units, List<TypeCheckingError> errors) {
-    for (TypeCheckingUnit unit : units) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-      // ModuleSerialization.writeFile((ClassDefinition) unit.typedDefinition, unit.outputFile);
     }
   }
 }

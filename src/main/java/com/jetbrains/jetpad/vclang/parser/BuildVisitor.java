@@ -1,11 +1,13 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.VcError;
+import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
@@ -18,11 +20,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private final ClassDefinition myParent;
   private List<String> myContext = new ArrayList<>();
   private final List<ModuleLoader.TypeCheckingUnit> myTypeCheckingUnits;
+  private final List<ModuleLoader.OutputUnit> myOutputUnits;
   private final List<VcError> myErrors;
 
-  public BuildVisitor(ClassDefinition parent, List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits, List<VcError> errors) {
+  public BuildVisitor(ClassDefinition parent, List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits, List<ModuleLoader.OutputUnit> outputUnits, List<VcError> errors) {
     myParent = parent;
     myTypeCheckingUnits = typeCheckingUnits;
+    myOutputUnits = outputUnits;
     myErrors = errors;
   }
 
@@ -95,7 +99,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Definition getDefinition(Concrete.Definition concreteDef, Definition defaultResult) {
-    Definition typedDef = myParent.findField(concreteDef.getName());
+    Definition typedDef = myParent.findChild(concreteDef.getName());
     if (typedDef == null) return defaultResult;
     if (!(typedDef instanceof ClassDefinition) || !(concreteDef instanceof Concrete.ClassDefinition)) {
       myErrors.add(new ParserError(concreteDef.getPosition(), concreteDef.getName() + " is already defined"));
@@ -403,9 +407,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Concrete.Expression findId(String name, boolean binOp, Concrete.Position position) {
-    Definition field = Prelude.PRELUDE.findField(name);
-    if (field != null) {
-      return new Concrete.DefCallExpression(position, field);
+    Definition child = Prelude.PRELUDE.findChild(name);
+    if (child != null) {
+      return new Concrete.DefCallExpression(position, child);
     }
 
     if (!binOp) {
@@ -421,9 +425,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         continue;
       }
 
-      field = ((ClassDefinition) definition).findField(name);
-      if (field != null) {
-        return new Concrete.DefCallExpression(position, field);
+      child = definition.findChild(name);
+      if (child != null) {
+        return new Concrete.DefCallExpression(position, child);
       }
     }
 
@@ -550,15 +554,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
         if (expr instanceof Concrete.DefCallExpression) {
           Definition definition = ((Concrete.DefCallExpression) expr).getDefinition();
-          if (definition instanceof ClassDefinition) {
-            Definition classField = ((ClassDefinition) definition).findField(name);
-            if (classField == null) {
-              myErrors.add(new ParserError(tokenPosition(nameCtx.getStart()), name + " is not defined in " + definition.getFullName()));
-              return null;
-            }
-            expr = new Concrete.DefCallExpression(expr.getPosition(), classField);
-            continue;
+          Definition classField = definition.findChild(name);
+          if (classField == null && definition instanceof ClassDefinition) {
+            classField = ModuleLoader.loadModule(new Module((ClassDefinition) definition, name), myTypeCheckingUnits, myOutputUnits, myErrors);
           }
+          if (classField == null && definition instanceof FunctionDefinition) {
+            FunctionDefinition functionDefinition = (FunctionDefinition) definition;
+            if (!functionDefinition.typeHasErrors() && functionDefinition.getArguments().isEmpty() && functionDefinition.getResultType() instanceof DefCallExpression && ((DefCallExpression) functionDefinition.getResultType()).getDefinition() instanceof ClassDefinition) {
+              expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name, fixity);
+              continue;
+            }
+          }
+          if (classField == null) {
+            myErrors.add(new ParserError(tokenPosition(nameCtx.getStart()), name + " is not defined in " + definition.getFullName()));
+            return null;
+          }
+          expr = new Concrete.DefCallExpression(expr.getPosition(), classField);
+          continue;
         }
         expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name, fixity);
       } else {

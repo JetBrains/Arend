@@ -11,7 +11,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class DataDefinition extends Definition implements Abstract.DataDefinition {
-  private final List<Constructor> myConstructors;
+  private List<Constructor> myConstructors;
   private List<TypeArgument> myParameters;
 
   public DataDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<Constructor> constructors) {
@@ -41,6 +41,10 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
     return myConstructors;
   }
 
+  public void setConstructors(List<Constructor> constructors) {
+    myConstructors = constructors;
+  }
+
   @Override
   public Expression getType() {
     Expression resultType = new UniverseExpression(getUniverse());
@@ -50,5 +54,16 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   @Override
   public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitData(this, params);
+  }
+
+  @Override
+  public Constructor findChild(String name) {
+    for (Constructor constructor : myConstructors) {
+      if (constructor.getName().equals(name)) {
+        return constructor;
+      }
+    }
+
+    return null;
   }
 }

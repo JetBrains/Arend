@@ -12,19 +12,19 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition {
-  private final Abstract.Definition.Arrow myArrow;
+  private Arrow myArrow;
   private List<TelescopeArgument> myArguments;
   private Expression myResultType;
   private Expression myTerm;
   private boolean myTypeHasErrors;
 
-  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Abstract.Definition.Arrow arrow) {
+  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Arrow arrow) {
     super(name, parent, precedence, fixity);
     myArrow = arrow;
     myTypeHasErrors = true;
   }
 
-  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Arrow arrow, Expression term) {
     super(name, parent, precedence, fixity);
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);
@@ -36,8 +36,12 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
-  public Abstract.Definition.Arrow getArrow() {
+  public Arrow getArrow() {
     return myArrow;
+  }
+
+  public void setArrow(Arrow arrow) {
+    myArrow = arrow;
   }
 
   @Override

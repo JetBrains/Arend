@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.VcError;
-import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
@@ -55,7 +54,7 @@ public class ParserTest {
   public void parserLamOpenError() {
     List<VcError> errors = new ArrayList<>();
     ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>());
-    Concrete.Expression result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitExpr(parse("\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y", errors).expr());
+    Concrete.Expression result = new BuildVisitor(root, null, null, errors).visitExpr(parse("\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y", errors).expr());
     assertEquals(1, errors.size());
     assertNull(result);
   }
@@ -64,7 +63,7 @@ public class ParserTest {
   public void parserPiOpenError() {
     List<VcError> errors = new ArrayList<>();
     ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>());
-    Concrete.Expression result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), errors).visitExpr(parse("\\Pi (a b : Nat a) -> Nat a b", errors).expr());
+    Concrete.Expression result = new BuildVisitor(root, null, null, errors).visitExpr(parse("\\Pi (a b : Nat a) -> Nat a b", errors).expr());
     assertEquals(1, errors.size());
     assertNull(result);
   }
@@ -152,7 +151,7 @@ public class ParserTest {
     List<VcError> vcErrors = new ArrayList<>();
     List<TypeCheckingError> errors = new ArrayList<>();
     ClassDefinition root = new ClassDefinition("\\root", null, definitions);
-    new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), vcErrors).visitExpr(parse("11 + 2 * 3", vcErrors).expr()).accept(new CheckTypeVisitor(new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
+    new BuildVisitor(root, null, null, vcErrors).visitExpr(parse("11 + 2 * 3", vcErrors).expr()).accept(new CheckTypeVisitor(new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(1, vcErrors.size());
     assertEquals(0, errors.size());
   }
