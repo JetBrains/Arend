@@ -309,9 +309,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       Result argResult = typeCheck(args.get(0).getExpression(), argExpectedType);
       if (!(argResult instanceof OKResult)) return argResult;
-      for (int k = 0; k < ((OKResult) argResult).equations.size(); ++k) {
-        if (((OKResult) argResult).equations.get(k).hole.equals(inferHoleExpr)) {
-          ((OKResult) argResult).equations.remove(k--);
+      if (argResult.equations != null) {
+        for (int k = 0; k < argResult.equations.size(); ++k) {
+          if (argResult.equations.get(k).hole.equals(inferHoleExpr)) {
+            argResult.equations.remove(k--);
+          }
         }
       }
       PiExpression piType = (PiExpression) ((OKResult) argResult).type;
@@ -329,7 +331,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       Expression type = arguments.size() > 0 ? Pi(arguments, piType.getCodomain()) : piType.getCodomain();
       Expression resultType = Apps(DefCall(Prelude.PATH), Lam("i", type), Apps(argResult.expression, DefCall(Prelude.LEFT)), Apps(argResult.expression, DefCall(Prelude.RIGHT)));
-      List<CompareVisitor.Equation> resultEquations = ((OKResult) argResult).equations;
+      List<CompareVisitor.Equation> resultEquations = argResult.equations;
       if (holeExpression != null) {
         if (resultEquations == null) {
           resultEquations = new ArrayList<>(1);
@@ -487,7 +489,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    if (expr.getDefinition().hasErrors()) {
+    if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).typeHasErrors() || !(expr.getDefinition() instanceof FunctionDefinition) && expr.getDefinition().hasErrors()) {
       TypeCheckingError error = new HasErrors(expr.getDefinition().getName(), expr);
       expr.setWellTyped(Error(DefCall(expr.getDefinition()), error));
       myErrors.add(error);
@@ -808,7 +810,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           if (!(result instanceof OKResult)) return result;
           OKResult okResult = (OKResult) result;
           fields.add(okResult.expression);
-          equations.addAll(okResult.equations);
+          if (okResult.equations != null) {
+            equations.addAll(okResult.equations);
+          }
         }
         return new OKResult(expression, expectedType, equations);
       } else {
@@ -835,7 +839,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       OKResult okResult = (OKResult) result;
       fields.add(okResult.expression);
       arguments.add(TypeArg(okResult.type));
-      equations.addAll(okResult.equations);
+      if (okResult.equations != null) {
+        equations.addAll(okResult.equations);
+      }
     }
     return new OKResult(expression, type, equations);
   }
@@ -951,6 +957,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     Result errorResult = null;
+    boolean wasError = false;
 
     for (Abstract.Clause clause : expr.getClauses()) {
       if (clause == null) continue;
@@ -1023,6 +1030,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
       Result clauseResult = new CheckTypeVisitor(localContext, myErrors, side).typeCheck(clause.getExpression(), clauseExpectedType);
       if (!(clauseResult instanceof OKResult)) {
+        wasError = true;
         if (errorResult == null) {
           errorResult = clauseResult;
         } else
@@ -1035,7 +1043,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    if (errorResult != null) {
+    if (wasError) {
       return errorResult;
     }
 

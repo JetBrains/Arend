@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.parser;
 
-import com.jetbrains.jetpad.vclang.VcError;
+import com.jetbrains.jetpad.vclang.module.Module;
+import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -16,7 +17,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class ParserTestCase {
-  public static VcgrammarParser parse(String text, final List<VcError> errors) {
+  public static VcgrammarParser parse(String text, final List<ModuleError> errors) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -25,16 +26,16 @@ public class ParserTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errors.add(new ParserError(new Concrete.Position(line, pos), msg));
+        errors.add(new ParserError(new Module(null, "test"), new Concrete.Position(line, pos), msg));
       }
     });
     return parser;
   }
 
   public static Concrete.Expression parseExpr(List<Definition> definitions, String text) {
-    List<VcError> errors = new ArrayList<>();
+    List<ModuleError> errors = new ArrayList<>();
     ClassDefinition root = new ClassDefinition("\\root", null, definitions);
-    Concrete.Expression result = new BuildVisitor(root, null, null, errors).visitExpr(parse(text, errors).expr());
+    Concrete.Expression result = new BuildVisitor(new Module(root, "test"), root, null, null, errors).visitExpr(parse(text, errors).expr());
     assertEquals(0, errors.size());
     return result;
   }
@@ -44,8 +45,8 @@ public class ParserTestCase {
   }
 
   public static ModuleLoader.TypeCheckingUnit parseDef(ClassDefinition root, String text) {
-    List<VcError> errors = new ArrayList<>();
-    ModuleLoader.TypeCheckingUnit result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), null, errors).visitDef(parse(text, errors).def());
+    List<ModuleError> errors = new ArrayList<>();
+    ModuleLoader.TypeCheckingUnit result = new BuildVisitor(new Module(root, "test"), root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), null, errors).visitDef(parse(text, errors).def());
     assertEquals(0, errors.size());
     return result;
   }
@@ -55,9 +56,9 @@ public class ParserTestCase {
   }
 
   public static List<Concrete.Definition> parseDefs(String text) {
-    List<VcError> errors = new ArrayList<>();
+    List<ModuleError> errors = new ArrayList<>();
     ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>(0));
-    List<Concrete.Definition> result = new BuildVisitor(root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), null, errors).visitDefs(parse(text, errors).defs());
+    List<Concrete.Definition> result = new BuildVisitor(new Module(root, "test"), root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), null, errors).visitDefs(parse(text, errors).defs());
     assertEquals(0, errors.size());
     return result;
   }

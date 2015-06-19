@@ -31,7 +31,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
     myArguments = arguments;
     myResultType = resultType;
     myArrow = arrow;
-    myTypeHasErrors = true;
+    myTypeHasErrors = false;
     myTerm = term;
   }
 

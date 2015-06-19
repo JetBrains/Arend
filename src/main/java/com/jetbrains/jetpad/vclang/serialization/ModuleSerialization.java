@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.module.Module;
+import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -40,7 +40,7 @@ public class ModuleSerialization {
     fileStream.close();
   }
 
-  public static void readFile(File file, ClassDefinition module, List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits, List<ModuleLoader.OutputUnit> outputUnits, List<VcError> errors) throws IOException, DeserializationException {
+  public static int readFile(File file, ClassDefinition module, List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits, List<ModuleLoader.OutputUnit> outputUnits, List<ModuleError> errors) throws IOException, DeserializationException {
     DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
     byte[] signature = new byte[4];
     stream.readFully(signature);
@@ -51,7 +51,7 @@ public class ModuleSerialization {
     if (version != VERSION) {
       throw new WrongVersion(version);
     }
-    stream.readInt();
+    int errorsNumber = stream.readInt();
 
     Map<Integer, Definition> definitionMap = new HashMap<>();
     definitionMap.put(0, ModuleLoader.rootModule());
@@ -89,6 +89,7 @@ public class ModuleSerialization {
     }
 
     deserializeClassDefinition(stream, definitionMap, module, errors);
+    return errorsNumber;
   }
 
   private static int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
@@ -161,7 +162,7 @@ public class ModuleSerialization {
     throw new IncorrectFormat();
   }
 
-  private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, List<VcError> errors) throws IOException, DeserializationException {
+  private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, List<ModuleError> errors) throws IOException, DeserializationException {
     int code = stream.read();
     Definition definition = definitionMap.get(stream.readInt());
     definition.hasErrors(stream.readBoolean());
@@ -239,7 +240,7 @@ public class ModuleSerialization {
     return errors;
   }
 
-  private static void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition, List<VcError> errors) throws IOException, DeserializationException {
+  private static void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition, List<ModuleError> errors) throws IOException, DeserializationException {
     Universe universe = readUniverse(stream);
     int size = stream.readInt();
     definition.setUniverse(universe);

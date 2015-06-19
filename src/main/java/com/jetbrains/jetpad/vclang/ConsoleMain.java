@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.module.Module;
+import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
@@ -78,12 +79,12 @@ public class ConsoleMain {
 
           @Override
           public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
-            System.err.println(VcError.ioError(e));
+            System.err.println(ModuleError.ioError(e));
             return FileVisitResult.CONTINUE;
           }
         });
       } catch (IOException e) {
-        System.err.println(VcError.ioError(e));
+        System.err.println(ModuleError.ioError(e));
       }
     } else {
       for (String fileName : cmdLine.getArgList()) {
@@ -122,16 +123,15 @@ public class ConsoleMain {
 
     List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits = new ArrayList<>();
     List<ModuleLoader.OutputUnit> outputUnits = new ArrayList<>();
-    List<VcError> vcErrors = new ArrayList<>();
+    List<ModuleError> moduleErrors = new ArrayList<>();
     ClassDefinition module = ModuleLoader.rootModule();
     for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      module = ModuleLoader.getModule(module, moduleNames.get(i), vcErrors);
+      module = ModuleLoader.getModule(module, moduleNames.get(i), moduleErrors);
     }
-    ModuleLoader.loadModule(new Module(module, moduleNames.get(moduleNames.size() - 1)), typeCheckingUnits, outputUnits, vcErrors);
+    ModuleLoader.loadModule(new Module(module, moduleNames.get(moduleNames.size() - 1)), typeCheckingUnits, outputUnits, moduleErrors);
 
-    for (VcError vcError : vcErrors) {
-      System.err.print((relativePath != null ? relativePath : fileName) + ": ");
-      System.err.println(vcError);
+    for (ModuleError moduleError : moduleErrors) {
+      System.err.println(moduleError);
     }
 
     List<TypeCheckingError> errors = new ArrayList<>();
@@ -144,7 +144,7 @@ public class ConsoleMain {
       System.err.println(error);
     }
 
-    if (vcErrors.isEmpty() && errors.isEmpty()) {
+    if (moduleErrors.isEmpty() && errors.isEmpty()) {
       System.out.println("[OK] " + (relativePath != null ? relativePath : fileName));
     }
 
@@ -152,7 +152,7 @@ public class ConsoleMain {
       try {
         ModuleSerialization.writeFile(unit.module, unit.file);
       } catch (IOException e) {
-        System.err.println(VcError.ioError(e));
+        System.err.println(ModuleError.ioError(e));
       }
     }
   }

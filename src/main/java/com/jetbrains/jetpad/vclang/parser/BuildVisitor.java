@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.parser;
 
-import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.module.Module;
+import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -21,13 +21,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<String> myContext = new ArrayList<>();
   private final List<ModuleLoader.TypeCheckingUnit> myTypeCheckingUnits;
   private final List<ModuleLoader.OutputUnit> myOutputUnits;
-  private final List<VcError> myErrors;
+  private final List<ModuleError> myErrors;
+  private final Module myModule;
 
-  public BuildVisitor(ClassDefinition parent, List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits, List<ModuleLoader.OutputUnit> outputUnits, List<VcError> errors) {
+  public BuildVisitor(Module module, ClassDefinition parent, List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits, List<ModuleLoader.OutputUnit> outputUnits, List<ModuleError> errors) {
     myParent = parent;
     myTypeCheckingUnits = typeCheckingUnits;
     myOutputUnits = outputUnits;
     myErrors = errors;
+    myModule = module;
   }
 
   private Concrete.NameArgument getVar(AtomFieldsAccContext ctx) {
@@ -79,7 +81,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<Concrete.NameArgument> getVars(ExprContext expr) {
     List<Concrete.NameArgument> result = getVarsNull(expr);
     if (result == null) {
-      myErrors.add(new ParserError(tokenPosition(expr.getStart()), "Expected a list of variables"));
+      myErrors.add(new ParserError(myModule, tokenPosition(expr.getStart()), "Expected a list of variables"));
       return null;
     } else {
       return result;
@@ -102,7 +104,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Definition typedDef = myParent.findChild(concreteDef.getName());
     if (typedDef == null) return defaultResult;
     if (!(typedDef instanceof ClassDefinition) || !(concreteDef instanceof Concrete.ClassDefinition)) {
-      myErrors.add(new ParserError(concreteDef.getPosition(), concreteDef.getName() + " is already defined"));
+      myErrors.add(new ParserError(myModule, concreteDef.getPosition(), concreteDef.getName() + " is already defined"));
       return null;
     } else {
       return typedDef;
@@ -160,7 +162,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (args.get(0) instanceof Concrete.TelescopeArgument) {
         arguments.add((Concrete.TelescopeArgument) args.get(0));
       } else {
-        myErrors.add(new ParserError(tokenPosition(tele.getStart()), "Expected a typed variable"));
+        myErrors.add(new ParserError(myModule, tokenPosition(tele.getStart()), "Expected a typed variable"));
         return null;
       }
     }
@@ -190,7 +192,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Abstract.Definition.Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
     int priority = Integer.valueOf(ctx.NUMBER().getText());
     if (priority < 1 || priority > 9) {
-      myErrors.add(new ParserError(tokenPosition(ctx.NUMBER().getSymbol()), "Precedence out of range: " + priority));
+      myErrors.add(new ParserError(myModule, tokenPosition(ctx.NUMBER().getSymbol()), "Precedence out of range: " + priority));
 
       if (priority < 1) {
         priority = 1;
@@ -234,7 +236,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     Concrete.Expression type = visitTypeOpt(ctx.typeOpt());
     if (type != null && !(type instanceof Concrete.UniverseExpression)) {
-      myErrors.add(new ParserError(tokenPosition(ctx.typeOpt().getStart()), "Expected a universe"));
+      myErrors.add(new ParserError(myModule, tokenPosition(ctx.typeOpt().getStart()), "Expected a universe"));
       return null;
     }
 
@@ -342,7 +344,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, "_"));
         myContext.add("_");
       } else {
-        myErrors.add(new ParserError(tokenPosition(literalContext.getStart()), "Unexpected token. Expected an identifier."));
+        myErrors.add(new ParserError(myModule, tokenPosition(literalContext.getStart()), "Unexpected token. Expected an identifier."));
         return null;
       }
     } else {
@@ -431,7 +433,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    myErrors.add(new ParserError(position, "Not in scope: " + name));
+    if (!binOp) {
+      Definition definition = ModuleLoader.loadModule(new Module(ModuleLoader.rootModule(), name), myTypeCheckingUnits, myOutputUnits, myErrors, true);
+      if (definition != null) {
+        return new Concrete.DefCallExpression(position, definition);
+      }
+    }
+
+    myErrors.add(new ParserError(myModule, position, "Not in scope: " + name));
     return null;
   }
 
@@ -522,7 +531,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     for (Concrete.TypeArgument arg : args) {
       if (!arg.getExplicit()) {
-        myErrors.add(new ParserError(arg.getPosition(), "Fields in sigma types must be explicit"));
+        myErrors.add(new ParserError(myModule, arg.getPosition(), "Fields in sigma types must be explicit"));
       }
     }
     return new Concrete.SigmaExpression(tokenPosition(ctx.getStart()), args);
@@ -566,7 +575,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
             }
           }
           if (classField == null) {
-            myErrors.add(new ParserError(tokenPosition(nameCtx.getStart()), name + " is not defined in " + definition.getFullName()));
+            myErrors.add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), name + " is not defined in " + definition.getFullName()));
             return null;
           }
           expr = new Concrete.DefCallExpression(expr.getPosition(), classField);
@@ -628,7 +637,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     if (!(prec.priority > prec2.priority || (prec.priority == prec2.priority && prec.associativity == Definition.Associativity.LEFT_ASSOC && prec2.associativity == Definition.Associativity.LEFT_ASSOC))) {
       String msg = "Precedence parsing error: cannot mix (" + topElem.definition.getName() + ") [" + prec + "] and (" + elem.definition.getName() + ") [" + prec2 + "] in the same infix expression";
-      myErrors.add(new ParserError(position, msg));
+      myErrors.add(new ParserError(myModule, position, msg));
     }
     stack.remove(stack.size() - 1);
     pushOnStack(stack, new StackElem(new Concrete.BinOpExpression(position, new Concrete.ArgumentExpression(topElem.argument, true, false), topElem.definition, new Concrete.ArgumentExpression(elem.argument, true, false)), elem.definition), position);
@@ -666,7 +675,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       pushOnStack(stack, new StackElem(expr, def), position);
     }
 
-    return rollUpStack(stack, visitAtoms(visitAtomFieldsAcc(ctx.atomFieldsAcc()), ctx.argument()));
+    Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
+    return expr == null ? null : rollUpStack(stack, visitAtoms(expr, ctx.argument()));
   }
 
   @Override
@@ -674,8 +684,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     String name = ctx.BIN_OP().getText();
     Concrete.Position position = tokenPosition(ctx.BIN_OP().getSymbol());
     Concrete.Expression expr = findId(name, true, position);
+    if (expr == null) return null;
     if (!(expr instanceof Concrete.DefCallExpression)) {
-      myErrors.add(new ParserError(position, "Infix notation cannot be used with local variables"));
+      myErrors.add(new ParserError(myModule, position, "Infix notation cannot be used with local variables"));
       return null;
     }
 
@@ -687,14 +698,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     boolean binOp = ctx.name() instanceof NameBinOpContext;
     String name = binOp ? ((NameBinOpContext) ctx.name()).BIN_OP().getText() : ((NameIdContext) ctx.name()).ID().getText();
     Concrete.Expression expr = findId(name, binOp, tokenPosition(ctx.name().getStart()));
+    if (expr == null) return null;
     if (!(expr instanceof Concrete.DefCallExpression)) {
-      myErrors.add(new ParserError(tokenPosition(ctx.getStart()), "Infix notation cannot be used with local variables"));
+      myErrors.add(new ParserError(myModule, tokenPosition(ctx.getStart()), "Infix notation cannot be used with local variables"));
       return null;
     }
 
     expr = visitFieldsAcc(expr, ctx.fieldAcc());
+    if (expr == null) return null;
     if (!(expr instanceof Concrete.DefCallExpression)) {
-      myErrors.add(new ParserError(tokenPosition(ctx.getStart()), "Infix notation can be used only with global definitions"));
+      myErrors.add(new ParserError(myModule, tokenPosition(ctx.getStart()), "Infix notation can be used only with global definitions"));
       return null;
     }
 
@@ -709,7 +722,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression elimExpr = visitExpr(ctx.expr());
     if (elimExpr == null) return null;
     if (!(elimExpr instanceof Concrete.IndexExpression)) {
-      myErrors.add(new ParserError(elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
+      myErrors.add(new ParserError(myModule, elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
       return null;
     }
     int elimIndex = ((Concrete.IndexExpression) elimExpr).getIndex();
@@ -728,7 +741,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           if (argument instanceof Concrete.NameArgument) {
             nameArguments.add((Concrete.NameArgument) argument);
           } else {
-            myErrors.add(new ParserError(argument.getPosition(), "Expected a variable"));
+            myErrors.add(new ParserError(myModule, argument.getPosition(), "Expected a variable"));
             return null;
           }
         }
@@ -751,7 +764,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       if (name == null) {
         if (otherwise != null) {
-          myErrors.add(new ParserError(tokenPosition(clauseCtx.clauseName().getStart()), "Overlapping pattern matching"));
+          myErrors.add(new ParserError(myModule, tokenPosition(clauseCtx.clauseName().getStart()), "Overlapping pattern matching"));
         }
         otherwise = clause;
       } else {

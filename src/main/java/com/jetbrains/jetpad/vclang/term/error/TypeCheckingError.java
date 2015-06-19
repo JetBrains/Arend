@@ -1,20 +1,24 @@
 package com.jetbrains.jetpad.vclang.term.error;
 
-import com.jetbrains.jetpad.vclang.VcError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TypeCheckingError extends VcError {
+public class TypeCheckingError {
+  private final String myMessage;
   private final Abstract.SourceNode myExpression;
   private final List<String> myNames;
 
   public TypeCheckingError(String message, Abstract.SourceNode expression, List<String> names) {
-    super(message);
+    myMessage = message;
     myExpression = expression;
     myNames = names;
+  }
+
+  public String getMessage() {
+    return myMessage;
   }
 
   public static List<String> getNames(List<? extends Abstract.Binding> context) {

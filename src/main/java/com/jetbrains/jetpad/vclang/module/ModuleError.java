@@ -1,17 +1,30 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.VcError;
+import java.io.IOException;
 
-public class ModuleError extends VcError {
+public class ModuleError {
   private final Module myModule;
+  private final String myMessage;
 
   public ModuleError(Module module, String message) {
-    super(message);
     myModule = module;
+    myMessage = message;
+  }
+
+  public Module getModule() {
+    return myModule;
+  }
+
+  public String getMessage() {
+    return myMessage;
+  }
+
+  public static String ioError(IOException e) {
+    return "I/O error: " + e.getMessage();
   }
 
   @Override
   public String toString() {
-    return myModule + ": " + (getMessage() == null ? "Unknown error" : getMessage());
+    return myModule + ": " + (myMessage == null ? "Unknown error" : myMessage);
   }
 }
