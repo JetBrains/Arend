@@ -8,8 +8,8 @@ import java.util.ArrayList;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
   private final Definition myParent;
-  private final Precedence myPrecedence;
-  private final Fixity myFixity;
+  private Precedence myPrecedence;
+  private Fixity myFixity;
   private Universe myUniverse;
   private boolean myHasErrors;
 
@@ -39,9 +39,17 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return myPrecedence;
   }
 
+  public void setPrecedence(Precedence precedence) {
+    myPrecedence = precedence;
+  }
+
   @Override
   public Fixity getFixity() {
     return myFixity;
+  }
+
+  public void setFixity(Fixity fixity) {
+    myFixity = fixity;
   }
 
   @Override

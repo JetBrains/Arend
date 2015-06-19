@@ -31,6 +31,10 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     return myDataStream;
   }
 
+  public DefinitionsIndices getDefinitionsIndices() {
+    return myDefinitionsIndices;
+  }
+
   @Override
   public Void visitApp(AppExpression expr) {
     myStream.write(1);

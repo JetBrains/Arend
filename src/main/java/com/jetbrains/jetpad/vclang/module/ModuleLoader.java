@@ -136,7 +136,6 @@ public class ModuleLoader {
       errors.add(new VcError(VcError.ioError(e)));
     } catch (ModuleSerialization.DeserializationException e) {
       errors.add(new VcError(e.toString()));
-      e.printStackTrace();
     }
     myLoadingModules.remove(myLoadingModules.size() - 1);
 
