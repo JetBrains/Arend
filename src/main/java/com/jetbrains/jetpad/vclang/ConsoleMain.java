@@ -64,7 +64,7 @@ public class ConsoleMain {
       libDirs.add(new File(workingPath, "lib"));
     }
 
-    ModuleLoader.init(sourceDir, outputDir, libDirs, recompile);
+    ModuleLoader.getInstance().init(sourceDir, outputDir, libDirs, recompile);
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDir == null) return;
       try {
@@ -121,39 +121,43 @@ public class ConsoleMain {
       return;
     }
 
-    List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits = new ArrayList<>();
-    List<ModuleLoader.OutputUnit> outputUnits = new ArrayList<>();
-    List<ModuleError> moduleErrors = new ArrayList<>();
-    ClassDefinition module = ModuleLoader.rootModule();
+    ClassDefinition module = ModuleLoader.getInstance().rootModule();
     for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      module = ModuleLoader.getModule(module, moduleNames.get(i), moduleErrors);
+      module = ModuleLoader.getInstance().getModule(module, moduleNames.get(i));
     }
-    ModuleLoader.loadModule(new Module(module, moduleNames.get(moduleNames.size() - 1)), typeCheckingUnits, outputUnits, moduleErrors);
-
-    for (ModuleError moduleError : moduleErrors) {
-      System.err.println(moduleError);
-    }
-
+    Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));
     List<TypeCheckingError> errors = new ArrayList<>();
-    for (ModuleLoader.TypeCheckingUnit unit : typeCheckingUnits) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    if (!ModuleLoader.getInstance().isModuleLoaded(newModule)) {
+      ModuleLoader.getInstance().loadModule(newModule);
+
+      for (ModuleError moduleError : ModuleLoader.getInstance().getErrors()) {
+        System.err.println(moduleError);
+      }
+
+      for (ModuleLoader.TypeCheckingUnit unit : ModuleLoader.getInstance().getTypeCheckingUnits()) {
+        unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+      }
+
+      for (TypeCheckingError error : errors) {
+        System.err.print((relativePath != null ? relativePath : fileName) + ":");
+        System.err.println(error);
+      }
+
+      for (ModuleLoader.OutputUnit unit : ModuleLoader.getInstance().getOutputUnits()) {
+        try {
+          ModuleSerialization.writeFile(unit.module, unit.file);
+        } catch (IOException e) {
+          System.err.println(ModuleError.ioError(e));
+        }
+      }
     }
 
-    for (TypeCheckingError error : errors) {
-      System.err.print((relativePath != null ? relativePath : fileName) + ":");
-      System.err.println(error);
-    }
-
-    if (moduleErrors.isEmpty() && errors.isEmpty()) {
+    if (ModuleLoader.getInstance().getErrors().isEmpty() && errors.isEmpty()) {
       System.out.println("[OK] " + (relativePath != null ? relativePath : fileName));
     }
 
-    for (ModuleLoader.OutputUnit unit : outputUnits) {
-      try {
-        ModuleSerialization.writeFile(unit.module, unit.file);
-      } catch (IOException e) {
-        System.err.println(ModuleError.ioError(e));
-      }
-    }
+    ModuleLoader.getInstance().getTypeCheckingUnits().clear();
+    ModuleLoader.getInstance().getOutputUnits().clear();
+    ModuleLoader.getInstance().getErrors().clear();
   }
 }

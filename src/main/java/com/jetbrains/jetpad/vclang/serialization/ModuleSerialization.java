@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.module.Module;
-import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -40,7 +39,7 @@ public class ModuleSerialization {
     fileStream.close();
   }
 
-  public static int readFile(File file, ClassDefinition module, List<ModuleLoader.TypeCheckingUnit> typeCheckingUnits, List<ModuleLoader.OutputUnit> outputUnits, List<ModuleError> errors) throws IOException, DeserializationException {
+  public static int readFile(File file, ClassDefinition module) throws IOException, DeserializationException {
     DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
     byte[] signature = new byte[4];
     stream.readFully(signature);
@@ -54,13 +53,13 @@ public class ModuleSerialization {
     int errorsNumber = stream.readInt();
 
     Map<Integer, Definition> definitionMap = new HashMap<>();
-    definitionMap.put(0, ModuleLoader.rootModule());
+    definitionMap.put(0, ModuleLoader.getInstance().rootModule());
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       int index = stream.readInt();
       Definition childModule;
       if (index == 0) {
-        childModule = ModuleLoader.rootModule();
+        childModule = ModuleLoader.getInstance().rootModule();
       } else {
         int parentIndex = stream.readInt();
         String name = stream.readUTF();
@@ -74,11 +73,11 @@ public class ModuleSerialization {
 
         if (childModule == null) {
           if (parent instanceof ClassDefinition && code == CLASS_CODE) {
-            childModule = ModuleLoader.loadModule(new Module((ClassDefinition) parent, name), typeCheckingUnits, outputUnits, errors);
+            childModule = ModuleLoader.getInstance().loadModule(new Module((ClassDefinition) parent, name));
           } else
           if (parent.isDescendantOf(module)) {
             childModule = newDefinition(code, name, parent);
-            module.getFields().add(childModule);
+            module.add(childModule);
           } else {
             throw new DeserializationException(name + " is not defined in " + parent.getFullName());
           }
@@ -88,7 +87,7 @@ public class ModuleSerialization {
       definitionMap.put(index, childModule);
     }
 
-    deserializeClassDefinition(stream, definitionMap, module, errors);
+    deserializeClassDefinition(stream, definitionMap, module);
     return errorsNumber;
   }
 
@@ -157,12 +156,12 @@ public class ModuleSerialization {
   public static Definition newDefinition(int code, String name, Definition parent) throws IncorrectFormat {
     if (code == 0) return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, Abstract.Definition.Arrow.LEFT);
     if (code == 1) return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Constructor>());
-    if (code == 2) return new ClassDefinition(name, parent, new ArrayList<Definition>());
+    if (code == 2) return new ClassDefinition(name, parent, new HashMap<String, Definition>());
     if (code == 3) return new Constructor(-1, name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX);
     throw new IncorrectFormat();
   }
 
-  private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, List<ModuleError> errors) throws IOException, DeserializationException {
+  private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException, DeserializationException {
     int code = stream.read();
     Definition definition = definitionMap.get(stream.readInt());
     definition.hasErrors(stream.readBoolean());
@@ -218,7 +217,7 @@ public class ModuleSerialization {
       }
 
       ClassDefinition classDefinition = (ClassDefinition) definition;
-      deserializeClassDefinition(stream, definitionMap, classDefinition, errors);
+      deserializeClassDefinition(stream, definitionMap, classDefinition);
     } else {
       throw new IncorrectFormat();
     }
@@ -227,25 +226,25 @@ public class ModuleSerialization {
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
     int size = 0;
-    for (Definition field : definition.getFields()) {
+    for (Definition field : definition.getFields().values()) {
       if (!(field instanceof Constructor)) {
         ++size;
       }
     }
     visitor.getDataStream().writeInt(size);
     int errors = 0;
-    for (Definition field : definition.getFields()) {
+    for (Definition field : definition.getFields().values()) {
       errors += serializeDefinition(visitor, field);
     }
     return errors;
   }
 
-  private static void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition, List<ModuleError> errors) throws IOException, DeserializationException {
+  private static void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException, DeserializationException {
     Universe universe = readUniverse(stream);
     int size = stream.readInt();
     definition.setUniverse(universe);
     for (int i = 0; i < size; ++i) {
-      deserializeDefinition(stream, definitionMap, errors);
+      deserializeDefinition(stream, definitionMap);
     }
   }
 

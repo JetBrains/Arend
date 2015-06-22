@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
@@ -22,16 +22,18 @@ import static org.junit.Assert.*;
 
 public class PrettyPrintingParserTest {
   private void testExpr(Expression expected, Expression expr) throws UnsupportedEncodingException {
+    ModuleLoader moduleLoader = new ModuleLoader();
     StringBuilder builder = new StringBuilder();
     expr.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
-    Concrete.Expression result = parseExpr(builder.toString());
+    Concrete.Expression result = parseExpr(moduleLoader, builder.toString());
+    assertEquals(0, moduleLoader.getErrors().size());
     assertTrue(compare(expected, result));
   }
 
-  private void testDef(ClassDefinition root, FunctionDefinition expected, FunctionDefinition def) throws UnsupportedEncodingException {
+  private void testDef(ModuleLoader moduleLoader, FunctionDefinition expected, FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     def.accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
-    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(root, builder.toString()).rawDefinition;
+    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(moduleLoader, builder.toString()).rawDefinition;
     assertEquals(expected.getArguments().size(), result.getArguments().size());
     for (int i = 0; i < expected.getArguments().size(); ++i) {
       assertTrue(compare(expected.getArguments().get(i).getType(), result.getArguments().get(i).getType()));
@@ -66,29 +68,29 @@ public class PrettyPrintingParserTest {
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
     // f (x : Nat) : Nat x => \y z. y z;
-    ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>(0));
-    FunctionDefinition def = new FunctionDefinition("f", root, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("x"), Nat())), Apps(Nat(), Index(0)), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Index(1), Index(0))));
-    testDef(root, def, def);
+    ModuleLoader moduleLoader = new ModuleLoader();
+    FunctionDefinition def = new FunctionDefinition("f", moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("x"), Nat())), Apps(Nat(), Index(0)), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Index(1), Index(0))));
+    testDef(moduleLoader, def, def);
   }
 
   @Test
   public void prettyPrintingParserElim() throws UnsupportedEncodingException {
     // \function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \elim x | zero => y | suc x' => z (foo z x')
-    ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>(0));
+    ModuleLoader moduleLoader = new ModuleLoader();
 
     List<Clause> fooClausesActual = new ArrayList<>();
     ElimExpression fooTermActual = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), fooClausesActual, null);
-    FunctionDefinition fooDef = new FunctionDefinition("foo", root, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, fooTermActual);
+    FunctionDefinition fooDef = new FunctionDefinition("foo", moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, fooTermActual);
     fooClausesActual.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), fooTermActual));
     fooClausesActual.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), fooTermActual));
-    root.getFields().add(fooDef);
+    moduleLoader.rootModule().add(fooDef);
 
     List<Clause> clausesActual = new ArrayList<>();
     ElimExpression termActual = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clausesActual, null);
-    FunctionDefinition def = new FunctionDefinition("bar", root, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, termActual);
+    FunctionDefinition def = new FunctionDefinition("bar", moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, teleArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, termActual);
     clausesActual.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), termActual));
     clausesActual.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), termActual));
 
-    testDef(root, def, def);
+    testDef(moduleLoader, def, def);
   }
 }

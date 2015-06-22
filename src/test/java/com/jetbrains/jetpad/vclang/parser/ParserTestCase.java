@@ -1,23 +1,21 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.module.Module;
-import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import org.antlr.v4.runtime.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 public class ParserTestCase {
-  public static VcgrammarParser parse(String text, final List<ModuleError> errors) {
+  public static VcgrammarParser parse(final ModuleLoader moduleLoader, String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -26,40 +24,27 @@ public class ParserTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errors.add(new ParserError(new Module(null, "test"), new Concrete.Position(line, pos), msg));
+        moduleLoader.getErrors().add(new ParserError(new Module(null, "test"), new Concrete.Position(line, pos), msg));
       }
     });
     return parser;
   }
 
-  public static Concrete.Expression parseExpr(List<Definition> definitions, String text) {
-    List<ModuleError> errors = new ArrayList<>();
-    ClassDefinition root = new ClassDefinition("\\root", null, definitions);
-    Concrete.Expression result = new BuildVisitor(new Module(root, "test"), root, null, null, errors).visitExpr(parse(text, errors).expr());
-    assertEquals(0, errors.size());
+  public static Concrete.Expression parseExpr(ModuleLoader moduleLoader, String text) {
+    Concrete.Expression result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, text).expr());
+    assertEquals(0, moduleLoader.getErrors().size());
     return result;
   }
 
-  public static Concrete.Expression parseExpr(String text) {
-    return parseExpr(new ArrayList<Definition>(0), text);
-  }
-
-  public static ModuleLoader.TypeCheckingUnit parseDef(ClassDefinition root, String text) {
-    List<ModuleError> errors = new ArrayList<>();
-    ModuleLoader.TypeCheckingUnit result = new BuildVisitor(new Module(root, "test"), root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), null, errors).visitDef(parse(text, errors).def());
-    assertEquals(0, errors.size());
+  public static ModuleLoader.TypeCheckingUnit parseDef(ModuleLoader moduleLoader, String text) {
+    ModuleLoader.TypeCheckingUnit result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDef(parse(moduleLoader, text).def());
+    assertEquals(0, moduleLoader.getErrors().size());
     return result;
   }
 
-  public static ModuleLoader.TypeCheckingUnit parseDef(String text) {
-    return parseDef(new ClassDefinition("\\root", null, new ArrayList<Definition>(0)), text);
-  }
-
-  public static List<Concrete.Definition> parseDefs(String text) {
-    List<ModuleError> errors = new ArrayList<>();
-    ClassDefinition root = new ClassDefinition("\\root", null, new ArrayList<Definition>(0));
-    List<Concrete.Definition> result = new BuildVisitor(new Module(root, "test"), root, new ArrayList<ModuleLoader.TypeCheckingUnit>(), null, errors).visitDefs(parse(text, errors).defs());
-    assertEquals(0, errors.size());
+  public static Map<String, Concrete.Definition> parseDefs(ModuleLoader moduleLoader, String text) {
+    Map<String, Concrete.Definition> result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
+    assertEquals(0, moduleLoader.getErrors().size());
     return result;
   }
 

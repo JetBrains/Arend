@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
 public class Recursive {
   @Test
   public void list() {
-    ModuleLoader.TypeCheckingUnit unit = parseDef("\\data List (A : \\Type0) | nil | cons A (List A)");
+    ModuleLoader.TypeCheckingUnit unit = parseDef(new ModuleLoader(), "\\data List (A : \\Type0) | nil | cons A (List A)");
     List<TypeCheckingError> errors = new ArrayList<>();
     unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
@@ -24,7 +24,7 @@ public class Recursive {
 
   @Test
   public void dataLeftError() {
-    ModuleLoader.TypeCheckingUnit unit = parseDef("\\data List (A : \\Type0) | nil | cons (List A -> A)");
+    ModuleLoader.TypeCheckingUnit unit = parseDef(new ModuleLoader(), "\\data List (A : \\Type0) | nil | cons (List A -> A)");
     List<TypeCheckingError> errors = new ArrayList<>();
     unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
     assertEquals(1, errors.size());
@@ -33,7 +33,7 @@ public class Recursive {
 
   @Test
   public void dataRightError() {
-    ModuleLoader.TypeCheckingUnit unit = parseDef("\\data List (B : \\Type0 -> \\Type0) (A : \\Type0) | nil | cons (B (List B A))");
+    ModuleLoader.TypeCheckingUnit unit = parseDef(new ModuleLoader(), "\\data List (B : \\Type0 -> \\Type0) (A : \\Type0) | nil | cons (B (List B A))");
     List<TypeCheckingError> errors = new ArrayList<>();
     unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
     assertEquals(1, errors.size());
@@ -42,7 +42,7 @@ public class Recursive {
 
   @Test
   public void plus() {
-    ModuleLoader.TypeCheckingUnit unit = parseDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => suc (x' + y)");
+    ModuleLoader.TypeCheckingUnit unit = parseDef(new ModuleLoader(), "\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => suc (x' + y)");
     List<TypeCheckingError> errors = new ArrayList<>();
     unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
@@ -51,7 +51,7 @@ public class Recursive {
 
   @Test
   public void doubleRec() {
-    ModuleLoader.TypeCheckingUnit unit = parseDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => suc x'' + (x'' + y)");
+    ModuleLoader.TypeCheckingUnit unit = parseDef(new ModuleLoader(), "\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => suc x'' + (x'' + y)");
     List<TypeCheckingError> errors = new ArrayList<>();
     unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());
@@ -60,7 +60,7 @@ public class Recursive {
 
   @Test
   public void functionError() {
-    ModuleLoader.TypeCheckingUnit unit = parseDef("\\function (+) (x y : Nat) : Nat <= x + y");
+    ModuleLoader.TypeCheckingUnit unit = parseDef(new ModuleLoader(), "\\function (+) (x y : Nat) : Nat <= x + y");
     List<TypeCheckingError> errors = new ArrayList<>();
     unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
     assertEquals(1, errors.size());
@@ -69,7 +69,7 @@ public class Recursive {
 
   @Test
   public void functionError2() {
-    ModuleLoader.TypeCheckingUnit unit = parseDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => y + y");
+    ModuleLoader.TypeCheckingUnit unit = parseDef(new ModuleLoader(), "\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => y + y");
     List<TypeCheckingError> errors = new ArrayList<>();
     unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
     assertEquals(1, errors.size());
@@ -78,7 +78,7 @@ public class Recursive {
 
   @Test
   public void functionPartiallyApplied() {
-    ModuleLoader.TypeCheckingUnit unit = parseDef("\\function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => z (foo z x')");
+    ModuleLoader.TypeCheckingUnit unit = parseDef(new ModuleLoader(), "\\function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => z (foo z x')");
     List<TypeCheckingError> errors = new ArrayList<>();
     unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
     assertEquals(0, errors.size());

@@ -5,12 +5,12 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVis
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 
-import java.util.List;
+import java.util.Map;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
-  private final List<Definition> myFields;
+  private final Map<String, Definition> myFields;
 
-  public ClassDefinition(String name, Definition parent, List<Definition> fields) {
+  public ClassDefinition(String name, Definition parent, Map<String, Definition> fields) {
     super(name, parent, DEFAULT_PRECEDENCE, Fixity.PREFIX);
     myFields = fields;
     hasErrors(false);
@@ -22,7 +22,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   }
 
   @Override
-  public List<Definition> getFields() {
+  public Map<String, Definition> getFields() {
     return myFields;
   }
 
@@ -31,14 +31,12 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return visitor.visitClass(this, params);
   }
 
+  public void add(Definition definition) {
+    myFields.put(definition.getName(), definition);
+  }
+
   @Override
   public Definition findChild(String name) {
-    for (Definition field : myFields) {
-      if (name.equals(field.getName())) {
-        return field;
-      }
-    }
-
-    return null;
+    return myFields.get(name);
   }
 }
