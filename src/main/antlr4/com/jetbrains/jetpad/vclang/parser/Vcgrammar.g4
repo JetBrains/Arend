@@ -2,20 +2,20 @@ grammar Vcgrammar;
 
 defs  : def*;
 
-def   : '\\function' precedence name tele* typeOpt termOpt             # defFunction
-      | '\\data' precedence name tele* typeOpt arrowOpt constructor*   # defData
+def   : '\\function' precedence name tele* (':' expr)? termOpt         # defFunction
+      | '\\data' precedence name tele* (':' expr)? '<='? constructor*  # defData
       | '\\class' ID '{' defs '}'                                      # defClass
+      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?               # defCmd
+      ;
+
+nsCmd : '\\open'                      # openCmd
+      | '\\close'                     # closeCmd
+      | '\\export'                    # exportCmd
       ;
 
 arrow : '<='                            # arrowLeft
       | '=>'                            # arrowRight
       ;
-
-arrowOpt : | '<=';
-
-typeOpt :                               # noType
-        | ':' expr                      # withType
-        ;
 
 termOpt :                               # noTerm
         | arrow expr                    # withTerm

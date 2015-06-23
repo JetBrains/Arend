@@ -66,4 +66,9 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
 
     return null;
   }
+
+  @Override
+  public List<Constructor> getChildren() {
+    return myConstructors;
+  }
 }

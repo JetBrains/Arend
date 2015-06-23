@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
@@ -134,7 +135,45 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       myParent.add(typedDef);
       return new ModuleLoader.TypeCheckingUnit(concreteDef, typedDef);
     }
+    if (ctx instanceof DefCmdContext) {
+      return visitDefCmd((DefCmdContext) ctx);
+    }
     throw new IllegalStateException();
+  }
+
+  @Override
+  public ModuleLoader.TypeCheckingUnit visitDefCmd(DefCmdContext ctx) {
+    Definition module = visitModule(ctx.name(0), ctx.fieldAcc());
+    if (module == null) return null;
+    boolean remove = ctx.nsCmd() instanceof CloseCmdContext;
+    boolean export = ctx.nsCmd() instanceof ExportCmdContext;
+    if (ctx.name().size() > 1) {
+      for (int i = 1; i < ctx.name().size(); ++i) {
+        String name = ctx.name(i) instanceof NameBinOpContext ? ((NameBinOpContext) ctx.name(i)).BIN_OP().getText() : ((NameIdContext) ctx.name(i)).ID().getText();
+        Definition definition = module.findChild(name);
+        if (definition == null) {
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name(i).getStart()), name + " is not exported from " + module.getFullName()));
+          continue;
+        }
+
+        if (remove) {
+          myParent.remove(definition);
+        } else {
+          myParent.add(definition, export);
+        }
+      }
+    } else {
+      Collection<? extends Definition> children = module.getChildren();
+      if (children == null) return null;
+      for (Definition definition : children) {
+        if (remove) {
+          myParent.remove(definition);
+        } else {
+          myParent.add(definition, export);
+        }
+      }
+    }
+    return null;
   }
 
   @Override
@@ -161,7 +200,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         return null;
       }
     }
-    Concrete.Expression type = visitTypeOpt(ctx.typeOpt());
+    Concrete.Expression type = ctx.expr() == null ? null : visitExpr(ctx.expr());
     Definition.Arrow arrow = ctx.termOpt() instanceof NoTermContext ? null : ((WithTermContext) ctx.termOpt()).arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, visitPrecedence(ctx.precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null);
 
@@ -229,9 +268,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.TypeArgument> parameters = visitTeles(ctx.tele());
     if (parameters == null) return null;
 
-    Concrete.Expression type = visitTypeOpt(ctx.typeOpt());
+    Concrete.Expression type = ctx.expr() == null ? null : visitExpr(ctx.expr());
     if (type != null && !(type instanceof Concrete.UniverseExpression)) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.typeOpt().getStart()), "Expected a universe"));
+      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.expr().getStart()), "Expected a universe"));
       return null;
     }
 
@@ -281,16 +320,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
     return new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), new Universe.Type(), fields);
-  }
-
-  private Concrete.Expression visitTypeOpt(TypeOptContext ctx) {
-    if (ctx instanceof NoTypeContext) {
-      return null;
-    }
-    if (ctx instanceof WithTypeContext) {
-      return visitExpr(((WithTypeContext) ctx).expr());
-    }
-    throw new IllegalStateException();
   }
 
   @Override
@@ -569,7 +598,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           Definition definition = ((Concrete.DefCallExpression) expr).getDefinition();
           Definition classField = definition.findChild(name);
           if (classField == null && definition instanceof ClassDefinition) {
-            classField = myModuleLoader.loadModule(new Module((ClassDefinition) definition, name));
+            classField = myModuleLoader.loadModule(new Module((ClassDefinition) definition, name), true);
           }
           if (classField == null && definition instanceof FunctionDefinition) {
             FunctionDefinition functionDefinition = (FunctionDefinition) definition;
@@ -680,7 +709,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
-    return expr == null ? null : rollUpStack(stack, visitAtoms(expr, ctx.argument()));
+    expr = expr == null ? null : visitAtoms(expr, ctx.argument());
+    return expr == null ? null : rollUpStack(stack, expr);
   }
 
   @Override
@@ -699,19 +729,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Definition visitInfixId(InfixIdContext ctx) {
-    boolean binOp = ctx.name() instanceof NameBinOpContext;
-    String name = binOp ? ((NameBinOpContext) ctx.name()).BIN_OP().getText() : ((NameIdContext) ctx.name()).ID().getText();
-    Concrete.Expression expr = findId(name, binOp, tokenPosition(ctx.name().getStart()));
+    return visitModule(ctx.name(), ctx.fieldAcc());
+  }
+
+  public Definition visitModule(NameContext nameCtx, List<FieldAccContext> fieldAccCtx) {
+    boolean binOp = nameCtx instanceof NameBinOpContext;
+    String name = binOp ? ((NameBinOpContext) nameCtx).BIN_OP().getText() : ((NameIdContext) nameCtx).ID().getText();
+    Concrete.Expression expr = findId(name, binOp, tokenPosition(nameCtx.getStart()));
     if (expr == null) return null;
     if (!(expr instanceof Concrete.DefCallExpression)) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), "Infix notation cannot be used with local variables"));
+      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), "Expected a global definition"));
       return null;
     }
 
-    expr = visitFieldsAcc(expr, ctx.fieldAcc());
+    expr = visitFieldsAcc(expr, fieldAccCtx);
     if (expr == null) return null;
     if (!(expr instanceof Concrete.DefCallExpression)) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), "Infix notation can be used only with global definitions"));
+      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), "Expected a global definition"));
       return null;
     }
 

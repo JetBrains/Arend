@@ -133,26 +133,28 @@ public class ConsoleMain {
         System.err.println(moduleError);
       }
 
-      List<TypeCheckingError> errors = new ArrayList<>();
-      for (ModuleLoader.TypeCheckingUnit unit : ModuleLoader.getInstance().getTypeCheckingUnits()) {
-        unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+      if (ModuleLoader.getInstance().getErrors().isEmpty()) {
+        List<TypeCheckingError> errors = new ArrayList<>();
+        for (ModuleLoader.TypeCheckingUnit unit : ModuleLoader.getInstance().getTypeCheckingUnits()) {
+          unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
 
-        if (errors.isEmpty() && unit.typedDefinition instanceof ClassDefinition) {
-          System.out.println("[OK] " + unit.typedDefinition.getFullName());
+          if (errors.isEmpty() && unit.typedDefinition instanceof ClassDefinition) {
+            System.out.println("[OK] " + unit.typedDefinition.getFullName());
+          }
+
+          for (TypeCheckingError error : errors) {
+            System.err.print(unit.typedDefinition.getFullName() + ":");
+            System.err.println(error);
+          }
+          errors.clear();
         }
 
-        for (TypeCheckingError error : errors) {
-          System.err.print((relativePath != null ? relativePath : fileName) + ":");
-          System.err.println(error);
-        }
-        errors.clear();
-      }
-
-      for (ModuleLoader.OutputUnit unit : ModuleLoader.getInstance().getOutputUnits()) {
-        try {
-          ModuleSerialization.writeFile(unit.module, unit.file);
-        } catch (IOException e) {
-          System.err.println(ModuleError.ioError(e));
+        for (ModuleLoader.OutputUnit unit : ModuleLoader.getInstance().getOutputUnits()) {
+          try {
+            ModuleSerialization.writeFile(unit.module, unit.file);
+          } catch (IOException e) {
+            System.err.println(ModuleError.ioError(e));
+          }
         }
       }
     }

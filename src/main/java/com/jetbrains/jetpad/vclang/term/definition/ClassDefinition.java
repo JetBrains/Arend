@@ -5,10 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVis
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
   private final Map<String, List<Definition>> myFields = new HashMap<>();
@@ -57,7 +54,9 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       children.add(definition);
       myFields.put(definition.getName(), children);
     } else {
-      children.add(definition);
+      if (!children.contains(definition)) {
+        children.add(definition);
+      }
     }
 
     if (export) {
@@ -83,5 +82,10 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   @Override
   public Definition findChild(String name) {
     return myExports.get(name);
+  }
+
+  @Override
+  public Collection<Definition> getChildren() {
+    return myExports.values();
   }
 }

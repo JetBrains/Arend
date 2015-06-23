@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
   private final Definition myParent;
@@ -30,6 +31,10 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   }
 
   public Definition findChild(String name) {
+    return null;
+  }
+
+  public Collection<? extends Definition> getChildren() {
     return null;
   }
 
@@ -76,6 +81,6 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   }
 
   public String getFullName() {
-    return myParent == null || myParent.getParent() == null ? getName() : myParent.getFullName() + "." + getName();
+    return myParent == null || myParent.getParent() == null ? getName() : myParent.getFullName() + "." + (myFixity == Fixity.PREFIX ? getName() : "(" + getName() + ")");
   }
 }

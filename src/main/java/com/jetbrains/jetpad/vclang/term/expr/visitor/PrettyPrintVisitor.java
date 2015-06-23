@@ -267,7 +267,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitProj(Abstract.ProjExpression expr, Byte prec) {
     if (prec > Abstract.ProjExpression.PREC) myBuilder.append('(');
     expr.getExpression().accept(this, Abstract.ProjExpression.PREC);
-    myBuilder.append('.').append(expr.getField());
+    myBuilder.append('.').append(expr.getField() + 1);
     if (prec > Abstract.ProjExpression.PREC) myBuilder.append(')');
     return null;
   }
