@@ -65,7 +65,7 @@ public class ModuleLoader {
     return myErrors;
   }
 
-  public Concrete.ClassDefinition loadSource(final Module module, ClassDefinition moduleDef, File sourceFile, final List<ModuleError> myErrors) throws IOException {
+  public Concrete.ClassDefinition loadSource(final Module module, ClassDefinition moduleDef, File sourceFile) throws IOException {
     VcgrammarParser parser = new VcgrammarParser(new CommonTokenStream(new VcgrammarLexer(new ANTLRInputStream(new FileInputStream(sourceFile)))));
     parser.removeErrorListeners();
     int errorsCount = myErrors.size();
@@ -141,7 +141,7 @@ public class ModuleLoader {
     myLoadingModules.add(module);
     try {
       if (compile) {
-        Concrete.ClassDefinition rawClass = loadSource(module, moduleDefinition, sourceFile, myErrors);
+        Concrete.ClassDefinition rawClass = loadSource(module, moduleDefinition, sourceFile);
         if (rawClass != null) {
           myTypeCheckingUnits.add(new TypeCheckingUnit(rawClass, moduleDefinition));
           moduleDefinition.hasErrors(false);
@@ -164,6 +164,8 @@ public class ModuleLoader {
         int errorsNumber = ModuleSerialization.readFile(outputFile, moduleDefinition);
         if (errorsNumber != 0) {
           myErrors.add(new ModuleError(module, "module contains " + errorsNumber + (errorsNumber == 1 ? " error" : " errors")));
+        } else {
+          System.out.println("[Loaded] " + moduleDefinition.getFullName());
         }
         moduleDefinition.hasErrors(false);
       }

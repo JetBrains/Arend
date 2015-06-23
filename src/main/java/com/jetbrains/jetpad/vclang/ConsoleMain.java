@@ -126,7 +126,6 @@ public class ConsoleMain {
       module = ModuleLoader.getInstance().getModule(module, moduleNames.get(i));
     }
     Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));
-    List<TypeCheckingError> errors = new ArrayList<>();
     if (!ModuleLoader.getInstance().isModuleLoaded(newModule)) {
       ModuleLoader.getInstance().loadModule(newModule);
 
@@ -134,13 +133,19 @@ public class ConsoleMain {
         System.err.println(moduleError);
       }
 
+      List<TypeCheckingError> errors = new ArrayList<>();
       for (ModuleLoader.TypeCheckingUnit unit : ModuleLoader.getInstance().getTypeCheckingUnits()) {
         unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-      }
 
-      for (TypeCheckingError error : errors) {
-        System.err.print((relativePath != null ? relativePath : fileName) + ":");
-        System.err.println(error);
+        if (errors.isEmpty() && unit.typedDefinition instanceof ClassDefinition) {
+          System.out.println("[OK] " + unit.typedDefinition.getFullName());
+        }
+
+        for (TypeCheckingError error : errors) {
+          System.err.print((relativePath != null ? relativePath : fileName) + ":");
+          System.err.println(error);
+        }
+        errors.clear();
       }
 
       for (ModuleLoader.OutputUnit unit : ModuleLoader.getInstance().getOutputUnits()) {
@@ -150,10 +155,6 @@ public class ConsoleMain {
           System.err.println(ModuleError.ioError(e));
         }
       }
-    }
-
-    if (ModuleLoader.getInstance().getErrors().isEmpty() && errors.isEmpty()) {
-      System.out.println("[OK] " + (relativePath != null ? relativePath : fileName));
     }
 
     ModuleLoader.getInstance().getTypeCheckingUnits().clear();
