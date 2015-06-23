@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintClause;
@@ -683,9 +682,9 @@ public final class Concrete {
   }
 
   public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
-    private final Map<String, Definition> myFields;
+    private final List<Definition> myFields;
 
-    public ClassDefinition(Position position, String name, Universe universe, Map<String, Definition> fields) {
+    public ClassDefinition(Position position, String name, Universe universe, List<Definition> fields) {
       super(position, name, DEFAULT_PRECEDENCE, Fixity.PREFIX, universe);
       myFields = fields;
     }
@@ -696,7 +695,7 @@ public final class Concrete {
     }
 
     @Override
-    public Map<String, Definition> getFields() {
+    public List<Definition> getFields() {
       return myFields;
     }
   }

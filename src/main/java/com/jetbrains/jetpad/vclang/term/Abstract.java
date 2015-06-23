@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public final class Abstract {
   private Abstract() {}
@@ -201,7 +200,7 @@ public final class Abstract {
   }
 
   public interface ClassDefinition extends Definition {
-    Map<String, ? extends Definition> getFields();
+    List<? extends Definition> getFields();
   }
 
   public interface Constructor extends Definition {

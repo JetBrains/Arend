@@ -10,7 +10,6 @@ import org.antlr.v4.runtime.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -42,8 +41,8 @@ public class ParserTestCase {
     return result;
   }
 
-  public static Map<String, Concrete.Definition> parseDefs(ModuleLoader moduleLoader, String text) {
-    Map<String, Concrete.Definition> result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
+  public static List<Concrete.Definition> parseDefs(ModuleLoader moduleLoader, String text) {
+    List<Concrete.Definition> result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
     assertEquals(0, moduleLoader.getErrors().size());
     return result;
   }

@@ -10,9 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
@@ -109,13 +107,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Map<String, Concrete.Definition> visitDefs(DefsContext ctx) {
-    Map<String, Concrete.Definition> defs = new HashMap<>();
+  public List<Concrete.Definition> visitDefs(DefsContext ctx) {
+    List<Concrete.Definition> defs = new ArrayList<>();
     for (DefContext def : ctx.def()) {
       ModuleLoader.TypeCheckingUnit unit = visitDef(def);
       if (unit != null) {
         myModuleLoader.getTypeCheckingUnits().add(unit);
-        defs.put(unit.rawDefinition.getName(), unit.rawDefinition);
+        defs.add(unit.rawDefinition);
       }
     }
     return defs;
@@ -131,7 +129,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     if (ctx instanceof DefClassContext) {
       Concrete.ClassDefinition concreteDef = visitDefClass((DefClassContext) ctx);
-      Definition typedDef = getDefinition(concreteDef, new ClassDefinition(concreteDef.getName(), myParent, new HashMap<String, Definition>()));
+      Definition typedDef = getDefinition(concreteDef, new ClassDefinition(concreteDef.getName(), myParent));
       if (typedDef == null) return null;
       myParent.add(typedDef);
       return new ModuleLoader.TypeCheckingUnit(concreteDef, typedDef);
@@ -274,12 +272,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
-    Map<String, Concrete.Definition> fields = new HashMap<>();
+    List<Concrete.Definition> fields = new ArrayList<>();
     for (DefContext def : ctx.defs().def()) {
       ModuleLoader.TypeCheckingUnit unit = visitDef(def);
       if (unit != null) {
         myModuleLoader.getTypeCheckingUnits().add(unit);
-        fields.put(unit.rawDefinition.getName(), unit.rawDefinition);
+        fields.add(unit.rawDefinition);
       }
     }
     return new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), new Universe.Type(), fields);
@@ -424,9 +422,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         continue;
       }
 
-      child = definition.findChild(name);
-      if (child != null) {
-        return new Concrete.DefCallExpression(position, child);
+      List<Definition> children = ((ClassDefinition) definition).getFields(name);
+      if (children != null && !children.isEmpty()) {
+        if (children.size() > 1) {
+          String msg = "ambiguous occurrence";
+          for (Definition child1 : children) {
+            msg += "\n\t" + child1.getName() + (child1.getParent() == definition ? " defined in " : " imported from ") + child1.getParent().getFullName();
+          }
+          ModuleLoader.getInstance().getErrors().add(new ParserError(myModule, position, msg));
+          return null;
+        } else {
+          return new Concrete.DefCallExpression(position, children.get(0));
+        }
       }
     }
 

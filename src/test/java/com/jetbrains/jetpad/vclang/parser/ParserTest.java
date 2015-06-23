@@ -15,7 +15,6 @@ import org.junit.Test;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -72,7 +71,7 @@ public class ParserTest {
 
   @Test
   public void parserDef() {
-    Map<String, Concrete.Definition> defs = parseDefs(new ModuleLoader(),
+    List<Concrete.Definition> defs = parseDefs(new ModuleLoader(),
         "\\function x : Nat => zero\n" +
             "\\function y : Nat => x");
     assertEquals(2, defs.size());
@@ -80,7 +79,7 @@ public class ParserTest {
 
   @Test
   public void parserDefType() {
-    Map<String, Concrete.Definition> defs = parseDefs(new ModuleLoader(),
+    List<Concrete.Definition> defs = parseDefs(new ModuleLoader(),
         "\\function x : \\Type0 => Nat\n" +
             "\\function y : x => zero");
     assertEquals(2, defs.size());
@@ -135,7 +134,7 @@ public class ParserTest {
 
   @Test
   public void parserInfixDef() {
-    Map<String, Concrete.Definition> defs = parseDefs(new ModuleLoader(),
+    List<Concrete.Definition> defs = parseDefs(new ModuleLoader(),
         "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
             "\\function (*) : Nat -> Nat => \\lam x => x + zero");
     assertEquals(2, defs.size());

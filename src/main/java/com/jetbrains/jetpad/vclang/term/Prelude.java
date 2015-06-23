@@ -10,9 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -34,8 +32,7 @@ public class Prelude {
   public final static FunctionDefinition AT;
 
   static {
-    Map<String, Definition> definitions = new HashMap<>();
-    PRELUDE = new ClassDefinition("Prelude", ModuleLoader.getInstance().rootModule(), definitions);
+    PRELUDE = new ClassDefinition("Prelude", ModuleLoader.getInstance().rootModule());
 
     List<Constructor> natConstructors = new ArrayList<>(2);
     NAT = new DataDefinition("Nat", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>(), natConstructors);

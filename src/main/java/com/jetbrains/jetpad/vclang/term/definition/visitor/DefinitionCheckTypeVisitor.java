@@ -215,7 +215,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
   public Void visitClass(Abstract.ClassDefinition def, List<Binding> localContext) {
     TypeCheckingError error = null;
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
-    for (Definition field : ((ClassDefinition) myResult).getFields().values()) {
+    for (Definition field : ((ClassDefinition) myResult).getFields()) {
       if (field instanceof FunctionDefinition && ((FunctionDefinition) field).getArrow() == null) {
         Universe maxUniverse = universe.max(field.getUniverse());
         if (maxUniverse == null) {

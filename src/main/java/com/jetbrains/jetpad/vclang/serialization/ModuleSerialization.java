@@ -156,7 +156,7 @@ public class ModuleSerialization {
   public static Definition newDefinition(int code, String name, Definition parent) throws IncorrectFormat {
     if (code == 0) return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, Abstract.Definition.Arrow.LEFT);
     if (code == 1) return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Constructor>());
-    if (code == 2) return new ClassDefinition(name, parent, new HashMap<String, Definition>());
+    if (code == 2) return new ClassDefinition(name, parent);
     if (code == 3) return new Constructor(-1, name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX);
     throw new IncorrectFormat();
   }
@@ -226,14 +226,15 @@ public class ModuleSerialization {
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
     int size = 0;
-    for (Definition field : definition.getFields().values()) {
+    List<Definition> fields = definition.getFields();
+    for (Definition field : fields) {
       if (!(field instanceof Constructor)) {
         ++size;
       }
     }
     visitor.getDataStream().writeInt(size);
     int errors = 0;
-    for (Definition field : definition.getFields().values()) {
+    for (Definition field : fields) {
       errors += serializeDefinition(visitor, field);
     }
     return errors;

@@ -15,16 +15,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ModuleLoader {
-  private final ClassDefinition myRoot = new ClassDefinition("\\root", null, new HashMap<String, Definition>());
+  private final ClassDefinition myRoot = new ClassDefinition("\\root", null);
   private final List<Module> myLoadingModules = new ArrayList<>();
   private File mySourceDir;
   private File myOutputDir;
-  private List<File> myLibDirs;
+  private List<File> myLibDirs = new ArrayList<>(0);
   private boolean myRecompile;
   private final List<Module> myLoadedModules = new ArrayList<>();
   private final List<TypeCheckingUnit> myTypeCheckingUnits = new ArrayList<>();
@@ -78,7 +76,7 @@ public class ModuleLoader {
 
     VcgrammarParser.DefsContext tree = parser.defs();
     if (errorsCount != myErrors.size()) return null;
-    Map<String, Concrete.Definition> defs = new BuildVisitor(module, moduleDef, INSTANCE).visitDefs(tree);
+    List<Concrete.Definition> defs = new BuildVisitor(module, moduleDef, INSTANCE).visitDefs(tree);
     if (errorsCount != myErrors.size()) return null;
     return new Concrete.ClassDefinition(new Concrete.Position(0, 0), module.getName(), null, defs);
   }
@@ -86,7 +84,7 @@ public class ModuleLoader {
   public ClassDefinition getModule(ClassDefinition parent, String name) {
     Definition definition = parent.findChild(name);
     if (definition == null) {
-      ClassDefinition result = new ClassDefinition(name, parent, new HashMap<String, Definition>());
+      ClassDefinition result = new ClassDefinition(name, parent);
       parent.add(result);
       result.hasErrors(true);
       return result;
@@ -131,7 +129,7 @@ public class ModuleLoader {
           myErrors.add(new ModuleError(module, "cannot find module"));
         }
         if (moduleDefinition.hasErrors()) {
-          module.getParent().getFields().remove(moduleDefinition.getName());
+          module.getParent().remove(moduleDefinition);
         }
         return null;
       }
@@ -178,7 +176,7 @@ public class ModuleLoader {
     myLoadedModules.add(module);
 
     if (moduleDefinition.hasErrors()) {
-      module.getParent().getFields().remove(moduleDefinition.getName());
+      module.getParent().remove(moduleDefinition);
       return null;
     } else {
       return moduleDefinition;
