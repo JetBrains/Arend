@@ -73,13 +73,18 @@ public class ModuleSerialization {
 
         if (childModule == null) {
           if (parent instanceof ClassDefinition && code == CLASS_CODE) {
-            childModule = ModuleLoader.getInstance().loadModule(new Module((ClassDefinition) parent, name));
-          } else
-          if (parent.isDescendantOf(module)) {
+            childModule = ModuleLoader.getInstance().loadModule(new Module((ClassDefinition) parent, name), true);
+          }
+          if (childModule == null) {
             childModule = newDefinition(code, name, parent);
-            module.add(childModule);
-          } else {
-            throw new DeserializationException(name + " is not defined in " + parent.getFullName());
+            if (parent instanceof DataDefinition && childModule instanceof Constructor) {
+              ((DataDefinition) parent).getConstructors().add((Constructor) childModule);
+            } else
+            if (parent instanceof ClassDefinition) {
+              ((ClassDefinition) parent).add(childModule, true);
+            } else {
+              throw new IncorrectFormat();
+            }
           }
         }
       }
@@ -92,9 +97,7 @@ public class ModuleSerialization {
   }
 
   private static int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
-    if (definition instanceof Constructor) return 0;
     visitor.getDataStream().write(getDefinitionCode(definition));
-    visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(definition));
     visitor.getDataStream().writeBoolean(definition.hasErrors());
 
     if (definition instanceof FunctionDefinition) {
@@ -161,9 +164,8 @@ public class ModuleSerialization {
     throw new IncorrectFormat();
   }
 
-  private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException, DeserializationException {
+  private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition definition) throws IOException, DeserializationException {
     int code = stream.read();
-    Definition definition = definitionMap.get(stream.readInt());
     definition.hasErrors(stream.readBoolean());
 
     if (code == FUNCTION_CODE) {
@@ -226,26 +228,47 @@ public class ModuleSerialization {
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
     int size = 0;
-    List<Definition> fields = definition.getFields();
-    for (Definition field : fields) {
-      if (!(field instanceof Constructor)) {
-        ++size;
-      }
+    for (List<Definition> fields : definition.getFieldsMap().values()) {
+      size += fields.size();
     }
     visitor.getDataStream().writeInt(size);
+
     int errors = 0;
-    for (Definition field : fields) {
-      errors += serializeDefinition(visitor, field);
+    for (List<Definition> fields : definition.getFieldsMap().values()) {
+      for (Definition field : fields) {
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
+        visitor.getDataStream().writeBoolean(field.getParent() == definition);
+        if (field.getParent() == definition) {
+          errors += serializeDefinition(visitor, field);
+        }
+      }
     }
+
+    visitor.getDataStream().writeInt(definition.getChildren().size());
+    for (Definition child : definition.getChildren()) {
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(child));
+    }
+
     return errors;
   }
 
   private static void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException, DeserializationException {
-    Universe universe = readUniverse(stream);
+    definition.setUniverse(readUniverse(stream));
+
     int size = stream.readInt();
-    definition.setUniverse(universe);
     for (int i = 0; i < size; ++i) {
-      deserializeDefinition(stream, definitionMap);
+      Definition field = definitionMap.get(stream.readInt());
+      boolean isChild = stream.readBoolean();
+      if (isChild) {
+        deserializeDefinition(stream, definitionMap, field);
+      } else {
+        definition.add(field, false);
+      }
+    }
+
+    size = stream.readInt();
+    for (int i = 0; i < size; ++i) {
+      definition.addExport(definitionMap.get(stream.readInt()));
     }
   }
 

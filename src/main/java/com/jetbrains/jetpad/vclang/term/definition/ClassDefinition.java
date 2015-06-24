@@ -34,6 +34,10 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return fields;
   }
 
+  public Map<String, List<Definition>> getFieldsMap() {
+    return myFields;
+  }
+
   public List<Definition> getFields(String name) {
     return myFields.get(name);
   }
@@ -59,16 +63,11 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       }
     }
 
-    if (export) {
-      Definition oldDef = myExports.get(definition.getName());
-      if (oldDef == null) {
-        myExports.put(definition.getName(), definition);
-      } else {
-        return oldDef == definition ? null : oldDef;
-      }
-    }
+    return export ? addExport(definition) : null;
+  }
 
-    return null;
+  public Definition addExport(Definition definition) {
+    return myExports.putIfAbsent(definition.getName(), definition);
   }
 
   public void remove(Definition definition) {
