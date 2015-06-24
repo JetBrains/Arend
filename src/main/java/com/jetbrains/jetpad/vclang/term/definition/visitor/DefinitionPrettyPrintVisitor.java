@@ -51,13 +51,13 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
       myBuilder.append(" : ");
       def.getResultType().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
     }
-    if (def.getArrow() != null) {
+    if (!def.isAbstract()) {
       myBuilder.append(def.getArrow() == Abstract.Definition.Arrow.RIGHT ? " => " : " <= ");
-    }
-    if (def.getTerm() != null) {
-      def.getTerm().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
-    } else {
-      myBuilder.append("{!error}");
+      if (def.getTerm() != null) {
+        def.getTerm().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
+      } else {
+        myBuilder.append("{!error}");
+      }
     }
 
     if (def.getArguments() != null) {

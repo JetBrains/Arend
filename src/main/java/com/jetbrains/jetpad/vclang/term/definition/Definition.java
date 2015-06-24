@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrint
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
   private final Definition myParent;
@@ -12,6 +13,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   private Fixity myFixity;
   private Universe myUniverse;
   private boolean myHasErrors;
+  private List<FunctionDefinition> myDependencies;
 
   public Definition(String name, Definition parent, Precedence precedence, Fixity fixity) {
     super(name);
@@ -20,6 +22,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     myFixity = fixity;
     myUniverse = new Universe.Type(0, Universe.Type.PROP);
     myHasErrors = true;
+    myDependencies = null;
   }
 
   public Definition getParent() {
@@ -71,6 +74,22 @@ public abstract class Definition extends Binding implements Abstract.Definition 
 
   public void hasErrors(boolean has) {
     myHasErrors = has;
+  }
+
+  public boolean isAbstract() {
+    return false;
+  }
+
+  public boolean isStatic() {
+    return myDependencies == null || myDependencies.isEmpty();
+  }
+
+  public List<FunctionDefinition> getDependencies() {
+    return myDependencies;
+  }
+
+  public void setDependencies(List<FunctionDefinition> dependencies) {
+    myDependencies = dependencies;
   }
 
   @Override

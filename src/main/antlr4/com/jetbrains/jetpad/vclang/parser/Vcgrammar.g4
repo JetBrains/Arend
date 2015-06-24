@@ -2,15 +2,16 @@ grammar Vcgrammar;
 
 defs  : def*;
 
-def   : '\\function' precedence name tele* (':' expr)? termOpt         # defFunction
-      | '\\data' precedence name tele* (':' expr)? '<='? constructor*  # defData
-      | '\\class' ID '{' defs '}'                                      # defClass
-      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?               # defCmd
+def   : '\\function' precedence name tele* (':' expr)? termOpt  # defFunction
+      | '\\override' name tele* (':' expr)? arrow expr          # defOverride
+      | '\\data' precedence name tele* (':' expr)? constructor* # defData
+      | '\\class' ID '{' defs '}'                               # defClass
+      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?        # defCmd
       ;
 
-nsCmd : '\\open'                      # openCmd
-      | '\\close'                     # closeCmd
-      | '\\export'                    # exportCmd
+nsCmd : '\\open'                        # openCmd
+      | '\\close'                       # closeCmd
+      | '\\export'                      # exportCmd
       ;
 
 arrow : '<='                            # arrowLeft

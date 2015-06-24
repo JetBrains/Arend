@@ -52,6 +52,21 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
+  public boolean isStatic() {
+    return getParent().isStatic();
+  }
+
+  @Override
+  public List<FunctionDefinition> getDependencies() {
+    return getParent().getDependencies();
+  }
+
+  @Override
+  public void setDependencies(List<FunctionDefinition> dependencies) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public Expression getType() {
     Expression resultType = DefCall(getParent());
     int numberOfVars = numberOfVariables(myArguments);

@@ -98,7 +98,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private Definition getDefinition(Concrete.Definition concreteDef, Definition defaultResult) {
     Definition typedDef = myParent.findChild(concreteDef.getName());
-    if (typedDef == null) return defaultResult;
+    if (typedDef == null) {
+      myParent.add(defaultResult);
+      return defaultResult;
+    }
+
     if (!(typedDef instanceof ClassDefinition) || !(concreteDef instanceof Concrete.ClassDefinition)) {
       myModuleLoader.getErrors().add(new ParserError(myModule, concreteDef.getPosition(), concreteDef.getName() + " is already defined"));
       return null;
@@ -132,11 +136,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       Concrete.ClassDefinition concreteDef = visitDefClass((DefClassContext) ctx);
       Definition typedDef = getDefinition(concreteDef, new ClassDefinition(concreteDef.getName(), myParent));
       if (typedDef == null) return null;
-      myParent.add(typedDef);
       return new ModuleLoader.TypeCheckingUnit(concreteDef, typedDef);
     }
     if (ctx instanceof DefCmdContext) {
       return visitDefCmd((DefCmdContext) ctx);
+    }
+    if (ctx instanceof DefOverrideContext) {
+      return visitDefOverride((DefOverrideContext) ctx);
     }
     throw new IllegalStateException();
   }
@@ -206,11 +212,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     Definition typedDef = getDefinition(def, new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow()));
     if (typedDef == null) return null;
-    myParent.add(typedDef);
     if (ctx.termOpt() instanceof WithTermContext) {
       def.setTerm(visitExpr(((WithTermContext) ctx.termOpt()).expr()));
     }
     return new ModuleLoader.TypeCheckingUnit(def, typedDef);
+  }
+
+  @Override
+  public ModuleLoader.TypeCheckingUnit visitDefOverride(DefOverrideContext ctx) {
+    // TODO
+    return null;
   }
 
   public Abstract.Definition.Precedence visitPrecedence(PrecedenceContext ctx) {
@@ -281,7 +292,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     DataDefinition typedDef = (DataDefinition) getDefinition(def, new DataDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), new ArrayList<Constructor>()));
     if (typedDef == null) return null;
-    myParent.add(typedDef);
 
     for (int i = 0; i < ctx.constructor().size(); ++i) {
       isPrefix = ctx.constructor(i).name() instanceof NameIdContext;
@@ -303,7 +313,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (typedConstructor == null) continue;
       constructors.add(concreteConstructor);
       typedDef.getConstructors().add(typedConstructor);
-      myParent.add(typedConstructor);
     }
 
     return new ModuleLoader.TypeCheckingUnit(def, typedDef);

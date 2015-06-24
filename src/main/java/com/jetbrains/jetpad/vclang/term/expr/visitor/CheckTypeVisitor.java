@@ -700,7 +700,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Universe argUniverse = ((UniverseExpression) domainResults[i].type).getUniverse();
       Universe maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
-        String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not comparable to universe " + universe + " of previous arguments";
+        String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
         TypeCheckingError error = new TypeCheckingError(msg, expr, getNames(myLocalContext));
         expr.setWellTyped(Error(null, error));
         myErrors.add(error);
@@ -711,7 +711,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Universe codomainUniverse = ((UniverseExpression) okCodomainResult.type).getUniverse();
     Universe maxUniverse = universe.max(codomainUniverse);
     if (maxUniverse == null) {
-      String msg = "Universe " + codomainUniverse + " the codomain is not comparable to universe " + universe + " of arguments";
+      String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
       TypeCheckingError error = new TypeCheckingError(msg, expr, getNames(myLocalContext));
       expr.setWellTyped(Error(null, error));
       myErrors.add(error);
@@ -884,7 +884,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Universe argUniverse = ((UniverseExpression) domainResults[i].type).getUniverse();
       Universe maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
-        String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not comparable to universe " + universe + " of previous arguments";
+        String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
         TypeCheckingError error = new TypeCheckingError(msg, expr, getNames(myLocalContext));
         expr.setWellTyped(Error(null, error));
         myErrors.add(error);

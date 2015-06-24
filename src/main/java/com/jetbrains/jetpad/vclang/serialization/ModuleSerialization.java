@@ -99,6 +99,14 @@ public class ModuleSerialization {
   private static int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
     visitor.getDataStream().write(getDefinitionCode(definition));
     visitor.getDataStream().writeBoolean(definition.hasErrors());
+    if (!(definition instanceof Constructor)) {
+      visitor.getDataStream().writeInt(definition.getDependencies() == null ? 0 : definition.getDependencies().size());
+      if (definition.getDependencies() != null) {
+        for (FunctionDefinition dependency : definition.getDependencies()) {
+          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(dependency));
+        }
+      }
+    }
 
     if (definition instanceof FunctionDefinition) {
       FunctionDefinition functionDefinition = (FunctionDefinition) definition;
@@ -108,7 +116,7 @@ public class ModuleSerialization {
         writeArguments(visitor, functionDefinition.getArguments());
         functionDefinition.getResultType().accept(visitor);
       }
-      visitor.getDataStream().writeBoolean(functionDefinition.getArrow() == Abstract.Definition.Arrow.RIGHT);
+      visitor.getDataStream().write(functionDefinition.getArrow() == null ? 0 : functionDefinition.getArrow() == Abstract.Definition.Arrow.LEFT ? 1 : 2);
       if (!definition.hasErrors()) {
         functionDefinition.getTerm().accept(visitor);
       }
@@ -167,6 +175,18 @@ public class ModuleSerialization {
   private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition definition) throws IOException, DeserializationException {
     int code = stream.read();
     definition.hasErrors(stream.readBoolean());
+    if (code != CONSTRUCTOR_CODE) {
+      int size = stream.readInt();
+      List<FunctionDefinition> dependencies = new ArrayList<>(size);
+      for (int i = 0; i < size; ++i) {
+        Definition dependency = definitionMap.get(stream.readInt());
+        if (!(dependency instanceof FunctionDefinition)) {
+          throw new IncorrectFormat();
+        }
+        dependencies.add((FunctionDefinition) dependency);
+      }
+      definition.setDependencies(dependencies);
+    }
 
     if (code == FUNCTION_CODE) {
       if (!(definition instanceof FunctionDefinition)) {
@@ -180,7 +200,11 @@ public class ModuleSerialization {
         functionDefinition.setArguments(readTelescopeArguments(stream, definitionMap));
         functionDefinition.setResultType(readExpression(stream, definitionMap));
       }
-      functionDefinition.setArrow(stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT);
+      int arrowCode = stream.read();
+      if (arrowCode != 0 && arrowCode != 1 && arrowCode != 2) {
+        throw new IncorrectFormat();
+      }
+      functionDefinition.setArrow(arrowCode == 0 ? null : arrowCode == 1 ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT);
       if (!functionDefinition.hasErrors()) {
         functionDefinition.setTerm(readExpression(stream, definitionMap));
       }

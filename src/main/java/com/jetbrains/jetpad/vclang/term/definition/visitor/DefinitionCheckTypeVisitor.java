@@ -149,7 +149,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
       Universe maxUniverse = universe.max(dataResult.getConstructors().get(i).getUniverse());
       if (maxUniverse == null) {
-        String msg = "Universe " + dataResult.getConstructors().get(i).getUniverse() + " of constructor " + dataResult.getConstructors().get(i).getName() + " is not comparable to universe " + universe + " of previous constructors";
+        String msg = "Universe " + dataResult.getConstructors().get(i).getUniverse() + " of constructor " + dataResult.getConstructors().get(i).getName() + " is not compatible with universe " + universe + " of previous constructors";
         myErrors.add(new TypeCheckingError(msg, null, null));
         continue;
       }
@@ -182,7 +182,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
       Universe maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
-        error = "Universe " + argUniverse + " of " + index + suffix(index) + " argument is not comparable to universe " + universe + " of previous arguments";
+        error = "Universe " + argUniverse + " of " + index + suffix(index) + " argument is not compatible with universe " + universe + " of previous arguments";
       } else {
         universe = maxUniverse;
       }
@@ -216,10 +216,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     TypeCheckingError error = null;
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     for (Definition field : ((ClassDefinition) myResult).getFields()) {
-      if (field instanceof FunctionDefinition && ((FunctionDefinition) field).getArrow() == null) {
+      if (field.isAbstract()) {
         Universe maxUniverse = universe.max(field.getUniverse());
         if (maxUniverse == null) {
-          String msg = "Universe " + field.getUniverse() + " of field " + field.getName() + " is not comparable to universe " + universe + " of previous fields";
+          String msg = "Universe " + field.getUniverse() + " of field " + field.getName() + " is not compatible with universe " + universe + " of previous fields";
           error = new TypeCheckingError(msg, null, null);
         } else {
           universe = maxUniverse;

@@ -631,6 +631,11 @@ public final class Concrete {
     }
 
     @Override
+    public boolean isAbstract() {
+      return myArrow == null;
+    }
+
+    @Override
     public Expression getTerm() {
       return myTerm;
     }

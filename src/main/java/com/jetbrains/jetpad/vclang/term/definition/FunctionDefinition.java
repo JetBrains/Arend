@@ -45,6 +45,11 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
+  public boolean isAbstract() {
+    return myArrow == null;
+  }
+
+  @Override
   public Expression getTerm() {
     return myTerm;
   }
