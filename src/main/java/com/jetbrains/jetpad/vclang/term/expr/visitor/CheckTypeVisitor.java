@@ -23,6 +23,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
+  private final Definition myParent;
   private final List<Binding> myLocalContext;
   private final List<TypeCheckingError> myErrors;
   private final Side mySide;
@@ -66,7 +67,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public enum Side { LHS, RHS }
 
-  public CheckTypeVisitor(List<Binding> localContext, List<TypeCheckingError> errors, Side side) {
+  public CheckTypeVisitor(Definition parent, List<Binding> localContext, List<TypeCheckingError> errors, Side side) {
+    myParent = parent;
     myLocalContext = localContext;
     myErrors = errors;
     mySide = side;
@@ -489,8 +491,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
+    TypeCheckingError error = null;
     if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).typeHasErrors() || !(expr.getDefinition() instanceof FunctionDefinition) && expr.getDefinition().hasErrors()) {
-      TypeCheckingError error = new HasErrors(expr.getDefinition().getName(), expr);
+      error = new HasErrors(expr.getDefinition().getName(), expr);
+    } else {
+      if (!expr.getDefinition().isRelativelyStatic(myParent)) {
+        error = new TypeCheckingError("Non-static function call", expr, null);
+      }
+    }
+
+    if (error != null) {
       expr.setWellTyped(Error(DefCall(expr.getDefinition()), error));
       myErrors.add(error);
       return null;
@@ -1028,7 +1038,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
-      Result clauseResult = new CheckTypeVisitor(localContext, myErrors, side).typeCheck(clause.getExpression(), clauseExpectedType);
+      Result clauseResult = new CheckTypeVisitor(myParent, localContext, myErrors, side).typeCheck(clause.getExpression(), clauseExpectedType);
       if (!(clauseResult instanceof OKResult)) {
         wasError = true;
         if (errorResult == null) {
@@ -1064,7 +1074,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Clause otherwise = null;
     if (expr.getOtherwise() != null) {
       Side side = expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.RIGHT || !(expr.getOtherwise().getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) expr.getOtherwise().getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
-      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myLocalContext, myErrors, side) : this;
+      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myParent, myLocalContext, myErrors, side) : this;
       Result clauseResult = visitor.typeCheck(expr.getOtherwise().getExpression(), expectedType);
       if (clauseResult instanceof InferErrorResult) {
         return clauseResult;

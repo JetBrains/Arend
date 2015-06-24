@@ -80,8 +80,26 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return false;
   }
 
-  public boolean isStatic() {
-    return myDependencies == null || myDependencies.isEmpty();
+  public boolean isRelativelyStatic(Definition definition) {
+    if (myDependencies == null || myDependencies.isEmpty()) return true;
+    if (definition == null) return false;
+    if (definition.isDescendantOf(myParent)) return true;
+
+    List<FunctionDefinition> dependencies = new ArrayList<>(myDependencies);
+    while (definition != null) {
+      if (definition instanceof ClassDefinition) {
+        for (List<Definition> definitions : ((ClassDefinition) definition).getFieldsMap().values()) {
+          for (int i = 0; i < dependencies.size(); ++i) {
+            if (definitions.contains(dependencies.get(i))) {
+              dependencies.remove(i--);
+              if (dependencies.isEmpty()) return true;
+            }
+          }
+        }
+      }
+      definition = definition.getParent();
+    }
+    return false;
   }
 
   public List<FunctionDefinition> getDependencies() {

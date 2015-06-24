@@ -37,7 +37,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     List<TelescopeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     for (Abstract.TelescopeArgument argument : def.getArguments()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -51,7 +51,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
     Expression expectedType = null;
     if (def.getResultType() != null) {
-      CheckTypeVisitor.OKResult typeResult = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(def.getResultType(), Universe());
+      CheckTypeVisitor.OKResult typeResult = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(def.getResultType(), Universe());
       if (typeResult != null) {
         expectedType = typeResult.expression;
       }
@@ -61,7 +61,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     functionResult.setResultType(expectedType);
     functionResult.typeHasErrors(false);
     functionResult.hasErrors(false);
-    CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
+    CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
 
     if (termResult != null) {
       functionResult.setTerm(termResult.expression);
@@ -95,7 +95,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(parameter.getType(), Universe());
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(parameter.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -173,7 +173,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     int index = 1;
     String error = null;
     for (Abstract.TypeArgument argument : def.getArguments()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;

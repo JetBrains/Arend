@@ -52,11 +52,6 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public boolean isStatic() {
-    return getParent().isStatic();
-  }
-
-  @Override
   public List<FunctionDefinition> getDependencies() {
     return getParent().getDependencies();
   }

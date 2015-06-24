@@ -123,7 +123,7 @@ public class DefinitionTest {
 
     Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
     List<TypeCheckingError> errors = new ArrayList<>();
-    CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(null, new ArrayList<Binding>(), null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
     assertEquals(Apps(DefCall(def), Nat()), result.type);
@@ -142,7 +142,7 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DefCall(def), Pi(Nat(), Nat())), Nat())));
 
-    CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(null, localContext, null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
     assertEquals(Nat(), result.type);
@@ -161,7 +161,7 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DefCall(def), Nat())), Pi(Nat(), Nat()))));
 
-    CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errors);
+    CheckTypeVisitor.OKResult result = expr.checkType(null, localContext, null, errors);
     assertEquals(0, errors.size());
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);
