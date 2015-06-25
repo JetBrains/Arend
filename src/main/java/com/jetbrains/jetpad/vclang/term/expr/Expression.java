@@ -60,8 +60,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return accept(new NormalizeVisitor(mode));
   }
 
-  public final CheckTypeVisitor.OKResult checkType(Definition parent, List<Binding> localContext, Expression expectedType, List<TypeCheckingError> errors) {
-    return new CheckTypeVisitor(parent, localContext, errors, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
+  public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, List<TypeCheckingError> errors) {
+    return new CheckTypeVisitor(null, localContext, new ArrayList<Definition>(0), errors, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
   }
 
   public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {

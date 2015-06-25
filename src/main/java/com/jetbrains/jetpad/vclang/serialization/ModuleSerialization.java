@@ -102,7 +102,7 @@ public class ModuleSerialization {
     if (!(definition instanceof Constructor)) {
       visitor.getDataStream().writeInt(definition.getDependencies() == null ? 0 : definition.getDependencies().size());
       if (definition.getDependencies() != null) {
-        for (FunctionDefinition dependency : definition.getDependencies()) {
+        for (Definition dependency : definition.getDependencies()) {
           visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(dependency));
         }
       }
@@ -177,13 +177,9 @@ public class ModuleSerialization {
     definition.hasErrors(stream.readBoolean());
     if (code != CONSTRUCTOR_CODE) {
       int size = stream.readInt();
-      List<FunctionDefinition> dependencies = new ArrayList<>(size);
+      List<Definition> dependencies = new ArrayList<>(size);
       for (int i = 0; i < size; ++i) {
-        Definition dependency = definitionMap.get(stream.readInt());
-        if (!(dependency instanceof FunctionDefinition)) {
-          throw new IncorrectFormat();
-        }
-        dependencies.add((FunctionDefinition) dependency);
+        dependencies.add(definitionMap.get(stream.readInt()));
       }
       definition.setDependencies(dependencies);
     }

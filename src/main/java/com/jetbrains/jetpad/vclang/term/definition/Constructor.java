@@ -52,12 +52,12 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public List<FunctionDefinition> getDependencies() {
+  public List<Definition> getDependencies() {
     return getParent().getDependencies();
   }
 
   @Override
-  public void setDependencies(List<FunctionDefinition> dependencies) {
+  public void setDependencies(List<Definition> dependencies) {
     throw new IllegalStateException();
   }
 

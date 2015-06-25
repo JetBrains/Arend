@@ -13,7 +13,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   private Fixity myFixity;
   private Universe myUniverse;
   private boolean myHasErrors;
-  private List<FunctionDefinition> myDependencies;
+  private List<Definition> myDependencies;
 
   public Definition(String name, Definition parent, Precedence precedence, Fixity fixity) {
     super(name);
@@ -85,7 +85,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     if (definition == null) return false;
     if (definition.isDescendantOf(myParent)) return true;
 
-    List<FunctionDefinition> dependencies = new ArrayList<>(myDependencies);
+    List<Definition> dependencies = new ArrayList<>(myDependencies);
     while (definition != null) {
       if (definition instanceof ClassDefinition) {
         for (List<Definition> definitions : ((ClassDefinition) definition).getFieldsMap().values()) {
@@ -102,11 +102,11 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return false;
   }
 
-  public List<FunctionDefinition> getDependencies() {
+  public List<Definition> getDependencies() {
     return myDependencies;
   }
 
-  public void setDependencies(List<FunctionDefinition> dependencies) {
+  public void setDependencies(List<Definition> dependencies) {
     myDependencies = dependencies;
   }
 

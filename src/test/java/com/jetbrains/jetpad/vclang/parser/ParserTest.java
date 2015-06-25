@@ -126,7 +126,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.rootModule().add(plus);
     moduleLoader.rootModule().add(mul);
-    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
+    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, errors.size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
     assertTrue(compare(BinOp(BinOp(Zero(), plus, BinOp(Suc(Zero()), mul, Suc(Suc(Zero())))), plus, BinOp(BinOp(Suc(Suc(Suc(Zero()))), mul, BinOp(Suc(Suc(Suc(Suc(Zero())))), mul, Suc(Suc(Suc(Suc(Suc(Zero()))))))), mul, BinOp(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), plus, Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))))))), result.expression));
@@ -151,7 +151,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.rootModule().add(plus);
     moduleLoader.rootModule().add(mul);
-    new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, "11 + 2 * 3").expr()).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), errors, CheckTypeVisitor.Side.RHS), null);
+    new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, "11 + 2 * 3").expr()).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(1, moduleLoader.getErrors().size());
     assertEquals(0, errors.size());
   }

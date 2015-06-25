@@ -36,8 +36,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     FunctionDefinition functionResult = (FunctionDefinition) myResult;
     List<TelescopeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
+    List<Definition> abstractCalls = new ArrayList<>();
+    CheckTypeVisitor visitor = new CheckTypeVisitor(myResult.getParent(), localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
     for (Abstract.TelescopeArgument argument : def.getArguments()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
+      CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -51,7 +53,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
     Expression expectedType = null;
     if (def.getResultType() != null) {
-      CheckTypeVisitor.OKResult typeResult = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(def.getResultType(), Universe());
+      CheckTypeVisitor.OKResult typeResult = visitor.checkType(def.getResultType(), Universe());
       if (typeResult != null) {
         expectedType = typeResult.expression;
       }
@@ -61,7 +63,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     functionResult.setResultType(expectedType);
     functionResult.typeHasErrors(false);
     functionResult.hasErrors(false);
-    CheckTypeVisitor.OKResult termResult = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.LHS).checkType(def.getTerm(), expectedType);
+    visitor.setSide(CheckTypeVisitor.Side.LHS);
+    CheckTypeVisitor.OKResult termResult = visitor.checkType(def.getTerm(), expectedType);
 
     if (termResult != null) {
       functionResult.setTerm(termResult.expression);
@@ -83,6 +86,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       functionResult.setTerm(null);
       functionResult.hasErrors(true);
     }
+    functionResult.setDependencies(abstractCalls);
     trimToSize(localContext, origSize);
 
     return null;
@@ -94,8 +98,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
+    List<Definition> abstractCalls = new ArrayList<>();
+    CheckTypeVisitor visitor = new CheckTypeVisitor(myResult.getParent(), localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(parameter.getType(), Universe());
+      CheckTypeVisitor.OKResult result = visitor.checkType(parameter.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
         return null;
@@ -115,10 +121,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     dataResult.setUniverse(def.getUniverse() != null ? def.getUniverse() : universe);
     dataResult.setParameters(parameters);
     dataResult.hasErrors(false);
+    dataResult.setDependencies(abstractCalls);
 
     constructors_loop:
     for (int i = 0; i < def.getConstructors().size(); ++i) {
-      new DefinitionCheckTypeVisitor(dataResult.getConstructors().get(i), myErrors).visitConstructor(def.getConstructors().get(i), localContext);
+      visitConstructor(def.getConstructors().get(i), dataResult.getConstructors().get(i), localContext, abstractCalls);
       if (dataResult.getConstructors().get(i).hasErrors()) {
         continue;
       }
@@ -165,18 +172,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     return null;
   }
 
-  @Override
-  public Void visitConstructor(Abstract.Constructor def, List<Binding> localContext) {
+  private void visitConstructor(Abstract.Constructor def, Constructor constructor, List<Binding> localContext, List<Definition> abstractCalls) {
     List<TypeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     int index = 1;
     String error = null;
+    CheckTypeVisitor visitor = new CheckTypeVisitor(constructor.getParent(), localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
     for (Abstract.TypeArgument argument : def.getArguments()) {
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor(myResult.getParent(), localContext, myErrors, CheckTypeVisitor.Side.RHS).checkType(argument.getType(), Universe());
+      CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
-        return null;
+        return;
       }
 
       Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
@@ -202,13 +209,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     trimToSize(localContext, origSize);
-    myResult.setUniverse(universe);
-    ((Constructor) myResult).setArguments(arguments);
-    myResult.hasErrors(false);
+    constructor.setUniverse(universe);
+    constructor.setArguments(arguments);
+    constructor.hasErrors(false);
     if (error != null) {
-      myErrors.add(new TypeCheckingError(error, DefCall(myResult), new ArrayList<String>()));
+      myErrors.add(new TypeCheckingError(error, DefCall(constructor), new ArrayList<String>()));
     }
-    return null;
+  }
+
+  @Override
+  public Void visitConstructor(Abstract.Constructor def, List<Binding> localContext) {
+    throw new IllegalStateException();
   }
 
   @Override

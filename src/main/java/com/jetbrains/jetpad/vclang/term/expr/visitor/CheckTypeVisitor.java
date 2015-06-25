@@ -26,7 +26,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private final Definition myParent;
   private final List<Binding> myLocalContext;
   private final List<TypeCheckingError> myErrors;
-  private final Side mySide;
+  private Side mySide;
+  private final List<Definition> myAbstractCalls;
 
   private static class Arg {
     boolean isExplicit;
@@ -67,10 +68,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public enum Side { LHS, RHS }
 
-  public CheckTypeVisitor(Definition parent, List<Binding> localContext, List<TypeCheckingError> errors, Side side) {
+  public CheckTypeVisitor(Definition parent, List<Binding> localContext, List<Definition> abstractCalls, List<TypeCheckingError> errors, Side side) {
     myParent = parent;
     myLocalContext = localContext;
+    myAbstractCalls = abstractCalls;
     myErrors = errors;
+    mySide = side;
+  }
+
+  public void setSide(Side side) {
     mySide = side;
   }
 
@@ -505,6 +511,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrors.add(error);
       return null;
     } else {
+      if (expr.getDefinition().isAbstract()) {
+        myAbstractCalls.add(expr.getDefinition());
+      }
+
       return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
     }
   }
@@ -1038,7 +1048,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
-      Result clauseResult = new CheckTypeVisitor(myParent, localContext, myErrors, side).typeCheck(clause.getExpression(), clauseExpectedType);
+      Result clauseResult = new CheckTypeVisitor(myParent, localContext, myAbstractCalls, myErrors, side).typeCheck(clause.getExpression(), clauseExpectedType);
       if (!(clauseResult instanceof OKResult)) {
         wasError = true;
         if (errorResult == null) {
@@ -1074,7 +1084,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Clause otherwise = null;
     if (expr.getOtherwise() != null) {
       Side side = expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.RIGHT || !(expr.getOtherwise().getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) expr.getOtherwise().getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
-      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myParent, myLocalContext, myErrors, side) : this;
+      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myParent, myLocalContext, myAbstractCalls, myErrors, side) : this;
       Result clauseResult = visitor.typeCheck(expr.getOtherwise().getExpression(), expectedType);
       if (clauseResult instanceof InferErrorResult) {
         return clauseResult;
