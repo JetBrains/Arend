@@ -206,14 +206,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         return null;
       }
     }
-    Concrete.Expression type = ctx.expr() == null ? null : visitExpr(ctx.expr());
-    Definition.Arrow arrow = ctx.termOpt() instanceof NoTermContext ? null : ((WithTermContext) ctx.termOpt()).arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
+    Concrete.Expression type = ctx.typeTermOpt() instanceof WithTypeContext ? visitExpr(((WithTypeContext) ctx.typeTermOpt()).expr()) : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? visitExpr(((WithTypeAndTermContext) ctx.typeTermOpt()).expr(0)) : null;
+    ArrowContext arrowCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).arrow() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).arrow() : null;
+    Definition.Arrow arrow = arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, visitPrecedence(ctx.precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null);
 
     Definition typedDef = getDefinition(def, new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow()));
     if (typedDef == null) return null;
-    if (ctx.termOpt() instanceof WithTermContext) {
-      def.setTerm(visitExpr(((WithTermContext) ctx.termOpt()).expr()));
+    if (ctx.typeTermOpt() instanceof WithTermContext) {
+      def.setTerm(visitExpr(((WithTermContext) ctx.typeTermOpt()).expr()));
+    } else
+    if (ctx.typeTermOpt() instanceof WithTypeAndTermContext) {
+      def.setTerm(visitExpr(((WithTypeAndTermContext) ctx.typeTermOpt()).expr(1)));
     }
     return new ModuleLoader.TypeCheckingUnit(def, typedDef);
   }

@@ -34,18 +34,18 @@ public abstract class ParseSource implements Source {
   public Concrete.ClassDefinition load(ClassDefinition classDefinition) throws IOException {
     VcgrammarParser parser = new VcgrammarParser(new CommonTokenStream(new VcgrammarLexer(new ANTLRInputStream(myStream))));
     parser.removeErrorListeners();
-    int errorsCount = ModuleLoader.getInstance().getErrors().size();
+    int errorsCount = myModuleLoader.getErrors().size();
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        ModuleLoader.getInstance().getErrors().add(new ParserError(myModule, new Concrete.Position(line, pos), msg));
+        myModuleLoader.getErrors().add(new ParserError(myModule, new Concrete.Position(line, pos), msg));
       }
     });
 
     VcgrammarParser.DefsContext tree = parser.defs();
-    if (errorsCount != ModuleLoader.getInstance().getErrors().size()) return null;
+    if (errorsCount != myModuleLoader.getErrors().size()) return null;
     List<Concrete.Definition> defs = new BuildVisitor(myModule, classDefinition, myModuleLoader).visitDefs(tree);
-    if (errorsCount != ModuleLoader.getInstance().getErrors().size()) return null;
+    if (errorsCount != myModuleLoader.getErrors().size()) return null;
     return new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.getName(), null, defs);
   }
 }

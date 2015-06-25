@@ -81,7 +81,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   }
 
   public boolean isRelativelyStatic(Definition definition) {
-    if (myDependencies == null || myDependencies.isEmpty()) return true;
+    if (!isAbstract() && (myDependencies == null || myDependencies.isEmpty())) return true;
     if (definition == null) return false;
     if (definition.isDescendantOf(myParent)) return true;
 

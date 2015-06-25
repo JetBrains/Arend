@@ -2,7 +2,7 @@ grammar Vcgrammar;
 
 defs  : def*;
 
-def   : '\\function' precedence name tele* (':' expr)? termOpt  # defFunction
+def   : '\\function' precedence name tele* typeTermOpt          # defFunction
       | '\\override' name tele* (':' expr)? arrow expr          # defOverride
       | '\\data' precedence name tele* (':' expr)? constructor* # defData
       | '\\class' ID '{' defs '}'                               # defClass
@@ -18,9 +18,10 @@ arrow : '<='                            # arrowLeft
       | '=>'                            # arrowRight
       ;
 
-termOpt :                               # noTerm
-        | arrow expr                    # withTerm
-        ;
+typeTermOpt : ':' expr                  # withType
+            | ':' expr arrow expr       # withTypeAndTerm
+            | arrow expr                # withTerm
+            ;
 
 constructor : '|' precedence name tele*;
 
