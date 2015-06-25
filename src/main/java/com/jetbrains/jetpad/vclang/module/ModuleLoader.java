@@ -42,6 +42,10 @@ public class ModuleLoader {
     return myLoadedModules.contains(module);
   }
 
+  public boolean isModuleLoading(Module module) {
+    return myLoadingModules.contains(module);
+  }
+
   public List<TypeCheckingUnit> getTypeCheckingUnits() {
     return myTypeCheckingUnits;
   }
@@ -69,10 +73,6 @@ public class ModuleLoader {
         return null;
       }
     }
-  }
-
-  public ClassDefinition loadModule(Module module) {
-    return loadModule(module, false);
   }
 
   public ClassDefinition loadModule(Module module, boolean tryLoad) {
@@ -169,5 +169,9 @@ public class ModuleLoader {
       this.rawDefinition = rawDefinition;
       this.typedDefinition = typedDefinition;
     }
+  }
+
+  public void reorderTypeCheckingUnits() {
+    // TODO: Check for mutual recursion.
   }
 }

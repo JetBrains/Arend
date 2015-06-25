@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.io.File;
+import java.util.Arrays;
 
 public class Module {
   private final ClassDefinition myParent;
@@ -42,5 +43,10 @@ public class Module {
   @Override
   public String toString() {
     return toString(myParent) + myName;
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(new Object[] { myParent, myName });
   }
 }

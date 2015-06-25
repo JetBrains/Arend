@@ -124,12 +124,13 @@ public class ConsoleMain {
     }
     Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));
     if (!ModuleLoader.getInstance().isModuleLoaded(newModule)) {
-      ModuleLoader.getInstance().loadModule(newModule);
+      ModuleLoader.getInstance().loadModule(newModule, false);
 
       for (ModuleError moduleError : ModuleLoader.getInstance().getErrors()) {
         System.err.println(moduleError);
       }
 
+      ModuleLoader.getInstance().reorderTypeCheckingUnits();
       if (ModuleLoader.getInstance().getErrors().isEmpty()) {
         List<TypeCheckingError> errors = new ArrayList<>();
         for (ModuleLoader.TypeCheckingUnit unit : ModuleLoader.getInstance().getTypeCheckingUnits()) {
