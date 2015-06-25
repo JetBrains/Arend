@@ -1,18 +1,11 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
-import com.jetbrains.jetpad.vclang.parser.ParserError;
-import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
-import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import org.antlr.v4.runtime.*;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +13,8 @@ import java.util.List;
 public class ModuleLoader {
   private final ClassDefinition myRoot = new ClassDefinition("\\root", null);
   private final List<Module> myLoadingModules = new ArrayList<>();
-  private File mySourceDir;
-  private File myOutputDir;
-  private List<File> myLibDirs = new ArrayList<>(0);
+  private SourceSupplier mySourceSupplier;
+  private OutputSupplier myOutputSupplier;
   private boolean myRecompile;
   private final List<Module> myLoadedModules = new ArrayList<>();
   private final List<TypeCheckingUnit> myTypeCheckingUnits = new ArrayList<>();
@@ -35,11 +27,10 @@ public class ModuleLoader {
     return INSTANCE;
   }
 
-  public void init(File sourceDir, File outputDir, List<File> libDirs, boolean recompile) {
+  public void init(SourceSupplier sourceSupplier, OutputSupplier outputSupplier, boolean recompile) {
     myRoot.add(Prelude.PRELUDE);
-    mySourceDir = sourceDir;
-    myOutputDir = outputDir;
-    myLibDirs = libDirs;
+    mySourceSupplier = sourceSupplier;
+    myOutputSupplier = outputSupplier;
     myRecompile = recompile;
   }
 
@@ -61,24 +52,6 @@ public class ModuleLoader {
 
   public List<ModuleError> getErrors() {
     return myErrors;
-  }
-
-  public Concrete.ClassDefinition loadSource(final Module module, ClassDefinition moduleDef, File sourceFile) throws IOException {
-    VcgrammarParser parser = new VcgrammarParser(new CommonTokenStream(new VcgrammarLexer(new ANTLRInputStream(new FileInputStream(sourceFile)))));
-    parser.removeErrorListeners();
-    int errorsCount = myErrors.size();
-    parser.addErrorListener(new BaseErrorListener() {
-      @Override
-      public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        myErrors.add(new ParserError(module, new Concrete.Position(line, pos), msg));
-      }
-    });
-
-    VcgrammarParser.DefsContext tree = parser.defs();
-    if (errorsCount != myErrors.size()) return null;
-    List<Concrete.Definition> defs = new BuildVisitor(module, moduleDef, INSTANCE).visitDefs(tree);
-    if (errorsCount != myErrors.size()) return null;
-    return new Concrete.ClassDefinition(new Concrete.Position(0, 0), module.getName(), null, defs);
   }
 
   public ClassDefinition getModule(ClassDefinition parent, String name) {
@@ -112,19 +85,14 @@ public class ModuleLoader {
       return null;
     }
 
-    File sourceFile = mySourceDir == null ? null : module.getFile(mySourceDir, ".vc");
-    File outputFile = myOutputDir == null ? null : module.getFile(myOutputDir, ".vcc");
+    Source source = mySourceSupplier.getSource(module);
+    Output output = myOutputSupplier.getOutput(module);
     boolean compile;
-    if (sourceFile != null && sourceFile.exists()) {
-      compile = myRecompile || outputFile == null || !outputFile.exists() || sourceFile.lastModified() > outputFile.lastModified();
+    if (source.isAvailable()) {
+      compile = myRecompile || !output.canRead() || source.lastModified() > output.lastModified();
     } else {
-      for (File libDir : myLibDirs) {
-        if (outputFile != null && outputFile.exists()) {
-          break;
-        }
-        outputFile = module.getFile(libDir, ".vcc");
-      }
-      if (outputFile == null || !outputFile.exists()) {
+      output = myOutputSupplier.locateOutput(module);
+      if (!output.canRead()) {
         if (!tryLoad) {
           myErrors.add(new ModuleError(module, "cannot find module"));
         }
@@ -139,27 +107,27 @@ public class ModuleLoader {
     myLoadingModules.add(module);
     try {
       if (compile) {
-        Concrete.ClassDefinition rawClass = loadSource(module, moduleDefinition, sourceFile);
+        Abstract.ClassDefinition rawClass = source.load(moduleDefinition);
         if (rawClass != null) {
           myTypeCheckingUnits.add(new TypeCheckingUnit(rawClass, moduleDefinition));
           moduleDefinition.hasErrors(false);
-          if (outputFile != null) {
+          if (output.canWrite()) {
             for (int i = 0; i < myOutputUnits.size(); ++i) {
               if (moduleDefinition.isDescendantOf(myOutputUnits.get(i).module)) {
-                outputFile = null;
+                output = null;
                 break;
               }
               if (myOutputUnits.get(i).module.isDescendantOf(moduleDefinition)) {
                 myOutputUnits.remove(i--);
               }
             }
-            if (outputFile != null) {
-              myOutputUnits.add(new OutputUnit(moduleDefinition, outputFile));
+            if (output != null) {
+              myOutputUnits.add(new OutputUnit(moduleDefinition, output));
             }
           }
         }
       } else {
-        int errorsNumber = ModuleSerialization.readFile(outputFile, moduleDefinition);
+        int errorsNumber = output.read(moduleDefinition);
         if (errorsNumber != 0) {
           myErrors.add(new ModuleError(module, "module contains " + errorsNumber + (errorsNumber == 1 ? " error" : " errors")));
         } else {
@@ -167,10 +135,10 @@ public class ModuleLoader {
         }
         moduleDefinition.hasErrors(false);
       }
-    } catch (IOException e) {
-      myErrors.add(new ModuleError(module, ModuleError.ioError(e)));
     } catch (ModuleSerialization.DeserializationException e) {
       myErrors.add(new ModuleError(module, e.toString()));
+    } catch (IOException e) {
+      myErrors.add(new ModuleError(module, ModuleError.ioError(e)));
     }
     myLoadingModules.remove(myLoadingModules.size() - 1);
     myLoadedModules.add(module);
@@ -185,19 +153,19 @@ public class ModuleLoader {
 
   public static class OutputUnit {
     public ClassDefinition module;
-    public File file;
+    public Output output;
 
-    public OutputUnit(ClassDefinition module, File file) {
+    public OutputUnit(ClassDefinition module, Output output) {
       this.module = module;
-      this.file = file;
+      this.output = output;
     }
   }
 
   public static class TypeCheckingUnit {
-    public Concrete.Definition rawDefinition;
+    public Abstract.Definition rawDefinition;
     public Definition typedDefinition;
 
-    public TypeCheckingUnit(Concrete.Definition rawDefinition, Definition typedDefinition) {
+    public TypeCheckingUnit(Abstract.Definition rawDefinition, Definition typedDefinition) {
       this.rawDefinition = rawDefinition;
       this.typedDefinition = typedDefinition;
     }

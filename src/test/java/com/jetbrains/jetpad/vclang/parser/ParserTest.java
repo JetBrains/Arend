@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.module.DummyOutputSupplier;
+import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -12,7 +14,6 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,7 +55,7 @@ public class ParserTest {
   @Test
   public void parserLamOpenError() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(null, null, new ArrayList<File>(), false);
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Concrete.Expression result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, "\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y").expr());
     assertEquals(1, moduleLoader.getErrors().size());
     assertNull(result);
@@ -63,7 +64,7 @@ public class ParserTest {
   @Test
   public void parserPiOpenError() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(null, null, new ArrayList<File>(), false);
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Concrete.Expression result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, "\\Pi (a b : Nat a) -> Nat a b").expr());
     assertEquals(1, moduleLoader.getErrors().size());
     assertNull(result);

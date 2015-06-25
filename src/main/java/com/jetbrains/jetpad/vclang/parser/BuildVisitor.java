@@ -118,7 +118,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       ModuleLoader.TypeCheckingUnit unit = visitDef(def);
       if (unit != null) {
         myModuleLoader.getTypeCheckingUnits().add(unit);
-        defs.add(unit.rawDefinition);
+        defs.add((Concrete.Definition) unit.rawDefinition);
       }
     }
     return defs;
@@ -325,7 +325,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       ModuleLoader.TypeCheckingUnit unit = visitDef(def);
       if (unit != null) {
         myModuleLoader.getTypeCheckingUnits().add(unit);
-        fields.add(unit.rawDefinition);
+        fields.add((Concrete.Definition) unit.rawDefinition);
       }
     }
     return new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), new Universe.Type(), fields);
@@ -467,7 +467,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           for (Definition child1 : children) {
             msg += "\n\t" + child1.getName() + (child1.getParent() == definition ? " defined in " : " imported from ") + child1.getParent().getFullName();
           }
-          ModuleLoader.getInstance().getErrors().add(new ParserError(myModule, position, msg));
+          myModuleLoader.getErrors().add(new ParserError(myModule, position, msg));
           return null;
         } else {
           return new Concrete.DefCallExpression(position, children.get(0));

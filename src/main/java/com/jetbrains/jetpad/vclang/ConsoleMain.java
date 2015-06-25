@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang;
 
-import com.jetbrains.jetpad.vclang.module.Module;
-import com.jetbrains.jetpad.vclang.module.ModuleError;
-import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
+import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
@@ -64,7 +61,7 @@ public class ConsoleMain {
       libDirs.add(new File(workingPath, "lib"));
     }
 
-    ModuleLoader.getInstance().init(sourceDir, outputDir, libDirs, recompile);
+    ModuleLoader.getInstance().init(new FileSourceSupplier(sourceDir), new FileOutputSupplier(outputDir, libDirs), recompile);
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDir == null) return;
       try {
@@ -151,7 +148,7 @@ public class ConsoleMain {
 
         for (ModuleLoader.OutputUnit unit : ModuleLoader.getInstance().getOutputUnits()) {
           try {
-            ModuleSerialization.writeFile(unit.module, unit.file);
+            unit.output.write(unit.module);
           } catch (IOException e) {
             System.err.println(ModuleError.ioError(e));
           }

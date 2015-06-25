@@ -39,7 +39,7 @@ public class ModuleSerialization {
     fileStream.close();
   }
 
-  public static int readFile(File file, ClassDefinition module) throws IOException, DeserializationException {
+  public static int readFile(File file, ClassDefinition module) throws IOException {
     DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
     byte[] signature = new byte[4];
     stream.readFully(signature);
@@ -172,7 +172,7 @@ public class ModuleSerialization {
     throw new IncorrectFormat();
   }
 
-  private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition definition) throws IOException, DeserializationException {
+  private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition definition) throws IOException {
     int code = stream.read();
     definition.hasErrors(stream.readBoolean());
     if (code != CONSTRUCTOR_CODE) {
@@ -272,7 +272,7 @@ public class ModuleSerialization {
     return errors;
   }
 
-  private static void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException, DeserializationException {
+  private static void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
     definition.setUniverse(readUniverse(stream));
 
     int size = stream.readInt();
@@ -298,7 +298,7 @@ public class ModuleSerialization {
     stream.write(definition.getFixity() == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
   }
 
-  private static void readDefinition(DataInputStream stream, Definition definition) throws IncorrectFormat, IOException {
+  private static void readDefinition(DataInputStream stream, Definition definition) throws IOException {
     int assocCode = stream.read();
     Abstract.Definition.Associativity assoc;
     if (assocCode == 0) {
@@ -347,7 +347,7 @@ public class ModuleSerialization {
     }
   }
 
-  public static List<Argument> readArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException, IncorrectFormat {
+  public static List<Argument> readArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int size = stream.readInt();
     List<Argument> result = new ArrayList<>(size);
     for (int i = 0; i < size; ++i) {
@@ -356,7 +356,7 @@ public class ModuleSerialization {
     return result;
   }
 
-  public static List<NameArgument> readNameArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException, IncorrectFormat {
+  public static List<NameArgument> readNameArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int size = stream.readInt();
     List<NameArgument> result = new ArrayList<>(size);
     for (int i = 0; i < size; ++i) {
@@ -369,7 +369,7 @@ public class ModuleSerialization {
     return result;
   }
 
-  public static List<TypeArgument> readTypeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException, IncorrectFormat {
+  public static List<TypeArgument> readTypeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int size = stream.readInt();
     List<TypeArgument> result = new ArrayList<>(size);
     for (int i = 0; i < size; ++i) {
@@ -382,7 +382,7 @@ public class ModuleSerialization {
     return result;
   }
 
-  public static List<TelescopeArgument> readTelescopeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException, IncorrectFormat {
+  public static List<TelescopeArgument> readTelescopeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int size = stream.readInt();
     List<TelescopeArgument> result = new ArrayList<>(size);
     for (int i = 0; i < size; ++i) {
@@ -424,7 +424,7 @@ public class ModuleSerialization {
     }
   }
 
-  public static Argument readArgument(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException, IncorrectFormat {
+  public static Argument readArgument(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     boolean explicit = stream.readBoolean();
     int code = stream.read();
     if (code == 0) {
@@ -445,7 +445,7 @@ public class ModuleSerialization {
     }
   }
 
-  public static Expression readExpression(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException, IncorrectFormat {
+  public static Expression readExpression(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int code = stream.read();
     switch (code) {
       case 1: {
@@ -525,7 +525,7 @@ public class ModuleSerialization {
     }
   }
 
-  public static Clause readClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException, IncorrectFormat {
+  public static Clause readClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     Definition definition = definitionMap.get(stream.readInt());
     if (!(definition instanceof Constructor)) {
       throw new IncorrectFormat();
@@ -535,7 +535,7 @@ public class ModuleSerialization {
     return new Clause((Constructor) definition, arguments, arrow, readExpression(stream, definitionMap), null);
   }
 
-  public static class DeserializationException extends Exception {
+  public static class DeserializationException extends IOException {
     private final String myMessage;
 
     public DeserializationException(String message) {
