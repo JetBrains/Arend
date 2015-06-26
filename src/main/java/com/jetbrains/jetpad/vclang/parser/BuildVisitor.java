@@ -113,7 +113,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public List<Concrete.Definition> visitDefs(DefsContext ctx) {
-    List<Concrete.Definition> defs = new ArrayList<>();
+    List<Concrete.Definition> defs = new ArrayList<>(ctx.def().size());
     for (DefContext def : ctx.def()) {
       ModuleLoader.TypeCheckingUnit unit = visitDef(def);
       if (unit != null) {

@@ -1124,7 +1124,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           myErrors.add(error);
           return null;
         } else {
-          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, child), child.getType(), okExprResult.equations), expr);
+          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, child), child.getType().accept(new ReplaceDefCallVisitor(((DefCallExpression) type).getDefinition(), okExprResult.expression)), okExprResult.equations), expr);
         }
       }
       notInScope = true;

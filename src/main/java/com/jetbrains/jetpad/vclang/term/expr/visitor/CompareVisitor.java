@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -234,7 +235,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (tupleResult != null) return tupleResult;
     Result lamResult = checkLam(expr, other);
     if (lamResult != null) return lamResult;
-    return new JustResult(other instanceof Abstract.DefCallExpression && expr.getDefinition().equals(((Abstract.DefCallExpression) other).getDefinition()) ? CMP.EQUALS : CMP.NOT_EQUIV);
+    Definition otherDefinition = other instanceof Abstract.DefCallExpression ? ((Abstract.DefCallExpression) other).getDefinition() : other instanceof FieldAccExpression ? ((FieldAccExpression) other).getField() : null;
+    return new JustResult(expr.getDefinition() == otherDefinition ? CMP.EQUALS : CMP.NOT_EQUIV);
   }
 
   @Override
@@ -589,6 +591,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (tupleResult != null) return tupleResult;
     Result lamResult = checkLam(expr, other);
     if (lamResult != null) return lamResult;
+    if (other instanceof DefCallExpression && expr instanceof FieldAccExpression && expr.getField() == ((DefCallExpression) other).getDefinition()) return new JustResult(CMP.EQUALS);
     if (!(other instanceof FieldAccExpression)) return new JustResult(CMP.NOT_EQUIV);
 
     FieldAccExpression otherFieldAcc = (FieldAccExpression) other;

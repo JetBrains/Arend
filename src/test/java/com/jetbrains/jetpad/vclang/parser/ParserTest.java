@@ -72,7 +72,7 @@ public class ParserTest {
 
   @Test
   public void parserDef() {
-    List<Concrete.Definition> defs = parseDefs(new ModuleLoader(),
+    List<?> defs = parseDefs(new ModuleLoader(),
         "\\function x : Nat => zero\n" +
             "\\function y : Nat => x");
     assertEquals(2, defs.size());
@@ -80,7 +80,7 @@ public class ParserTest {
 
   @Test
   public void parserDefType() {
-    List<Concrete.Definition> defs = parseDefs(new ModuleLoader(),
+    List<?> defs = parseDefs(new ModuleLoader(),
         "\\function x : \\Type0 => Nat\n" +
             "\\function y : x => zero");
     assertEquals(2, defs.size());
@@ -135,7 +135,7 @@ public class ParserTest {
 
   @Test
   public void parserInfixDef() {
-    List<Concrete.Definition> defs = parseDefs(new ModuleLoader(),
+    List<?> defs = parseDefs(new ModuleLoader(),
         "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
             "\\function (*) : Nat -> Nat => \\lam x => x + zero");
     assertEquals(2, defs.size());

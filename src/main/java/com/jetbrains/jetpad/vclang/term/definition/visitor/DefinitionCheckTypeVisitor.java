@@ -71,8 +71,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     if (termResult != null) {
       functionResult.setTerm(termResult.expression);
       functionResult.setResultType(termResult.type);
-      functionResult.typeHasErrors(false);
-      functionResult.hasErrors(false);
 
       if (!termResult.expression.accept(new TerminationCheckVisitor(functionResult))) {
         myErrors.add(new TypeCheckingError("Termination check failed", def.getTerm(), getNames(localContext)));
@@ -86,7 +84,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
     if (termResult == null) {
       functionResult.setTerm(null);
-      functionResult.hasErrors(true);
+      if (!functionResult.isAbstract()) {
+        functionResult.hasErrors(true);
+      }
     }
     functionResult.setDependencies(abstractCalls);
     trimToSize(localContext, origSize);
