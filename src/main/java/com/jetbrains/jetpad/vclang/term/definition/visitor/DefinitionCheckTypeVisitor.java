@@ -15,7 +15,9 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.term.error.TypeCheckingError.getNames;
@@ -36,7 +38,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     FunctionDefinition functionResult = (FunctionDefinition) myResult;
     List<TelescopeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
-    List<Definition> abstractCalls = new ArrayList<>();
+    Set<Definition> abstractCalls = new HashSet<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor(myResult.getParent(), localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
     for (Abstract.TelescopeArgument argument : def.getArguments()) {
       CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
@@ -98,7 +100,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
-    List<Definition> abstractCalls = new ArrayList<>();
+    Set<Definition> abstractCalls = new HashSet<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor(myResult.getParent(), localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
       CheckTypeVisitor.OKResult result = visitor.checkType(parameter.getType(), Universe());
@@ -172,7 +174,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     return null;
   }
 
-  private void visitConstructor(Abstract.Constructor def, Constructor constructor, List<Binding> localContext, List<Definition> abstractCalls) {
+  private void visitConstructor(Abstract.Constructor def, Constructor constructor, List<Binding> localContext, Set<Definition> abstractCalls) {
     List<TypeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
@@ -226,7 +228,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
   public Void visitClass(Abstract.ClassDefinition def, List<Binding> localContext) {
     TypeCheckingError error = null;
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
-    for (Definition field : ((ClassDefinition) myResult).getFields()) {
+    Set<Definition> abstractCalls = new HashSet<>();
+    List<Definition> fields = ((ClassDefinition) myResult).getFields();
+    for (Definition field : fields) {
       if (field.isAbstract()) {
         Universe maxUniverse = universe.max(field.getUniverse());
         if (maxUniverse == null) {
@@ -235,6 +239,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         } else {
           universe = maxUniverse;
         }
+      } else {
+        if (field.getDependencies() != null) {
+          abstractCalls.addAll(field.getDependencies());
+        }
+      }
+    }
+    for (Definition field : fields) {
+      if (field.isAbstract()) {
+        abstractCalls.remove(field);
       }
     }
 
@@ -243,6 +256,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
     myResult.setUniverse(universe);
     myResult.hasErrors(false);
+    myResult.setDependencies(abstractCalls);
     return null;
   }
 }

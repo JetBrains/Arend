@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
@@ -27,7 +28,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private final List<Binding> myLocalContext;
   private final List<TypeCheckingError> myErrors;
   private Side mySide;
-  private final List<Definition> myAbstractCalls;
+  private final Set<Definition> myAbstractCalls;
 
   private static class Arg {
     boolean isExplicit;
@@ -68,7 +69,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public enum Side { LHS, RHS }
 
-  public CheckTypeVisitor(Definition parent, List<Binding> localContext, List<Definition> abstractCalls, List<TypeCheckingError> errors, Side side) {
+  public CheckTypeVisitor(Definition parent, List<Binding> localContext, Set<Definition> abstractCalls, List<TypeCheckingError> errors, Side side) {
     myParent = parent;
     myLocalContext = localContext;
     myAbstractCalls = abstractCalls;
@@ -502,7 +503,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       error = new HasErrors(expr.getDefinition().getName(), expr);
     } else {
       if (!expr.getDefinition().isRelativelyStatic(myParent)) {
-        error = new TypeCheckingError("Non-static function call", expr, null);
+        error = new TypeCheckingError("Non-static method call", expr, null);
       }
     }
 

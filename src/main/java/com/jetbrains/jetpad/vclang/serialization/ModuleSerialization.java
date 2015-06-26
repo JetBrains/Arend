@@ -177,7 +177,7 @@ public class ModuleSerialization {
     definition.hasErrors(stream.readBoolean());
     if (code != CONSTRUCTOR_CODE) {
       int size = stream.readInt();
-      List<Definition> dependencies = new ArrayList<>(size);
+      Set<Definition> dependencies = new HashSet<>();
       for (int i = 0; i < size; ++i) {
         dependencies.add(definitionMap.get(stream.readInt()));
       }

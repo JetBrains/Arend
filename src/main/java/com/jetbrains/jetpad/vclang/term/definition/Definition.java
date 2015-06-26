@@ -3,9 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
   private final Definition myParent;
@@ -13,7 +11,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   private Fixity myFixity;
   private Universe myUniverse;
   private boolean myHasErrors;
-  private List<Definition> myDependencies;
+  private Set<Definition> myDependencies;
 
   public Definition(String name, Definition parent, Precedence precedence, Fixity fixity) {
     super(name);
@@ -85,13 +83,13 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     if (definition == null) return false;
     if (definition.isDescendantOf(myParent)) return true;
 
-    List<Definition> dependencies = new ArrayList<>(myDependencies);
+    Set<Definition> dependencies = new HashSet<>(myDependencies);
     while (definition != null) {
       if (definition instanceof ClassDefinition) {
         for (List<Definition> definitions : ((ClassDefinition) definition).getFieldsMap().values()) {
-          for (int i = 0; i < dependencies.size(); ++i) {
-            if (definitions.contains(dependencies.get(i))) {
-              dependencies.remove(i--);
+          for (Definition definition1 : definitions) {
+            if (definition1.isAbstract()) {
+              dependencies.remove(definition1);
               if (dependencies.isEmpty()) return true;
             }
           }
@@ -102,11 +100,11 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return false;
   }
 
-  public List<Definition> getDependencies() {
+  public Set<Definition> getDependencies() {
     return myDependencies;
   }
 
-  public void setDependencies(List<Definition> dependencies) {
+  public void setDependencies(Set<Definition> dependencies) {
     myDependencies = dependencies;
   }
 

@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.List;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
@@ -52,12 +53,12 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public List<Definition> getDependencies() {
+  public Set<Definition> getDependencies() {
     return getParent().getDependencies();
   }
 
   @Override
-  public void setDependencies(List<Definition> dependencies) {
+  public void setDependencies(Set<Definition> dependencies) {
     throw new IllegalStateException();
   }
 

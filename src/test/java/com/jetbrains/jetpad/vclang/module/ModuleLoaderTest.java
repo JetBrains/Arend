@@ -79,6 +79,70 @@ public class ModuleLoaderTest {
   }
 
   @Test
+  public void moduleTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
+    Module moduleA = new Module(moduleLoader.rootModule(), "A");
+    sourceSupplier.add(moduleA, "\\function f : Nat \\class C { \\function g : Nat \\function h => g }");
+
+    moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
+    moduleLoader.loadModule(moduleA, false);
+    moduleLoader.reorderTypeCheckingUnits();
+    assertEquals(0, moduleLoader.getErrors().size());
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    }
+    assertEquals(0, errors.size());
+
+    assertEquals(2, moduleLoader.rootModule().findChild("A").getChildren().size());
+    assertEquals(2, moduleLoader.rootModule().findChild("A").findChild("C").getChildren().size());
+  }
+
+  @Test
+  public void nonStaticTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
+    Module moduleA = new Module(moduleLoader.rootModule(), "A");
+    Module moduleB = new Module(moduleLoader.rootModule(), "B");
+    sourceSupplier.add(moduleA, "\\function f : Nat \\class B { \\function g : Nat \\function h => g }");
+    sourceSupplier.add(moduleB, "\\function f (p : A.B) => p.h");
+
+    moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
+    moduleLoader.loadModule(moduleB, false);
+    moduleLoader.reorderTypeCheckingUnits();
+    assertEquals(0, moduleLoader.getErrors().size());
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    }
+    assertEquals(0, errors.size());
+  }
+
+  @Test
+  public void nonStaticTestError2() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
+    Module moduleA = new Module(moduleLoader.rootModule(), "A");
+    Module moduleB = new Module(moduleLoader.rootModule(), "B");
+    sourceSupplier.add(moduleA, "\\function f : Nat \\class B { \\function g : Nat \\function (+) (f g : Nat) => f \\function h => f + g }");
+    sourceSupplier.add(moduleB, "\\function f (p : A.B) => p.h");
+
+    moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
+    moduleLoader.loadModule(moduleB, false);
+    moduleLoader.reorderTypeCheckingUnits();
+    assertEquals(0, moduleLoader.getErrors().size());
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    }
+    assertEquals(1, errors.size());
+  }
+
+  @Test
   public void abstractNonStaticTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
