@@ -238,6 +238,32 @@ public final class Concrete {
     }
   }
 
+  public static class ClassExtExpression extends Expression implements Abstract.ClassExtExpression {
+    private final com.jetbrains.jetpad.vclang.term.definition.ClassDefinition myBaseClass;
+    private final List<FunctionDefinition> myDefinitions;
+
+    public ClassExtExpression(Position position, com.jetbrains.jetpad.vclang.term.definition.ClassDefinition baseClass, List<FunctionDefinition> definitions) {
+      super(position);
+      myBaseClass = baseClass;
+      myDefinitions = definitions;
+    }
+
+    @Override
+    public com.jetbrains.jetpad.vclang.term.definition.ClassDefinition getBaseClass() {
+      return myBaseClass;
+    }
+
+    @Override
+    public List<FunctionDefinition> getDefinitions() {
+      return myDefinitions;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassExt(this, params);
+    }
+  }
+
   public static class ErrorExpression extends Expression implements Abstract.ErrorExpression {
     public ErrorExpression(Position position) {
       super(position);

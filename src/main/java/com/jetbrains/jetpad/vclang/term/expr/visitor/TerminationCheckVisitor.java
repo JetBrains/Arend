@@ -185,7 +185,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     }
 
     if (expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM && expr.getExpression() instanceof IndexExpression) {
-      int var = ((IndexExpression) expr.getExpression()).getIndex();
+      int var = expr.getExpression().getIndex();
       for (Clause clause : expr.getClauses()) {
         if (clause == null) continue;
 
@@ -221,5 +221,11 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   @Override
   public Boolean visitProj(ProjExpression expr) {
     return expr.getExpression().accept(this);
+  }
+
+  @Override
+  public Boolean visitClassExt(ClassExtExpression expr) {
+    // TODO
+    return null;
   }
 }

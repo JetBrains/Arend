@@ -105,4 +105,10 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
   public Boolean visitProj(ProjExpression expr) {
     return expr.getExpression().accept(this);
   }
+
+  @Override
+  public Boolean visitClassExt(ClassExtExpression expr) {
+    // TODO
+    return null;
+  }
 }

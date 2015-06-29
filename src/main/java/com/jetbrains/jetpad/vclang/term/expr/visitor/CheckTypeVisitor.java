@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -11,10 +12,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
@@ -1168,5 +1166,46 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       exprs.add(Proj(okExprResult.expression, i));
     }
     return checkResult(expectedType, new OKResult(Proj(okExprResult.expression, expr.getField()), splitArgs.get(expr.getField()).getType().subst(exprs, 0), okExprResult.equations), expr);
+  }
+
+  @Override
+  public Result visitClassExt(Abstract.ClassExtExpression expr, Expression expectedType) {
+    TypeCheckingError error = null;
+    if (expr.getBaseClass().hasErrors()) {
+      error = new HasErrors(expr.getBaseClass().getName(), expr);
+    } else {
+      if (!expr.getBaseClass().isRelativelyStatic(myParent)) {
+        error = new TypeCheckingError("Non-static method call", expr, getNames(myLocalContext));
+      }
+    }
+
+    if (error != null) {
+      expr.setWellTyped(Error(DefCall(expr.getBaseClass()), error));
+      myErrors.add(error);
+      return null;
+    }
+
+    if (expr.getDefinitions().isEmpty()) {
+      return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getBaseClass()), expr.getBaseClass().getType(), null), expr);
+    }
+
+    Map<String, FunctionDefinition> abstracts = new HashMap<>(expr.getBaseClass().getAbstracts());
+    Map<FunctionDefinition, FunctionDefinition> definitions = new HashMap<>();
+    for (Abstract.FunctionDefinition definition : expr.getDefinitions()) {
+      FunctionDefinition oldDefinition = abstracts.remove(definition.getName());
+      if (oldDefinition == null) {
+        myErrors.add(new TypeCheckingError(definition.getName() + " is not defined in " + expr.getBaseClass().getFullName(), definition, getNames(myLocalContext)));
+      } else {
+        FunctionDefinition newDefinition = new FunctionDefinition(definition.getName(), expr.getBaseClass(), definition.getPrecedence(), definition.getFixity(), definition.getArrow());
+        new DefinitionCheckTypeVisitor(newDefinition, myErrors).visitFunction(definition, myLocalContext);
+        definitions.put(oldDefinition, newDefinition);
+      }
+    }
+
+    Universe universe = new Universe.Type(0, Universe.Type.PROP);
+    for (FunctionDefinition definition : abstracts.values()) {
+      universe = universe.max(definition.getUniverse());
+    }
+    return checkResultImplicit(expectedType, new OKResult(ClassExt(expr.getBaseClass(), definitions), new UniverseExpression(universe), null), expr);
   }
 }

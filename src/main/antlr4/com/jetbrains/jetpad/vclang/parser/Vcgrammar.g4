@@ -5,9 +5,11 @@ defs  : def*;
 def   : '\\function' precedence name tele* typeTermOpt          # defFunction
       | '\\override' name tele* (':' expr)? arrow expr          # defOverride
       | '\\data' precedence name tele* (':' expr)? constructor* # defData
-      | '\\class' ID '{' defs '}'                               # defClass
+      | '\\class' ID tele* classFields                          # defClass
       | nsCmd name fieldAcc* ('(' name (',' name)* ')')?        # defCmd
       ;
+
+classFields : '{' defs '}';
 
 nsCmd : '\\open'                        # openCmd
       | '\\close'                       # closeCmd
@@ -72,7 +74,7 @@ atom  : '(' expr (',' expr)* ')'        # tuple
       | NUMBER                          # atomNumber
       ;
 
-atomFieldsAcc : atom fieldAcc*;
+atomFieldsAcc : atom fieldAcc* classFields?;
 
 argument : atomFieldsAcc                # argumentExplicit
          | '{' expr '}'                 # argumentImplicit

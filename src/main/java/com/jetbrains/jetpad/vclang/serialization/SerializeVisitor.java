@@ -219,4 +219,10 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     }
     return null;
   }
+
+  @Override
+  public Void visitClassExt(ClassExtExpression expr) {
+    // TODO
+    return null;
+  }
 }

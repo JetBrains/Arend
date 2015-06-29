@@ -81,7 +81,7 @@ public class ModuleSerialization {
               ((DataDefinition) parent).getConstructors().add((Constructor) childModule);
             } else
             if (parent instanceof ClassDefinition) {
-              ((ClassDefinition) parent).add(childModule, true);
+              ((ClassDefinition) parent).add(childModule, true, ModuleLoader.getInstance().getErrors());
             } else {
               throw new IncorrectFormat();
             }
@@ -282,13 +282,13 @@ public class ModuleSerialization {
       if (isChild) {
         deserializeDefinition(stream, definitionMap, field);
       } else {
-        definition.add(field, false);
+        definition.add(field, false, ModuleLoader.getInstance().getErrors());
       }
     }
 
     size = stream.readInt();
     for (int i = 0; i < size; ++i) {
-      definition.addExport(definitionMap.get(stream.readInt()));
+      definition.addExport(definitionMap.get(stream.readInt()), ModuleLoader.getInstance().getErrors());
     }
   }
 

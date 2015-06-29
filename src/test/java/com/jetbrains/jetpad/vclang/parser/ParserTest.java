@@ -125,8 +125,8 @@ public class ParserTest {
 
     List<TypeCheckingError> errors = new ArrayList<>();
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.rootModule().add(plus);
-    moduleLoader.rootModule().add(mul);
+    moduleLoader.rootModule().add(plus, null);
+    moduleLoader.rootModule().add(mul, null);
     CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, errors.size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
@@ -150,8 +150,8 @@ public class ParserTest {
 
     List<TypeCheckingError> errors = new ArrayList<>();
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.rootModule().add(plus);
-    moduleLoader.rootModule().add(mul);
+    moduleLoader.rootModule().add(plus, null);
+    moduleLoader.rootModule().add(mul, null);
     new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, "11 + 2 * 3").expr()).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(1, moduleLoader.getErrors().size());
     assertEquals(0, errors.size());

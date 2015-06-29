@@ -109,4 +109,10 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
   public InferHoleExpression visitProj(ProjExpression expr) {
     return expr.getExpression().accept(this);
   }
+
+  @Override
+  public InferHoleExpression visitClassExt(ClassExtExpression expr) {
+    // TODO
+    return null;
+  }
 }

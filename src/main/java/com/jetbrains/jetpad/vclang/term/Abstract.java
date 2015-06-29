@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -59,6 +60,12 @@ public final class Abstract {
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
     com.jetbrains.jetpad.vclang.term.definition.Definition getDefinition();
+  }
+
+  public interface ClassExtExpression extends Expression {
+    byte PREC = 12;
+    com.jetbrains.jetpad.vclang.term.definition.ClassDefinition getBaseClass();
+    Collection<? extends FunctionDefinition> getDefinitions();
   }
 
   public interface IndexExpression extends Expression {

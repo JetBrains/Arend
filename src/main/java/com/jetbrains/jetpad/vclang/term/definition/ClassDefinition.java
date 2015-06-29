@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.module.Module;
+import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -10,10 +12,15 @@ import java.util.*;
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
   private final Map<String, List<Definition>> myFields = new HashMap<>();
   private final Map<String, Definition> myExports = new HashMap<>();
+  private final Map<String, FunctionDefinition> myAbstracts = new HashMap<>();
 
   public ClassDefinition(String name, Definition parent) {
     super(name, parent, DEFAULT_PRECEDENCE, Fixity.PREFIX);
     hasErrors(false);
+  }
+
+  public Map<String, FunctionDefinition> getAbstracts() {
+    return myAbstracts;
   }
 
   @Override
@@ -47,11 +54,28 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return visitor.visitClass(this, params);
   }
 
-  public Definition add(Definition definition) {
-    return add(definition, definition.getParent() == this || definition instanceof Constructor && definition.getParent() != null && definition.getParent().getParent() == this);
+  public boolean add(Definition definition, List<ModuleError> errors) {
+    return add(definition, definition.getParent() == this || definition instanceof Constructor && definition.getParent() != null && definition.getParent().getParent() == this, errors);
   }
 
-  public Definition add(Definition definition, boolean export) {
+  public boolean add(Definition definition, boolean export, List<ModuleError> errors) {
+    if (definition instanceof FunctionDefinition && definition.isAbstract()) {
+      Universe max = getUniverse().max(definition.getUniverse());
+      if (max == null) {
+        String msg = "Universe " + definition.getUniverse() + " of the field is not compatible with universe " + getUniverse() + " of previous fields";
+        errors.add(new ModuleError(new Module(this, definition.getName()), msg));
+        return false;
+      }
+
+      Definition old = myAbstracts.putIfAbsent(definition.getName(), (FunctionDefinition) definition);
+      if (old != null) {
+        errors.add(new ModuleError(new Module(this, definition.getName()), "Name is already defined"));
+        return false;
+      }
+
+      setUniverse(max);
+    }
+
     List<Definition> children = myFields.get(definition.getName());
     if (children == null) {
       children = new ArrayList<>(1);
@@ -63,11 +87,17 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       }
     }
 
-    return export ? addExport(definition) : null;
+    return !export || addExport(definition, errors);
   }
 
-  public Definition addExport(Definition definition) {
-    return myExports.putIfAbsent(definition.getName(), definition);
+  public boolean addExport(Definition definition, List<ModuleError> errors) {
+    Definition old = myExports.putIfAbsent(definition.getName(), definition);
+    if (old != null) {
+      errors.add(new ModuleError(new Module(this, definition.getName()), "Name is already exported"));
+      return false;
+    } else {
+      return true;
+    }
   }
 
   public void remove(Definition definition) {
@@ -75,6 +105,9 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     List<Definition> definitions = myFields.get(definition.getName());
     if (definitions != null) {
       definitions.remove(definition);
+    }
+    if (definition instanceof FunctionDefinition && definition.isAbstract()) {
+      myAbstracts.remove(definition.getName());
     }
   }
 

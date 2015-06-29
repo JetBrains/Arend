@@ -99,7 +99,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private Definition getDefinition(String name, Concrete.Position position, Definition defaultResult) {
     Definition typedDef = myParent.findChild(name);
     if (typedDef == null) {
-      myParent.add(defaultResult);
+      myParent.add(defaultResult, myModuleLoader.getErrors());
       return defaultResult;
     }
 
@@ -170,7 +170,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         if (remove) {
           myParent.remove(definition);
         } else {
-          myParent.add(definition, export);
+          myParent.add(definition, export, myModuleLoader.getErrors());
         }
       }
     } else {
@@ -180,7 +180,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         if (remove) {
           myParent.remove(definition);
         } else {
-          myParent.add(definition, export);
+          myParent.add(definition, export, myModuleLoader.getErrors());
         }
       }
     }
@@ -330,7 +330,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     List<Concrete.Definition> fields = new ArrayList<>();
-    for (DefContext def : ctx.defs().def()) {
+    for (DefContext def : ctx.classFields().defs().def()) {
       ModuleLoader.TypeCheckingUnit unit = visitDef(def);
       if (unit != null) {
         myModuleLoader.getTypeCheckingUnits().add(unit);
@@ -643,7 +643,29 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Expression visitAtomFieldsAcc(AtomFieldsAccContext ctx) {
     Concrete.Expression expr = visitExpr(ctx.atom());
-    return expr == null ? null : visitFieldsAcc(expr, ctx.fieldAcc());
+    if (expr == null) return null;
+
+    expr = visitFieldsAcc(expr, ctx.fieldAcc());
+    if (expr == null) return null;
+
+    if (ctx.classFields() != null) {
+      if (!(expr instanceof Concrete.DefCallExpression && ((Concrete.DefCallExpression) expr).getDefinition() instanceof ClassDefinition)) {
+        myModuleLoader.getErrors().add(new ParserError(myModule, expr.getPosition(), "Expected a class name"));
+        return null;
+      }
+      List<Concrete.Definition> definitions = visitDefs(ctx.classFields().defs());
+      List<Concrete.FunctionDefinition> functionDefinitions = new ArrayList<>(definitions.size());
+      for (Concrete.Definition definition : definitions) {
+        if (definition instanceof Concrete.FunctionDefinition) {
+          functionDefinitions.add((Concrete.FunctionDefinition) definition);
+        } else {
+          myModuleLoader.getErrors().add(new ParserError(myModule, definition.getPosition(), "Expected an overridden function"));
+        }
+      }
+
+      expr = new Concrete.ClassExtExpression(tokenPosition(ctx.getStart()), (ClassDefinition) ((Concrete.DefCallExpression) expr).getDefinition(), functionDefinitions);
+    }
+    return expr;
   }
 
   private Concrete.Expression visitAtoms(Concrete.Expression expr, List<ArgumentContext> arguments) {

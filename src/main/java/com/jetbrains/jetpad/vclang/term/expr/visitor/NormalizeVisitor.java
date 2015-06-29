@@ -343,4 +343,10 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
       return myMode == Mode.TOP ? null : myMode == Mode.NF ? Proj(expr.getExpression().accept(this), expr.getField()) : expr;
     }
   }
+
+  @Override
+  public Expression visitClassExt(ClassExtExpression expr) {
+    // TODO
+    return null;
+  }
 }

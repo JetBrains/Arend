@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -13,6 +15,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
@@ -35,6 +38,10 @@ public class ExpressionFactory {
 
   public static DefCallExpression DefCall(Definition definition) {
     return new DefCallExpression(definition);
+  }
+
+  public static ClassExtExpression ClassExt(ClassDefinition baseClass, Map<FunctionDefinition, FunctionDefinition> definitions) {
+    return new ClassExtExpression(baseClass, definitions);
   }
 
   public static IndexExpression Index(int i) {

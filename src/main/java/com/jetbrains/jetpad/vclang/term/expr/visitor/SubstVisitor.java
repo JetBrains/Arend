@@ -143,4 +143,10 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   public Expression visitProj(ProjExpression expr) {
     return Proj(expr.getExpression().accept(this), expr.getField());
   }
+
+  @Override
+  public Expression visitClassExt(ClassExtExpression expr) {
+    // TODO
+    return null;
+  }
 }

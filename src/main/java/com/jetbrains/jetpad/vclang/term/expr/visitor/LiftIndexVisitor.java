@@ -147,4 +147,10 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     Expression expr1 = expr.getExpression().accept(this);
     return expr1 == null ? null : Proj(expr1, expr.getField());
   }
+
+  @Override
+  public Expression visitClassExt(ClassExtExpression expr) {
+    // TODO
+    return null;
+  }
 }

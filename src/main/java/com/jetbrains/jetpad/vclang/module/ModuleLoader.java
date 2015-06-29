@@ -28,7 +28,7 @@ public class ModuleLoader {
   }
 
   public void init(SourceSupplier sourceSupplier, OutputSupplier outputSupplier, boolean recompile) {
-    myRoot.add(Prelude.PRELUDE);
+    myRoot.add(Prelude.PRELUDE, myErrors);
     mySourceSupplier = sourceSupplier;
     myOutputSupplier = outputSupplier;
     myRecompile = recompile;
@@ -62,7 +62,7 @@ public class ModuleLoader {
     Definition definition = parent.findChild(name);
     if (definition == null) {
       ClassDefinition result = new ClassDefinition(name, parent);
-      parent.add(result);
+      parent.add(result, myErrors);
       result.hasErrors(true);
       return result;
     } else {
