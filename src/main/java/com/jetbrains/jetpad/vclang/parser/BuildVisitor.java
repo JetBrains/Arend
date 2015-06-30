@@ -217,13 +217,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       name = ((NameBinOpContext) nameCtx).BIN_OP().getText();
       position = tokenPosition(((NameBinOpContext) nameCtx).BIN_OP().getSymbol());
     }
-    List<Concrete.TelescopeArgument> arguments = new ArrayList<>();
+    List<Concrete.Argument> arguments = new ArrayList<>();
     for (TeleContext tele : teleCtx) {
       List<Concrete.Argument> args = visitLamTele(tele);
       if (args == null) return null;
 
-      if (args.get(0) instanceof Concrete.TelescopeArgument) {
-        arguments.add((Concrete.TelescopeArgument) args.get(0));
+      if (overridden || args.get(0) instanceof Concrete.TelescopeArgument) {
+        arguments.add(args.get(0));
       } else {
         myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(tele.getStart()), "Expected a typed variable"));
         return null;

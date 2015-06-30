@@ -94,10 +94,10 @@ public class ParserTest {
     assertFalse(def.getArguments().get(1).getExplicit());
     assertTrue(def.getArguments().get(2).getExplicit());
     assertFalse(def.getArguments().get(3).getExplicit());
-    assertTrue(compare(DefCall(Prelude.NAT), def.getArguments().get(0).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), def.getArguments().get(1).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), def.getArguments().get(2).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), def.getArguments().get(3).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(3)).getType()));
     assertTrue(compare(Apps(DefCall(Prelude.NAT), Index(5), Index(4), Index(3), Index(2), Index(1), Index(0)), def.getResultType()));
   }
 
@@ -109,10 +109,10 @@ public class ParserTest {
     assertTrue(def.getArguments().get(1).getExplicit());
     assertFalse(def.getArguments().get(2).getExplicit());
     assertTrue(def.getArguments().get(3).getExplicit());
-    assertTrue(compare(DefCall(Prelude.NAT), def.getArguments().get(0).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), def.getArguments().get(1).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), def.getArguments().get(2).getType()));
-    assertTrue(compare(Apps(DefCall(Prelude.NAT), Index(3), Index(1), Index(0)), def.getArguments().get(3).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
+    assertTrue(compare(Apps(DefCall(Prelude.NAT), Index(3), Index(1), Index(0)), ((Concrete.TypeArgument) def.getArguments().get(3)).getType()));
     assertTrue(compare(DefCall(Prelude.NAT), def.getResultType()));
   }
 

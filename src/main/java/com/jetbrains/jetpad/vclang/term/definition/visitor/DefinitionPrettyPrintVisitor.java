@@ -22,7 +22,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Void ignored) {
     myBuilder.append("\\function");
-    if (!def.getPrecedence().equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
+    if (def.getPrecedence() != null && !def.getPrecedence().equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
       myBuilder.append(" \\infix");
       if (def.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC) myBuilder.append('l');
       if (def.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC) myBuilder.append('r');

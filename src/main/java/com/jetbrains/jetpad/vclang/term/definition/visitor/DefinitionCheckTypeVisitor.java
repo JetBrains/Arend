@@ -58,32 +58,51 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
 
     int index = 0;
     if (splitArgs != null) {
-      for (Abstract.Argument argument : def.getArguments()) {
-        boolean ok = true;
-        if (argument instanceof Abstract.TelescopeArgument) {
-          for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
+      if (splitArgs.isEmpty() && !def.getArguments().isEmpty()) {
+        index = -1;
+      } else {
+        for (Abstract.Argument argument : def.getArguments()) {
+          boolean ok = true;
+          if (argument instanceof Abstract.TelescopeArgument) {
+            for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
+              if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
+                ok = false;
+                break;
+              }
+              if (++index == splitArgs.size()) {
+                index = -1;
+                break;
+              }
+            }
+          } else {
             if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
               ok = false;
-              break;
+            } else {
+              if (++index == splitArgs.size()) {
+                index = -1;
+              }
             }
-            ++index;
           }
-        } else {
-          if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
-            ok = false;
-          } else {
-            ++index;
-          }
-        }
 
-        if (!ok) {
-          myErrors.add(new TypeCheckingError("Expected an " + (splitArgs.get(index).getExplicit() ? "explicit" : "implicit") + " argument", argument, null));
-          trimToSize(localContext, origSize);
-          return null;
+          if (index == -1) {
+            break;
+          }
+          if (!ok) {
+            myErrors.add(new TypeCheckingError("Type of the argument does not match the type in the overridden function", argument, null));
+            trimToSize(localContext, origSize);
+            return null;
+          }
         }
+      }
+
+      if (index == -1) {
+        myErrors.add(new TypeCheckingError("Function has more arguments than overridden function", def, null));
+        trimToSize(localContext, origSize);
+        return null;
       }
     }
 
+    int numberOfArgs = index;
     index = 0;
     for (Abstract.Argument argument : def.getArguments()) {
       if (argument instanceof Abstract.TypeArgument) {
@@ -145,12 +164,38 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       }
     }
 
+    Expression overriddenResultType = null;
+    if (overriddenFunction != null) {
+      if (numberOfArgs == splitArgs.size()) {
+        overriddenResultType = overriddenFunction.getResultType();
+      } else {
+        List<TypeArgument> args = new ArrayList<>(splitArgs.size() - numberOfArgs);
+        for (; numberOfArgs < splitArgs.size(); ++numberOfArgs) {
+          args.add(splitArgs.get(numberOfArgs));
+        }
+        overriddenResultType = Pi(args, overriddenFunction.getResultType());
+      }
+    }
+
     Expression expectedType = null;
     if (def.getResultType() != null) {
       CheckTypeVisitor.OKResult typeResult = visitor.checkType(def.getResultType(), Universe());
       if (typeResult != null) {
         expectedType = typeResult.expression;
+        if (overriddenResultType != null) {
+          List<CompareVisitor.Equation> equations = new ArrayList<>(0);
+          CompareVisitor.Result cmpResult = compare(expectedType, overriddenResultType, equations);
+          if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
+            myErrors.add(new TypeCheckingError("Result type of the function does not match the result type in the overridden function", def.getResultType(), null));
+            trimToSize(localContext, origSize);
+            return null;
+          }
+        }
       }
+    }
+
+    if (expectedType == null) {
+      expectedType = overriddenResultType;
     }
 
     functionResult.setArguments(arguments);
