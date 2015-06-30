@@ -7,8 +7,8 @@ import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import org.junit.Test;
 
@@ -35,7 +35,7 @@ public class ElimTest {
     constructors.add(new Constructor(0, "con1", dataType, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(Universe.NO_LEVEL), arguments1));
     constructors.add(new Constructor(1, "con2", dataType, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(Universe.NO_LEVEL), arguments2));
 
-    List<TelescopeArgument> arguments3 = new ArrayList<>(4);
+    List<Argument> arguments3 = new ArrayList<>(4);
     arguments3.add(Tele(vars("a1", "b1", "c1"), Nat()));
     arguments3.add(Tele(vars("d1"), Apps(DefCall(dataType), Index(2), Index(1), Index(0))));
     arguments3.add(Tele(vars("a2", "b2", "c2"), Nat()));
@@ -51,9 +51,9 @@ public class ElimTest {
     ElimExpression pTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(4), clauses1, null);
     clauses1.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Nat(), pTerm));
     clauses1.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Pi(Nat(), Nat()), pTerm));
-    FunctionDefinition pFunction = new FunctionDefinition("P", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
+    FunctionDefinition pFunction = new FunctionDefinition("P", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, false, pTerm);
 
-    List<TelescopeArgument> arguments = new ArrayList<>(3);
+    List<Argument> arguments = new ArrayList<>(3);
     arguments.add(Tele(vars("q", "w"), Nat()));
     arguments.add(Tele(vars("e"), Apps(DefCall(dataType), Var("w"), Zero(), Var("q"))));
     arguments.add(Tele(vars("r"), Apps(DefCall(dataType), Var("q"), Var("w"), Suc(Zero()))));
@@ -70,7 +70,7 @@ public class ElimTest {
     clauses3.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Var("s"), term3));
     clauses4.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Apps(Var("x"), Var("z")), term4));
     clauses4.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(7), term4));
-    FunctionDefinition function = new FunctionDefinition("fun", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
+    FunctionDefinition function = new FunctionDefinition("fun", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, false, term2);
 
     List<TypeCheckingError> errors = new ArrayList<>();
     function.accept(new DefinitionCheckTypeVisitor(function, errors), new ArrayList<Binding>());

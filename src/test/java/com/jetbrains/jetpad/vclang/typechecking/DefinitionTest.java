@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -20,7 +20,7 @@ public class DefinitionTest {
   @Test
   public void function() {
     // f : N => 0;
-    FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), Nat(), Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, false, Zero());
     List<TypeCheckingError> errors = new ArrayList<>();
     new DefinitionCheckTypeVisitor(def, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
@@ -30,7 +30,7 @@ public class DefinitionTest {
   @Test
   public void functionUntyped() {
     // f => 0;
-    FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<TelescopeArgument>(), null, Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, false, Zero());
     List<TypeCheckingError> errors = new ArrayList<>();
     new DefinitionCheckTypeVisitor(def, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());
@@ -41,10 +41,10 @@ public class DefinitionTest {
   @Test
   public void functionWithArgs() {
     // f (x : N) (y : N -> N) => y;
-    List<TelescopeArgument> arguments = new ArrayList<>();
+    List<Argument> arguments = new ArrayList<>();
     arguments.add(Tele(vars("x"), Nat()));
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
-    FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, null, Definition.Arrow.RIGHT, Index(0));
+    FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, null, Definition.Arrow.RIGHT, false, Index(0));
     List<TypeCheckingError> errors = new ArrayList<>();
     new DefinitionCheckTypeVisitor(def, errors).visitFunction(def, new ArrayList<Binding>());
     assertEquals(0, errors.size());

@@ -155,9 +155,10 @@ public class ModuleSerialization {
   public static int DATA_CODE = 1;
   public static int CLASS_CODE = 2;
   public static int CONSTRUCTOR_CODE = 3;
+  public static int OVERRIDDEN_CODE = 4;
 
   public static int getDefinitionCode(Definition definition) {
-    if (definition instanceof FunctionDefinition) return FUNCTION_CODE;
+    if (definition instanceof FunctionDefinition) return ((FunctionDefinition) definition).isOverridden() ? OVERRIDDEN_CODE : FUNCTION_CODE;
     if (definition instanceof DataDefinition) return DATA_CODE;
     if (definition instanceof ClassDefinition) return CLASS_CODE;
     if (definition instanceof Constructor) return CONSTRUCTOR_CODE;
@@ -165,10 +166,18 @@ public class ModuleSerialization {
   }
 
   public static Definition newDefinition(int code, String name, Definition parent) throws IncorrectFormat {
-    if (code == 0) return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, Abstract.Definition.Arrow.LEFT);
-    if (code == 1) return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Constructor>());
-    if (code == 2) return new ClassDefinition(name, parent);
-    if (code == 3) return new Constructor(-1, name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX);
+    if (code == FUNCTION_CODE || code == OVERRIDDEN_CODE) {
+      return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, Abstract.Definition.Arrow.LEFT, code == OVERRIDDEN_CODE);
+    }
+    if (code == DATA_CODE) {
+      return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Constructor>());
+    }
+    if (code == CLASS_CODE) {
+      return new ClassDefinition(name, parent);
+    }
+    if (code == CONSTRUCTOR_CODE) {
+      return new Constructor(-1, name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX);
+    }
     throw new IncorrectFormat();
   }
 
@@ -184,7 +193,7 @@ public class ModuleSerialization {
       definition.setDependencies(dependencies);
     }
 
-    if (code == FUNCTION_CODE) {
+    if (code == FUNCTION_CODE || code == OVERRIDDEN_CODE) {
       if (!(definition instanceof FunctionDefinition)) {
         throw new IncorrectFormat();
       }
@@ -193,7 +202,7 @@ public class ModuleSerialization {
       FunctionDefinition functionDefinition = (FunctionDefinition) definition;
       functionDefinition.typeHasErrors(stream.readBoolean());
       if (!functionDefinition.typeHasErrors()) {
-        functionDefinition.setArguments(readTelescopeArguments(stream, definitionMap));
+        functionDefinition.setArguments(readArguments(stream, definitionMap));
         functionDefinition.setResultType(readExpression(stream, definitionMap));
       }
       int arrowCode = stream.read();

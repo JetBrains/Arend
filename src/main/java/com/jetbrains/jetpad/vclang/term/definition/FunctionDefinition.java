@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
@@ -13,18 +13,20 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition {
   private Arrow myArrow;
-  private List<TelescopeArgument> myArguments;
+  private List<Argument> myArguments;
   private Expression myResultType;
   private Expression myTerm;
   private boolean myTypeHasErrors;
+  private final boolean myOverridden;
 
-  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Arrow arrow) {
+  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Arrow arrow, boolean overridden) {
     super(name, parent, precedence, fixity);
     myArrow = arrow;
     myTypeHasErrors = true;
+    myOverridden = overridden;
   }
 
-  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Arrow arrow, Expression term) {
+  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<Argument> arguments, Expression resultType, Arrow arrow, boolean overridden, Expression term) {
     super(name, parent, precedence, fixity);
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);
@@ -33,6 +35,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
     myArrow = arrow;
     myTypeHasErrors = false;
     myTerm = term;
+    myOverridden = overridden;
   }
 
   @Override
@@ -50,6 +53,11 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
+  public boolean isOverridden() {
+    return myOverridden;
+  }
+
+  @Override
   public Expression getTerm() {
     return myTerm;
   }
@@ -59,11 +67,11 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
-  public List<TelescopeArgument> getArguments() {
+  public List<Argument> getArguments() {
     return myArguments;
   }
 
-  public void setArguments(List<TelescopeArgument> arguments) {
+  public void setArguments(List<Argument> arguments) {
     myArguments = arguments;
   }
 
@@ -86,7 +94,11 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
 
   @Override
   public Expression getType() {
-    return myArguments.isEmpty() ? myResultType : Pi(new ArrayList<TypeArgument>(myArguments), myResultType);
+    List<TypeArgument> arguments = new ArrayList<>(myArguments.size());
+    for (Argument argument : myArguments) {
+      arguments.add((TypeArgument) argument);
+    }
+    return myArguments.isEmpty() ? myResultType : Pi(arguments, myResultType);
   }
 
   @Override

@@ -197,8 +197,9 @@ public final class Abstract {
   public interface FunctionDefinition extends Definition {
     Definition.Arrow getArrow();
     boolean isAbstract();
+    boolean isOverridden();
     Expression getTerm();
-    List<? extends TelescopeArgument> getArguments();
+    List<? extends Argument> getArguments();
     Expression getResultType();
   }
 

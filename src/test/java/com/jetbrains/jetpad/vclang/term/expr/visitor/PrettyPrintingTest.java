@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -45,10 +45,10 @@ public class PrettyPrintingTest {
   @Test
   public void prettyPrintingFunDef() {
     // f (X : Type0) (x : X) : X => x;
-    List<TelescopeArgument> arguments = new ArrayList<>(2);
+    List<Argument> arguments = new ArrayList<>(2);
     arguments.add(Tele(vars("X"), Universe(0)));
     arguments.add(Tele(vars("x"), Index(0)));
-    FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, Index(1), Definition.Arrow.RIGHT, Lam("X", Lam("x", Index(0))));
+    FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, Index(1), Definition.Arrow.RIGHT, false, Lam("X", Lam("x", Index(0))));
     def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), null);
   }
 }

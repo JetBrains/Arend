@@ -2,12 +2,13 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.FindDefCallVisitor;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.suffix;
+import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.typeOfFunctionArg;
 import static com.jetbrains.jetpad.vclang.term.error.TypeCheckingError.getNames;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
@@ -36,20 +38,47 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, List<Binding> localContext) {
     FunctionDefinition functionResult = (FunctionDefinition) myResult;
-    List<TelescopeArgument> arguments = new ArrayList<>(def.getArguments().size());
+    FunctionDefinition overriddenFunction = null;
+    if (functionResult.isOverridden()) {
+      // myErrors.add(new TypeCheckingError("Cannot find function " + def.getName() + " in the parent class", def, getNames(localContext)));
+      myErrors.add(new TypeCheckingError("Overridden function cannot be defined in a base class", def, getNames(localContext)));
+      return null;
+    }
+
+    List<Argument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     Set<Definition> abstractCalls = new HashSet<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor(myResult.getParent(), localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
-    for (Abstract.TelescopeArgument argument : def.getArguments()) {
-      CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
-      if (result == null) {
-        trimToSize(localContext, origSize);
-        return null;
-      }
 
-      arguments.add(Tele(argument.getExplicit(), argument.getNames(), result.expression));
-      for (int i = 0; i < argument.getNames().size(); ++i) {
-        localContext.add(new TypedBinding(argument.getNames().get(i), result.expression.liftIndex(0, i)));
+    int index = 1;
+    for (Abstract.Argument argument : def.getArguments()) {
+      if (argument instanceof Abstract.TypeArgument) {
+        if (argument instanceof Abstract.TelescopeArgument) {
+          index += ((Abstract.TelescopeArgument) argument).getNames().size();
+        } else {
+          ++index;
+        }
+
+        CheckTypeVisitor.OKResult result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
+        if (result == null) {
+          trimToSize(localContext, origSize);
+          return null;
+        }
+
+        if (argument instanceof Abstract.TelescopeArgument) {
+          List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
+          arguments.add(Tele(argument.getExplicit(), names, result.expression));
+          for (int i = 0; i < names.size(); ++i) {
+            localContext.add(new TypedBinding(names.get(i), result.expression.liftIndex(0, i)));
+          }
+        } else {
+          arguments.add(TypeArg(argument.getExplicit(), result.expression));
+          localContext.add(null);
+        }
+      } else {
+        // TODO
+        myErrors.add(new ArgInferenceError(typeOfFunctionArg(index), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+        return null;
       }
     }
 

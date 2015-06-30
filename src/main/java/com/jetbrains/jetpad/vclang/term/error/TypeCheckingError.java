@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,7 @@ public class TypeCheckingError {
     return myExpression;
   }
 
-  protected String prettyPrint(Abstract.PrettyPrintableSourceNode expression) {
+  protected String prettyPrint(PrettyPrintable expression) {
     StringBuilder builder = new StringBuilder();
     expression.prettyPrint(builder, myNames, Abstract.Expression.PREC);
     return builder.toString();

@@ -641,14 +641,16 @@ public final class Concrete {
     private final Abstract.Definition.Arrow myArrow;
     private final List<TelescopeArgument> myArguments;
     private final Expression myResultType;
+    private final boolean myOverridden;
     private Expression myTerm;
 
-    public FunctionDefinition(Position position, String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+    public FunctionDefinition(Position position, String name, Precedence precedence, Fixity fixity, List<TelescopeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden) {
       super(position, name, precedence, fixity, null);
       myArguments = arguments;
       myResultType = resultType;
       myArrow = arrow;
       myTerm = term;
+      myOverridden = overridden;
     }
 
     @Override
@@ -659,6 +661,11 @@ public final class Concrete {
     @Override
     public boolean isAbstract() {
       return myArrow == null;
+    }
+
+    @Override
+    public boolean isOverridden() {
+      return myOverridden;
     }
 
     @Override

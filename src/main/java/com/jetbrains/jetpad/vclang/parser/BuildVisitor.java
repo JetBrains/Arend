@@ -189,18 +189,30 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public ModuleLoader.TypeCheckingUnit visitDefFunction(DefFunctionContext ctx) {
-    boolean isPrefix = ctx.name() instanceof NameIdContext;
+    ExprContext typeCtx = ctx.typeTermOpt() instanceof WithTypeContext ? ((WithTypeContext) ctx.typeTermOpt()).expr() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).expr(0) : null;
+    ArrowContext arrowCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).arrow() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).arrow() : null;
+    ExprContext termCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).expr() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).expr(1) : null;
+    return visitDefFunction(false, ctx.precedence(), ctx.name(), ctx.tele(), typeCtx, arrowCtx, termCtx);
+  }
+
+  @Override
+  public ModuleLoader.TypeCheckingUnit visitDefOverride(DefOverrideContext ctx) {
+    return visitDefFunction(true, null, ctx.name(), ctx.tele(), ctx.expr().size() == 1 ? null : ctx.expr(0), ctx.arrow(), ctx.expr(ctx.expr().size() == 1 ? 0 : 1));
+  }
+
+  private ModuleLoader.TypeCheckingUnit visitDefFunction(boolean overridden, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, ExprContext typeCtx, ArrowContext arrowCtx, ExprContext termCtx) {
+    boolean isPrefix = nameCtx instanceof NameIdContext;
     String name;
     Concrete.Position position;
     if (isPrefix) {
-      name = ((NameIdContext) ctx.name()).ID().getText();
-      position = tokenPosition(((NameIdContext) ctx.name()).ID().getSymbol());
+      name = ((NameIdContext) nameCtx).ID().getText();
+      position = tokenPosition(((NameIdContext) nameCtx).ID().getSymbol());
     } else {
-      name = ((NameBinOpContext) ctx.name()).BIN_OP().getText();
-      position = tokenPosition(((NameBinOpContext) ctx.name()).BIN_OP().getSymbol());
+      name = ((NameBinOpContext) nameCtx).BIN_OP().getText();
+      position = tokenPosition(((NameBinOpContext) nameCtx).BIN_OP().getSymbol());
     }
     List<Concrete.TelescopeArgument> arguments = new ArrayList<>();
-    for (TeleContext tele : ctx.tele()) {
+    for (TeleContext tele : teleCtx) {
       List<Concrete.Argument> args = visitLamTele(tele);
       if (args == null) return null;
 
@@ -211,26 +223,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         return null;
       }
     }
-    Concrete.Expression type = ctx.typeTermOpt() instanceof WithTypeContext ? visitExpr(((WithTypeContext) ctx.typeTermOpt()).expr()) : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? visitExpr(((WithTypeAndTermContext) ctx.typeTermOpt()).expr(0)) : null;
-    ArrowContext arrowCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).arrow() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).arrow() : null;
+    Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
     Definition.Arrow arrow = arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, visitPrecedence(ctx.precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null);
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, precCtx == null ? null : visitPrecedence(precCtx), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null, overridden);
 
-    Definition typedDef = getDefinition(def.getName(), def.getPosition(), new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow()));
+    Definition typedDef = getDefinition(def.getName(), def.getPosition(), new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow(), overridden));
     if (typedDef == null) return null;
-    if (ctx.typeTermOpt() instanceof WithTermContext) {
-      def.setTerm(visitExpr(((WithTermContext) ctx.typeTermOpt()).expr()));
-    } else
-    if (ctx.typeTermOpt() instanceof WithTypeAndTermContext) {
-      def.setTerm(visitExpr(((WithTypeAndTermContext) ctx.typeTermOpt()).expr(1)));
+    if (termCtx != null) {
+      def.setTerm(visitExpr(termCtx));
     }
     return new ModuleLoader.TypeCheckingUnit(def, typedDef);
-  }
-
-  @Override
-  public ModuleLoader.TypeCheckingUnit visitDefOverride(DefOverrideContext ctx) {
-    // TODO
-    return null;
   }
 
   public Abstract.Definition.Precedence visitPrecedence(PrecedenceContext ctx) {
@@ -656,7 +658,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       List<Concrete.Definition> definitions = visitDefs(ctx.classFields().defs());
       List<Concrete.FunctionDefinition> functionDefinitions = new ArrayList<>(definitions.size());
       for (Concrete.Definition definition : definitions) {
-        if (definition instanceof Concrete.FunctionDefinition) {
+        if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).isOverridden()) {
           functionDefinitions.add((Concrete.FunctionDefinition) definition);
         } else {
           myModuleLoader.getErrors().add(new ParserError(myModule, definition.getPosition(), "Expected an overridden function"));

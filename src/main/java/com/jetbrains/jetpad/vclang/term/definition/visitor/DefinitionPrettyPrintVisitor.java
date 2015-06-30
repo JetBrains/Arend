@@ -39,7 +39,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
     }
 
     if (def.getArguments() != null) {
-      for (Abstract.TelescopeArgument argument : def.getArguments()) {
+      for (Abstract.Argument argument : def.getArguments()) {
         myBuilder.append(' ');
         argument.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
       }

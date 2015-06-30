@@ -262,7 +262,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression signatureResultType = splitArguments(okFunction.type, signatureArguments);
     Arg[] argsImp = new Arg[signatureArguments.size()];
     for (int i = 0; i < parametersNumber; ++i) {
-      argsImp[i] = new Arg(!signatureArguments.get(i).getExplicit(), null, new InferHoleExpression(new ArgInferenceError(parameter(i + 1), fun, new ArrayList<String>(), DefCall(dataType))));
+      assert dataType != null;
+      argsImp[i] = new Arg(!signatureArguments.get(i).getExplicit(), null, new InferHoleExpression(new ArgInferenceError(parameter(i + 1), fun, null, new StringPrettyPrintable(dataType.getName()))));
     }
 
     int i, j;
@@ -470,7 +471,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (argIndex > parametersNumber) {
           error = new ArgInferenceError(functionArg(argIndex - parametersNumber), fun, getNames(myLocalContext), fun);
         } else {
-          error = new ArgInferenceError(parameter(argIndex), fun, getNames(myLocalContext), DefCall(((Constructor) ((DefCallExpression) okFunction.expression).getDefinition()).getDataType()));
+          error = new ArgInferenceError(parameter(argIndex), fun, null, new StringPrettyPrintable(((Constructor) ((DefCallExpression) okFunction.expression).getDefinition()).getDataType().getName()));
         }
       }
       expression.setWellTyped(Error(resultExpr, error));
@@ -1196,7 +1197,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (oldDefinition == null) {
         myErrors.add(new TypeCheckingError(definition.getName() + " is not defined in " + expr.getBaseClass().getFullName(), definition, getNames(myLocalContext)));
       } else {
-        FunctionDefinition newDefinition = new FunctionDefinition(definition.getName(), expr.getBaseClass(), definition.getPrecedence(), definition.getFixity(), definition.getArrow());
+        FunctionDefinition newDefinition = new FunctionDefinition(definition.getName(), expr.getBaseClass(), definition.getPrecedence(), definition.getFixity(), definition.getArrow(), true);
         new DefinitionCheckTypeVisitor(newDefinition, myErrors).visitFunction(definition, myLocalContext);
         definitions.put(oldDefinition, newDefinition);
       }

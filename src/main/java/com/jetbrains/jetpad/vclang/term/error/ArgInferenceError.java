@@ -1,19 +1,24 @@
 package com.jetbrains.jetpad.vclang.term.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 
 import java.util.List;
 
 public class ArgInferenceError extends TypeCheckingError {
-  private final Abstract.PrettyPrintableSourceNode myWhere;
+  private final PrettyPrintable myWhere;
 
-  public ArgInferenceError(String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, Abstract.PrettyPrintableSourceNode where) {
+  public ArgInferenceError(String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, PrettyPrintable where) {
     super(message, expression, names);
     myWhere = where;
   }
 
   public static String functionArg(int index) {
     return "Cannot infer " + index + suffix(index) + " argument to function";
+  }
+
+  public static String typeOfFunctionArg(int index) {
+    return "Cannot infer type of " + index + suffix(index) + " argument of function";
   }
 
   public static String lambdaArg(int index) {
@@ -51,6 +56,19 @@ public class ArgInferenceError extends TypeCheckingError {
         msg += " " + prettyPrint(myWhere);
       }
       return msg;
+    }
+  }
+
+  public static class StringPrettyPrintable implements PrettyPrintable {
+    private final String myString;
+
+    public StringPrettyPrintable(String string) {
+      myString = string;
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+      builder.append(myString);
     }
   }
 }
