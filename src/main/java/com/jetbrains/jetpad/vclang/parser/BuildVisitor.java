@@ -113,11 +113,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public List<Concrete.Definition> visitDefs(DefsContext ctx) {
+    return visitDefs(ctx, true);
+  }
+
+  public List<Concrete.Definition> visitDefs(DefsContext ctx, boolean isTopLevel) {
     List<Concrete.Definition> defs = new ArrayList<>(ctx.def().size());
     for (DefContext def : ctx.def()) {
       ModuleLoader.TypeCheckingUnit unit = visitDef(def);
       if (unit != null) {
-        myModuleLoader.getTypeCheckingUnits().add(unit);
+        if (isTopLevel) {
+          myModuleLoader.getTypeCheckingUnits().add(unit);
+        }
         defs.add((Concrete.Definition) unit.rawDefinition);
       }
     }
@@ -658,7 +664,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         myModuleLoader.getErrors().add(new ParserError(myModule, expr.getPosition(), "Expected a class name"));
         return null;
       }
-      List<Concrete.Definition> definitions = visitDefs(ctx.classFields().defs());
+      List<Concrete.Definition> definitions = visitDefs(ctx.classFields().defs(), false);
       List<Concrete.FunctionDefinition> functionDefinitions = new ArrayList<>(definitions.size());
       for (Concrete.Definition definition : definitions) {
         if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).isOverridden()) {

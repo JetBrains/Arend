@@ -10,10 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.FindDefCallVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,7 +20,9 @@ import java.util.Set;
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.typeOfFunctionArg;
 import static com.jetbrains.jetpad.vclang.term.error.TypeCheckingError.getNames;
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<List<Binding>, Void> {
@@ -42,7 +41,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     if (overriddenFunction == null && functionResult.isOverridden()) {
       // TODO
       // myErrors.add(new TypeCheckingError("Cannot find function " + def.getName() + " in the parent class", def, getNames(localContext)));
-      myErrors.add(new TypeCheckingError("Overridden function cannot be defined in a base class", def, getNames(localContext)));
+      myErrors.add(new TypeCheckingError("Overridden function " + functionResult.getName() + " cannot be defined in a base class", def, getNames(localContext)));
       return null;
     }
 
@@ -51,35 +50,98 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     Set<Definition> abstractCalls = new HashSet<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor(myResult.getParent(), localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
 
-    int index = 1;
-    for (Abstract.Argument argument : def.getArguments()) {
-      if (argument instanceof Abstract.TypeArgument) {
+    List<TypeArgument> splitArgs = null;
+    if (overriddenFunction != null) {
+      splitArgs = new ArrayList<>();
+      splitArguments(overriddenFunction.getType(), splitArgs);
+    }
+
+    int index = 0;
+    if (splitArgs != null) {
+      for (Abstract.Argument argument : def.getArguments()) {
+        boolean ok = true;
         if (argument instanceof Abstract.TelescopeArgument) {
-          index += ((Abstract.TelescopeArgument) argument).getNames().size();
+          for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
+            if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
+              ok = false;
+              break;
+            }
+            ++index;
+          }
         } else {
-          ++index;
+          if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
+            ok = false;
+          } else {
+            ++index;
+          }
         }
 
+        if (!ok) {
+          myErrors.add(new TypeCheckingError("Expected an " + (splitArgs.get(index).getExplicit() ? "explicit" : "implicit") + " argument", argument, null));
+          trimToSize(localContext, origSize);
+          return null;
+        }
+      }
+    }
+
+    index = 0;
+    for (Abstract.Argument argument : def.getArguments()) {
+      if (argument instanceof Abstract.TypeArgument) {
         CheckTypeVisitor.OKResult result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
         if (result == null) {
           trimToSize(localContext, origSize);
           return null;
         }
 
+        boolean ok = true;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
           arguments.add(Tele(argument.getExplicit(), names, result.expression));
           for (int i = 0; i < names.size(); ++i) {
+            if (splitArgs != null) {
+              List <CompareVisitor.Equation> equations = new ArrayList<>(0);
+              CompareVisitor.Result cmpResult = compare(splitArgs.get(index).getType(), result.expression, equations);
+              if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
+                ok = false;
+                break;
+              }
+            }
+
             localContext.add(new TypedBinding(names.get(i), result.expression.liftIndex(0, i)));
+            ++index;
           }
         } else {
-          arguments.add(TypeArg(argument.getExplicit(), result.expression));
-          localContext.add(null);
+          if (splitArgs != null) {
+            List <CompareVisitor.Equation> equations = new ArrayList<>(0);
+            CompareVisitor.Result cmpResult = compare(splitArgs.get(index).getType(), result.expression, equations);
+            if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
+              ok = false;
+            }
+          }
+
+          if (ok) {
+            arguments.add(TypeArg(argument.getExplicit(), result.expression));
+            localContext.add(new TypedBinding(null, result.expression));
+            ++index;
+          }
+        }
+
+        if (!ok) {
+          myErrors.add(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+          trimToSize(localContext, origSize);
+          return null;
         }
       } else {
-        // TODO
-        myErrors.add(new ArgInferenceError(typeOfFunctionArg(index), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
-        return null;
+        if (splitArgs == null) {
+          myErrors.add(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+          trimToSize(localContext, origSize);
+          return null;
+        } else {
+          List<String> names = new ArrayList<>(1);
+          names.add(((Abstract.NameArgument) argument).getName());
+          arguments.add(Tele(argument.getExplicit(), names, splitArgs.get(index).getType()));
+          localContext.add(new TypedBinding(names.get(0), splitArgs.get(index).getType()));
+        }
       }
     }
 

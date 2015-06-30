@@ -226,6 +226,6 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   @Override
   public Boolean visitClassExt(ClassExtExpression expr) {
     // TODO
-    return null;
+    return true;
   }
 }
