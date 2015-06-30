@@ -330,6 +330,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitFieldAcc(FieldAccExpression expr) {
+    // TODO
     return myMode == Mode.TOP ? null : myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getField()) : expr;
   }
 

@@ -225,9 +225,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
     Definition.Arrow arrow = arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, precCtx == null ? null : visitPrecedence(precCtx), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, arguments, type, arrow, null, overridden);
+    Abstract.Definition.Precedence precedence = precCtx == null ? null : visitPrecedence(precCtx);
+    Abstract.Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, precedence, fixity, arguments, type, arrow, null, overridden);
 
-    Definition typedDef = getDefinition(def.getName(), def.getPosition(), new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow(), overridden));
+    Definition defaultDef = overridden ? new OverriddenDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow()) : new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow());
+    Definition typedDef = getDefinition(def.getName(), def.getPosition(), defaultDef);
     if (typedDef == null) return null;
     if (termCtx != null) {
       def.setTerm(visitExpr(termCtx));

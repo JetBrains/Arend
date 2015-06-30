@@ -51,7 +51,7 @@ public class ElimTest {
     ElimExpression pTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(4), clauses1, null);
     clauses1.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Nat(), pTerm));
     clauses1.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Pi(Nat(), Nat()), pTerm));
-    FunctionDefinition pFunction = new FunctionDefinition("P", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, false, pTerm);
+    FunctionDefinition pFunction = new FunctionDefinition("P", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
 
     List<Argument> arguments = new ArrayList<>(3);
     arguments.add(Tele(vars("q", "w"), Nat()));
@@ -70,7 +70,7 @@ public class ElimTest {
     clauses3.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Var("s"), term3));
     clauses4.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Apps(Var("x"), Var("z")), term4));
     clauses4.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(7), term4));
-    FunctionDefinition function = new FunctionDefinition("fun", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, false, term2);
+    FunctionDefinition function = new FunctionDefinition("fun", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
 
     List<TypeCheckingError> errors = new ArrayList<>();
     function.accept(new DefinitionCheckTypeVisitor(function, errors), new ArrayList<Binding>());

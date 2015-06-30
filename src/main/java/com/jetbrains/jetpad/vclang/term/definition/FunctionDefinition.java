@@ -17,16 +17,14 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   private Expression myResultType;
   private Expression myTerm;
   private boolean myTypeHasErrors;
-  private final boolean myOverridden;
 
-  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Arrow arrow, boolean overridden) {
+  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Arrow arrow) {
     super(name, parent, precedence, fixity);
     myArrow = arrow;
     myTypeHasErrors = true;
-    myOverridden = overridden;
   }
 
-  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<Argument> arguments, Expression resultType, Arrow arrow, boolean overridden, Expression term) {
+  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
     super(name, parent, precedence, fixity);
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);
@@ -35,7 +33,6 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
     myArrow = arrow;
     myTypeHasErrors = false;
     myTerm = term;
-    myOverridden = overridden;
   }
 
   @Override
@@ -54,7 +51,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
 
   @Override
   public boolean isOverridden() {
-    return myOverridden;
+    return false;
   }
 
   @Override

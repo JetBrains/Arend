@@ -1191,13 +1191,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     Map<String, FunctionDefinition> abstracts = new HashMap<>(expr.getBaseClass().getAbstracts());
-    Map<FunctionDefinition, FunctionDefinition> definitions = new HashMap<>();
+    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
     for (Abstract.FunctionDefinition definition : expr.getDefinitions()) {
       FunctionDefinition oldDefinition = abstracts.remove(definition.getName());
       if (oldDefinition == null) {
         myErrors.add(new TypeCheckingError(definition.getName() + " is not defined in " + expr.getBaseClass().getFullName(), definition, getNames(myLocalContext)));
       } else {
-        FunctionDefinition newDefinition = new FunctionDefinition(definition.getName(), expr.getBaseClass(), definition.getPrecedence(), definition.getFixity(), definition.getArrow(), true);
+        OverriddenDefinition newDefinition = new OverriddenDefinition(definition.getName(), expr.getBaseClass(), definition.getPrecedence(), definition.getFixity(), definition.getArrow());
+        newDefinition.setOverriddenFunction(oldDefinition);
         new DefinitionCheckTypeVisitor(newDefinition, myErrors).visitFunction(definition, myLocalContext);
         definitions.put(oldDefinition, newDefinition);
       }

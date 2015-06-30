@@ -38,8 +38,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, List<Binding> localContext) {
     FunctionDefinition functionResult = (FunctionDefinition) myResult;
-    FunctionDefinition overriddenFunction = null;
-    if (functionResult.isOverridden()) {
+    FunctionDefinition overriddenFunction = functionResult instanceof OverriddenDefinition ? ((OverriddenDefinition) functionResult).getOverriddenFunction() : null;
+    if (overriddenFunction == null && functionResult.isOverridden()) {
+      // TODO
       // myErrors.add(new TypeCheckingError("Cannot find function " + def.getName() + " in the parent class", def, getNames(localContext)));
       myErrors.add(new TypeCheckingError("Overridden function cannot be defined in a base class", def, getNames(localContext)));
       return null;

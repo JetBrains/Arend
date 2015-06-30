@@ -81,7 +81,7 @@ public class ModuleSerialization {
               ((DataDefinition) parent).getConstructors().add((Constructor) childModule);
             } else
             if (parent instanceof ClassDefinition) {
-              ((ClassDefinition) parent).add(childModule, true, ModuleLoader.getInstance().getErrors());
+              ((ClassDefinition) parent).add(childModule, false, ModuleLoader.getInstance().getErrors());
             } else {
               throw new IncorrectFormat();
             }
@@ -111,6 +111,9 @@ public class ModuleSerialization {
     if (definition instanceof FunctionDefinition) {
       FunctionDefinition functionDefinition = (FunctionDefinition) definition;
       writeDefinition(visitor.getDataStream(), definition);
+      if (definition instanceof OverriddenDefinition) {
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(((OverriddenDefinition) definition).getOverriddenFunction()));
+      }
       visitor.getDataStream().writeBoolean(functionDefinition.typeHasErrors());
       if (!functionDefinition.typeHasErrors()) {
         writeArguments(visitor, functionDefinition.getArguments());
@@ -158,7 +161,8 @@ public class ModuleSerialization {
   public static int OVERRIDDEN_CODE = 4;
 
   public static int getDefinitionCode(Definition definition) {
-    if (definition instanceof FunctionDefinition) return ((FunctionDefinition) definition).isOverridden() ? OVERRIDDEN_CODE : FUNCTION_CODE;
+    if (definition instanceof OverriddenDefinition) return OVERRIDDEN_CODE;
+    if (definition instanceof FunctionDefinition) return FUNCTION_CODE;
     if (definition instanceof DataDefinition) return DATA_CODE;
     if (definition instanceof ClassDefinition) return CLASS_CODE;
     if (definition instanceof Constructor) return CONSTRUCTOR_CODE;
@@ -166,8 +170,11 @@ public class ModuleSerialization {
   }
 
   public static Definition newDefinition(int code, String name, Definition parent) throws IncorrectFormat {
-    if (code == FUNCTION_CODE || code == OVERRIDDEN_CODE) {
-      return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, Abstract.Definition.Arrow.LEFT, code == OVERRIDDEN_CODE);
+    if (code == OVERRIDDEN_CODE) {
+      return new OverriddenDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null);
+    }
+    if (code == FUNCTION_CODE) {
+      return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null);
     }
     if (code == DATA_CODE) {
       return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Constructor>());
@@ -198,8 +205,15 @@ public class ModuleSerialization {
         throw new IncorrectFormat();
       }
       readDefinition(stream, definition);
-
       FunctionDefinition functionDefinition = (FunctionDefinition) definition;
+      if (code == OVERRIDDEN_CODE) {
+        Definition overridden = definitionMap.get(stream.readInt());
+        if (!(overridden instanceof FunctionDefinition && functionDefinition instanceof OverriddenDefinition)) {
+          throw new IncorrectFormat();
+        }
+        ((OverriddenDefinition) functionDefinition).setOverriddenFunction((FunctionDefinition) overridden);
+      }
+
       functionDefinition.typeHasErrors(stream.readBoolean());
       if (!functionDefinition.typeHasErrors()) {
         functionDefinition.setArguments(readArguments(stream, definitionMap));

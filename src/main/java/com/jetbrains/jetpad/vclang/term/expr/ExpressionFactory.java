@@ -2,10 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -40,7 +37,7 @@ public class ExpressionFactory {
     return new DefCallExpression(definition);
   }
 
-  public static ClassExtExpression ClassExt(ClassDefinition baseClass, Map<FunctionDefinition, FunctionDefinition> definitions) {
+  public static ClassExtExpression ClassExt(ClassDefinition baseClass, Map<FunctionDefinition, OverriddenDefinition> definitions) {
     return new ClassExtExpression(baseClass, definitions);
   }
 
