@@ -23,7 +23,7 @@ public class ParserTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        moduleLoader.getErrors().add(new ParserError(new Module(null, "test"), new Concrete.Position(line, pos), msg));
+        moduleLoader.getErrors().add(new ParserError(new Module(moduleLoader.rootModule(), "test"), new Concrete.Position(line, pos), msg));
       }
     });
     return parser;

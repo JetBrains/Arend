@@ -29,6 +29,10 @@ public class ClassExtExpression extends Expression implements Abstract.ClassExtE
     return myDefinitions.values();
   }
 
+  public Map<FunctionDefinition, OverriddenDefinition> getDefinitionsMap() {
+    return myDefinitions;
+  }
+
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitClassExt(this);

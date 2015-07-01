@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -93,8 +94,12 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitLam(LamExpression expr) {
+    return visitLamArguments(expr.getArguments(), expr.getBody(), null);
+  }
+
+  private boolean visitLamArguments(List<Argument> arguments, Expression body1, Expression body2) {
     int on = 0, total = 0;
-    for (Argument argument : expr.getArguments()) {
+    for (Argument argument : arguments) {
       if (argument instanceof NameArgument) {
         ++on;
         ++total;
@@ -110,7 +115,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     }
 
     liftPatterns(on);
-    Boolean result = expr.getBody().accept(this);
+    boolean result = (body1 == null ? true : body1.accept(this)) && (body2 == null ? true : body2.accept(this));
     liftPatterns(-total);
     return result;
   }
@@ -225,7 +230,11 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitClassExt(ClassExtExpression expr) {
-    // TODO
+    for (OverriddenDefinition definition : expr.getDefinitionsMap().values()) {
+      if (!definition.hasErrors() && !definition.typeHasErrors() && !visitLamArguments(definition.getArguments(), definition.getResultType(), definition.getTerm())) {
+        return false;
+      }
+    }
     return true;
   }
 }

@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -7,7 +9,9 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -39,13 +43,18 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLam(LamExpression expr) {
-    List<Argument> arguments = new ArrayList<>();
+    List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
+    Expression[] result = visitLamArguments(expr.getArguments(), arguments, expr.getBody());
+    return Lam(arguments, result[0]);
+  }
+
+  public Expression[] visitLamArguments(List<Argument> inputArgs, List<Argument> outputArgs, Expression... exprs) {
     List<Expression> substExprs = new ArrayList<>(mySubstExprs);
     int from = myFrom;
     int on = 0;
-    for (Argument argument : expr.getArguments()) {
+    for (Argument argument : inputArgs) {
       if (argument instanceof NameArgument) {
-        arguments.add(argument);
+        outputArgs.add(argument);
         ++on;
       } else
       if (argument instanceof TelescopeArgument) {
@@ -54,7 +63,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
         for (int i = 0; i < substExprs.size(); ++i) {
           substExprs.set(i, substExprs.get(i).liftIndex(0, on));
         }
-        arguments.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(substExprs, from)));
+        outputArgs.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(substExprs, from)));
         on = teleArgument.getNames().size();
       } else {
         throw new IllegalStateException();
@@ -64,7 +73,12 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
     for (int i = 0; i < substExprs.size(); ++i) {
       substExprs.set(i, substExprs.get(i).liftIndex(0, on));
     }
-    return Lam(arguments, expr.getBody().subst(substExprs, from + on));
+
+    Expression[] result = new Expression[exprs.length];
+    for (int i = 0; i < exprs.length; ++i) {
+      result[i] = exprs[i] == null ? null : exprs[i].subst(substExprs, from + on);
+    }
+    return result;
   }
 
   private Expression visitArguments(List<TypeArgument> arguments, Expression codomain) {
@@ -146,7 +160,12 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitClassExt(ClassExtExpression expr) {
-    // TODO
-    return null;
+    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
+    for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
+      List<Argument> arguments = new ArrayList<>(entry.getValue().getArguments().size());
+      Expression[] result = visitLamArguments(entry.getValue().getArguments(), arguments, entry.getValue().getResultType(), entry.getValue().getTerm());
+      definitions.put(entry.getKey(), new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), entry.getValue().getFixity(), arguments, result[0], entry.getValue().getArrow(),result[1], entry.getKey() ));
+    }
+    return ClassExt(expr.getBaseClass(), definitions);
   }
 }

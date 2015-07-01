@@ -51,47 +51,41 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     CheckTypeVisitor visitor = new CheckTypeVisitor(myResult.getParent(), localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
 
     List<TypeArgument> splitArgs = null;
+    Expression splitResult = null;
     if (overriddenFunction != null) {
       splitArgs = new ArrayList<>();
-      splitArguments(overriddenFunction.getType(), splitArgs);
+      splitResult = splitArguments(overriddenFunction.getType(), splitArgs);
     }
 
     int index = 0;
     if (splitArgs != null) {
-      if (splitArgs.isEmpty() && !def.getArguments().isEmpty()) {
-        index = -1;
-      } else {
-        for (Abstract.Argument argument : def.getArguments()) {
-          boolean ok = true;
-          if (argument instanceof Abstract.TelescopeArgument) {
-            for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
-              if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
-                ok = false;
-                break;
-              }
-              if (++index == splitArgs.size()) {
-                index = -1;
-                break;
-              }
-            }
-          } else {
+      for (Abstract.Argument argument : def.getArguments()) {
+        if (index >= splitArgs.size()) {
+          index = -1;
+          break;
+        }
+
+        boolean ok = true;
+        if (argument instanceof Abstract.TelescopeArgument) {
+          for (String ignored : ((Abstract.TelescopeArgument) argument).getNames()) {
             if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
               ok = false;
-            } else {
-              if (++index == splitArgs.size()) {
-                index = -1;
-              }
+              break;
             }
+            ++index;
           }
+        } else {
+          if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
+            ok = false;
+          } else {
+            ++index;
+          }
+        }
 
-          if (index == -1) {
-            break;
-          }
-          if (!ok) {
-            myErrors.add(new TypeCheckingError("Type of the argument does not match the type in the overridden function", argument, null));
-            trimToSize(localContext, origSize);
-            return null;
-          }
+        if (!ok) {
+          myErrors.add(new TypeCheckingError("Type of the argument does not match the type in the overridden function", argument, null));
+          trimToSize(localContext, origSize);
+          return null;
         }
       }
 
@@ -167,13 +161,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     Expression overriddenResultType = null;
     if (overriddenFunction != null) {
       if (numberOfArgs == splitArgs.size()) {
-        overriddenResultType = overriddenFunction.getResultType();
+        overriddenResultType = splitResult;
       } else {
         List<TypeArgument> args = new ArrayList<>(splitArgs.size() - numberOfArgs);
         for (; numberOfArgs < splitArgs.size(); ++numberOfArgs) {
           args.add(splitArgs.get(numberOfArgs));
         }
-        overriddenResultType = Pi(args, overriddenFunction.getResultType());
+        overriddenResultType = Pi(args, splitResult);
       }
     }
 
@@ -209,7 +203,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       functionResult.setTerm(termResult.expression);
       functionResult.setResultType(termResult.type);
 
-      if (!termResult.expression.accept(new TerminationCheckVisitor(functionResult))) {
+      if (!termResult.expression.accept(new TerminationCheckVisitor(overriddenFunction == null ? functionResult : overriddenFunction))) {
         myErrors.add(new TypeCheckingError("Termination check failed", def.getTerm(), getNames(localContext)));
         termResult = null;
       }

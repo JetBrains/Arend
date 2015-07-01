@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -161,5 +162,20 @@ public class ModuleLoaderTest {
       unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
     }
     assertEquals(1, errors.size());
+  }
+
+  @Test
+  public void numberOfFieldsTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
+    assertEquals(0, moduleLoader.getErrors().size());
+
+    List<TypeCheckingError> errors = new ArrayList<>(1);
+    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    }
+    assertEquals(0, errors.size());
+    assertEquals(2, moduleLoader.rootModule().getChildren().size());
+    assertEquals(2, moduleLoader.rootModule().getFields().size());
   }
 }

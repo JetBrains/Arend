@@ -96,7 +96,7 @@ public class ModuleSerialization {
     return errorsNumber;
   }
 
-  private static int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
+  public static int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
     visitor.getDataStream().write(getDefinitionCode(definition));
     visitor.getDataStream().writeBoolean(definition.hasErrors());
     if (!(definition instanceof Constructor)) {
@@ -541,6 +541,24 @@ public class ModuleSerialization {
       case 14: {
         Expression expr = readExpression(stream, definitionMap);
         return Proj(expr, stream.readInt());
+      }
+      case 15: {
+        Definition definition = definitionMap.get(stream.readInt());
+        if (!(definition instanceof ClassDefinition)) {
+          throw new IncorrectFormat();
+        }
+        Map<FunctionDefinition, OverriddenDefinition> map = new HashMap<>();
+        int size = stream.readInt();
+        for (int i = 0; i < size; ++i) {
+          Definition overridden = definitionMap.get(stream.readInt());
+          if (!(overridden instanceof FunctionDefinition)) {
+            throw new IncorrectFormat();
+          }
+          OverriddenDefinition overriding = (OverriddenDefinition) newDefinition(OVERRIDDEN_CODE, overridden.getName(), overridden.getParent());
+          deserializeDefinition(stream, definitionMap, overriding);
+          map.put((FunctionDefinition) overridden, overriding);
+        }
+        return ClassExt((ClassDefinition) definition, map);
       }
       default: {
         throw new IncorrectFormat();

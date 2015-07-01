@@ -156,4 +156,13 @@ public class ParserTest {
     assertEquals(1, moduleLoader.getErrors().size());
     assertEquals(0, errors.size());
   }
+
+  @Test
+  public void parserError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text = "A { \\function f (x : Nat) <= elim x | zero => zero | suc x' => zero }";
+    new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, text).expr());
+    assertTrue(moduleLoader.getErrors().size() > 0);
+  }
 }

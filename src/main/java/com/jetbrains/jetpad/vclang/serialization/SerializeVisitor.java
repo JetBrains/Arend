@@ -1,12 +1,15 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.serialization.ModuleSerialization.writeArguments;
 import static com.jetbrains.jetpad.vclang.serialization.ModuleSerialization.writeUniverse;
@@ -222,7 +225,17 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   @Override
   public Void visitClassExt(ClassExtExpression expr) {
-    // TODO
+    myStream.write(15);
+    try {
+      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getBaseClass()));
+      myDataStream.writeInt(expr.getDefinitionsMap().size());
+      for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
+        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey()));
+        myErrors += ModuleSerialization.serializeDefinition(this, entry.getValue());
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
     return null;
   }
 }
