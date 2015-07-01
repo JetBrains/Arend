@@ -3,12 +3,15 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class CompareVisitor implements AbstractExpressionVisitor<Expression, CompareVisitor.Result> {
   private final List<Equation> myEquations;
@@ -49,20 +52,24 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
   }
 
+  private static void lamArgsToTypes(List<? extends Abstract.Argument> arguments, List<Abstract.Expression> types) {
+    for (Abstract.Argument arg : arguments) {
+      if (arg instanceof Abstract.TelescopeArgument) {
+        Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
+        for (String ignored : teleArg.getNames()) {
+          types.add(teleArg.getType());
+        }
+      } else
+      if (arg instanceof Abstract.NameArgument) {
+        types.add(null);
+      }
+    }
+  }
+
   private static Abstract.Expression lamArgs(Abstract.Expression expr, List<Abstract.Expression> args) {
     if (expr instanceof Abstract.LamExpression) {
       Abstract.LamExpression lamExpr = (Abstract.LamExpression) expr;
-      for (Abstract.Argument arg : lamExpr.getArguments()) {
-        if (arg instanceof Abstract.TelescopeArgument) {
-          Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
-          for (String ignored : teleArg.getNames()) {
-            args.add(teleArg.getType());
-          }
-        } else
-        if (arg instanceof Abstract.NameArgument) {
-          args.add(null);
-        }
-      }
+      lamArgsToTypes(lamExpr.getArguments(), args);
       return lamArgs(lamExpr.getBody(), args);
     } else {
       return expr;
@@ -252,9 +259,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   }
 
   private Result checkLam(Abstract.Expression expr, Expression other) {
-    List<Abstract.Expression> args1 = new ArrayList<>();
+    return checkLam(expr, other, new ArrayList<Abstract.Expression>(), new ArrayList<Abstract.Expression>());
+  }
+
+  private Result checkLam(Abstract.Expression expr, Expression other, List<Abstract.Expression> args1, List<Abstract.Expression> args2) {
     Abstract.Expression body1 = lamArgs(expr, args1);
-    List<Abstract.Expression> args2 = new ArrayList<>();
     Expression body2 = (Expression) lamArgs(other, args2);
 
     if (args1.size() == 0 && args2.size() == 0) return null;
@@ -620,9 +629,43 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   }
 
   @Override
-  public Result visitClassExt(Abstract.ClassExtExpression expr, Expression params) {
-    // TODO
-    return null;
+  public Result visitClassExt(Abstract.ClassExtExpression expr, Expression other) {
+    if (expr == other) return new JustResult(CMP.EQUALS);
+    Result pathResult = checkPath(expr, other);
+    if (pathResult != null) return pathResult;
+    Result tupleResult = checkTuple(expr, other);
+    if (tupleResult != null) return tupleResult;
+    Result lamResult = checkLam(expr, other);
+    if (lamResult != null) return lamResult;
+    if (!(expr instanceof ClassExtExpression && other instanceof ClassExtExpression)) return new JustResult(CMP.NOT_EQUIV);
+
+    ClassExtExpression classExt = (ClassExtExpression) expr;
+    ClassExtExpression otherClassExt = (ClassExtExpression) other;
+    if (classExt.getBaseClass() != otherClassExt.getBaseClass() || classExt.getDefinitions().size() != otherClassExt.getDefinitions().size()) return new JustResult(CMP.NOT_EQUIV);
+
+    CMP cmp = CMP.EQUALS;
+    MaybeResult maybeResult = null;
+    for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : classExt.getDefinitionsMap().entrySet()) {
+      OverriddenDefinition otherDef = otherClassExt.getDefinitionsMap().get(entry.getKey());
+      if (otherDef == null || entry.getValue().getArrow() != otherDef.getArrow() || entry.getValue().getArguments() == null || otherDef.getArguments() == null || entry.getValue().getTerm() == null || otherDef.getTerm() == null) return new JustResult(CMP.NOT_EQUIV);
+      List<Abstract.Expression> args1 = new ArrayList<>();
+      lamArgsToTypes(entry.getValue().getArguments(), args1);
+      List<Abstract.Expression> args2 = new ArrayList<>();
+      lamArgsToTypes(otherDef.getArguments(), args1);
+
+      Result result = checkLam(entry.getValue().getTerm(), otherDef.getTerm(), args1, args2);
+      if (result == null || result.isOK() == CMP.NOT_EQUIV) {
+        if (result instanceof MaybeResult) {
+          if (maybeResult == null) {
+            maybeResult = (MaybeResult) result;
+          }
+        } else {
+          return result;
+        }
+      }
+      cmp = and(cmp, result.isOK());
+    }
+    return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 
   @Override

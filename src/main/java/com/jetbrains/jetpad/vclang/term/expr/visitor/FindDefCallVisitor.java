@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -108,7 +109,17 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitClassExt(ClassExtExpression expr) {
-    // TODO
-    return null;
+    if (expr.getBaseClass() == myDef) return true;
+    for (OverriddenDefinition definition : expr.getDefinitions()) {
+      if (definition.getArguments() != null) {
+        for (Argument argument : definition.getArguments()) {
+          if (argument instanceof TypeArgument && ((TypeArgument) argument).getType().accept(this)) return true;
+        }
+      }
+
+      if (definition.getResultType() != null && definition.getResultType().accept(this)) return true;
+      if (definition.getTerm() != null && definition.getTerm().accept(this)) return true;
+    }
+    return false;
   }
 }

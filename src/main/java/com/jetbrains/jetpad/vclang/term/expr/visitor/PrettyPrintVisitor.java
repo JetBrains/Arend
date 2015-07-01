@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
@@ -273,8 +274,17 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitClassExt(Abstract.ClassExtExpression expr, Byte params) {
-    // TODO
+  public Void visitClassExt(Abstract.ClassExtExpression expr, Byte prec) {
+    if (prec > Abstract.ClassExtExpression.PREC) myBuilder.append('(');
+    myBuilder.append(expr.getBaseClass().getName()).append(" {\n");
+    ++myIndent;
+    DefinitionPrettyPrintVisitor visitor = new DefinitionPrettyPrintVisitor(myBuilder, myNames, myIndent);
+    for (Abstract.FunctionDefinition definition : expr.getDefinitions()) {
+      visitor.visitFunction(definition, null);
+      myBuilder.append("\n");
+    }
+    --myIndent;
+    if (prec > Abstract.ClassExtExpression.PREC) myBuilder.append(')');
     return null;
   }
 
