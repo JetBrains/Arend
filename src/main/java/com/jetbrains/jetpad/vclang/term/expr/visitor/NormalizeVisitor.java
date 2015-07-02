@@ -8,9 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
@@ -347,7 +345,33 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitClassExt(ClassExtExpression expr) {
-    // TODO
-    return null;
+    if (myMode == Mode.TOP) return null;
+    if (myMode == Mode.WHNF) return expr;
+
+    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
+    for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
+      List<Argument> arguments = null;
+      if (entry.getValue().getArguments() != null) {
+        arguments = new ArrayList<>(entry.getValue().getArguments().size());
+        for (Argument argument : entry.getValue().getArguments()) {
+          if (argument instanceof TypeArgument) {
+            Expression type = ((TypeArgument) argument).getType().accept(this);
+            if (argument instanceof TelescopeArgument) {
+              arguments.add(Tele(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), type));
+            } else {
+              arguments.add(TypeArg(argument.getExplicit(), type));
+            }
+          } else {
+            arguments.add(argument);
+          }
+        }
+      }
+
+      Expression resultType = entry.getValue().getResultType() == null ? null : entry.getValue().getResultType().accept(this);
+      Expression term = entry.getValue().getTerm() == null ? null : entry.getValue().getTerm().accept(this);
+      OverriddenDefinition definition = new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), entry.getValue().getFixity(), arguments, resultType, entry.getValue().getArrow(), term, entry.getValue().getOverriddenFunction());
+      definitions.put(entry.getKey(), definition);
+    }
+    return ClassExt(expr.getBaseClass(), definitions);
   }
 }

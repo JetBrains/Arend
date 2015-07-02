@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -112,7 +113,24 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
 
   @Override
   public InferHoleExpression visitClassExt(ClassExtExpression expr) {
-    // TODO
+    for (OverriddenDefinition definition : expr.getDefinitions()) {
+      if (definition.getArguments() != null) {
+        for (Argument argument : definition.getArguments()) {
+          if (argument instanceof TypeArgument) {
+            InferHoleExpression result = ((TypeArgument) argument).getType().accept(this);
+            if (result != null) return result;
+          }
+        }
+      }
+      if (definition.getResultType() != null) {
+        InferHoleExpression result = definition.getResultType().accept(this);
+        if (result != null) return result;
+      }
+      if (definition.getTerm() != null) {
+        InferHoleExpression result = definition.getTerm().accept(this);
+        if (result != null) return result;
+      }
+    }
     return null;
   }
 }
