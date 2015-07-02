@@ -30,4 +30,10 @@ public class OverriddenDefinition extends FunctionDefinition {
   public boolean isOverridden() {
     return true;
   }
+
+  @Override
+  public Expression getType() {
+    if (getArguments() == null || getResultType() == null) return null;
+    return super.getType();
+  }
 }

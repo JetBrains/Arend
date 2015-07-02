@@ -137,4 +137,27 @@ public class RecordsTest {
     new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
     assertEquals(1, moduleLoader.getErrors().size());
   }
+
+  @Test
+  public void overriddenFieldAccTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text =
+        "\\class Point {\n" +
+          "\\function x : Nat\n" +
+          "\\function y : Nat\n" +
+        "}\n" +
+        "\\function diagonal => \\lam (d : Nat) => Point {\n" +
+          "\\override x => d\n" +
+          "\\override y => d\n" +
+        "}\n" +
+        "\\function test (p : diagonal 0) : p.x = 0 => path (\\lam _ => 0)";
+    parseDefs(moduleLoader, text);
+
+    List<TypeCheckingError> errors = new ArrayList<>(1);
+    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    }
+    assertEquals(0, errors.size());
+  }
 }

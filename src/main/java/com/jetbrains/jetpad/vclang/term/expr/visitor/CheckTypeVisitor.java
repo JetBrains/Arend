@@ -1114,8 +1114,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
     boolean notInScope = false;
 
-    if (type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
-      Definition child = ((DefCallExpression) type).getDefinition().findChild(expr.getName());
+    if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
+      Definition parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : ((DefCallExpression) type).getDefinition();
+      Definition child = parent.findChild(expr.getName());
       if (child != null) {
         if (child.hasErrors()) {
           TypeCheckingError error = new HasErrors(child.getName(), expr);
@@ -1123,7 +1124,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           myErrors.add(error);
           return null;
         } else {
-          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, child), child.getType().accept(new ReplaceDefCallVisitor(((DefCallExpression) type).getDefinition(), okExprResult.expression)), okExprResult.equations), expr);
+          Definition resultDef = child;
+          if (type instanceof ClassExtExpression && child instanceof FunctionDefinition) {
+            OverriddenDefinition overridden = ((ClassExtExpression) type).getDefinitionsMap().get(child);
+            if (overridden != null) {
+              resultDef = overridden;
+            }
+          }
+          Expression resultType = resultDef.getType();
+          if (resultType == null) {
+            resultType = child.getType();
+          }
+          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, resultDef), resultType.accept(new ReplaceDefCallVisitor(parent, okExprResult.expression)), okExprResult.equations), expr);
         }
       }
       notInScope = true;
@@ -1133,7 +1145,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (notInScope) {
       error = new NotInScopeError(expr, expr.getName());
     } else {
-      error = new TypeCheckingError("Expected a class or an expression of a class type", expr.getExpression(), getNames(myLocalContext));
+      error = new TypeCheckingError("Expected an expression of a class type", expr.getExpression(), getNames(myLocalContext));
     }
     expr.setWellTyped(Error(null, error));
     myErrors.add(error);

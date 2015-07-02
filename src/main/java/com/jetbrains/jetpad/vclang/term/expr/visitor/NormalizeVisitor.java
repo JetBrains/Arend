@@ -239,7 +239,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return visitDefCall(expr.getDefinition(), expr, new ArrayList<ArgumentExpression>());
+    return visitDefCall(expr.getDefinition(), expr, new ArrayList<ArgumentExpression>(0));
   }
 
   @Override
@@ -328,8 +328,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitFieldAcc(FieldAccExpression expr) {
-    // TODO
-    return myMode == Mode.TOP ? null : myMode == Mode.NF ? FieldAcc(expr.getExpression().accept(this), expr.getField()) : expr;
+    return visitDefCall(expr.getField(), FieldAcc(expr.getExpression().accept(this), expr.getField()) , new ArrayList<ArgumentExpression>(0));
   }
 
   @Override
