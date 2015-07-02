@@ -560,6 +560,9 @@ public class ModuleSerialization {
         }
         return ClassExt((ClassDefinition) definition, map);
       }
+      case 16: {
+        return New(readExpression(stream, definitionMap));
+      }
       default: {
         throw new IncorrectFormat();
       }

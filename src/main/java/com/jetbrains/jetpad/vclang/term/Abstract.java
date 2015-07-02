@@ -68,6 +68,11 @@ public final class Abstract {
     Collection<? extends FunctionDefinition> getDefinitions();
   }
 
+  public interface NewExpression extends Expression {
+    byte PREC = 11;
+    Expression getExpression();
+  }
+
   public interface IndexExpression extends Expression {
     byte PREC = 12;
     int getIndex();

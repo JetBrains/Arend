@@ -122,4 +122,9 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
     }
     return false;
   }
+
+  @Override
+  public Boolean visitNew(NewExpression expr) {
+    return expr.getExpression().accept(this);
+  }
 }

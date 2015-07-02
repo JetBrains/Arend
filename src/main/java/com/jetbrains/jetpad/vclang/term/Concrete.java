@@ -264,6 +264,25 @@ public final class Concrete {
     }
   }
 
+  public static class NewExpression extends Expression implements Abstract.NewExpression {
+    private final Expression myExpression;
+
+    public NewExpression(Position position, Expression expression) {
+      super(position);
+      myExpression = expression;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitNew(this, params);
+    }
+  }
+
   public static class ErrorExpression extends Expression implements Abstract.ErrorExpression {
     public ErrorExpression(Position position) {
       super(position);

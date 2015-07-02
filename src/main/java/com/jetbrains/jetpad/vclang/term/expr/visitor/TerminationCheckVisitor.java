@@ -237,4 +237,9 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     }
     return true;
   }
+
+  @Override
+  public Boolean visitNew(NewExpression expr) {
+    return expr.getExpression().accept(this);
+  }
 }

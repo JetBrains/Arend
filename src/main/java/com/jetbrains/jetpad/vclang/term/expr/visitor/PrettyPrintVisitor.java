@@ -288,6 +288,15 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  @Override
+  public Void visitNew(Abstract.NewExpression expr, Byte prec) {
+    if (prec > Abstract.NewExpression.PREC) myBuilder.append('(');
+    myBuilder.append("\\new ");
+    expr.getExpression().accept(this, Abstract.NewExpression.PREC);
+    if (prec > Abstract.NewExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
   public static void printIndent(StringBuilder builder, int indent) {
     for (int i = 0; i < indent; ++i) {
       builder.append("    ");

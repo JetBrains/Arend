@@ -160,4 +160,75 @@ public class RecordsTest {
     }
     assertEquals(0, errors.size());
   }
+
+  @Test
+  public void newAbstractTestError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text =
+        "\\class Point {\n" +
+          "\\function x : Nat\n" +
+          "\\function y : Nat\n" +
+        "}\n" +
+        "\\function diagonal => Point {\n" +
+          "\\override y => x\n" +
+        "}\n" +
+        "\\function test => \\new diagonal";
+    parseDefs(moduleLoader, text);
+
+    List<TypeCheckingError> errors = new ArrayList<>(1);
+    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    }
+    assertEquals(1, errors.size());
+  }
+
+  @Test
+  public void newTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text =
+        "\\class Point {\n" +
+          "\\function x : Nat\n" +
+          "\\function y : Nat\n" +
+        "}\n" +
+        "\\function diagonal => \\lam (d : Nat) => Point {\n" +
+          "\\override x => d\n" +
+          "\\override y => d\n" +
+        "}\n" +
+        "\\function diagonal1 => Point {\n" +
+          "\\override x => 0\n" +
+          "\\override y => x\n" +
+        "}\n" +
+        "\\function test : \\new diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new diagonal 0)";
+    parseDefs(moduleLoader, text);
+
+    List<TypeCheckingError> errors = new ArrayList<>(1);
+    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    }
+    assertEquals(0, errors.size());
+  }
+
+  @Test
+  public void mutualRecursionTestError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text =
+        "\\class Point {\n" +
+          "\\function x : Nat\n" +
+          "\\function y : Nat\n" +
+        "}\n" +
+        "\\function test => Point {\n" +
+          "\\override x => y\n" +
+          "\\override y => x\n" +
+        "}";
+    parseDefs(moduleLoader, text);
+
+    List<TypeCheckingError> errors = new ArrayList<>(1);
+    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
+      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
+    }
+    assertEquals(1, errors.size());
+  }
 }

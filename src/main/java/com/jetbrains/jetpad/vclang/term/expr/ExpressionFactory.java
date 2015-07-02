@@ -41,6 +41,10 @@ public class ExpressionFactory {
     return new ClassExtExpression(baseClass, definitions);
   }
 
+  public static NewExpression New(Expression expression) {
+    return new NewExpression(expression);
+  }
+
   public static IndexExpression Index(int i) {
     return new IndexExpression(i);
   }

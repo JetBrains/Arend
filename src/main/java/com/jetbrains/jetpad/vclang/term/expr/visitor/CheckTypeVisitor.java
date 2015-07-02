@@ -480,8 +480,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   public OKResult checkType(Abstract.Expression expr, Expression expectedType) {
-    if (expr == null) return null;
-    Result result = expr.accept(this, expectedType);
+    Result result = typeCheck(expr, expectedType);
     if (result == null) return null;
     if (result instanceof OKResult) return (OKResult) result;
     InferErrorResult errorResult = (InferErrorResult) result;
@@ -1108,7 +1107,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitFieldAcc(Abstract.FieldAccExpression expr, Expression expectedType) {
-    Result exprResult = expr.getExpression().accept(this, null);
+    Result exprResult = typeCheck(expr.getExpression(), null);
     if (!(exprResult instanceof OKResult)) return exprResult;
     OKResult okExprResult = (OKResult) exprResult;
     Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
@@ -1154,7 +1153,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitProj(Abstract.ProjExpression expr, Expression expectedType) {
-    Result exprResult = expr.getExpression().accept(this, null);
+    Result exprResult = typeCheck(expr.getExpression(), null);
     if (!(exprResult instanceof OKResult)) return exprResult;
     OKResult okExprResult = (OKResult) exprResult;
     Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
@@ -1221,5 +1220,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       universe = universe.max(definition.getUniverse());
     }
     return checkResultImplicit(expectedType, new OKResult(ClassExt(expr.getBaseClass(), definitions), new UniverseExpression(universe), null), expr);
+  }
+
+  @Override
+  public Result visitNew(Abstract.NewExpression expr, Expression expectedType) {
+    Result exprResult = typeCheck(expr.getExpression(), null);
+    if (!(exprResult instanceof OKResult)) return exprResult;
+    OKResult okExprResult = (OKResult) exprResult;
+    Expression normExpr = okExprResult.expression.accept(new NormalizeVisitor(NormalizeVisitor.Mode.WHNF));
+    if (!(normExpr instanceof DefCallExpression && ((DefCallExpression) normExpr).getDefinition() instanceof ClassDefinition || normExpr instanceof ClassExtExpression)) {
+      TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getExpression(), getNames(myLocalContext));
+      expr.setWellTyped(Error(null, error));
+      myErrors.add(error);
+      return null;
+    }
+
+    return checkResultImplicit(expectedType, new OKResult(New(okExprResult.expression), normExpr, okExprResult.equations), expr);
   }
 }

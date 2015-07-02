@@ -133,4 +133,9 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
     }
     return null;
   }
+
+  @Override
+  public InferHoleExpression visitNew(NewExpression expr) {
+    return expr.getExpression().accept(this);
+  }
 }

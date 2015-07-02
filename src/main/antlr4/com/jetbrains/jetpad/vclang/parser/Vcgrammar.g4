@@ -40,7 +40,7 @@ name  : ID                              # nameId
       | '(' BIN_OP ')'                  # nameBinOp
       ;
 
-expr  : binOpLeft* atomFieldsAcc argument* # binOp
+expr  : binOpLeft* maybeNew atomFieldsAcc argument* # binOp
       | <assoc=right> expr '->' expr    # arr
       | '\\Pi' tele+ '->' expr          # pi
       | '\\Sigma' tele+                 # sigma
@@ -59,7 +59,11 @@ elimCase : '\\elim'                     # elim
          | '\\case'                     # case
          ;
 
-binOpLeft : atomFieldsAcc argument* infix;
+binOpLeft : maybeNew atomFieldsAcc argument* infix;
+
+maybeNew :                              # noNew
+         | '\\new'                      # withNew
+         ;
 
 fieldAcc : '.' name                     # classField
          | '.' NUMBER                   # sigmaField

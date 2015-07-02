@@ -155,4 +155,9 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
     }
     return ClassExt(expr.getBaseClass(), definitions);
   }
+
+  @Override
+  public Expression visitNew(NewExpression expr) {
+    return New(expr.getExpression().accept(this));
+  }
 }

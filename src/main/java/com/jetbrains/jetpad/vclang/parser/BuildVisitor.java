@@ -801,6 +801,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (expr == null) continue;
       expr = visitAtoms(expr, leftContext.argument());
       if (expr == null) continue;
+      if (leftContext.maybeNew() instanceof WithNewContext) {
+        expr = new Concrete.NewExpression(tokenPosition(leftContext.getStart()), expr);
+      }
 
       if (def == null) {
         stack = new ArrayList<>(ctx.binOpLeft().size() - stack.size());
@@ -811,8 +814,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
-    expr = expr == null ? null : visitAtoms(expr, ctx.argument());
-    return expr == null ? null : rollUpStack(stack, expr);
+    if (expr == null) return null;
+    expr = visitAtoms(expr, ctx.argument());
+    if (expr == null) return null;
+    if (ctx.maybeNew() instanceof WithNewContext) {
+      expr = new Concrete.NewExpression(tokenPosition(ctx.getStart()), expr);
+    }
+    return rollUpStack(stack, expr);
   }
 
   @Override

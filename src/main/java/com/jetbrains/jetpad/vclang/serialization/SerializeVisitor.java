@@ -238,4 +238,11 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     }
     return null;
   }
+
+  @Override
+  public Void visitNew(NewExpression expr) {
+    myStream.write(16);
+    expr.getExpression().accept(this);
+    return null;
+  }
 }
