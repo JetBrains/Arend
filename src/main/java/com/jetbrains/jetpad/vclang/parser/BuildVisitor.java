@@ -177,7 +177,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         if (remove) {
           myParent.remove(definition);
         } else {
-          myParent.add(definition, export, myModuleLoader.getErrors());
+          if (!definition.isAbstract() && definition.getDependencies().isEmpty()) {
+            myParent.add(definition, export, myModuleLoader.getErrors());
+          }
         }
       }
     } else {
@@ -187,7 +189,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         if (remove) {
           myParent.remove(definition);
         } else {
-          myParent.add(definition, export, myModuleLoader.getErrors());
+          if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
+            myParent.add(definition, export, myModuleLoader.getErrors());
+          }
         }
       }
     }

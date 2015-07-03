@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -8,6 +9,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parse;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -168,7 +170,6 @@ public class ModuleLoaderTest {
   public void numberOfFieldsTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
     parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
-    assertEquals(0, moduleLoader.getErrors().size());
 
     List<TypeCheckingError> errors = new ArrayList<>(1);
     for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
@@ -177,5 +178,23 @@ public class ModuleLoaderTest {
     assertEquals(0, errors.size());
     assertEquals(2, moduleLoader.rootModule().getChildren().size());
     assertEquals(2, moduleLoader.rootModule().getFields().size());
+  }
+
+  @Test
+  public void openAbstractTestError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text = "\\class A { \\function x : Nat } \\open A \\function y => x";
+    new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
+    assertEquals(1, moduleLoader.getErrors().size());
+  }
+
+  @Test
+  public void openAbstractTestError2() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text = "\\class A { \\function x : Nat \\function y => x } \\open A \\function z => y";
+    new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
+    assertEquals(1, moduleLoader.getErrors().size());
   }
 }

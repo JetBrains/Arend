@@ -32,8 +32,20 @@ public class OverriddenDefinition extends FunctionDefinition {
   }
 
   @Override
+  public List<Argument> getArguments() {
+    if (super.getArguments() == null) return myOverriddenFunction.getArguments();
+    return super.getArguments();
+  }
+
+  @Override
+  public Expression getResultType() {
+    if (super.getResultType() == null) return myOverriddenFunction.getResultType();
+    return super.getResultType();
+  }
+
+  @Override
   public Expression getType() {
-    if (getArguments() == null || getResultType() == null) return null;
+    if (getArguments() == null || getResultType() == null) return myOverriddenFunction.getType();
     return super.getType();
   }
 }
