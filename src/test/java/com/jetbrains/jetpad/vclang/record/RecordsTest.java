@@ -22,72 +22,36 @@ public class RecordsTest {
   public void recordTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
     parseDefs(moduleLoader, "\\class B { \\function f : Nat -> \\Type0 \\function g : f 0 } \\function f (p : B) : p.f 0 => p.g ");
-
-    List<TypeCheckingError> errors = new ArrayList<>();
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(0, errors.size());
   }
 
   @Test
   public void unknownExtTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 \\override z => 0 \\override y => 0 }");
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(1, errors.size());
+    parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 \\override z => 0 \\override y => 0 }", 1);
   }
 
   @Test
   public void typeMismatchMoreTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x (a : Nat) => a }");
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(1, errors.size());
+    parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x (a : Nat) => a }", 1);
   }
 
   @Test
   public void typeMismatchLessTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
     parseDefs(moduleLoader, "\\class C { \\function f (x y z : Nat) : Nat } \\function D => C { \\override f a => \\lam z w => z }");
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(0, errors.size());
   }
 
   @Test
   public void argTypeMismatchTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseDefs(moduleLoader, "\\class C { \\function f (a : Nat) : Nat } \\function D => C { \\override f (a : Nat -> Nat) => 0 }");
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(1, errors.size());
+    parseDefs(moduleLoader, "\\class C { \\function f (a : Nat) : Nat } \\function D => C { \\override f (a : Nat -> Nat) => 0 }", 1);
   }
 
   @Test
   public void resultTypeMismatchTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => \\lam (t : Nat) => t }");
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(1, errors.size());
+    parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => \\lam (t : Nat) => t }", 1);
   }
 
   @Test
@@ -102,25 +66,13 @@ public class RecordsTest {
         "\\function B => A {\n" +
             "\\override f n <= c n n\n" +
         "}");
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(0, errors.size());
   }
 
   @Test
   public void recursiveTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\function f : Nat -> Nat } \\function B => A { \\override f n <= \\elim n | zero => zero | suc n' => f (suc n') }");
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(1, errors.size());
+    parseDefs(moduleLoader, "\\class A { \\function f : Nat -> Nat } \\function B => A { \\override f n <= \\elim n | zero => zero | suc n' => f (suc n') }", 1);
   }
 
   @Test
@@ -134,8 +86,7 @@ public class RecordsTest {
         "\\function B => A {\n" +
             "\\function f (n : Nat) <= n\n" +
         "}";
-    new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
-    assertEquals(1, moduleLoader.getErrors().size());
+    parseDefs(moduleLoader, text, 1, 0);
   }
 
   @Test
@@ -153,12 +104,6 @@ public class RecordsTest {
         "}\n" +
         "\\function test (p : diagonal 0) : p.x = 0 => path (\\lam _ => 0)";
     parseDefs(moduleLoader, text);
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(0, errors.size());
   }
 
   @Test
@@ -174,13 +119,7 @@ public class RecordsTest {
           "\\override y => x\n" +
         "}\n" +
         "\\function test => \\new diagonal";
-    parseDefs(moduleLoader, text);
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(1, errors.size());
+    parseDefs(moduleLoader, text, 1);
   }
 
   @Test
@@ -202,12 +141,6 @@ public class RecordsTest {
         "}\n" +
         "\\function test : \\new diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new diagonal 0)";
     parseDefs(moduleLoader, text);
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(0, errors.size());
   }
 
   @Test
@@ -223,12 +156,6 @@ public class RecordsTest {
           "\\override x => y\n" +
           "\\override y => x\n" +
         "}";
-    parseDefs(moduleLoader, text);
-
-    List<TypeCheckingError> errors = new ArrayList<>(1);
-    for (ModuleLoader.TypeCheckingUnit unit : moduleLoader.getTypeCheckingUnits()) {
-      unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-    }
-    assertEquals(1, errors.size());
+    parseDefs(moduleLoader, text, 1);
   }
 }

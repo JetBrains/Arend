@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
 import java.io.File;
@@ -26,7 +25,7 @@ public class FileSource extends ParseSource {
   }
 
   @Override
-  public Concrete.ClassDefinition load(ClassDefinition classDefinition) throws IOException {
+  public boolean load(ClassDefinition classDefinition) throws IOException {
     setStream(new FileInputStream(myFile));
     return super.load(classDefinition);
   }

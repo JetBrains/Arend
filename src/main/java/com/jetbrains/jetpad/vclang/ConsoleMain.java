@@ -130,23 +130,15 @@ public class ConsoleMain {
         System.err.println(moduleError);
       }
 
-      ModuleLoader.getInstance().reorderTypeCheckingUnits();
+      for (TypeCheckingError error : ModuleLoader.getInstance().getTypeCheckingErrors()) {
+        System.err.println(error);
+      }
+
+      if (ModuleLoader.getInstance().getErrors().isEmpty() && ModuleLoader.getInstance().getTypeCheckingErrors().isEmpty()) {
+        System.out.println("[OK] " + module.getFullName());
+      }
+
       if (ModuleLoader.getInstance().getErrors().isEmpty()) {
-        List<TypeCheckingError> errors = new ArrayList<>();
-        for (ModuleLoader.TypeCheckingUnit unit : ModuleLoader.getInstance().getTypeCheckingUnits()) {
-          unit.rawDefinition.accept(new DefinitionCheckTypeVisitor(unit.typedDefinition, errors), new ArrayList<Binding>());
-
-          if (errors.isEmpty() && unit.typedDefinition instanceof ClassDefinition) {
-            System.out.println("[OK] " + unit.typedDefinition.getFullName());
-          }
-
-          for (TypeCheckingError error : errors) {
-            System.err.print(unit.typedDefinition.getFullName() + ":");
-            System.err.println(error);
-          }
-          errors.clear();
-        }
-
         for (ModuleLoader.OutputUnit unit : ModuleLoader.getInstance().getOutputUnits()) {
           try {
             unit.output.write(unit.module);
@@ -157,8 +149,8 @@ public class ConsoleMain {
       }
     }
 
-    ModuleLoader.getInstance().getTypeCheckingUnits().clear();
     ModuleLoader.getInstance().getOutputUnits().clear();
     ModuleLoader.getInstance().getErrors().clear();
+    ModuleLoader.getInstance().getTypeCheckingErrors().clear();
   }
 }

@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,9 +18,9 @@ public class ModuleLoader {
   private OutputSupplier myOutputSupplier;
   private boolean myRecompile;
   private final List<Module> myLoadedModules = new ArrayList<>();
-  private final List<TypeCheckingUnit> myTypeCheckingUnits = new ArrayList<>();
   private final List<OutputUnit> myOutputUnits = new ArrayList<>();
   private final List<ModuleError> myErrors = new ArrayList<>();
+  private final List<TypeCheckingError> myTypeCheckingErrors = new ArrayList<>();
 
   private static ModuleLoader INSTANCE = new ModuleLoader();
 
@@ -46,16 +47,16 @@ public class ModuleLoader {
     return myLoadingModules.contains(module);
   }
 
-  public List<TypeCheckingUnit> getTypeCheckingUnits() {
-    return myTypeCheckingUnits;
-  }
-
   public List<OutputUnit> getOutputUnits() {
     return myOutputUnits;
   }
 
   public List<ModuleError> getErrors() {
     return myErrors;
+  }
+
+  public List<TypeCheckingError> getTypeCheckingErrors() {
+    return myTypeCheckingErrors;
   }
 
   public ClassDefinition getModule(ClassDefinition parent, String name) {
@@ -107,9 +108,7 @@ public class ModuleLoader {
     myLoadingModules.add(module);
     try {
       if (compile) {
-        Abstract.ClassDefinition rawClass = source.load(moduleDefinition);
-        if (rawClass != null) {
-          myTypeCheckingUnits.add(new TypeCheckingUnit(rawClass, moduleDefinition));
+        if (!source.load(moduleDefinition)) {
           moduleDefinition.hasErrors(false);
           if (output.canWrite()) {
             for (int i = 0; i < myOutputUnits.size(); ++i) {
@@ -159,19 +158,5 @@ public class ModuleLoader {
       this.module = module;
       this.output = output;
     }
-  }
-
-  public static class TypeCheckingUnit {
-    public Abstract.Definition rawDefinition;
-    public Definition typedDefinition;
-
-    public TypeCheckingUnit(Abstract.Definition rawDefinition, Definition typedDefinition) {
-      this.rawDefinition = rawDefinition;
-      this.typedDefinition = typedDefinition;
-    }
-  }
-
-  public void reorderTypeCheckingUnits() {
-    // TODO: Check for mutual recursion.
   }
 }

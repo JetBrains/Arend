@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -56,7 +57,7 @@ public class ParserTest {
   public void parserLamOpenError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, "\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y").expr());
+    Concrete.Expression result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, "\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y").expr());
     assertEquals(1, moduleLoader.getErrors().size());
     assertNull(result);
   }
@@ -65,30 +66,30 @@ public class ParserTest {
   public void parserPiOpenError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, "\\Pi (a b : Nat a) -> Nat a b").expr());
+    Concrete.Expression result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, "\\Pi (a b : Nat a) -> Nat a b").expr());
     assertEquals(1, moduleLoader.getErrors().size());
     assertNull(result);
   }
 
   @Test
   public void parserDef() {
-    List<?> defs = parseDefs(new ModuleLoader(),
+    ClassDefinition result = parseDefs(new ModuleLoader(),
         "\\function x : Nat => zero\n" +
             "\\function y : Nat => x");
-    assertEquals(2, defs.size());
+    assertEquals(2, result.getChildren().size());
   }
 
   @Test
   public void parserDefType() {
-    List<?> defs = parseDefs(new ModuleLoader(),
+    ClassDefinition result = parseDefs(new ModuleLoader(),
         "\\function x : \\Type0 => Nat\n" +
             "\\function y : x => zero");
-    assertEquals(2, defs.size());
+    assertEquals(2, result.getChildren().size());
   }
 
   @Test
   public void parserImplicit() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef(new ModuleLoader(), "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} : Nat x y z w t r => Nat").rawDefinition;
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef(new ModuleLoader(), "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} : Nat x y z w t r => Nat");
     assertEquals(4, def.getArguments().size());
     assertTrue(def.getArguments().get(0).getExplicit());
     assertFalse(def.getArguments().get(1).getExplicit());
@@ -103,7 +104,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit2() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef(new ModuleLoader(), "\\function f {x : Nat} (_ : Nat) {y z : Nat} (_ : Nat x y z) : Nat => Nat").rawDefinition;
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef(new ModuleLoader(), "\\function f {x : Nat} (_ : Nat) {y z : Nat} (_ : Nat x y z) : Nat => Nat");
     assertEquals(4, def.getArguments().size());
     assertFalse(def.getArguments().get(0).getExplicit());
     assertTrue(def.getArguments().get(1).getExplicit());
@@ -135,10 +136,10 @@ public class ParserTest {
 
   @Test
   public void parserInfixDef() {
-    List<?> defs = parseDefs(new ModuleLoader(),
+    ClassDefinition result = parseDefs(new ModuleLoader(),
         "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
             "\\function (*) : Nat -> Nat => \\lam x => x + zero");
-    assertEquals(2, defs.size());
+    assertEquals(2, result.getChildren().size());
   }
 
   @Test
@@ -152,7 +153,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.rootModule().add(plus, null);
     moduleLoader.rootModule().add(mul, null);
-    new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, "11 + 2 * 3").expr()).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, errors, CheckTypeVisitor.Side.RHS), null);
+    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, "11 + 2 * 3").expr()).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, errors, CheckTypeVisitor.Side.RHS), null);
     assertEquals(1, moduleLoader.getErrors().size());
     assertEquals(0, errors.size());
   }
@@ -162,7 +163,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     String text = "A { \\function f (x : Nat) <= elim x | zero => zero | suc x' => zero }";
-    new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, text).expr());
+    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, text).expr());
     assertTrue(moduleLoader.getErrors().size() > 0);
   }
 }

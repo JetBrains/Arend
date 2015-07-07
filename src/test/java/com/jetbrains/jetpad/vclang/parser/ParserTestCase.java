@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import org.antlr.v4.runtime.*;
@@ -12,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ParserTestCase {
   public static VcgrammarParser parse(final ModuleLoader moduleLoader, String text) {
@@ -30,20 +33,32 @@ public class ParserTestCase {
   }
 
   public static Concrete.Expression parseExpr(ModuleLoader moduleLoader, String text) {
-    Concrete.Expression result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, text).expr());
+    Concrete.Expression result = new BuildVisitor(moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, text).expr());
     assertEquals(0, moduleLoader.getErrors().size());
     return result;
   }
 
-  public static ModuleLoader.TypeCheckingUnit parseDef(ModuleLoader moduleLoader, String text) {
-    ModuleLoader.TypeCheckingUnit result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDef(parse(moduleLoader, text).def());
+  public static Concrete.Definition parseDef(ModuleLoader moduleLoader, String text) {
+    Abstract.Definition result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitDef(parse(moduleLoader, text).def());
     assertEquals(0, moduleLoader.getErrors().size());
-    return result;
+    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+    assertTrue(result instanceof Concrete.Definition);
+    return (Concrete.Definition) result;
   }
 
-  public static List<Concrete.Definition> parseDefs(ModuleLoader moduleLoader, String text) {
-    List<Concrete.Definition> result = new BuildVisitor(new Module(moduleLoader.rootModule(), "test"), moduleLoader.rootModule(), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
-    assertEquals(0, moduleLoader.getErrors().size());
+  public static ClassDefinition parseDefs(ModuleLoader moduleLoader, String text) {
+    return parseDefs(moduleLoader, text, 0);
+  }
+
+  public static ClassDefinition parseDefs(ModuleLoader moduleLoader, String text, int errors) {
+    return parseDefs(moduleLoader, text, 0, errors);
+  }
+
+  public static ClassDefinition parseDefs(ModuleLoader moduleLoader, String text, int moduleErrors, int errors) {
+    ClassDefinition result = new ClassDefinition("test", moduleLoader.rootModule());
+    new BuildVisitor(result, moduleLoader).visitDefs(parse(moduleLoader, text).defs());
+    assertEquals(moduleErrors, moduleLoader.getErrors().size());
+    assertEquals(errors, moduleLoader.getTypeCheckingErrors().size());
     return result;
   }
 

@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import org.antlr.v4.runtime.Token;
 
@@ -22,9 +23,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private final Module myModule;
   private final ModuleLoader myModuleLoader;
 
-  public BuildVisitor(Module module, ClassDefinition parent, ModuleLoader moduleLoader) {
+  public BuildVisitor(ClassDefinition parent, ModuleLoader moduleLoader) {
     myParent = parent;
-    myModule = module;
+    myModule = new Module((ClassDefinition) parent.getParent(), parent.getName());
     myModuleLoader = moduleLoader;
   }
 
@@ -112,26 +113,45 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public List<Concrete.Definition> visitDefs(DefsContext ctx) {
-    return visitDefs(ctx, true);
+  public Void visitDefs(DefsContext ctx) {
+    if (ctx == null) return null;
+    for (DefContext def : ctx.def()) {
+      Abstract.Definition definition = visitDef(def);
+      if (definition == null) {
+        continue;
+      }
+      Definition typedDefinition;
+      if (definition instanceof Definition) {
+        typedDefinition = (Definition) definition;
+      } else {
+        typedDefinition = getDefinition(definition.getName(), ((Concrete.Definition) definition).getPosition(), null);
+        if (typedDefinition == null) {
+          continue;
+        }
+        definition.accept(new DefinitionCheckTypeVisitor(typedDefinition, myModuleLoader.getTypeCheckingErrors()), new ArrayList<Binding>());
+      }
+      myParent.add(typedDefinition, myModuleLoader.getErrors());
+    }
+    return null;
   }
 
-  public List<Concrete.Definition> visitDefs(DefsContext ctx, boolean isTopLevel) {
+  public List<Concrete.FunctionDefinition> visitDefsRaw(DefsContext ctx) {
     if (ctx == null) return null;
-    List<Concrete.Definition> defs = new ArrayList<>(ctx.def().size());
+    List<Concrete.FunctionDefinition> definitions = new ArrayList<>(ctx.def().size());
     for (DefContext def : ctx.def()) {
-      ModuleLoader.TypeCheckingUnit unit = visitDef(def);
-      if (unit != null) {
-        if (isTopLevel) {
-          myModuleLoader.getTypeCheckingUnits().add(unit);
+      Abstract.Definition definition = visitDef(def);
+      if (definition != null) {
+        if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).isOverridden()) {
+          definitions.add((Concrete.FunctionDefinition) definition);
+        } else {
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), "Expected an overridden function"));
         }
-        defs.add((Concrete.Definition) unit.rawDefinition);
       }
     }
-    return defs;
+    return definitions;
   }
 
-  public ModuleLoader.TypeCheckingUnit visitDef(DefContext ctx) {
+  public Abstract.Definition visitDef(DefContext ctx) {
     if (ctx instanceof DefFunctionContext) {
       return visitDefFunction((DefFunctionContext) ctx);
     }
@@ -145,12 +165,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       ClassDefinition oldParent = myParent;
       myParent = typedDef;
-      Concrete.ClassDefinition concreteDef = visitDefClass((DefClassContext) ctx);
+      visitDefClass((DefClassContext) ctx);
       myParent = oldParent;
-      return new ModuleLoader.TypeCheckingUnit(concreteDef, typedDef);
+      return typedDef;
     }
     if (ctx instanceof DefCmdContext) {
-      return visitDefCmd((DefCmdContext) ctx);
+      visitDefCmd((DefCmdContext) ctx);
+      return null;
     }
     if (ctx instanceof DefOverrideContext) {
       return visitDefOverride((DefOverrideContext) ctx);
@@ -159,7 +180,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public ModuleLoader.TypeCheckingUnit visitDefCmd(DefCmdContext ctx) {
+  public Void visitDefCmd(DefCmdContext ctx) {
     if (ctx == null) return null;
     Definition module = visitModule(ctx.name(0), ctx.fieldAcc());
     if (module == null) return null;
@@ -199,7 +220,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public ModuleLoader.TypeCheckingUnit visitDefFunction(DefFunctionContext ctx) {
+  public Concrete.FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
     if (ctx == null) return null;
     ExprContext typeCtx = ctx.typeTermOpt() instanceof WithTypeContext ? ((WithTypeContext) ctx.typeTermOpt()).expr() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).expr(0) : null;
     ArrowContext arrowCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).arrow() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).arrow() : null;
@@ -208,12 +229,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public ModuleLoader.TypeCheckingUnit visitDefOverride(DefOverrideContext ctx) {
+  public Concrete.FunctionDefinition visitDefOverride(DefOverrideContext ctx) {
     if (ctx == null) return null;
     return visitDefFunction(true, null, ctx.name(), ctx.tele(), ctx.expr().size() == 1 ? null : ctx.expr(0), ctx.arrow(), ctx.expr(ctx.expr().size() == 1 ? 0 : 1));
   }
 
-  private ModuleLoader.TypeCheckingUnit visitDefFunction(boolean overridden, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, ExprContext typeCtx, ArrowContext arrowCtx, ExprContext termCtx) {
+  private Concrete.FunctionDefinition visitDefFunction(boolean overridden, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, ExprContext typeCtx, ArrowContext arrowCtx, ExprContext termCtx) {
     boolean isPrefix = nameCtx instanceof NameIdContext;
     String name;
     Concrete.Position position;
@@ -247,18 +268,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Abstract.Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, precedence, fixity, arguments, type, arrow, null, overridden);
 
-    Definition defaultDef = overridden ? new OverriddenDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow()) : new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow());
-    Definition typedDef = overridden ? defaultDef : getDefinition(def.getName(), def.getPosition(), defaultDef);
-    if (typedDef == null) {
-      trimToSize(myContext, size);
-      return null;
-    }
     if (termCtx != null) {
       def.setTerm(visitExpr(termCtx));
     }
 
     trimToSize(myContext, size);
-    return new ModuleLoader.TypeCheckingUnit(def, typedDef);
+    return def;
   }
 
   public Abstract.Definition.Precedence visitPrecedence(PrecedenceContext ctx) {
@@ -303,7 +318,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public ModuleLoader.TypeCheckingUnit visitDefData(DefDataContext ctx) {
+  public Concrete.DataDefinition visitDefData(DefDataContext ctx) {
     if (ctx == null) return null;
     boolean isPrefix = ctx.name() instanceof NameIdContext;
     String name;
@@ -334,12 +349,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Universe universe = type == null ? null : ((Concrete.UniverseExpression) type).getUniverse();
     Concrete.DataDefinition def = new Concrete.DataDefinition(position, name, visitPrecedence(ctx.precedence()), fixity, universe, parameters, constructors);
 
-    DataDefinition typedDef = (DataDefinition) getDefinition(def.getName(), def.getPosition(), new DataDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), new ArrayList<Constructor>()));
-    if (typedDef == null) {
-      trimToSize(myContext, origSize);
-      return null;
-    }
-
     int size = myContext.size();
     for (int i = 0; i < ctx.constructor().size(); ++i) {
       isPrefix = ctx.constructor(i).name() instanceof NameIdContext;
@@ -354,30 +363,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       List<Concrete.TypeArgument> arguments = visitTeles(ctx.constructor(i).tele());
       trimToSize(myContext, size);
       if (arguments == null) continue;
-      Concrete.Constructor concreteConstructor = new Concrete.Constructor(position, name, visitPrecedence(ctx.constructor(i).precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), arguments, def);
-
-      Constructor typedConstructor = (Constructor) getDefinition(concreteConstructor.getName(), concreteConstructor.getPosition(), new Constructor(i, concreteConstructor.getName(), typedDef, concreteConstructor.getPrecedence(), concreteConstructor.getFixity()));
-      if (typedConstructor == null) continue;
-      constructors.add(concreteConstructor);
-      typedDef.getConstructors().add(typedConstructor);
+      constructors.add(new Concrete.Constructor(position, name, visitPrecedence(ctx.constructor(i).precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), arguments, def));
     }
 
     trimToSize(myContext, origSize);
-    return new ModuleLoader.TypeCheckingUnit(def, typedDef);
+    return def;
   }
 
   @Override
-  public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
+  public Void visitDefClass(DefClassContext ctx) {
     if (ctx == null) return null;
-    List<Concrete.Definition> fields = new ArrayList<>();
-    for (DefContext def : ctx.classFields().defs().def()) {
-      ModuleLoader.TypeCheckingUnit unit = visitDef(def);
-      if (unit != null) {
-        myModuleLoader.getTypeCheckingUnits().add(unit);
-        fields.add((Concrete.Definition) unit.rawDefinition);
-      }
-    }
-    return new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), new Universe.Type(), fields);
+    visitDefs(ctx.classFields().defs());
+    return null;
   }
 
   @Override
@@ -717,18 +714,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       ClassDefinition newParent = (ClassDefinition) ((Concrete.DefCallExpression) expr).getDefinition();
       ClassDefinition oldParent = myParent;
       myParent = newParent;
-      List<Concrete.Definition> definitions = visitDefs(ctx.classFields().defs(), false);
-      List<Concrete.FunctionDefinition> functionDefinitions = new ArrayList<>(definitions.size());
-      for (Concrete.Definition definition : definitions) {
-        if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).isOverridden()) {
-          functionDefinitions.add((Concrete.FunctionDefinition) definition);
-        } else {
-          myModuleLoader.getErrors().add(new ParserError(myModule, definition.getPosition(), "Expected an overridden function"));
-        }
-      }
+      List<Concrete.FunctionDefinition> definitions = visitDefsRaw(ctx.classFields().defs());
       myParent = oldParent;
 
-      expr = new Concrete.ClassExtExpression(tokenPosition(ctx.getStart()), newParent, functionDefinitions);
+      expr = new Concrete.ClassExtExpression(tokenPosition(ctx.getStart()), newParent, definitions);
     }
     return expr;
   }
