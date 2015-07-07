@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.ArgInferenceError;
@@ -26,12 +27,12 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<List<Binding>, Definition> {
-  private final Definition myParent;
-  private final List<TypeCheckingError> myErrors;
+  private final ClassDefinition myParent;
+  private final ModuleLoader myModuleLoader;
 
-  public DefinitionCheckTypeVisitor(Definition parent, List<TypeCheckingError> errors) {
+  public DefinitionCheckTypeVisitor(ClassDefinition parent, ModuleLoader moduleLoader) {
     myParent = parent;
-    myErrors = errors;
+    myModuleLoader = moduleLoader;
   }
 
   @Override
@@ -40,15 +41,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     FunctionDefinition overriddenFunction = null; // result instanceof OverriddenDefinition ? ((OverriddenDefinition) result).getOverriddenFunction() : null;
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
-      // myErrors.add(new TypeCheckingError("Cannot find function " + def.getName() + " in the parent class", def, getNames(localContext)));
-      myErrors.add(new TypeCheckingError("Overridden function " + def.getName() + " cannot be defined in a base class", def, getNames(localContext)));
+      // myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Cannot find function " + def.getName() + " in the parent class", def, getNames(localContext)));
+      myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Overridden function " + def.getName() + " cannot be defined in a base class", def, getNames(localContext)));
       return null;
     }
 
     List<Argument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     Set<Definition> abstractCalls = new HashSet<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(myParent, localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(myParent, localContext, abstractCalls, myModuleLoader, CheckTypeVisitor.Side.RHS);
 
     List<TypeArgument> splitArgs = null;
     Expression splitResult = null;
@@ -83,14 +84,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         }
 
         if (!ok) {
-          myErrors.add(new TypeCheckingError("Type of the argument does not match the type in the overridden function", argument, null));
+          myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Type of the argument does not match the type in the overridden function", argument, null));
           trimToSize(localContext, origSize);
           return null;
         }
       }
 
       if (index == -1) {
-        myErrors.add(new TypeCheckingError("Function has more arguments than overridden function", def, null));
+        myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Function has more arguments than overridden function", def, null));
         trimToSize(localContext, origSize);
         return null;
       }
@@ -140,13 +141,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         }
 
         if (!ok) {
-          myErrors.add(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+          myModuleLoader.getTypeCheckingErrors().add(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
           trimToSize(localContext, origSize);
           return null;
         }
       } else {
         if (splitArgs == null) {
-          myErrors.add(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+          myModuleLoader.getTypeCheckingErrors().add(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
           trimToSize(localContext, origSize);
           return null;
         } else {
@@ -180,7 +181,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
           List<CompareVisitor.Equation> equations = new ArrayList<>(0);
           CompareVisitor.Result cmpResult = compare(expectedType, overriddenResultType, equations);
           if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
-            myErrors.add(new TypeCheckingError("Result type of the function does not match the result type in the overridden function", def.getResultType(), null));
+            myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Result type of the function does not match the result type in the overridden function", def.getResultType(), null));
             trimToSize(localContext, origSize);
             return null;
           }
@@ -196,6 +197,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     result.typeHasErrors(false);
     result.hasErrors(false);
     visitor.setSide(CheckTypeVisitor.Side.LHS);
+    if (!myParent.add(result, myModuleLoader.getErrors())) {
+      return null;
+    }
     CheckTypeVisitor.OKResult termResult = visitor.checkType(def.getTerm(), expectedType);
 
     if (termResult != null) {
@@ -203,7 +207,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       result.setResultType(termResult.type);
 
       if (!termResult.expression.accept(new TerminationCheckVisitor(overriddenFunction == null ? result : overriddenFunction))) {
-        myErrors.add(new TypeCheckingError("Termination check failed", def.getTerm(), getNames(localContext)));
+        myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Termination check failed", def.getTerm(), getNames(localContext)));
         termResult = null;
       }
     } else {
@@ -230,7 +234,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     Set<Definition> abstractCalls = new HashSet<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(myParent, localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(myParent, localContext, abstractCalls, myModuleLoader, CheckTypeVisitor.Side.RHS);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
       CheckTypeVisitor.OKResult result = visitor.checkType(parameter.getType(), Universe());
       if (result == null) {
@@ -252,13 +256,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     DataDefinition result = new DataDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : universe, parameters, new ArrayList<Constructor>(def.getConstructors().size()));
     result.hasErrors(false);
     result.setDependencies(abstractCalls);
+    if (!myParent.add(result, myModuleLoader.getErrors())) {
+      return null;
+    }
 
     constructors_loop:
     for (int i = 0; i < def.getConstructors().size(); ++i) {
-      visitConstructor(def.getConstructors().get(i), result.getConstructors().get(i), localContext, abstractCalls);
-      if (result.getConstructors().get(i).hasErrors()) {
+      Constructor constructor = visitConstructor(def.getConstructors().get(i), i, result, localContext, abstractCalls);
+      if (constructor == null || constructor.hasErrors()) {
         continue;
       }
+      result.getConstructors().add(constructor);
 
       for (int j = 0; j < result.getConstructors().get(i).getArguments().size(); ++j) {
         Expression type = result.getConstructors().get(i).getArguments().get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
@@ -266,7 +274,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
             if (argument1.getType().accept(new FindDefCallVisitor(result))) {
               String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + result.getConstructors().get(i).getName();
-              myErrors.add(new TypeCheckingError(msg, def.getConstructors().get(i).getArguments().get(j).getType(), getNames(localContext)));
+              myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(msg, def.getConstructors().get(i).getArguments().get(j).getType(), getNames(localContext)));
               continue constructors_loop;
             }
           }
@@ -278,7 +286,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
         for (Expression expr : exprs) {
           if (expr.accept(new FindDefCallVisitor(result))) {
             String msg = "Non-positive recursive occurrence of data type " + result.getName() + " in constructor " + result.getConstructors().get(i).getName();
-            myErrors.add(new TypeCheckingError(msg, def.getConstructors().get(i).getArguments().get(j).getType(), getNames(localContext)));
+            myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(msg, def.getConstructors().get(i).getArguments().get(j).getType(), getNames(localContext)));
             continue constructors_loop;
           }
         }
@@ -287,7 +295,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
       Universe maxUniverse = universe.max(result.getConstructors().get(i).getUniverse());
       if (maxUniverse == null) {
         String msg = "Universe " + result.getConstructors().get(i).getUniverse() + " of constructor " + result.getConstructors().get(i).getName() + " is not compatible with universe " + universe + " of previous constructors";
-        myErrors.add(new TypeCheckingError(msg, null, null));
+        myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(msg, null, null));
         continue;
       }
       universe = maxUniverse;
@@ -296,24 +304,24 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     result.setUniverse(universe);
     trimToSize(localContext, origSize);
     if (def.getUniverse() != null && !universe.lessOrEquals(def.getUniverse())) {
-      myErrors.add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
+      myModuleLoader.getTypeCheckingErrors().add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
     }
 
     return result;
   }
 
-  private void visitConstructor(Abstract.Constructor def, Constructor constructor, List<Binding> localContext, Set<Definition> abstractCalls) {
+  private Constructor visitConstructor(Abstract.Constructor def, int constructorIndex, DataDefinition dataDefinition, List<Binding> localContext, Set<Definition> abstractCalls) {
     List<TypeArgument> arguments = new ArrayList<>(def.getArguments().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     int index = 1;
     String error = null;
-    CheckTypeVisitor visitor = new CheckTypeVisitor(constructor.getParent(), localContext, abstractCalls, myErrors, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(dataDefinition, localContext, abstractCalls, myModuleLoader, CheckTypeVisitor.Side.RHS);
     for (Abstract.TypeArgument argument : def.getArguments()) {
       CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
       if (result == null) {
         trimToSize(localContext, origSize);
-        return;
+        return null;
       }
 
       Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
@@ -339,12 +347,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     trimToSize(localContext, origSize);
-    constructor.setUniverse(universe);
-    constructor.setArguments(arguments);
+
+    Constructor constructor = new Constructor(constructorIndex, def.getName(), dataDefinition, def.getPrecedence(), def.getFixity(), universe, arguments);
     constructor.hasErrors(false);
     if (error != null) {
-      myErrors.add(new TypeCheckingError(error, DefCall(constructor), new ArrayList<String>()));
+      myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(error, DefCall(constructor), new ArrayList<String>()));
     }
+    return constructor;
   }
 
   @Override
@@ -382,7 +391,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Lis
     }
 
     if (error != null) {
-      myErrors.add(error);
+      myModuleLoader.getTypeCheckingErrors().add(error);
     }
     myResult.setUniverse(universe);
     myResult.hasErrors(false);

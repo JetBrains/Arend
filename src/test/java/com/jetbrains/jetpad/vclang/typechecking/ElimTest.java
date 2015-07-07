@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
@@ -70,11 +71,12 @@ public class ElimTest {
     clauses3.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Var("s"), term3));
     clauses4.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Apps(Var("x"), Var("z")), term4));
     clauses4.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(7), term4));
-    FunctionDefinition function = new FunctionDefinition("fun", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
 
-    List<TypeCheckingError> errors = new ArrayList<>();
-    function.accept(new DefinitionCheckTypeVisitor(function, errors), new ArrayList<Binding>());
-    assertEquals(0, errors.size());
+    ModuleLoader moduleLoader = new ModuleLoader();
+    FunctionDefinition function = new FunctionDefinition("fun", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
+    function.accept(new DefinitionCheckTypeVisitor((ClassDefinition) function.getParent(), moduleLoader), new ArrayList<Binding>());
+    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+    assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(function.hasErrors());
   }
 }

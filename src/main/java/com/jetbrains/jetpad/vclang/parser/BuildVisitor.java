@@ -97,21 +97,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.Expression) visit(expr);
   }
 
-  private Definition getDefinition(String name, Concrete.Position position, Definition defaultResult) {
-    Definition typedDef = myParent.findChild(name);
-    if (typedDef == null) {
-      myParent.add(defaultResult, myModuleLoader.getErrors());
-      return defaultResult;
-    }
-
-    if (!(typedDef instanceof ClassDefinition)) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, position, name + " is already defined"));
-      return null;
-    } else {
-      return typedDef;
-    }
-  }
-
   @Override
   public Void visitDefs(DefsContext ctx) {
     if (ctx == null) return null;
@@ -120,17 +105,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (definition == null) {
         continue;
       }
-      Definition typedDefinition;
       if (definition instanceof Definition) {
-        typedDefinition = (Definition) definition;
+        myParent.add((Definition) definition, myModuleLoader.getErrors());
       } else {
-        typedDefinition = getDefinition(definition.getName(), ((Concrete.Definition) definition).getPosition(), null);
-        if (typedDefinition == null) {
-          continue;
-        }
-        definition.accept(new DefinitionCheckTypeVisitor(typedDefinition, myModuleLoader.getTypeCheckingErrors()), new ArrayList<Binding>());
+        definition.accept(new DefinitionCheckTypeVisitor(myParent, myModuleLoader), new ArrayList<Binding>());
       }
-      myParent.add(typedDefinition, myModuleLoader.getErrors());
     }
     return null;
   }
@@ -160,14 +139,24 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     if (ctx instanceof DefClassContext) {
       String name = ((DefClassContext) ctx).ID().getText();
-      ClassDefinition typedDef = (ClassDefinition) getDefinition(name, tokenPosition(ctx.getStart()), new ClassDefinition(name, myParent));
-      if (typedDef == null) return null;
+      Definition typedDef = myParent.findChild(name);
+      ClassDefinition classDef;
+      if (typedDef == null) {
+        classDef = new ClassDefinition(name, myParent);
+        myParent.add(classDef, myModuleLoader.getErrors());
+      } else {
+        if (!(typedDef instanceof ClassDefinition)) {
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), name + " is already defined"));
+          return null;
+        }
+        classDef = (ClassDefinition) typedDef;
+      }
 
       ClassDefinition oldParent = myParent;
-      myParent = typedDef;
+      myParent = classDef;
       visitDefClass((DefClassContext) ctx);
       myParent = oldParent;
-      return typedDef;
+      return classDef;
     }
     if (ctx instanceof DefCmdContext) {
       visitDefCmd((DefCmdContext) ctx);

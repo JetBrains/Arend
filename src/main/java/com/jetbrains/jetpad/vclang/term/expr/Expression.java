@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
@@ -61,8 +62,8 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return accept(new NormalizeVisitor(mode));
   }
 
-  public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, List<TypeCheckingError> errors) {
-    return new CheckTypeVisitor(null, localContext, new HashSet<Definition>(), errors, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
+  public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, ModuleLoader moduleLoader) {
+    return new CheckTypeVisitor(null, localContext, new HashSet<Definition>(), moduleLoader, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
   }
 
   public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {

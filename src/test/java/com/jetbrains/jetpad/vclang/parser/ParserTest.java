@@ -124,12 +124,12 @@ public class ParserTest {
     Definition plus = new FunctionDefinition("+", null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
     Definition mul = new FunctionDefinition("*", null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
 
-    List<TypeCheckingError> errors = new ArrayList<>();
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.rootModule().add(plus, null);
     moduleLoader.rootModule().add(mul, null);
-    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, errors, CheckTypeVisitor.Side.RHS), null);
-    assertEquals(0, errors.size());
+    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
+    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+    assertEquals(0, moduleLoader.getErrors().size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
     assertTrue(compare(BinOp(BinOp(Zero(), plus, BinOp(Suc(Zero()), mul, Suc(Suc(Zero())))), plus, BinOp(BinOp(Suc(Suc(Suc(Zero()))), mul, BinOp(Suc(Suc(Suc(Suc(Zero())))), mul, Suc(Suc(Suc(Suc(Suc(Zero()))))))), mul, BinOp(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), plus, Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))))))), result.expression));
   }
@@ -149,13 +149,12 @@ public class ParserTest {
     Definition plus = new FunctionDefinition("+", null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
     Definition mul = new FunctionDefinition("*", null, new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
 
-    List<TypeCheckingError> errors = new ArrayList<>();
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.rootModule().add(plus, null);
     moduleLoader.rootModule().add(mul, null);
-    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, "11 + 2 * 3").expr()).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, errors, CheckTypeVisitor.Side.RHS), null);
+    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, "11 + 2 * 3").expr()).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(1, moduleLoader.getErrors().size());
-    assertEquals(0, errors.size());
+    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
   @Test
