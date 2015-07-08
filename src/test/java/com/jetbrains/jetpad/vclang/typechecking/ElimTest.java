@@ -3,8 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -17,8 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 public class ElimTest {
   @Test
@@ -74,9 +72,12 @@ public class ElimTest {
 
     ModuleLoader moduleLoader = new ModuleLoader();
     FunctionDefinition function = new FunctionDefinition("fun", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
-    function.accept(new DefinitionCheckTypeVisitor((ClassDefinition) function.getParent(), moduleLoader), new ArrayList<Binding>());
+    List<Binding> localContext = new ArrayList<>();
+    FunctionDefinition typedFun = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) function.getParent(), function, localContext, null);
+    assertNotNull(typedFun);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) function.getParent(), function.getTerm(), typedFun, localContext, null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
-    assertFalse(function.hasErrors());
+    assertFalse(typedFun.hasErrors());
   }
 }

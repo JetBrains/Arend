@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class ParserTestCase {
   public static VcgrammarParser parse(final ModuleLoader moduleLoader, String text) {
@@ -38,12 +37,11 @@ public class ParserTestCase {
     return result;
   }
 
-  public static Concrete.Definition parseDef(ModuleLoader moduleLoader, String text) {
-    Abstract.Definition result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitDef(parse(moduleLoader, text).def());
+  public static Definition parseDef(ModuleLoader moduleLoader, String text) {
+    Definition result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitDef(parse(moduleLoader, text).def());
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-    assertTrue(result instanceof Concrete.Definition);
-    return (Concrete.Definition) result;
+    return result;
   }
 
   public static ClassDefinition parseDefs(ModuleLoader moduleLoader, String text) {

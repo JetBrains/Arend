@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.module.DummyOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
-import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -10,8 +9,8 @@ import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
@@ -89,31 +88,31 @@ public class ParserTest {
 
   @Test
   public void parserImplicit() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef(new ModuleLoader(), "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} : Nat x y z w t r => Nat");
+    FunctionDefinition def = (FunctionDefinition) parseDef(new ModuleLoader(), "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} : Nat x y z w t r => Nat");
     assertEquals(4, def.getArguments().size());
     assertTrue(def.getArguments().get(0).getExplicit());
     assertFalse(def.getArguments().get(1).getExplicit());
     assertTrue(def.getArguments().get(2).getExplicit());
     assertFalse(def.getArguments().get(3).getExplicit());
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(3)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(0)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(1)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(2)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(3)).getType()));
     assertTrue(compare(Apps(DefCall(Prelude.NAT), Index(5), Index(4), Index(3), Index(2), Index(1), Index(0)), def.getResultType()));
   }
 
   @Test
   public void parserImplicit2() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef(new ModuleLoader(), "\\function f {x : Nat} (_ : Nat) {y z : Nat} (_ : Nat x y z) : Nat => Nat");
+    FunctionDefinition def = (FunctionDefinition) parseDef(new ModuleLoader(), "\\function f {x : Nat} (_ : Nat) {y z : Nat} (_ : Nat x y z) : Nat => Nat");
     assertEquals(4, def.getArguments().size());
     assertFalse(def.getArguments().get(0).getExplicit());
     assertTrue(def.getArguments().get(1).getExplicit());
     assertFalse(def.getArguments().get(2).getExplicit());
     assertTrue(def.getArguments().get(3).getExplicit());
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
-    assertTrue(compare(Apps(DefCall(Prelude.NAT), Index(3), Index(1), Index(0)), ((Concrete.TypeArgument) def.getArguments().get(3)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(0)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(1)).getType()));
+    assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(2)).getType()));
+    assertTrue(compare(Apps(DefCall(Prelude.NAT), Index(3), Index(1), Index(0)), ((TypeArgument) def.getArguments().get(3)).getType()));
     assertTrue(compare(DefCall(Prelude.NAT), def.getResultType()));
   }
 

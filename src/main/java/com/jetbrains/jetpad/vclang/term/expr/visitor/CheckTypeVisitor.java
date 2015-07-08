@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -1209,9 +1209,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (oldDefinition == null) {
         myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(definition.getName() + " is not defined in " + expr.getBaseClass().getFullName(), definition, getNames(myLocalContext)));
       } else {
-        OverriddenDefinition newDefinition = (OverriddenDefinition) new DefinitionCheckTypeVisitor(expr.getBaseClass(), myModuleLoader).visitFunction(definition, myLocalContext);
+        OverriddenDefinition newDefinition = (OverriddenDefinition) TypeChecking.typeCheckFunctionBegin(myModuleLoader, expr.getBaseClass(), definition, myLocalContext, oldDefinition);
         if (newDefinition == null) return null;
-        newDefinition.setOverriddenFunction(oldDefinition);
+        TypeChecking.typeCheckFunctionEnd(myModuleLoader, expr.getBaseClass(), definition.getTerm(), newDefinition, myLocalContext, oldDefinition);
         definitions.put(oldDefinition, newDefinition);
       }
     }

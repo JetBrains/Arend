@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -24,10 +22,13 @@ public class DefinitionTest {
     // f : N => 0;
     ModuleLoader moduleLoader = new ModuleLoader();
     FunctionDefinition def = new FunctionDefinition("f", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
-    def = new DefinitionCheckTypeVisitor((ClassDefinition) def.getParent(), moduleLoader).visitFunction(def, new ArrayList<Binding>());
+    List<Binding> localContext = new ArrayList<>();
+    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
+    assertNotNull(typedDef);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null);
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-    assertFalse(def.hasErrors());
+    assertFalse(typedDef.hasErrors());
   }
 
   @Test
@@ -35,11 +36,14 @@ public class DefinitionTest {
     // f => 0;
     ModuleLoader moduleLoader = new ModuleLoader();
     FunctionDefinition def = new FunctionDefinition("f", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
-    def = new DefinitionCheckTypeVisitor((ClassDefinition) def.getParent(), moduleLoader).visitFunction(def, new ArrayList<Binding>());
+    List<Binding> localContext = new ArrayList<>();
+    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
+    assertNotNull(typedDef);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(def.hasErrors());
-    assertEquals(Nat(), def.getType());
+    assertEquals(Nat(), typedDef.getType());
   }
 
   @Test
@@ -51,11 +55,14 @@ public class DefinitionTest {
 
     ModuleLoader moduleLoader = new ModuleLoader();
     FunctionDefinition def = new FunctionDefinition("f", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, null, Definition.Arrow.RIGHT, Index(0));
-    def = new DefinitionCheckTypeVisitor((ClassDefinition) def.getParent(), moduleLoader).visitFunction(def, new ArrayList<Binding>());
+    List<Binding> localContext = new ArrayList<>();
+    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
+    assertNotNull(typedDef);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
-    assertFalse(def.hasErrors());
-    assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), def.getType());
+    assertFalse(typedDef.hasErrors());
+    assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), typedDef.getType());
   }
 
   @Test
@@ -81,14 +88,17 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
     constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
-    def = new DefinitionCheckTypeVisitor((ClassDefinition) def.getParent(), moduleLoader).visitData(def, new ArrayList<Binding>());
+    List<Binding> localContext = new ArrayList<>();
+    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext);
+    assertNotNull(typedDef);
+    TypeChecking.typeCheckDataEnd(moduleLoader, def, typedDef, localContext);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
-    assertFalse(def.hasErrors());
-    assertEquals(Pi(parameters, Universe(0)), def.getType());
-    assertEquals(2, def.getConstructors().size());
-    assertEquals(Pi(arguments1, Apps(Apps(Apps(DefCall(def), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), def.getConstructors().get(0).getType());
-    assertEquals(Pi(arguments2, Apps(Apps(Apps(DefCall(def), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), def.getConstructors().get(1).getType());
+    assertFalse(typedDef.hasErrors());
+    assertEquals(Pi(parameters, Universe(0)), typedDef.getType());
+    assertEquals(2, typedDef.getConstructors().size());
+    assertEquals(Pi(arguments1, Apps(Apps(Apps(DefCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(0).getType());
+    assertEquals(Pi(arguments2, Apps(Apps(Apps(DefCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(1).getType());
   }
 
   @Test
@@ -111,14 +121,17 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Index(1)));
     constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
 
-    def = new DefinitionCheckTypeVisitor((ClassDefinition) def.getParent(), moduleLoader).visitData(def, new ArrayList<Binding>());
+    List<Binding> localContext = new ArrayList<>();
+    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext);
+    assertNotNull(typedDef);
+    TypeChecking.typeCheckDataEnd(moduleLoader, def, typedDef, localContext);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
-    assertFalse(def.hasErrors());
-    assertEquals(Pi(parameters, Universe(6, 7)), def.getType());
-    assertEquals(2, def.getConstructors().size());
-    assertEquals(Pi(arguments1, Apps(DefCall(def), Index(2))), def.getConstructors().get(0).getType());
-    assertEquals(Pi(arguments2, Apps(DefCall(def), Index(3))), def.getConstructors().get(1).getType());
+    assertFalse(typedDef.hasErrors());
+    assertEquals(Pi(parameters, Universe(6, 7)), typedDef.getType());
+    assertEquals(2, typedDef.getConstructors().size());
+    assertEquals(Pi(arguments1, Apps(DefCall(typedDef), Index(2))), typedDef.getConstructors().get(0).getType());
+    assertEquals(Pi(arguments2, Apps(DefCall(typedDef), Index(3))), typedDef.getConstructors().get(1).getType());
   }
 
   @Test
@@ -168,7 +181,6 @@ public class DefinitionTest {
     constructors.add(con);
 
     Expression expr = Apps(Index(0), DefCall(con));
-    List<TypeCheckingError> errors = new ArrayList<>();
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DefCall(def), Nat())), Pi(Nat(), Nat()))));
 
