@@ -271,7 +271,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
     Definition.Arrow arrow = arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
     Abstract.Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
-    return new Concrete.FunctionDefinition(position, name, visitPrecedence(precCtx), fixity, arguments, type, arrow, null, true);
+    return new Concrete.FunctionDefinition(position, name, precCtx == null ? null : visitPrecedence(precCtx), fixity, arguments, type, arrow, null, overridden);
   }
 
   private void visitFunctionRawEnd(Concrete.FunctionDefinition definition) {

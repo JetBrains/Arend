@@ -68,9 +68,9 @@ public class PrettyPrintingParserTest {
 
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
-    // f (x : Nat) : Nat x => \y z. y z;
+    // f {x : Nat} (A : Nat -> \Type0) : A x -> (Nat -> Nat) -> Nat -> Nat => \t y z. y z;
     ModuleLoader moduleLoader = new ModuleLoader();
-    FunctionDefinition def = new FunctionDefinition("f", moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, lamArgs(Tele(vars("x"), Nat())), Apps(Nat(), Index(0)), Definition.Arrow.RIGHT, Lam(lamArgs(Name("y"), Name("z")), Apps(Index(1), Index(0))));
+    FunctionDefinition def = new FunctionDefinition("f", moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, lamArgs(Tele(false, vars("x"), Nat()), Tele(vars("A"), Pi(Nat(), Universe(0)))), Pi(Apps(Index(0), Index(1)), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), Definition.Arrow.RIGHT, Lam(lamArgs(Name("t"), Name("y"), Name("z")), Apps(Index(1), Index(0))));
     testDef(moduleLoader, def, def);
   }
 

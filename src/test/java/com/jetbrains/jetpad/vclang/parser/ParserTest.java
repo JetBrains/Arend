@@ -72,7 +72,9 @@ public class ParserTest {
 
   @Test
   public void parserDef() {
-    ClassDefinition result = parseDefs(new ModuleLoader(),
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    ClassDefinition result = parseDefs(moduleLoader,
         "\\function x : Nat => zero\n" +
             "\\function y : Nat => x");
     assertEquals(2, result.getChildren().size());
@@ -80,7 +82,9 @@ public class ParserTest {
 
   @Test
   public void parserDefType() {
-    ClassDefinition result = parseDefs(new ModuleLoader(),
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    ClassDefinition result = parseDefs(moduleLoader,
         "\\function x : \\Type0 => Nat\n" +
             "\\function y : x => zero");
     assertEquals(2, result.getChildren().size());
@@ -88,8 +92,8 @@ public class ParserTest {
 
   @Test
   public void parserImplicit() {
-    FunctionDefinition def = (FunctionDefinition) parseDef(new ModuleLoader(), "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} : Nat x y z w t r => Nat");
-    assertEquals(4, def.getArguments().size());
+    FunctionDefinition def = (FunctionDefinition) parseDef(new ModuleLoader(), "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} (A : Nat -> Nat -> Nat -> Nat -> Nat -> Nat -> \\Type0) : A x y z w t r");
+    assertEquals(5, def.getArguments().size());
     assertTrue(def.getArguments().get(0).getExplicit());
     assertFalse(def.getArguments().get(1).getExplicit());
     assertTrue(def.getArguments().get(2).getExplicit());
@@ -98,13 +102,13 @@ public class ParserTest {
     assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(1)).getType()));
     assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(2)).getType()));
     assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(3)).getType()));
-    assertTrue(compare(Apps(DefCall(Prelude.NAT), Index(5), Index(4), Index(3), Index(2), Index(1), Index(0)), def.getResultType()));
+    assertTrue(compare(Apps(Index(0), Index(6), Index(5), Index(4), Index(3), Index(2), Index(1)), def.getResultType()));
   }
 
   @Test
   public void parserImplicit2() {
-    FunctionDefinition def = (FunctionDefinition) parseDef(new ModuleLoader(), "\\function f {x : Nat} (_ : Nat) {y z : Nat} (_ : Nat x y z) : Nat => Nat");
-    assertEquals(4, def.getArguments().size());
+    FunctionDefinition def = (FunctionDefinition) parseDef(new ModuleLoader(), "\\function f {x : Nat} (_ : Nat) {y z : Nat} (A : Nat -> Nat -> Nat -> \\Type0) (_ : A x y z) : Nat");
+    assertEquals(5, def.getArguments().size());
     assertFalse(def.getArguments().get(0).getExplicit());
     assertTrue(def.getArguments().get(1).getExplicit());
     assertFalse(def.getArguments().get(2).getExplicit());
@@ -112,7 +116,7 @@ public class ParserTest {
     assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(0)).getType()));
     assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(1)).getType()));
     assertTrue(compare(DefCall(Prelude.NAT), ((TypeArgument) def.getArguments().get(2)).getType()));
-    assertTrue(compare(Apps(DefCall(Prelude.NAT), Index(3), Index(1), Index(0)), ((TypeArgument) def.getArguments().get(3)).getType()));
+    assertTrue(compare(Apps(Index(0), Index(4), Index(2), Index(1)), ((TypeArgument) def.getArguments().get(4)).getType()));
     assertTrue(compare(DefCall(Prelude.NAT), def.getResultType()));
   }
 

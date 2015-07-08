@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
@@ -108,7 +107,7 @@ public class ModuleLoader {
     myLoadingModules.add(module);
     try {
       if (compile) {
-        if (!source.load(moduleDefinition)) {
+        if (source.load(moduleDefinition)) {
           moduleDefinition.hasErrors(false);
           if (output.canWrite()) {
             for (int i = 0; i < myOutputUnits.size(); ++i) {

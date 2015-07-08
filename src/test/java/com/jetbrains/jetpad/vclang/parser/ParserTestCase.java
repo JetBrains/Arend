@@ -38,9 +38,13 @@ public class ParserTestCase {
   }
 
   public static Definition parseDef(ModuleLoader moduleLoader, String text) {
+    return parseDef(moduleLoader, text, 0);
+  }
+
+  public static Definition parseDef(ModuleLoader moduleLoader, String text, int errors) {
     Definition result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitDef(parse(moduleLoader, text).def());
     assertEquals(0, moduleLoader.getErrors().size());
-    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+    assertEquals(errors, moduleLoader.getTypeCheckingErrors().size());
     return result;
   }
 

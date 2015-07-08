@@ -91,6 +91,9 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>();
     DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext);
     assertNotNull(typedDef);
+    for (int i = 0; i < constructors.size(); i++) {
+      TypeChecking.typeCheckConstructor(moduleLoader, typedDef, constructors.get(i), localContext, i);
+    }
     TypeChecking.typeCheckDataEnd(moduleLoader, def, typedDef, localContext);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
@@ -124,6 +127,9 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>();
     DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext);
     assertNotNull(typedDef);
+    for (int i = 0; i < constructors.size(); i++) {
+      TypeChecking.typeCheckConstructor(moduleLoader, typedDef, constructors.get(i), localContext, i);
+    }
     TypeChecking.typeCheckDataEnd(moduleLoader, def, typedDef, localContext);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
