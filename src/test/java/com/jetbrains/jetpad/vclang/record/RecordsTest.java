@@ -154,4 +154,46 @@ public class RecordsTest {
         "}";
     parseDefs(moduleLoader, text, 1);
   }
+
+  @Test
+  public void splitClassTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text =
+        "\\class A {\n" +
+          "\\function x : Nat\n" +
+        "}\n" +
+        "\\class A {\n" +
+          "\\function y => 0\n" +
+        "}";
+    parseDefs(moduleLoader, text);
+  }
+
+  @Test
+  public void splitClassTest2() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text =
+        "\\class A {\n" +
+          "\\function x => 0\n" +
+        "}\n" +
+        "\\class A {\n" +
+          "\\function y : Nat\n" +
+        "}";
+    parseDefs(moduleLoader, text);
+  }
+
+  @Test
+  public void splitClassTestError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    String text =
+        "\\class A {\n" +
+          "\\function x : Nat\n" +
+        "}\n" +
+        "\\class A {\n" +
+          "\\function y : Nat\n" +
+        "}";
+    parseDefs(moduleLoader, text, 1);
+  }
 }

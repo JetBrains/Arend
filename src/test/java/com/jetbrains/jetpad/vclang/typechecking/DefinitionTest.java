@@ -94,7 +94,7 @@ public class DefinitionTest {
     for (int i = 0; i < constructors.size(); i++) {
       TypeChecking.typeCheckConstructor(moduleLoader, typedDef, constructors.get(i), localContext, i);
     }
-    TypeChecking.typeCheckDataEnd(moduleLoader, def, typedDef, localContext);
+    TypeChecking.typeCheckDataEnd(moduleLoader, (ClassDefinition) def.getParent(), def, typedDef, localContext);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedDef.hasErrors());
@@ -130,7 +130,7 @@ public class DefinitionTest {
     for (int i = 0; i < constructors.size(); i++) {
       TypeChecking.typeCheckConstructor(moduleLoader, typedDef, constructors.get(i), localContext, i);
     }
-    TypeChecking.typeCheckDataEnd(moduleLoader, def, typedDef, localContext);
+    TypeChecking.typeCheckDataEnd(moduleLoader, (ClassDefinition) def.getParent(), def, typedDef, localContext);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedDef.hasErrors());

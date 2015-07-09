@@ -53,13 +53,13 @@ public class TypeChecking {
 
     DataDefinition result = new DataDefinition(def.getName(), parent, def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters, new ArrayList<Constructor>());
     result.setDependencies(abstractCalls);
-    if (!parent.add(result, moduleLoader.getErrors())) {
+    if (!parent.addField(result, moduleLoader.getErrors())) {
       return null;
     }
     return result;
   }
 
-  public static void typeCheckDataEnd(ModuleLoader moduleLoader, Abstract.DataDefinition def, DataDefinition definition, List<Binding> localContext) {
+  public static void typeCheckDataEnd(ModuleLoader moduleLoader, ClassDefinition parent, Abstract.DataDefinition def, DataDefinition definition, List<Binding> localContext) {
     if (localContext != null) {
       for (TypeArgument parameter : definition.getParameters()) {
         if (parameter instanceof TelescopeArgument) {
@@ -87,6 +87,8 @@ public class TypeChecking {
     if (def.getUniverse() != null && !universe.lessOrEquals(def.getUniverse())) {
       moduleLoader.getTypeCheckingErrors().add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
     }
+
+    parent.addStaticField(definition);
   }
 
   public static Constructor typeCheckConstructor(ModuleLoader moduleLoader, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext, int conIndex) {
@@ -158,6 +160,7 @@ public class TypeChecking {
     }
 
     dataDefinition.getConstructors().add(constructor);
+    ((ClassDefinition) dataDefinition.getParent()).addPrivateField(constructor);
     return constructor;
   }
 
@@ -322,12 +325,13 @@ public class TypeChecking {
     } else {
       result = new FunctionDefinition(def.getName(), parent, def.getPrecedence(), def.getFixity(), arguments, expectedType, def.getArrow(), null);
     }
-    if (!def.isOverridden() && !parent.add(result, moduleLoader.getErrors())) {
+
+    result.setDependencies(abstractCalls);
+    if (!def.isOverridden() && !parent.addField(result, moduleLoader.getErrors())) {
       trimToSize(localContext, origSize);
       return null;
     }
 
-    result.setDependencies(abstractCalls);
     return result;
   }
 
@@ -365,5 +369,7 @@ public class TypeChecking {
         localContext.remove(localContext.size() - 1);
       }
     }
+
+    parent.addStaticField(definition);
   }
 }

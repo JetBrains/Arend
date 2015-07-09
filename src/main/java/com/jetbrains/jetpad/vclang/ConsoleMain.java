@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.module.*;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.apache.commons.cli.*;
 
@@ -120,7 +118,7 @@ public class ConsoleMain {
 
     ClassDefinition module = ModuleLoader.getInstance().rootModule();
     for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      module = ModuleLoader.getInstance().getModule(module, moduleNames.get(i));
+      module = module.getClass(moduleNames.get(i), ModuleLoader.getInstance().getErrors());
     }
     Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));
     if (!ModuleLoader.getInstance().isModuleLoaded(newModule)) {

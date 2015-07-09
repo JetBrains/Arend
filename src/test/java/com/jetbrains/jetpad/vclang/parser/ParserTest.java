@@ -24,31 +24,41 @@ import static org.junit.Assert.*;
 public class ParserTest {
   @Test
   public void parserLam() {
-    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\lam x y z => y");
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    Concrete.Expression expr = parseExpr(moduleLoader, "\\lam x y z => y");
     assertTrue(compare(Lam("x", Lam("y", Lam("z", Index(1)))), expr));
   }
 
   @Test
   public void parserLam2() {
-    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\lam x y => (\\lam z w => y z) y");
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    Concrete.Expression expr = parseExpr(moduleLoader, "\\lam x y => (\\lam z w => y z) y");
     assertTrue(compare(Lam("x'", Lam("y'", Apps(Lam("z'", Lam("w'", Apps(Index(2), Index(1)))), Index(0)))), expr));
   }
 
   @Test
   public void parserLamTele() {
-    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\lam p {x t : Nat} {y} (a : Nat -> Nat) => (\\lam (z w : Nat) => y z) y");
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    Concrete.Expression expr = parseExpr(moduleLoader, "\\lam p {x t : Nat} {y} (a : Nat -> Nat) => (\\lam (z w : Nat) => y z) y");
     assertTrue(compare(Lam(lamArgs(Name("p"), Tele(false, vars("x", "t"), DefCall(Prelude.NAT)), Name(false, "y"), Tele(vars("a"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Apps(Lam(lamArgs(Tele(vars("z", "w"), DefCall(Prelude.NAT))), Apps(Index(3), Index(1))), Index(1))), expr));
   }
 
   @Test
   public void parserPi() {
-    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\Pi (x y z : Nat) (w t : Nat -> Nat) -> \\Pi (a b : \\Pi (c : Nat) -> Nat c) -> Nat b y w");
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    Concrete.Expression expr = parseExpr(moduleLoader, "\\Pi (x y z : Nat) (w t : Nat -> Nat) -> \\Pi (a b : \\Pi (c : Nat) -> Nat c) -> Nat b y w");
     assertTrue(compare(Pi(args(Tele(vars("x", "y", "z"), DefCall(Prelude.NAT)), Tele(vars("w", "t"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Pi(args(Tele(vars("a", "b"), Pi("c", DefCall(Prelude.NAT), Apps(DefCall(Prelude.NAT), Index(0))))), Apps(DefCall(Prelude.NAT), Index(0), Index(5), Index(3)))), expr));
   }
 
   @Test
   public void parserPi2() {
-    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\Pi (x y : Nat) (z : Nat x -> Nat y) -> Nat z y x");
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    Concrete.Expression expr = parseExpr(moduleLoader, "\\Pi (x y : Nat) (z : Nat x -> Nat y) -> Nat z y x");
     assertTrue(compare(Pi(args(Tele(vars("x", "y"), DefCall(Prelude.NAT)), Tele(vars("z"), Pi(Apps(DefCall(Prelude.NAT), Index(1)), Apps(DefCall(Prelude.NAT), Index(0))))), Apps(DefCall(Prelude.NAT), Index(0), Index(1), Index(2))), expr));
   }
 
@@ -77,6 +87,7 @@ public class ParserTest {
     ClassDefinition result = parseDefs(moduleLoader,
         "\\function x : Nat => zero\n" +
             "\\function y : Nat => x");
+    assertNotNull(result.getChildren());
     assertEquals(2, result.getChildren().size());
   }
 
@@ -87,12 +98,15 @@ public class ParserTest {
     ClassDefinition result = parseDefs(moduleLoader,
         "\\function x : \\Type0 => Nat\n" +
             "\\function y : x => zero");
+    assertNotNull(result.getChildren());
     assertEquals(2, result.getChildren().size());
   }
 
   @Test
   public void parserImplicit() {
-    FunctionDefinition def = (FunctionDefinition) parseDef(new ModuleLoader(), "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} (A : Nat -> Nat -> Nat -> Nat -> Nat -> Nat -> \\Type0) : A x y z w t r");
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    FunctionDefinition def = (FunctionDefinition) parseDef(moduleLoader, "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} (A : Nat -> Nat -> Nat -> Nat -> Nat -> Nat -> \\Type0) : A x y z w t r");
     assertEquals(5, def.getArguments().size());
     assertTrue(def.getArguments().get(0).getExplicit());
     assertFalse(def.getArguments().get(1).getExplicit());
@@ -107,7 +121,9 @@ public class ParserTest {
 
   @Test
   public void parserImplicit2() {
-    FunctionDefinition def = (FunctionDefinition) parseDef(new ModuleLoader(), "\\function f {x : Nat} (_ : Nat) {y z : Nat} (A : Nat -> Nat -> Nat -> \\Type0) (_ : A x y z) : Nat");
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    FunctionDefinition def = (FunctionDefinition) parseDef(moduleLoader, "\\function f {x : Nat} (_ : Nat) {y z : Nat} (A : Nat -> Nat -> Nat -> \\Type0) (_ : A x y z) : Nat");
     assertEquals(5, def.getArguments().size());
     assertFalse(def.getArguments().get(0).getExplicit());
     assertTrue(def.getArguments().get(1).getExplicit());
@@ -128,8 +144,8 @@ public class ParserTest {
     Definition mul = new FunctionDefinition("*", null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
 
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.rootModule().add(plus, null);
-    moduleLoader.rootModule().add(mul, null);
+    moduleLoader.rootModule().addField(plus, null);
+    moduleLoader.rootModule().addField(mul, null);
     CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
@@ -139,9 +155,12 @@ public class ParserTest {
 
   @Test
   public void parserInfixDef() {
-    ClassDefinition result = parseDefs(new ModuleLoader(),
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    ClassDefinition result = parseDefs(moduleLoader,
         "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
             "\\function (*) : Nat -> Nat => \\lam x => x + zero");
+    assertNotNull(result.getChildren());
     assertEquals(2, result.getChildren().size());
   }
 
@@ -153,8 +172,8 @@ public class ParserTest {
     Definition mul = new FunctionDefinition("*", null, new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), Definition.Fixity.INFIX, arguments, Nat(), Definition.Arrow.LEFT, null);
 
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.rootModule().add(plus, null);
-    moduleLoader.rootModule().add(mul, null);
+    moduleLoader.rootModule().addField(plus, null);
+    moduleLoader.rootModule().addField(mul, null);
     new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, "11 + 2 * 3").expr()).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(1, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());

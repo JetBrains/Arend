@@ -497,26 +497,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    TypeCheckingError error = null;
     if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).typeHasErrors() || !(expr.getDefinition() instanceof FunctionDefinition) && expr.getDefinition().hasErrors()) {
-      error = new HasErrors(expr.getDefinition().getName(), expr);
-    } else {
-      if (!expr.getDefinition().isRelativelyStatic(myParent)) {
-        error = new TypeCheckingError("Non-static method call", expr, null);
-      }
-    }
-
-    if (error != null) {
+      TypeCheckingError error = new HasErrors(expr.getDefinition().getName(), expr);
       expr.setWellTyped(Error(DefCall(expr.getDefinition()), error));
       myModuleLoader.getTypeCheckingErrors().add(error);
       return null;
-    } else {
-      if (expr.getDefinition().isAbstract()) {
-        myAbstractCalls.add(expr.getDefinition());
-      }
-
-      return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
     }
+
+    if (expr.getDefinition().isAbstract()) {
+      myAbstractCalls.add(expr.getDefinition());
+    }
+
+    return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
   }
 
   @Override
@@ -1183,16 +1175,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitClassExt(Abstract.ClassExtExpression expr, Expression expectedType) {
-    TypeCheckingError error = null;
     if (expr.getBaseClass().hasErrors()) {
-      error = new HasErrors(expr.getBaseClass().getName(), expr);
-    } else {
-      if (!expr.getBaseClass().isRelativelyStatic(myParent)) {
-        error = new TypeCheckingError("Non-static method call", expr, getNames(myLocalContext));
-      }
-    }
-
-    if (error != null) {
+      TypeCheckingError error = new HasErrors(expr.getBaseClass().getName(), expr);
       expr.setWellTyped(Error(DefCall(expr.getBaseClass()), error));
       myModuleLoader.getTypeCheckingErrors().add(error);
       return null;
@@ -1202,7 +1186,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getBaseClass()), expr.getBaseClass().getType(), null), expr);
     }
 
-    Map<String, FunctionDefinition> abstracts = new HashMap<>(expr.getBaseClass().getAbstracts());
+    // TODO
+    Map<String, FunctionDefinition> abstracts = new HashMap<>(); // new HashMap<>(expr.getBaseClass().getAbstracts());
     Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
     for (Abstract.FunctionDefinition definition : expr.getDefinitions()) {
       FunctionDefinition oldDefinition = abstracts.remove(definition.getName());

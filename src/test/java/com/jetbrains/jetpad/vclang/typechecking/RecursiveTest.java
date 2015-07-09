@@ -38,6 +38,7 @@ public class RecursiveTest {
   @Test
   public void plus() {
     ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => suc (x' + y)");
     assertFalse(definition.hasErrors());
   }
@@ -45,6 +46,7 @@ public class RecursiveTest {
   @Test
   public void doubleRec() {
     ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => suc x'' + (x'' + y)");
     assertFalse(definition.hasErrors());
   }
@@ -52,6 +54,7 @@ public class RecursiveTest {
   @Test
   public void functionError() {
     ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= x + y", 1);
     assertTrue(definition.hasErrors());
   }
@@ -59,6 +62,7 @@ public class RecursiveTest {
   @Test
   public void functionError2() {
     ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => y + y", 1);
     assertTrue(definition.hasErrors());
   }

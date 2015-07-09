@@ -81,7 +81,8 @@ public class ModuleSerialization {
               ((DataDefinition) parent).getConstructors().add((Constructor) childModule);
             } else
             if (parent instanceof ClassDefinition) {
-              ((ClassDefinition) parent).add(childModule, false, ModuleLoader.getInstance().getErrors());
+              // TODO
+              // ((ClassDefinition) parent).add(childModule, false, ModuleLoader.getInstance().getErrors());
             } else {
               throw new IncorrectFormat();
             }
@@ -271,12 +272,16 @@ public class ModuleSerialization {
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
     int size = 0;
+    // TODO
+    /*
     for (List<Definition> fields : definition.getFieldsMap().values()) {
       size += fields.size();
     }
     visitor.getDataStream().writeInt(size);
+    */
 
     int errors = 0;
+    /*
     for (List<Definition> fields : definition.getFieldsMap().values()) {
       for (Definition field : fields) {
         visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
@@ -286,10 +291,15 @@ public class ModuleSerialization {
         }
       }
     }
+    */
 
-    visitor.getDataStream().writeInt(definition.getChildren().size());
-    for (Definition child : definition.getChildren()) {
-      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(child));
+    if (definition.getChildren() != null) {
+      visitor.getDataStream().writeInt(definition.getChildren().size());
+      for (Definition child : definition.getChildren()) {
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(child));
+      }
+    } else {
+      visitor.getDataStream().writeInt(0);
     }
 
     return errors;
@@ -305,13 +315,15 @@ public class ModuleSerialization {
       if (isChild) {
         deserializeDefinition(stream, definitionMap, field);
       } else {
-        definition.add(field, false, ModuleLoader.getInstance().getErrors());
+        // TODO
+        // definition.add(field, false, ModuleLoader.getInstance().getErrors());
       }
     }
 
     size = stream.readInt();
     for (int i = 0; i < size; ++i) {
-      definition.addExport(definitionMap.get(stream.readInt()), ModuleLoader.getInstance().getErrors());
+      // TODO
+      // definition.addExport(definitionMap.get(stream.readInt()), ModuleLoader.getInstance().getErrors());
     }
   }
 

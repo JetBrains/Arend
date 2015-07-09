@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
@@ -136,20 +135,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return visitDefData((DefDataContext) ctx);
     } else
     if (ctx instanceof DefClassContext) {
-      String name = ((DefClassContext) ctx).ID().getText();
-      Definition typedDef = myParent.findChild(name);
-      ClassDefinition classDef;
-      if (typedDef == null) {
-        classDef = new ClassDefinition(name, myParent);
-        myParent.add(classDef, myModuleLoader.getErrors());
-      } else {
-        if (!(typedDef instanceof ClassDefinition)) {
-          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), name + " is already defined"));
-          return null;
-        }
-        classDef = (ClassDefinition) typedDef;
-      }
-
+      ClassDefinition classDef = myParent.getClass(((DefClassContext) ctx).ID().getText(), myModuleLoader.getErrors());
+      if (classDef == null) return null;
       ClassDefinition oldParent = myParent;
       myParent = classDef;
       visitDefClass((DefClassContext) ctx);
@@ -157,7 +144,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return classDef;
     } else
     if (ctx instanceof DefCmdContext) {
-      // TODO
       visitDefCmd((DefCmdContext) ctx);
       return null;
     } else
@@ -170,6 +156,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Void visitDefCmd(DefCmdContext ctx) {
+    // TODO
+    /*
     if (ctx == null) return null;
     Definition module = visitModule(ctx.name(0), ctx.fieldAcc());
     if (module == null) return null;
@@ -193,9 +181,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
       }
     } else {
-      Collection<? extends Definition> children = module.getChildren();
-      if (children == null) return null;
-      for (Definition definition : children) {
+      if (module.getChildren() == null) return null;
+      for (Definition definition : module.getChildren()) {
         if (remove) {
           myParent.remove(definition);
         } else {
@@ -205,6 +192,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
       }
     }
+    */
     return null;
   }
 
@@ -382,7 +370,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     trimToSize(myContext, origSize);
-    TypeChecking.typeCheckDataEnd(myModuleLoader, def, typedDef, null);
+    TypeChecking.typeCheckDataEnd(myModuleLoader, myParent, def, typedDef, null);
     return typedDef;
   }
 
@@ -530,18 +518,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         continue;
       }
 
-      List<Definition> children = ((ClassDefinition) definition).getFields(name);
-      if (children != null && !children.isEmpty()) {
-        if (children.size() > 1) {
-          String msg = "ambiguous occurrence";
-          for (Definition child1 : children) {
-            msg += "\n\t" + child1.getName() + (child1.getParent() == definition ? " defined in " : " imported from ") + child1.getParent().getFullName();
-          }
-          myModuleLoader.getErrors().add(new ParserError(myModule, position, msg));
-          return null;
-        } else {
-          return new Concrete.DefCallExpression(position, children.get(0));
-        }
+      Definition field = ((ClassDefinition) definition).getPrivateField(name);
+      if (field != null) {
+        return new Concrete.DefCallExpression(position, field);
       }
     }
 

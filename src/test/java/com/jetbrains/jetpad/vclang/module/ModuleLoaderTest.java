@@ -6,8 +6,7 @@ import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parse;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ModuleLoaderTest {
   @Test
@@ -78,7 +77,9 @@ public class ModuleLoaderTest {
     moduleLoader.loadModule(moduleA, false);
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+    assertNotNull(moduleLoader.rootModule().findChild("A").getChildren());
     assertEquals(2, moduleLoader.rootModule().findChild("A").getChildren().size());
+    assertNotNull(moduleLoader.rootModule().findChild("A").findChild("C").getChildren());
     assertEquals(2, moduleLoader.rootModule().findChild("A").findChild("C").getChildren().size());
   }
 
@@ -130,9 +131,12 @@ public class ModuleLoaderTest {
   @Test
   public void numberOfFieldsTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
-    assertEquals(2, moduleLoader.rootModule().getChildren().size());
-    assertEquals(2, moduleLoader.rootModule().getFields().size());
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    ClassDefinition result = parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
+    assertNotNull(result.getChildren());
+    assertEquals(2, result.getChildren().size());
+    assertNotNull(result.getFields());
+    assertEquals(2, result.getFields().size());
   }
 
   @Test

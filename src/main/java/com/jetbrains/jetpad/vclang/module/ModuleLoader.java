@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 
 import java.io.IOException;
@@ -28,7 +26,6 @@ public class ModuleLoader {
   }
 
   public void init(SourceSupplier sourceSupplier, OutputSupplier outputSupplier, boolean recompile) {
-    myRoot.add(Prelude.PRELUDE, myErrors);
     mySourceSupplier = sourceSupplier;
     myOutputSupplier = outputSupplier;
     myRecompile = recompile;
@@ -40,10 +37,6 @@ public class ModuleLoader {
 
   public boolean isModuleLoaded(Module module) {
     return myLoadedModules.contains(module);
-  }
-
-  public boolean isModuleLoading(Module module) {
-    return myLoadingModules.contains(module);
   }
 
   public List<OutputUnit> getOutputUnits() {
@@ -58,29 +51,12 @@ public class ModuleLoader {
     return myTypeCheckingErrors;
   }
 
-  public ClassDefinition getModule(ClassDefinition parent, String name) {
-    Definition definition = parent.findChild(name);
-    if (definition == null) {
-      ClassDefinition result = new ClassDefinition(name, parent);
-      parent.add(result, myErrors);
-      result.hasErrors(true);
-      return result;
-    } else {
-      if (definition instanceof ClassDefinition) {
-        return (ClassDefinition) definition;
-      } else {
-        myErrors.add(new ModuleError(new Module(parent, name), name + " is already defined"));
-        return null;
-      }
-    }
-  }
-
   public ClassDefinition loadModule(Module module, boolean tryLoad) {
     if (myLoadingModules.contains(module)) {
       myErrors.add(new ModuleError(module, "modules dependencies form a cycle"));
       return null;
     }
-    ClassDefinition moduleDefinition = getModule(module.getParent(), module.getName());
+    ClassDefinition moduleDefinition = module.getParent().getClass(module.getName(), myErrors);
     if (moduleDefinition == null) {
       return null;
     }
@@ -96,14 +72,12 @@ public class ModuleLoader {
         if (!tryLoad) {
           myErrors.add(new ModuleError(module, "cannot find module"));
         }
-        if (moduleDefinition.hasErrors()) {
-          module.getParent().remove(moduleDefinition);
-        }
         return null;
       }
       compile = false;
     }
 
+    boolean ok = true;
     myLoadingModules.add(module);
     try {
       if (compile) {
@@ -128,6 +102,7 @@ public class ModuleLoader {
         int errorsNumber = output.read(moduleDefinition);
         if (errorsNumber != 0) {
           myErrors.add(new ModuleError(module, "module contains " + errorsNumber + (errorsNumber == 1 ? " error" : " errors")));
+          ok = false;
         } else {
           System.out.println("[Loaded] " + moduleDefinition.getFullName());
         }
@@ -135,18 +110,15 @@ public class ModuleLoader {
       }
     } catch (ModuleSerialization.DeserializationException e) {
       myErrors.add(new ModuleError(module, e.toString()));
+      ok = false;
     } catch (IOException e) {
       myErrors.add(new ModuleError(module, ModuleError.ioError(e)));
+      ok = false;
     }
     myLoadingModules.remove(myLoadingModules.size() - 1);
     myLoadedModules.add(module);
 
-    if (moduleDefinition.hasErrors()) {
-      module.getParent().remove(moduleDefinition);
-      return null;
-    } else {
-      return moduleDefinition;
-    }
+    return ok ? moduleDefinition : null;
   }
 
   public static class OutputUnit {

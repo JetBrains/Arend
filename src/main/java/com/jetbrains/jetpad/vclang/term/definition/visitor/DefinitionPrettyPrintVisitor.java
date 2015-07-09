@@ -119,14 +119,16 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
     myBuilder.append("\\class ").append(def.getName()).append(" {");
-    ++myIndent;
-    for (Abstract.Definition field : def.getFields()) {
-      myBuilder.append('\n');
-      PrettyPrintVisitor.printIndent(myBuilder, myIndent);
-      field.accept(this, null);
-      myBuilder.append('\n');
+    if (def.getFields() != null) {
+      ++myIndent;
+      for (Abstract.Definition field : def.getFields()) {
+        myBuilder.append('\n');
+        PrettyPrintVisitor.printIndent(myBuilder, myIndent);
+        field.accept(this, null);
+        myBuilder.append('\n');
+      }
+      --myIndent;
     }
-    --myIndent;
     myBuilder.append("}");
     return null;
   }

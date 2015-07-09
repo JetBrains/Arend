@@ -3,7 +3,9 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Set;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
   private final Definition myParent;
@@ -75,28 +77,6 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   }
 
   public boolean isAbstract() {
-    return false;
-  }
-
-  public boolean isRelativelyStatic(Definition definition) {
-    if (!isAbstract() && (myDependencies == null || myDependencies.isEmpty())) return true;
-    if (definition == null) return false;
-    if (definition.isDescendantOf(myParent)) return true;
-
-    Set<Definition> dependencies = new HashSet<>(myDependencies);
-    while (definition != null) {
-      if (definition instanceof ClassDefinition) {
-        for (List<Definition> definitions : ((ClassDefinition) definition).getFieldsMap().values()) {
-          for (Definition definition1 : definitions) {
-            if (definition1.isAbstract()) {
-              dependencies.remove(definition1);
-              if (dependencies.isEmpty()) return true;
-            }
-          }
-        }
-      }
-      definition = definition.getParent();
-    }
     return false;
   }
 

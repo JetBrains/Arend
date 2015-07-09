@@ -10,17 +10,13 @@ import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import java.util.*;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
-  private final Map<String, List<Definition>> myFields = new HashMap<>();
-  private final Map<String, Definition> myExports = new HashMap<>();
-  private final Map<String, FunctionDefinition> myAbstracts = new HashMap<>();
+  private List<Definition> myPublicFields;
+  private Map<String, Definition> myStaticFields;
+  private Map<String, Definition> myPrivateFields;
 
   public ClassDefinition(String name, Definition parent) {
     super(name, parent, DEFAULT_PRECEDENCE, Fixity.PREFIX);
     hasErrors(false);
-  }
-
-  public Map<String, FunctionDefinition> getAbstracts() {
-    return myAbstracts;
   }
 
   @Override
@@ -30,23 +26,31 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
 
   @Override
   public List<Definition> getFields() {
-    List<Definition> fields = new ArrayList<>(myFields.size());
-    for (List<Definition> definitions : myFields.values()) {
-      for (Definition definition : definitions) {
-        if (definition.getParent() == this) {
-          fields.add(definition);
-        }
+    return myPublicFields;
+  }
+
+  @Override
+  public Definition findChild(String name) {
+    return myStaticFields == null ? null : myStaticFields.get(name);
+  }
+
+  @Override
+  public Collection<Definition> getChildren() {
+    return myStaticFields == null ? null : myStaticFields.values();
+  }
+
+  public Definition getPublicField(String name) {
+    if (myPublicFields == null) return null;
+    for (Definition field : myPublicFields) {
+      if (field.getName().equals(name)) {
+        return field;
       }
     }
-    return fields;
+    return null;
   }
 
-  public Map<String, List<Definition>> getFieldsMap() {
-    return myFields;
-  }
-
-  public List<Definition> getFields(String name) {
-    return myFields.get(name);
+  public Definition getPrivateField(String name) {
+    return myPrivateFields == null ? null : myPrivateFields.get(name);
   }
 
   @Override
@@ -54,6 +58,71 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return visitor.visitClass(this, params);
   }
 
+  public ClassDefinition getClass(String name, List<ModuleError> errors) {
+    if (myPublicFields != null) {
+      Definition definition = getPublicField(name);
+      if (definition != null) {
+        if (definition instanceof ClassDefinition) {
+          return (ClassDefinition) definition;
+        } else {
+          errors.add(new ModuleError(new Module(this, name), "Name is already defined"));
+          return null;
+        }
+      }
+    }
+
+    ClassDefinition result = new ClassDefinition(name, this);
+    if (myPublicFields == null) {
+      myPublicFields = new ArrayList<>();
+    }
+    myPublicFields.add(result);
+    return result;
+  }
+
+  private boolean hasAbstracts() {
+    if (myPublicFields == null) return false;
+    for (Definition field : myPublicFields) {
+      if (field.isAbstract()) return true;
+    }
+    return false;
+  }
+
+  public boolean addPublicField(Definition definition, List<ModuleError> errors) {
+    Definition oldDefinition = getPublicField(definition.getName());
+    if (oldDefinition != null && !(oldDefinition instanceof ClassDefinition && definition instanceof ClassDefinition && (!((ClassDefinition) oldDefinition).hasAbstracts() || !((ClassDefinition) definition).hasAbstracts()))) {
+      errors.add(new ModuleError(new Module(this, definition.getName()), "Name is already defined"));
+      return false;
+    }
+
+    if (myPublicFields == null) {
+      myPublicFields = new ArrayList<>();
+    }
+    myPublicFields.add(definition);
+    return true;
+  }
+
+  public void addPrivateField(Definition definition) {
+    if (myPrivateFields == null) {
+      myPrivateFields = new HashMap<>();
+    }
+    myPrivateFields.put(definition.getName(), definition);
+  }
+
+  public void addStaticField(Definition definition) {
+    // TODO: check if definition is static & update dependencies and universe of the parent
+    if (myStaticFields == null) {
+      myStaticFields = new HashMap<>();
+    }
+    myStaticFields.put(definition.getName(), definition);
+  }
+
+  public boolean addField(Definition definition, List<ModuleError> errors) {
+    if (!addPublicField(definition, errors)) return false;
+    addPrivateField(definition);
+    return true;
+  }
+
+  /*
   public boolean add(Definition definition, List<ModuleError> errors) {
     return add(definition, definition.getParent() == this || definition instanceof Constructor && definition.getParent() != null && definition.getParent().getParent() == this, errors);
   }
@@ -87,7 +156,30 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       }
     }
 
-    return !export || addExport(definition, errors);
+    return true; // foundAny || !export || addExport(definition, errors);
+  }
+
+  public void addDependencies(Set<FunctionDefinition> dependencies) {
+    boolean foundAny = false;
+    if (dependencies != null) {
+      for (Definition dependency : definition.getDependencies()) {
+        boolean found = false;
+        for (FunctionDefinition abstractFunction : myAbstracts.values()) {
+          if (dependency == abstractFunction) {
+            found = true;
+            foundAny = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          if (getDependencies() == null) {
+            setDependencies(new HashSet<Definition>());
+          }
+          getDependencies().add(dependency);
+        }
+      }
+    }
   }
 
   public boolean addExport(Definition definition, List<ModuleError> errors) {
@@ -110,14 +202,5 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       myAbstracts.remove(definition.getName());
     }
   }
-
-  @Override
-  public Definition findChild(String name) {
-    return myExports.get(name);
-  }
-
-  @Override
-  public Collection<Definition> getChildren() {
-    return myExports.values();
-  }
+  */
 }

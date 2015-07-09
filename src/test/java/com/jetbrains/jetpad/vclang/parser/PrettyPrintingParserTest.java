@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.module.DummyOutputSupplier;
+import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -24,6 +26,7 @@ import static org.junit.Assert.*;
 public class PrettyPrintingParserTest {
   private void testExpr(Expression expected, Expression expr) throws UnsupportedEncodingException {
     ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     StringBuilder builder = new StringBuilder();
     expr.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     Concrete.Expression result = parseExpr(moduleLoader, builder.toString());
@@ -70,6 +73,7 @@ public class PrettyPrintingParserTest {
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
     // f {x : Nat} (A : Nat -> \Type0) : A x -> (Nat -> Nat) -> Nat -> Nat => \t y z. y z;
     ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     FunctionDefinition def = new FunctionDefinition("f", moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, lamArgs(Tele(false, vars("x"), Nat()), Tele(vars("A"), Pi(Nat(), Universe(0)))), Pi(Apps(Index(0), Index(1)), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), Definition.Arrow.RIGHT, Lam(lamArgs(Name("t"), Name("y"), Name("z")), Apps(Index(1), Index(0))));
     testDef(moduleLoader, def, def);
   }
@@ -78,13 +82,14 @@ public class PrettyPrintingParserTest {
   public void prettyPrintingParserElim() throws UnsupportedEncodingException {
     // \function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \elim x | zero => y | suc x' => z (foo z x')
     ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
 
     List<Clause> fooClausesActual = new ArrayList<>();
     ElimExpression fooTermActual = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), fooClausesActual, null);
     FunctionDefinition fooDef = new FunctionDefinition("foo", moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, lamArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, fooTermActual);
     fooClausesActual.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), fooTermActual));
     fooClausesActual.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), fooTermActual));
-    moduleLoader.rootModule().add(fooDef, null);
+    moduleLoader.rootModule().addField(fooDef, null);
 
     List<Clause> clausesActual = new ArrayList<>();
     ElimExpression termActual = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clausesActual, null);
