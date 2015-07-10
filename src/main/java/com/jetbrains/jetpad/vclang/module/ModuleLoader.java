@@ -6,7 +6,9 @@ import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ModuleLoader {
   private final ClassDefinition myRoot = new ClassDefinition("\\root", null);
@@ -14,7 +16,7 @@ public class ModuleLoader {
   private SourceSupplier mySourceSupplier;
   private OutputSupplier myOutputSupplier;
   private boolean myRecompile;
-  private final List<Module> myLoadedModules = new ArrayList<>();
+  private final Set<Module> myLoadedModules = new HashSet<>();
   private final List<OutputUnit> myOutputUnits = new ArrayList<>();
   private final List<ModuleError> myErrors = new ArrayList<>();
   private final List<TypeCheckingError> myTypeCheckingErrors = new ArrayList<>();
@@ -52,12 +54,13 @@ public class ModuleLoader {
   }
 
   public ClassDefinition loadModule(Module module, boolean tryLoad) {
-    if (myLoadingModules.contains(module)) {
-      myErrors.add(new ModuleError(module, "modules dependencies form a cycle"));
-      return null;
-    }
-    ClassDefinition moduleDefinition = module.getParent().getClass(module.getName(), myErrors);
-    if (moduleDefinition == null) {
+    int index = myLoadingModules.indexOf(module);
+    if (index != -1) {
+      String msg = "modules dependencies form a cycle: ";
+      for (; index < myLoadingModules.size(); ++index) {
+        msg += myLoadingModules.get(index) + " - ";
+      }
+      myErrors.add(new ModuleError(module, msg + module));
       return null;
     }
 
@@ -77,7 +80,11 @@ public class ModuleLoader {
       compile = false;
     }
 
-    boolean ok = true;
+    ClassDefinition moduleDefinition = module.getParent().getClass(module.getName(), myErrors);
+    if (moduleDefinition == null) {
+      return null;
+    }
+
     myLoadingModules.add(module);
     try {
       if (compile) {
@@ -102,7 +109,6 @@ public class ModuleLoader {
         int errorsNumber = output.read(moduleDefinition);
         if (errorsNumber != 0) {
           myErrors.add(new ModuleError(module, "module contains " + errorsNumber + (errorsNumber == 1 ? " error" : " errors")));
-          ok = false;
         } else {
           System.out.println("[Loaded] " + moduleDefinition.getFullName());
         }
@@ -110,15 +116,18 @@ public class ModuleLoader {
       }
     } catch (ModuleSerialization.DeserializationException e) {
       myErrors.add(new ModuleError(module, e.toString()));
-      ok = false;
     } catch (IOException e) {
       myErrors.add(new ModuleError(module, ModuleError.ioError(e)));
-      ok = false;
     }
     myLoadingModules.remove(myLoadingModules.size() - 1);
     myLoadedModules.add(module);
 
-    return ok ? moduleDefinition : null;
+    if (moduleDefinition.hasErrors()) {
+      module.getParent().removeField(moduleDefinition);
+    } else {
+      module.getParent().addStaticField(moduleDefinition, myErrors);
+    }
+    return moduleDefinition;
   }
 
   public static class OutputUnit {

@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrint
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
@@ -86,6 +87,13 @@ public abstract class Definition extends Binding implements Abstract.Definition 
 
   public void setDependencies(Set<Definition> dependencies) {
     myDependencies = dependencies;
+  }
+
+  public void addDependecy(Definition dependency) {
+    if (myDependencies == null) {
+      myDependencies = new HashSet<>();
+    }
+    myDependencies.add(dependency);
   }
 
   @Override

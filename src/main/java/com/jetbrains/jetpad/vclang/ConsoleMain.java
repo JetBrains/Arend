@@ -118,7 +118,11 @@ public class ConsoleMain {
 
     ClassDefinition module = ModuleLoader.getInstance().rootModule();
     for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      module = module.getClass(moduleNames.get(i), ModuleLoader.getInstance().getErrors());
+      ClassDefinition module1 = module.getClass(moduleNames.get(i), ModuleLoader.getInstance().getErrors());
+      if (module1 == null) return;
+      module1.hasErrors(false);
+      module.addStaticField(module1, ModuleLoader.getInstance().getErrors());
+      module = module1;
     }
     Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));
     if (!ModuleLoader.getInstance().isModuleLoaded(newModule)) {

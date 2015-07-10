@@ -137,10 +137,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx instanceof DefClassContext) {
       ClassDefinition classDef = myParent.getClass(((DefClassContext) ctx).ID().getText(), myModuleLoader.getErrors());
       if (classDef == null) return null;
+      classDef.hasErrors(false);
       ClassDefinition oldParent = myParent;
       myParent = classDef;
       visitDefClass((DefClassContext) ctx);
       myParent = oldParent;
+      myParent.addStaticField(classDef, myModuleLoader.getErrors());
       return classDef;
     } else
     if (ctx instanceof DefCmdContext) {
@@ -677,7 +679,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
             }
           }
           if (classField == null) {
-            myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), name + " is not defined in " + definition.getFullName()));
+            myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), name + " is not a static field of " + definition.getFullName()));
             return null;
           }
           expr = new Concrete.DefCallExpression(expr.getPosition(), classField);

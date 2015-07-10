@@ -20,7 +20,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
     moduleLoader.loadModule(moduleA, false);
-    assertEquals(1, moduleLoader.getErrors().size());
+    assertTrue(moduleLoader.getErrors().size() > 0);
   }
 
   @Test
@@ -78,9 +78,10 @@ public class ModuleLoaderTest {
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertNotNull(moduleLoader.rootModule().findChild("A").getChildren());
-    assertEquals(2, moduleLoader.rootModule().findChild("A").getChildren().size());
-    assertNotNull(moduleLoader.rootModule().findChild("A").findChild("C").getChildren());
-    assertEquals(2, moduleLoader.rootModule().findChild("A").findChild("C").getChildren().size());
+    assertEquals(1, moduleLoader.rootModule().findChild("A").getChildren().size());
+    assertEquals(2, ((ClassDefinition) moduleLoader.rootModule().findChild("A")).getFields().size());
+    assertTrue(moduleLoader.rootModule().findChild("A").findChild("C").getChildren() == null || moduleLoader.rootModule().findChild("A").findChild("C").getChildren().isEmpty());
+    assertEquals(2, ((ClassDefinition) moduleLoader.rootModule().findChild("A").findChild("C")).getFields().size());
   }
 
   @Test
@@ -109,8 +110,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
     moduleLoader.loadModule(moduleB, false);
-    assertEquals(0, moduleLoader.getErrors().size());
-    assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
+    assertEquals(1, moduleLoader.getErrors().size());
   }
 
   @Test

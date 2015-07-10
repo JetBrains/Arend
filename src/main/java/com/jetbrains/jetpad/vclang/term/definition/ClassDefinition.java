@@ -72,10 +72,15 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     }
 
     ClassDefinition result = new ClassDefinition(name, this);
+    result.hasErrors(true);
     if (myPublicFields == null) {
       myPublicFields = new ArrayList<>();
     }
     myPublicFields.add(result);
+    if (myPrivateFields == null) {
+      myPrivateFields = new HashMap<>();
+    }
+    myPrivateFields.put(result.getName(), result);
     return result;
   }
 
@@ -108,12 +113,35 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     myPrivateFields.put(definition.getName(), definition);
   }
 
-  public void addStaticField(Definition definition) {
-    // TODO: check if definition is static & update dependencies and universe of the parent
-    if (myStaticFields == null) {
-      myStaticFields = new HashMap<>();
+  public boolean addStaticField(Definition definition, List<ModuleError> errors) {
+    if (definition.isAbstract()) {
+      Universe max = getUniverse().max(definition.getUniverse());
+      if (max == null) {
+        String msg = "Universe " + definition.getUniverse() + " of the field is not compatible with universe " + getUniverse() + " of previous fields";
+        errors.add(new ModuleError(new Module(this, definition.getName()), msg));
+        return false;
+      }
+      setUniverse(max);
     }
-    myStaticFields.put(definition.getName(), definition);
+
+    boolean isStatic = true;
+    if (definition.getDependencies() != null) {
+      for (Definition dependency : definition.getDependencies()) {
+        if (myPublicFields.contains(dependency)) {
+          isStatic = false;
+        } else {
+          addDependecy(dependency);
+        }
+      }
+    }
+    if (isStatic) {
+      if (myStaticFields == null) {
+        myStaticFields = new HashMap<>();
+      }
+      myStaticFields.put(definition.getName(), definition);
+    }
+
+    return true;
   }
 
   public boolean addField(Definition definition, List<ModuleError> errors) {
@@ -122,85 +150,12 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return true;
   }
 
-  /*
-  public boolean add(Definition definition, List<ModuleError> errors) {
-    return add(definition, definition.getParent() == this || definition instanceof Constructor && definition.getParent() != null && definition.getParent().getParent() == this, errors);
-  }
-
-  public boolean add(Definition definition, boolean export, List<ModuleError> errors) {
-    if (definition instanceof FunctionDefinition && definition.isAbstract()) {
-      Universe max = getUniverse().max(definition.getUniverse());
-      if (max == null) {
-        String msg = "Universe " + definition.getUniverse() + " of the field is not compatible with universe " + getUniverse() + " of previous fields";
-        errors.add(new ModuleError(new Module(this, definition.getName()), msg));
-        return false;
-      }
-
-      Definition old = myAbstracts.putIfAbsent(definition.getName(), (FunctionDefinition) definition);
-      if (old != null) {
-        errors.add(new ModuleError(new Module(this, definition.getName()), "Name is already defined"));
-        return false;
-      }
-
-      setUniverse(max);
+  public void removeField(Definition definition) {
+    if (myPublicFields != null) {
+      myPublicFields.remove(definition);
     }
-
-    List<Definition> children = myFields.get(definition.getName());
-    if (children == null) {
-      children = new ArrayList<>(1);
-      children.add(definition);
-      myFields.put(definition.getName(), children);
-    } else {
-      if (!children.contains(definition)) {
-        children.add(definition);
-      }
-    }
-
-    return true; // foundAny || !export || addExport(definition, errors);
-  }
-
-  public void addDependencies(Set<FunctionDefinition> dependencies) {
-    boolean foundAny = false;
-    if (dependencies != null) {
-      for (Definition dependency : definition.getDependencies()) {
-        boolean found = false;
-        for (FunctionDefinition abstractFunction : myAbstracts.values()) {
-          if (dependency == abstractFunction) {
-            found = true;
-            foundAny = true;
-            break;
-          }
-        }
-
-        if (!found) {
-          if (getDependencies() == null) {
-            setDependencies(new HashSet<Definition>());
-          }
-          getDependencies().add(dependency);
-        }
-      }
+    if (myPrivateFields != null) {
+      myPrivateFields.remove(definition.getName(), definition);
     }
   }
-
-  public boolean addExport(Definition definition, List<ModuleError> errors) {
-    Definition old = myExports.putIfAbsent(definition.getName(), definition);
-    if (old != null) {
-      errors.add(new ModuleError(new Module(this, definition.getName()), "Name is already exported"));
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  public void remove(Definition definition) {
-    myExports.remove(definition.getName());
-    List<Definition> definitions = myFields.get(definition.getName());
-    if (definitions != null) {
-      definitions.remove(definition);
-    }
-    if (definition instanceof FunctionDefinition && definition.isAbstract()) {
-      myAbstracts.remove(definition.getName());
-    }
-  }
-  */
 }

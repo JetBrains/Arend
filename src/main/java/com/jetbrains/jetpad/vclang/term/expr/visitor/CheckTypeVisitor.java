@@ -1107,8 +1107,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     boolean notInScope = false;
 
     if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
-      Definition parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : ((DefCallExpression) type).getDefinition();
-      Definition child = parent.findChild(expr.getName());
+      ClassDefinition parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
+      Definition child = parent.getPublicField(expr.getName());
       if (child != null) {
         if (child.hasErrors()) {
           TypeCheckingError error = new HasErrors(child.getName(), expr);

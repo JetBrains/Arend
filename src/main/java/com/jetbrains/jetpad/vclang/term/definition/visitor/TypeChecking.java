@@ -88,7 +88,7 @@ public class TypeChecking {
       moduleLoader.getTypeCheckingErrors().add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
     }
 
-    parent.addStaticField(definition);
+    parent.addStaticField(definition, moduleLoader.getErrors());
   }
 
   public static Constructor typeCheckConstructor(ModuleLoader moduleLoader, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext, int conIndex) {
@@ -98,6 +98,7 @@ public class TypeChecking {
     int index = 1;
     boolean ok = true;
     CheckTypeVisitor visitor = new CheckTypeVisitor(dataDefinition, localContext, dataDefinition.getDependencies(), moduleLoader, CheckTypeVisitor.Side.RHS);
+
     for (Abstract.TypeArgument argument : con.getArguments()) {
       CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
       if (result == null) {
@@ -370,6 +371,6 @@ public class TypeChecking {
       }
     }
 
-    parent.addStaticField(definition);
+    parent.addStaticField(definition, moduleLoader.getErrors());
   }
 }

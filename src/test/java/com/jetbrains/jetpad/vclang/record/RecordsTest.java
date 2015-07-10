@@ -3,9 +3,12 @@ package com.jetbrains.jetpad.vclang.record;
 import com.jetbrains.jetpad.vclang.module.DummyOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
+import static org.junit.Assert.assertEquals;
 
 public class RecordsTest {
   @Test
@@ -195,5 +198,14 @@ public class RecordsTest {
           "\\function y : Nat\n" +
         "}";
     parseDefs(moduleLoader, text, 1);
+  }
+
+  @Test
+  public void recordUniverseTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    ClassDefinition result = parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
+    assertEquals(new Universe.Type(0), result.getPublicField("Point").getUniverse());
+    assertEquals(new Universe.Type(0), result.getPublicField("C").getUniverse());
   }
 }
