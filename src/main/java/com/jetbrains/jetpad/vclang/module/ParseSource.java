@@ -10,7 +10,6 @@ import org.antlr.v4.runtime.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 
 public abstract class ParseSource implements Source {
   private final ModuleLoader myModuleLoader;
@@ -44,7 +43,7 @@ public abstract class ParseSource implements Source {
 
     VcgrammarParser.DefsContext tree = parser.defs();
     if (errorsCount != myModuleLoader.getErrors().size()) return false;
-    new BuildVisitor(classDefinition, myModuleLoader).visitDefs(tree);
+    new BuildVisitor(classDefinition, myModuleLoader).fillClass(tree);
     return errorsCount == myModuleLoader.getErrors().size();
   }
 }

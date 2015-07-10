@@ -62,8 +62,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
     moduleLoader.loadModule(moduleB, false);
-    assertEquals(0, moduleLoader.getErrors().size());
-    assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
+    assertEquals(1, moduleLoader.getErrors().size());
   }
 
   @Test
@@ -124,8 +123,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
     moduleLoader.loadModule(moduleB, false);
-    assertEquals(0, moduleLoader.getErrors().size());
-    assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
+    assertEquals(1, moduleLoader.getErrors().size());
   }
 
   @Test

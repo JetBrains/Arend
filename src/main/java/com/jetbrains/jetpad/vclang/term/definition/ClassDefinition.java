@@ -84,7 +84,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return result;
   }
 
-  private boolean hasAbstracts() {
+  public boolean hasAbstracts() {
     if (myPublicFields == null) return false;
     for (Definition field : myPublicFields) {
       if (field.isAbstract()) return true;

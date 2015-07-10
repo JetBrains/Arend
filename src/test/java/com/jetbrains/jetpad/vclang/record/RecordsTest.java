@@ -59,12 +59,12 @@ public class RecordsTest {
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     parseDefs(moduleLoader,
         "\\class A {\n" +
-            "\\function c : Nat -> Nat -> Nat\n" +
-            "\\function f : Nat -> Nat\n" +
-            "}\n" +
-            "\\function B => A {\n" +
-            "\\override f n <= c n n\n" +
-            "}");
+          "\\function c : Nat -> Nat -> Nat\n" +
+          "\\function f : Nat -> Nat\n" +
+        "}\n" +
+          "\\function B => A {\n" +
+          "\\override f n <= c n n\n" +
+        "}");
   }
 
   @Test
@@ -197,7 +197,7 @@ public class RecordsTest {
         "\\class A {\n" +
           "\\function y : Nat\n" +
         "}";
-    parseDefs(moduleLoader, text, 1);
+    parseDefs(moduleLoader, text, 1, 0);
   }
 
   @Test

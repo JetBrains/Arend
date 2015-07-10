@@ -22,6 +22,8 @@ public class ModuleSerialization {
   private static final byte[] SIGNATURE = { 'v', 'c', (byte) 0xb1, 0x0b };
   private static final int VERSION = 0;
 
+  // TODO: add noAbstract check.
+
   public static void writeFile(ClassDefinition def, File outputFile) throws IOException {
     Files.createDirectories(outputFile.getParentFile().toPath());
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
@@ -121,7 +123,7 @@ public class ModuleSerialization {
         functionDefinition.getResultType().accept(visitor);
       }
       visitor.getDataStream().write(functionDefinition.getArrow() == null ? 0 : functionDefinition.getArrow() == Abstract.Definition.Arrow.LEFT ? 1 : 2);
-      if (!definition.hasErrors()) {
+      if (!definition.hasErrors() && !functionDefinition.isAbstract()) {
         functionDefinition.getTerm().accept(visitor);
       }
       return definition.hasErrors() ? 1 : 0;
@@ -225,7 +227,7 @@ public class ModuleSerialization {
         throw new IncorrectFormat();
       }
       functionDefinition.setArrow(arrowCode == 0 ? null : arrowCode == 1 ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT);
-      if (!functionDefinition.hasErrors()) {
+      if (!functionDefinition.hasErrors() && !functionDefinition.isAbstract()) {
         functionDefinition.setTerm(readExpression(stream, definitionMap));
       }
     } else

@@ -21,6 +21,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<String> myContext = new ArrayList<>();
   private final Module myModule;
   private final ModuleLoader myModuleLoader;
+  private boolean myNoAbstracts = false;
 
   public BuildVisitor(ClassDefinition parent, ModuleLoader moduleLoader) {
     myParent = parent;
@@ -96,6 +97,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.Expression) visit(expr);
   }
 
+  public void fillClass(DefsContext ctx) {
+    myNoAbstracts = myParent.hasAbstracts();
+    visitDefs(ctx);
+  }
+
   @Override
   public Void visitDefs(DefsContext ctx) {
     if (ctx == null) return null;
@@ -140,7 +146,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       classDef.hasErrors(false);
       ClassDefinition oldParent = myParent;
       myParent = classDef;
+      boolean oldNoAbstracts = myNoAbstracts;
+      myNoAbstracts = classDef.hasAbstracts();
       visitDefClass((DefClassContext) ctx);
+      myNoAbstracts = oldNoAbstracts;
       myParent = oldParent;
       myParent.addStaticField(classDef, myModuleLoader.getErrors());
       return classDef;
@@ -204,6 +213,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     ExprContext typeCtx = ctx.typeTermOpt() instanceof WithTypeContext ? ((WithTypeContext) ctx.typeTermOpt()).expr() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).expr(0) : null;
     ArrowContext arrowCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).arrow() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).arrow() : null;
     ExprContext termCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).expr() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).expr(1) : null;
+    if (termCtx == null && myNoAbstracts) {
+      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), "Previous definition of class " + myParent.getName() + " already has abstract fields"));
+      return null;
+    }
     return visitDefFunction(false, ctx.precedence(), ctx.name(), ctx.tele(), typeCtx, arrowCtx, termCtx);
   }
 
