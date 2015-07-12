@@ -84,6 +84,20 @@ public final class Abstract {
     Expression getBody();
   }
 
+  public interface LetClause extends PrettyPrintableSourceNode {
+    Expression getType();
+    Expression getExpression();
+    Definition.Arrow getArrow();
+    String getName();
+  }
+
+  public interface LetExpression extends Expression {
+    byte PREC = -9;
+
+    List<? extends LetClause> getClauses();
+    Expression getExpression();
+  }
+
   public interface TupleExpression extends Expression {
     byte PREC = 12;
     List<? extends Expression> getFields();

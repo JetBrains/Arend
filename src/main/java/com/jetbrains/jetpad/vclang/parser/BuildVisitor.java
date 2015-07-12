@@ -167,7 +167,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     boolean export = ctx.nsCmd() instanceof ExportCmdContext;
     if (ctx.name().size() > 1) {
       for (int i = 1; i < ctx.name().size(); ++i) {
-        String name = ctx.name(i) instanceof NameBinOpContext ? ((NameBinOpContext) ctx.name(i)).BIN_OP().getText() : ((NameIdContext) ctx.name(i)).ID().getText();
+        String name = getName(ctx.name(i));
         Definition definition = module.findChild(name);
         if (definition == null) {
           myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name(i).getStart()), name + " is not exported from " + module.getFullName()));
@@ -214,16 +214,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private ModuleLoader.TypeCheckingUnit visitDefFunction(boolean overridden, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, ExprContext typeCtx, ArrowContext arrowCtx, ExprContext termCtx) {
-    boolean isPrefix = nameCtx instanceof NameIdContext;
-    String name;
-    Concrete.Position position;
-    if (isPrefix) {
-      name = ((NameIdContext) nameCtx).ID().getText();
-      position = tokenPosition(((NameIdContext) nameCtx).ID().getSymbol());
-    } else {
-      name = ((NameBinOpContext) nameCtx).BIN_OP().getText();
-      position = tokenPosition(((NameBinOpContext) nameCtx).BIN_OP().getSymbol());
-    }
+    final String name = getName(nameCtx);
+    final Concrete.Position position = getNamePosition(nameCtx);
+
     List<Concrete.Argument> arguments = new ArrayList<>();
     int size = myContext.size();
     for (TeleContext tele : teleCtx) {
@@ -242,9 +235,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
     Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
-    Definition.Arrow arrow = arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
+    Definition.Arrow arrow = getArrow(arrowCtx);
     Abstract.Definition.Precedence precedence = precCtx == null ? null : visitPrecedence(precCtx);
-    Abstract.Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
+    Abstract.Definition.Fixity fixity = getNameFixity(nameCtx);
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, precedence, fixity, arguments, type, arrow, null, overridden);
 
     Definition defaultDef = overridden ? new OverriddenDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow()) : new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow());
@@ -259,6 +252,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     trimToSize(myContext, size);
     return new ModuleLoader.TypeCheckingUnit(def, typedDef);
+  }
+
+  private Abstract.Definition.Arrow getArrow(ArrowContext arrowCtx) {
+    return arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
   }
 
   public Abstract.Definition.Precedence visitPrecedence(PrecedenceContext ctx) {
@@ -306,15 +303,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public ModuleLoader.TypeCheckingUnit visitDefData(DefDataContext ctx) {
     if (ctx == null) return null;
     boolean isPrefix = ctx.name() instanceof NameIdContext;
-    String name;
-    Concrete.Position position;
-    if (isPrefix) {
-      name = ((NameIdContext) ctx.name()).ID().getText();
-      position = tokenPosition(((NameIdContext) ctx.name()).ID().getSymbol());
-    } else {
-      name = ((NameBinOpContext) ctx.name()).BIN_OP().getText();
-      position = tokenPosition(((NameBinOpContext) ctx.name()).BIN_OP().getSymbol());
-    }
+    final String name = getName(ctx.name());
+    final Concrete.Position position = getNamePosition(ctx.name());
+
     int origSize = myContext.size();
     List<Concrete.TypeArgument> parameters = visitTeles(ctx.tele());
     if (parameters == null) {
@@ -343,18 +334,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     int size = myContext.size();
     for (int i = 0; i < ctx.constructor().size(); ++i) {
       isPrefix = ctx.constructor(i).name() instanceof NameIdContext;
-      if (isPrefix) {
-        name = ((NameIdContext) ctx.constructor(i).name()).ID().getText();
-        position = tokenPosition(((NameIdContext) ctx.constructor(i).name()).ID().getSymbol());
-      } else {
-        name = ((NameBinOpContext) ctx.constructor(i).name()).BIN_OP().getText();
-        position = tokenPosition(((NameBinOpContext) ctx.constructor(i).name()).BIN_OP().getSymbol());
-      }
+      final String constructorName = getName(ctx.constructor(i).name());
+      final Concrete.Position constructorPosition = getNamePosition(ctx.constructor(i).name());
 
       List<Concrete.TypeArgument> arguments = visitTeles(ctx.constructor(i).tele());
       trimToSize(myContext, size);
       if (arguments == null) continue;
-      Concrete.Constructor concreteConstructor = new Concrete.Constructor(position, name, visitPrecedence(ctx.constructor(i).precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), arguments, def);
+      Concrete.Constructor concreteConstructor = new Concrete.Constructor(constructorPosition, constructorName, visitPrecedence(ctx.constructor(i).precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), arguments, def);
 
       Constructor typedConstructor = (Constructor) getDefinition(concreteConstructor.getName(), concreteConstructor.getPosition(), new Constructor(i, concreteConstructor.getName(), typedDef, concreteConstructor.getPrecedence(), concreteConstructor.getFixity()));
       if (typedConstructor == null) continue;
@@ -955,8 +941,42 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public String visitClauseNameArgs(ClauseNameArgsContext ctx) {
     if (ctx == null) return null;
-    boolean isPrefix = ctx.name() instanceof NameIdContext;
-    return isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
+    return getName(ctx.name());
+  }
+
+  private static String getName(NameContext ctx) {
+    boolean isPrefix = ctx instanceof NameIdContext;
+    return isPrefix ? ((NameIdContext) ctx).ID().getText() : ((NameBinOpContext) ctx).BIN_OP().getText();
+  }
+
+  private static Concrete.Position getNamePosition(NameContext ctx) {
+    boolean isPrefix = ctx instanceof NameIdContext;
+    return tokenPosition(isPrefix ? ((NameIdContext) ctx).ID().getSymbol() : ((NameBinOpContext) ctx).BIN_OP().getSymbol());
+  }
+
+  private static Abstract.Definition.Fixity getNameFixity(NameContext ctx) {
+    boolean isPrefix = ctx instanceof NameIdContext;
+    return isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
+  }
+
+  @Override
+  public Concrete.LetClause visitLetClause(LetClauseContext ctx) {
+    final Concrete.Expression typeExpression = ctx.typeAnnotation() == null ? null : visitExpr(ctx.typeAnnotation().expr());
+    final Concrete.LetClause result = new Concrete.LetClause(tokenPosition(ctx.getStart()), getName(ctx.name()),
+            typeExpression, getArrow(ctx.arrow()), visitExpr(ctx.expr()));
+    myContext.add(result.getName());
+    return result;
+  }
+
+  @Override
+  public Concrete.LetExpression visitLet(LetContext ctx) {
+    final List<Concrete.LetClause> clauses = new ArrayList<>();
+    for (LetClauseContext clauseCtx : ctx.letClause()) {
+      clauses.add(visitLetClause(clauseCtx));
+    }
+    final Concrete.Expression expr = visitExpr(ctx.expr());
+    trimToSize(myContext, myContext.size() - ctx.letClause().size());
+    return new Concrete.LetExpression(tokenPosition(ctx.getStart()), clauses, expr);
   }
 
   private static Concrete.Position tokenPosition(Token token) {

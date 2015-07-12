@@ -689,6 +689,12 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   }
 
   @Override
+  public Result visitLet(Abstract.LetExpression expr, Expression other) {
+    // TODO: fill
+    return null;
+  }
+
+  @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression other) {
     if (expr == other) return new JustResult(CMP.EQUALS);
     if (!(other instanceof ElimExpression)) return new JustResult(CMP.NOT_EQUIV);

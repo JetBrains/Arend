@@ -1237,4 +1237,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     return checkResultImplicit(expectedType, new OKResult(New(okExprResult.expression), normExpr, okExprResult.equations), expr);
   }
+
+  @Override
+  public Result visitLet(Abstract.LetExpression letExpression, Expression params) {
+    // TODO: Fill it in
+    return null;
+  }
 }

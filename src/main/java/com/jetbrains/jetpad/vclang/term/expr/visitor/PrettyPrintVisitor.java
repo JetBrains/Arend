@@ -297,6 +297,30 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  @Override
+  public Void visitLet(Abstract.LetExpression expr, Byte prec) {
+    if (prec > Abstract.LetExpression.PREC) myBuilder.append('(');
+    myBuilder.append("\\let ");
+
+    myIndent += 5;
+    for (Abstract.LetClause letClause : expr.getClauses()) {
+      prettyPrintLetClause(letClause, myBuilder, myNames, myIndent);
+      myBuilder.append("\n");
+      myNames.add(letClause.getName());
+    }
+    myIndent -= 5;
+
+    myBuilder.append("\\in ");
+    myIndent += 4;
+    expr.getExpression().accept(this, Abstract.LetExpression.PREC);
+    myIndent -= 4;
+
+    for (int i = 0; i < myNames.size(); i++) {
+      myNames.remove(myNames.size() - 1);
+    }
+    return null;
+  }
+
   public static void printIndent(StringBuilder builder, int indent) {
     for (int i = 0; i < indent; ++i) {
       builder.append("    ");

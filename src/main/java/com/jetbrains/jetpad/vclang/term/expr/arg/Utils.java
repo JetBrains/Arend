@@ -158,9 +158,28 @@ public class Utils {
       }
     }
 
-    builder.append(clause.getArrow() == Abstract.Definition.Arrow.LEFT ? " <= " : " => ");
+    builder.append(prettyArrow(clause.getArrow()));
     clause.getExpression().accept(new PrettyPrintVisitor(builder, newNames, indent), Abstract.Expression.PREC);
     builder.append('\n');
     removeFromList(names, clause.getArguments());
   }
+
+  private static String prettyArrow(Abstract.Definition.Arrow arrow) {
+    switch (arrow) {
+      case LEFT: return " <= ";
+      case RIGHT: return " => ";
+      default: return null;
+    }
+  }
+
+  public static void prettyPrintLetClause(Abstract.LetClause letClause, StringBuilder builder, List<String> names, int indent) {
+    builder.append(letClause.getName());
+    if (letClause.getType() != null) {
+      builder.append(" : ");
+      letClause.getType().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
+    }
+    builder.append(prettyArrow(letClause.getArrow()));
+    letClause.getExpression().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
+  }
+
 }
