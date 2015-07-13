@@ -339,31 +339,16 @@ public final class Concrete {
 
   public static class LetClause extends SourceNode implements Abstract.LetClause {
     private final String myName;
-    private final Expression myType;
-    private final Abstract.Definition.Arrow myArrow;
-    private final Expression myExpression;
+    private final List<Argument> myArguments;
+    private final Expression myResultType;
+    private final Expression myTerm;
 
-    public LetClause(Position position, String name, Expression type, Abstract.Definition.Arrow arrow, Expression expression) {
+    public LetClause(Position position, String name, List<Argument> arguments, Expression resultType, Expression term) {
       super(position);
       myName = name;
-      myType = type;
-      myArrow = arrow;
-      myExpression = expression;
-    }
-
-    @Override
-    public Expression getType() {
-      return myType;
-    }
-
-    @Override
-    public Expression getExpression() {
-      return myExpression;
-    }
-
-    @Override
-    public Abstract.Definition.Arrow getArrow() {
-      return myArrow;
+      myArguments = arguments;
+      myResultType = resultType;
+      myTerm = term;
     }
 
     @Override
@@ -374,6 +359,21 @@ public final class Concrete {
     @Override
     public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
       prettyPrintLetClause(this, builder, names, 0);
+    }
+
+    @Override
+    public Abstract.Expression getTerm() {
+      return myTerm;
+    }
+
+    @Override
+    public List<? extends Abstract.Argument> getArguments() {
+      return myArguments;
+    }
+
+    @Override
+    public Abstract.Expression getResultType() {
+      return myResultType;
     }
   }
 

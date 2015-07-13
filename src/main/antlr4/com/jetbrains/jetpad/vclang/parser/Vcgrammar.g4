@@ -49,7 +49,7 @@ expr  : binOpLeft* maybeNew atomFieldsAcc argument*  # binOp
       | elimCase expr clause* ';'?                   # exprElim
       ;
 
-letClause : name typeAnnotation? arrow expr;
+letClause : '|' ID tele* typeAnnotation? '=>' expr;
 
 typeAnnotation : ':' expr;
 

@@ -85,10 +85,10 @@ public final class Abstract {
   }
 
   public interface LetClause extends PrettyPrintableSourceNode {
-    Expression getType();
-    Expression getExpression();
-    Definition.Arrow getArrow();
     String getName();
+    Expression getTerm();
+    List<? extends Argument> getArguments();
+    Expression getResultType();
   }
 
   public interface LetExpression extends Expression {

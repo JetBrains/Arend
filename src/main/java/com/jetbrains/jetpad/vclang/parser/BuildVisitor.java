@@ -961,21 +961,30 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.LetClause visitLetClause(LetClauseContext ctx) {
-    final Concrete.Expression typeExpression = ctx.typeAnnotation() == null ? null : visitExpr(ctx.typeAnnotation().expr());
-    final Concrete.LetClause result = new Concrete.LetClause(tokenPosition(ctx.getStart()), getName(ctx.name()),
-            typeExpression, getArrow(ctx.arrow()), visitExpr(ctx.expr()));
-    myContext.add(result.getName());
-    return result;
+    final int oldContextSize = myContext.size();
+    final String name = ctx.ID().getText();
+    final List<Concrete.Argument> arguments = visitLamTeles(ctx.tele());
+    if (arguments == null) return null;
+
+    final Concrete.Expression resultType = ctx.typeAnnotation() == null ? null : visitExpr(ctx.typeAnnotation().expr());
+    final Concrete.Expression term = visitExpr(ctx.expr());
+
+    trimToSize(myContext, oldContextSize);
+
+    myContext.add(name);
+    return new Concrete.LetClause(tokenPosition(ctx.getStart()), name, arguments, resultType, term);
   }
 
   @Override
   public Concrete.LetExpression visitLet(LetContext ctx) {
+    final int oldContextSize = myContext.size();
     final List<Concrete.LetClause> clauses = new ArrayList<>();
     for (LetClauseContext clauseCtx : ctx.letClause()) {
       clauses.add(visitLetClause(clauseCtx));
     }
+
     final Concrete.Expression expr = visitExpr(ctx.expr());
-    trimToSize(myContext, myContext.size() - ctx.letClause().size());
+    trimToSize(myContext, oldContextSize);
     return new Concrete.LetExpression(tokenPosition(ctx.getStart()), clauses, expr);
   }
 

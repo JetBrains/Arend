@@ -173,13 +173,18 @@ public class Utils {
   }
 
   public static void prettyPrintLetClause(Abstract.LetClause letClause, StringBuilder builder, List<String> names, int indent) {
-    builder.append(letClause.getName());
-    if (letClause.getType() != null) {
-      builder.append(" : ");
-      letClause.getType().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
+    builder.append("| ").append(letClause.getName());
+    for (Abstract.Argument arg : letClause.getArguments()) {
+      builder.append(" ");
+      prettyPrintArgument(arg, builder, names, Abstract.LetExpression.PREC, indent);
     }
-    builder.append(prettyArrow(letClause.getArrow()));
-    letClause.getExpression().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
+
+    if (letClause.getResultType() != null) {
+      builder.append(" : ");
+      letClause.getResultType().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
+    }
+    builder.append(" => ");
+    letClause.getTerm().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
   }
 
 }
