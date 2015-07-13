@@ -88,7 +88,7 @@ public final class Abstract {
     String getName();
     Expression getTerm();
     List<? extends Argument> getArguments();
-    Expression getResultType();
+    Expression getType();
   }
 
   public interface LetExpression extends Expression {

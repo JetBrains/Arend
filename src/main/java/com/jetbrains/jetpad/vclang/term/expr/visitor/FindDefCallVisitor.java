@@ -6,6 +6,8 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
+import java.util.List;
+
 public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
   private final Definition myDef;
 
@@ -30,11 +32,7 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitLam(LamExpression expr) {
-    for (Argument argument : expr.getArguments()) {
-      if (argument instanceof TypeArgument) {
-        if (((TypeArgument) argument).getType().accept(this)) return true;
-      }
-    }
+    if (visitArguments(expr.getArguments())) return true;
     return expr.getBody().accept(this);
   }
 
@@ -87,11 +85,7 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
     if (expr.getExpression().accept(this)) return true;
     for (Clause clause : expr.getClauses()) {
       if (clause == null) continue;
-      for (Argument argument : clause.getArguments()) {
-        if (argument instanceof TypeArgument) {
-          if (((TypeArgument) argument).getType().accept(this)) return true;
-        }
-      }
+      if (visitArguments(clause.getArguments())) return true;
       if (clause.getExpression().accept(this)) return true;
     }
     return expr.getOtherwise() == null ? false : expr.getOtherwise().getExpression().accept(this);
@@ -111,14 +105,16 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
   public Boolean visitClassExt(ClassExtExpression expr) {
     if (expr.getBaseClass() == myDef) return true;
     for (OverriddenDefinition definition : expr.getDefinitions()) {
-      if (definition.getArguments() != null) {
-        for (Argument argument : definition.getArguments()) {
-          if (argument instanceof TypeArgument && ((TypeArgument) argument).getType().accept(this)) return true;
-        }
-      }
-
+      if (definition.getArguments() != null && visitArguments(definition.getArguments())) return true;
       if (definition.getResultType() != null && definition.getResultType().accept(this)) return true;
       if (definition.getTerm() != null && definition.getTerm().accept(this)) return true;
+    }
+    return false;
+  }
+
+  private boolean visitArguments(List<? extends Argument> arguments) {
+    for (Argument argument : arguments) {
+      if (argument instanceof TypeArgument && ((TypeArgument) argument).getType().accept(this)) return true;
     }
     return false;
   }
@@ -126,5 +122,19 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
   @Override
   public Boolean visitNew(NewExpression expr) {
     return expr.getExpression().accept(this);
+  }
+
+  @Override
+  public Boolean visitLet(LetExpression letExpression) {
+    for (LetClause clause : letExpression.getClauses()) {
+      if (visitLetClause(clause)) return true;
+    }
+    return letExpression.getExpression().accept(this);
+  }
+
+  private boolean visitLetClause(LetClause clause) {
+    if (visitArguments(clause.getArguments())) return true;
+    if (clause.getType() != null && clause.getType().accept(this)) return true;
+    return clause.getTerm().accept(this);
   }
 }

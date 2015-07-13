@@ -177,4 +177,9 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   public Expression visitNew(NewExpression expr) {
     return New(expr.getExpression().accept(this));
   }
+
+  @Override
+  public Expression visitLet(LetExpression letExpression) {
+    return null; // TODO: implement
+  }
 }

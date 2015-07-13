@@ -245,4 +245,31 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     expr.getExpression().accept(this);
     return null;
   }
+
+  @Override
+  public Void visitLet(LetExpression letExpression) {
+    myStream.write(17);
+    try {
+      myDataStream.write(letExpression.getClauses().size());
+      for (LetClause letClause : letExpression.getClauses()) {
+        visitLetClause(letClause);
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+    return null;
+  }
+
+  private void visitLetClause(LetClause clause) {
+    try {
+      myDataStream.writeUTF(clause.getName());
+      writeArguments(this, clause.getArguments());
+      myDataStream.writeBoolean(clause.getType() != null);
+      if (clause.getType() != null)
+        clause.getType().accept(this);
+      clause.getTerm().accept(this);
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+  }
 }

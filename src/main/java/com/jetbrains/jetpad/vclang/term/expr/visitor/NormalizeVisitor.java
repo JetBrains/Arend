@@ -378,4 +378,9 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   public Expression visitNew(NewExpression expr) {
     return myMode == Mode.TOP ? null : myMode == Mode.WHNF ? expr : New(expr.getExpression().accept(this));
   }
+
+  @Override
+  public Expression visitLet(LetExpression letExpression) {
+    return null; // TODO: implement
+  }
 }

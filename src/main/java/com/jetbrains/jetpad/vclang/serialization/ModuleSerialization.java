@@ -563,10 +563,28 @@ public class ModuleSerialization {
       case 16: {
         return New(readExpression(stream, definitionMap));
       }
+      case 17: {
+        final int numClauses = stream.readInt();
+        final List<LetClause> clauses = new ArrayList<>(numClauses);
+        for (int i = 0; i < numClauses; i++) {
+          clauses.add(readLetClause(stream, definitionMap));
+        }
+        final Expression expr = readExpression(stream, definitionMap);
+        return Let(clauses, expr);
+      }
       default: {
         throw new IncorrectFormat();
       }
     }
+  }
+
+  private static LetClause readLetClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    final String name = stream.readUTF();
+    final List<Argument> arguments = readArguments(stream, definitionMap);
+    final Expression type = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+    final Expression term = readExpression(stream, definitionMap);
+    return new LetClause(name, arguments, type, term);
+
   }
 
   public static Clause readClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {

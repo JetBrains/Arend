@@ -340,14 +340,14 @@ public final class Concrete {
   public static class LetClause extends SourceNode implements Abstract.LetClause {
     private final String myName;
     private final List<Argument> myArguments;
-    private final Expression myResultType;
+    private final Expression myType;
     private final Expression myTerm;
 
-    public LetClause(Position position, String name, List<Argument> arguments, Expression resultType, Expression term) {
+    public LetClause(Position position, String name, List<Argument> arguments, Expression type, Expression term) {
       super(position);
       myName = name;
       myArguments = arguments;
-      myResultType = resultType;
+      myType = type;
       myTerm = term;
     }
 
@@ -372,8 +372,8 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.Expression getResultType() {
-      return myResultType;
+    public Abstract.Expression getType() {
+      return myType;
     }
   }
 
