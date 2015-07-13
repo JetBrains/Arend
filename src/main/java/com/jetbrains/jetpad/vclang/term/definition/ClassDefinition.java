@@ -25,17 +25,17 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   }
 
   @Override
-  public List<Definition> getFields() {
+  public List<Definition> getPublicFields() {
     return myPublicFields;
   }
 
   @Override
-  public Definition findChild(String name) {
+  public Definition getStaticField(String name) {
     return myStaticFields == null ? null : myStaticFields.get(name);
   }
 
   @Override
-  public Collection<Definition> getChildren() {
+  public Collection<Definition> getStaticFields() {
     return myStaticFields == null ? null : myStaticFields.values();
   }
 

@@ -150,11 +150,6 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitVar(VarExpression expr) {
-    return true;
-  }
-
-  @Override
   public Boolean visitInferHole(InferHoleExpression expr) {
     return true;
   }

@@ -52,11 +52,6 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitVar(VarExpression expr) {
-    return false;
-  }
-
-  @Override
   public Boolean visitInferHole(InferHoleExpression expr) {
     return false;
   }

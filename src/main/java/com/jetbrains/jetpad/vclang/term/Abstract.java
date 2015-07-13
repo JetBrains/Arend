@@ -214,7 +214,7 @@ public final class Abstract {
   }
 
   public interface ClassDefinition extends Definition {
-    List<? extends Definition> getFields();
+    List<? extends Definition> getPublicFields();
   }
 
   public interface Constructor extends Definition {

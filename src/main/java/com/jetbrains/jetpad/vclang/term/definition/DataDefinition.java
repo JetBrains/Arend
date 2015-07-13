@@ -57,7 +57,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   }
 
   @Override
-  public Constructor findChild(String name) {
+  public Constructor getStaticField(String name) {
     for (Constructor constructor : myConstructors) {
       if (constructor.getName().equals(name)) {
         return constructor;
@@ -68,7 +68,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   }
 
   @Override
-  public List<Constructor> getChildren() {
+  public List<Constructor> getStaticFields() {
     return myConstructors;
   }
 }

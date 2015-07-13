@@ -34,11 +34,11 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return this == definition || myParent != null && myParent.isDescendantOf(definition);
   }
 
-  public Definition findChild(String name) {
+  public Definition getStaticField(String name) {
     return null;
   }
 
-  public Collection<? extends Definition> getChildren() {
+  public Collection<? extends Definition> getStaticFields() {
     return null;
   }
 

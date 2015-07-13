@@ -71,11 +71,6 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public VarExpression visitVar(VarExpression expr) {
-    return expr;
-  }
-
-  @Override
   public InferHoleExpression visitInferHole(InferHoleExpression expr) {
     return expr;
   }
@@ -91,7 +86,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this));
     }
-    return Tuple(fields);
+    return Tuple(fields, visitSigma(expr.getType()));
   }
 
   @Override
@@ -153,7 +148,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
       OverriddenDefinition definition = new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), entry.getValue().getFixity(), arguments, resultType, entry.getValue().getArrow(), term, entry.getValue().getOverriddenFunction());
       definitions.put(entry.getKey(), definition);
     }
-    return ClassExt(expr.getBaseClass(), definitions);
+    return ClassExt(expr.getBaseClass(), definitions, expr.getUniverse());
   }
 
   @Override

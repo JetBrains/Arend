@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.List;
+
 public class ErrorExpression extends Expression implements Abstract.ErrorExpression {
   private final Expression myExpr;
   private final TypeCheckingError myError;
@@ -26,6 +28,11 @@ public class ErrorExpression extends Expression implements Abstract.ErrorExpress
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitError(this);
+  }
+
+  @Override
+  public Expression getType(List<Expression> context) {
+    return null;
   }
 
   @Override

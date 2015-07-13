@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -12,75 +11,52 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class ExpressionTest {
   @Test
   public void typeCheckingLam() {
-    // \x. x : N -> N
-    Expression expr = Lam("x", Var("x"));
+    // \x. x : Nat -> Nat
     ModuleLoader moduleLoader = new ModuleLoader();
-    expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Nat()), moduleLoader);
-    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-  }
-
-  @Test
-  public void typeCheckingLamIndex() {
-    // \x. x : N -> N
-    Expression expr = Lam("x", Index(0));
-    ModuleLoader moduleLoader = new ModuleLoader();
-    expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Nat()), moduleLoader);
+    parseExpr(moduleLoader, "\\lam x => x").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), Pi(Nat(), Nat()));
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
   @Test
   public void typeCheckingLamError() {
-    // \x. x : N -> N -> N
-    Expression expr = Lam("x", Index(0));
+    // \x. x : Nat -> Nat -> Nat
     ModuleLoader moduleLoader = new ModuleLoader();
-    assertEquals(null, expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Pi(Nat(), Nat())), moduleLoader));
+    parseExpr(moduleLoader, "\\lam x => x").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), Pi(Nat(), Pi(Nat(), Nat())));
     assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
-    assertTrue(moduleLoader.getTypeCheckingErrors().get(0) instanceof TypeMismatchError);
   }
 
   @Test
   public void typeCheckingId() {
     // \X x. x : (X : Type0) -> X -> X
-    Expression expr = Lam("X", Lam("x", Var("x")));
     Expression type = Pi("X", Universe(0), Pi(Index(0), Index(0)));
     ModuleLoader moduleLoader = new ModuleLoader();
-    expr.checkType(new ArrayList<Binding>(), type, moduleLoader);
-    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-  }
-
-  @Test
-  public void typeCheckingIdIndex() {
-    // \X x. x : (X : Type0) -> X -> X
-    Expression expr = Lam("X", Lam("x", Index(0)));
-    Expression type = Pi("X", Universe(0), Pi(Index(0), Index(0)));
-    ModuleLoader moduleLoader = new ModuleLoader();
-    expr.checkType(new ArrayList<Binding>(), type, moduleLoader);
+    parseExpr(moduleLoader, "\\lam X x => x").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), type);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
   @Test
   public void typeCheckingIdError() {
     // \X x. X : (X : Type0) -> X -> X
-    Expression expr = Lam("X", Lam("x", Var("X")));
     Expression type = Pi("X", Universe(0), Pi(Index(0), Index(0)));
     ModuleLoader moduleLoader = new ModuleLoader();
-    assertEquals(null, expr.checkType(new ArrayList<Binding>(), type, moduleLoader));
+    assertEquals(null, parseExpr(moduleLoader, "\\lam X x => X").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), type));
     assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
     assertTrue(moduleLoader.getTypeCheckingErrors().get(0) instanceof TypeMismatchError);
   }
 
   @Test
   public void typeCheckingApp() {
-    // \x y. y (y x) : N -> (N -> N) -> N
-    Expression expr = Lam("x", Lam("y", Apps(Var("y"), Apps(Var("y"), Var("x")))));
+    // \x y. y (y x) : Nat -> (Nat -> Nat) -> Nat
+    Expression type = Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat()));
     ModuleLoader moduleLoader = new ModuleLoader();
-    expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())), moduleLoader);
+    parseExpr(moduleLoader, "\\lam x y => y (y x)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), type);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
@@ -94,30 +70,10 @@ public class ExpressionTest {
   }
 
   @Test
-  public void typeCheckingAppPi() {
-    // \f g. g zero (f zero) : (f : (x : N) -> N x) -> ((x : N) -> N x -> N (f x)) -> N (f zero)
-    Expression expr = Lam("f", Lam("g", Apps(Var("g"), Zero(), Apps(Var("f"), Zero()))));
-    Expression type = Pi("f", Pi("x", Nat(), Apps(Nat(), Index(0))), Pi(Pi("x", Nat(), Pi(Apps(Nat(), Index(0)), Apps(Nat(), Apps(Index(1), Index(0))))), Apps(Nat(), Apps(Index(0), Zero()))));
-    ModuleLoader moduleLoader = new ModuleLoader();
-    expr.checkType(new ArrayList<Binding>(), type, moduleLoader);
-    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-  }
-
-  @Test
   public void typeCheckingAppPiIndex() {
     // \f g. g zero (f zero) : (f : (x : N) -> N x) -> ((x : N) -> N x -> N (f x)) -> N (f zero)
     Expression expr = Lam("f", Lam("g", Apps(Index(0), Zero(), Apps(Index(1), Zero()))));
     Expression type = Pi("f", Pi("x", Nat(), Apps(Nat(), Index(0))), Pi(Pi("x", Nat(), Pi(Apps(Nat(), Index(0)), Apps(Nat(), Apps(Index(1), Index(0))))), Apps(Nat(), Apps(Index(0), Zero()))));
-    ModuleLoader moduleLoader = new ModuleLoader();
-    expr.checkType(new ArrayList<Binding>(), type, moduleLoader);
-    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-  }
-
-  @Test
-  public void typeCheckingAppLamPi() {
-    // \f h. h (\k -> k (suc zero)) : (f : (g : N -> N) -> N (g zero)) -> ((z : (N -> N) -> N) -> N (f (\x. z (\_. x)))) -> N (f (\x. x))
-    Expression expr = Lam("f", Lam("h", Apps(Var("h"), Lam("k", Apps(Var("k"), Apps(Suc(), Zero()))))));
-    Expression type = Pi("f", Pi("g", Pi(Nat(), Nat()), Apps(Nat(), Apps(Index(0), Zero()))), Pi(Pi("z", Pi(Pi(Nat(), Nat()), Nat()), Apps(Nat(), Apps(Index(1), Lam("x", Apps(Index(1), Lam("_", Index(1))))))), Apps(Nat(), Apps(Index(0), Lam("x", Index(0))))));
     ModuleLoader moduleLoader = new ModuleLoader();
     expr.checkType(new ArrayList<Binding>(), type, moduleLoader);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
@@ -134,15 +90,6 @@ public class ExpressionTest {
   }
 
   @Test
-  public void typeCheckingInferPi() {
-    // (X : Type1) -> X -> X : Type2
-    Expression expr = Pi("X", Universe(1), Pi(Var("X"), Var("X")));
-    ModuleLoader moduleLoader = new ModuleLoader();
-    assertEquals(Universe(2), expr.checkType(new ArrayList<Binding>(), null, moduleLoader).type);
-    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-  }
-
-  @Test
   public void typeCheckingInferPiIndex() {
     // (X : Type1) -> X -> X : Type2
     Expression expr = Pi("X", Universe(1), Pi(Index(0), Index(0)));
@@ -154,7 +101,7 @@ public class ExpressionTest {
   @Test
   public void typeCheckingUniverse() {
     // (f : Type1 -> Type1) -> f Type1
-    Expression expr = Pi("f", Pi(Universe(1), Universe(1)), Apps(Var("f"), Universe(1)));
+    Expression expr = Pi("f", Pi(Universe(1), Universe(1)), Apps(Index(0), Universe(1)));
     ModuleLoader moduleLoader = new ModuleLoader();
     assertEquals(null, expr.checkType(new ArrayList<Binding>(), null, moduleLoader));
     assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
@@ -204,7 +151,7 @@ public class ExpressionTest {
   @Test
   public void lambdaExpectedError() {
     // \x. x : (Nat -> Nat) -> Nat
-    Expression expr = Lam("x", Var("x"));
+    Expression expr = Lam("x", Index(0));
     ModuleLoader moduleLoader = new ModuleLoader();
     CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), Pi(Pi(Nat(), Nat()), Nat()), moduleLoader);
     assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
@@ -215,7 +162,7 @@ public class ExpressionTest {
   @Test
   public void lambdaOmegaError() {
     // \x. x x : (Nat -> Nat) -> Nat
-    Expression expr = Lam("x", Apps(Var("x"), Var("x")));
+    Expression expr = Lam("x", Apps(Index(0), Index(0)));
     ModuleLoader moduleLoader = new ModuleLoader();
     CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), Pi(Pi(Nat(), Nat()), Nat()), moduleLoader);
     assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
@@ -226,7 +173,7 @@ public class ExpressionTest {
   @Test
   public void lambdaExpectedError2() {
     // \x. x 0 : (Nat -> Nat) -> Nat -> Nat
-    Expression expr = Lam("x", Apps(Var("x"), Zero()));
+    Expression expr = Lam("x", Apps(Index(0), Zero()));
     ModuleLoader moduleLoader = new ModuleLoader();
     CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())), moduleLoader);
     assertEquals(1, moduleLoader.getTypeCheckingErrors().size());

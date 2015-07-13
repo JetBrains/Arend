@@ -76,11 +76,11 @@ public class ModuleLoaderTest {
     moduleLoader.loadModule(moduleA, false);
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-    assertNotNull(moduleLoader.rootModule().findChild("A").getChildren());
-    assertEquals(1, moduleLoader.rootModule().findChild("A").getChildren().size());
-    assertEquals(2, ((ClassDefinition) moduleLoader.rootModule().findChild("A")).getFields().size());
-    assertTrue(moduleLoader.rootModule().findChild("A").findChild("C").getChildren() == null || moduleLoader.rootModule().findChild("A").findChild("C").getChildren().isEmpty());
-    assertEquals(2, ((ClassDefinition) moduleLoader.rootModule().findChild("A").findChild("C")).getFields().size());
+    assertNotNull(moduleLoader.rootModule().getStaticField("A").getStaticFields());
+    assertEquals(1, moduleLoader.rootModule().getStaticField("A").getStaticFields().size());
+    assertEquals(2, ((ClassDefinition) moduleLoader.rootModule().getStaticField("A")).getPublicFields().size());
+    assertTrue(moduleLoader.rootModule().getStaticField("A").getStaticField("C").getStaticFields() == null || moduleLoader.rootModule().getStaticField("A").getStaticField("C").getStaticFields().isEmpty());
+    assertEquals(2, ((ClassDefinition) moduleLoader.rootModule().getStaticField("A").getStaticField("C")).getPublicFields().size());
   }
 
   @Test
@@ -131,10 +131,10 @@ public class ModuleLoaderTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     ClassDefinition result = parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
-    assertNotNull(result.getChildren());
-    assertEquals(2, result.getChildren().size());
-    assertNotNull(result.getFields());
-    assertEquals(2, result.getFields().size());
+    assertNotNull(result.getStaticFields());
+    assertEquals(2, result.getStaticFields().size());
+    assertNotNull(result.getPublicFields());
+    assertEquals(2, result.getPublicFields().size());
   }
 
   @Test

@@ -55,8 +55,8 @@ public class ComparisonTest {
 
   @Test
   public void pi() {
-    Expression expr1 = Pi(args(Tele(vars("x", "y"), Nat()), TypeArg(false, Nat())), Apps(Nat(), Index(2), Var("y")));
-    Expression expr2 = Pi(args(Tele(vars("x"), Nat()), Tele(vars("y"), Nat())), Pi(args(TypeArg(false, Nat())), Apps(Nat(), Index(2), Var("y"))));
+    Expression expr1 = Pi(args(Tele(vars("x", "y"), Nat()), TypeArg(false, Nat())), Apps(Nat(), Index(2), Index(1)));
+    Expression expr2 = Pi(args(Tele(vars("x"), Nat()), Tele(vars("y"), Nat())), Pi(args(TypeArg(false, Nat())), Apps(Nat(), Index(2), Index(1))));
     assertEquals(expr1, expr2);
   }
 

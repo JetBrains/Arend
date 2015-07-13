@@ -337,27 +337,39 @@ public class TypeChecking {
   }
 
   public static void typeCheckFunctionEnd(ModuleLoader moduleLoader, ClassDefinition parent, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(parent, localContext, definition.getDependencies(), moduleLoader, CheckTypeVisitor.Side.LHS);
-    CheckTypeVisitor.OKResult termResult = visitor.checkType(term, definition.getResultType());
+    if (term != null) {
+      CheckTypeVisitor visitor = new CheckTypeVisitor(parent, localContext, definition.getDependencies(), moduleLoader, CheckTypeVisitor.Side.LHS);
+      CheckTypeVisitor.OKResult termResult = visitor.checkType(term, definition.getResultType());
 
-    if (termResult != null) {
-      definition.setTerm(termResult.expression);
-      definition.setResultType(termResult.type);
+      if (termResult != null) {
+        definition.setTerm(termResult.expression);
+        definition.setResultType(termResult.type);
 
-      if (!termResult.expression.accept(new TerminationCheckVisitor(overriddenFunction == null ? definition : overriddenFunction))) {
-        moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Termination check failed", term, getNames(localContext)));
-        termResult = null;
+        if (!termResult.expression.accept(new TerminationCheckVisitor(overriddenFunction == null ? definition : overriddenFunction))) {
+          moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Termination check failed", term, getNames(localContext)));
+          termResult = null;
+        }
+      } else {
+        if (definition.getResultType() == null) {
+          definition.typeHasErrors(true);
+        }
       }
-    } else {
-      if (definition.getResultType() == null) {
-        definition.typeHasErrors(true);
+
+      if (termResult == null) {
+        definition.setTerm(null);
+        if (!definition.isAbstract()) {
+          definition.hasErrors(true);
+        }
       }
     }
 
-    if (termResult == null) {
-      definition.setTerm(null);
-      if (!definition.isAbstract()) {
-        definition.hasErrors(true);
+    Expression type = definition.getType();
+    if (type != null) {
+      type = type.getType(new ArrayList<Expression>(2));
+      if (type instanceof UniverseExpression) {
+        definition.setUniverse(((UniverseExpression) type).getUniverse());
+      } else {
+        throw new IllegalStateException();
       }
     }
 

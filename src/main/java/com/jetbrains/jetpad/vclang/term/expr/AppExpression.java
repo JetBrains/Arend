@@ -1,8 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AppExpression extends Expression implements Abstract.AppExpression {
   private final Expression myFunction;
@@ -26,6 +30,15 @@ public class AppExpression extends Expression implements Abstract.AppExpression 
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitApp(this);
+  }
+
+  @Override
+  public Expression getType(List<Expression> context) {
+    List<Expression> arguments = new ArrayList<>();
+    Expression function = getFunction(arguments);
+    Expression type = function.getType(context);
+    if (!(type instanceof PiExpression)) return null;
+    return type.splitAt(arguments.size(), new ArrayList<TypeArgument>(arguments.size())).subst(arguments, 0);
   }
 
   @Override

@@ -291,11 +291,6 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitVar(VarExpression expr) {
-    return myMode == Mode.TOP ? null : expr;
-  }
-
-  @Override
   public Expression visitError(ErrorExpression expr) {
     return myMode == Mode.TOP ? null : myMode != Mode.NF || expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this), expr.getError());
   }
@@ -313,7 +308,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this));
     }
-    return Tuple(fields);
+    return Tuple(fields, expr.getType());
   }
 
   @Override
@@ -371,7 +366,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
       OverriddenDefinition definition = new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), entry.getValue().getFixity(), arguments, resultType, entry.getValue().getArrow(), term, entry.getValue().getOverriddenFunction());
       definitions.put(entry.getKey(), definition);
     }
-    return ClassExt(expr.getBaseClass(), definitions);
+    return ClassExt(expr.getBaseClass(), definitions, expr.getUniverse());
   }
 
   @Override

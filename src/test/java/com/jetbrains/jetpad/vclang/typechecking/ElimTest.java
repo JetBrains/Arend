@@ -15,6 +15,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
@@ -54,9 +55,9 @@ public class ElimTest {
 
     List<Argument> arguments = new ArrayList<>(3);
     arguments.add(Tele(vars("q", "w"), Nat()));
-    arguments.add(Tele(vars("e"), Apps(DefCall(dataType), Var("w"), Zero(), Var("q"))));
-    arguments.add(Tele(vars("r"), Apps(DefCall(dataType), Var("q"), Var("w"), Suc(Zero()))));
-    Expression resultType = Apps(DefCall(pFunction), Var("w"), Zero(), Var("q"), Var("e"), Var("q"), Var("w"), Suc(Zero()), Var("r"));
+    arguments.add(Tele(vars("e"), Apps(DefCall(dataType), Index(0), Zero(), Index(1))));
+    arguments.add(Tele(vars("r"), Apps(DefCall(dataType), Index(2), Index(1), Suc(Zero()))));
+    Expression resultType = Apps(DefCall(pFunction), Index(2), Zero(), Index(3), Index(1), Index(3), Index(2), Suc(Zero()), Index(0));
     List<Clause> clauses2 = new ArrayList<>();
     List<Clause> clauses3 = new ArrayList<>();
     List<Clause> clauses4 = new ArrayList<>();
@@ -65,9 +66,9 @@ public class ElimTest {
     ElimExpression term4 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(4) /* e */, clauses4, null);
     clauses2.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.LEFT, term4, term2));
     clauses2.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.LEFT, term3, term2));
-    clauses3.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Var("x"), term3));
-    clauses3.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Var("s"), term3));
-    clauses4.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Apps(Var("x"), Var("z")), term4));
+    clauses3.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(4), term3));
+    clauses3.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Index(0), term3));
+    clauses4.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Apps(Index(3), Index(2)), term4));
     clauses4.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(7), term4));
 
     ModuleLoader moduleLoader = new ModuleLoader();
@@ -79,5 +80,23 @@ public class ElimTest {
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedFun.hasErrors());
+  }
+
+  @Test
+  public void elim2() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    parseDefs(moduleLoader,
+        "\\data D Nat (x y : Nat) | con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
+        "\\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
+            "| con2 _ _ _ _ => Nat -> Nat\n" +
+            "| con1 _ => Nat\n" +
+        "\\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
+            "| con1 s <= \\elim e\n" +
+              "| con2 x y z t => x" +
+              "| con1 _ => s" +
+              ";\n" +
+            "| con2 x y z t <= \\elim e\n" +
+              "| con1 s => x q" +
+              "| con2 _ y z t => x");
   }
 }

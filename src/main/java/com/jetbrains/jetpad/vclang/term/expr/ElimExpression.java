@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import java.util.List;
 
 public class ElimExpression extends Expression implements Abstract.ElimExpression {
+  // TODO: separate elim and case expressions.
   private final ElimType myElimType;
   private final IndexExpression myExpression;
   private final List<Clause> myClauses;
@@ -42,6 +43,11 @@ public class ElimExpression extends Expression implements Abstract.ElimExpressio
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitElim(this);
+  }
+
+  @Override
+  public Expression getType(List<Expression> context) {
+    return null;
   }
 
   @Override

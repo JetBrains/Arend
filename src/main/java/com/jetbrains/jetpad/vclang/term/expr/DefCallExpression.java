@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.List;
+
 public class DefCallExpression extends Expression implements Abstract.DefCallExpression {
   private final Definition myDefinition;
 
@@ -20,6 +22,11 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitDefCall(this);
+  }
+
+  @Override
+  public Expression getType(List<Expression> context) {
+    return myDefinition.getType();
   }
 
   @Override

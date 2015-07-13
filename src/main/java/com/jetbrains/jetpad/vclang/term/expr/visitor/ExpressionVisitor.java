@@ -9,7 +9,6 @@ public interface ExpressionVisitor<T> {
   T visitLam(LamExpression expr);
   T visitPi(PiExpression expr);
   T visitUniverse(UniverseExpression expr);
-  T visitVar(VarExpression expr);
   T visitInferHole(InferHoleExpression expr);
   T visitError(ErrorExpression expr);
   T visitTuple(TupleExpression expr);

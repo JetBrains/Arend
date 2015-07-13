@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.List;
+
 public class FieldAccExpression extends Expression implements Abstract.FieldAccExpression {
   private final Expression myExpression;
   private final Definition myField;
@@ -37,6 +39,11 @@ public class FieldAccExpression extends Expression implements Abstract.FieldAccE
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitFieldAcc(this);
+  }
+
+  @Override
+  public Expression getType(List<Expression> context) {
+    return myField.getType();
   }
 
   @Override

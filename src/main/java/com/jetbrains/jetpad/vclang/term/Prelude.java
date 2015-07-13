@@ -85,7 +85,7 @@ public class Prelude {
     List<Argument> pathInfixArguments = new ArrayList<>(3);
     pathInfixArguments.add(Tele(false, vars("A"), Universe(0)));
     pathInfixArguments.add(Tele(vars("a", "a'"), Index(0)));
-    Expression pathInfixTerm = Apps(DefCall(PATH), Lam("_", Index(3)), Index(1), Index(0));
+    Expression pathInfixTerm = Apps(DefCall(PATH), Lam(lamArgs(Tele(vars("_"), DefCall(INTERVAL))), Index(3)), Index(1), Index(0));
     PATH_INFIX = new FunctionDefinition("=", PRELUDE, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), Abstract.Definition.Fixity.INFIX, pathInfixArguments, Universe(0), Abstract.Definition.Arrow.RIGHT, pathInfixTerm);
 
     PRELUDE.addStaticField(PATH_INFIX, null);

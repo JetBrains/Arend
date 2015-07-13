@@ -111,11 +111,6 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   }
 
   @Override
-  public Void visitVar(VarExpression expr) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Void visitInferHole(InferHoleExpression expr) {
     throw new IllegalStateException();
   }
@@ -146,6 +141,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     for (Expression field : expr.getFields()) {
       field.accept(this);
     }
+    visitSigma(expr.getType());
     return null;
   }
 
@@ -233,6 +229,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
         myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey()));
         myErrors += ModuleSerialization.serializeDefinition(this, entry.getValue());
       }
+      writeUniverse(myDataStream, expr.getUniverse());
     } catch (IOException e) {
       throw new IllegalStateException();
     }

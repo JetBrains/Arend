@@ -76,10 +76,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     mySide = side;
   }
 
-  public void setSide(Side side) {
-    mySide = side;
-  }
-
   private Result checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
     if (result == null) return null;
     if (expectedType == null) {
@@ -339,13 +335,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       Expression type = arguments.size() > 0 ? Pi(arguments, piType.getCodomain()) : piType.getCodomain();
-      Expression resultType = Apps(DefCall(Prelude.PATH), Lam("i", type), Apps(argResult.expression, DefCall(Prelude.LEFT)), Apps(argResult.expression, DefCall(Prelude.RIGHT)));
+      Expression resultType = Apps(DefCall(Prelude.PATH), Lam(lamArgs(Tele(vars("i"), DefCall(Prelude.INTERVAL))), type), Apps(argResult.expression, DefCall(Prelude.LEFT)), Apps(argResult.expression, DefCall(Prelude.RIGHT)));
       List<CompareVisitor.Equation> resultEquations = argResult.equations;
       if (holeExpression != null) {
         if (resultEquations == null) {
           resultEquations = new ArrayList<>(1);
         }
-        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam("i", type.normalize(NormalizeVisitor.Mode.NF))));
+        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(lamArgs(Tele(vars("i"), DefCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF))));
       }
 
       return checkResult(expectedType, new OKResult(Apps(DefCall(Prelude.PATH_CON), argResult.expression), resultType, resultEquations), expression);
@@ -809,7 +805,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
 
         List<Expression> fields = new ArrayList<>(expr.getFields().size());
-        Expression expression = Tuple(fields);
+        Expression expression = Tuple(fields, (SigmaExpression) expectedTypeNorm);
         List<CompareVisitor.Equation> equations = new ArrayList<>();
         for (int i = 0; i < sigmaArgs.size(); ++i) {
           List<Expression> substExprs = new ArrayList<>(fields.size());
@@ -833,7 +829,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           return new InferErrorResult((InferHoleExpression) fexpectedTypeNorm, ((InferHoleExpression) fexpectedTypeNorm).getError(), null);
         }
 
-        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(args(TypeArg(Var("?")), TypeArg(Var("?")))), expr, getNames(myLocalContext));
+        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(args(TypeArg(Error(null, null)), TypeArg(Error(null, null)))), expr, getNames(myLocalContext));
         expr.setWellTyped(Error(null, error));
         myModuleLoader.getTypeCheckingErrors().add(error);
         return null;
@@ -841,9 +837,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
-    Expression expression = Tuple(fields);
     List<TypeArgument> arguments = new ArrayList<>(expr.getFields().size());
-    Expression type = Sigma(arguments);
+    SigmaExpression type = Sigma(arguments);
+    Expression expression = Tuple(fields, type);
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     for (Abstract.Expression field : expr.getFields()) {
       Result result = typeCheck(field, null);
@@ -1187,7 +1183,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     // TODO
-    Map<String, FunctionDefinition> abstracts = new HashMap<>(); // new HashMap<>(expr.getBaseClass().getAbstracts());
+    Map<String, FunctionDefinition> abstracts = new HashMap<>();
+    for (Definition definition : expr.getBaseClass().getPublicFields()) {
+      if (definition instanceof FunctionDefinition && definition.isAbstract()) {
+        abstracts.put(definition.getName(), (FunctionDefinition) definition);
+      }
+    }
+
     Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
     for (Abstract.FunctionDefinition definition : expr.getDefinitions()) {
       FunctionDefinition oldDefinition = abstracts.remove(definition.getName());
@@ -1205,7 +1207,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (FunctionDefinition definition : abstracts.values()) {
       universe = universe.max(definition.getUniverse());
     }
-    return checkResultImplicit(expectedType, new OKResult(ClassExt(expr.getBaseClass(), definitions), new UniverseExpression(universe), null), expr);
+    return checkResultImplicit(expectedType, new OKResult(ClassExt(expr.getBaseClass(), definitions, universe), new UniverseExpression(universe), null), expr);
   }
 
   @Override

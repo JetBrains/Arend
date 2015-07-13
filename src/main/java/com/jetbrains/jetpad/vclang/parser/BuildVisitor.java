@@ -177,7 +177,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx.name().size() > 1) {
       for (int i = 1; i < ctx.name().size(); ++i) {
         String name = ctx.name(i) instanceof NameBinOpContext ? ((NameBinOpContext) ctx.name(i)).BIN_OP().getText() : ((NameIdContext) ctx.name(i)).ID().getText();
-        Definition definition = module.findChild(name);
+        Definition definition = module.getStaticField(name);
         if (definition == null) {
           myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name(i).getStart()), name + " is not exported from " + module.getFullName()));
           continue;
@@ -192,8 +192,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
       }
     } else {
-      if (module.getChildren() == null) return null;
-      for (Definition definition : module.getChildren()) {
+      if (module.getStaticFields() == null) return null;
+      for (Definition definition : module.getStaticFields()) {
         if (remove) {
           myParent.remove(definition);
         } else {
@@ -234,8 +234,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(myModuleLoader, myParent, def, localContext, null);
-    if (typedDef != null && termCtx != null) {
-      TypeChecking.typeCheckFunctionEnd(myModuleLoader, myParent, visitExpr(termCtx), typedDef, localContext, null);
+    if (typedDef != null) {
+      TypeChecking.typeCheckFunctionEnd(myModuleLoader, myParent, termCtx == null ? null : visitExpr(termCtx), typedDef, localContext, null);
     }
     visitFunctionRawEnd(def);
     return typedDef;
@@ -515,7 +515,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Concrete.Expression findId(String name, boolean binOp, Concrete.Position position) {
-    Definition child = Prelude.PRELUDE.findChild(name);
+    Definition child = Prelude.PRELUDE.getStaticField(name);
     if (child != null) {
       return new Concrete.DefCallExpression(position, child);
     }
@@ -680,7 +680,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
         if (expr instanceof Concrete.DefCallExpression) {
           Definition definition = ((Concrete.DefCallExpression) expr).getDefinition();
-          Definition classField = definition.findChild(name);
+          Definition classField = definition.getStaticField(name);
           if (classField == null && definition instanceof ClassDefinition) {
             classField = myModuleLoader.loadModule(new Module((ClassDefinition) definition, name), true);
           }

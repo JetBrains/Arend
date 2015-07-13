@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.List;
+
 public class InferHoleExpression extends Expression implements Abstract.InferHoleExpression {
   private final TypeCheckingError myError;
 
@@ -19,6 +21,11 @@ public class InferHoleExpression extends Expression implements Abstract.InferHol
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitInferHole(this);
+  }
+
+  @Override
+  public Expression getType(List<Expression> context) {
+    return null;
   }
 
   @Override

@@ -71,7 +71,7 @@ public class ModuleSerialization {
         if (parent == null) {
           throw new IncorrectFormat();
         }
-        childModule = parent.findChild(name);
+        childModule = parent.getStaticField(name);
 
         if (childModule == null) {
           if (parent instanceof ClassDefinition && code == CLASS_CODE) {
@@ -295,9 +295,9 @@ public class ModuleSerialization {
     }
     */
 
-    if (definition.getChildren() != null) {
-      visitor.getDataStream().writeInt(definition.getChildren().size());
-      for (Definition child : definition.getChildren()) {
+    if (definition.getStaticFields() != null) {
+      visitor.getDataStream().writeInt(definition.getStaticFields().size());
+      for (Definition child : definition.getStaticFields()) {
         visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(child));
       }
     } else {
@@ -522,7 +522,7 @@ public class ModuleSerialization {
         for (int i = 0; i < size; ++i) {
           fields.add(readExpression(stream, definitionMap));
         }
-        return new TupleExpression(fields);
+        return Tuple(fields, (SigmaExpression) readExpression(stream, definitionMap));
       }
       case 11: {
         return Sigma(readTypeArguments(stream, definitionMap));
@@ -572,7 +572,7 @@ public class ModuleSerialization {
           deserializeDefinition(stream, definitionMap, overriding);
           map.put((FunctionDefinition) overridden, overriding);
         }
-        return ClassExt((ClassDefinition) definition, map);
+        return ClassExt((ClassDefinition) definition, map, readUniverse(stream));
       }
       case 16: {
         return New(readExpression(stream, definitionMap));

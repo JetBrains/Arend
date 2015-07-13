@@ -8,9 +8,11 @@ import java.util.List;
 
 public class TupleExpression extends Expression implements Abstract.TupleExpression {
   private final List<Expression> myFields;
+  private final SigmaExpression myType;
 
-  public TupleExpression(List<Expression> fields) {
+  public TupleExpression(List<Expression> fields, SigmaExpression type) {
     myFields = fields;
+    myType = type;
   }
 
   @Override
@@ -21,6 +23,15 @@ public class TupleExpression extends Expression implements Abstract.TupleExpress
   @Override
   public <T> T accept(ExpressionVisitor<? extends T> visitor) {
     return visitor.visitTuple(this);
+  }
+
+  @Override
+  public SigmaExpression getType(List<Expression> context) {
+    return myType;
+  }
+
+  public SigmaExpression getType() {
+    return myType;
   }
 
   @Override

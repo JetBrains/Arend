@@ -752,7 +752,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Definition> getFields() {
+    public List<Definition> getPublicFields() {
       return myFields;
     }
   }

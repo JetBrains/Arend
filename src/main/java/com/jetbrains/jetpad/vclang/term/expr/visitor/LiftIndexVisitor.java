@@ -108,11 +108,6 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitVar(VarExpression expr) {
-    return expr;
-  }
-
-  @Override
   public Expression visitError(ErrorExpression expr) {
     if (expr.getExpr() == null) return expr;
     Expression expr1 = expr.accept(this);
@@ -132,7 +127,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
       if (expr1 == null) return null;
       fields.add(expr1);
     }
-    return Tuple(fields);
+    return Tuple(fields, (SigmaExpression) expr.getType().accept(this));
   }
 
   @Override
@@ -170,7 +165,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
       Expression term = entry.getValue().getTerm() == null ? null : entry.getValue().getTerm().liftIndex(from, myOn);
       definitions.put(entry.getKey(), new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), entry.getValue().getFixity(), arguments, resultType, entry.getValue().getArrow(), term, entry.getKey()));
     }
-    return ClassExt(expr.getBaseClass(), definitions);
+    return ClassExt(expr.getBaseClass(), definitions, expr.getUniverse());
   }
 
   @Override

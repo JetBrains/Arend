@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -19,6 +18,8 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public abstract class Expression implements PrettyPrintable, Abstract.Expression {
   public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
+
+  public abstract Expression getType(List<Expression> context);
 
   @Override
   public void setWellTyped(Expression wellTyped) {}

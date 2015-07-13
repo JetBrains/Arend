@@ -37,8 +37,8 @@ public class ExpressionFactory {
     return new DefCallExpression(definition);
   }
 
-  public static ClassExtExpression ClassExt(ClassDefinition baseClass, Map<FunctionDefinition, OverriddenDefinition> definitions) {
-    return new ClassExtExpression(baseClass, definitions);
+  public static ClassExtExpression ClassExt(ClassDefinition baseClass, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
+    return new ClassExtExpression(baseClass, definitions, universe);
   }
 
   public static NewExpression New(Expression expression) {
@@ -127,12 +127,12 @@ public class ExpressionFactory {
     return new SigmaExpression(arguments);
   }
 
-  public static TupleExpression Tuple(List<Expression> fields) {
-    return new TupleExpression(fields);
+  public static TupleExpression Tuple(List<Expression> fields, SigmaExpression type) {
+    return new TupleExpression(fields, type);
   }
 
-  public static TupleExpression Tuple(Expression... fields) {
-    return new TupleExpression(Arrays.asList(fields));
+  public static TupleExpression Tuple(SigmaExpression type, Expression... fields) {
+    return new TupleExpression(Arrays.asList(fields), type);
   }
 
   public static FieldAccExpression FieldAcc(Expression expr, Definition field) {
@@ -141,10 +141,6 @@ public class ExpressionFactory {
 
   public static ProjExpression Proj(Expression expr, int field) {
     return new ProjExpression(expr, field);
-  }
-
-  public static VarExpression Var(String name) {
-    return new VarExpression(name);
   }
 
   public static DefCallExpression Nat() {

@@ -115,11 +115,6 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitVar(VarExpression expr) {
-    return expr;
-  }
-
-  @Override
   public Expression visitError(ErrorExpression expr) {
     return expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this), expr.getError());
   }
@@ -135,7 +130,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this));
     }
-    return Tuple(fields);
+    return Tuple(fields, (SigmaExpression) expr.getType().accept(this));
   }
 
   @Override
@@ -166,7 +161,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
       Expression[] result = visitLamArguments(entry.getValue().getArguments(), arguments, entry.getValue().getResultType(), entry.getValue().getTerm());
       definitions.put(entry.getKey(), new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), entry.getValue().getFixity(), arguments, result[0], entry.getValue().getArrow(), result[1], entry.getKey()));
     }
-    return ClassExt(expr.getBaseClass(), definitions);
+    return ClassExt(expr.getBaseClass(), definitions, expr.getUniverse());
   }
 
   @Override

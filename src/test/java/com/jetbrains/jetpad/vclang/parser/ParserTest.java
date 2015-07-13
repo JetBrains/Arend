@@ -87,8 +87,8 @@ public class ParserTest {
     ClassDefinition result = parseDefs(moduleLoader,
         "\\function x : Nat => zero\n" +
             "\\function y : Nat => x");
-    assertNotNull(result.getChildren());
-    assertEquals(2, result.getChildren().size());
+    assertNotNull(result.getStaticFields());
+    assertEquals(2, result.getStaticFields().size());
   }
 
   @Test
@@ -98,8 +98,8 @@ public class ParserTest {
     ClassDefinition result = parseDefs(moduleLoader,
         "\\function x : \\Type0 => Nat\n" +
             "\\function y : x => zero");
-    assertNotNull(result.getChildren());
-    assertEquals(2, result.getChildren().size());
+    assertNotNull(result.getStaticFields());
+    assertEquals(2, result.getStaticFields().size());
   }
 
   @Test
@@ -160,8 +160,8 @@ public class ParserTest {
     ClassDefinition result = parseDefs(moduleLoader,
         "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
             "\\function (*) : Nat -> Nat => \\lam x => x + zero");
-    assertNotNull(result.getChildren());
-    assertEquals(2, result.getChildren().size());
+    assertNotNull(result.getStaticFields());
+    assertEquals(2, result.getStaticFields().size());
   }
 
   @Test
