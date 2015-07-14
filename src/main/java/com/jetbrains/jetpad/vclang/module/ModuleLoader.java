@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 
@@ -21,13 +22,9 @@ public class ModuleLoader {
   private final List<ModuleError> myErrors = new ArrayList<>();
   private final List<TypeCheckingError> myTypeCheckingErrors = new ArrayList<>();
 
-  private static ModuleLoader INSTANCE = new ModuleLoader();
-
-  public static ModuleLoader getInstance() {
-    return INSTANCE;
-  }
-
   public void init(SourceSupplier sourceSupplier, OutputSupplier outputSupplier, boolean recompile) {
+    Prelude.PRELUDE.setParent(myRoot);
+    myRoot.addStaticField(Prelude.PRELUDE, null);
     mySourceSupplier = sourceSupplier;
     myOutputSupplier = outputSupplier;
     myRecompile = recompile;

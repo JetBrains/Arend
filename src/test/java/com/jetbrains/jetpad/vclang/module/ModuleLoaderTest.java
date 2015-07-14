@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parse;
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
 import static org.junit.Assert.*;
 
@@ -138,20 +137,51 @@ public class ModuleLoaderTest {
   }
 
   @Test
+  public void openTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDef(moduleLoader, "\\class A { \\function x : Nat => 0 } \\open A \\function y => x");
+  }
+
+  @Test
+  public void closeTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDef(moduleLoader, "\\class A { \\function x : Nat => 0 } \\open A \\function y => x \\close A(x) \\function z => x", 1);
+  }
+
+  @Test
+  public void exportTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDef(moduleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\export B } \\function y => A.x");
+  }
+
+  @Test
+  public void openExportTestError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDef(moduleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\open B } \\function y => A.x", 1);
+  }
+
+  @Test
+  public void export2TestError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDef(moduleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\export B } \\function y => x", 1);
+  }
+
+  @Test
   public void openAbstractTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    String text = "\\class A { \\function x : Nat } \\open A \\function y => x";
-    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
-    assertEquals(1, moduleLoader.getErrors().size());
+    parseDef(moduleLoader, "\\class A { \\function x : Nat } \\open A \\function y => x", 1);
   }
 
   @Test
   public void openAbstractTestError2() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    String text = "\\class A { \\function x : Nat \\function y => x } \\open A \\function z => y";
-    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
-    assertEquals(1, moduleLoader.getErrors().size());
+    parseDef(moduleLoader, "\\class A { \\function x : Nat \\function y => x } \\open A \\function z => y", 1);
   }
 }

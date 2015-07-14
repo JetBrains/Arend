@@ -8,9 +8,11 @@ import java.io.IOException;
 
 public class FileOutput implements Output {
   private final File myFile;
+  private final ModuleSerialization myModuleSerialization;
 
-  public FileOutput(File file) {
+  public FileOutput(ModuleSerialization moduleSerialization, File file) {
     myFile = file;
+    myModuleSerialization = moduleSerialization;
   }
 
   @Override
@@ -30,11 +32,11 @@ public class FileOutput implements Output {
 
   @Override
   public int read(ClassDefinition classDefinition) throws IOException {
-    return ModuleSerialization.readFile(myFile, classDefinition);
+    return myModuleSerialization.readFile(myFile, classDefinition);
   }
 
   @Override
   public void write(ClassDefinition classDefinition) throws IOException {
-    ModuleSerialization.writeFile(classDefinition, myFile);
+    myModuleSerialization.writeFile(classDefinition, myFile);
   }
 }

@@ -22,14 +22,20 @@ public class ModuleSerialization {
   private static final byte[] SIGNATURE = { 'v', 'c', (byte) 0xb1, 0x0b };
   private static final int VERSION = 0;
 
+  private final ModuleLoader myModuleLoader;
+
+  public ModuleSerialization(ModuleLoader moduleLoader) {
+    myModuleLoader = moduleLoader;
+  }
+
   // TODO: add noAbstract check.
 
-  public static void writeFile(ClassDefinition def, File outputFile) throws IOException {
+  public void writeFile(ClassDefinition def, File outputFile) throws IOException {
     Files.createDirectories(outputFile.getParentFile().toPath());
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
     DefinitionsIndices definitionsIndices = new DefinitionsIndices();
-    SerializeVisitor visitor = new SerializeVisitor(definitionsIndices, byteArrayStream, dataStream);
+    SerializeVisitor visitor = new SerializeVisitor(definitionsIndices, byteArrayStream, dataStream, this);
     int errors = serializeClassDefinition(visitor, def);
 
     DataOutputStream fileStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
@@ -41,7 +47,7 @@ public class ModuleSerialization {
     fileStream.close();
   }
 
-  public static int readFile(File file, ClassDefinition module) throws IOException {
+  public int readFile(File file, ClassDefinition module) throws IOException {
     DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
     byte[] signature = new byte[4];
     stream.readFully(signature);
@@ -55,13 +61,13 @@ public class ModuleSerialization {
     int errorsNumber = stream.readInt();
 
     Map<Integer, Definition> definitionMap = new HashMap<>();
-    definitionMap.put(0, ModuleLoader.getInstance().rootModule());
+    definitionMap.put(0, myModuleLoader.rootModule());
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       int index = stream.readInt();
       Definition childModule;
       if (index == 0) {
-        childModule = ModuleLoader.getInstance().rootModule();
+        childModule = myModuleLoader.rootModule();
       } else {
         int parentIndex = stream.readInt();
         String name = stream.readUTF();
@@ -75,7 +81,7 @@ public class ModuleSerialization {
 
         if (childModule == null) {
           if (parent instanceof ClassDefinition && code == CLASS_CODE) {
-            childModule = ModuleLoader.getInstance().loadModule(new Module((ClassDefinition) parent, name), true);
+            childModule = myModuleLoader.loadModule(new Module((ClassDefinition) parent, name), true);
           }
           if (childModule == null) {
             childModule = newDefinition(code, name, parent);
@@ -84,7 +90,7 @@ public class ModuleSerialization {
             } else
             if (parent instanceof ClassDefinition) {
               // TODO
-              // ((ClassDefinition) parent).add(childModule, false, ModuleLoader.getInstance().getErrors());
+              // ((ClassDefinition) parent).add(childModule, false, myModuleLoader.getErrors());
             } else {
               throw new IncorrectFormat();
             }
@@ -99,7 +105,7 @@ public class ModuleSerialization {
     return errorsNumber;
   }
 
-  public static int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
+  public int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
     visitor.getDataStream().write(getDefinitionCode(definition));
     visitor.getDataStream().writeBoolean(definition.hasErrors());
     if (!(definition instanceof Constructor)) {
@@ -172,7 +178,7 @@ public class ModuleSerialization {
     throw new IllegalStateException();
   }
 
-  public static Definition newDefinition(int code, String name, Definition parent) throws IncorrectFormat {
+  public Definition newDefinition(int code, String name, Definition parent) throws IncorrectFormat {
     if (code == OVERRIDDEN_CODE) {
       return new OverriddenDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null);
     }
@@ -192,7 +198,7 @@ public class ModuleSerialization {
     throw new IncorrectFormat();
   }
 
-  private static void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition definition) throws IOException {
+  private void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition definition) throws IOException {
     int code = stream.read();
     definition.hasErrors(stream.readBoolean());
     if (code != CONSTRUCTOR_CODE) {
@@ -272,7 +278,7 @@ public class ModuleSerialization {
     }
   }
 
-  private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
+  private int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
     int size = 0;
     // TODO
@@ -308,7 +314,7 @@ public class ModuleSerialization {
     return errors;
   }
 
-  private static void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
+  private void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
     definition.setUniverse(readUniverse(stream));
 
     int size = stream.readInt();
@@ -319,24 +325,24 @@ public class ModuleSerialization {
         deserializeDefinition(stream, definitionMap, field);
       } else {
         // TODO
-        // definition.add(field, false, ModuleLoader.getInstance().getErrors());
+        // definition.add(field, false, myModuleLoader.getErrors());
       }
     }
 
     size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       // TODO
-      // definition.addExport(definitionMap.get(stream.readInt()), ModuleLoader.getInstance().getErrors());
+      // definition.addExport(definitionMap.get(stream.readInt()), myModuleLoader.getErrors());
     }
   }
 
-  private static void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
+  private void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
     stream.write(definition.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 1 : 2);
     stream.writeByte(definition.getPrecedence().priority);
     stream.write(definition.getFixity() == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
   }
 
-  private static void readDefinition(DataInputStream stream, Definition definition) throws IOException {
+  private void readDefinition(DataInputStream stream, Definition definition) throws IOException {
     int assocCode = stream.read();
     Abstract.Definition.Associativity assoc;
     if (assocCode == 0) {
@@ -363,7 +369,7 @@ public class ModuleSerialization {
     }
   }
 
-  public static void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {
+  public void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {
     stream.writeInt(universe.getLevel());
     if (universe instanceof Universe.Type) {
       stream.writeInt(((Universe.Type) universe).getTruncated());
@@ -372,20 +378,20 @@ public class ModuleSerialization {
     }
   }
 
-  public static Universe readUniverse(DataInputStream stream) throws IOException {
+  public Universe readUniverse(DataInputStream stream) throws IOException {
     int level = stream.readInt();
     int truncated = stream.readInt();
     return new Universe.Type(level, truncated);
   }
 
-  public static void writeArguments(SerializeVisitor visitor, List<? extends Argument> arguments) throws IOException {
+  public void writeArguments(SerializeVisitor visitor, List<? extends Argument> arguments) throws IOException {
     visitor.getDataStream().writeInt(arguments.size());
     for (Argument argument : arguments) {
       writeArgument(visitor, argument);
     }
   }
 
-  public static List<Argument> readArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public List<Argument> readArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int size = stream.readInt();
     List<Argument> result = new ArrayList<>(size);
     for (int i = 0; i < size; ++i) {
@@ -394,7 +400,7 @@ public class ModuleSerialization {
     return result;
   }
 
-  public static List<NameArgument> readNameArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public List<NameArgument> readNameArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int size = stream.readInt();
     List<NameArgument> result = new ArrayList<>(size);
     for (int i = 0; i < size; ++i) {
@@ -407,7 +413,7 @@ public class ModuleSerialization {
     return result;
   }
 
-  public static List<TypeArgument> readTypeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public List<TypeArgument> readTypeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int size = stream.readInt();
     List<TypeArgument> result = new ArrayList<>(size);
     for (int i = 0; i < size; ++i) {
@@ -420,7 +426,7 @@ public class ModuleSerialization {
     return result;
   }
 
-  public static List<TelescopeArgument> readTelescopeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public List<TelescopeArgument> readTelescopeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int size = stream.readInt();
     List<TelescopeArgument> result = new ArrayList<>(size);
     for (int i = 0; i < size; ++i) {
@@ -433,7 +439,7 @@ public class ModuleSerialization {
     return result;
   }
 
-  public static void writeArgument(SerializeVisitor visitor, Argument argument) throws IOException {
+  public void writeArgument(SerializeVisitor visitor, Argument argument) throws IOException {
     visitor.getDataStream().writeBoolean(argument.getExplicit());
     if (argument instanceof TelescopeArgument) {
       visitor.getDataStream().write(0);
@@ -462,7 +468,7 @@ public class ModuleSerialization {
     }
   }
 
-  public static Argument readArgument(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public Argument readArgument(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     boolean explicit = stream.readBoolean();
     int code = stream.read();
     if (code == 0) {
@@ -483,7 +489,7 @@ public class ModuleSerialization {
     }
   }
 
-  public static Expression readExpression(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public Expression readExpression(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int code = stream.read();
     switch (code) {
       case 1: {
@@ -584,7 +590,7 @@ public class ModuleSerialization {
     }
   }
 
-  public static Clause readClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public Clause readClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     Definition definition = definitionMap.get(stream.readInt());
     if (!(definition instanceof Constructor)) {
       throw new IncorrectFormat();
@@ -594,7 +600,7 @@ public class ModuleSerialization {
     return new Clause((Constructor) definition, arguments, arrow, readExpression(stream, definitionMap), null);
   }
 
-  public static class DeserializationException extends IOException {
+  public class DeserializationException extends IOException {
     private final String myMessage;
 
     public DeserializationException(String message) {
@@ -607,13 +613,13 @@ public class ModuleSerialization {
     }
   }
 
-  public static class IncorrectFormat extends DeserializationException {
+  public class IncorrectFormat extends DeserializationException {
     public IncorrectFormat() {
       super("Incorrect format");
     }
   }
 
-  public static class WrongVersion extends DeserializationException {
+  public class WrongVersion extends DeserializationException {
     WrongVersion(int version) {
       super("Version of the file format (" + version + ") differs from the version of the program + (" + VERSION + ")");
     }

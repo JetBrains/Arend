@@ -11,19 +11,18 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.serialization.ModuleSerialization.writeArguments;
-import static com.jetbrains.jetpad.vclang.serialization.ModuleSerialization.writeUniverse;
-
 public class SerializeVisitor implements ExpressionVisitor<Void> {
   private int myErrors = 0;
   private final DefinitionsIndices myDefinitionsIndices;
   private final ByteArrayOutputStream myStream;
   private final DataOutputStream myDataStream;
+  private final ModuleSerialization myModuleSerialization;
 
-  public SerializeVisitor(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream) {
+  public SerializeVisitor(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream, ModuleSerialization moduleSerialization) {
     myDefinitionsIndices = definitionsIndices;
     myStream = stream;
     myDataStream = dataStream;
+    myModuleSerialization = moduleSerialization;
   }
 
   public int getErrors() {
@@ -80,7 +79,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     myStream.write(4);
     expr.getBody().accept(this);
     try {
-      writeArguments(this, expr.getArguments());
+      myModuleSerialization.writeArguments(this, expr.getArguments());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -91,7 +90,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitPi(PiExpression expr) {
     myStream.write(5);
     try {
-      writeArguments(this, expr.getArguments());
+      myModuleSerialization.writeArguments(this, expr.getArguments());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -103,7 +102,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitUniverse(UniverseExpression expr) {
     myStream.write(6);
     try {
-      writeUniverse(myDataStream, expr.getUniverse());
+      myModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -149,7 +148,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitSigma(SigmaExpression expr) {
     myStream.write(11);
     try {
-      writeArguments(this, expr.getArguments());
+      myModuleSerialization.writeArguments(this, expr.getArguments());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -187,7 +186,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   private void visitClause(Clause clause) {
     try {
       myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(clause.getConstructor()));
-      writeArguments(this, clause.getArguments());
+      myModuleSerialization.writeArguments(this, clause.getArguments());
       myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
     } catch (IOException e) {
       throw new IllegalStateException();
@@ -227,9 +226,9 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
       myDataStream.writeInt(expr.getDefinitionsMap().size());
       for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
         myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey()));
-        myErrors += ModuleSerialization.serializeDefinition(this, entry.getValue());
+        myErrors += myModuleSerialization.serializeDefinition(this, entry.getValue());
       }
-      writeUniverse(myDataStream, expr.getUniverse());
+      myModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());
     } catch (IOException e) {
       throw new IllegalStateException();
     }

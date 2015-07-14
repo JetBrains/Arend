@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
-  private final Definition myParent;
+  private Definition myParent;
   private Precedence myPrecedence;
   private Fixity myFixity;
   private Universe myUniverse;
@@ -28,6 +28,10 @@ public abstract class Definition extends Binding implements Abstract.Definition 
 
   public Definition getParent() {
     return myParent;
+  }
+
+  public void setParent(Definition parent) {
+    myParent = parent;
   }
 
   public boolean isDescendantOf(Definition definition) {

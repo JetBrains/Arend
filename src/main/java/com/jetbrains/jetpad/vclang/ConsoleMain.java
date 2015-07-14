@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.module.*;
+import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.apache.commons.cli.*;
@@ -59,7 +60,10 @@ public class ConsoleMain {
       libDirs.add(new File(workingPath, "lib"));
     }
 
-    ModuleLoader.getInstance().init(new FileSourceSupplier(sourceDir), new FileOutputSupplier(outputDir, libDirs), recompile);
+    final ModuleLoader moduleLoader = new ModuleLoader();
+    ModuleSerialization moduleSerialization = new ModuleSerialization(moduleLoader);
+    moduleLoader.init(new FileSourceSupplier(moduleLoader, sourceDir), new FileOutputSupplier(moduleSerialization, outputDir, libDirs), recompile);
+
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDir == null) return;
       try {
@@ -67,7 +71,7 @@ public class ConsoleMain {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
             if (path.getFileName().toString().endsWith(".vc")) {
-              processFile(path, sourceDir);
+              processFile(moduleLoader, path, sourceDir);
             }
             return FileVisitResult.CONTINUE;
           }
@@ -83,7 +87,7 @@ public class ConsoleMain {
       }
     } else {
       for (String fileName : cmdLine.getArgList()) {
-        processFile(Paths.get(fileName), sourceDir);
+        processFile(moduleLoader, Paths.get(fileName), sourceDir);
       }
     }
   }
@@ -108,7 +112,7 @@ public class ConsoleMain {
     return names;
   }
 
-  static private void processFile(Path fileName, File sourceDir) {
+  static private void processFile(ModuleLoader moduleLoader, Path fileName, File sourceDir) {
     Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName.getFileName();
     List<String> moduleNames = getModule(relativePath);
     if (moduleNames == null) {
@@ -116,32 +120,32 @@ public class ConsoleMain {
       return;
     }
 
-    ClassDefinition module = ModuleLoader.getInstance().rootModule();
+    ClassDefinition module = moduleLoader.rootModule();
     for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      ClassDefinition module1 = module.getClass(moduleNames.get(i), ModuleLoader.getInstance().getErrors());
+      ClassDefinition module1 = module.getClass(moduleNames.get(i), moduleLoader.getErrors());
       if (module1 == null) return;
       module1.hasErrors(false);
-      module.addStaticField(module1, ModuleLoader.getInstance().getErrors());
+      module.addStaticField(module1, moduleLoader.getErrors());
       module = module1;
     }
     Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));
-    if (!ModuleLoader.getInstance().isModuleLoaded(newModule)) {
-      ModuleLoader.getInstance().loadModule(newModule, false);
+    if (!moduleLoader.isModuleLoaded(newModule)) {
+      moduleLoader.loadModule(newModule, false);
 
-      for (ModuleError moduleError : ModuleLoader.getInstance().getErrors()) {
+      for (ModuleError moduleError : moduleLoader.getErrors()) {
         System.err.println(moduleError);
       }
 
-      for (TypeCheckingError error : ModuleLoader.getInstance().getTypeCheckingErrors()) {
+      for (TypeCheckingError error : moduleLoader.getTypeCheckingErrors()) {
         System.err.println(error);
       }
 
-      if (ModuleLoader.getInstance().getErrors().isEmpty() && ModuleLoader.getInstance().getTypeCheckingErrors().isEmpty()) {
+      if (moduleLoader.getErrors().isEmpty() && moduleLoader.getTypeCheckingErrors().isEmpty()) {
         System.out.println("[OK] " + module.getFullName());
       }
 
-      if (ModuleLoader.getInstance().getErrors().isEmpty()) {
-        for (ModuleLoader.OutputUnit unit : ModuleLoader.getInstance().getOutputUnits()) {
+      if (moduleLoader.getErrors().isEmpty()) {
+        for (ModuleLoader.OutputUnit unit : moduleLoader.getOutputUnits()) {
           try {
             unit.output.write(unit.module);
           } catch (IOException e) {
@@ -151,8 +155,8 @@ public class ConsoleMain {
       }
     }
 
-    ModuleLoader.getInstance().getOutputUnits().clear();
-    ModuleLoader.getInstance().getErrors().clear();
-    ModuleLoader.getInstance().getTypeCheckingErrors().clear();
+    moduleLoader.getOutputUnits().clear();
+    moduleLoader.getErrors().clear();
+    moduleLoader.getTypeCheckingErrors().clear();
   }
 }

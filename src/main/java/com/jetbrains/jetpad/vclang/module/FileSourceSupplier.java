@@ -4,13 +4,15 @@ import java.io.File;
 
 public class FileSourceSupplier implements SourceSupplier {
   private final File myDirectory;
+  private final ModuleLoader myModuleLoader;
 
-  public FileSourceSupplier(File directory) {
+  public FileSourceSupplier(ModuleLoader moduleLoader, File directory) {
+    myModuleLoader = moduleLoader;
     myDirectory = directory;
   }
 
   @Override
   public FileSource getSource(Module module) {
-    return new FileSource(module, myDirectory == null ? null : module.getFile(myDirectory, ".vc"));
+    return new FileSource(myModuleLoader, module, myDirectory == null ? null : module.getFile(myDirectory, ".vc"));
   }
 }

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
@@ -15,24 +14,24 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Prelude {
-  public final static ClassDefinition PRELUDE;
+  public static ClassDefinition PRELUDE;
 
-  public final static DataDefinition NAT;
-  public final static Constructor ZERO, SUC;
+  public static DataDefinition NAT;
+  public static Constructor ZERO, SUC;
 
-  public final static DataDefinition INTERVAL;
-  public final static Constructor LEFT, RIGHT;
+  public static DataDefinition INTERVAL;
+  public static Constructor LEFT, RIGHT;
 
-  public final static FunctionDefinition COERCE;
+  public static FunctionDefinition COERCE;
 
-  public final static DataDefinition PATH;
-  public final static FunctionDefinition PATH_INFIX;
-  public final static Constructor PATH_CON;
+  public static DataDefinition PATH;
+  public static FunctionDefinition PATH_INFIX;
+  public static Constructor PATH_CON;
 
-  public final static FunctionDefinition AT;
+  public static FunctionDefinition AT;
 
   static {
-    PRELUDE = new ClassDefinition("Prelude", ModuleLoader.getInstance().rootModule());
+    PRELUDE = new ClassDefinition("Prelude", null);
 
     List<Constructor> natConstructors = new ArrayList<>(2);
     NAT = new DataDefinition("Nat", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>(), natConstructors);
