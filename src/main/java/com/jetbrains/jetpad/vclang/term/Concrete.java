@@ -485,7 +485,7 @@ public final class Concrete {
     }
 
     @Override
-    public Definition getField() {
+    public com.jetbrains.jetpad.vclang.term.definition.Definition getField() {
       return null;
     }
 

@@ -8,7 +8,10 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
@@ -158,11 +161,13 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         if (expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor) {
           Constructor constructor = (Constructor) ((DefCallExpression) expr).getDefinition();
           Clause clause = constructor.getIndex() < ((ElimExpression) result).getClauses().size() ? ((ElimExpression) result).getClauses().get(constructor.getIndex()) : null;
-          if (clause != null && clause.getArguments().size() == constructorArgs.size()) {
+          int parametersCount = numberOfVariables(constructor.getDataType().getParameters());
+          if (clause != null && clause.getArguments().size() == constructorArgs.size() - parametersCount) {
             int var = ((ElimExpression) result).getExpression().getIndex();
             args2.remove(var);
-            Collections.reverse(constructorArgs);
-            args2.addAll(var, constructorArgs);
+            for (int i = constructorArgs.size() - 1; i >= parametersCount; --i) {
+              args2.add(var++, constructorArgs.get(i));
+            }
             result = clause.getExpression();
             arrow = clause.getArrow();
             continue;

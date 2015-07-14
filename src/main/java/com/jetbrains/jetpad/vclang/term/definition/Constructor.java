@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -17,12 +18,12 @@ public class Constructor extends Definition implements Abstract.Constructor {
   private List<TypeArgument> myArguments;
   private int myIndex;
 
-  public Constructor(int index, String name, Definition parent, Precedence precedence, Fixity fixity) {
+  public Constructor(int index, String name, DataDefinition parent, Precedence precedence, Fixity fixity) {
     super(name, parent, precedence, fixity);
     myIndex = index;
   }
 
-  public Constructor(int index, String name, Definition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments) {
+  public Constructor(int index, String name, DataDefinition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments) {
     super(name, parent, precedence, fixity);
     setUniverse(universe);
     hasErrors(false);
@@ -75,7 +76,21 @@ public class Constructor extends Definition implements Abstract.Constructor {
         resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
       }
     }
-    return myArguments.isEmpty() ? resultType : Pi(myArguments, resultType);
+
+    if (getDataType().getParameters().isEmpty() && myArguments.isEmpty()) {
+      return resultType;
+    }
+
+    if (getDataType().getParameters().isEmpty()) {
+      return Pi(myArguments, resultType);
+    }
+
+    List<TypeArgument> arguments = new ArrayList<>(getDataType().getParameters().size() + myArguments.size());
+    for (TypeArgument argument : getDataType().getParameters()) {
+      arguments.add(argument instanceof TelescopeArgument ? Tele(false, ((TelescopeArgument) argument).getNames(), argument.getType()) : TypeArg(false, argument.getType()));
+    }
+    arguments.addAll(myArguments);
+    return Pi(arguments, resultType);
   }
 
   @Override

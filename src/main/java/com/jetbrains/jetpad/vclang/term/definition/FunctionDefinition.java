@@ -92,11 +92,12 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   @Override
   public Expression getType() {
     if (typeHasErrors() || myResultType == null) return null;
+    if (myArguments.isEmpty()) return myResultType;
     List<TypeArgument> arguments = new ArrayList<>(myArguments.size());
     for (Argument argument : myArguments) {
       arguments.add((TypeArgument) argument);
     }
-    return myArguments.isEmpty() ? myResultType : Pi(arguments, myResultType);
+    return Pi(arguments, myResultType);
   }
 
   @Override

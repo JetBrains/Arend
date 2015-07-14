@@ -186,7 +186,8 @@ public class ModuleSerialization {
       return new ClassDefinition(name, parent);
     }
     if (code == CONSTRUCTOR_CODE) {
-      return new Constructor(-1, name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX);
+      if (!(parent instanceof DataDefinition)) throw new IncorrectFormat();
+      return new Constructor(-1, name, (DataDefinition) parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX);
     }
     throw new IncorrectFormat();
   }

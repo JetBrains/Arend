@@ -122,6 +122,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
         return false;
       }
       setUniverse(max);
+      return true;
     }
 
     boolean isStatic = true;

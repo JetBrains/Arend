@@ -99,4 +99,19 @@ public class ElimTest {
               "| con1 s => x q" +
               "| con2 _ y z t => x");
   }
+
+  @Test
+  public void elim3() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    parseDefs(moduleLoader,
+        "\\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
+        "\\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
+          "| con1 s <= \\elim e\n" +
+            "| con2 _ {y} {z} {t} => q t" +
+            "| con1 {z} _ => z" +
+            ";\n" +
+          "| con2 y <= \\elim e\n" +
+            "| con1 s => y s" +
+            "| con2 _ {a} {b} => y (q b)");
+  }
 }

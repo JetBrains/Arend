@@ -41,7 +41,7 @@ public class GetTypeTest {
   public void classExtTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    ClassDefinition def = parseDefs(moduleLoader, "\\class Test { \\function A : \\Type0 \\function a : A } \\function test => Test { A => Nat }");
+    ClassDefinition def = parseDefs(moduleLoader, "\\class Test { \\function A : \\Type0 \\function a : A } \\function test => Test { \\override A => Nat }");
     assertEquals(Universe(1), def.getPublicField("Test").getType());
     assertEquals(Universe(0, Universe.Type.SET), def.getPublicField("test").getType());
     assertEquals(Universe(0, Universe.Type.SET), ((FunctionDefinition) def.getPublicField("test")).getTerm().getType(new ArrayList<Expression>(0)));
@@ -64,7 +64,7 @@ public class GetTypeTest {
     Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), FieldAcc(Apps(Index(0), Zero()), ((ClassDefinition) def.getPublicField("C")).getPublicField("x")));
     List<Expression> context = new ArrayList<>(1);
     context.add(Pi(Nat(), DefCall(def.getPublicField("C"))));
-    assertEquals(Pi(context.get(0), Pi(type, type)), def.getPublicField("test").getType());
+    assertEquals(Pi(args(Tele(vars("p"), context.get(0))), Pi(type, type)), def.getPublicField("test").getType());
     assertEquals(Pi(type, type), ((FunctionDefinition) def.getPublicField("test")).getTerm().getType(context));
   }
 

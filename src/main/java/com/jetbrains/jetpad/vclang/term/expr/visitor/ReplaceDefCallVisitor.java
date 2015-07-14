@@ -18,7 +18,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
   private final Definition myParent;
-  private final Expression myExpression;
+  private Expression myExpression;
 
   public ReplaceDefCallVisitor(Definition parent, Expression expression) {
     myParent = parent;
@@ -40,29 +40,48 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
     return expr;
   }
 
-  private <T extends Argument> List<T> visitArguments(List<T> args) {
-    List<T> arguments = new ArrayList<>(args.size());
-    for (T arg : args) {
-      if (arg instanceof TelescopeArgument) {
-        arguments.add((T) Tele(arg.getExplicit(), ((TelescopeArgument) arg).getNames(), ((TelescopeArgument) arg).getType().accept(this)));
-      } else
-      if (arg instanceof TypeArgument) {
-        arguments.add((T) TypeArg(arg.getExplicit(), ((TypeArgument) arg).getType().accept(this)));
-      } else {
-        arguments.add(arg);
-      }
-    }
-    return arguments;
-  }
-
   @Override
   public LamExpression visitLam(LamExpression expr) {
-    return Lam(visitArguments(expr.getArguments()), expr.getBody().accept(this));
+    Expression oldExpression = myExpression;
+    List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
+    for (Argument arg : expr.getArguments()) {
+      if (arg instanceof TelescopeArgument) {
+        arguments.add(Tele(arg.getExplicit(), ((TelescopeArgument) arg).getNames(), ((TelescopeArgument) arg).getType().accept(this)));
+        myExpression = myExpression.liftIndex(0, ((TelescopeArgument) arg).getNames().size());
+      } else {
+        if (arg instanceof TypeArgument) {
+          arguments.add(TypeArg(arg.getExplicit(), ((TypeArgument) arg).getType().accept(this)));
+        } else {
+          arguments.add(arg);
+        }
+        myExpression = myExpression.liftIndex(0, 1);
+      }
+    }
+    LamExpression result = Lam(arguments, expr.getBody().accept(this));
+    myExpression = oldExpression;
+    return result;
+  }
+
+  private Expression visitArguments(List<TypeArgument> args, Expression codomain) {
+    Expression oldExpression = myExpression;
+    List<TypeArgument> arguments = new ArrayList<>(args.size());
+    for (TypeArgument arg : args) {
+      if (arg instanceof TelescopeArgument) {
+        arguments.add(Tele(arg.getExplicit(), ((TelescopeArgument) arg).getNames(), arg.getType().accept(this)));
+        myExpression = myExpression.liftIndex(0, ((TelescopeArgument) arg).getNames().size());
+      } else {
+        arguments.add(TypeArg(arg.getExplicit(), arg.getType().accept(this)));
+        myExpression = myExpression.liftIndex(0, 1);
+      }
+    }
+    Expression result = codomain == null ? Sigma(arguments) : Pi(arguments, codomain.accept(this));
+    myExpression = oldExpression;
+    return result;
   }
 
   @Override
   public PiExpression visitPi(PiExpression expr) {
-    return Pi(visitArguments(expr.getArguments()), expr.getCodomain().accept(this));
+    return (PiExpression) visitArguments(expr.getArguments(), expr.getCodomain());
   }
 
   @Override
@@ -91,11 +110,11 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr) {
-    return Sigma(visitArguments(expr.getArguments()));
+    return (SigmaExpression) visitArguments(expr.getArguments(), null);
   }
 
   private Clause visitClause(Clause clause, ElimExpression elimExpression) {
-    return new Clause(clause.getConstructor(), visitArguments(clause.getArguments()), clause.getArrow(), clause.getExpression().accept(this), elimExpression);
+    return new Clause(clause.getConstructor(), clause.getArguments(), clause.getArrow(), clause.getExpression().accept(this), elimExpression);
   }
 
   @Override

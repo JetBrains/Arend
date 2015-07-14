@@ -59,6 +59,10 @@ public class ExpressionFactory {
     return Lam(arguments, body);
   }
 
+  public static VarExpression Var(String name) {
+    return new VarExpression(name);
+  }
+
   public static List<String> vars(String... vars) {
     return Arrays.asList(vars);
   }

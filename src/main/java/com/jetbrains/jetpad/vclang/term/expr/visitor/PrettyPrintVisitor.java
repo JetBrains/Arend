@@ -80,8 +80,26 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
   }
 
+  private Integer getNumber(Abstract.Expression expr) {
+    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getDefinition() == Prelude.ZERO) {
+      return 0;
+    }
+    if (expr instanceof Abstract.AppExpression && ((Abstract.AppExpression) expr).getFunction() instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getDefinition() == Prelude.SUC) {
+      Integer result = getNumber(((Abstract.AppExpression) expr).getArgument().getExpression());
+      if (result == null) return null;
+      return result + 1;
+    }
+    return null;
+  }
+
   @Override
   public Void visitApp(Abstract.AppExpression expr, Byte prec) {
+    Integer number = getNumber(expr);
+    if (number != null) {
+      myBuilder.append(number);
+      return null;
+    }
+
     List<Abstract.ArgumentExpression> args = new ArrayList<>();
     visitApps(Abstract.getFunction(expr, args), args, prec);
     return null;
@@ -90,7 +108,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Byte prec) {
     if (expr.getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX) myBuilder.append('(');
-    myBuilder.append(expr.getDefinition().getName());
+    myBuilder.append(expr.getDefinition() == Prelude.ZERO ? "0" : expr.getDefinition().getName());
     if (expr.getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX) myBuilder.append(')');
     return null;
   }

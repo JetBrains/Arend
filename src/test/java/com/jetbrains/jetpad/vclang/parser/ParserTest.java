@@ -27,7 +27,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Concrete.Expression expr = parseExpr(moduleLoader, "\\lam x y z => y");
-    assertTrue(compare(Lam("x", Lam("y", Lam("z", Index(1)))), expr));
+    assertTrue(compare(Lam("x", Lam("y", Lam("z", Var("y")))), expr));
   }
 
   @Test
@@ -35,7 +35,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Concrete.Expression expr = parseExpr(moduleLoader, "\\lam x y => (\\lam z w => y z) y");
-    assertTrue(compare(Lam("x'", Lam("y'", Apps(Lam("z'", Lam("w'", Apps(Index(2), Index(1)))), Index(0)))), expr));
+    assertTrue(compare(Lam("x'", Lam("y'", Apps(Lam("z'", Lam("w'", Apps(Var("y"), Var("z")))), Var("y")))), expr));
   }
 
   @Test
@@ -43,7 +43,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Concrete.Expression expr = parseExpr(moduleLoader, "\\lam p {x t : Nat} {y} (a : Nat -> Nat) => (\\lam (z w : Nat) => y z) y");
-    assertTrue(compare(Lam(lamArgs(Name("p"), Tele(false, vars("x", "t"), DefCall(Prelude.NAT)), Name(false, "y"), Tele(vars("a"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Apps(Lam(lamArgs(Tele(vars("z", "w"), DefCall(Prelude.NAT))), Apps(Index(3), Index(1))), Index(1))), expr));
+    assertTrue(compare(Lam(lamArgs(Name("p"), Tele(false, vars("x", "t"), DefCall(Prelude.NAT)), Name(false, "y"), Tele(vars("a"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Apps(Lam(lamArgs(Tele(vars("z", "w"), DefCall(Prelude.NAT))), Apps(Var("y"), Var("z"))), Var("y"))), expr));
   }
 
   @Test
@@ -51,7 +51,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Concrete.Expression expr = parseExpr(moduleLoader, "\\Pi (x y z : Nat) (w t : Nat -> Nat) -> \\Pi (a b : \\Pi (c : Nat) -> Nat c) -> Nat b y w");
-    assertTrue(compare(Pi(args(Tele(vars("x", "y", "z"), DefCall(Prelude.NAT)), Tele(vars("w", "t"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Pi(args(Tele(vars("a", "b"), Pi("c", DefCall(Prelude.NAT), Apps(DefCall(Prelude.NAT), Index(0))))), Apps(DefCall(Prelude.NAT), Index(0), Index(5), Index(3)))), expr));
+    assertTrue(compare(Pi(args(Tele(vars("x", "y", "z"), DefCall(Prelude.NAT)), Tele(vars("w", "t"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Pi(args(Tele(vars("a", "b"), Pi("c", DefCall(Prelude.NAT), Apps(DefCall(Prelude.NAT), Var("c"))))), Apps(DefCall(Prelude.NAT), Var("b"), Var("y"), Var("w")))), expr));
   }
 
   @Test
@@ -59,7 +59,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     Concrete.Expression expr = parseExpr(moduleLoader, "\\Pi (x y : Nat) (z : Nat x -> Nat y) -> Nat z y x");
-    assertTrue(compare(Pi(args(Tele(vars("x", "y"), DefCall(Prelude.NAT)), Tele(vars("z"), Pi(Apps(DefCall(Prelude.NAT), Index(1)), Apps(DefCall(Prelude.NAT), Index(0))))), Apps(DefCall(Prelude.NAT), Index(0), Index(1), Index(2))), expr));
+    assertTrue(compare(Pi(args(Tele(vars("x", "y"), DefCall(Prelude.NAT)), Tele(vars("z"), Pi(Apps(DefCall(Prelude.NAT), Var("x")), Apps(DefCall(Prelude.NAT), Var("y"))))), Apps(DefCall(Prelude.NAT), Var("z"), Var("y"), Var("x"))), expr));
   }
 
   @Test

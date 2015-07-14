@@ -119,20 +119,23 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public Expression splitAt(int index, List<TypeArgument> arguments) {
-    assert arguments.size() == 0;
+    int count = 0;
     Expression type = this;
-    while (arguments.size() < index) {
+    while (count < index) {
       type = type.normalize(NormalizeVisitor.Mode.WHNF);
       if (type instanceof PiExpression) {
         PiExpression piType = (PiExpression) type;
         TelescopeArgument additionalArgument = null;
         int i;
-        for (i = 0; i < piType.getArguments().size() && arguments.size() < index; ++i) {
+        for (i = 0; i < piType.getArguments().size() && count < index; ++i) {
           if (piType.getArguments().get(i) instanceof TelescopeArgument) {
             TelescopeArgument teleArg = (TelescopeArgument) piType.getArguments().get(i);
             int j;
-            for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
-              arguments.add(Tele(piType.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType().liftIndex(0, j)));
+            for (j = 0; j < teleArg.getNames().size() && count < index; ++j) {
+              if (arguments != null) {
+                arguments.add(Tele(piType.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType().liftIndex(0, j)));
+              }
+              ++count;
             }
             if (j < teleArg.getNames().size()) {
               List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
@@ -142,7 +145,10 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
               additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType());
             }
           } else {
-            arguments.add(piType.getArguments().get(i));
+            if (arguments != null) {
+              arguments.add(piType.getArguments().get(i));
+            }
+            ++count;
           }
         }
 

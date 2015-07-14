@@ -139,7 +139,7 @@ public final class Abstract {
     Expression getExpression();
     String getName();
     Definition.Fixity getFixity();
-    Definition getField();
+    com.jetbrains.jetpad.vclang.term.definition.Definition getField();
   }
 
   public interface ProjExpression extends Expression {

@@ -242,7 +242,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (tupleResult != null) return tupleResult;
     Result lamResult = checkLam(expr, other);
     if (lamResult != null) return lamResult;
-    Definition otherDefinition = other instanceof Abstract.DefCallExpression ? ((Abstract.DefCallExpression) other).getDefinition() : other instanceof FieldAccExpression ? ((FieldAccExpression) other).getField() : null;
+    Definition otherDefinition = other instanceof Abstract.DefCallExpression ? ((Abstract.DefCallExpression) other).getDefinition() : null;
     return new JustResult(expr.getDefinition() == otherDefinition ? CMP.EQUALS : CMP.NOT_EQUIV);
   }
 
@@ -607,7 +607,9 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (expr.getField() == null) {
       if (!expr.getName().equals(otherFieldAcc.getName())) return new JustResult(CMP.NOT_EQUIV);
     } else {
-      if (expr.getField() != otherFieldAcc.getField()) return new JustResult(CMP.NOT_EQUIV);
+      Definition definition1 = expr.getField() instanceof OverriddenDefinition ? ((OverriddenDefinition) expr.getField()).getOverriddenFunction() : expr.getField();
+      Definition definition2 = otherFieldAcc.getField() instanceof OverriddenDefinition ? ((OverriddenDefinition) otherFieldAcc.getField()).getOverriddenFunction() : otherFieldAcc.getField();
+      if (definition1 != definition2) return new JustResult(CMP.NOT_EQUIV);
     }
     return expr.getExpression().accept(this, otherFieldAcc.getExpression());
   }

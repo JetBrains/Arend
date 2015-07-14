@@ -247,19 +247,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private Result typeCheckApps(Abstract.Expression fun, int argsSkipped, OKResult okFunction, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
     List<TypeArgument> signatureArguments = new ArrayList<>();
     DataDefinition dataType = null;
+    int parametersNumber = 0;
     if (okFunction.expression instanceof DefCallExpression) {
       Definition def = ((DefCallExpression) okFunction.expression).getDefinition();
       if (def instanceof Constructor) {
         dataType = ((Constructor) def).getDataType();
-        splitArguments(dataType.getParameters(), signatureArguments);
+        parametersNumber = numberOfVariables(dataType.getParameters());
       }
     }
-    int parametersNumber = signatureArguments.size();
 
     Expression signatureResultType = splitArguments(okFunction.type, signatureArguments);
     Arg[] argsImp = new Arg[signatureArguments.size()];
     for (int i = 0; i < parametersNumber; ++i) {
-      assert dataType != null;
       argsImp[i] = new Arg(!signatureArguments.get(i).getExplicit(), null, new InferHoleExpression(new ArgInferenceError(parameter(i + 1), fun, null, new StringPrettyPrintable(dataType.getName()))));
     }
 
@@ -335,7 +334,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       Expression type = arguments.size() > 0 ? Pi(arguments, piType.getCodomain()) : piType.getCodomain();
-      Expression resultType = Apps(DefCall(Prelude.PATH), Lam(lamArgs(Tele(vars("i"), DefCall(Prelude.INTERVAL))), type), Apps(argResult.expression, DefCall(Prelude.LEFT)), Apps(argResult.expression, DefCall(Prelude.RIGHT)));
+      Expression parameter1 = Lam(lamArgs(Tele(vars("i"), DefCall(Prelude.INTERVAL))), type);
+      Expression parameter2 = Apps(argResult.expression, DefCall(Prelude.LEFT));
+      Expression parameter3 = Apps(argResult.expression, DefCall(Prelude.RIGHT));
+      Expression resultType = Apps(DefCall(Prelude.PATH), parameter1, parameter2, parameter3);
       List<CompareVisitor.Equation> resultEquations = argResult.equations;
       if (holeExpression != null) {
         if (resultEquations == null) {
@@ -344,7 +346,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(lamArgs(Tele(vars("i"), DefCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF))));
       }
 
-      return checkResult(expectedType, new OKResult(Apps(DefCall(Prelude.PATH_CON), argResult.expression), resultType, resultEquations), expression);
+      Expression resultExpr = Apps(DefCall(Prelude.PATH_CON), new ArgumentExpression(parameter1, false, true), new ArgumentExpression(parameter2, false, true), new ArgumentExpression(parameter3, false, true), new ArgumentExpression(argResult.expression, true, false));
+      return checkResult(expectedType, new OKResult(resultExpr, resultType, resultEquations), expression);
     }
 
     if (expectedType != null && j == args.size()) {
@@ -446,8 +449,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     Expression resultExpr = okFunction.expression;
-    for (i = parametersNumber; i < argsNumber; ++i) {
-      resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
+    for (i = 0; i < argsNumber; ++i) {
+      resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, i >= parametersNumber && signatureArguments.get(i).getExplicit(), i < parametersNumber || argsImp[i].isExplicit));
     }
 
     if (argIndex == 0) {
@@ -967,6 +970,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result errorResult = null;
     boolean wasError = false;
 
+    clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
       if (clause == null) continue;
 
@@ -1004,35 +1008,69 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       List<TypeArgument> constructorArguments = new ArrayList<>();
       splitArguments(constructor.getType(), constructorArguments);
-      if (clause.getArguments().size() != constructorArguments.size()) {
-        String msg = "Expected " + constructorArguments.size() + " arguments to " + constructor.getName() + ", but given " + clause.getArguments().size();
+
+      List<NameArgument> arguments = new ArrayList<>(clause.getArguments().size());
+      int indexI = 0, indexJ = parameters.size();
+      for (; indexI < clause.getArguments().size() && indexJ < constructorArguments.size(); ++indexJ) {
+        if (clause.getArguments().get(indexI).getExplicit() == constructorArguments.get(indexJ).getExplicit()) {
+          arguments.add(new NameArgument(clause.getArguments().get(indexI).getExplicit(), clause.getArguments().get(indexI).getName()));
+          ++indexI;
+        } else
+        if (!clause.getArguments().get(indexI).getExplicit()) {
+          error = new TypeCheckingError("Unexpected implicit argument", clause.getArguments().get(indexI), getNames(myLocalContext));
+          clause.getExpression().setWellTyped(Error(null, error));
+          myModuleLoader.getTypeCheckingErrors().add(error);
+          continue clause_loop;
+        } else {
+          String name = constructorArguments.get(indexJ) instanceof TelescopeArgument ? ((TelescopeArgument) constructorArguments.get(indexJ)).getNames().get(0) : null;
+          arguments.add(new NameArgument(false, name));
+        }
+      }
+
+      if (indexI < clause.getArguments().size()) {
+        String msg = "Expected " + (constructorArguments.size() - parameters.size()) + " arguments to " + constructor.getName() + ", but given " + (constructorArguments.size() - parameters.size() + clause.getArguments().size() - indexI);
         error = new TypeCheckingError(msg, clause, getNames(myLocalContext));
         clause.getExpression().setWellTyped(Error(null, error));
         myModuleLoader.getTypeCheckingErrors().add(error);
         continue;
       }
 
-      List<NameArgument> arguments = new ArrayList<>(clause.getArguments().size());
-      for (int i = 0; i < clause.getArguments().size(); ++i) {
-        arguments.add(new NameArgument(clause.getArguments().get(i).getExplicit(), clause.getArguments().get(i).getName()));
+      int explicitCount = 0;
+      for (; indexJ < constructorArguments.size(); ++indexJ) {
+        if (constructorArguments.get(indexJ).getExplicit()) {
+          ++explicitCount;
+        } else {
+          String name = constructorArguments.get(indexJ) instanceof TelescopeArgument ? ((TelescopeArgument) constructorArguments.get(indexJ)).getNames().get(0) : null;
+          arguments.add(new NameArgument(false, name));
+        }
+      }
+      if (explicitCount > 0) {
+        String msg = "Expected " + (constructorArguments.size() - parameters.size()) + " arguments to " + constructor.getName() + ", but given " + (constructorArguments.size() - parameters.size() - explicitCount);
+        error = new TypeCheckingError(msg, clause, getNames(myLocalContext));
+        clause.getExpression().setWellTyped(Error(null, error));
+        myModuleLoader.getTypeCheckingErrors().add(error);
+        continue;
       }
 
       Expression substExpr = DefCall(constructor);
-      for (int j = constructorArguments.size() - 1; j >= 0; --j) {
-        substExpr = Apps(substExpr, new ArgumentExpression(Index(j + varIndex), constructorArguments.get(j).getExplicit(), !constructorArguments.get(j).getExplicit()));
+      for (int j = parameters.size() - 1; j >= 0; --j) {
+        substExpr = Apps(substExpr, new ArgumentExpression(parameters.get(j), false, true));
       }
-      Expression clauseExpectedType = expectedType.liftIndex(varIndex + 1, constructorArguments.size()).subst(substExpr, varIndex);
+      for (int j = parameters.size(); j < constructorArguments.size(); ++j) {
+        substExpr = Apps(substExpr, new ArgumentExpression(Index(j - parameters.size() + varIndex), constructorArguments.get(j).getExplicit(), !constructorArguments.get(j).getExplicit()));
+      }
+      Expression clauseExpectedType = expectedType.liftIndex(varIndex + 1, constructorArguments.size() - parameters.size()).subst(substExpr, varIndex);
 
-      List<Binding> localContext = new ArrayList<>(myLocalContext.size() - 1 + clause.getArguments().size());
+      List<Binding> localContext = new ArrayList<>(myLocalContext.size() - 1 + constructorArguments.size() - parameters.size());
       for (int i = 0; i < myLocalContext.size() - 1 - varIndex; ++i) {
         localContext.add(myLocalContext.get(i));
       }
-      for (int i = 0; i < constructorArguments.size(); ++i) {
-        localContext.add(new TypedBinding(arguments.get(i).getName(), constructorArguments.get(i).getType().subst(parameters, 0)));
+      for (int i = parameters.size(); i < constructorArguments.size(); ++i) {
+        localContext.add(new TypedBinding(arguments.get(i - parameters.size()).getName(), constructorArguments.get(i).getType().subst(parameters, 0)));
       }
       for (int i = myLocalContext.size() - varIndex; i < myLocalContext.size(); ++i) {
         int i0 = i - myLocalContext.size() + varIndex;
-        localContext.add(new TypedBinding(myLocalContext.get(i).getName(), myLocalContext.get(i).getType().liftIndex(i0 + 1, constructorArguments.size()).subst(substExpr, i0)));
+        localContext.add(new TypedBinding(myLocalContext.get(i).getName(), myLocalContext.get(i).getType().liftIndex(i0 + 1, constructorArguments.size() - parameters.size()).subst(substExpr, i0)));
       }
 
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
@@ -1127,13 +1165,40 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
       }
       notInScope = true;
+    } else
+    if (okExprResult.type instanceof UniverseExpression) {
+      Expression expression = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
+      if (expression instanceof DefCallExpression && ((DefCallExpression) expression).getDefinition() instanceof ClassDefinition) {
+        Definition field = ((DefCallExpression) expression).getDefinition().getStaticField(expr.getName());
+        if (field == null) {
+          notInScope = true;
+        } else {
+          return checkResult(expectedType, new OKResult(DefCall(field), field.getType(), okExprResult.equations), expr);
+        }
+      } else {
+        List<Expression> arguments = new ArrayList<>();
+        Expression function = expression.getFunction(arguments);
+        if (function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() instanceof DataDefinition) {
+          Constructor constructor = ((DataDefinition) ((DefCallExpression) function).getDefinition()).getStaticField(expr.getName());
+          if (constructor == null) {
+            notInScope = true;
+          } else {
+            Expression resultExpr = DefCall(constructor);
+            for (int i = arguments.size() - 1; i >= 0; --i) {
+              resultExpr = Apps(resultExpr, new ArgumentExpression(arguments.get(i), false, true));
+            }
+            Expression resultType = constructor.getType().splitAt(arguments.size(), null);
+            return checkResult(expectedType, new OKResult(resultExpr, resultType.subst(arguments, 0), okExprResult.equations), expr);
+          }
+        }
+      }
     }
 
     TypeCheckingError error;
     if (notInScope) {
       error = new NotInScopeError(expr, expr.getName());
     } else {
-      error = new TypeCheckingError("Expected an expression of a class type", expr.getExpression(), getNames(myLocalContext));
+      error = new TypeCheckingError("Expected an expression of a class type or a data type", expr.getExpression(), getNames(myLocalContext));
     }
     expr.setWellTyped(Error(null, error));
     myModuleLoader.getTypeCheckingErrors().add(error);

@@ -465,7 +465,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (vars == null) return null;
 
       if (typeExpr == null) {
-        arguments.addAll(vars);
+        if (explicit) {
+          arguments.addAll(vars);
+        } else {
+          for (Concrete.NameArgument var : vars) {
+            arguments.add(new Concrete.NameArgument(var.getPosition(), false, var.getName()));
+          }
+        }
         for (Concrete.NameArgument var : vars) {
           myContext.add(var.getName());
         }
@@ -521,10 +527,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     if (!binOp) {
-      for (int i = myContext.size() - 1; i >= 0; --i) {
-        if (name.equals(myContext.get(i))) {
-          return new Concrete.IndexExpression(position, myContext.size() - 1 - i);
-        }
+      if (myContext.contains(name)) {
+        return new Concrete.VarExpression(position, name);
       }
     }
 
@@ -875,15 +879,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     Concrete.Expression elimExpr = visitExpr(ctx.expr());
     if (elimExpr == null) return null;
-    if (!(elimExpr instanceof Concrete.IndexExpression)) {
+    if (!(elimExpr instanceof Concrete.VarExpression)) {
       myModuleLoader.getErrors().add(new ParserError(myModule, elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
       return null;
     }
-    int elimIndex = ((Concrete.IndexExpression) elimExpr).getIndex();
+    String name = ((Concrete.VarExpression) elimExpr).getName();
+    int elimIndex = myContext.lastIndexOf(name);
+    if (elimIndex == -1) {
+      myModuleLoader.getErrors().add(new ParserError(myModule, elimExpr.getPosition(), "Not in scope: " + name));
+      return null;
+    }
 
     List<String> oldContext = new ArrayList<>(myContext);
     for (ClauseContext clauseCtx : ctx.clause()) {
-      String name = (String) visit(clauseCtx.clauseName());
+      name = (String) visit(clauseCtx.clauseName());
       Definition.Arrow arrow = clauseCtx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
       List<Concrete.NameArgument> nameArguments = null;
       if (clauseCtx.clauseName() instanceof ClauseNameArgsContext) {
@@ -905,13 +914,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
 
         myContext.clear();
-        for (int i = 0; i < oldContext.size() - elimIndex - 1; ++i) {
+        for (int i = 0; i < elimIndex; ++i) {
           myContext.add(oldContext.get(i));
         }
         for (Concrete.NameArgument argument : nameArguments) {
           myContext.add(argument.getName());
         }
-        for (int i = oldContext.size() - elimIndex; i < oldContext.size(); ++i) {
+        for (int i = elimIndex + 1; i < oldContext.size(); ++i) {
           myContext.add(oldContext.get(i));
         }
       }
