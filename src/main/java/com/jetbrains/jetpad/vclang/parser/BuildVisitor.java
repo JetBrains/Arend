@@ -167,8 +167,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Void visitDefCmd(DefCmdContext ctx) {
-    // TODO
-    /*
     if (ctx == null) return null;
     Definition module = visitModule(ctx.name(0), ctx.fieldAcc());
     if (module == null) return null;
@@ -179,15 +177,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         String name = ctx.name(i) instanceof NameBinOpContext ? ((NameBinOpContext) ctx.name(i)).BIN_OP().getText() : ((NameIdContext) ctx.name(i)).ID().getText();
         Definition definition = module.getStaticField(name);
         if (definition == null) {
-          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name(i).getStart()), name + " is not exported from " + module.getFullName()));
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name(i).getStart()), name + " is not a static field of " + module.getFullName()));
           continue;
         }
 
         if (remove) {
-          myParent.remove(definition);
+          myParent.removeField(definition);
         } else {
-          if (!definition.isAbstract() && definition.getDependencies().isEmpty()) {
-            myParent.add(definition, export, myModuleLoader.getErrors());
+          if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
+            myParent.addPrivateField(definition);
+            if (export) {
+              myParent.addStaticField(definition, myModuleLoader.getErrors());
+            }
           }
         }
       }
@@ -195,15 +196,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (module.getStaticFields() == null) return null;
       for (Definition definition : module.getStaticFields()) {
         if (remove) {
-          myParent.remove(definition);
+          myParent.removeField(definition);
         } else {
           if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
-            myParent.add(definition, export, myModuleLoader.getErrors());
+            myParent.addPrivateField(definition);
+            if (export) {
+              myParent.addStaticField(definition, myModuleLoader.getErrors());
+            }
           }
         }
       }
     }
-    */
     return null;
   }
 
