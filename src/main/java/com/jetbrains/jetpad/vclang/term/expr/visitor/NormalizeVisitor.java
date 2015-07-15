@@ -381,6 +381,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLet(LetExpression letExpression) {
-    return null; // TODO: implement
+    // TODO: implement
+    return letExpression;
   }
 }

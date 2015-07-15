@@ -217,28 +217,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     final String name = getName(nameCtx);
     final Concrete.Position position = getNamePosition(nameCtx);
 
-    List<Concrete.Argument> arguments = new ArrayList<>();
     int size = myContext.size();
-    for (TeleContext tele : teleCtx) {
-      List<Concrete.Argument> args = visitLamTele(tele);
-      if (args == null) {
-        trimToSize(myContext, size);
-        return null;
-      }
-
-      if (overridden || args.get(0) instanceof Concrete.TelescopeArgument) {
-        arguments.add(args.get(0));
-      } else {
-        myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(tele.getStart()), "Expected a typed variable"));
-        trimToSize(myContext, size);
-        return null;
-      }
+    List<Concrete.Argument> arguments = visitFunctionArguments(teleCtx, overridden);
+    if (arguments == null) {
+      trimToSize(myContext, size);
+      return null;
     }
     Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
     Definition.Arrow arrow = getArrow(arrowCtx);
     Abstract.Definition.Precedence precedence = precCtx == null ? null : visitPrecedence(precCtx);
     Abstract.Definition.Fixity fixity = getNameFixity(nameCtx);
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, precedence, fixity, arguments, type, arrow, null, overridden);
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(position, name, precedence, fixity, new ArrayList<>(arguments), type, arrow, null, overridden);
 
     Definition defaultDef = overridden ? new OverriddenDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow()) : new FunctionDefinition(def.getName(), myParent, def.getPrecedence(), def.getFixity(), def.getArrow());
     Definition typedDef = overridden ? defaultDef : getDefinition(def.getName(), def.getPosition(), defaultDef);
@@ -252,6 +241,28 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     trimToSize(myContext, size);
     return new ModuleLoader.TypeCheckingUnit(def, typedDef);
+  }
+
+  private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx) {
+    return visitFunctionArguments(teleCtx, false);
+  }
+
+  private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx, boolean overridden) {
+    List<Concrete.Argument> arguments = new ArrayList<>();
+    for (TeleContext tele : teleCtx) {
+      List<Concrete.Argument> args = visitLamTele(tele);
+      if (args == null) {
+        return null;
+      }
+
+      if (overridden || args.get(0) instanceof Concrete.TelescopeArgument) {
+        arguments.add(args.get(0));
+      } else {
+        myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(tele.getStart()), "Expected a typed variable"));
+        return null;
+      }
+    }
+    return arguments;
   }
 
   private Abstract.Definition.Arrow getArrow(ArrowContext arrowCtx) {
@@ -963,16 +974,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.LetClause visitLetClause(LetClauseContext ctx) {
     final int oldContextSize = myContext.size();
     final String name = ctx.ID().getText();
-    final List<Concrete.Argument> arguments = visitLamTeles(ctx.tele());
-    if (arguments == null) return null;
 
-    final Concrete.Expression resultType = ctx.typeAnnotation() == null ? null : visitExpr(ctx.typeAnnotation().expr());
+    final List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele());
+    if (arguments == null) {
+      trimToSize(myContext, oldContextSize);
+      return null;
+    }
+    final Concrete.Expression resultType = ctx.typeAnnotation() == null ? null: visitExpr(ctx.typeAnnotation().expr());
+    final Abstract.Definition.Arrow arrow = getArrow(ctx.arrow());
     final Concrete.Expression term = visitExpr(ctx.expr());
 
     trimToSize(myContext, oldContextSize);
 
     myContext.add(name);
-    return new Concrete.LetClause(tokenPosition(ctx.getStart()), name, arguments, resultType, term);
+    return new Concrete.LetClause(tokenPosition(ctx.getStart()), name, new ArrayList<>(arguments), resultType, arrow, term);
   }
 
   @Override

@@ -179,10 +179,6 @@ public class Utils {
       prettyPrintArgument(arg, builder, names, Abstract.LetExpression.PREC, indent);
     }
 
-    if (letClause.getType() != null) {
-      builder.append(" : ");
-      letClause.getType().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
-    }
     builder.append(" => ");
     letClause.getTerm().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
   }

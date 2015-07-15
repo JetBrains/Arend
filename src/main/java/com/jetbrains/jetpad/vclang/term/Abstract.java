@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -84,11 +85,8 @@ public final class Abstract {
     Expression getBody();
   }
 
-  public interface LetClause extends PrettyPrintableSourceNode {
-    String getName();
-    Expression getTerm();
-    List<? extends Argument> getArguments();
-    Expression getType();
+  public interface LetClause extends FunctionDefinition, PrettyPrintable {
+
   }
 
   public interface LetExpression extends Expression {

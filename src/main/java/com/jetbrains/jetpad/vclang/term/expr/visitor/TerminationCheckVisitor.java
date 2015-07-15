@@ -128,26 +128,30 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     }
   }
 
-  private Boolean visitArguments(List<TypeArgument> arguments, Expression codomain) {
-    try (PatternLifter lifter = new PatternLifter()) {
-
-      for (TypeArgument argument : arguments) {
-        if (!argument.getType().accept(this)) return false;
-        if (argument instanceof TelescopeArgument) {
-          lifter.liftPatterns(((TelescopeArgument) argument).getNames().size());
-        } else {
-          lifter.liftPatterns();
-        }
+  private Boolean visitArguments(List<? extends Argument> arguments, Expression codomain, PatternLifter lifter) {
+    for (Argument argument : arguments) {
+      if (argument instanceof TypeArgument && !((TypeArgument) argument).getType().accept(this)) return false;
+      if (argument instanceof TelescopeArgument) {
+        lifter.liftPatterns(((TelescopeArgument) argument).getNames().size());
+      } else {
+        lifter.liftPatterns();
       }
-
-      boolean result = codomain != null ? codomain.accept(this) : true;
-      return result;
     }
+
+    boolean result = codomain != null ? codomain.accept(this) : true;
+    return result;
+  }
+
+  private Boolean visitArguments(List<? extends Argument> arguments, PatternLifter lifter)
+  {
+    return visitArguments(arguments, null, lifter);
   }
 
   @Override
   public Boolean visitPi(PiExpression expr) {
-    return visitArguments(expr.getArguments(), expr.getCodomain());
+    try (PatternLifter lifter = new PatternLifter()) {
+      return visitArguments(expr.getArguments(), expr.getCodomain(), lifter);
+    }
   }
 
   @Override
@@ -180,7 +184,9 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitSigma(SigmaExpression expr) {
-    return visitArguments(expr.getArguments(), null);
+    try (PatternLifter lifter = new PatternLifter()) {
+      return visitArguments(expr.getArguments(), lifter);
+    }
   }
 
   @Override
@@ -251,11 +257,16 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitLet(LetExpression letExpression) {
-    return true; // TODO: implement
-//    try (PatternLifter lifter = new PatternLifter()) {
-//      for (LetClause clause : letExpression.getClauses()) {
-//
-//      }
-//    }
+    try (PatternLifter lifter = new PatternLifter()) {
+      for (LetClause clause : letExpression.getClauses()) {
+        if (!visitLetClause(clause, lifter)) return false;
+      }
+      return letExpression.getExpression().accept(this);
+    }
+  }
+
+  private boolean visitLetClause(LetClause clause, PatternLifter lifter) {
+    if (!visitArguments(clause.getArguments(), lifter)) return false;
+    return clause.getTerm().accept(this);
   }
 }

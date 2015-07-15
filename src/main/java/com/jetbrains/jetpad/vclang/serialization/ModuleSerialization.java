@@ -580,10 +580,11 @@ public class ModuleSerialization {
 
   private static LetClause readLetClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     final String name = stream.readUTF();
-    final List<Argument> arguments = readArguments(stream, definitionMap);
-    final Expression type = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+    final List<Argument> arguments = new ArrayList<Argument>(readTypeArguments(stream, definitionMap));
+    final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+    final Abstract.Definition.Arrow arrow = readArrow(stream);
     final Expression term = readExpression(stream, definitionMap);
-    return new LetClause(name, arguments, type, term);
+    return new LetClause(name, arguments, resultType, arrow, term);
 
   }
 
@@ -593,8 +594,12 @@ public class ModuleSerialization {
       throw new IncorrectFormat();
     }
     List<NameArgument> arguments = readNameArguments(stream, definitionMap);
-    Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
+    Abstract.Definition.Arrow arrow = readArrow(stream);
     return new Clause((Constructor) definition, arguments, arrow, readExpression(stream, definitionMap), null);
+  }
+
+  private static Abstract.Definition.Arrow readArrow(DataInputStream stream) throws IOException {
+    return stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
   }
 
   public static class DeserializationException extends IOException {

@@ -691,7 +691,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   @Override
   public Result visitLet(Abstract.LetExpression expr, Expression other) {
     // TODO: fill
-    return null;
+    return new JustResult(CMP.EQUALS);
   }
 
   @Override

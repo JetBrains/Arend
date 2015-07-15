@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
@@ -337,43 +338,15 @@ public final class Concrete {
     }
   }
 
-  public static class LetClause extends SourceNode implements Abstract.LetClause {
-    private final String myName;
-    private final List<Argument> myArguments;
-    private final Expression myType;
-    private final Expression myTerm;
+  public static class LetClause extends FunctionDefinition implements PrettyPrintable, Abstract.LetClause {
 
-    public LetClause(Position position, String name, List<Argument> arguments, Expression type, Expression term) {
-      super(position);
-      myName = name;
-      myArguments = arguments;
-      myType = type;
-      myTerm = term;
-    }
-
-    @Override
-    public String getName() {
-      return myName;
+    public LetClause(Position position, String name, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
+      super(position, name, null, Fixity.PREFIX, arguments, resultType, arrow, term, false);
     }
 
     @Override
     public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
       prettyPrintLetClause(this, builder, names, 0);
-    }
-
-    @Override
-    public Abstract.Expression getTerm() {
-      return myTerm;
-    }
-
-    @Override
-    public List<? extends Abstract.Argument> getArguments() {
-      return myArguments;
-    }
-
-    @Override
-    public Abstract.Expression getType() {
-      return myType;
     }
   }
 
@@ -388,7 +361,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<? extends LetClause> getClauses() {
+    public List<LetClause> getClauses() {
       return myClauses;
     }
 

@@ -48,14 +48,13 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitLam(LamExpression expr) {
     List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
-    Integer from = visitLamArguments(expr.getArguments(), arguments);
+    Integer from = visitArguments(expr.getArguments(), arguments);
     if (from == null) return null;
     Expression body = expr.getBody().liftIndex(from, myOn);
     return body == null ? null : Lam(arguments, body);
   }
 
-  private Integer visitLamArguments(List<Argument> arguments, List<Argument> result) {
-    int from = myFrom;
+  private Integer visitArguments(List<Argument> arguments, List<Argument> result, int from) {
     for (Argument argument : arguments) {
       if (argument instanceof NameArgument) {
         result.add(argument);
@@ -74,8 +73,11 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     return from;
   }
 
-  private int visitArguments(List<TypeArgument> arguments, List<TypeArgument> result) {
-    int from = myFrom;
+  private Integer visitArguments(List<Argument> arguments, List<Argument> result) {
+    return visitArguments(arguments, result, myFrom);
+  }
+
+  private int visitTypeArguments(List<TypeArgument> arguments, List<TypeArgument> result, int from) {
     for (TypeArgument argument : arguments) {
       if (argument instanceof TelescopeArgument) {
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
@@ -93,10 +95,14 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     return from;
   }
 
+  private int visitTypeArguments(List<TypeArgument> arguments, List<TypeArgument> result) {
+    return visitTypeArguments(arguments, result, myFrom);
+  }
+
   @Override
   public Expression visitPi(PiExpression expr) {
     List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
-    int from = visitArguments(expr.getArguments(), result);
+    int from = visitTypeArguments(expr.getArguments(), result);
     if (from < 0) return null;
     Expression codomain = expr.getCodomain().liftIndex(from, myOn);
     return codomain == null ? null : Pi(result, codomain);
@@ -138,7 +144,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitSigma(SigmaExpression expr) {
     List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
-    return visitArguments(expr.getArguments(), result) < 0 ? null : Sigma(result);
+    return visitTypeArguments(expr.getArguments(), result) < 0 ? null : Sigma(result);
   }
 
   @Override
@@ -163,7 +169,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
     for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
       List<Argument> arguments = new ArrayList<>(entry.getValue().getArguments().size());
-      Integer from = visitLamArguments(entry.getValue().getArguments(), arguments);
+      Integer from = visitArguments(entry.getValue().getArguments(), arguments);
       if (from == null) return null;
 
       Expression resultType = entry.getValue().getResultType() == null ? null : entry.getValue().getResultType().liftIndex(from, myOn);
@@ -180,6 +186,18 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLet(LetExpression letExpression) {
-    return null; // TODO: implement
+    final List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
+    Integer from = myFrom;
+    for (LetClause clause : letExpression.getClauses()) {
+      final List<Argument> arguments = new ArrayList<>(clause.getArguments().size());
+      from = visitArguments(clause.getArguments(), arguments, from);
+      if (from == null) return null;
+      final Expression resultType = clause.getResultType() == null ? null : clause.getResultType().liftIndex(from, myOn);
+      final Expression term = clause.getTerm().liftIndex(from, myOn);
+      clauses.add(new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), term));
+      from++;
+    }
+    final Expression expr = letExpression.getExpression().liftIndex(from, myOn);
+    return Let(clauses, expr);
   }
 }

@@ -192,11 +192,15 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     try {
       myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(clause.getConstructor()));
       writeArguments(this, clause.getArguments());
-      myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
+      writeArrow(clause.getArrow());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
     clause.getExpression().accept(this);
+  }
+
+  private void writeArrow(Abstract.Definition.Arrow arrow) throws IOException {
+    myDataStream.writeBoolean(arrow == Abstract.Definition.Arrow.RIGHT);
   }
 
   @Override
@@ -264,9 +268,11 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     try {
       myDataStream.writeUTF(clause.getName());
       writeArguments(this, clause.getArguments());
-      myDataStream.writeBoolean(clause.getType() != null);
-      if (clause.getType() != null)
-        clause.getType().accept(this);
+      myDataStream.writeBoolean(clause.getResultType() != null);
+      if (clause.getResultType() != null) {
+        clause.getResultType().accept(this);
+      }
+      writeArrow(clause.getArrow());
       clause.getTerm().accept(this);
     } catch (IOException e) {
       throw new IllegalStateException();

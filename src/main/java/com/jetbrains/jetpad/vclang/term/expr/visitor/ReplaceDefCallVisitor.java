@@ -163,6 +163,11 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLet(LetExpression letExpression) {
-    return null; // TODO: implement
+    List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
+    for (LetClause clause : letExpression.getClauses()) {
+      clauses.add(new LetClause(clause.getName(), visitArguments(clause.getArguments()),
+              clause.getResultType() == null ? null : clause.getResultType().accept(this), clause.getArrow(), clause.getTerm().accept(this)));
+    }
+    return Let(clauses, letExpression.getExpression().accept(this));
   }
 }
