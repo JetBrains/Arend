@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.module.*;
-import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
+import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.apache.commons.cli.*;
@@ -61,8 +61,8 @@ public class ConsoleMain {
     }
 
     final ModuleLoader moduleLoader = new ModuleLoader();
-    ModuleSerialization moduleSerialization = new ModuleSerialization(moduleLoader);
-    moduleLoader.init(new FileSourceSupplier(moduleLoader, sourceDir), new FileOutputSupplier(moduleSerialization, outputDir, libDirs), recompile);
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    moduleLoader.init(new FileSourceSupplier(moduleLoader, sourceDir), new FileOutputSupplier(moduleDeserialization, outputDir, libDirs), recompile);
 
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDir == null) return;

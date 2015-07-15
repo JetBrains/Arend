@@ -31,10 +31,14 @@ public class ParserTestCase {
     return parser;
   }
 
-  public static Concrete.Expression parseExpr(ModuleLoader moduleLoader, String text) {
-    Concrete.Expression result = new BuildVisitor(moduleLoader.rootModule(), moduleLoader).visitExpr(parse(moduleLoader, text).expr());
-    assertEquals(0, moduleLoader.getErrors().size());
+  public static Concrete.Expression parseExpr(ModuleLoader moduleLoader, String text, int errors) {
+    Concrete.Expression result = new BuildVisitor(moduleLoader.rootModule(), moduleLoader, false).visitExpr(parse(moduleLoader, text).expr());
+    assertEquals(errors, moduleLoader.getErrors().size());
     return result;
+  }
+
+  public static Concrete.Expression parseExpr(ModuleLoader moduleLoader, String text) {
+    return parseExpr(moduleLoader, text, 0);
   }
 
   public static Definition parseDef(ModuleLoader moduleLoader, String text) {
@@ -42,7 +46,7 @@ public class ParserTestCase {
   }
 
   public static Definition parseDef(ModuleLoader moduleLoader, String text, int errors) {
-    Definition result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitDef(parse(moduleLoader, text).def());
+    Definition result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader, false).visitDef(parse(moduleLoader, text).def());
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(errors, moduleLoader.getTypeCheckingErrors().size());
     return result;
@@ -58,7 +62,7 @@ public class ParserTestCase {
 
   public static ClassDefinition parseDefs(ModuleLoader moduleLoader, String text, int moduleErrors, int errors) {
     ClassDefinition result = new ClassDefinition("test", moduleLoader.rootModule());
-    new BuildVisitor(result, moduleLoader).visitDefs(parse(moduleLoader, text).defs());
+    new BuildVisitor(result, moduleLoader, false).visitDefs(parse(moduleLoader, text).defs());
     assertEquals(moduleErrors, moduleLoader.getErrors().size());
     assertEquals(errors, moduleLoader.getTypeCheckingErrors().size());
     return result;

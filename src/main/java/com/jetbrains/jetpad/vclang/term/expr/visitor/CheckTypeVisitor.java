@@ -1263,7 +1263,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       } else {
         OverriddenDefinition newDefinition = (OverriddenDefinition) TypeChecking.typeCheckFunctionBegin(myModuleLoader, expr.getBaseClass(), definition, myLocalContext, oldDefinition);
         if (newDefinition == null) return null;
-        TypeChecking.typeCheckFunctionEnd(myModuleLoader, expr.getBaseClass(), definition.getTerm(), newDefinition, myLocalContext, oldDefinition);
+        TypeChecking.typeCheckFunctionEnd(myModuleLoader, expr.getBaseClass(), definition.getTerm(), newDefinition, myLocalContext, oldDefinition, false);
         definitions.put(oldDefinition, newDefinition);
       }
     }

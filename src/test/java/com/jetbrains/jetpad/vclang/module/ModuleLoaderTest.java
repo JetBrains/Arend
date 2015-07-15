@@ -183,4 +183,18 @@ public class ModuleLoaderTest {
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     parseDefs(moduleLoader, "\\class A { \\function x : Nat \\function y => x } \\open A \\function z => y", 1, 0);
   }
+
+  @Test
+  public void staticInOnlyStaticTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDefs(moduleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\function s => 0 \\data D (A : Nat) | foo Nat | bar }");
+  }
+
+  @Test
+  public void nonStaticInOnlyStaticTestError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDefs(moduleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\data D (A : Nat) | foo Nat | bar B }", 1, 0);
+  }
 }

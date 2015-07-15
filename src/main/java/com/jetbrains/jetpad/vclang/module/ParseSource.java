@@ -43,7 +43,7 @@ public abstract class ParseSource implements Source {
 
     VcgrammarParser.DefsContext tree = parser.defs();
     if (errorsCount != myModuleLoader.getErrors().size()) return false;
-    new BuildVisitor(classDefinition, myModuleLoader).fillClass(tree);
+    new BuildVisitor(classDefinition, myModuleLoader, !classDefinition.hasErrors()).visitDefs(tree);
     return errorsCount == myModuleLoader.getErrors().size();
   }
 }

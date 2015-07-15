@@ -76,7 +76,7 @@ public class ElimTest {
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedFun = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) function.getParent(), function, localContext, null);
     assertNotNull(typedFun);
-    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) function.getParent(), function.getTerm(), typedFun, localContext, null);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) function.getParent(), function.getTerm(), typedFun, localContext, null, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedFun.hasErrors());

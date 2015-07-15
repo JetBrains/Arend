@@ -66,8 +66,7 @@ public class ParserTest {
   public void parserLamOpenError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, "\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y").expr());
-    assertEquals(1, moduleLoader.getErrors().size());
+    Concrete.Expression result = parseExpr(moduleLoader, "\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y", 1);
     assertNull(result);
   }
 
@@ -75,8 +74,7 @@ public class ParserTest {
   public void parserPiOpenError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression result = new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, "\\Pi (a b : Nat a) -> Nat a b").expr());
-    assertEquals(1, moduleLoader.getErrors().size());
+    Concrete.Expression result = parseExpr(moduleLoader, "\\Pi (a b : Nat a) -> Nat a b", 1);
     assertNull(result);
   }
 
@@ -174,8 +172,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.rootModule().addField(plus, null);
     moduleLoader.rootModule().addField(mul, null);
-    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, "11 + 2 * 3").expr()).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
-    assertEquals(1, moduleLoader.getErrors().size());
+    parseExpr(moduleLoader, "11 + 2 * 3", 1).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
@@ -184,7 +181,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     String text = "A { \\function f (x : Nat) <= elim x | zero => zero | suc x' => zero }";
-    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader).visitExpr(parse(moduleLoader, text).expr());
+    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader, false).visitExpr(parse(moduleLoader, text).expr());
     assertTrue(moduleLoader.getErrors().size() > 0);
   }
 }

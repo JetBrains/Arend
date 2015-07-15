@@ -1,10 +1,11 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
+import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -111,7 +112,9 @@ public class ModuleLoader {
         }
         moduleDefinition.hasErrors(false);
       }
-    } catch (ModuleSerialization.DeserializationException e) {
+    } catch (EOFException e) {
+      myErrors.add(new ModuleError(module, "Incorrect format"));
+    } catch (ModuleDeserialization.DeserializationException e) {
       myErrors.add(new ModuleError(module, e.toString()));
     } catch (IOException e) {
       myErrors.add(new ModuleError(module, ModuleError.ioError(e)));

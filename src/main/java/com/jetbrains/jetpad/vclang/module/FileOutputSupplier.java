@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
+import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 
 import java.io.File;
 import java.util.List;
@@ -8,17 +8,17 @@ import java.util.List;
 public class FileOutputSupplier implements OutputSupplier {
   private final File myDirectory;
   private final List<File> myLibDirs;
-  private final ModuleSerialization myModuleSerialization;
+  private final ModuleDeserialization myModuleDeserialization;
 
-  public FileOutputSupplier(ModuleSerialization moduleSerialization, File directory, List<File> libDirs) {
+  public FileOutputSupplier(ModuleDeserialization moduleDeserialization, File directory, List<File> libDirs) {
     myDirectory = directory;
     myLibDirs = libDirs;
-    myModuleSerialization = moduleSerialization;
+    myModuleDeserialization = moduleDeserialization;
   }
 
   @Override
   public FileOutput getOutput(Module module) {
-    return new FileOutput(myModuleSerialization, myDirectory == null ? null : module.getFile(myDirectory, ".vcc"));
+    return new FileOutput(myModuleDeserialization, myDirectory == null ? null : module.getFile(myDirectory, ".vcc"));
   }
 
   @Override
@@ -26,10 +26,10 @@ public class FileOutputSupplier implements OutputSupplier {
     for (File dir : myLibDirs) {
       File file = module.getFile(dir, ".vcc");
       if (file != null && file.exists()) {
-        return new FileOutput(myModuleSerialization, file);
+        return new FileOutput(myModuleDeserialization, file);
       }
     }
 
-    return new FileOutput(myModuleSerialization, null);
+    return new FileOutput(myModuleDeserialization, null);
   }
 }

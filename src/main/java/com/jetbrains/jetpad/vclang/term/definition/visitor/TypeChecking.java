@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
+import com.jetbrains.jetpad.vclang.module.Module;
+import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -59,7 +61,7 @@ public class TypeChecking {
     return result;
   }
 
-  public static void typeCheckDataEnd(ModuleLoader moduleLoader, ClassDefinition parent, Abstract.DataDefinition def, DataDefinition definition, List<Binding> localContext) {
+  public static boolean typeCheckDataEnd(ModuleLoader moduleLoader, ClassDefinition parent, Abstract.DataDefinition def, DataDefinition definition, List<Binding> localContext, boolean onlyStatics) {
     if (localContext != null) {
       for (TypeArgument parameter : definition.getParameters()) {
         if (parameter instanceof TelescopeArgument) {
@@ -88,7 +90,11 @@ public class TypeChecking {
       moduleLoader.getTypeCheckingErrors().add(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
     }
 
+    if (onlyStatics && !checkOnlyStatic(moduleLoader, parent, definition, definition.getName())) {
+      return false;
+    }
     parent.addStaticField(definition, moduleLoader.getErrors());
+    return true;
   }
 
   public static Constructor typeCheckConstructor(ModuleLoader moduleLoader, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext, int conIndex) {
@@ -336,7 +342,7 @@ public class TypeChecking {
     return result;
   }
 
-  public static void typeCheckFunctionEnd(ModuleLoader moduleLoader, ClassDefinition parent, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction) {
+  public static boolean typeCheckFunctionEnd(ModuleLoader moduleLoader, ClassDefinition parent, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction, boolean onlyStatics) {
     if (term != null) {
       CheckTypeVisitor visitor = new CheckTypeVisitor(parent, localContext, definition.getDependencies(), moduleLoader, CheckTypeVisitor.Side.LHS);
       CheckTypeVisitor.OKResult termResult = visitor.checkType(term, definition.getResultType());
@@ -383,6 +389,21 @@ public class TypeChecking {
       }
     }
 
+    if (onlyStatics && !checkOnlyStatic(moduleLoader, parent, definition, definition.getName())) {
+      return false;
+    }
     parent.addStaticField(definition, moduleLoader.getErrors());
+    return true;
+  }
+
+  public static boolean checkOnlyStatic(ModuleLoader moduleLoader, ClassDefinition parent, Definition definition, String name) {
+    if (definition == null || definition.isAbstract() || definition.getDependencies() != null && !definition.getDependencies().isEmpty()) {
+      moduleLoader.getErrors().add(new ModuleError(new Module(parent, name), "Only static fields are allowed in a class extension of " + parent.getName()));
+      if (definition != null) {
+        parent.removeField(definition);
+      }
+      return false;
+    }
+    return true;
   }
 }

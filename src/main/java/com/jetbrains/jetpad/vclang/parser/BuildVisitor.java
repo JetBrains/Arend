@@ -21,12 +21,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<String> myContext = new ArrayList<>();
   private final Module myModule;
   private final ModuleLoader myModuleLoader;
-  private boolean myNoAbstracts = false;
+  private boolean myOnlyStatics;
 
-  public BuildVisitor(ClassDefinition parent, ModuleLoader moduleLoader) {
+  public BuildVisitor(ClassDefinition parent, ModuleLoader moduleLoader, boolean onlyStatics) {
     myParent = parent;
     myModule = new Module((ClassDefinition) parent.getParent(), parent.getName());
     myModuleLoader = moduleLoader;
+    myOnlyStatics = onlyStatics;
   }
 
   private Concrete.NameArgument getVar(AtomFieldsAccContext ctx) {
@@ -97,11 +98,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.Expression) visit(expr);
   }
 
-  public void fillClass(DefsContext ctx) {
-    myNoAbstracts = myParent.hasAbstracts();
-    visitDefs(ctx);
-  }
-
   @Override
   public Void visitDefs(DefsContext ctx) {
     if (ctx == null) return null;
@@ -143,23 +139,34 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx instanceof DefClassContext) {
       ClassDefinition classDef = myParent.getClass(((DefClassContext) ctx).ID().getText(), myModuleLoader.getErrors());
       if (classDef == null) return null;
+      boolean oldOnlyStatics = myOnlyStatics;
+      myOnlyStatics = !classDef.hasErrors();
       classDef.hasErrors(false);
       ClassDefinition oldParent = myParent;
       myParent = classDef;
-      boolean oldNoAbstracts = myNoAbstracts;
-      myNoAbstracts = classDef.hasAbstracts();
       visitDefClass((DefClassContext) ctx);
-      myNoAbstracts = oldNoAbstracts;
+      myOnlyStatics = oldOnlyStatics;
       myParent = oldParent;
-      myParent.addStaticField(classDef, myModuleLoader.getErrors());
-      return classDef;
+
+      if (myOnlyStatics) {
+        TypeChecking.checkOnlyStatic(myModuleLoader, myParent, classDef, classDef.getName());
+        return null;
+      } else {
+        myParent.addStaticField(classDef, myModuleLoader.getErrors());
+        return classDef;
+      }
     } else
     if (ctx instanceof DefCmdContext) {
       visitDefCmd((DefCmdContext) ctx);
       return null;
     } else
     if (ctx instanceof DefOverrideContext) {
-      return visitDefOverride((DefOverrideContext) ctx);
+      if (myOnlyStatics) {
+        TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, getName(((DefOverrideContext) ctx).name()).name);
+        return null;
+      } else {
+        return visitDefOverride((DefOverrideContext) ctx);
+      }
     } else {
       throw new IllegalStateException();
     }
@@ -216,8 +223,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     ExprContext typeCtx = ctx.typeTermOpt() instanceof WithTypeContext ? ((WithTypeContext) ctx.typeTermOpt()).expr() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).expr(0) : null;
     ArrowContext arrowCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).arrow() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).arrow() : null;
     ExprContext termCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).expr() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).expr(1) : null;
-    if (termCtx == null && myNoAbstracts) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), "Previous definition of class " + myParent.getName() + " already has abstract fields"));
+    if (termCtx == null && myOnlyStatics) {
+      TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, getName(ctx.name()).name);
       return null;
     }
     return visitDefFunction(false, ctx.precedence(), ctx.name(), ctx.tele(), typeCtx, arrowCtx, termCtx);
@@ -238,24 +245,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(myModuleLoader, myParent, def, localContext, null);
     if (typedDef != null) {
-      TypeChecking.typeCheckFunctionEnd(myModuleLoader, myParent, termCtx == null ? null : visitExpr(termCtx), typedDef, localContext, null);
+      TypeChecking.typeCheckFunctionEnd(myModuleLoader, myParent, termCtx == null ? null : visitExpr(termCtx), typedDef, localContext, null, myOnlyStatics);
     }
     visitFunctionRawEnd(def);
     return typedDef;
   }
 
   private Concrete.FunctionDefinition visitFunctionRawBegin(boolean overridden, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, ExprContext typeCtx, ArrowContext arrowCtx) {
-    boolean isPrefix = nameCtx instanceof NameIdContext;
-    String name;
-    Concrete.Position position;
-    if (isPrefix) {
-      name = ((NameIdContext) nameCtx).ID().getText();
-      position = tokenPosition(((NameIdContext) nameCtx).ID().getSymbol());
-    } else {
-      name = ((NameBinOpContext) nameCtx).BIN_OP().getText();
-      position = tokenPosition(((NameBinOpContext) nameCtx).BIN_OP().getSymbol());
-    }
-
+    Name name = getName(nameCtx);
     int size = myContext.size();
     List<Concrete.Argument> arguments = new ArrayList<>();
     for (TeleContext tele : teleCtx) {
@@ -276,8 +273,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
     Definition.Arrow arrow = arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
-    Abstract.Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
-    return new Concrete.FunctionDefinition(position, name, precCtx == null ? null : visitPrecedence(precCtx), fixity, arguments, type, arrow, null, overridden);
+    return new Concrete.FunctionDefinition(name.position, name.name, precCtx == null ? null : visitPrecedence(precCtx), name.fixity, arguments, type, arrow, null, overridden);
   }
 
   private void visitFunctionRawEnd(Concrete.FunctionDefinition definition) {
@@ -336,16 +332,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public DataDefinition visitDefData(DefDataContext ctx) {
     if (ctx == null) return null;
-    boolean isPrefix = ctx.name() instanceof NameIdContext;
-    String name;
-    Concrete.Position position;
-    if (isPrefix) {
-      name = ((NameIdContext) ctx.name()).ID().getText();
-      position = tokenPosition(((NameIdContext) ctx.name()).ID().getSymbol());
-    } else {
-      name = ((NameBinOpContext) ctx.name()).BIN_OP().getText();
-      position = tokenPosition(((NameBinOpContext) ctx.name()).BIN_OP().getSymbol());
-    }
+    Name name = getName(ctx.name());
     int origSize = myContext.size();
     List<Concrete.TypeArgument> parameters = visitTeles(ctx.tele());
     if (parameters == null) {
@@ -360,35 +347,26 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    Definition.Fixity fixity = isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX;
     Universe universe = type == null ? null : ((Concrete.UniverseExpression) type).getUniverse();
-    Concrete.DataDefinition def = new Concrete.DataDefinition(position, name, visitPrecedence(ctx.precedence()), fixity, universe, parameters, null);
+    Concrete.DataDefinition def = new Concrete.DataDefinition(name.position, name.name, visitPrecedence(ctx.precedence()), name.fixity, universe, parameters, null);
     List<Binding> localContext = new ArrayList<>();
     DataDefinition typedDef = TypeChecking.typeCheckDataBegin(myModuleLoader, myParent, def, localContext);
 
     int size = myContext.size();
     int index = 0;
     for (int i = 0; i < ctx.constructor().size(); ++i) {
-      isPrefix = ctx.constructor(i).name() instanceof NameIdContext;
-      if (isPrefix) {
-        name = ((NameIdContext) ctx.constructor(i).name()).ID().getText();
-        position = tokenPosition(((NameIdContext) ctx.constructor(i).name()).ID().getSymbol());
-      } else {
-        name = ((NameBinOpContext) ctx.constructor(i).name()).BIN_OP().getText();
-        position = tokenPosition(((NameBinOpContext) ctx.constructor(i).name()).BIN_OP().getSymbol());
-      }
-
+      Name conName = getName(ctx.constructor(i).name());
       List<Concrete.TypeArgument> arguments = visitTeles(ctx.constructor(i).tele());
       trimToSize(myContext, size);
       if (arguments == null) continue;
-      Concrete.Constructor con = new Concrete.Constructor(position, name, visitPrecedence(ctx.constructor(i).precedence()), isPrefix ? Definition.Fixity.PREFIX : Definition.Fixity.INFIX, new Universe.Type(), arguments, def);
+      Concrete.Constructor con = new Concrete.Constructor(conName.position, conName.name, visitPrecedence(ctx.constructor(i).precedence()), conName.fixity, new Universe.Type(), arguments, def);
       if (TypeChecking.typeCheckConstructor(myModuleLoader, typedDef, con, localContext, index) != null) {
         ++index;
       }
     }
 
     trimToSize(myContext, origSize);
-    TypeChecking.typeCheckDataEnd(myModuleLoader, myParent, def, typedDef, null);
+    TypeChecking.typeCheckDataEnd(myModuleLoader, myParent, def, typedDef, null, myOnlyStatics);
     return typedDef;
   }
 
@@ -675,37 +653,28 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private Concrete.Expression visitFieldsAcc(Concrete.Expression expr, List<FieldAccContext> fieldAccs) {
     for (FieldAccContext field : fieldAccs) {
       if (field instanceof ClassFieldContext) {
-        String name;
-        Abstract.Definition.Fixity fixity;
-        NameContext nameCtx = ((ClassFieldContext) field).name();
-        if (nameCtx instanceof NameIdContext) {
-          name = ((NameIdContext) nameCtx).ID().getText();
-          fixity = Abstract.Definition.Fixity.PREFIX;
-        } else {
-          name = ((NameBinOpContext) nameCtx).BIN_OP().getText();
-          fixity = Abstract.Definition.Fixity.INFIX;
-        }
+        Name name = getName(((ClassFieldContext) field).name());
         if (expr instanceof Concrete.DefCallExpression) {
           Definition definition = ((Concrete.DefCallExpression) expr).getDefinition();
-          Definition classField = definition.getStaticField(name);
+          Definition classField = definition.getStaticField(name.name);
           if (classField == null && definition instanceof ClassDefinition) {
-            classField = myModuleLoader.loadModule(new Module((ClassDefinition) definition, name), true);
+            classField = myModuleLoader.loadModule(new Module((ClassDefinition) definition, name.name), true);
           }
           if (classField == null && definition instanceof FunctionDefinition) {
             FunctionDefinition functionDefinition = (FunctionDefinition) definition;
             if (!functionDefinition.typeHasErrors() && functionDefinition.getArguments().isEmpty() && functionDefinition.getResultType() instanceof DefCallExpression && ((DefCallExpression) functionDefinition.getResultType()).getDefinition() instanceof ClassDefinition) {
-              expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name, fixity);
+              expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name.name, name.fixity);
               continue;
             }
           }
           if (classField == null) {
-            myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), name + " is not a static field of " + definition.getFullName()));
+            myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(((ClassFieldContext) field).name().getStart()), name.name + " is not a static field of " + definition.getFullName()));
             return null;
           }
           expr = new Concrete.DefCallExpression(expr.getPosition(), classField);
           continue;
         }
-        expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name, fixity);
+        expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name.name, name.fixity);
       } else {
         expr = new Concrete.ProjExpression(expr.getPosition(), expr, Integer.valueOf(((SigmaFieldContext) field).NUMBER().getText()) - 1);
       }
@@ -978,5 +947,24 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ErrorExpression visitHole(HoleContext ctx) {
     if (ctx == null) return null;
     return new Concrete.ErrorExpression(tokenPosition(ctx.getStart()));
+  }
+
+  private static Name getName(NameContext ctx) {
+    Name result = new Name();
+    result.fixity = ctx instanceof NameIdContext ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
+    if (result.fixity == Abstract.Definition.Fixity.PREFIX) {
+      result.name = ((NameIdContext) ctx).ID().getText();
+      result.position = tokenPosition(((NameIdContext) ctx).ID().getSymbol());
+    } else {
+      result.name = ((NameBinOpContext) ctx).BIN_OP().getText();
+      result.position = tokenPosition(((NameBinOpContext) ctx).BIN_OP().getSymbol());
+    }
+    return result;
+  }
+
+  private static class Name {
+    String name;
+    Concrete.Position position;
+    Abstract.Definition.Fixity fixity;
   }
 }

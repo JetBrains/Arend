@@ -25,7 +25,7 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
     assertNotNull(typedDef);
-    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null, false);
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertFalse(typedDef.hasErrors());
@@ -39,7 +39,7 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
     assertNotNull(typedDef);
-    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(def.hasErrors());
@@ -58,7 +58,7 @@ public class DefinitionTest {
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
     assertNotNull(typedDef);
-    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedDef.hasErrors());
@@ -94,7 +94,7 @@ public class DefinitionTest {
     for (int i = 0; i < constructors.size(); i++) {
       TypeChecking.typeCheckConstructor(moduleLoader, typedDef, constructors.get(i), localContext, i);
     }
-    TypeChecking.typeCheckDataEnd(moduleLoader, (ClassDefinition) def.getParent(), def, typedDef, localContext);
+    TypeChecking.typeCheckDataEnd(moduleLoader, (ClassDefinition) def.getParent(), def, typedDef, localContext, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedDef.hasErrors());
@@ -133,7 +133,7 @@ public class DefinitionTest {
     for (int i = 0; i < constructors.size(); i++) {
       TypeChecking.typeCheckConstructor(moduleLoader, typedDef, constructors.get(i), localContext, i);
     }
-    TypeChecking.typeCheckDataEnd(moduleLoader, (ClassDefinition) def.getParent(), def, typedDef, localContext);
+    TypeChecking.typeCheckDataEnd(moduleLoader, (ClassDefinition) def.getParent(), def, typedDef, localContext, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedDef.hasErrors());
