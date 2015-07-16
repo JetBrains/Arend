@@ -53,10 +53,6 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myPrivateFields == null ? null : myPrivateFields.get(name);
   }
 
-  public Collection<? extends Definition> getPrivateFields() {
-    return myPrivateFields == null ? null : myPrivateFields.values();
-  }
-
   @Override
   public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitClass(this, params);

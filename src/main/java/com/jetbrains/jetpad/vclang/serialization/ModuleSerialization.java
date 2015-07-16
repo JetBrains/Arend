@@ -108,19 +108,25 @@ public class ModuleSerialization {
 
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
-    if (definition.getPrivateFields() == null) {
-      visitor.getDataStream().writeInt(0);
-      return 0;
-    }
-    visitor.getDataStream().writeInt(definition.getPrivateFields().size());
 
     int errors = 0;
-    for (Definition field : definition.getPrivateFields()) {
-      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
-      visitor.getDataStream().writeBoolean(field.getParent() == definition);
-      if (field.getParent() == definition) {
+    if (definition.getPublicFields() != null) {
+      visitor.getDataStream().writeInt(definition.getPublicFields().size());
+      for (Definition field : definition.getPublicFields()) {
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
         errors += serializeDefinition(visitor, field);
       }
+    } else {
+      visitor.getDataStream().writeInt(0);
+    }
+
+    if (definition.getStaticFields() != null) {
+      visitor.getDataStream().writeInt(definition.getStaticFields().size());
+      for (Definition field : definition.getStaticFields()) {
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
+      }
+    } else {
+      visitor.getDataStream().writeInt(0);
     }
 
     return errors;

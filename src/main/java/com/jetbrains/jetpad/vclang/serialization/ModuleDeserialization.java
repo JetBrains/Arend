@@ -67,13 +67,20 @@ public class ModuleDeserialization {
         if (childModule == null) {
           if (parent instanceof ClassDefinition && code == ModuleSerialization.CLASS_CODE) {
             childModule = myModuleLoader.loadModule(new Module((ClassDefinition) parent, name), true);
-            if (childModule == null) {
-              childModule = new ClassDefinition(name, parent);
-              ((ClassDefinition) parent).addField(childModule, null);
-              ((ClassDefinition) parent).addStaticField(childModule, null);
+          }
+          if (childModule == null) {
+            childModule = newDefinition(code, name, parent);
+            if (parent instanceof ClassDefinition) {
+              ((ClassDefinition) parent).addPublicField(childModule, null);
+            } else
+            if (parent instanceof DataDefinition && childModule instanceof Constructor) {
+              ((DataDefinition) parent).getConstructors().add((Constructor) childModule);
+              if (parent.getParent() instanceof ClassDefinition) {
+                ((ClassDefinition) parent.getParent()).addStaticField(childModule, myModuleLoader.getErrors());
+              }
+            } else {
+              throw new IncorrectFormat();
             }
-          } else {
-            throw new IncorrectFormat();
           }
         }
       }
@@ -156,9 +163,10 @@ public class ModuleDeserialization {
         dataDefinition.setParameters(readTypeArguments(stream, definitionMap));
       }
       int constructorsNumber = stream.readInt();
-      dataDefinition.setConstructors(new ArrayList<Constructor>(constructorsNumber));
       for (int i = 0; i < constructorsNumber; ++i) {
-        Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
+        int conInt = stream.readInt();
+        Definition conDef = definitionMap.get(conInt);
+        Constructor constructor = (Constructor) conDef;
         if (constructor == null) {
           throw new IncorrectFormat();
         }
@@ -171,7 +179,8 @@ public class ModuleDeserialization {
           constructor.setArguments(readTypeArguments(stream, definitionMap));
         }
       }
-    } else if (code == ModuleSerialization.CLASS_CODE) {
+    } else
+    if (code == ModuleSerialization.CLASS_CODE) {
       if (!(definition instanceof ClassDefinition)) {
         throw new IncorrectFormat();
       }
@@ -189,19 +198,12 @@ public class ModuleDeserialization {
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       Definition field = definitionMap.get(stream.readInt());
-      boolean isChild = stream.readBoolean();
-      if (isChild) {
-        deserializeDefinition(stream, definitionMap, field);
-      } else {
-        // TODO
-        // definition.add(field, false, myModuleLoader.getErrors());
-      }
+      deserializeDefinition(stream, definitionMap, field);
     }
 
     size = stream.readInt();
     for (int i = 0; i < size; ++i) {
-      // TODO
-      // definition.addExport(definitionMap.get(stream.readInt()), myModuleLoader.getErrors());
+      definition.addStaticField(definitionMap.get(stream.readInt()), myModuleLoader.getErrors());
     }
   }
 
