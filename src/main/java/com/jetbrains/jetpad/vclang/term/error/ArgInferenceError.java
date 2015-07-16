@@ -2,14 +2,15 @@ package com.jetbrains.jetpad.vclang.term.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.util.List;
 
 public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
 
-  public ArgInferenceError(String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, PrettyPrintable where) {
-    super(message, expression, names);
+  public ArgInferenceError(Definition parent, String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, PrettyPrintable where) {
+    super(parent, message, expression, names);
     myWhere = where;
   }
 

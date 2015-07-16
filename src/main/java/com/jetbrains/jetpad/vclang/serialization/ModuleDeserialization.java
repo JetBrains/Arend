@@ -20,6 +20,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
   private final ModuleLoader myModuleLoader;
+  private Definition myParent;
 
   public ModuleDeserialization(ModuleLoader moduleLoader) {
     myModuleLoader = moduleLoader;
@@ -30,6 +31,7 @@ public class ModuleDeserialization {
   }
 
   public int readStream(DataInputStream stream, ClassDefinition module) throws IOException {
+    myParent = module;
     byte[] signature = new byte[4];
     stream.readFully(signature);
     if (!Arrays.equals(signature, ModuleSerialization.SIGNATURE)) {
@@ -322,7 +324,7 @@ public class ModuleDeserialization {
         return new UniverseExpression(readUniverse(stream));
       }
       case 9: {
-        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError("Deserialized error", null, null));
+        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myParent, "Deserialized error", null, null));
       }
       case 10: {
         int size = stream.readInt();

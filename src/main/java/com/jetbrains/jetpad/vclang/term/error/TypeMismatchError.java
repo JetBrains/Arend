@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.util.List;
 
@@ -8,8 +9,8 @@ public class TypeMismatchError extends TypeCheckingError {
   private final Object myExpected;
   private final Abstract.Expression myActual;
 
-  public TypeMismatchError(Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
-    super(null, expression, names);
+  public TypeMismatchError(Definition parent, Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
+    super(parent, null, expression, names);
     myExpected = expected;
     myActual = actual;
   }

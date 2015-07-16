@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.util.List;
 
@@ -10,8 +11,8 @@ public class InferredArgumentsMismatch extends TypeCheckingError {
   private final int myArgument;
   private final List<Abstract.Expression> myOptions;
 
-  public InferredArgumentsMismatch(int argument, List<Abstract.Expression> options, Abstract.Expression expression, List<String> names) {
-    super(null, expression, names);
+  public InferredArgumentsMismatch(Definition parent, int argument, List<Abstract.Expression> options, Abstract.Expression expression, List<String> names) {
+    super(parent, null, expression, names);
     myArgument = argument;
     myOptions = options;
   }

@@ -3,16 +3,19 @@ package com.jetbrains.jetpad.vclang.term.error;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TypeCheckingError {
+  private final Definition myParent;
   private final String myMessage;
   private final Abstract.SourceNode myExpression;
   private final List<String> myNames;
 
-  public TypeCheckingError(String message, Abstract.SourceNode expression, List<String> names) {
+  public TypeCheckingError(Definition parent, String message, Abstract.SourceNode expression, List<String> names) {
+    myParent = parent;
     myMessage = message;
     myExpression = expression;
     myNames = names;
@@ -41,12 +44,12 @@ public class TypeCheckingError {
   }
 
   protected String printPosition() {
+    String msg = myParent == null ? "" : myParent.getFullName() + ":";
     if (myExpression instanceof Concrete.SourceNode) {
       Concrete.Position position = ((Concrete.SourceNode) myExpression).getPosition();
-      return position.line + ":" + position.column + ": ";
-    } else {
-      return "";
+      msg += position.line + ":" + position.column + ":";
     }
+    return msg + " ";
   }
 
   @Override
