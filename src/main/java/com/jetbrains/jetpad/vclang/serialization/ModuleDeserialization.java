@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -19,8 +20,6 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
   private final ModuleLoader myModuleLoader;
-
-  // TODO: add onlyStatics check.
 
   public ModuleDeserialization(ModuleLoader moduleLoader) {
     myModuleLoader = moduleLoader;
@@ -70,17 +69,6 @@ public class ModuleDeserialization {
           }
           if (childModule == null) {
             childModule = newDefinition(code, name, parent);
-            if (parent instanceof ClassDefinition) {
-              ((ClassDefinition) parent).addPublicField(childModule, null);
-            } else
-            if (parent instanceof DataDefinition && childModule instanceof Constructor) {
-              ((DataDefinition) parent).getConstructors().add((Constructor) childModule);
-              if (parent.getParent() instanceof ClassDefinition) {
-                ((ClassDefinition) parent.getParent()).addStaticField(childModule, myModuleLoader.getErrors());
-              }
-            } else {
-              throw new IncorrectFormat();
-            }
           }
         }
       }
@@ -100,10 +88,12 @@ public class ModuleDeserialization {
       return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null);
     }
     if (code == ModuleSerialization.DATA_CODE) {
-      return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Constructor>());
+      return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null);
     }
     if (code == ModuleSerialization.CLASS_CODE) {
-      return new ClassDefinition(name, parent);
+      ClassDefinition definition = new ClassDefinition(name, parent);
+      definition.hasErrors(true);
+      return definition;
     }
     if (code == ModuleSerialization.CONSTRUCTOR_CODE) {
       if (!(parent instanceof DataDefinition)) throw new IncorrectFormat();
@@ -163,10 +153,9 @@ public class ModuleDeserialization {
         dataDefinition.setParameters(readTypeArguments(stream, definitionMap));
       }
       int constructorsNumber = stream.readInt();
+      dataDefinition.setConstructors(new ArrayList<Constructor>(constructorsNumber));
       for (int i = 0; i < constructorsNumber; ++i) {
-        int conInt = stream.readInt();
-        Definition conDef = definitionMap.get(conInt);
-        Constructor constructor = (Constructor) conDef;
+        Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
         if (constructor == null) {
           throw new IncorrectFormat();
         }
@@ -178,6 +167,11 @@ public class ModuleDeserialization {
           constructor.setUniverse(readUniverse(stream));
           constructor.setArguments(readTypeArguments(stream, definitionMap));
         }
+
+        dataDefinition.getConstructors().add(constructor);
+        if (dataDefinition.getParent() instanceof ClassDefinition) {
+          ((ClassDefinition) dataDefinition.getParent()).addStaticField(constructor, myModuleLoader.getErrors());
+        }
       }
     } else
     if (code == ModuleSerialization.CLASS_CODE) {
@@ -185,8 +179,7 @@ public class ModuleDeserialization {
         throw new IncorrectFormat();
       }
 
-      ClassDefinition classDefinition = (ClassDefinition) definition;
-      deserializeClassDefinition(stream, definitionMap, classDefinition);
+      deserializeClassDefinition(stream, definitionMap, (ClassDefinition) definition);
     } else {
       throw new IncorrectFormat();
     }
@@ -199,12 +192,18 @@ public class ModuleDeserialization {
     for (int i = 0; i < size; ++i) {
       Definition field = definitionMap.get(stream.readInt());
       deserializeDefinition(stream, definitionMap, field);
+      definition.addPublicField(field, myModuleLoader.getErrors());
+      if (!definition.hasErrors()) {
+        TypeChecking.checkOnlyStatic(myModuleLoader, definition, field, field.getName());
+      }
     }
 
     size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       definition.addStaticField(definitionMap.get(stream.readInt()), myModuleLoader.getErrors());
     }
+
+    definition.hasErrors(false);
   }
 
   private void readDefinition(DataInputStream stream, Definition definition) throws IOException {

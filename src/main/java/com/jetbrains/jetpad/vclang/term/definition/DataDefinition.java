@@ -58,6 +58,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
 
   @Override
   public Constructor getStaticField(String name) {
+    if (myConstructors == null) return null;
     for (Constructor constructor : myConstructors) {
       if (constructor.getName().equals(name)) {
         return constructor;
