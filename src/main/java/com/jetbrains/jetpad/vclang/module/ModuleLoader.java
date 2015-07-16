@@ -19,7 +19,6 @@ public class ModuleLoader {
   private OutputSupplier myOutputSupplier;
   private boolean myRecompile;
   private final Set<Module> myLoadedModules = new HashSet<>();
-  private final List<OutputUnit> myOutputUnits = new ArrayList<>();
   private final List<ModuleError> myErrors = new ArrayList<>();
   private final List<TypeCheckingError> myTypeCheckingErrors = new ArrayList<>();
 
@@ -35,14 +34,6 @@ public class ModuleLoader {
     return myRoot;
   }
 
-  public boolean isModuleLoaded(Module module) {
-    return myLoadedModules.contains(module);
-  }
-
-  public List<OutputUnit> getOutputUnits() {
-    return myOutputUnits;
-  }
-
   public List<ModuleError> getErrors() {
     return myErrors;
   }
@@ -52,6 +43,10 @@ public class ModuleLoader {
   }
 
   public ClassDefinition loadModule(Module module, boolean tryLoad) {
+    if (myLoadedModules.contains(module)) {
+      return null;
+    }
+
     int index = myLoadingModules.indexOf(module);
     if (index != -1) {
       String msg = "modules dependencies form a cycle: ";
@@ -83,25 +78,16 @@ public class ModuleLoader {
       return null;
     }
 
+    module.getParent().addStaticField(moduleDefinition, myErrors);
     myLoadingModules.add(module);
     try {
       if (compile) {
         if (source.load(moduleDefinition)) {
           moduleDefinition.hasErrors(false);
           if (output.canWrite()) {
-            for (int i = 0; i < myOutputUnits.size(); ++i) {
-              if (moduleDefinition.isDescendantOf(myOutputUnits.get(i).module)) {
-                output = null;
-                break;
-              }
-              if (myOutputUnits.get(i).module.isDescendantOf(moduleDefinition)) {
-                myOutputUnits.remove(i--);
-              }
-            }
-            if (output != null) {
-              myOutputUnits.add(new OutputUnit(moduleDefinition, output));
-            }
+            output.write(moduleDefinition);
           }
+          System.out.println("[OK] " + moduleDefinition.getFullName());
         }
       } else {
         int errorsNumber = output.read(moduleDefinition);
@@ -124,19 +110,7 @@ public class ModuleLoader {
 
     if (moduleDefinition.hasErrors()) {
       module.getParent().removeField(moduleDefinition);
-    } else {
-      module.getParent().addStaticField(moduleDefinition, myErrors);
     }
     return moduleDefinition;
-  }
-
-  public static class OutputUnit {
-    public ClassDefinition module;
-    public Output output;
-
-    public OutputUnit(ClassDefinition module, Output output) {
-      this.module = module;
-      this.output = output;
-    }
   }
 }

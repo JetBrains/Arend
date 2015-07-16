@@ -148,12 +148,17 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   }
 
   private Result checkPath(Abstract.Expression expr, Expression other) {
-    if (!(other instanceof AppExpression && ((AppExpression) other).getFunction() instanceof DefCallExpression && ((DefCallExpression) ((AppExpression) other).getFunction()).getDefinition().equals(Prelude.PATH_CON) && ((AppExpression) other).getArgument().getExpression() instanceof LamExpression)) {
+    if (!(other instanceof AppExpression)) {
+      return null;
+    }
+    List<Expression> arguments = new ArrayList<>(4);
+    Expression function = other.getFunction(arguments);
+    if (!(arguments.size() == 4 && function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition().equals(Prelude.PATH_CON) && arguments.get(0) instanceof LamExpression)) {
       return null;
     }
 
     List<Expression> args = new ArrayList<>();
-    Expression expr1 = ((LamExpression) ((AppExpression) other).getArgument().getExpression()).getBody().getFunction(args);
+    Expression expr1 = ((LamExpression) arguments.get(0)).getBody().getFunction(args);
     if (expr1 instanceof DefCallExpression && ((DefCallExpression) expr1).getDefinition().equals(Prelude.AT) && args.size() == 5 && args.get(0) instanceof IndexExpression && ((IndexExpression) args.get(0)).getIndex() == 0) {
       Expression newOther = args.get(1).liftIndex(0, -1);
       if (newOther != null) {
@@ -171,29 +176,12 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression other) {
     if (expr == other) return new JustResult(CMP.EQUALS);
-    if (!(expr.getFunction() instanceof DefCallExpression && ((DefCallExpression) expr.getFunction()).getDefinition().equals(Prelude.PATH_CON))) {
-      Result result = checkPath(expr, other);
-      if (result != null) return result;
-    }
+    Result pathResult = checkPath(expr, other);
+    if (pathResult != null) return pathResult;
     Result tupleResult = checkTuple(expr, other);
     if (tupleResult != null) return tupleResult;
     Result lamResult = checkLam(expr, other);
     if (lamResult != null) return lamResult;
-
-    if (expr.getFunction() instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr.getFunction()).getDefinition().equals(Prelude.PATH_CON)) {
-      if (expr.getArgument().getExpression() instanceof Abstract.LamExpression) {
-        List<Abstract.ArgumentExpression> args = new ArrayList<>();
-        Abstract.Expression expr1 = Abstract.getFunction(((Abstract.LamExpression) expr.getArgument().getExpression()).getBody(), args);
-        if (expr1 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr1).getDefinition().equals(Prelude.AT) && args.size() == 5 && args.get(4).getExpression() instanceof Abstract.IndexExpression && ((Abstract.IndexExpression) args.get(4).getExpression()).getIndex() == 0) {
-          List<Equation> equations = new ArrayList<>();
-          Result result = args.get(3).getExpression().accept(new CompareVisitor(equations), other.liftIndex(0, 1));
-          if (result.isOK() != CMP.NOT_EQUIV) {
-            myEquations.addAll(equations);
-            return result;
-          }
-        }
-      }
-    }
 
     List<Abstract.ArgumentExpression> args = new ArrayList<>();
     Abstract.Expression expr1 = Abstract.getFunction(expr, args);
@@ -201,9 +189,24 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       return new MaybeResult(expr1);
     }
 
+    if (expr1 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr1).getDefinition() == Prelude.PATH_CON && args.size() == 4 && args.get(3).getExpression() instanceof Abstract.LamExpression) {
+      List<Abstract.ArgumentExpression> args1 = new ArrayList<>();
+      Abstract.Expression expr2 = Abstract.getFunction(((Abstract.LamExpression) args.get(3).getExpression()).getBody(), args1);
+      if (expr2 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr2).getDefinition().equals(Prelude.AT) && args1.size() == 5 && args1.get(4).getExpression() instanceof Abstract.IndexExpression && ((Abstract.IndexExpression) args1.get(4).getExpression()).getIndex() == 0) {
+        List<Equation> equations = new ArrayList<>();
+        Result result = args1.get(3).getExpression().accept(new CompareVisitor(equations), other.liftIndex(0, 1));
+        if (result.isOK() != CMP.NOT_EQUIV) {
+          myEquations.addAll(equations);
+          return result;
+        }
+      }
+    }
+
     List<Expression> otherArgs = new ArrayList<>();
     Expression other1 = other.getFunction(otherArgs);
-    if (args.size() != otherArgs.size()) return new JustResult(CMP.NOT_EQUIV);
+    if (args.size() != otherArgs.size()) {
+      return new JustResult(CMP.NOT_EQUIV);
+    }
 
     int equationsNumber = myEquations.size();
     Result result = expr1.accept(this, other1);

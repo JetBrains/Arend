@@ -199,7 +199,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       Expression type = signature.get(i).getType().subst(substExprs, 0);
 
-      Result result = typeCheck(argsImp[i].expression, type);
+      Result result;
+      /* if (argsImp[i].expression instanceof Expression) {
+        List<Expression> context = new ArrayList<>(myLocalContext.size());
+        for (Binding binding : myLocalContext) {
+          context.add(binding.getType());
+        }
+        Expression actualType = ((Expression) argsImp[i].expression).getType(context);
+        result = checkResult(type, new OKResult((Expression) argsImp[i].expression, actualType, null), argsImp[i].expression);
+      } else { */
+        result = typeCheck(argsImp[i].expression, type);
+      // }
       if (result == null) {
         for (int j = i + 1; j < resultArgs.length; ++j) {
           if (!(argsImp[j].expression instanceof Abstract.InferHoleExpression)) {
@@ -246,24 +256,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   private Result typeCheckApps(Abstract.Expression fun, int argsSkipped, OKResult okFunction, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
     List<TypeArgument> signatureArguments = new ArrayList<>();
-    DataDefinition dataType = null;
     int parametersNumber = 0;
     if (okFunction.expression instanceof DefCallExpression) {
       Definition def = ((DefCallExpression) okFunction.expression).getDefinition();
       if (def instanceof Constructor) {
-        dataType = ((Constructor) def).getDataType();
-        parametersNumber = numberOfVariables(dataType.getParameters());
+        parametersNumber = numberOfVariables(((Constructor) def).getDataType().getParameters());
       }
     }
 
     Expression signatureResultType = splitArguments(okFunction.type, signatureArguments);
     Arg[] argsImp = new Arg[signatureArguments.size()];
-    for (int i = 0; i < parametersNumber; ++i) {
-      argsImp[i] = new Arg(!signatureArguments.get(i).getExplicit(), null, new InferHoleExpression(new ArgInferenceError(myParent, parameter(i + 1), fun, null, new StringPrettyPrintable(dataType.getName()))));
-    }
-
     int i, j;
-    for (i = parametersNumber, j = 0; i < signatureArguments.size() && j < args.size(); ++i, ++j) {
+    for (i = 0, j = 0; i < signatureArguments.size() && j < args.size(); ++i, ++j) {
       if (args.get(j).isExplicit() == signatureArguments.get(i).getExplicit()) {
         argsImp[i] = new Arg(args.get(j).isHidden(), null, args.get(j).getExpression());
       } else
@@ -306,8 +310,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
       }
 
-      InferHoleExpression inferHoleExpr = new InferHoleExpression(new ArgInferenceError(myParent, type(), args.get(0).getExpression(), getNames(myLocalContext), args.get(0).getExpression()));
+      InferHoleExpression inferHoleExpr = null;
       if (argExpectedType == null) {
+        inferHoleExpr = new InferHoleExpression(new ArgInferenceError(myParent, type(), args.get(0).getExpression(), getNames(myLocalContext), args.get(0).getExpression()));
         argExpectedType = Pi("i", DefCall(Prelude.INTERVAL), inferHoleExpr);
       }
 

@@ -25,6 +25,10 @@ public class TypeCheckingError {
     return myMessage;
   }
 
+  public Definition getParent() {
+    return myParent;
+  }
+
   public static List<String> getNames(List<? extends Abstract.Binding> context) {
     List<String> names = new ArrayList<>(context.size());
     for (Abstract.Binding binding : context) {

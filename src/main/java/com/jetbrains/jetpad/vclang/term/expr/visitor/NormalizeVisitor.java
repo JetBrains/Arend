@@ -165,7 +165,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
           if (clause != null && clause.getArguments().size() == constructorArgs.size() - parametersCount) {
             int var = ((ElimExpression) result).getExpression().getIndex();
             args2.remove(var);
-            for (int i = constructorArgs.size() - 1; i >= parametersCount; --i) {
+            for (int i = clause.getArguments().size() - 1; i >= 0; --i) {
               args2.add(var++, constructorArgs.get(i));
             }
             result = clause.getExpression();

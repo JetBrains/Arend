@@ -129,33 +129,16 @@ public class ConsoleMain {
       module = module1;
     }
     Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));
-    if (!moduleLoader.isModuleLoaded(newModule)) {
-      moduleLoader.loadModule(newModule, false);
+    moduleLoader.loadModule(newModule, false);
 
-      for (ModuleError moduleError : moduleLoader.getErrors()) {
-        System.err.println(moduleError);
-      }
-
-      for (TypeCheckingError error : moduleLoader.getTypeCheckingErrors()) {
-        System.err.println(error);
-      }
-
-      if (moduleLoader.getErrors().isEmpty() && moduleLoader.getTypeCheckingErrors().isEmpty()) {
-        System.out.println("[OK] " + module.getFullName());
-      }
-
-      if (moduleLoader.getErrors().isEmpty()) {
-        for (ModuleLoader.OutputUnit unit : moduleLoader.getOutputUnits()) {
-          try {
-            unit.output.write(unit.module);
-          } catch (IOException e) {
-            System.err.println(ModuleError.ioError(e));
-          }
-        }
-      }
+    for (ModuleError moduleError : moduleLoader.getErrors()) {
+      System.err.println(moduleError);
     }
 
-    moduleLoader.getOutputUnits().clear();
+    for (TypeCheckingError error : moduleLoader.getTypeCheckingErrors()) {
+      System.err.println(error);
+    }
+
     moduleLoader.getErrors().clear();
     moduleLoader.getTypeCheckingErrors().clear();
   }
