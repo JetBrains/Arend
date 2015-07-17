@@ -16,4 +16,6 @@ public abstract class Binding implements Abstract.Binding {
   }
 
   public abstract Expression getType();
+
+  public abstract Binding lift(int on);
 }

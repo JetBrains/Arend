@@ -132,9 +132,9 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
     return letExpression.getExpression().accept(this);
   }
 
-  private boolean visitLetClause(LetClause clause) {
+  public boolean visitLetClause(LetClause clause) {
     if (visitArguments(clause.getArguments())) return true;
-    if (clause.getType() != null && clause.getType().accept(this)) return true;
+    if (clause.getResultType() != null && clause.getResultType().accept(this)) return true;
     return clause.getTerm().accept(this);
   }
 }

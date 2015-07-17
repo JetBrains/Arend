@@ -85,8 +85,7 @@ public final class Abstract {
     Expression getBody();
   }
 
-  public interface LetClause extends FunctionDefinition, PrettyPrintable {
-
+  public interface LetClause extends Function, PrettyPrintable {
   }
 
   public interface LetExpression extends Expression {
@@ -211,13 +210,16 @@ public final class Abstract {
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
-  public interface FunctionDefinition extends Definition {
+  public interface Function extends Binding {
     Definition.Arrow getArrow();
-    boolean isAbstract();
-    boolean isOverridden();
     Expression getTerm();
     List<? extends Argument> getArguments();
     Expression getResultType();
+  }
+
+  public interface FunctionDefinition extends Definition, Function {
+    boolean isAbstract();
+    boolean isOverridden();
   }
 
   public interface DataDefinition extends Definition {

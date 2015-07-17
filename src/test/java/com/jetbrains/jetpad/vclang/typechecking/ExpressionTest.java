@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.error.TypeMismatchError;
@@ -9,8 +12,10 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
@@ -181,6 +186,28 @@ public class ExpressionTest {
     assertEquals(Pi(Nat(), Nat()), result.type);
     assertEquals(0, errors.size());
   }
+
+  private static CheckTypeVisitor.OKResult checkTypeConcrete(Concrete.Expression expr, List<TypeCheckingError> errors) {
+    return new CheckTypeVisitor(null, new ArrayList<Binding>(), new HashSet<Definition>(), errors, CheckTypeVisitor.Side.LHS).checkType(expr, null);
+  }
+
+  @Test
+  public void letDependentType() {
+    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\lam (F : \\Pi Nat -> \\Type0) (f : \\Pi (x : Nat) -> F x) => \\let | x => 0 \\in f x");
+    List<TypeCheckingError> errors = new ArrayList<>();
+    checkTypeConcrete(expr, errors);
+    assertEquals(0, errors.size());
+  }
+
+  @Test
+  public void letBoundIsInTypeError() {
+    Concrete.Expression expr = parseExpr(new ModuleLoader(),
+            "\\lam (F : \\Pi {A : \\Type0}  (a : A) -> \\Type1) (f : \\Pi {A : \\Type0} (x : A) -> F x) => \\let | x (y : Nat) : Nat <= \\elim y |zero => zero | suc x' => suc x' \\in f x");
+    List<TypeCheckingError> errors = new ArrayList<>();
+    checkTypeConcrete(expr, errors);
+    assertEquals(1, errors.size());
+  }
+
 
   @Test
   public void tooManyLambdasError() {

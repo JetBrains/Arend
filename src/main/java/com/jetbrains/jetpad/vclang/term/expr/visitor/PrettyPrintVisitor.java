@@ -299,6 +299,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitLet(Abstract.LetExpression expr, Byte prec) {
+    final int oldNamesSize = myNames.size();
     if (prec > Abstract.LetExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\let ");
 
@@ -317,9 +318,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     expr.getExpression().accept(this, Abstract.LetExpression.PREC);
     myIndent -= INDENT1;
 
-    for (int i = 0; i < myNames.size(); i++) {
-      myNames.remove(myNames.size() - 1);
-    }
+    trimToSize(myNames, oldNamesSize);
     return null;
   }
 

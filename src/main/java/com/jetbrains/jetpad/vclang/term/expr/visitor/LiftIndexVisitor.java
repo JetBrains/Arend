@@ -147,9 +147,22 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
     return visitTypeArguments(expr.getArguments(), result) < 0 ? null : Sigma(result);
   }
 
+  private Clause visitClause(Clause clause, ElimExpression elimExpr) {
+    if (clause == null)
+      return null;
+    return new Clause(clause.getConstructor(), clause.getArguments(), clause.getArrow(), clause.getExpression().liftIndex(myFrom + clause.getArguments().size(), myOn), elimExpr);
+  }
+
   @Override
   public Expression visitElim(ElimExpression expr) {
-    throw new IllegalStateException();
+    List<Clause> clauses = new ArrayList<>();
+    ElimExpression result = Elim(expr.getElimType(), (IndexExpression) expr.getExpression().liftIndex(myFrom, myOn), clauses, visitClause(expr.getOtherwise(), null));
+    if (result.getOtherwise() != null)
+      result.getOtherwise().setElimExpression(result);
+    for (Clause clause : expr.getClauses()) {
+      clauses.add(visitClause(clause, result));
+    }
+    return result;
   }
 
   @Override
@@ -187,17 +200,27 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitLet(LetExpression letExpression) {
     final List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
-    Integer from = myFrom;
+    int from = myFrom;
     for (LetClause clause : letExpression.getClauses()) {
-      final List<Argument> arguments = new ArrayList<>(clause.getArguments().size());
-      from = visitArguments(clause.getArguments(), arguments, from);
-      if (from == null) return null;
-      final Expression resultType = clause.getResultType() == null ? null : clause.getResultType().liftIndex(from, myOn);
-      final Expression term = clause.getTerm().liftIndex(from, myOn);
-      clauses.add(new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), term));
+      clauses.add(visitLetClause(clause, from));
+      if (clauses.get(clauses.size() - 1)== null)
+        return null;
       from++;
     }
     final Expression expr = letExpression.getExpression().liftIndex(from, myOn);
-    return Let(clauses, expr);
+    return expr == null ? null : Let(clauses, expr);
+  }
+
+  public LetClause visitLetClause(LetClause clause, Integer from) {
+    final List<Argument> arguments = new ArrayList<>(clause.getArguments().size());
+    from = visitArguments(clause.getArguments(), arguments, from);
+    if (from == null) return null;
+    final Expression resultType = clause.getResultType() == null ? null : clause.getResultType().liftIndex(from, myOn);
+    final Expression term = clause.getTerm().liftIndex(from, myOn);
+    return new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), term);
+  }
+
+  public LetClause visitLetClause(LetClause clause) {
+    return visitLetClause(clause, myFrom);
   }
 }

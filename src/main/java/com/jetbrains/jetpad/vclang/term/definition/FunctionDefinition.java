@@ -3,15 +3,13 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Function;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
-
-public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition {
+public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition, Function {
   private Arrow myArrow;
   private List<Argument> myArguments;
   private Expression myResultType;
@@ -91,11 +89,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
 
   @Override
   public Expression getType() {
-    List<TypeArgument> arguments = new ArrayList<>(myArguments.size());
-    for (Argument argument : myArguments) {
-      arguments.add((TypeArgument) argument);
-    }
-    return myArguments.isEmpty() ? myResultType : Pi(arguments, myResultType);
+    return Utils.getFunctionType(this);
   }
 
   @Override
