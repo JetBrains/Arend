@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
@@ -13,13 +14,53 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+
 public class CompareVisitor implements AbstractExpressionVisitor<Expression, CompareVisitor.Result> {
   private final List<Equation> myEquations;
 
-  public enum CMP { EQUIV, EQUALS, GREATER, LESS, NOT_EQUIV }
+  public enum CMP {EQUIV, EQUALS, GREATER, LESS, NOT_EQUIV}
 
   public interface Result {
     CMP isOK();
+  }
+
+  private static class EquationsLifter implements AutoCloseable {
+    final List<Equation> myEquations;
+    int myOldEquationSize;
+    int myOn;
+
+    EquationsLifter(List<Equation> equations) {
+      this(equations, 0);
+    }
+
+    EquationsLifter(List<Equation> equations, int on) {
+      myEquations = equations;
+      myOldEquationSize = equations.size();
+      myOn = on;
+    }
+
+    private void doLift(int size, int on) {
+      for (int j = size; j < myEquations.size(); ++j) {
+        Expression expr1 = myEquations.get(j).expression.liftIndex(0, -on);
+        if (expr1 != null) {
+          myEquations.get(j).expression = expr1;
+        } else {
+          myEquations.remove(j--);
+        }
+      }
+    }
+
+    void lift(int on) {
+      doLift(myOldEquationSize, myOn);
+      myOldEquationSize = myEquations.size();
+      myOn += on;
+    }
+
+    @Override
+    public void close() {
+      doLift(myOldEquationSize, myOn);
+    }
   }
 
   public static class JustResult implements Result {
@@ -59,8 +100,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         for (String ignored : teleArg.getNames()) {
           types.add(teleArg.getType());
         }
-      } else
-      if (arg instanceof Abstract.NameArgument) {
+      } else if (arg instanceof Abstract.NameArgument) {
         types.add(null);
       }
     }
@@ -85,8 +125,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
           for (int i = 0; i < teleArg.getNames().size(); ++i) {
             args.add(teleArg.getType() instanceof Expression ? ((Expression) teleArg.getType()).liftIndex(0, i) : teleArg.getType());
           }
-        } else
-        if (arg instanceof Abstract.TypeArgument) {
+        } else if (arg instanceof Abstract.TypeArgument) {
           args.add(((Abstract.TypeArgument) arg).getType());
         }
       }
@@ -567,6 +606,21 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 
+  private List<Abstract.Expression> splitConcreteTypeArgumentsTypes(List<? extends Abstract.TypeArgument> arguments) {
+    List<Abstract.Expression> args = new ArrayList<>();
+    for (Abstract.TypeArgument arg : arguments) {
+      if (arg instanceof Abstract.TelescopeArgument) {
+        for (String ignored : ((Abstract.TelescopeArgument) arg).getNames()) {
+          args.add(arg.getType());
+        }
+      } else {
+        args.add(arg.getType());
+      }
+    }
+    return args;
+  }
+
+
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression other) {
     if (expr == other) return new JustResult(CMP.EQUALS);
@@ -688,10 +742,71 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     return expr.getExpression().accept(this, ((NewExpression) other).getExpression());
   }
 
+  Result compareTypeArguments(List<Abstract.TypeArgument> args1, List<TypeArgument> args2) {
+    try (EquationsLifter lifter = new EquationsLifter(myEquations)) {
+      List<Abstract.Expression> types1 = splitConcreteTypeArgumentsTypes(args1); // TODO: use local functions
+      List<TypeArgument> args2Splitted = new ArrayList<>();
+      splitArguments(args2, args2Splitted);
+
+      if (types1.size() != args2Splitted.size())
+        return new JustResult(CMP.NOT_EQUIV);
+      CMP cmp = CMP.EQUALS;
+      for (int i = 0; i < types1.size(); ++i) {
+        // TODO: is this correct???
+        if (i > 0 && types1.get(i) == types1.get(i - 1) && args2Splitted.get(i) == args2Splitted.get(i - 1)) continue;
+
+        Result result = types1.get(i).accept(this, args2Splitted.get(i).getType());
+        if (result.isOK() == CMP.NOT_EQUIV) return result;
+        cmp = and(cmp, result.isOK());
+        lifter.lift(1);
+      }
+
+      return new JustResult(cmp);
+    }
+  }
+
   @Override
   public Result visitLet(Abstract.LetExpression expr, Expression other) {
-    // TODO: fill
-    return new JustResult(CMP.EQUALS);
+    try (EquationsLifter lifter = new EquationsLifter(myEquations)) {
+      if (expr == other)
+        return new JustResult(CMP.EQUALS);
+      if (!(other instanceof LetExpression))
+        return new JustResult(CMP.NOT_EQUIV);
+      LetExpression otherLet = (LetExpression) other;
+
+      if (otherLet.getClauses().size() != expr.getClauses().size())
+        return new JustResult(CMP.NOT_EQUIV);
+      CMP cmp = CMP.EQUALS;
+      for (int i = 0; i < expr.getClauses().size(); i++) {
+        List<Abstract.TypeArgument> letTypeArgs = new ArrayList<>();
+        List<TypeArgument> otherTypeArgs = new ArrayList<>();
+        for (Abstract.Argument arg : expr.getClauses().get(i).getArguments()) {
+          letTypeArgs.add((Abstract.TypeArgument) arg);
+        }
+        for (Argument arg : otherLet.getClauses().get(i).getArguments()) {
+          otherTypeArgs.add((TypeArgument) arg);
+        }
+
+        Result result = compareTypeArguments(letTypeArgs, otherTypeArgs);
+        if (result.isOK() == CMP.NOT_EQUIV)
+          return result;
+        cmp = and(cmp, result.isOK());
+
+        try (EquationsLifter ignore = new EquationsLifter(myEquations, letTypeArgs.size())) {
+          result = expr.getClauses().get(i).getTerm().accept(this, ((LetExpression) other).getClauses().get(i).getTerm());
+        }
+
+        if (result.isOK() == CMP.NOT_EQUIV)
+          return result;
+        cmp = and(cmp, result.isOK());
+
+        lifter.lift(1);
+      }
+      Result result = expr.getExpression().accept(this, otherLet.getExpression());
+      if (result.isOK() == CMP.NOT_EQUIV)
+        return result;
+      return new JustResult(and(cmp, result.isOK()));
+    }
   }
 
   @Override
@@ -723,7 +838,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
 
     if (expr.getOtherwise() == otherElim.getOtherwise()) return maybeResult == null ? new JustResult(cmp) : maybeResult;
-    if (expr.getOtherwise() == null || otherElim.getOtherwise() == null || expr.getOtherwise().getArrow() != otherElim.getOtherwise().getArrow()) return new JustResult(CMP.NOT_EQUIV);
+    if (expr.getOtherwise() == null || otherElim.getOtherwise() == null || expr.getOtherwise().getArrow() != otherElim.getOtherwise().getArrow())
+      return new JustResult(CMP.NOT_EQUIV);
     result = expr.getExpression().accept(this, otherElim.getOtherwise().getExpression());
     if (result.isOK() == CMP.NOT_EQUIV) {
       if (result instanceof MaybeResult) {
@@ -741,7 +857,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (clause == other) return new JustResult(CMP.EQUALS);
     if (clause == null || other == null) return new JustResult(CMP.NOT_EQUIV);
 
-    if (!other.getName().equals(clause.getName()) || clause.getArrow() != other.getArrow()) return new JustResult(CMP.NOT_EQUIV);
+    if (!other.getName().equals(clause.getName()) || clause.getArrow() != other.getArrow())
+      return new JustResult(CMP.NOT_EQUIV);
     List<Abstract.Expression> args1 = new ArrayList<>();
     Abstract.Expression expr1 = lamArgs(clause.getExpression(), args1);
     List<Abstract.Expression> args2 = new ArrayList<>();

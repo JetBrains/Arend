@@ -1221,10 +1221,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       int numVarsPassed = 0;
       for (int i = 0; i < clause.getArguments().size(); i++) {
         if (clause.getArguments().get(i) instanceof Abstract.TypeArgument) {
-          final Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) clause.getArguments().get(i);
-          final Result result = typeCheck(typeArgument.getType(), Universe());
+          Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) clause.getArguments().get(i);
+          Result result = typeCheck(typeArgument.getType(), Universe());
           if (!(result instanceof OKResult)) return result;
-          final OKResult okResult = (OKResult) result;
+          OKResult okResult = (OKResult) result;
           args.add(argFromArgResult(typeArgument, okResult));
           addLiftedEquations(okResult, equations, numVarsPassed);
           if (typeArgument instanceof Abstract.TelescopeArgument) {
@@ -1257,7 +1257,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       resultType = ((OKResult) termResult).type;
     }
 
-    // Check that this is enough
     LetClause result = new LetClause(clause.getName(), args, resultType, clause.getArrow(), term);
     myLocalContext.add(result);
     return new LetClauseOKResult(result, equations);
@@ -1281,17 +1280,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       List<LetClause> clauses = new ArrayList<>();
       List<CompareVisitor.Equation> equations = new ArrayList<>();
       for (int i = 0; i < expr.getClauses().size(); i++) {
-        final Result clauseResult = visitLetClause(expr.getClauses().get(i));
+        Result clauseResult = visitLetClause(expr.getClauses().get(i));
         if (!(clauseResult instanceof LetClauseOKResult)) return clauseResult;
         addLiftedEquations((OKResult) clauseResult, equations, i);
         clauses.add(((LetClauseOKResult) clauseResult).clause);
       }
-      final Result result = typeCheck(expr.getExpression(), expectedType);
+      Result result = typeCheck(expr.getExpression(), expectedType);
       if (!(result instanceof OKResult)) return result;
-      final OKResult okResult = (OKResult) result;
+      OKResult okResult = (OKResult) result;
       addLiftedEquations(okResult, equations, expr.getClauses().size());
 
-      final Expression normalizedResultType = okResult.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
+      Expression normalizedResultType = okResult.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
       if (normalizedResultType.liftIndex(0, -expr.getClauses().size()) == null) {
         TypeCheckingError error = new TypeCheckingError("Let result type depends on a bound variable.", expr, getNames(myLocalContext));
         expr.setWellTyped(Error(null, error));

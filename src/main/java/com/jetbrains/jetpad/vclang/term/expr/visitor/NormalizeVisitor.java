@@ -209,7 +209,8 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     Abstract.Definition.Arrow arrow = func.getArrow();
     while (result instanceof ElimExpression && ((ElimExpression) result).getElimType() == Abstract.ElimExpression.ElimType.ELIM) {
       List<Expression> constructorArgs = new ArrayList<>();
-      Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0).normalize(Mode.WHNF, myContext).getFunction(constructorArgs); // TODO: check that we shouldn't lift something
+      // TODO: check that we shouldn't lift something
+      Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0).normalize(Mode.WHNF, myContext).getFunction(constructorArgs);
       if (expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor) {
         Constructor constructor = (Constructor) ((DefCallExpression) expr).getDefinition();
         Clause clause = constructor.getIndex() < ((ElimExpression) result).getClauses().size() ? ((ElimExpression) result).getClauses().get(constructor.getIndex()) : null;
@@ -265,7 +266,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitIndex(IndexExpression expr) {
-    final Binding binding = getBinding(myContext, expr.getIndex());
+    Binding binding = getBinding(myContext, expr.getIndex());
     if (binding != null && binding instanceof Function) { // TODO: check normalization mode
       return visitFunctionCall((Function) binding, expr, new ArrayList<ArgumentExpression>());
     } else {
@@ -417,12 +418,12 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   public Expression visitLet(LetExpression letExpression) {
     List<LetClause> normalizedClauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
-      final LetClause normalizedClause = visitLetClause(clause);
+      LetClause normalizedClause = visitLetClause(clause);
       normalizedClauses.add(normalizedClause);
       myContext.add(normalizedClause);
     }
     // TODO: check modes
-    final Expression term = letExpression.getExpression().accept(this);
+    Expression term = letExpression.getExpression().accept(this);
     if (term.liftIndex(0, - normalizedClauses.size()) != null)
       return term.liftIndex(0, -normalizedClauses.size());
     else
@@ -431,9 +432,9 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   private LetClause visitLetClause(LetClause clause) {
     try (ContextSaver saver = new ContextSaver(myContext)) {
-      final List<Argument> arguments = visitArguments(clause.getArguments());
-      final Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this);
-      final Expression term = clause.getTerm().accept(this);
+      List<Argument> arguments = visitArguments(clause.getArguments());
+      Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this);
+      Expression term = clause.getTerm().accept(this);
       return new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), term);
     }
   }

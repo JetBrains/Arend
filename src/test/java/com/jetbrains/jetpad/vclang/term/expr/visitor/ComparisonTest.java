@@ -26,6 +26,20 @@ public class ComparisonTest {
   }
 
   @Test
+  public void letsNotEqual() {
+    Expression expr = Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Index(0))), Apps(Index(0), Zero()));
+    Expression expr2 = Let(lets(let("x", lamArgs(Tele(vars("y"), Universe(0))), Index(0))), Apps(Index(0), Nat()));
+    assertNotEquals(expr, expr2);
+  }
+
+  @Test
+  public void letsEqual() {
+    Expression expr = Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Index(0))), Apps(Index(0), Zero()));
+    Expression expr2 = Let(lets(let("x", lamArgs(Tele(vars("z"), Nat())), Index(0))), Apps(Index(0), Zero()));
+    assertEquals(expr, expr2);
+  }
+
+  @Test
   public void lambdasTyped() {
     Expression expr1 = Lam(lamArgs(Tele(vars("x"), Nat()), Name("y")), Index(1));
     Expression expr2 = Lam("x", Lam("y", Index(1)));
