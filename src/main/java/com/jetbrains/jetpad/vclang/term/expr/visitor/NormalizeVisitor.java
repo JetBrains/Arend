@@ -423,7 +423,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
     // TODO: check modes
     final Expression term = letExpression.getExpression().accept(this);
-    if (term.accept(new FindIndiciesVisitor(0, normalizedClauses.size() - 1)).isEmpty())
+    if (term.liftIndex(0, - normalizedClauses.size()) != null)
       return term.liftIndex(0, -normalizedClauses.size());
     else
       return Let(normalizedClauses, term);

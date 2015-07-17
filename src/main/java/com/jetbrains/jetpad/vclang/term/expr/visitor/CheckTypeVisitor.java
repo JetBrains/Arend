@@ -1291,11 +1291,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       final OKResult okResult = (OKResult) result;
       addLiftedEquations(okResult, equations, expr.getClauses().size());
 
-      // TODO: expand only let bindings?
       final Expression normalizedResultType = okResult.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
-
-      if (!normalizedResultType.accept(new FindIndiciesVisitor(0, expr.getClauses().size())).isEmpty()) {
-        TypeCheckingError error = new TypeCheckingError("Let result type depends on bound variable.", expr, getNames(myLocalContext));
+      if (normalizedResultType.liftIndex(0, -expr.getClauses().size()) == null) {
+        TypeCheckingError error = new TypeCheckingError("Let result type depends on a bound variable.", expr, getNames(myLocalContext));
         expr.setWellTyped(Error(null, error));
         myErrors.add(error);
         return null;
