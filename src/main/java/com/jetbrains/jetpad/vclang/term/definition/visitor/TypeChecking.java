@@ -95,6 +95,7 @@ public class TypeChecking {
     }
     parent.addStaticField(definition, moduleLoader.getErrors());
     for (Constructor constructor : definition.getConstructors()) {
+      parent.addPublicField(constructor, moduleLoader.getErrors());
       parent.addStaticField(constructor, moduleLoader.getErrors());
     }
     return true;

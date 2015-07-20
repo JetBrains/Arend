@@ -148,13 +148,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       myOnlyStatics = oldOnlyStatics;
       myParent = oldParent;
 
-      if (myOnlyStatics) {
-        TypeChecking.checkOnlyStatic(myModuleLoader, myParent, classDef, classDef.getName());
+      if (myOnlyStatics && !TypeChecking.checkOnlyStatic(myModuleLoader, myParent, classDef, classDef.getName())) {
         return null;
-      } else {
-        myParent.addStaticField(classDef, myModuleLoader.getErrors());
-        return classDef;
       }
+      myParent.addStaticField(classDef, myModuleLoader.getErrors());
+      return classDef;
     } else
     if (ctx instanceof DefCmdContext) {
       visitDefCmd((DefCmdContext) ctx);
@@ -194,6 +192,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
             myParent.addPrivateField(definition);
             if (export) {
+              myParent.addPublicField(definition, myModuleLoader.getErrors());
               myParent.addStaticField(definition, myModuleLoader.getErrors());
             }
           }
@@ -208,6 +207,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
             myParent.addPrivateField(definition);
             if (export) {
+              myParent.addPublicField(definition, myModuleLoader.getErrors());
               myParent.addStaticField(definition, myModuleLoader.getErrors());
             }
           }

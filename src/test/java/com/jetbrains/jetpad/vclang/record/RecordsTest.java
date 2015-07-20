@@ -208,4 +208,11 @@ public class RecordsTest {
     assertEquals(new Universe.Type(0, Universe.Type.SET), result.getPublicField("Point").getUniverse());
     assertEquals(new Universe.Type(0, Universe.Type.SET), result.getPublicField("C").getUniverse());
   }
+
+  @Test
+  public void recordConstructorsTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDefs(moduleLoader, "\\class A { \\function x : Nat \\data Foo | foo (x = 0) \\function y : foo = foo } \\function test (p : A) : p.foo = p.foo => p.y");
+  }
 }
