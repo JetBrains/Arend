@@ -20,7 +20,7 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr) {
-    return expr.getDefinition() == myDef;
+    return expr.getDefinition() == myDef || expr.getExpression() != null && expr.getExpression().accept(this);
   }
 
   @Override
@@ -90,11 +90,6 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
       if (clause.getExpression().accept(this)) return true;
     }
     return expr.getOtherwise() == null ? false : expr.getOtherwise().getExpression().accept(this);
-  }
-
-  @Override
-  public Boolean visitFieldAcc(FieldAccExpression expr) {
-    return expr.getExpression().accept(this);
   }
 
   @Override

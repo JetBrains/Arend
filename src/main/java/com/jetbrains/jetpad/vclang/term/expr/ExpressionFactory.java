@@ -34,7 +34,11 @@ public class ExpressionFactory {
   }
 
   public static DefCallExpression DefCall(Definition definition) {
-    return new DefCallExpression(definition);
+    return new DefCallExpression(null, definition);
+  }
+
+  public static DefCallExpression DefCall(Expression expression, Definition definition) {
+    return new DefCallExpression(expression, definition);
   }
 
   public static ClassExtExpression ClassExt(ClassDefinition baseClass, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
@@ -137,10 +141,6 @@ public class ExpressionFactory {
 
   public static TupleExpression Tuple(SigmaExpression type, Expression... fields) {
     return new TupleExpression(Arrays.asList(fields), type);
-  }
-
-  public static FieldAccExpression FieldAcc(Expression expr, Definition field) {
-    return new FieldAccExpression(expr, field);
   }
 
   public static ProjExpression Proj(Expression expr, int field) {

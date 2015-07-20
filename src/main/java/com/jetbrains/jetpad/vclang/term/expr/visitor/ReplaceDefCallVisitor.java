@@ -32,7 +32,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return expr.getDefinition().getParent() == myParent ? FieldAcc(myExpression, expr.getDefinition()) : expr;
+    return expr.getExpression() == null && expr.getDefinition().getParent() == myParent ? DefCall(myExpression, expr.getDefinition()) : expr;
   }
 
   @Override
@@ -129,11 +129,6 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
       clauses.add(visitClause(clause, elimExpression));
     }
     return elimExpression;
-  }
-
-  @Override
-  public Expression visitFieldAcc(FieldAccExpression expr) {
-    return FieldAcc(expr.getExpression().accept(this), expr.getField());
   }
 
   @Override

@@ -501,18 +501,92 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).typeHasErrors() || !(expr.getDefinition() instanceof FunctionDefinition) && expr.getDefinition().hasErrors()) {
-      TypeCheckingError error = new HasErrors(myParent, expr.getDefinition().getName(), expr);
-      expr.setWellTyped(Error(DefCall(expr.getDefinition()), error));
+    if (expr.getExpression() != null) {
+      Result exprResult = typeCheck(expr.getExpression(), null);
+      if (!(exprResult instanceof OKResult)) return exprResult;
+      OKResult okExprResult = (OKResult) exprResult;
+      Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+      boolean notInScope = false;
+
+      if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
+        ClassDefinition parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
+        Definition child = parent.getPublicField(expr.getName());
+        if (child != null) {
+          if (child.hasErrors()) {
+            TypeCheckingError error = new HasErrors(myParent, child.getName(), expr);
+            expr.setWellTyped(Error(DefCall(child), error));
+            myModuleLoader.getTypeCheckingErrors().add(error);
+            return null;
+          } else {
+            Definition resultDef = child;
+            if (type instanceof ClassExtExpression && child instanceof FunctionDefinition) {
+              OverriddenDefinition overridden = ((ClassExtExpression) type).getDefinitionsMap().get(child);
+              if (overridden != null) {
+                resultDef = overridden;
+              }
+            }
+            Expression resultType = resultDef.getType();
+            if (resultType == null) {
+              resultType = child.getType();
+            }
+            return checkResult(expectedType, new OKResult(DefCall(okExprResult.expression, resultDef), resultType.accept(new ReplaceDefCallVisitor(parent, okExprResult.expression)), okExprResult.equations), expr);
+          }
+        }
+        notInScope = true;
+      } else
+      if (okExprResult.type instanceof UniverseExpression) {
+        Expression expression = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
+        if (expression instanceof DefCallExpression && ((DefCallExpression) expression).getDefinition() instanceof ClassDefinition) {
+          Definition field = ((DefCallExpression) expression).getDefinition().getStaticField(expr.getName());
+          if (field == null) {
+            notInScope = true;
+          } else {
+            return checkResult(expectedType, new OKResult(DefCall(field), field.getType(), okExprResult.equations), expr);
+          }
+        } else {
+          List<Expression> arguments = new ArrayList<>();
+          Expression function = expression.getFunction(arguments);
+          if (function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() instanceof DataDefinition) {
+            Constructor constructor = ((DataDefinition) ((DefCallExpression) function).getDefinition()).getStaticField(expr.getName());
+            if (constructor == null) {
+              notInScope = true;
+            } else {
+              Expression resultExpr = DefCall(constructor);
+              for (int i = arguments.size() - 1; i >= 0; --i) {
+                resultExpr = Apps(resultExpr, new ArgumentExpression(arguments.get(i), false, true));
+              }
+              Expression resultType = constructor.getType().splitAt(arguments.size(), null);
+              return checkResult(expectedType, new OKResult(resultExpr, resultType.subst(arguments, 0), okExprResult.equations), expr);
+            }
+          }
+        }
+      }
+
+      TypeCheckingError error;
+      if (notInScope) {
+        error = new NotInScopeError(myParent, expr, expr.getName());
+      } else {
+        error = new TypeCheckingError(myParent, "Expected an expression of a class type or a data type", expr.getExpression(), getNames(myLocalContext));
+      }
+      expr.setWellTyped(Error(null, error));
       myModuleLoader.getTypeCheckingErrors().add(error);
       return null;
-    }
+    } else {
+      assert expr.getDefinition() != null;
 
-    if (expr.getDefinition().isAbstract()) {
-      myAbstractCalls.add(expr.getDefinition());
-    }
+      if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).typeHasErrors() || !(expr.getDefinition() instanceof FunctionDefinition) && expr.getDefinition().hasErrors()) {
+        TypeCheckingError error = new HasErrors(myParent, expr.getName(), expr);
+        expr.setWellTyped(Error(DefCall(expr.getDefinition()), error));
+        myModuleLoader.getTypeCheckingErrors().add(error);
+        return null;
+      }
 
-    return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
+      if (expr.getDefinition().isAbstract()) {
+        myAbstractCalls.add(expr.getDefinition());
+      }
+
+      return checkResultImplicit(expectedType, new OKResult(DefCall(expr.getDefinition()), expr.getDefinition().getType(), null), expr);
+    }
   }
 
   @Override
@@ -928,7 +1002,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     args.add(expr.getRight());
 
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
-    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getBinOp()), args, expectedType, expr);
+    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, null, expr.getBinOp()), args, expectedType, expr);
   }
 
   @Override
@@ -1020,8 +1094,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (clause.getArguments().get(indexI).getExplicit() == constructorArguments.get(indexJ).getExplicit()) {
           arguments.add(new NameArgument(clause.getArguments().get(indexI).getExplicit(), clause.getArguments().get(indexI).getName()));
           ++indexI;
-        } else
-        if (!clause.getArguments().get(indexI).getExplicit()) {
+        } else if (!clause.getArguments().get(indexI).getExplicit()) {
           error = new TypeCheckingError(myParent, "Unexpected implicit argument", clause.getArguments().get(indexI), getNames(myLocalContext));
           clause.getExpression().setWellTyped(Error(null, error));
           myModuleLoader.getTypeCheckingErrors().add(error);
@@ -1084,8 +1157,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         wasError = true;
         if (errorResult == null) {
           errorResult = clauseResult;
-        } else
-        if (clauseResult instanceof InferErrorResult) {
+        } else if (clauseResult instanceof InferErrorResult) {
           myModuleLoader.getTypeCheckingErrors().add(((InferErrorResult) errorResult).error);
           errorResult = clauseResult;
         }
@@ -1135,79 +1207,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       otherwise.setElimExpression(result);
     }
     return new OKResult(result, expectedType, null);
-  }
-
-  @Override
-  public Result visitFieldAcc(Abstract.FieldAccExpression expr, Expression expectedType) {
-    Result exprResult = typeCheck(expr.getExpression(), null);
-    if (!(exprResult instanceof OKResult)) return exprResult;
-    OKResult okExprResult = (OKResult) exprResult;
-    Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
-    boolean notInScope = false;
-
-    if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
-      ClassDefinition parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
-      Definition child = parent.getPublicField(expr.getName());
-      if (child != null) {
-        if (child.hasErrors()) {
-          TypeCheckingError error = new HasErrors(myParent, child.getName(), expr);
-          expr.setWellTyped(Error(DefCall(child), error));
-          myModuleLoader.getTypeCheckingErrors().add(error);
-          return null;
-        } else {
-          Definition resultDef = child;
-          if (type instanceof ClassExtExpression && child instanceof FunctionDefinition) {
-            OverriddenDefinition overridden = ((ClassExtExpression) type).getDefinitionsMap().get(child);
-            if (overridden != null) {
-              resultDef = overridden;
-            }
-          }
-          Expression resultType = resultDef.getType();
-          if (resultType == null) {
-            resultType = child.getType();
-          }
-          return checkResult(expectedType, new OKResult(FieldAcc(okExprResult.expression, resultDef), resultType.accept(new ReplaceDefCallVisitor(parent, okExprResult.expression)), okExprResult.equations), expr);
-        }
-      }
-      notInScope = true;
-    } else
-    if (okExprResult.type instanceof UniverseExpression) {
-      Expression expression = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
-      if (expression instanceof DefCallExpression && ((DefCallExpression) expression).getDefinition() instanceof ClassDefinition) {
-        Definition field = ((DefCallExpression) expression).getDefinition().getStaticField(expr.getName());
-        if (field == null) {
-          notInScope = true;
-        } else {
-          return checkResult(expectedType, new OKResult(DefCall(field), field.getType(), okExprResult.equations), expr);
-        }
-      } else {
-        List<Expression> arguments = new ArrayList<>();
-        Expression function = expression.getFunction(arguments);
-        if (function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() instanceof DataDefinition) {
-          Constructor constructor = ((DataDefinition) ((DefCallExpression) function).getDefinition()).getStaticField(expr.getName());
-          if (constructor == null) {
-            notInScope = true;
-          } else {
-            Expression resultExpr = DefCall(constructor);
-            for (int i = arguments.size() - 1; i >= 0; --i) {
-              resultExpr = Apps(resultExpr, new ArgumentExpression(arguments.get(i), false, true));
-            }
-            Expression resultType = constructor.getType().splitAt(arguments.size(), null);
-            return checkResult(expectedType, new OKResult(resultExpr, resultType.subst(arguments, 0), okExprResult.equations), expr);
-          }
-        }
-      }
-    }
-
-    TypeCheckingError error;
-    if (notInScope) {
-      error = new NotInScopeError(myParent, expr, expr.getName());
-    } else {
-      error = new TypeCheckingError(myParent, "Expected an expression of a class type or a data type", expr.getExpression(), getNames(myLocalContext));
-    }
-    expr.setWellTyped(Error(null, error));
-    myModuleLoader.getTypeCheckingErrors().add(error);
-    return null;
   }
 
   @Override

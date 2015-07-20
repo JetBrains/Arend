@@ -8,15 +8,32 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import java.util.List;
 
 public class DefCallExpression extends Expression implements Abstract.DefCallExpression {
+  private final Expression myExpression;
   private final Definition myDefinition;
 
-  public DefCallExpression(Definition definition) {
+  public DefCallExpression(Expression expression, Definition definition) {
     myDefinition = definition;
+    myExpression = expression;
+  }
+
+  @Override
+  public Expression getExpression() {
+    return myExpression;
   }
 
   @Override
   public Definition getDefinition() {
     return myDefinition;
+  }
+
+  @Override
+  public String getName() {
+    return myDefinition.getName();
+  }
+
+  @Override
+  public Abstract.Definition.Fixity getFixity() {
+    return myDefinition.getFixity();
   }
 
   @Override

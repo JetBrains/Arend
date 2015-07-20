@@ -114,7 +114,9 @@ public class ModuleSerialization {
       visitor.getDataStream().writeInt(definition.getPublicFields().size());
       for (Definition field : definition.getPublicFields()) {
         visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
-        errors += serializeDefinition(visitor, field);
+        if (field.getParent() == definition) {
+          errors += serializeDefinition(visitor, field);
+        }
       }
     } else {
       visitor.getDataStream().writeInt(0);

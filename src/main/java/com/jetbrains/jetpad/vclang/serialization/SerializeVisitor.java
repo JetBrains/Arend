@@ -54,6 +54,10 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     myStream.write(2);
     int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition());
     try {
+      myDataStream.writeBoolean(expr.getExpression() != null);
+      if (expr.getExpression() != null) {
+        expr.getExpression().accept(this);
+      }
       myDataStream.writeInt(index);
     } catch (IOException e) {
       throw new IllegalStateException();
@@ -190,18 +194,6 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
       throw new IllegalStateException();
     }
     clause.getExpression().accept(this);
-  }
-
-  @Override
-  public Void visitFieldAcc(FieldAccExpression expr) {
-    myStream.write(13);
-    expr.getExpression().accept(this);
-    try {
-      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getField()));
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
-    return null;
   }
 
   @Override

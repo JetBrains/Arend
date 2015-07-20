@@ -35,7 +35,9 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return expr;
+    if (expr.getExpression() == null) return expr;
+    Expression expr1 = expr.getExpression().accept(this);
+    return expr1 == null ? null : DefCall(expr1, expr.getDefinition());
   }
 
   @Override
@@ -139,12 +141,6 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitElim(ElimExpression expr) {
     throw new IllegalStateException();
-  }
-
-  @Override
-  public Expression visitFieldAcc(FieldAccExpression expr) {
-    Expression expr1 = expr.getExpression().accept(this);
-    return expr1 == null ? null : FieldAcc(expr1, expr.getField());
   }
 
   @Override

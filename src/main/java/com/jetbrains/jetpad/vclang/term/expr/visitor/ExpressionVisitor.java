@@ -14,7 +14,6 @@ public interface ExpressionVisitor<T> {
   T visitTuple(TupleExpression expr);
   T visitSigma(SigmaExpression expr);
   T visitElim(ElimExpression expr);
-  T visitFieldAcc(FieldAccExpression expr);
   T visitProj(ProjExpression expr);
   T visitClassExt(ClassExtExpression expr);
   T visitNew(NewExpression expr);

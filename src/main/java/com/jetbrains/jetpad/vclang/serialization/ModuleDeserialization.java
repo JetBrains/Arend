@@ -193,7 +193,9 @@ public class ModuleDeserialization {
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       Definition field = definitionMap.get(stream.readInt());
-      deserializeDefinition(stream, definitionMap, field);
+      if (field.getParent() == definition) {
+        deserializeDefinition(stream, definitionMap, field);
+      }
       definition.addPublicField(field, myModuleLoader.getErrors());
       if (!definition.hasErrors()) {
         TypeChecking.checkOnlyStatic(myModuleLoader, definition, field, field.getName());
@@ -303,11 +305,13 @@ public class ModuleDeserialization {
         return Apps(function, new ArgumentExpression(argument, explicit, hidden));
       }
       case 2: {
+        boolean isFieldAcc = stream.readBoolean();
+        Expression expression = isFieldAcc ? readExpression(stream, definitionMap) : null;
         Definition definition = definitionMap.get(stream.readInt());
         if (definition == null) {
           throw new IncorrectFormat();
         }
-        return DefCall(definition);
+        return DefCall(expression, definition);
       }
       case 3: {
         return Index(stream.readInt());
@@ -353,14 +357,6 @@ public class ModuleDeserialization {
           result.getOtherwise().setElimExpression(result);
         }
         return result;
-      }
-      case 13: {
-        Expression expr = readExpression(stream, definitionMap);
-        Definition definition = definitionMap.get(stream.readInt());
-        if (definition == null) {
-          throw new IncorrectFormat();
-        }
-        return FieldAcc(expr, definition);
       }
       case 14: {
         Expression expr = readExpression(stream, definitionMap);

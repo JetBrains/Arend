@@ -59,7 +59,10 @@ public final class Abstract {
 
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
+    Expression getExpression();
     com.jetbrains.jetpad.vclang.term.definition.Definition getDefinition();
+    String getName();
+    Definition.Fixity getFixity();
   }
 
   public interface ClassExtExpression extends Expression {
@@ -132,14 +135,6 @@ public final class Abstract {
     Expression getExpression();
     List<? extends Clause> getClauses();
     Clause getOtherwise();
-  }
-
-  public interface FieldAccExpression extends Expression {
-    byte PREC = 12;
-    Expression getExpression();
-    String getName();
-    Definition.Fixity getFixity();
-    com.jetbrains.jetpad.vclang.term.definition.Definition getField();
   }
 
   public interface ProjExpression extends Expression {

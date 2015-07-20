@@ -31,7 +31,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return expr;
+    return expr.getExpression() == null ? expr : DefCall(expr.getExpression().accept(this), expr.getDefinition());
   }
 
   @Override
@@ -141,11 +141,6 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitElim(ElimExpression expr) {
     throw new IllegalStateException();
-  }
-
-  @Override
-  public Expression visitFieldAcc(FieldAccExpression expr) {
-    return FieldAcc(expr.getExpression().accept(this), expr.getField());
   }
 
   @Override

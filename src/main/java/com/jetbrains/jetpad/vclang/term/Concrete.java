@@ -220,16 +220,71 @@ public final class Concrete {
   }
 
   public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
+    private final Expression myExpression;
     private final com.jetbrains.jetpad.vclang.term.definition.Definition myDefinition;
 
-    public DefCallExpression(Position position, com.jetbrains.jetpad.vclang.term.definition.Definition definition) {
+    public DefCallExpression(Position position, Expression expression, com.jetbrains.jetpad.vclang.term.definition.Definition definition) {
       super(position);
+      myExpression = expression;
       myDefinition = definition;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
     }
 
     @Override
     public com.jetbrains.jetpad.vclang.term.definition.Definition getDefinition() {
       return myDefinition;
+    }
+
+    @Override
+    public String getName() {
+      return myDefinition.getName();
+    }
+
+    @Override
+    public Abstract.Definition.Fixity getFixity() {
+      return myDefinition.getFixity();
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitDefCall(this, params);
+    }
+  }
+
+  public static class DefCallNameExpression extends Expression implements Abstract.DefCallExpression {
+    private final Expression myExpression;
+    private final String myName;
+    private final Abstract.Definition.Fixity myFixity;
+
+    public DefCallNameExpression(Position position, Expression expression, String name, Abstract.Definition.Fixity fixity) {
+      super(position);
+      myExpression = expression;
+      myName = name;
+      myFixity = fixity;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public com.jetbrains.jetpad.vclang.term.definition.Definition getDefinition() {
+      return null;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
+    public Abstract.Definition.Fixity getFixity() {
+      return myFixity;
     }
 
     @Override
@@ -454,44 +509,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitIndex(this, params);
-    }
-  }
-
-  public static class FieldAccExpression extends Expression implements Abstract.FieldAccExpression {
-    private final Expression myExpression;
-    private final String myName;
-    private final Abstract.Definition.Fixity myFixity;
-
-    public FieldAccExpression(Position position, Expression expression, String name, Abstract.Definition.Fixity fixity) {
-      super(position);
-      myExpression = expression;
-      myName = name;
-      myFixity = fixity;
-    }
-
-    @Override
-    public Expression getExpression() {
-      return myExpression;
-    }
-
-    @Override
-    public String getName() {
-      return myName;
-    }
-
-    @Override
-    public Abstract.Definition.Fixity getFixity() {
-      return myFixity;
-    }
-
-    @Override
-    public com.jetbrains.jetpad.vclang.term.definition.Definition getField() {
-      return null;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitFieldAcc(this, params);
     }
   }
 

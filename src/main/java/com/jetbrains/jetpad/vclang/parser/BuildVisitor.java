@@ -504,7 +504,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private Concrete.Expression findId(String name, boolean binOp, Concrete.Position position) {
     Definition child = Prelude.PRELUDE.getStaticField(name);
     if (child != null) {
-      return new Concrete.DefCallExpression(position, child);
+      return new Concrete.DefCallExpression(position, null, child);
     }
 
     if (!binOp) {
@@ -520,14 +520,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       Definition field = ((ClassDefinition) definition).getPrivateField(name);
       if (field != null) {
-        return new Concrete.DefCallExpression(position, field);
+        return new Concrete.DefCallExpression(position, null, field);
       }
     }
 
     if (!binOp) {
       Definition definition = myModuleLoader.loadModule(new Module(myModuleLoader.rootModule(), name), true);
       if (definition != null) {
-        return new Concrete.DefCallExpression(position, definition);
+        return new Concrete.DefCallExpression(position, null, definition);
       }
     }
 
@@ -612,9 +612,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx == null) return null;
     int number = Integer.valueOf(ctx.NUMBER().getText());
     Concrete.Position pos = tokenPosition(ctx.NUMBER().getSymbol());
-    Concrete.Expression result = new Concrete.DefCallExpression(pos, Prelude.ZERO);
+    Concrete.Expression result = new Concrete.DefCallExpression(pos, null, Prelude.ZERO);
     for (int i = 0; i < number; ++i) {
-      result = new Concrete.AppExpression(pos, new Concrete.DefCallExpression(pos, Prelude.SUC), new Concrete.ArgumentExpression(result, true, false));
+      result = new Concrete.AppExpression(pos, new Concrete.DefCallExpression(pos, null, Prelude.SUC), new Concrete.ArgumentExpression(result, true, false));
     }
     return result;
   }
@@ -654,7 +654,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (FieldAccContext field : fieldAccs) {
       if (field instanceof ClassFieldContext) {
         Name name = getName(((ClassFieldContext) field).name());
-        if (expr instanceof Concrete.DefCallExpression) {
+        if (expr instanceof Concrete.DefCallExpression && ((Concrete.DefCallExpression) expr).getDefinition() != null) {
           Definition definition = ((Concrete.DefCallExpression) expr).getDefinition();
           Definition classField = definition.getStaticField(name.name);
           if (classField == null && definition instanceof ClassDefinition) {
@@ -663,7 +663,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           if (classField == null && definition instanceof FunctionDefinition) {
             FunctionDefinition functionDefinition = (FunctionDefinition) definition;
             if (!functionDefinition.typeHasErrors() && functionDefinition.getArguments().isEmpty() && functionDefinition.getResultType() instanceof DefCallExpression && ((DefCallExpression) functionDefinition.getResultType()).getDefinition() instanceof ClassDefinition) {
-              expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name.name, name.fixity);
+              expr = new Concrete.DefCallNameExpression(expr.getPosition(), expr, name.name, name.fixity);
               continue;
             }
           }
@@ -671,10 +671,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
             myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(((ClassFieldContext) field).name().getStart()), name.name + " is not a static field of " + definition.getFullName()));
             return null;
           }
-          expr = new Concrete.DefCallExpression(expr.getPosition(), classField);
+          expr = new Concrete.DefCallExpression(expr.getPosition(), null, classField);
           continue;
         }
-        expr = new Concrete.FieldAccExpression(expr.getPosition(), expr, name.name, name.fixity);
+        expr = new Concrete.DefCallNameExpression(expr.getPosition(), expr, name.name, name.fixity);
       } else {
         expr = new Concrete.ProjExpression(expr.getPosition(), expr, Integer.valueOf(((SigmaFieldContext) field).NUMBER().getText()) - 1);
       }
@@ -835,7 +835,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     expr = visitFieldsAcc(expr, fieldAccCtx);
     if (expr == null) return null;
-    if (!(expr instanceof Concrete.DefCallExpression)) {
+    if (!(expr instanceof Concrete.DefCallExpression) || ((Concrete.DefCallExpression) expr).getDefinition() == null) {
       myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), "Expected a global definition"));
       return null;
     }

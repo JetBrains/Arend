@@ -14,7 +14,7 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
 
   @Override
   public InferHoleExpression visitDefCall(DefCallExpression expr) {
-    return null;
+    return expr.getExpression() == null ? null : expr.getExpression().accept(this);
   }
 
   @Override
@@ -94,11 +94,6 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
       }
     }
     return expr.getOtherwise() == null ? null : expr.getOtherwise().getExpression().accept(this);
-  }
-
-  @Override
-  public InferHoleExpression visitFieldAcc(FieldAccExpression expr) {
-    return expr.getExpression().accept(this);
   }
 
   @Override

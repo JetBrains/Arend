@@ -64,7 +64,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     List<Expression> args = new ArrayList<>();
     Expression fun = expr.getFunction(args);
     if (fun instanceof DefCallExpression) {
-      if (((DefCallExpression) fun).getDefinition().equals(myDef) && isLess(args, myPatterns) != Ord.LESS) return false;
+      if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) return false;
     } else {
       if (!fun.accept(this)) return false;
     }
@@ -77,7 +77,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr) {
-    return expr.getDefinition() != myDef;
+    return expr.getDefinition() != myDef && (expr.getExpression() == null || expr.getExpression().accept(this));
   }
 
   @Override
@@ -211,11 +211,6 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     }
 
     return true;
-  }
-
-  @Override
-  public Boolean visitFieldAcc(FieldAccExpression expr) {
-    return expr.getExpression().accept(this);
   }
 
   @Override
