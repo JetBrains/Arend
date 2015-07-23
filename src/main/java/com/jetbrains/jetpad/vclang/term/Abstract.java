@@ -201,7 +201,7 @@ public final class Abstract {
       }
     }
 
-    Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
+    static Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
     Universe getUniverse();
     Precedence getPrecedence();

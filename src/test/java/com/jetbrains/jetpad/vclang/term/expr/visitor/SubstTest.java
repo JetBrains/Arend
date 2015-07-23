@@ -112,6 +112,14 @@ public class SubstTest {
     assertEquals(expr2, expr1.subst(Zero(), 0));
   }
 
+  @Test
+  public void substLet() {
+    // \let | x (z : N) => z | y (w : N) => <2> => <2> [0 := zero] = \let | x (z : N) => z | y (w : N) => zero \in zero
+    Expression expr1 = Let(lets(let("x", lamArgs(Tele(vars("z"), Nat())), Index(0)), let("y", lamArgs(Tele(vars("w"), Nat())), Index(2))), Index(2));
+    Expression expr2 = Let(lets(let("x", lamArgs(Tele(vars("z"), Nat())), Index(0)), let("y", lamArgs(Tele(vars("w"), Nat())), Zero())), Zero());
+    assertEquals(expr1.subst(Zero(), 0), expr2);
+  }
+
   /*
   @Test
   public void substElimLess() {

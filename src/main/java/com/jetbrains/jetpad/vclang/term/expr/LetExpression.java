@@ -16,7 +16,7 @@ public class LetExpression extends Expression implements Abstract.LetExpression 
     }
 
     @Override
-    public List<? extends LetClause> getClauses() {
+    public List<LetClause> getClauses() {
         return myClauses;
     }
 

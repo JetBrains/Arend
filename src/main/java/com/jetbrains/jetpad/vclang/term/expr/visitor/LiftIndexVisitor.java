@@ -150,7 +150,8 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   private Clause visitClause(Clause clause, ElimExpression elimExpr) {
     if (clause == null)
       return null;
-    return new Clause(clause.getConstructor(), clause.getArguments(), clause.getArrow(), clause.getExpression().liftIndex(myFrom + clause.getArguments().size(), myOn), elimExpr);
+    return new Clause(clause.getConstructor(), clause.getArguments(), clause.getArrow(),
+            clause.getExpression().liftIndex(myFrom + clause.getArguments().size(), myOn), elimExpr);
   }
 
   @Override

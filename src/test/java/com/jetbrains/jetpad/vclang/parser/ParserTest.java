@@ -4,12 +4,15 @@ import com.jetbrains.jetpad.vclang.module.DummyOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.Clause;
+import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -22,6 +25,36 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class ParserTest {
+  @Test
+  public void parserLetToTheRight() {
+    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\lam x => \\let | x => Nat \\in x x");
+    Concrete.Expression expr1 = parseExpr(new ModuleLoader(), "\\let | x => Nat \\in \\lam x => x x");
+    assertTrue(compare(Lam("x", Let(lets(let("x", lamArgs(), Nat())), Apps(Index(0), Index(0)))), expr));
+    assertTrue(compare(Let(lets(let("x", lamArgs(), Nat())), Lam("x", Apps(Index(0), Index(0)))), expr1));
+  }
+
+  @Test
+  public void parseLetMultiple() {
+    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\let | x => Nat | y => x \\in y");
+    assertTrue(compare(Let(lets(let("x", Nat()), let("y", Index(0))), Index(0)), expr));
+  }
+
+  @Test
+  public void parseLetTyped() {
+    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\let | x : Nat => zero \\in x");
+    assertTrue(compare(Let(lets(let("x", lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Index(0)), expr));
+  }
+
+  @Test
+  public void parseLetElim() {
+    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\let | x (y : Nat) <= \\elim y | zero => zero | zero => zero \\in zero");
+    List<Clause> clauses = new ArrayList<>();
+    ElimExpression elim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses, null);
+    clauses.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
+    clauses.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
+    assertTrue(compare(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Abstract.Definition.Arrow.LEFT, elim)), Zero()), expr));
+  }
+
   @Test
   public void parserLam() {
     Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\lam x y z => y");

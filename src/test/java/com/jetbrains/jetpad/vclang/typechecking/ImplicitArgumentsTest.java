@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -220,5 +221,32 @@ public class ImplicitArgumentsTest {
     List<TypeCheckingError> errors = new ArrayList<>();
     assertNull(expr.checkType(defs, Apps(Index(1), Universe(0)), errors));
     assertEquals(1, errors.size());
+  }
+/*
+  @Test
+  public void inferUnderLet() {
+    // f : {A : Type0} -> (A -> A) -> A -> A |- let | x {A : Type0} (y : A) = f y | z (x : Nat) = x \in x z :
+    Expression expr = Let(lets(
+            let("x", lamArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Index(0))), Apps(Index(2), Index(0))),
+            let("z", lamArgs(Tele(vars("x"), Nat())), Index(0))), Apps(Index(1), Index(0)));
+    List<Binding> defs = new ArrayList<Binding>(Collections.singleton(new TypedBinding("f", Pi(args(Tele(false, vars("A"), Universe(0)), TypeArg(Pi(Index(0), Index(0))), TypeArg(Index(1))), Index(2)))));
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(defs, null, errors);
+    assertFalse(errors.isEmpty());
+  }
+  */
+  @Test
+  public void inferUnderLet() {
+    // f : {A : Type0} -> (A -> A) -> A -> A |- let | x {A : Type0} (y : A -> A) = f y | z (x : Nat) = x \in x z :
+    Expression expr = Let(lets(
+            let("x", lamArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Pi(Index(0), Index(0)))), Apps(Index(2), Index(0))),
+            let("z", lamArgs(Tele(vars("x"), Nat())), Index(0))), Apps(Index(1), Index(0)));
+    List<Binding> defs = new ArrayList<Binding>(Collections.singleton(new TypedBinding("f", Pi(args(Tele(false, vars("A"), Universe(0)), TypeArg(Pi(Index(0), Index(0))), TypeArg(Index(1))), Index(2)))));
+
+    List<TypeCheckingError> errors = new ArrayList<>();
+    CheckTypeVisitor.OKResult result = expr.checkType(defs, null, errors);
+    assertTrue(errors.isEmpty());
+    assertEquals(result.type, Pi(Nat(), Nat()));
   }
 }

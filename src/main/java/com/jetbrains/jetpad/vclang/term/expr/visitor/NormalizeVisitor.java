@@ -266,11 +266,13 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitIndex(IndexExpression expr) {
+    if (myMode == Mode.TOP)
+      return null;
     Binding binding = getBinding(myContext, expr.getIndex());
     if (binding != null && binding instanceof Function) { // TODO: check normalization mode
       return visitFunctionCall((Function) binding, expr, new ArrayList<ArgumentExpression>());
     } else {
-      return myMode == Mode.TOP ? null : expr;
+      return expr;
     }
   }
 
@@ -416,18 +418,15 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLet(LetExpression letExpression) {
-    List<LetClause> normalizedClauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
-      LetClause normalizedClause = visitLetClause(clause);
-      normalizedClauses.add(normalizedClause);
-      myContext.add(normalizedClause);
+      myContext.add(clause);
     }
-    // TODO: check modes
+
     Expression term = letExpression.getExpression().accept(this);
-    if (term.liftIndex(0, - normalizedClauses.size()) != null)
-      return term.liftIndex(0, -normalizedClauses.size());
+    if (term.liftIndex(0, - letExpression.getClauses().size()) != null)
+      return term.liftIndex(0, -letExpression.getClauses().size());
     else
-      return Let(normalizedClauses, term);
+      return Let(letExpression.getClauses(), term);
   }
 
   private LetClause visitLetClause(LetClause clause) {

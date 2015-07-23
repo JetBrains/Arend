@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
@@ -66,6 +65,10 @@ public class ExpressionFactory {
 
   public static List<LetClause> lets(LetClause... letClauses) {
     return Arrays.asList(letClauses);
+  }
+
+  public static LetClause let(String name, Expression term) {
+    return new LetClause(name, lamArgs(), null, Abstract.Definition.Arrow.RIGHT, term);
   }
 
   public static LetClause let(String name, List<Argument> args, Expression term) {
