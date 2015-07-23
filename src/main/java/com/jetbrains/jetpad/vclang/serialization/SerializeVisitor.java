@@ -59,6 +59,12 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
         expr.getExpression().accept(this);
       }
       myDataStream.writeInt(index);
+      myDataStream.writeInt(expr.getParameters() == null ? 0 : expr.getParameters().size());
+      if (expr.getParameters() != null) {
+        for (Expression parameter : expr.getParameters()) {
+          parameter.accept(this);
+        }
+      }
     } catch (IOException e) {
       throw new IllegalStateException();
     }

@@ -31,7 +31,21 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return expr.getExpression() == null ? expr : DefCall(expr.getExpression().accept(this), expr.getDefinition());
+    if (expr.getExpression() == null && expr.getParameters() == null) return expr;
+    Expression expr1 = null;
+    if (expr.getExpression() != null) {
+      expr1 = expr.getExpression().accept(this);
+      if (expr1 == null) return null;
+    }
+    List<Expression> parameters = expr.getParameters() == null ? null : new ArrayList<Expression>(expr.getParameters().size());
+    if (expr.getParameters() != null) {
+      for (Expression parameter : expr.getParameters()) {
+        Expression expr2 = parameter.accept(this);
+        if (expr2 == null) return null;
+        parameters.add(expr2);
+      }
+    }
+    return DefCall(expr1, expr.getDefinition(), parameters);
   }
 
   @Override

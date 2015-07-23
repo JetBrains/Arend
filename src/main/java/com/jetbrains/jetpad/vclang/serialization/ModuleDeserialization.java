@@ -311,7 +311,12 @@ public class ModuleDeserialization {
         if (definition == null) {
           throw new IncorrectFormat();
         }
-        return DefCall(expression, definition);
+        int size = stream.readInt();
+        List<Expression> parameters = size == 0 ? null : new ArrayList<Expression>(size);
+        for (int i = 0; i < size; ++i) {
+          parameters.add(readExpression(stream, definitionMap));
+        }
+        return DefCall(expression, definition, parameters);
       }
       case 3: {
         return Index(stream.readInt());

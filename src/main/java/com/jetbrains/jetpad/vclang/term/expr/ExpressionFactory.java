@@ -34,11 +34,15 @@ public class ExpressionFactory {
   }
 
   public static DefCallExpression DefCall(Definition definition) {
-    return new DefCallExpression(null, definition);
+    return new DefCallExpression(null, definition, null);
   }
 
   public static DefCallExpression DefCall(Expression expression, Definition definition) {
-    return new DefCallExpression(expression, definition);
+    return new DefCallExpression(expression, definition, null);
+  }
+
+  public static DefCallExpression DefCall(Expression expression, Definition definition, List<Expression> parameters) {
+    return new DefCallExpression(expression, definition, parameters);
   }
 
   public static ClassExtExpression ClassExt(ClassDefinition baseClass, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {

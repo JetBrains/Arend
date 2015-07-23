@@ -153,7 +153,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
     List<Expression> arguments = new ArrayList<>(4);
     Expression function = other.getFunction(arguments);
-    if (!(arguments.size() == 4 && function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() == Prelude.PATH_CON && arguments.get(0) instanceof LamExpression)) {
+    if (!(arguments.size() == 1 && function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() == Prelude.PATH_CON && arguments.get(0) instanceof LamExpression)) {
       return null;
     }
 
@@ -189,9 +189,9 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       return new MaybeResult(expr1);
     }
 
-    if (expr1 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr1).getDefinition() == Prelude.PATH_CON && args.size() == 4 && args.get(3).getExpression() instanceof Abstract.LamExpression) {
+    if (expr1 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr1).getDefinition() == Prelude.PATH_CON && args.size() == 1 && args.get(0).getExpression() instanceof Abstract.LamExpression) {
       List<Abstract.ArgumentExpression> args1 = new ArrayList<>();
-      Abstract.Expression expr2 = Abstract.getFunction(((Abstract.LamExpression) args.get(3).getExpression()).getBody(), args1);
+      Abstract.Expression expr2 = Abstract.getFunction(((Abstract.LamExpression) args.get(0).getExpression()).getBody(), args1);
       if (expr2 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr2).getDefinition() == Prelude.AT && args1.size() == 5 && args1.get(4).getExpression() instanceof Abstract.IndexExpression && ((Abstract.IndexExpression) args1.get(4).getExpression()).getIndex() == 0) {
         List<Equation> equations = new ArrayList<>();
         Result result = args1.get(3).getExpression().accept(new CompareVisitor(equations), other.liftIndex(0, 1));

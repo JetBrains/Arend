@@ -101,8 +101,6 @@ public class DefinitionTest {
     assertEquals(Pi(parameters, Universe(0)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    arguments1.addAll(0, parameters);
-    arguments2.addAll(0, parameters);
     assertEquals(Pi(arguments1, Apps(Apps(Apps(DefCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(0).getType());
     assertEquals(Pi(arguments2, Apps(Apps(Apps(DefCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(1).getType());
   }
@@ -140,8 +138,6 @@ public class DefinitionTest {
     assertEquals(Pi(parameters, Universe(6, 7)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    arguments1.addAll(0, parameters);
-    arguments2.addAll(0, parameters);
     assertEquals(Pi(arguments1, Apps(DefCall(typedDef), Index(2))), typedDef.getConstructors().get(0).getType());
     assertEquals(Pi(arguments2, Apps(DefCall(typedDef), Index(3))), typedDef.getConstructors().get(1).getType());
   }

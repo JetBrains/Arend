@@ -32,7 +32,21 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return expr.getExpression() == null && expr.getDefinition().getParent() == myParent ? DefCall(myExpression, expr.getDefinition()) : expr;
+    Expression expr1;
+    if (expr.getExpression() != null) {
+      expr1 = expr.getExpression().accept(this);
+    } else {
+      expr1 = expr.getDefinition().getParent().isDescendantOf(myParent) ? myExpression : null;
+    }
+
+    List<Expression> parameters = expr.getParameters() == null ? null : new ArrayList<Expression>(expr.getParameters().size());
+    if (expr.getParameters() != null) {
+      for (Expression parameter : expr.getParameters()) {
+        parameters.add(parameter.accept(this));
+      }
+    }
+
+    return DefCall(expr1, expr.getDefinition(), parameters);
   }
 
   @Override

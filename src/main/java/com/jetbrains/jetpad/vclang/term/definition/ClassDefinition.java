@@ -156,7 +156,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       myPublicFields.remove(definition);
     }
     if (myPrivateFields != null) {
-      myPrivateFields.remove(definition.getName(), definition);
+      myPrivateFields.remove(definition.getName());
     }
   }
 }

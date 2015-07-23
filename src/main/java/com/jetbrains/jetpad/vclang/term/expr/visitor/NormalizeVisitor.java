@@ -161,11 +161,10 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         if (expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor) {
           Constructor constructor = (Constructor) ((DefCallExpression) expr).getDefinition();
           Clause clause = constructor.getIndex() < ((ElimExpression) result).getClauses().size() ? ((ElimExpression) result).getClauses().get(constructor.getIndex()) : null;
-          int parametersCount = numberOfVariables(constructor.getDataType().getParameters());
-          if (clause != null && clause.getArguments().size() == constructorArgs.size() - parametersCount) {
+          if (clause != null && clause.getArguments().size() == constructorArgs.size()) {
             int var = ((ElimExpression) result).getExpression().getIndex();
             args2.remove(var);
-            for (int i = clause.getArguments().size() - 1; i >= 0; --i) {
+            for (int i = constructorArgs.size() - 1; i >= 0; --i) {
               args2.add(var++, constructorArgs.get(i));
             }
             result = clause.getExpression();
@@ -244,7 +243,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return visitDefCall(expr.getDefinition(), expr.getExpression() == null ? expr : DefCall(expr.getExpression().normalize(Mode.WHNF), expr.getDefinition()), new ArrayList<ArgumentExpression>(0));
+    return visitDefCall(expr.getDefinition(), expr.getExpression() == null ? expr : DefCall(expr.getExpression().normalize(Mode.WHNF), expr.getDefinition(), expr.getParameters()), new ArrayList<ArgumentExpression>(0));
   }
 
   @Override

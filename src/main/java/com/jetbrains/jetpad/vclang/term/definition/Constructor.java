@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -67,30 +66,19 @@ public class Constructor extends Definition implements Abstract.Constructor {
   public Expression getType() {
     Expression resultType = DefCall(getParent());
     int numberOfVars = numberOfVariables(myArguments);
-    for (int i = numberOfVariables(getDataType().getParameters()) - 1, j = 0; i >= 0; ++j) {
-      if (getDataType().getParameters().get(j) instanceof TelescopeArgument) {
-        for (String ignored : ((TelescopeArgument) getDataType().getParameters().get(j)).getNames()) {
+    if (getDataType().getParameters() != null) {
+      for (int i = numberOfVariables(getDataType().getParameters()) - 1, j = 0; i >= 0; ++j) {
+        if (getDataType().getParameters().get(j) instanceof TelescopeArgument) {
+          for (String ignored : ((TelescopeArgument) getDataType().getParameters().get(j)).getNames()) {
+            resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
+          }
+        } else {
           resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
         }
-      } else {
-        resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
       }
     }
 
-    if (getDataType().getParameters().isEmpty() && myArguments.isEmpty()) {
-      return resultType;
-    }
-
-    if (getDataType().getParameters().isEmpty()) {
-      return Pi(myArguments, resultType);
-    }
-
-    List<TypeArgument> arguments = new ArrayList<>(getDataType().getParameters().size() + myArguments.size());
-    for (TypeArgument argument : getDataType().getParameters()) {
-      arguments.add(argument instanceof TelescopeArgument ? Tele(false, ((TelescopeArgument) argument).getNames(), argument.getType()) : TypeArg(false, argument.getType()));
-    }
-    arguments.addAll(myArguments);
-    return Pi(arguments, resultType);
+    return myArguments.isEmpty() ? resultType : Pi(myArguments, resultType);
   }
 
   @Override

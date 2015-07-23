@@ -64,20 +64,43 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     List<Expression> args = new ArrayList<>();
     Expression fun = expr.getFunction(args);
     if (fun instanceof DefCallExpression) {
-      if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) return false;
+      if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
+        return false;
+      }
+      if (((DefCallExpression) fun).getParameters() != null) {
+        for (Expression parameter : ((DefCallExpression) fun).getParameters()) {
+          if (!parameter.accept(this)) {
+            return false;
+          }
+        }
+      }
     } else {
-      if (!fun.accept(this)) return false;
+      if (!fun.accept(this)) {
+        return false;
+      }
     }
 
     for (Expression arg : args) {
-      if (!arg.accept(this)) return false;
+      if (!arg.accept(this)) {
+        return false;
+      }
     }
     return true;
   }
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr) {
-    return expr.getDefinition() != myDef && (expr.getExpression() == null || expr.getExpression().accept(this));
+    if (!(expr.getDefinition() != myDef && (expr.getExpression() == null || expr.getExpression().accept(this)))) {
+      return false;
+    }
+    if (expr.getParameters() != null) {
+      for (Expression parameter : expr.getParameters()) {
+        if (!parameter.accept(this)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   @Override
@@ -174,12 +197,17 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitElim(ElimExpression expr) {
-    if (!expr.getExpression().accept(this)) return false;
+    if (!expr.getExpression().accept(this)) {
+      return false;
+    }
+
     for (Clause clause : expr.getClauses()) {
       if (clause == null) continue;
       for (Argument argument : clause.getArguments()) {
         if (argument instanceof TypeArgument) {
-          if (!((TypeArgument) argument).getType().accept(this)) return false;
+          if (!((TypeArgument) argument).getType().accept(this)) {
+            return false;
+          }
         }
       }
     }
@@ -200,13 +228,19 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
           patterns.add(pattern.liftIndex(var + 1, vars).subst(newExpr, var));
         }
 
-        if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns))) return false;
+        if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns))) {
+          return false;
+        }
       }
 
-      if (expr.getOtherwise() != null && !expr.getExpression().accept(this)) return false;
+      if (expr.getOtherwise() != null && !expr.getExpression().accept(this)) {
+        return false;
+      }
     } else {
       for (Clause clause : expr.getClauses()) {
-        if (clause != null && !clause.getExpression().accept(this)) return false;
+        if (clause != null && !clause.getExpression().accept(this)) {
+          return false;
+        }
       }
     }
 

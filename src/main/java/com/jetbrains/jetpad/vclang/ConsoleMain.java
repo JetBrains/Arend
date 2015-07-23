@@ -35,7 +35,7 @@ public class ConsoleMain {
     }
 
     String sourceDirStr = cmdLine.getOptionValue("s");
-    final File sourceDir = sourceDirStr == null ? null : new File(sourceDirStr);
+    final File sourceDir = new File(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
     String outputDirStr = cmdLine.getOptionValue("o");
     File outputDir = outputDirStr == null ? null : new File(outputDirStr);
     boolean recompile = cmdLine.hasOption("recompile");
@@ -65,7 +65,7 @@ public class ConsoleMain {
     moduleLoader.init(new FileSourceSupplier(moduleLoader, sourceDir), new FileOutputSupplier(moduleDeserialization, outputDir, libDirs), recompile);
 
     if (cmdLine.getArgList().isEmpty()) {
-      if (sourceDir == null) return;
+      if (sourceDirStr == null) return;
       try {
         Files.walkFileTree(sourceDir.toPath(), new SimpleFileVisitor<Path>() {
           @Override
