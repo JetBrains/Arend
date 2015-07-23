@@ -178,7 +178,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
       throw new IllegalStateException();
     }
     for (Clause clause : expr.getClauses()) {
-      visitClause(clause);
+      visitClause(clause, false);
     }
     try {
       myDataStream.writeBoolean(expr.getOtherwise() != null);
@@ -186,20 +186,26 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
       throw new IllegalStateException();
     }
     if (expr.getOtherwise() != null) {
-      visitClause(expr.getOtherwise());
+      visitClause(expr.getOtherwise(), true);
     }
     return null;
   }
 
-  private void visitClause(Clause clause) {
+  private void visitClause(Clause clause, boolean isOtherwise) {
     try {
-      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(clause.getConstructor()));
-      ModuleSerialization.writeArguments(this, clause.getArguments());
-      myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
+      if (clause == null) {
+        myDataStream.writeInt(-1);
+      } else {
+        if (!isOtherwise) {
+          myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(clause.getConstructor()));
+          ModuleSerialization.writeArguments(this, clause.getArguments());
+        }
+        myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
+        clause.getExpression().accept(this);
+      }
     } catch (IOException e) {
       throw new IllegalStateException();
     }
-    clause.getExpression().accept(this);
   }
 
   @Override

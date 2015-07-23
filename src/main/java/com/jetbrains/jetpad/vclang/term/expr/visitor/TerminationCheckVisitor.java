@@ -131,7 +131,9 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
         liftPatterns(on);
         on = ((TelescopeArgument) argument).getNames().size();
         total += on;
-        if (!((TypeArgument) argument).getType().accept(this)) return false;
+        if (!((TypeArgument) argument).getType().accept(this)) {
+          return false;
+        }
       } else {
         throw new IllegalStateException();
       }
@@ -146,7 +148,9 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   private Boolean visitArguments(List<TypeArgument> arguments, Expression codomain) {
     int total = 0;
     for (TypeArgument argument : arguments) {
-      if (!argument.getType().accept(this)) return false;
+      if (!argument.getType().accept(this)) {
+        return false;
+      }
       if (argument instanceof TelescopeArgument) {
         int on = ((TelescopeArgument) argument).getNames().size();
         total += on;
@@ -185,7 +189,9 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   @Override
   public Boolean visitTuple(TupleExpression expr) {
     for (Expression field : expr.getFields()) {
-      if (!field.accept(this)) return false;
+      if (!field.accept(this)) {
+        return false;
+      }
     }
     return true;
   }

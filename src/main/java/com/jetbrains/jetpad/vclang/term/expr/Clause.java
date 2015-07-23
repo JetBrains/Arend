@@ -38,6 +38,11 @@ public class Clause implements Abstract.Clause {
   }
 
   @Override
+  public Abstract.Definition.Fixity getFixity() {
+    return myConstructor.getFixity();
+  }
+
+  @Override
   public List<NameArgument> getArguments() {
     return myArguments;
   }

@@ -27,7 +27,7 @@ public class ArgInferenceError extends TypeCheckingError {
   }
 
   public static String parameter(int index) {
-    return "Cannot infer " + index + suffix(index) + " parameter to data type";
+    return "Cannot infer " + index + suffix(index) + " parameter to constructor";
   }
 
   public static String expression() {

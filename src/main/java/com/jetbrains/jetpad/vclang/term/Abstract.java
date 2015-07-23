@@ -145,6 +145,7 @@ public final class Abstract {
 
   public interface Clause extends PrettyPrintableSourceNode {
     String getName();
+    Definition.Fixity getFixity();
     List<? extends NameArgument> getArguments();
     Definition.Arrow getArrow();
     Expression getExpression();

@@ -580,14 +580,16 @@ public final class Concrete {
 
   public static class Clause extends SourceNode implements Abstract.Clause {
     private final String myName;
+    private final Abstract.Definition.Fixity myFixity;
     private final List<NameArgument> myArguments;
     private final Definition.Arrow myArrow;
     private final Expression myExpression;
     private ElimExpression myElimExpression;
 
-    public Clause(Position position, String name, List<NameArgument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
+    public Clause(Position position, String name, Abstract.Definition.Fixity fixity, List<NameArgument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
       super(position);
       myName = name;
+      myFixity = fixity;
       myArguments = arguments;
       myArrow = arrow;
       myExpression = expression;
@@ -601,6 +603,11 @@ public final class Concrete {
     @Override
     public String getName() {
       return myName;
+    }
+
+    @Override
+    public Abstract.Definition.Fixity getFixity() {
+      return myFixity;
     }
 
     @Override

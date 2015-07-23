@@ -352,11 +352,13 @@ public class ModuleDeserialization {
         int clausesNumber = stream.readInt();
         List<Clause> clauses = new ArrayList<>(clausesNumber);
         for (int i = 0; i < clausesNumber; ++i) {
-          clauses.add(readClause(stream, definitionMap));
+          clauses.add(readClause(stream, definitionMap, false));
         }
-        ElimExpression result = Elim(elimType, Index(index), clauses, stream.readBoolean() ? readClause(stream, definitionMap) : null);
+        ElimExpression result = Elim(elimType, Index(index), clauses, stream.readBoolean() ? readClause(stream, definitionMap, true) : null);
         for (Clause clause : result.getClauses()) {
-          clause.setElimExpression(result);
+          if (clause != null) {
+            clause.setElimExpression(result);
+          }
         }
         if (result.getOtherwise() != null) {
           result.getOtherwise().setElimExpression(result);
@@ -394,12 +396,21 @@ public class ModuleDeserialization {
     }
   }
 
-  public Clause readClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    Definition definition = definitionMap.get(stream.readInt());
-    if (!(definition instanceof Constructor)) {
-      throw new IncorrectFormat();
+  public Clause readClause(DataInputStream stream, Map<Integer, Definition> definitionMap, boolean isOtherwise) throws IOException {
+    Definition definition = null;
+    List<NameArgument> arguments = null;
+    if (!isOtherwise) {
+      int index = stream.readInt();
+      if (index == -1) {
+        return null;
+      }
+
+      definition = definitionMap.get(index);
+      if (!(definition instanceof Constructor)) {
+        throw new IncorrectFormat();
+      }
+      arguments = readNameArguments(stream, definitionMap);
     }
-    List<NameArgument> arguments = readNameArguments(stream, definitionMap);
     Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
     return new Clause((Constructor) definition, arguments, arrow, readExpression(stream, definitionMap), null);
   }

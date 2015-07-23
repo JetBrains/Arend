@@ -175,10 +175,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return found;
   }
 
-  private boolean typeCheckArgs(Arg[] argsImp, Result[] resultArgs, List<TypeArgument> signature, List<CompareVisitor.Equation> resultEquations, int startIndex, Abstract.Expression fun) {
+  private boolean typeCheckArgs(Arg[] argsImp, Result[] resultArgs, List<TypeArgument> signature, List<CompareVisitor.Equation> resultEquations, int startIndex, int parametersNumber, Abstract.Expression fun) {
     for (int i = startIndex; i < resultArgs.length; ++i) {
       if (resultArgs[i] == null) {
-        TypeCheckingError error = new ArgInferenceError(myParent, functionArg(i + 1), fun, getNames(myLocalContext), fun);
+        TypeCheckingError error = new ArgInferenceError(myParent, i < parametersNumber ? parameter(i + 1) : functionArg(i - parametersNumber + 1), fun, getNames(myLocalContext), fun);
         resultArgs[i] = new InferErrorResult(new InferHoleExpression(error), error, null);
       }
     }
@@ -278,7 +278,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         ++j;
       } else
       if (args.get(j).isExplicit()) {
-        argsImp[i] = new Arg(true, null, new InferHoleExpression(new ArgInferenceError(myParent, functionArg(i + 1), fun, getNames(myLocalContext), fun)));
+        argsImp[i] = new Arg(true, null, new InferHoleExpression(new ArgInferenceError(myParent, functionArg(i - parametersNumber + 1), fun, getNames(myLocalContext), fun)));
       } else {
         TypeCheckingError error = new TypeCheckingError(myParent, "Unexpected implicit argument", args.get(j).getExpression(), getNames(myLocalContext));
         args.get(j).getExpression().setWellTyped(Error(null, error));
@@ -377,7 +377,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int argsNumber = i;
     Result[] resultArgs = new Result[argsNumber];
     List<CompareVisitor.Equation> resultEquations = new ArrayList<>();
-    if (!typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, 0, fun)) {
+    if (!typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, 0, parametersNumber, fun)) {
       expression.setWellTyped(Error(null, myModuleLoader.getTypeCheckingErrors().get(myModuleLoader.getTypeCheckingErrors().size() - 1)));
       return null;
     }
@@ -426,7 +426,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       int found = solveEquations(argsNumber, argsImp, resultArgs, equations, resultEquations, fun);
-      if (found < 0 || (found != argsNumber && !typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, found, fun))) {
+      if (found < 0 || (found != argsNumber && !typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, found, parametersNumber, fun))) {
         Expression resultExpr = okFunction.expression;
         for (i = parametersNumber; i < argsNumber; ++i) {
           resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i] == null ? new InferHoleExpression(null) : resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
@@ -749,6 +749,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           if (result.isOK() != CompareVisitor.CMP.LESS && result.isOK() != CompareVisitor.CMP.EQUALS) {
             errors.add(new TypeMismatchError(myParent, piArgs.get(i).getType(), lambdaArgs.get(i).expression, expr, getNames(myLocalContext)));
           } else {
+            for (int j = 0; j < equations.size(); ++j) {
+              Expression expression = equations.get(j).expression.liftIndex(0, -i);
+              if (expression == null) {
+                equations.remove(j--);
+              } else {
+                equations.set(j, new CompareVisitor.Equation(equations.get(j).hole, expression));
+              }
+            }
             resultEquations.addAll(equations);
           }
         }
@@ -969,12 +977,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     SigmaExpression type = Sigma(arguments);
     Expression expression = Tuple(fields, type);
     List<CompareVisitor.Equation> equations = new ArrayList<>();
-    for (Abstract.Expression field : expr.getFields()) {
-      Result result = typeCheck(field, null);
+    for (int i = 0; i < expr.getFields().size(); ++i) {
+      Result result = typeCheck(expr.getFields().get(i), null);
       if (!(result instanceof OKResult)) return result;
       OKResult okResult = (OKResult) result;
       fields.add(okResult.expression);
-      arguments.add(TypeArg(okResult.type));
+      arguments.add(TypeArg(okResult.type.liftIndex(0, i)));
       if (okResult.equations != null) {
         equations.addAll(okResult.equations);
       }
@@ -1086,6 +1094,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     int varIndex = ((IndexExpression) exprOKResult.expression).getIndex();
+    for (int i = 0; i < parameters.size(); ++i) {
+      parameters.set(i, parameters.get(i).liftIndex(0, -(varIndex + 1)));
+      if (parameters.get(i) == null) {
+        throw new IllegalStateException();
+      }
+    }
+
     DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
     List<Constructor> constructors = new ArrayList<>(dataType.getConstructors());
     List<Clause> clauses = new ArrayList<>(dataType.getConstructors().size());
@@ -1188,12 +1203,23 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       for (int i = 0; i < myLocalContext.size() - 1 - varIndex; ++i) {
         localContext.add(myLocalContext.get(i));
       }
-      Collections.reverse(parameters);
-      for (int i = 0; i < constructorArguments.size(); ++i) {
-        localContext.add(new TypedBinding(arguments.get(i).getName(), constructorArguments.get(i).getType().subst(parameters, 0)));
+      if (!constructorArguments.isEmpty()) {
+        List<Expression> parameters1 = new ArrayList<>(parameters);
+        Collections.reverse(parameters1);
+        for (int i = 0; i < constructorArguments.size(); ++i) {
+          if (i > 0) {
+            for (int j = 0; j < parameters1.size(); ++j) {
+              parameters1.set(j, parameters1.get(j).liftIndex(0, 1));
+            }
+          }
+          localContext.add(new TypedBinding(arguments.get(i).getName(), constructorArguments.get(i).getType().subst(parameters1, i)));
+        }
       }
       for (int i = myLocalContext.size() - varIndex; i < myLocalContext.size(); ++i) {
         int i0 = i - myLocalContext.size() + varIndex;
+        if (i0 > 0) {
+          substExpr = substExpr.liftIndex(0, 1);
+        }
         localContext.add(new TypedBinding(myLocalContext.get(i).getName(), myLocalContext.get(i).getType().liftIndex(i0 + 1, constructorArguments.size()).subst(substExpr, i0)));
       }
 
@@ -1216,7 +1242,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return errorResult;
     }
 
-    if (!constructors.isEmpty()) {
+    if (!constructors.isEmpty() && expr.getOtherwise() == null) {
       String msg = "Incomplete pattern matching";
       if (!dataType.equals(Prelude.INTERVAL)) {
         msg += ". Unhandled constructors: ";
@@ -1225,7 +1251,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           msg += constructors.get(i).getName();
         }
       }
-      error = new TypeCheckingError(myParent, msg + ".", expr, getNames(myLocalContext));
+      error = new TypeCheckingError(myParent, msg, expr, getNames(myLocalContext));
+      expr.setWellTyped(Error(null, error));
+      myModuleLoader.getTypeCheckingErrors().add(error);
+    }
+    if (constructors.isEmpty() && expr.getOtherwise() != null) {
+      String msg = "Overlapping pattern matching";
+      error = new TypeCheckingError(myParent, msg, expr.getOtherwise(), getNames(myLocalContext));
       expr.setWellTyped(Error(null, error));
       myModuleLoader.getTypeCheckingErrors().add(error);
     }

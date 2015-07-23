@@ -137,30 +137,38 @@ public class Utils {
     if (clause == null) return;
 
     PrettyPrintVisitor.printIndent(builder, indent);
-    builder.append("| ").append(clause.getName());
-    int startIndex = names.size();
-    for (Abstract.Argument argument : clause.getArguments()){
-      builder.append(' ');
-      prettyPrintArgument(argument, builder, names, (byte) (Abstract.AppExpression.PREC + 1), indent);
+    builder.append("| ");
+    if (clause.getFixity() == Abstract.Definition.Fixity.PREFIX) {
+      builder.append(clause.getName());
+    } else {
+      builder.append('(').append(clause.getName()).append(')');
     }
+    int origSize = names.size();
 
     List<String> newNames = names;
+    int varIndex = -1;
     if (expr.getExpression() instanceof Abstract.IndexExpression) {
-      int varIndex = ((Abstract.IndexExpression) expr.getExpression()).getIndex();
-      newNames = new ArrayList<>(names.subList(0, startIndex - varIndex - 1 > 0 ? startIndex - varIndex - 1 : 0));
-      newNames.addAll(names.subList(startIndex, names.size()));
-      if (startIndex >= varIndex) {
-        newNames.addAll(names.subList(startIndex - varIndex, startIndex));
-      } else {
-        for (int i = 0; i < varIndex; ++i) {
-          newNames.add(null);
-        }
-      }
+      varIndex = names.size() - 1 - ((Abstract.IndexExpression) expr.getExpression()).getIndex();
+    } else
+    if (expr.getExpression() instanceof Abstract.VarExpression) {
+      varIndex = names.lastIndexOf(((Abstract.VarExpression) expr.getExpression()).getName());
+    }
+
+    if (varIndex != -1) {
+      newNames = new ArrayList<>(names.subList(0, varIndex));
+    }
+    for (Abstract.Argument argument : clause.getArguments()){
+      builder.append(' ');
+      prettyPrintArgument(argument, builder, newNames, (byte) (Abstract.AppExpression.PREC + 1), indent);
+    }
+
+    if (varIndex != -1) {
+      newNames.addAll(names.subList(varIndex + 1, names.size()));
     }
 
     builder.append(clause.getArrow() == Abstract.Definition.Arrow.LEFT ? " <= " : " => ");
     clause.getExpression().accept(new PrettyPrintVisitor(builder, newNames, indent), Abstract.Expression.PREC);
     builder.append('\n');
-    removeFromList(names, clause.getArguments());
+    trimToSize(names, origSize);
   }
 }

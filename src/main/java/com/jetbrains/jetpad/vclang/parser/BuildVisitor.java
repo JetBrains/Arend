@@ -864,7 +864,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<String> oldContext = new ArrayList<>(myContext);
     for (ClauseContext clauseCtx : ctx.clause()) {
-      name = (String) visit(clauseCtx.clauseName());
+      Name name1 = (Name) visit(clauseCtx.clauseName());
       Definition.Arrow arrow = clauseCtx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
       List<Concrete.NameArgument> nameArguments = null;
       if (clauseCtx.clauseName() instanceof ClauseNameArgsContext) {
@@ -895,6 +895,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         for (int i = elimIndex + 1; i < oldContext.size(); ++i) {
           myContext.add(oldContext.get(i));
         }
+      } else {
+        myContext = new ArrayList<>(oldContext);
       }
 
       Concrete.Expression expr = visitExpr(clauseCtx.expr());
@@ -902,9 +904,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         myContext = oldContext;
         return null;
       }
-      Concrete.Clause clause = new Concrete.Clause(tokenPosition(clauseCtx.getStart()), name, nameArguments, arrow, expr, null);
+      Concrete.Clause clause = new Concrete.Clause(tokenPosition(clauseCtx.getStart()), name1.name, name1.fixity, nameArguments, arrow, expr, null);
 
-      if (name == null) {
+      if (name1.name == null) {
         if (otherwise != null) {
           myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(clauseCtx.clauseName().getStart()), "Overlapping pattern matching"));
         }
@@ -928,15 +930,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public String visitClauseNoName(ClauseNoNameContext ctx) {
-    return null;
+  public Name visitClauseNoName(ClauseNoNameContext ctx) {
+    Name name = new Name();
+    name.name = null;
+    name.fixity = Abstract.Definition.Fixity.PREFIX;
+    return name;
   }
 
   @Override
-  public String visitClauseNameArgs(ClauseNameArgsContext ctx) {
+  public Name visitClauseNameArgs(ClauseNameArgsContext ctx) {
     if (ctx == null) return null;
-    boolean isPrefix = ctx.name() instanceof NameIdContext;
-    return isPrefix ? ((NameIdContext) ctx.name()).ID().getText() : ((NameBinOpContext) ctx.name()).BIN_OP().getText();
+    return getName(ctx.name());
   }
 
   private static Concrete.Position tokenPosition(Token token) {
