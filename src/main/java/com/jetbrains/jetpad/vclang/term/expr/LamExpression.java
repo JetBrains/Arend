@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -38,17 +40,17 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
   }
 
   @Override
-  public Expression getType(List<Expression> context) {
+  public Expression getType(List<Binding> context) {
     int origSize = context.size();
     List<TypeArgument> resultArgs = new ArrayList<>(myArguments.size());
     for (Argument argument : myArguments) {
       if (!(argument instanceof TypeArgument)) return null;
       if (argument instanceof TelescopeArgument) {
-        for (String ignored : ((TelescopeArgument) argument).getNames()) {
-          context.add(((TelescopeArgument) argument).getType());
+        for (String name : ((TelescopeArgument) argument).getNames()) {
+          context.add(new TypedBinding(name, ((TelescopeArgument) argument).getType()));
         }
       } else {
-        context.add(((TypeArgument) argument).getType());
+        context.add(new TypedBinding(null, ((TypeArgument) argument).getType()));
       }
       resultArgs.add((TypeArgument) argument);
     }

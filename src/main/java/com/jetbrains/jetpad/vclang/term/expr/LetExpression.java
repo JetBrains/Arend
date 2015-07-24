@@ -1,8 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils.ContextSaver;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.List;
 
@@ -36,7 +39,10 @@ public class LetExpression extends Expression implements Abstract.LetExpression 
     }
 
     @Override
-    public Expression getType(List<Expression> context) {
-        return null; //TODO: implement
+    public Expression getType(List<Binding> context) {
+        try (ContextSaver ignore = new ContextSaver(context)) {
+            context.addAll(myClauses);
+            return myExpression.getType(context).normalize(NormalizeVisitor.Mode.NF, context).liftIndex(0, -myClauses.size());
+        }
     }
 }

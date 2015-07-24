@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -42,7 +44,7 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
   }
 
   @Override
-  public Expression getType(List<Expression> context) {
+  public Expression getType(List<Binding> context) {
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     int origSize = context.size();
     for (TypeArgument argument : myArguments) {
@@ -52,11 +54,11 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
       if (universe == null) return null;
 
       if (argument instanceof TelescopeArgument) {
-        for (String ignored : ((TelescopeArgument) argument).getNames()) {
-          context.add(argument.getType());
+        for (String name : ((TelescopeArgument) argument).getNames()) {
+          context.add(new TypedBinding(name, argument.getType()));
         }
       } else {
-        context.add(argument.getType());
+        context.add(new TypedBinding(null, argument.getType()));
       }
     }
 
