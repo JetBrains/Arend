@@ -7,7 +7,10 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Let;
 
 public class LetExpression extends Expression implements Abstract.LetExpression {
     private final List<LetClause> myClauses;
@@ -16,6 +19,16 @@ public class LetExpression extends Expression implements Abstract.LetExpression 
     public LetExpression(List<LetClause> clauses, Expression expression) {
         myClauses = clauses;
         myExpression = expression;
+    }
+
+    public LetExpression mergeNestedLets() {
+        List<LetClause> clauses = new ArrayList<>(myClauses);
+        Expression expression = myExpression;
+        while (expression instanceof  LetExpression) {
+            clauses.addAll(((LetExpression) expression).getClauses());
+            expression = ((LetExpression) expression).getExpression();
+        }
+        return Let(clauses, expression);
     }
 
     @Override
@@ -27,6 +40,7 @@ public class LetExpression extends Expression implements Abstract.LetExpression 
     public Expression getExpression() {
         return myExpression;
     }
+
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {

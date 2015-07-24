@@ -716,26 +716,19 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
   }
 
-  @Override
-  public Result visitLet(Abstract.LetExpression expr, Expression other) {
+  private Result visitLet(List<Abstract.LetClause> clauses, Abstract.Expression expr, List<LetClause> otherClauses, Expression other) {
     try (EquationsLifter lifter = new EquationsLifter(myEquations)) {
-      if (expr == other)
-        return new JustResult(CMP.EQUALS);
-      if (!(other instanceof LetExpression))
-        return new JustResult(CMP.NOT_EQUIV);
-      LetExpression otherLet = (LetExpression) other;
-
-      if (otherLet.getClauses().size() != expr.getClauses().size())
+      if (otherClauses.size() != clauses.size())
         return new JustResult(CMP.NOT_EQUIV);
 
       CMP cmp = CMP.EQUALS;
-      for (int i = 0; i < expr.getClauses().size(); i++) {
+      for (int i = 0; i < clauses.size(); i++) {
         List<Abstract.TypeArgument> letTypeArgs = new ArrayList<>();
         List<TypeArgument> otherTypeArgs = new ArrayList<>();
-        for (Abstract.Argument arg : expr.getClauses().get(i).getArguments()) {
+        for (Abstract.Argument arg : clauses.get(i).getArguments()) {
           letTypeArgs.add((Abstract.TypeArgument) arg);
         }
-        for (Argument arg : otherLet.getClauses().get(i).getArguments()) {
+        for (Argument arg : otherClauses.get(i).getArguments()) {
           otherTypeArgs.add((TypeArgument) arg);
         }
 
@@ -745,7 +738,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         cmp = and(cmp, result.isOK());
 
         try (EquationsLifter ignore = new EquationsLifter(myEquations, letTypeArgs.size())) {
-          result = expr.getClauses().get(i).getTerm().accept(this, ((LetExpression) other).getClauses().get(i).getTerm());
+          result = clauses.get(i).getTerm().accept(this, otherClauses.get(i).getTerm());
         }
 
         if (result.isOK() != CMP.EQUIV && result.isOK() != CMP.EQUALS)
@@ -754,11 +747,28 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
         lifter.lift(-1);
       }
-      Result result = expr.getExpression().accept(this, otherLet.getExpression());
+      Result result = expr.accept(this, other);
       if (result.isOK() == CMP.NOT_EQUIV)
         return result;
       return new JustResult(and(cmp, result.isOK()));
     }
+  }
+
+  @Override
+  public Result visitLet(Abstract.LetExpression expr, Expression other) {
+    if (expr == other)
+      return new JustResult(CMP.EQUALS);
+    if (!(other instanceof LetExpression))
+      return new JustResult(CMP.NOT_EQUIV);
+    LetExpression otherLet = ((LetExpression) other).mergeNestedLets();
+
+    List<Abstract.LetClause> exprLetClauses = new ArrayList<>(expr.getClauses());
+    Abstract.Expression exprExpression = expr.getExpression();
+    while (exprExpression instanceof Abstract.LetExpression) {
+      exprLetClauses.addAll(((Abstract.LetExpression) exprExpression).getClauses());
+      exprExpression = ((Abstract.LetExpression) exprExpression).getExpression();
+    }
+    return visitLet(exprLetClauses, exprExpression, otherLet.getClauses(), otherLet.getExpression());
   }
 
   @Override
