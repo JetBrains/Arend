@@ -167,7 +167,6 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitElim(ElimExpression expr) {
     myStream.write(12);
     try {
-      myDataStream.writeBoolean(expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM);
       myDataStream.writeInt(expr.getExpression().getIndex());
     } catch (IOException e) {
       throw new IllegalStateException();

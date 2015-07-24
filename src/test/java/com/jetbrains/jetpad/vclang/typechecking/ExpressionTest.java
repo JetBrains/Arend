@@ -2,12 +2,10 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
@@ -16,9 +14,9 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
@@ -206,7 +204,7 @@ public class ExpressionTest {
     //   \let | x (y : Nat) : Nat <= \elim y | zero => zero
     //                                       | suc x' => suc x' \in f x)
     List<Clause> clauses = new ArrayList<>();
-    ElimExpression elim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses, null);
+    ElimExpression elim = Elim(Index(0), clauses, null);
     clauses.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
     clauses.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Suc(), Index(0)), elim));
     Expression expr = Lam(lamArgs(
@@ -226,5 +224,19 @@ public class ExpressionTest {
     assertEquals(Pi(Nat(), Nat()), expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Nat()), moduleLoader).type);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
+  }
+
+  @Test
+  public void caseTranslation() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    FunctionDefinition def = (FunctionDefinition) parseDef(moduleLoader, "\\function test : Nat => \\case 1 | zero => 0 | suc y => y");
+    FunctionDefinition def2 = (FunctionDefinition) parseDef(moduleLoader, "\\function test => \\let | caseF (caseA : Nat) : Nat <= \\elim caseA | zero => 0 | suc y => y \\in caseF 1");
+    assertEquals(def.getTerm(), def2.getTerm());
+  }
+
+  @Test
+  public void caseNoExpectedError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    parseDef(moduleLoader, "\\function test => \\case 1 | zero => 0 | suc y => y", 1);
   }
 }

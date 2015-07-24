@@ -104,12 +104,12 @@ public class LiftTest {
     constructors.add(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
-    ElimExpression expr1 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses1, null);
+    ElimExpression expr1 = Elim(Index(1), clauses1, null);
     clauses1.add(new Clause(con, nameArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(4)), expr1));
 
 
     List<Clause> clauses2 = new ArrayList<>(1);
-    ElimExpression expr2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(2), clauses2, null);
+    ElimExpression expr2 = Elim(Index(2), clauses2, null);
     clauses2.add(new Clause(con, nameArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(4), Index(5)), expr2));
 
 
@@ -127,11 +127,11 @@ public class LiftTest {
     constructors.add(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
-    ElimExpression expr1 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses1, null);
+    ElimExpression expr1 = Elim(Index(1), clauses1, null);
     clauses1.add(new Clause(con, nameArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(5)), expr1));
 
     List<Clause> clauses2 = new ArrayList<>(1);
-    ElimExpression expr2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses2, null);
+    ElimExpression expr2 = Elim(Index(1), clauses2, null);
     clauses2.add(new Clause(con, nameArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(6)), expr2));
 
     assertEquals(expr2, expr1.liftIndex(2, 1));

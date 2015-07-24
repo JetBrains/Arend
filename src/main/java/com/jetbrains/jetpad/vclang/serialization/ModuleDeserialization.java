@@ -347,14 +347,13 @@ public class ModuleDeserialization {
         return Sigma(readTypeArguments(stream, definitionMap));
       }
       case 12: {
-        Abstract.ElimExpression.ElimType elimType = stream.readBoolean() ? Abstract.ElimExpression.ElimType.ELIM : Abstract.ElimExpression.ElimType.CASE;
         int index = stream.readInt();
         int clausesNumber = stream.readInt();
         List<Clause> clauses = new ArrayList<>(clausesNumber);
         for (int i = 0; i < clausesNumber; ++i) {
           clauses.add(readClause(stream, definitionMap, false));
         }
-        ElimExpression result = Elim(elimType, Index(index), clauses, stream.readBoolean() ? readClause(stream, definitionMap, true) : null);
+        ElimExpression result = Elim(Index(index), clauses, stream.readBoolean() ? readClause(stream, definitionMap, true) : null);
         for (Clause clause : result.getClauses()) {
           if (clause != null) {
             clause.setElimExpression(result);

@@ -183,7 +183,7 @@ public class Utils {
     }
   }
 
-  public static void prettyPrintClause(Abstract.ElimExpression expr, Abstract.Clause clause, StringBuilder builder, List<String> names, int indent) {
+  public static void prettyPrintClause(Abstract.ElimCaseExpression expr, Abstract.Clause clause, StringBuilder builder, List<String> names, int indent) {
     if (clause == null) return;
 
     PrettyPrintVisitor.printIndent(builder, indent);
@@ -242,7 +242,7 @@ public class Utils {
       prettyPrintArgument(arg, builder, names, Abstract.LetExpression.PREC, indent);
     }
 
-    builder.append(" => ");
+    builder.append(prettyArrow(letClause.getArrow()));
     letClause.getTerm().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
     trimToSize(names, oldNamesSize);
   }

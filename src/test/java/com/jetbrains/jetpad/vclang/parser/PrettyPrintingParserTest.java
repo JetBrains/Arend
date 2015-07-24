@@ -88,14 +88,14 @@ public class PrettyPrintingParserTest {
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
 
     List<Clause> fooClausesActual = new ArrayList<>();
-    ElimExpression fooTermActual = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), fooClausesActual, null);
+    ElimExpression fooTermActual = Elim(Index(1), fooClausesActual, null);
     FunctionDefinition fooDef = new FunctionDefinition("foo", moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, lamArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, fooTermActual);
     fooClausesActual.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), fooTermActual));
     fooClausesActual.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), fooTermActual));
     moduleLoader.rootModule().addField(fooDef, null);
 
     List<Clause> clausesActual = new ArrayList<>();
-    ElimExpression termActual = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clausesActual, null);
+    ElimExpression termActual = Elim(Index(1), clausesActual, null);
     FunctionDefinition def = new FunctionDefinition("bar", moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, lamArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, termActual);
     clausesActual.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), termActual));
     clausesActual.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), termActual));

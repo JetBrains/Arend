@@ -9,9 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintClause;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintLetClause;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 
 public final class Concrete {
   private Concrete() {}
@@ -605,23 +603,16 @@ public final class Concrete {
     }
   }
 
-  public static class ElimExpression extends Expression implements Abstract.ElimExpression {
-    private final ElimType myElimType;
+  public static abstract class ElimCaseExpression extends Expression implements Abstract.ElimCaseExpression {
     private final Expression myExpression;
     private final List<Clause> myClauses;
     private final Clause myOtherwise;
 
-    public ElimExpression(Position position, ElimType elimType, Expression expression, List<Clause> clauses, Clause otherwise) {
+    public ElimCaseExpression(Position position, Expression expression, List<Clause> clauses, Clause otherwise) {
       super(position);
-      myElimType = elimType;
       myExpression = expression;
       myClauses = clauses;
       myOtherwise = otherwise;
-    }
-
-    @Override
-    public ElimType getElimType() {
-      return myElimType;
     }
 
     @Override
@@ -638,10 +629,29 @@ public final class Concrete {
     public Clause getOtherwise() {
       return myOtherwise;
     }
+  }
+
+  public static class ElimExpression extends ElimCaseExpression implements Abstract.ElimExpression {
+
+    public ElimExpression(Position position, Expression expression, List<Clause> clauses, Clause otherwise) {
+      super(position, expression, clauses, otherwise);
+    }
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitElim(this, params);
+    }
+  }
+
+  public static class CaseExpression extends ElimCaseExpression implements Abstract.CaseExpression {
+
+    public CaseExpression(Position position, Expression expression, List<Clause> clauses, Clause otherwise) {
+      super(position, expression, clauses, otherwise);
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitCase(this, params);
     }
   }
 
@@ -651,7 +661,7 @@ public final class Concrete {
     private final List<NameArgument> myArguments;
     private final Definition.Arrow myArrow;
     private final Expression myExpression;
-    private ElimExpression myElimExpression;
+    private Abstract.ElimCaseExpression myElimCaseExpresson;
 
     public Clause(Position position, String name, Abstract.Definition.Fixity fixity, List<NameArgument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
       super(position);
@@ -660,11 +670,11 @@ public final class Concrete {
       myArguments = arguments;
       myArrow = arrow;
       myExpression = expression;
-      myElimExpression = elimExpression;
+      myElimCaseExpresson = elimExpression;
     }
 
-    public void setElimExpression(ElimExpression elimExpression) {
-      myElimExpression = elimExpression;
+    public void setElimExpression(Abstract.ElimCaseExpression elimCaseExpression) {
+      myElimCaseExpresson = elimCaseExpression;
     }
 
     @Override
@@ -694,7 +704,7 @@ public final class Concrete {
 
     @Override
     public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      prettyPrintClause(myElimExpression, this, builder, names, 0);
+      prettyPrintClause(myElimCaseExpresson, this, builder, names, 0);
     }
   }
 

@@ -273,7 +273,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     if (myMode == Mode.TOP)
       return null;
     Binding binding = getBinding(myContext, expr.getIndex());
-    if (binding != null && binding instanceof Function) { // TODO: check normalization mode
+    if (binding != null && binding instanceof Function) {
       return visitFunctionCall((Function) binding, expr, new ArrayList<ArgumentExpression>());
     } else {
       return expr;

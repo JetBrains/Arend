@@ -866,15 +866,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     Concrete.Expression elimExpr = visitExpr(ctx.expr());
     if (elimExpr == null) return null;
-    if (!(elimExpr instanceof Concrete.VarExpression)) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
-      return null;
-    }
-    String name = ((Concrete.VarExpression) elimExpr).getName();
-    int elimIndex = myContext.lastIndexOf(name);
-    if (elimIndex == -1) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, elimExpr.getPosition(), "Not in scope: " + name));
-      return null;
+
+    int elimIndex = -1;
+    if (ctx.elimCase() instanceof ElimContext) {
+      if (!(elimExpr instanceof Concrete.VarExpression)) {
+        myModuleLoader.getErrors().add(new ParserError(myModule, elimExpr.getPosition(), "\\elim can be applied only to a local variable"));
+        return null;
+      }
+      String name = ((Concrete.VarExpression) elimExpr).getName();
+      elimIndex = myContext.lastIndexOf(name);
+      if (elimIndex == -1) {
+        myModuleLoader.getErrors().add(new ParserError(myModule, elimExpr.getPosition(), "Not in scope: " + name));
+        return null;
+      }
     }
 
     List<String> oldContext = new ArrayList<>(myContext);
@@ -901,14 +905,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
 
         myContext.clear();
-        for (int i = 0; i < elimIndex; ++i) {
-          myContext.add(oldContext.get(i));
-        }
-        for (Concrete.NameArgument argument : nameArguments) {
-          myContext.add(argument.getName());
-        }
-        for (int i = elimIndex + 1; i < oldContext.size(); ++i) {
-          myContext.add(oldContext.get(i));
+        if (ctx.elimCase() instanceof ElimContext) {
+          for (int i = 0; i < elimIndex; ++i) {
+            myContext.add(oldContext.get(i));
+          }
+          for (Concrete.NameArgument argument : nameArguments) {
+            myContext.add(argument.getName());
+          }
+          for (int i = elimIndex + 1; i < oldContext.size(); ++i) {
+            myContext.add(oldContext.get(i));
+          }
+        } else {
+          for (Concrete.NameArgument argument : nameArguments) {
+            myContext.add(argument.getName());
+          }
         }
       } else {
         myContext = new ArrayList<>(oldContext);
@@ -933,8 +943,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       myContext = new ArrayList<>(oldContext);
     }
 
-    Abstract.ElimExpression.ElimType elimType = ctx.elimCase() instanceof ElimContext ? Abstract.ElimExpression.ElimType.ELIM : Abstract.ElimExpression.ElimType.CASE;
-    Concrete.ElimExpression result = new Concrete.ElimExpression(tokenPosition(ctx.getStart()), elimType, elimExpr, clauses, otherwise);
+    Concrete.ElimCaseExpression result = ctx.elimCase() instanceof ElimContext ?
+            new Concrete.ElimExpression(tokenPosition(ctx.getStart()), elimExpr, clauses, otherwise) :
+            new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExpr, clauses, otherwise);
+
     for (Concrete.Clause clause : clauses) {
       clause.setElimExpression(result);
     }

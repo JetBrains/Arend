@@ -48,7 +48,7 @@ public class ElimTest {
     arguments12.add(Name("z"));
     arguments12.add(Name("t"));
     List<Clause> clauses1 = new ArrayList<>(2);
-    ElimExpression pTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(4), clauses1, null);
+    ElimExpression pTerm = Elim(Index(4), clauses1, null);
     clauses1.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.RIGHT, Nat(), pTerm));
     clauses1.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Pi(Nat(), Nat()), pTerm));
     FunctionDefinition pFunction = new FunctionDefinition("P", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
@@ -61,9 +61,9 @@ public class ElimTest {
     List<Clause> clauses2 = new ArrayList<>();
     List<Clause> clauses3 = new ArrayList<>();
     List<Clause> clauses4 = new ArrayList<>();
-    ElimExpression term2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0) /* r */, clauses2, null);
-    ElimExpression term3 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1) /* e */, clauses3, null);
-    ElimExpression term4 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(4) /* e */, clauses4, null);
+    ElimExpression term2 = Elim(Index(0) /* r */, clauses2, null);
+    ElimExpression term3 = Elim(Index(1) /* e */, clauses3, null);
+    ElimExpression term4 = Elim(Index(4) /* e */, clauses4, null);
     clauses2.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.LEFT, term4, term2));
     clauses2.add(new Clause(constructors.get(0), arguments11, Abstract.Definition.Arrow.LEFT, term3, term2));
     clauses3.add(new Clause(constructors.get(1), arguments12, Abstract.Definition.Arrow.RIGHT, Index(4), term3));

@@ -209,4 +209,11 @@ public class ParserTest {
     new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader, false).visitExpr(parse(moduleLoader, text).expr());
     assertTrue(moduleLoader.getErrors().size() > 0);
   }
+
+  @Test
+  public void parserCase() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseExpr(moduleLoader, "\\case 2 | zero => zero | suc x' => x'");
+  }
 }

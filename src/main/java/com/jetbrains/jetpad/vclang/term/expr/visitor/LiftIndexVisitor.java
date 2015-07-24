@@ -166,7 +166,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitElim(ElimExpression expr) {
     List<Clause> clauses = new ArrayList<>();
-    ElimExpression result = Elim(expr.getElimType(), (IndexExpression) expr.getExpression().liftIndex(myFrom, myOn), clauses, visitClause(expr.getOtherwise(), null));
+    ElimExpression result = Elim((IndexExpression) expr.getExpression().liftIndex(myFrom, myOn), clauses, visitClause(expr.getOtherwise(), null));
     if (result.getOtherwise() != null)
       result.getOtherwise().setElimExpression(result);
     for (Clause clause : expr.getClauses()) {

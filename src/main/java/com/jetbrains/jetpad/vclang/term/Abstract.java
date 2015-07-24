@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
 import java.util.Collection;
@@ -139,13 +140,19 @@ public final class Abstract {
     Expression getExpr();
   }
 
-  public interface ElimExpression extends Expression {
+  public interface ElimCaseExpression extends Expression {
+    enum ElimType {CASE, ELIM};
+
     byte PREC = -8;
-    enum ElimType { ELIM, CASE }
-    ElimType getElimType();
     Expression getExpression();
     List<? extends Clause> getClauses();
     Clause getOtherwise();
+  }
+
+  public interface CaseExpression extends ElimCaseExpression {
+  }
+
+  public interface ElimExpression extends ElimCaseExpression {
   }
 
   public interface ProjExpression extends Expression {

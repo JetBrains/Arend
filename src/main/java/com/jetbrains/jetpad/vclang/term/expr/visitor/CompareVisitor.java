@@ -777,7 +777,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (!(other instanceof ElimExpression)) return new JustResult(CMP.NOT_EQUIV);
 
     ElimExpression otherElim = (ElimExpression) other;
-    if (expr.getElimType() != otherElim.getElimType() || expr.getClauses().size() != otherElim.getClauses().size()) {
+    if (expr.getClauses().size() != otherElim.getClauses().size()) {
       return new JustResult(CMP.NOT_EQUIV);
     }
     Result result = expr.getExpression().accept(this, otherElim.getExpression());
@@ -813,6 +813,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       }
     }
     return maybeResult == null ? new JustResult(and(cmp, result.isOK())) : maybeResult;
+  }
+
+  @Override
+  public Result visitCase(Abstract.CaseExpression expr, Expression params) {
+    return new JustResult(CMP.NOT_EQUIV);
   }
 
   public Result visitClause(Abstract.Clause clause, Clause other) {

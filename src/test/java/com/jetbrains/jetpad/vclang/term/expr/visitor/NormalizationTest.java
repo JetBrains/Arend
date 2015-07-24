@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -33,25 +32,25 @@ public class NormalizationTest {
 
   public NormalizationTest() {
     List<Clause> plusClauses = new ArrayList<>(2);
-    ElimExpression plusTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), plusClauses, null);
+    ElimExpression plusTerm = Elim(Index(1), plusClauses, null);
     plus = new FunctionDefinition("+", null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), Abstract.Definition.Fixity.INFIX, lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, plusTerm);
     plusClauses.add(new Clause(Prelude.ZERO, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(0), plusTerm));
     plusClauses.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Suc(BinOp(Index(0), plus, Index(1))), plusTerm));
 
     List<Clause> mulClauses = new ArrayList<>(2);
-    ElimExpression mulTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), mulClauses, null);
+    ElimExpression mulTerm = Elim(Index(1), mulClauses, null);
     mul = new FunctionDefinition("*", null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), Abstract.Definition.Fixity.INFIX, lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, mulTerm);
     mulClauses.add(new Clause(Prelude.ZERO, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Zero(), mulTerm));
     mulClauses.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0))), mulTerm));
 
     List<Clause> facClauses = new ArrayList<>(2);
-    ElimExpression facTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), facClauses, null);
+    ElimExpression facTerm = Elim(Index(0), facClauses, null);
     fac = new FunctionDefinition("fac", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, lamArgs(Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, facTerm);
     facClauses.add(new Clause(Prelude.ZERO, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Suc(Zero()), facTerm));
     facClauses.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Suc(Index(0)), mul, Apps(DefCall(fac), Index(0))), facTerm));
 
     List<Clause> nelimClauses = new ArrayList<>(2);
-    ElimExpression nelimTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), nelimClauses, null);
+    ElimExpression nelimTerm = Elim(Index(0), nelimClauses, null);
     nelim = new FunctionDefinition("nelim", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, lamArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
     nelimClauses.add(new Clause(Prelude.ZERO, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(1), nelimTerm));
     nelimClauses.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(DefCall(nelim), Index(2), Index(1), Index(0))), nelimTerm));
@@ -195,7 +194,7 @@ public class NormalizationTest {
   public void normalizeLetElimStuck() {
     // normalize (\let | x (y : N) : N <= \elim y | zero => zero | succ _ => zero \in x <1>) = the same
     List<Clause> clauses = new ArrayList<>();
-    ElimExpression elim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses, null);
+    ElimExpression elim = Elim(Index(0), clauses, null);
     clauses.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
     clauses.add(new Clause(Prelude.SUC, nameArgs(Name("_")), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
     Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)),
@@ -208,7 +207,7 @@ public class NormalizationTest {
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \Type2 <= \elim y | \Type0 => \Type1 | succ _ => \Type1 \in x zero) = \Type0
     List<Clause> clauses = new ArrayList<>();
-    ElimExpression elim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses, null);
+    ElimExpression elim = Elim(Index(0), clauses, null);
     clauses.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Universe(0), elim));
     clauses.add(new Clause(Prelude.SUC, nameArgs(Name("_")), Abstract.Definition.Arrow.RIGHT, Universe(1), elim));
     Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Universe(2), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(0), Zero())));

@@ -51,9 +51,9 @@ public class ModuleSerializationTest {
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     ClassDefinition def = new ClassDefinition("test", moduleLoader.rootModule());
     List<Clause> clauses1 = new ArrayList<>(2);
-    ElimExpression term1 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses1, null);
+    ElimExpression term1 = Elim(Index(0), clauses1, null);
     List<Clause> clauses2 = new ArrayList<>(2);
-    ElimExpression term2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses2, null);
+    ElimExpression term2 = Elim(Index(1), clauses2, null);
     clauses1.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Zero(), term1));
     clauses1.add(new Clause(Prelude.SUC, nameArgs(Name("x")), Abstract.Definition.Arrow.LEFT, term2, term1));
     clauses2.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), term2));

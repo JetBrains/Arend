@@ -61,7 +61,7 @@ public class Prelude {
     coerceArguments.add(Tele(vars("elem"), Apps(Index(0), DefCall(LEFT))));
     coerceArguments.add(Tele(vars("point"), DefCall(INTERVAL)));
     List<Clause> coerceClauses = new ArrayList<>(1);
-    ElimExpression coerceTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), coerceClauses, null);
+    ElimExpression coerceTerm = Elim(Index(0), coerceClauses, null);
     coerceClauses.add(new Clause(LEFT, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(0), coerceTerm));
     COERCE = new FunctionDefinition("coe", PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, coerceArguments, Apps(Index(2), Index(0)), Abstract.Definition.Arrow.LEFT, coerceTerm);
 
@@ -98,10 +98,10 @@ public class Prelude {
     Expression atResultType = Apps(Index(4), Index(0));
     List<Clause> atClauses = new ArrayList<>(2);
     List<Clause> atOtherwiseClauses = new ArrayList<>(1);
-    ElimExpression atOtherwiseElim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), atOtherwiseClauses, null);
+    ElimExpression atOtherwiseElim = Elim(Index(1), atOtherwiseClauses, null);
     atOtherwiseClauses.add(new Clause(PATH_CON, nameArgs(Name("f")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0)), atOtherwiseElim));
     Clause atOtherwise = new Clause(null, null, Abstract.Definition.Arrow.LEFT, atOtherwiseElim, null);
-    ElimExpression atTerm = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), atClauses, atOtherwise);
+    ElimExpression atTerm = Elim(Index(0), atClauses, atOtherwise);
     atOtherwise.setElimExpression(atTerm);
     atClauses.add(new Clause(LEFT, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(2), atTerm));
     atClauses.add(new Clause(RIGHT, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(1), atTerm));

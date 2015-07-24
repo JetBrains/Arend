@@ -1053,9 +1053,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression expectedType) {
     TypeCheckingError error = null;
-    if (expr.getElimType() == Abstract.ElimExpression.ElimType.CASE) {
-      error = new TypeCheckingError(myParent, "Not implemented yet: \\case", expr, getNames(myLocalContext));
-    }
     if (expectedType == null && error == null) {
       error = new TypeCheckingError(myParent, "Cannot infer type of the expression", expr, getNames(myLocalContext));
     }
@@ -1216,7 +1213,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         localContext.add(new TypedBinding(myLocalContext.get(i).getName(), myLocalContext.get(i).getType().liftIndex(i0 + 1, constructorArguments.size()).subst(substExpr, i0)));
       }
 
-      Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) clause.getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
+      Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
       Result clauseResult = new CheckTypeVisitor(myParent, localContext, myAbstractCalls, myModuleLoader, side).typeCheck(clause.getExpression(), clauseExpectedType);
       if (!(clauseResult instanceof OKResult)) {
         wasError = true;
@@ -1257,7 +1254,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Clause otherwise = null;
     if (expr.getOtherwise() != null) {
-      Side side = expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.RIGHT || !(expr.getOtherwise().getExpression() instanceof Abstract.ElimExpression && ((Abstract.ElimExpression) expr.getOtherwise().getExpression()).getElimType() == Abstract.ElimExpression.ElimType.ELIM) ? Side.RHS : Side.LHS;
+      Side side = expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.RIGHT || !(expr.getOtherwise().getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
       CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myParent, myLocalContext, myAbstractCalls, myModuleLoader, side) : this;
       Result clauseResult = visitor.typeCheck(expr.getOtherwise().getExpression(), expectedType);
       if (clauseResult instanceof InferErrorResult) {
@@ -1268,7 +1265,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    ElimExpression result = Elim(expr.getElimType(), (IndexExpression) exprOKResult.expression, clauses, otherwise);
+    ElimExpression result = Elim((IndexExpression) exprOKResult.expression, clauses, otherwise);
     for (Clause clause : clauses) {
       if (clause != null) {
         clause.setElimExpression(result);
@@ -1280,6 +1277,49 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return new OKResult(result, expectedType, null);
   }
 
+  private Concrete.Clause copyClause(Concrete.Clause from, Concrete.ElimExpression elim) {
+    if (from == null)
+      return null;
+    return new Concrete.Clause(from.getPosition(), from.getName(), from.getFixity(), from.getArguments(), from.getArrow(), from.getExpression(), elim);
+  }
+
+  @Override
+  public Result visitCase(Abstract.CaseExpression expr, Expression expectedType) {
+    if (expectedType == null) {
+      TypeCheckingError error = new TypeCheckingError(myParent, "Cannot infer type of the expression", expr, getNames(myLocalContext));
+      expr.setWellTyped(Error(null, error));
+      myModuleLoader.getTypeCheckingErrors().add(error);
+      return null;
+    }
+
+    List<CompareVisitor.Equation> equations = new ArrayList<>();
+    Concrete.CaseExpression caseExpression = (Concrete.CaseExpression) expr;
+
+    Result exprResult = typeCheck(expr.getExpression(), null);
+    if (!(exprResult instanceof OKResult)) return exprResult;
+    OKResult exprOKResult = (OKResult) exprResult;
+    equations.addAll(exprOKResult.equations);
+
+    List<Concrete.Clause> elimClauses = new ArrayList<>(caseExpression.getClauses().size());
+    Concrete.ElimExpression elim = new Concrete.ElimExpression(null, new Concrete.IndexExpression(null, 0), elimClauses, copyClause(caseExpression.getOtherwise(), null));
+    if (caseExpression.getOtherwise() != null)
+      elim.getOtherwise().setElimExpression(elim);
+    for (Concrete.Clause clause : caseExpression.getClauses()) {
+      elimClauses.add(copyClause(clause, elim));
+    }
+    myLocalContext.add(new TypedBinding(null, exprOKResult.type));
+    Result elimResult = typeCheck(elim, expectedType.liftIndex(0, 1));
+    if (!(elimResult instanceof OKResult)) return elimResult;
+    OKResult elimOKResult = (OKResult) elimResult;
+    addLiftedEquations(elimOKResult, equations, 1);
+    myLocalContext.remove(myLocalContext.size() - 1);
+
+    LetExpression letExpression = Let(lets(let("caseF", lamArgs(Tele(vars("caseA"), exprOKResult.type)), elimOKResult.type,
+                    Abstract.Definition.Arrow.LEFT, elimOKResult.expression)), Apps(Index(0), exprOKResult.expression));
+
+    return new OKResult(letExpression, exprOKResult.type.liftIndex(0, -1), equations);
+  }
+  
   @Override
   public Result visitProj(Abstract.ProjExpression expr, Expression expectedType) {
     Result exprResult = typeCheck(expr.getExpression(), null);
@@ -1429,6 +1469,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitLet(Abstract.LetExpression expr, Expression expectedType) {
+    OKResult finalResult;
     try (ContextSaver saver = new ContextSaver(myLocalContext)) {
       List<LetClause> clauses = new ArrayList<>();
       List<CompareVisitor.Equation> equations = new ArrayList<>();
@@ -1438,20 +1479,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         addLiftedEquations((OKResult) clauseResult, equations, i);
         clauses.add(((LetClauseOKResult) clauseResult).clause);
       }
-      Result result = typeCheck(expr.getExpression(), expectedType == null ? null : expectedType.liftIndex(0, expr.getClauses().size()));
+      Result result = typeCheck(expr.getExpression(), null);
       if (!(result instanceof OKResult)) return result;
       OKResult okResult = (OKResult) result;
       addLiftedEquations(okResult, equations, expr.getClauses().size());
 
-      Expression normalizedResultType = okResult.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
-      if (normalizedResultType.liftIndex(0, -expr.getClauses().size()) == null) {
+      Expression normalizedResultType = okResult.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext).liftIndex(0, -expr.getClauses().size());
+      if (normalizedResultType == null) {
         TypeCheckingError error = new TypeCheckingError(myParent, "Let result type depends on a bound variable.", expr, getNames(myLocalContext));
         expr.setWellTyped(Error(null, error));
         myModuleLoader.getTypeCheckingErrors().add(error);
         return null;
       }
-
-      return new OKResult(Let(clauses, okResult.expression), normalizedResultType.liftIndex(0, -expr.getClauses().size()), equations);
+      finalResult = new OKResult(Let(clauses, okResult.expression), normalizedResultType, equations);
     }
+    return checkResultImplicit(expectedType, finalResult, expr);
   }
 }

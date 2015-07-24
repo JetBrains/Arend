@@ -249,10 +249,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  @Override
-  public Void visitElim(Abstract.ElimExpression expr, Byte prec) {
+  private void visitElimCaseExpression(Abstract.ElimCaseExpression expr, Byte prec) {
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append('(');
-    myBuilder.append(expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM ? "\\elim " : "\\case ");
+    myBuilder.append(expr instanceof Abstract.ElimExpression ? "\\elim " : "\\case ");
     expr.getExpression().accept(this, Abstract.Expression.PREC);
     myBuilder.append('\n');
     ++myIndent;
@@ -271,6 +270,17 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append(';');
     --myIndent;
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append(')');
+  }
+
+  @Override
+  public Void visitElim(Abstract.ElimExpression expr, Byte prec) {
+    visitElimCaseExpression(expr, prec);
+    return null;
+  }
+
+  @Override
+  public Void visitCase(Abstract.CaseExpression expr, Byte params) {
+    visitElimCaseExpression(expr, params);
     return null;
   }
 
