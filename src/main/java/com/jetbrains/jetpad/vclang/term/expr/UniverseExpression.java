@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
@@ -25,7 +26,7 @@ public class UniverseExpression extends Expression implements Abstract.UniverseE
   }
 
   @Override
-  public UniverseExpression getType(List<Expression> context) {
+  public UniverseExpression getType(List<Binding> context) {
     return new UniverseExpression(myUniverse.succ());
   }
 

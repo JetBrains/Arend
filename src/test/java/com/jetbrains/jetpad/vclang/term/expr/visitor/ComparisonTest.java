@@ -1,11 +1,17 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.module.DummyOutputSupplier;
+import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
@@ -138,5 +144,14 @@ public class ComparisonTest {
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     CompareVisitor.Result result = compare(expr1, expr2, equations);
     assertTrue(result.isOK() == CompareVisitor.CMP.LESS);
+  }
+
+  @Test
+  public void letsNested() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    Definition def1 = parseDef(moduleLoader, "\\function test => \\let | x => 0 \\in \\let  | y => 1 \\in zero");
+    Definition def2 = parseDef(moduleLoader, "\\function test => \\let | x => 0 | y => 1 \\in zero");
+    assertEquals(((FunctionDefinition) def1).getTerm(), ((FunctionDefinition) def2).getTerm());
   }
 }

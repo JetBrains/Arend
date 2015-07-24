@@ -79,6 +79,7 @@ public final class Abstract {
   public interface IndexExpression extends Expression {
     byte PREC = 12;
     int getIndex();
+
   }
 
   public interface LamExpression extends Expression {

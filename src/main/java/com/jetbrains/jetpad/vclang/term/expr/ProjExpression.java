@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -33,7 +34,7 @@ public class ProjExpression extends Expression implements Abstract.ProjExpressio
   }
 
   @Override
-  public Expression getType(List<Expression> context) {
+  public Expression getType(List<Binding> context) {
     Expression type = myExpression.getType(context);
     if (!(type instanceof SigmaExpression)) return null;
     List<TypeArgument> arguments = ((SigmaExpression) type).getArguments();

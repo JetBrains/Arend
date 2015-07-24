@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
@@ -26,7 +27,7 @@ public class TupleExpression extends Expression implements Abstract.TupleExpress
   }
 
   @Override
-  public SigmaExpression getType(List<Expression> context) {
+  public SigmaExpression getType(List<Binding> context) {
     return myType;
   }
 

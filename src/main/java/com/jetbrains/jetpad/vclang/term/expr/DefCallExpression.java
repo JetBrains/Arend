@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -56,7 +57,7 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   }
 
   @Override
-  public Expression getType(List<Expression> context) {
+  public Expression getType(List<Binding> context) {
     Expression resultType;
     resultType = myDefinition.getType();
     if (myDefinition instanceof Constructor && !((Constructor) myDefinition).getDataType().getParameters().isEmpty()) {

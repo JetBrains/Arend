@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
@@ -24,8 +25,8 @@ public class IndexExpression extends Expression implements Abstract.IndexExpress
   }
 
   @Override
-  public Expression getType(List<Expression> context) {
-    return context.get(context.size() - 1 - myIndex);
+  public Expression getType(List<Binding> context) {
+    return context.get(context.size() - 1 - myIndex).lift(myIndex + 1).getType();
   }
 
   @Override

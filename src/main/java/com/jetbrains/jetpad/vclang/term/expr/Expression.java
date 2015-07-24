@@ -19,7 +19,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 public abstract class Expression implements PrettyPrintable, Abstract.Expression {
   public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
 
-  public abstract Expression getType(List<Expression> context);
+  public abstract Expression getType(List<Binding> context);
 
   @Override
   public void setWellTyped(Expression wellTyped) {}

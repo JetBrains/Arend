@@ -375,7 +375,7 @@ public class TypeChecking {
 
     Expression type = definition.getType();
     if (type != null) {
-      type = type.getType(new ArrayList<Expression>(2));
+      type = type.getType(new ArrayList<Binding>(2));
       if (type instanceof UniverseExpression) {
         definition.setUniverse(((UniverseExpression) type).getUniverse());
       } else {
