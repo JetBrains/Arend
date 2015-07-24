@@ -390,10 +390,29 @@ public class ModuleDeserialization {
       case 16: {
         return New(readExpression(stream, definitionMap));
       }
+      case 17: {
+        final int numClauses = stream.readInt();
+        final List<LetClause> clauses = new ArrayList<>(numClauses);
+        for (int i = 0; i < numClauses; i++) {
+          clauses.add(readLetClause(stream, definitionMap));
+        }
+        final Expression expr = readExpression(stream, definitionMap);
+        return Let(clauses, expr);
+      }
       default: {
         throw new IncorrectFormat();
       }
     }
+  }
+
+  private LetClause readLetClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    final String name = stream.readUTF();
+    final List<Argument> arguments = new ArrayList<Argument>(readTypeArguments(stream, definitionMap));
+    final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+    final Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
+    final Expression term = readExpression(stream, definitionMap);
+    return let(name, arguments, resultType, arrow, term);
+
   }
 
   public Clause readClause(DataInputStream stream, Map<Integer, Definition> definitionMap, boolean isOtherwise) throws IOException {

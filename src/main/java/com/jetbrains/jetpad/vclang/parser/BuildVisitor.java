@@ -254,21 +254,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private Concrete.FunctionDefinition visitFunctionRawBegin(boolean overridden, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, ExprContext typeCtx, ArrowContext arrowCtx) {
     Name name = getName(nameCtx);
     int size = myContext.size();
-    List<Concrete.Argument> arguments = new ArrayList<>();
-    for (TeleContext tele : teleCtx) {
-      List<Concrete.Argument> args = visitLamTele(tele);
-      if (args == null) {
-        trimToSize(myContext, size);
-        return null;
-      }
-
-      if (overridden || args.get(0) instanceof Concrete.TelescopeArgument) {
-        arguments.add(args.get(0));
-      } else {
-        myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(tele.getStart()), "Expected a typed variable"));
-        trimToSize(myContext, size);
-        return null;
-      }
+    List<Concrete.Argument> arguments = visitFunctionArguments(teleCtx, overridden);
+    if (arguments == null) {
+      trimToSize(myContext, size);
+      return null;
     }
 
     Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
@@ -286,6 +275,32 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         myContext.remove(myContext.size() - 1);
       }
     }
+  }
+
+  private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx) {
+    return visitFunctionArguments(teleCtx, false);
+  }
+
+  private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx, boolean overridden) {
+    List<Concrete.Argument> arguments = new ArrayList<>();
+    for (TeleContext tele : teleCtx) {
+      List<Concrete.Argument> args = visitLamTele(tele);
+      if (args == null) {
+        return null;
+      }
+
+      if (overridden || args.get(0) instanceof Concrete.TelescopeArgument) {
+        arguments.add(args.get(0));
+      } else {
+        myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(tele.getStart()), "Expected a typed variable"));
+        return null;
+      }
+    }
+    return arguments;
+  }
+
+  private Abstract.Definition.Arrow getArrow(ArrowContext arrowCtx) {
+    return arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
   }
 
   public Abstract.Definition.Precedence visitPrecedence(PrecedenceContext ctx) {
@@ -941,6 +956,39 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Name visitClauseNameArgs(ClauseNameArgsContext ctx) {
     if (ctx == null) return null;
     return getName(ctx.name());
+  }
+
+  @Override
+  public Concrete.LetClause visitLetClause(LetClauseContext ctx) {
+    final int oldContextSize = myContext.size();
+    final String name = ctx.ID().getText();
+
+    final List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele());
+    if (arguments == null) {
+      trimToSize(myContext, oldContextSize);
+      return null;
+    }
+    final Concrete.Expression resultType = ctx.typeAnnotation() == null ? null: visitExpr(ctx.typeAnnotation().expr());
+    final Abstract.Definition.Arrow arrow = getArrow(ctx.arrow());
+    final Concrete.Expression term = visitExpr(ctx.expr());
+
+    trimToSize(myContext, oldContextSize);
+
+    myContext.add(name);
+    return new Concrete.LetClause(tokenPosition(ctx.getStart()), name, new ArrayList<>(arguments), resultType, arrow, term);
+  }
+
+  @Override
+  public Concrete.LetExpression visitLet(LetContext ctx) {
+    final int oldContextSize = myContext.size();
+    final List<Concrete.LetClause> clauses = new ArrayList<>();
+    for (LetClauseContext clauseCtx : ctx.letClause()) {
+      clauses.add(visitLetClause(clauseCtx));
+    }
+
+    final Concrete.Expression expr = visitExpr(ctx.expr());
+    trimToSize(myContext, oldContextSize);
+    return new Concrete.LetExpression(tokenPosition(ctx.getStart()), clauses, expr);
   }
 
   private static Concrete.Position tokenPosition(Token token) {

@@ -1,14 +1,22 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.error.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.term.expr.Clause;
+import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
@@ -179,5 +187,44 @@ public class ExpressionTest {
     assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(null, result);
     assertTrue(moduleLoader.getTypeCheckingErrors().get(0) instanceof TypeMismatchError);
+  }
+
+  @Test
+  public void letDependentType() {
+    // \lam (F : \Pi N -> \Type0) (f : \Pi (x : N) -> F x) => \\let | x => 0 \\in f x");
+    Expression expr = Lam(lamArgs(Tele(vars("F"), Pi(Nat(), Universe(0))), Tele(vars("f"), Pi(args(Tele(vars("x"), Nat())), Apps(Index(1), Index(0))))),
+            Let(lets(let("x", Zero())), Apps(Index(1), Index(0))));
+    ModuleLoader moduleLoader = new ModuleLoader();
+    CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), null, moduleLoader);
+    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+    assertEquals(0, moduleLoader.getErrors().size());
+  }
+
+  @Test
+  public void letTypeHasBoundVarError() {
+    // \lam (F : \Pi {A : \Type0}  (a : A) -> \Type1) (f : \Pi {A : \Type0} (x : A) -> F x) =>
+    //   \let | x (y : Nat) : Nat <= \elim y | zero => zero
+    //                                       | suc x' => suc x' \in f x)
+    List<Clause> clauses = new ArrayList<>();
+    ElimExpression elim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses, null);
+    clauses.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
+    clauses.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Suc(), Index(0)), elim));
+    Expression expr = Lam(lamArgs(
+                    Tele(vars("F"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
+                    Tele(vars("f"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
+            Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(1), Index(0))));
+    ModuleLoader moduleLoader = new ModuleLoader();
+    CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), null, moduleLoader);
+    assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
+  }
+
+  @Test
+  public void letArrowType() {
+    // \let | x (y : Nat) => Zero \in x : Nat -> Nat
+    Expression expr = Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Zero())), Index(0));
+    ModuleLoader moduleLoader = new ModuleLoader();
+    assertEquals(Pi(Nat(), Nat()), expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Nat()), moduleLoader).type);
+    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+    assertEquals(0, moduleLoader.getErrors().size());
   }
 }

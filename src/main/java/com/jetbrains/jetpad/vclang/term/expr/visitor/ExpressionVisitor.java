@@ -17,4 +17,5 @@ public interface ExpressionVisitor<T> {
   T visitProj(ProjExpression expr);
   T visitClassExt(ClassExtExpression expr);
   T visitNew(NewExpression expr);
+  T visitLet(LetExpression letExpression);
 }

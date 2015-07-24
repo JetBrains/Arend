@@ -71,6 +71,30 @@ public class ExpressionFactory {
     return new VarExpression(name);
   }
 
+  public static LetExpression Let(List<LetClause> clauses, Expression expr) {
+    return new LetExpression(clauses, expr);
+  }
+
+  public static List<LetClause> lets(LetClause... letClauses) {
+    return Arrays.asList(letClauses);
+  }
+
+  public static LetClause let(String name, Expression term) {
+    return new LetClause(name, lamArgs(), null, Abstract.Definition.Arrow.RIGHT, term);
+  }
+
+  public static LetClause let(String name, List<Argument> args, Expression term) {
+    return new LetClause(name, args, null, Abstract.Definition.Arrow.RIGHT, term);
+  }
+
+  public static LetClause let(String name, List<Argument> args, Abstract.Definition.Arrow arrow, Expression term) {
+    return new LetClause(name, args, null, arrow, term);
+  }
+
+  public static LetClause let(String name, List<Argument> args, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+    return new LetClause(name, args, resultType, arrow, term);
+  }
+
   public static List<String> vars(String... vars) {
     return Arrays.asList(vars);
   }

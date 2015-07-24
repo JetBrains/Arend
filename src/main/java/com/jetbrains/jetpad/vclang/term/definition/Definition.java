@@ -110,4 +110,9 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   public String getFullName() {
     return myParent == null || myParent.getParent() == null ? getName() : myParent.getFullName() + "." + (myFixity == Fixity.PREFIX ? getName() : "(" + getName() + ")");
   }
+
+  @Override
+  public Definition lift(int on) {
+    return this;
+  }
 }

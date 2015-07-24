@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LetExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import org.junit.Test;
 
@@ -50,5 +51,12 @@ public class PrettyPrintingTest {
     arguments.add(Tele(vars("x"), Index(0)));
     FunctionDefinition def = new FunctionDefinition("f", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, Index(1), Definition.Arrow.RIGHT, Lam("X", Lam("x", Index(0))));
     def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), null);
+  }
+
+  @Test
+  public void prettyPrintingLet() {
+    // \let x {A : Type0} (y ; A) : A => y \in x Zero()
+    LetExpression expr = Let(lets(let("x", lamArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Index(0))), Index(0))), Apps(Index(0), Zero()));
+    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 }

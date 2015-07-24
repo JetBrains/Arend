@@ -1,7 +1,17 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.expr.Clause;
+import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
@@ -83,43 +93,61 @@ public class LiftTest {
     assertEquals(expr2, expr1.liftIndex(0, 1));
   }
 
-  /*
   @Test
   public void liftElim() {
-    // lift (\elim <1> | con a b c => <2> <3> <4>, 0, 1) = \elim <2> | con a b c => <3> <4> <5>
+    // lift (\elim <1> | con a b c => <2> <3> <4>, 0, 1) = \elim <2> | con a b c => <2> <4> <5>
     List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition("D", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
-    Constructor con = new Constructor(0, "con", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
+    DataDefinition def = new DataDefinition("D", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX,
+            new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
+    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX,
+            new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
     constructors.add(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
-    clauses1.add(new Clause(con, lamArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(4))));
-    Expression expr1 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses1);
+    ElimExpression expr1 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses1, null);
+    clauses1.add(new Clause(con, nameArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(4)), expr1));
+
 
     List<Clause> clauses2 = new ArrayList<>(1);
-    clauses2.add(new Clause(con, lamArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(3), Index(4), Index(5))));
-    Expression expr2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(2), clauses2);
+    ElimExpression expr2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(2), clauses2, null);
+    clauses2.add(new Clause(con, nameArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(4), Index(5)), expr2));
+
 
     assertEquals(expr2, expr1.liftIndex(0, 1));
   }
 
   @Test
   public void liftElim2() {
-    // lift (\elim <1> | con a b c => <2> <3> <4>, 2, 1) = \elim <1> | con a b c => <2> <3> <5>
+    // lift (\elim <1> | con a b c => <2> <3> <5>, 2, 1) = \elim <1> | con a b c => <2> <3> <6>
     List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition("D", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
-    Constructor con = new Constructor(0, "con", Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
+    DataDefinition def = new DataDefinition("D", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX,
+            new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
+    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX,
+            new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
     constructors.add(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
-    clauses1.add(new Clause(con, lamArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(4))));
-    Expression expr1 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses1);
+    ElimExpression expr1 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses1, null);
+    clauses1.add(new Clause(con, nameArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(5)), expr1));
 
     List<Clause> clauses2 = new ArrayList<>(1);
-    clauses2.add(new Clause(con, lamArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(5))));
-    Expression expr2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses2);
+    ElimExpression expr2 = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(1), clauses2, null);
+    clauses2.add(new Clause(con, nameArgs(Name("a"), Name("b"), Name("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(6)), expr2));
 
     assertEquals(expr2, expr1.liftIndex(2, 1));
   }
-  */
+
+  @Test
+  public void liftLet() {
+    // lift (\let | x (y : Nat) => <1> y | z => x zero \in <2> z,  0, 1) = (\let | x (y : Nat) > <2> y | z => x zero \in <3> z)
+    Expression expr1 = Let(lets(
+            let("x", lamArgs(Tele(vars("y"), Nat())), Apps(Index(1), Index(0))),
+            let("z", Apps(Index(0), Zero()))
+            ), Apps(Index(2), Index(0)));
+    Expression expr2 = Let(lets(
+            let("x", lamArgs(Tele(vars("y"), Nat())), Apps(Index(2), Index(0))),
+            let("z", Apps(Index(0), Zero()))
+            ), Apps(Index(3), Index(0)));
+    assertEquals(expr1.liftIndex(0, 1), expr2);
+  }
 }

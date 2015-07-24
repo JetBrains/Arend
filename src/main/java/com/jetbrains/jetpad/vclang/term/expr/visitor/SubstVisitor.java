@@ -62,65 +62,85 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
     return Lam(arguments, result[0]);
   }
 
-  public Expression[] visitLamArguments(List<Argument> inputArgs, List<Argument> outputArgs, Expression... exprs) {
-    List<Expression> substExprs = new ArrayList<>(mySubstExprs);
-    int from = myFrom;
-    int on = 0;
-    for (Argument argument : inputArgs) {
-      if (argument instanceof NameArgument) {
-        outputArgs.add(argument);
-        ++on;
-      } else
-      if (argument instanceof TelescopeArgument) {
-        from += on;
-        TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        for (int i = 0; i < substExprs.size(); ++i) {
-          substExprs.set(i, substExprs.get(i).liftIndex(0, on));
-        }
-        outputArgs.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), teleArgument.getType().subst(substExprs, from)));
-        on = teleArgument.getNames().size();
-      } else {
-        throw new IllegalStateException();
-      }
-    }
-
-    for (int i = 0; i < substExprs.size(); ++i) {
-      substExprs.set(i, substExprs.get(i).liftIndex(0, on));
-    }
+  private Expression[] visitLamArguments(List<Argument> inputArgs, List<Argument> outputArgs, Expression... exprs) {
+    SubstVisitorContext ctx = new SubstVisitorContext(mySubstExprs, myFrom);
+    outputArgs.addAll(visitArguments(inputArgs, ctx));
 
     Expression[] result = new Expression[exprs.length];
     for (int i = 0; i < exprs.length; ++i) {
-      result[i] = exprs[i] == null ? null : exprs[i].subst(substExprs, from + on);
+      result[i] = exprs[i] == null ? null : ctx.subst(exprs[i]);
     }
     return result;
   }
 
-  private Expression visitArguments(List<TypeArgument> arguments, Expression codomain) {
-    List<Expression> substExprs = new ArrayList<>(mySubstExprs);
-    int from = myFrom;
-    List<TypeArgument> result = new ArrayList<>();
-    for (TypeArgument argument : arguments) {
-      if (argument instanceof TelescopeArgument) {
-        List<String> names = ((TelescopeArgument) argument).getNames();
-        result.add(new TelescopeArgument(argument.getExplicit(), names, argument.getType().subst(substExprs, from)));
-        for (int i = 0; i < substExprs.size(); ++i) {
-          substExprs.set(i, substExprs.get(i).liftIndex(0, names.size()));
-        }
-        from += names.size();
-      } else {
-        result.add(new TypeArgument(argument.getExplicit(), argument.getType().subst(substExprs, from)));
-        for (int i = 0; i < substExprs.size(); ++i) {
-          substExprs.set(i, substExprs.get(i).liftIndex(0, 1));
-        }
-        ++from;
-      }
+  public static class SubstVisitorContext {
+    private int myFrom;
+    private final List<Expression> mySubstExprs;
+
+    public SubstVisitorContext(List<? extends Expression> substExprs, int from) {
+      this.myFrom = from;
+      this.mySubstExprs = new ArrayList<>(substExprs);
     }
-    return codomain == null ? Sigma(result) : Pi(result, codomain.subst(substExprs, from));
+
+    private void lift(int on) {
+      for (int i = 0; i < mySubstExprs.size(); ++i) {
+        mySubstExprs.set(i, mySubstExprs.get(i).liftIndex(0, on));
+      }
+      myFrom += on;
+    }
+
+    Expression subst(Expression expr) {
+      return expr.subst(mySubstExprs, myFrom);
+    }
+
+  }
+
+  static TypeArgument visitTypeArgument(TypeArgument argument, SubstVisitorContext ctx) {
+    TypeArgument result;
+    if (argument instanceof TelescopeArgument) {
+      List<String> names = ((TelescopeArgument) argument).getNames();
+      result = new TelescopeArgument(argument.getExplicit(), names, ctx.subst(argument.getType()));
+      ctx.lift(names.size());
+    } else {
+      result = new TypeArgument(argument.getExplicit(), ctx.subst(argument.getType()));
+      ctx.lift(1);
+    }
+    return result;
+  }
+
+  static Argument visitArgument(Argument argument, SubstVisitorContext ctx) {
+    Argument result;
+    if (argument instanceof NameArgument) {
+      result = argument;
+      ctx.lift(1);
+    } else if (argument instanceof TypeArgument) {
+      result = visitTypeArgument((TypeArgument) argument, ctx);
+    } else {
+      throw new IllegalStateException();
+    }
+    return result;
+  }
+
+  static List<Argument> visitArguments(List<Argument> arguments, SubstVisitorContext ctx) {
+    List<Argument> result = new ArrayList<>(arguments.size());
+    for (Argument arg : arguments) {
+      result.add(visitArgument(arg, ctx));
+    }
+    return result;
+  }
+
+  List<TypeArgument> visitTypeArguments(List<TypeArgument> arguments, SubstVisitorContext ctx) {
+    List<TypeArgument> result = new ArrayList<>(arguments.size());
+    for (TypeArgument arg : arguments) {
+      result.add(visitTypeArgument(arg, ctx));
+    }
+    return result;
   }
 
   @Override
   public Expression visitPi(PiExpression expr) {
-    return visitArguments(expr.getArguments(), expr.getCodomain());
+    SubstVisitorContext ctx = new SubstVisitorContext(mySubstExprs, myFrom);
+    return Pi(visitTypeArguments(expr.getArguments(), ctx), ctx.subst(expr.getCodomain()));
   }
 
   @Override
@@ -149,7 +169,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitSigma(SigmaExpression expr) {
-    return visitArguments(expr.getArguments(), null);
+    return Sigma(visitTypeArguments(expr.getArguments(), new SubstVisitorContext(mySubstExprs, myFrom)));
   }
 
   @Override
@@ -176,5 +196,27 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitNew(NewExpression expr) {
     return New(expr.getExpression().accept(this));
+  }
+
+  @Override
+  public LetExpression visitLet(LetExpression letExpression) {
+    final List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
+    final SubstVisitorContext ctx = new SubstVisitorContext(mySubstExprs, myFrom);
+
+    for (LetClause clause : letExpression.getClauses()) {
+      clauses.add(visitLetClause(clause, ctx.mySubstExprs, ctx.myFrom));
+      ctx.lift(1);
+    }
+
+    final Expression expr = letExpression.getExpression().subst(ctx.mySubstExprs, ctx.myFrom);
+    return Let(clauses, expr);
+  }
+
+  public static LetClause visitLetClause(LetClause clause, List<Expression> substExprs, int from) {
+    final SubstVisitorContext localCtx = new SubstVisitorContext(substExprs, from);
+    final List<Argument> arguments = visitArguments(clause.getArguments(), localCtx);
+    final Expression resultType = clause.getResultType() == null ? null : localCtx.subst(clause.getResultType());
+    final Expression expression = localCtx.subst(clause.getTerm());
+    return new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), expression);
   }
 }

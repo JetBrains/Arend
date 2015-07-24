@@ -1,11 +1,15 @@
 package com.jetbrains.jetpad.vclang.term.expr.arg;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,14 +84,60 @@ public class Utils {
     }
   }
 
-  public static Expression splitArguments(Expression type, List<TypeArgument> result) {
-    type = type.normalize(NormalizeVisitor.Mode.WHNF);
-    while (type instanceof PiExpression) {
-      PiExpression pi = (PiExpression) type;
-      splitArguments(pi.getArguments(), result);
-      type = pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+  public static class ContextSaver implements Closeable {
+    private final List<Binding> myContext;
+    private final int myOldContextSize;
+
+    public ContextSaver(List<Binding> context) {
+      myContext = context;
+      myOldContextSize = context.size();
     }
-    return type;
+
+
+    @Override
+    public void close() {
+      trimToSize(myContext, myOldContextSize);
+    }
+  }
+
+  public static void pushArgument(List<Binding> context, Argument argument) {
+    if (argument instanceof TelescopeArgument) {
+      for (int i = 0; i < ((TelescopeArgument) argument).getNames().size(); i++) {
+        context.add(new TypedBinding(((TelescopeArgument) argument).getNames().get(i), ((TelescopeArgument) argument).getType().liftIndex(0, i)));
+      }
+    } else if (argument instanceof TypeArgument) {
+      context.add(new TypedBinding(null, ((TypeArgument)argument).getType()));
+    } else if (argument instanceof NameArgument){
+      context.add(null);
+    }
+  }
+
+  public static Binding getBinding(List<Binding> context, int index) {
+    if (index >= context.size())
+      return null;
+    if (context.get(context.size() - 1 - index) == null)
+      return null;
+    return context.get(context.size() - 1 - index).lift(index + 1);
+  }
+
+
+  public static Expression splitArguments(Expression type, List<TypeArgument> result, List<Binding> ctx) {
+    try (ContextSaver saver = new ContextSaver(ctx)) {
+      type = type.normalize(NormalizeVisitor.Mode.WHNF, ctx);
+      while (type instanceof PiExpression) {
+        PiExpression pi = (PiExpression) type;
+        splitArguments(pi.getArguments(), result);
+        for (TypeArgument arg : pi.getArguments()) {
+          pushArgument(ctx, arg);
+        }
+        type = pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF, ctx);
+      }
+      return type;
+    }
+  }
+
+  public static Expression splitArguments(Expression type, List<TypeArgument> result) {
+    return splitArguments(type, result, new ArrayList<Binding>());
   }
 
   public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, byte prec, int indent) {
@@ -137,38 +187,64 @@ public class Utils {
     if (clause == null) return;
 
     PrettyPrintVisitor.printIndent(builder, indent);
-    builder.append("| ");
-    if (clause.getFixity() == Abstract.Definition.Fixity.PREFIX) {
-      builder.append(clause.getName());
-    } else {
-      builder.append('(').append(clause.getName()).append(')');
-    }
-    int origSize = names.size();
-
-    List<String> newNames = names;
-    int varIndex = -1;
-    if (expr.getExpression() instanceof Abstract.IndexExpression) {
-      varIndex = names.size() - 1 - ((Abstract.IndexExpression) expr.getExpression()).getIndex();
-    } else
-    if (expr.getExpression() instanceof Abstract.VarExpression) {
-      varIndex = names.lastIndexOf(((Abstract.VarExpression) expr.getExpression()).getName());
-    }
-
-    if (varIndex != -1) {
-      newNames = new ArrayList<>(names.subList(0, varIndex));
-    }
+    builder.append("| ").append(clause.getName());
+    int startIndex = names.size();
     for (Abstract.Argument argument : clause.getArguments()){
       builder.append(' ');
-      prettyPrintArgument(argument, builder, newNames, (byte) (Abstract.AppExpression.PREC + 1), indent);
+      prettyPrintArgument(argument, builder, names, (byte) (Abstract.AppExpression.PREC + 1), indent);
     }
 
-    if (varIndex != -1) {
-      newNames.addAll(names.subList(varIndex + 1, names.size()));
+    List<String> newNames = names;
+    if (expr.getExpression() instanceof Abstract.IndexExpression) {
+      int varIndex = ((Abstract.IndexExpression) expr.getExpression()).getIndex();
+      newNames = new ArrayList<>(names.subList(0, startIndex - varIndex - 1 > 0 ? startIndex - varIndex - 1 : 0));
+      newNames.addAll(names.subList(startIndex, names.size()));
+      if (startIndex >= varIndex) {
+        newNames.addAll(names.subList(startIndex - varIndex, startIndex));
+      } else {
+        for (int i = 0; i < varIndex; ++i) {
+          newNames.add(null);
+        }
+      }
     }
 
-    builder.append(clause.getArrow() == Abstract.Definition.Arrow.LEFT ? " <= " : " => ");
+    builder.append(prettyArrow(clause.getArrow()));
     clause.getExpression().accept(new PrettyPrintVisitor(builder, newNames, indent), Abstract.Expression.PREC);
     builder.append('\n');
-    trimToSize(names, origSize);
+    removeFromList(names, clause.getArguments());
   }
+
+  private static String prettyArrow(Abstract.Definition.Arrow arrow) {
+    switch (arrow) {
+      case LEFT: return " <= ";
+      case RIGHT: return " => ";
+      default: return null;
+    }
+  }
+
+  public static Expression getFunctionType(Function function) {
+    if (function.getResultType() == null)
+      return null;
+    if (function.getArguments().isEmpty())
+      return function.getResultType();
+    List<TypeArgument> arguments = new ArrayList<>(function.getArguments().size());
+    for (Argument argument : function.getArguments()) {
+      arguments.add((TypeArgument) argument);
+    }
+    return Pi(arguments, function.getResultType());
+  }
+
+  public static void prettyPrintLetClause(Abstract.LetClause letClause, StringBuilder builder, List<String> names, int indent) {
+    final int oldNamesSize = names.size();
+    builder.append("| ").append(letClause.getName());
+    for (Abstract.Argument arg : letClause.getArguments()) {
+      builder.append(" ");
+      prettyPrintArgument(arg, builder, names, Abstract.LetExpression.PREC, indent);
+    }
+
+    builder.append(" => ");
+    letClause.getTerm().accept(new PrettyPrintVisitor(builder, names, indent), Abstract.LetExpression.PREC);
+    trimToSize(names, oldNamesSize);
+  }
+
 }

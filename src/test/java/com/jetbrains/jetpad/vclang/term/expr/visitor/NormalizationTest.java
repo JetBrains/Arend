@@ -1,8 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -10,10 +14,12 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class NormalizationTest {
   // \function (+) (x y : Nat) : Nat <= elim x | zero => y | suc x' => suc (x' + y)
@@ -149,5 +155,63 @@ public class NormalizationTest {
     // normalize (fac 3) = 6
     Expression expr = Apps(DefCall(fac), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
+  }
+
+  private static Expression typecheckExpression(Expression expr) {
+    return typecheckExpression(expr, new ArrayList<Binding>());
+  }
+
+  private static Expression typecheckExpression(Expression expr, List<Binding> ctx) {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    CheckTypeVisitor.Result result = expr.checkType(ctx, null, moduleLoader);
+    assertEquals(0, moduleLoader.getErrors().size());
+    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+    assertTrue(result.equations.isEmpty());
+    return result.expression;
+  }
+
+  @Test
+  public void normalizeLet1() {
+    // normalize (\let | x => zero \in \let | y = S \in y x) = 1
+    Expression expr = typecheckExpression(Let(lets(let("x", Zero())), Let(lets(let("y", Suc())), Apps(Index(0), Index(1)))));
+    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+  }
+
+  @Test
+  public void normalizeLet2() {
+    // normalize (\let | x => zero \in \let | y = S \in y x) = 1
+    Expression expr = typecheckExpression(Let(lets(let("x", Suc())), Let(lets(let("y", Zero())), Apps(Index(1), Index(0)))));
+    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+  }
+
+  @Test
+  public void normalizeLetNo() {
+    // normalize (\let | x (y z : N) => zero \in x zero) = \lam (z : N) => zero
+    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y", "z"), Nat())), Zero())), Apps(Index(0), Zero())));
+    assertEquals(Lam("x", Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+  }
+
+  @Test
+  public void normalizeLetElimStuck() {
+    // normalize (\let | x (y : N) : N <= \elim y | zero => zero | succ _ => zero \in x <1>) = the same
+    List<Clause> clauses = new ArrayList<>();
+    ElimExpression elim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses, null);
+    clauses.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
+    clauses.add(new Clause(Prelude.SUC, nameArgs(Name("_")), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
+    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)),
+            Apps(Index(0), Index(1))), new ArrayList<Binding>(Collections.singleton(new TypedBinding("n", Nat()))));
+    assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF));
+  }
+
+
+  @Test
+  public void normalizeLetElimNoStuck() {
+    // normalize (\let | x (y : N) : \Type2 <= \elim y | \Type0 => \Type1 | succ _ => \Type1 \in x zero) = \Type0
+    List<Clause> clauses = new ArrayList<>();
+    ElimExpression elim = Elim(Abstract.ElimExpression.ElimType.ELIM, Index(0), clauses, null);
+    clauses.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Universe(0), elim));
+    clauses.add(new Clause(Prelude.SUC, nameArgs(Name("_")), Abstract.Definition.Arrow.RIGHT, Universe(1), elim));
+    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Universe(2), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(0), Zero())));
+    assertEquals(Universe(0), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 }

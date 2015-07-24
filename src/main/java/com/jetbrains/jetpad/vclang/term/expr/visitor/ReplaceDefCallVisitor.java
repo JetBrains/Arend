@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.sun.org.apache.xpath.internal.Arg;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,26 +58,31 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
   @Override
   public LamExpression visitLam(LamExpression expr) {
     Expression oldExpression = myExpression;
-    List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
-    for (Argument arg : expr.getArguments()) {
-      if (arg instanceof TelescopeArgument) {
-        arguments.add(Tele(arg.getExplicit(), ((TelescopeArgument) arg).getNames(), ((TelescopeArgument) arg).getType().accept(this)));
-        myExpression = myExpression.liftIndex(0, ((TelescopeArgument) arg).getNames().size());
-      } else {
-        if (arg instanceof TypeArgument) {
-          arguments.add(TypeArg(arg.getExplicit(), ((TypeArgument) arg).getType().accept(this)));
-        } else {
-          arguments.add(arg);
-        }
-        myExpression = myExpression.liftIndex(0, 1);
-      }
-    }
+    List<Argument> arguments = visitArguments(expr.getArguments());
     LamExpression result = Lam(arguments, expr.getBody().accept(this));
     myExpression = oldExpression;
     return result;
   }
 
-  private Expression visitArguments(List<TypeArgument> args, Expression codomain) {
+  private List<Argument> visitArguments(List<Argument> arguments) {
+    List<Argument> result = new ArrayList<>(arguments.size());
+    for (Argument arg : arguments) {
+      if (arg instanceof TelescopeArgument) {
+        result.add(Tele(arg.getExplicit(), ((TelescopeArgument) arg).getNames(), ((TelescopeArgument) arg).getType().accept(this)));
+        myExpression = myExpression.liftIndex(0, ((TelescopeArgument) arg).getNames().size());
+      } else {
+        if (arg instanceof TypeArgument) {
+          result.add(TypeArg(arg.getExplicit(), ((TypeArgument) arg).getType().accept(this)));
+        } else {
+          result.add(arg);
+        }
+        myExpression = myExpression.liftIndex(0, 1);
+      }
+    }
+    return arguments;
+  }
+
+  private Expression visitTypeArguments(List<TypeArgument> args, Expression codomain) {
     Expression oldExpression = myExpression;
     List<TypeArgument> arguments = new ArrayList<>(args.size());
     for (TypeArgument arg : args) {
@@ -95,7 +101,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public PiExpression visitPi(PiExpression expr) {
-    return (PiExpression) visitArguments(expr.getArguments(), expr.getCodomain());
+    return (PiExpression) visitTypeArguments(expr.getArguments(), expr.getCodomain());
   }
 
   @Override
@@ -124,7 +130,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr) {
-    return (SigmaExpression) visitArguments(expr.getArguments(), null);
+    return (SigmaExpression) visitTypeArguments(expr.getArguments(), null);
   }
 
   private Clause visitClause(Clause clause, ElimExpression elimExpression) {
@@ -182,5 +188,27 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
   @Override
   public Expression visitNew(NewExpression expr) {
     return New(expr.getExpression().accept(this));
+  }
+
+  private LetClause visitLetClause(LetClause clause) {
+    Expression oldExpresson = myExpression;
+    LetClause result = new LetClause(clause.getName(), visitArguments(clause.getArguments()), clause.getResultType() == null ? null : clause.getResultType().accept(this),
+            clause.getArrow(), clause.getTerm().accept(this));
+    myExpression = oldExpresson;
+    return result;
+  }
+
+  @Override
+  public Expression visitLet(LetExpression letExpression) {
+    Expression oldExpression = myExpression;
+    List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
+    for (LetClause clause : letExpression.getClauses()) {
+      clauses.add(visitLetClause(clause));
+      myExpression.liftIndex(0, 1);
+    }
+
+    Expression result = Let(clauses, letExpression.getExpression().accept(this));
+    myExpression = oldExpression;
+    return result;
   }
 }

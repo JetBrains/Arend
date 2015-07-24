@@ -14,4 +14,9 @@ public class TypedBinding extends Binding {
   public Expression getType() {
     return myType;
   }
+
+  @Override
+  public Binding lift(int on) {
+    return new TypedBinding(getName(), myType.liftIndex(0, on));
+  }
 }

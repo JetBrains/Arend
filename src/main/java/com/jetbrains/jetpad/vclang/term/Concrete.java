@@ -11,6 +11,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintArgument;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintClause;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintLetClause;
 
 public final class Concrete {
   private Concrete() {}
@@ -388,6 +389,72 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitLam(this, params);
+    }
+  }
+
+  public static class LetClause extends Binding implements  Abstract.LetClause {
+    private final List<Argument> myArguments;
+    private final Expression myResultType;
+    private final Abstract.Definition.Arrow myArrow;
+    private final Expression myTerm;
+
+    public LetClause(Position position, String name, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+      super(position, name);
+      myArguments = arguments;
+      myResultType = resultType;
+      myArrow = arrow;
+      myTerm = term;
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+      prettyPrintLetClause(this, builder, names, 0);
+    }
+
+    @Override
+    public Abstract.Definition.Arrow getArrow() {
+      return myArrow;
+    }
+
+    @Override
+    public Abstract.Expression getTerm() {
+      return myTerm;
+    }
+
+    @Override
+    public List<Argument> getArguments() {
+      return myArguments;
+    }
+
+    @Override
+    public Abstract.Expression getResultType() {
+      return myResultType;
+    }
+  }
+
+  public static class LetExpression extends Expression implements Abstract.LetExpression {
+    private final List<LetClause> myClauses;
+    private final Expression myExpression;
+
+    public LetExpression(Position position, List<LetClause> clauses, Expression expression) {
+      super(position);
+      myClauses = clauses;
+      myExpression = expression;
+    }
+
+    @Override
+    public List<LetClause> getClauses() {
+      return myClauses;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitLet(this, params);
     }
   }
 

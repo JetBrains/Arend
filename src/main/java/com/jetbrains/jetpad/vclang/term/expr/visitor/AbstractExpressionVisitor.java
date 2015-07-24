@@ -19,4 +19,5 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitProj(Abstract.ProjExpression expr, P params);
   R visitClassExt(Abstract.ClassExtExpression expr, P params);
   R visitNew(Abstract.NewExpression expr, P params);
+  R visitLet(Abstract.LetExpression letExpression, P params);
 }

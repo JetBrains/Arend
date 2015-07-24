@@ -108,10 +108,24 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
     return true;
   }
 
-  private void liftPatterns(int on) {
-    if (on == 0) return;
-    for (int i = 0; i < myPatterns.size(); ++i) {
-      myPatterns.set(i, myPatterns.get(i).liftIndex(0, on));
+  private class PatternLifter implements AutoCloseable {
+    private int total = 0;
+
+    void liftPatterns(int on) {
+      total += on;
+      if (on == 0) return;
+      for (int i = 0; i < myPatterns.size(); ++i) {
+        myPatterns.set(i, myPatterns.get(i).liftIndex(0, on));
+      }
+    }
+
+    void liftPatterns() {
+      liftPatterns(1);
+    }
+
+    @Override
+    public void close() {
+      liftPatterns(-total);
     }
   }
 
@@ -121,54 +135,55 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   }
 
   private boolean visitLamArguments(List<Argument> arguments, Expression body1, Expression body2) {
-    int on = 0, total = 0;
+    try (PatternLifter lifter = new PatternLifter()) {
+      for (Argument argument : arguments) {
+        if (argument instanceof NameArgument) {
+          lifter.liftPatterns();
+        } else if (argument instanceof TelescopeArgument) {
+          if (!((TypeArgument) argument).getType().accept(this)) {
+            return false;
+          }
+          lifter.liftPatterns(((TelescopeArgument) argument).getNames().size());
+        } else {
+          throw new IllegalStateException();
+        }
+      }
+      boolean result = (body1 == null ? true : body1.accept(this)) && (body2 == null ? true : body2.accept(this));
+      return result;
+    }
+  }
+  
+  private Boolean visitArguments(List<? extends Argument> arguments, Expression codomain, PatternLifter lifter) {
+    int total = 0;
     for (Argument argument : arguments) {
       if (argument instanceof NameArgument) {
-        ++on;
-        ++total;
-      } else
-      if (argument instanceof TelescopeArgument) {
-        liftPatterns(on);
-        on = ((TelescopeArgument) argument).getNames().size();
-        total += on;
-        if (!((TypeArgument) argument).getType().accept(this)) {
+        lifter.liftPatterns();
+      } else if (argument instanceof TypeArgument) {
+        if (!((TypeArgument)argument).getType().accept(this)) {
           return false;
         }
-      } else {
-        throw new IllegalStateException();
-      }
-    }
-
-    liftPatterns(on);
-    boolean result = (body1 == null ? true : body1.accept(this)) && (body2 == null ? true : body2.accept(this));
-    liftPatterns(-total);
-    return result;
-  }
-
-  private Boolean visitArguments(List<TypeArgument> arguments, Expression codomain) {
-    int total = 0;
-    for (TypeArgument argument : arguments) {
-      if (!argument.getType().accept(this)) {
-        return false;
-      }
-      if (argument instanceof TelescopeArgument) {
-        int on = ((TelescopeArgument) argument).getNames().size();
-        total += on;
-        liftPatterns(on);
-      } else {
-        liftPatterns(1);
-        ++total;
+        if (argument instanceof TelescopeArgument) {
+          lifter.liftPatterns(((TelescopeArgument) argument).getNames().size());
+        } else {
+          lifter.liftPatterns();
+        }
       }
     }
 
     boolean result = codomain != null ? codomain.accept(this) : true;
-    liftPatterns(-total);
     return result;
+  }
+
+  private Boolean visitArguments(List<? extends Argument> arguments, PatternLifter lifter)
+  {
+    return visitArguments(arguments, null, lifter);
   }
 
   @Override
   public Boolean visitPi(PiExpression expr) {
-    return visitArguments(expr.getArguments(), expr.getCodomain());
+    try (PatternLifter lifter = new PatternLifter()) {
+      return visitArguments(expr.getArguments(), expr.getCodomain(), lifter);
+    }
   }
 
   @Override
@@ -198,7 +213,9 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitSigma(SigmaExpression expr) {
-    return visitArguments(expr.getArguments(), null);
+    try (PatternLifter lifter = new PatternLifter()) {
+      return visitArguments(expr.getArguments(), lifter);
+    }
   }
 
   @Override
@@ -271,5 +288,20 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   @Override
   public Boolean visitNew(NewExpression expr) {
     return expr.getExpression().accept(this);
+  }
+
+  @Override
+  public Boolean visitLet(LetExpression letExpression) {
+    try (PatternLifter lifter = new PatternLifter()) {
+      for (LetClause clause : letExpression.getClauses()) {
+        if (!visitLetClause(clause, lifter)) return false;
+      }
+      return letExpression.getExpression().accept(this);
+    }
+  }
+
+  private boolean visitLetClause(LetClause clause, PatternLifter lifter) {
+    if (!visitArguments(clause.getArguments(), lifter)) return false;
+    return clause.getTerm().accept(this);
   }
 }

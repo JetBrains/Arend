@@ -40,13 +40,18 @@ name  : ID                              # nameId
       | '(' BIN_OP ')'                  # nameBinOp
       ;
 
-expr  : binOpLeft* maybeNew atomFieldsAcc argument* # binOp
-      | <assoc=right> expr '->' expr    # arr
-      | '\\Pi' tele+ '->' expr          # pi
-      | '\\Sigma' tele+                 # sigma
-      | '\\lam' tele+ '=>' expr         # lam
-      | elimCase expr clause* ';'?      # exprElim
+expr  : binOpLeft* maybeNew atomFieldsAcc argument*  # binOp
+      | <assoc=right> expr '->' expr                 # arr
+      | '\\Pi' tele+ '->' expr                       # pi
+      | '\\Sigma' tele+                              # sigma
+      | '\\lam' tele+ '=>' expr                      # lam
+      | '\\let' letClause+ '\\in' expr               # let
+      | elimCase expr clause* ';'?                   # exprElim
       ;
+
+letClause : '|' ID tele* typeAnnotation? arrow expr;
+
+typeAnnotation : ':' expr;
 
 clauseName
       : '_'                             # clauseNoName

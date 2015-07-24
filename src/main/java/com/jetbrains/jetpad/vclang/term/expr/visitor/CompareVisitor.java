@@ -6,20 +6,61 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+
 public class CompareVisitor implements AbstractExpressionVisitor<Expression, CompareVisitor.Result> {
   private final List<Equation> myEquations;
 
-  public enum CMP { EQUIV, EQUALS, GREATER, LESS, NOT_EQUIV }
+  public enum CMP {EQUIV, EQUALS, GREATER, LESS, NOT_EQUIV}
 
   public interface Result {
     CMP isOK();
+  }
+
+  private static class EquationsLifter implements AutoCloseable {
+    final List<Equation> myEquations;
+    int myOldEquationSize;
+    int myOn;
+
+    EquationsLifter(List<Equation> equations) {
+      this(equations, 0);
+    }
+
+    EquationsLifter(List<Equation> equations, int on) {
+      myEquations = equations;
+      myOldEquationSize = equations.size();
+      myOn = on;
+    }
+
+    private void doLift(int size, int on) {
+      for (int j = size; j < myEquations.size(); ++j) {
+        Expression expr1 = myEquations.get(j).expression.liftIndex(0, on);
+        if (expr1 != null) {
+          myEquations.get(j).expression = expr1;
+        } else {
+          myEquations.remove(j--);
+        }
+      }
+    }
+
+    void lift(int on) {
+      doLift(myOldEquationSize, myOn);
+      myOldEquationSize = myEquations.size();
+      myOn += on;
+    }
+
+    @Override
+    public void close() {
+      doLift(myOldEquationSize, myOn);
+    }
   }
 
   public static class JustResult implements Result {
@@ -59,8 +100,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         for (String ignored : teleArg.getNames()) {
           types.add(teleArg.getType());
         }
-      } else
-      if (arg instanceof Abstract.NameArgument) {
+      } else if (arg instanceof Abstract.NameArgument) {
         types.add(null);
       }
     }
@@ -76,18 +116,14 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
   }
 
-  private static Abstract.Expression piArgs(Abstract.Expression expr, List<Abstract.Expression> args) {
+  private static Abstract.Expression piArgs(Abstract.Expression expr, List<Abstract.TypeArgument> args) {
     if (expr instanceof Abstract.PiExpression) {
       Abstract.PiExpression piExpr = (Abstract.PiExpression) expr;
       for (Abstract.Argument arg : piExpr.getArguments()) {
         if (arg instanceof Abstract.TelescopeArgument) {
-          Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
-          for (int i = 0; i < teleArg.getNames().size(); ++i) {
-            args.add(teleArg.getType() instanceof Expression ? ((Expression) teleArg.getType()).liftIndex(0, i) : teleArg.getType());
-          }
-        } else
-        if (arg instanceof Abstract.TypeArgument) {
-          args.add(((Abstract.TypeArgument) arg).getType());
+          args.add((Abstract.TelescopeArgument) arg);
+        } else if (arg instanceof Abstract.TypeArgument) {
+          args.add((Abstract.TypeArgument) arg);
         }
       }
       return piArgs(piExpr.getCodomain(), args);
@@ -359,46 +395,44 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
   @Override
   public Result visitPi(Abstract.PiExpression expr, Expression other) {
-    if (expr == other) return new JustResult(CMP.EQUALS);
-    if (!(other instanceof PiExpression)) return new JustResult(CMP.NOT_EQUIV);
+    try (EquationsLifter lifter = new EquationsLifter(myEquations)) {
+      if (expr == other) return new JustResult(CMP.EQUALS);
+      if (!(other instanceof PiExpression)) return new JustResult(CMP.NOT_EQUIV);
 
-    List<Abstract.Expression> args1 = new ArrayList<>();
-    Abstract.Expression codomain1 = piArgs(expr, args1);
-    List<TypeArgument> args2 = new ArrayList<>(args1.size());
-    Expression codomain2 = other.splitAt(args1.size(), args2);
-    if (args1.size() != args2.size()) return new JustResult(CMP.NOT_EQUIV);
+      List<Abstract.TypeArgument> args1 = new ArrayList<>();
+      Abstract.Expression codomain1 = piArgs(expr, args1);
+      List<TypeArgument> args2 = new ArrayList<>(numberOfVariables(args1));
+      Expression codomain2 = other.splitAt(numberOfVariables(args1), args2);
 
-    int equationsNumber;
+      Result maybeResult = null;
+      CMP cmp = CMP.EQUALS;
 
-    CMP cmp = CMP.EQUALS;
-    for (int i = 0; i < args1.size(); ++i) {
-      if (i > 0 && args1.get(i) == args1.get(i - 1) && args2.get(i).getType() == args2.get(i - 1).getType()) continue;
-
-      equationsNumber = myEquations.size();
-      Result result = args1.get(i).accept(this, args2.get(i).getType());
-      if (result.isOK() == CMP.NOT_EQUIV) return result;
-      cmp = and(cmp, result.isOK());
-      for (int j = equationsNumber; j < myEquations.size(); ++j) {
-        Expression expr1 = myEquations.get(j).expression.liftIndex(0, -i);
-        if (expr1 != null) {
-          myEquations.get(j).expression = expr1;
+      Result argsResult = compareTypeArguments(args1, args2);
+      if (argsResult.isOK() == CMP.NOT_EQUIV) {
+        if (argsResult instanceof MaybeResult) {
+          maybeResult = argsResult;
         } else {
-          myEquations.remove(j--);
+          return argsResult;
         }
       }
-    }
+      cmp = and(cmp, argsResult.isOK());
 
-    equationsNumber = myEquations.size();
-    Result result = codomain1.accept(this, codomain2);
-    for (int i = equationsNumber; i < myEquations.size(); ++i) {
-      Expression expr1 = myEquations.get(i).expression.liftIndex(0, -args1.size());
-      if (expr1 != null) {
-        myEquations.get(i).expression = expr1;
-      } else {
-        myEquations.remove(i--);
+
+      lifter.lift(-numberOfVariables(args1));
+
+      Result codomainResult = codomain1.accept(this, codomain2);
+      if (codomainResult.isOK() == CMP.NOT_EQUIV) {
+        if (codomainResult instanceof MaybeResult) {
+          if (maybeResult != null)
+            maybeResult = codomainResult;
+        } else {
+          return codomainResult;
+        }
       }
+
+      cmp = and(not(cmp), codomainResult.isOK());
+      return maybeResult != null ? maybeResult : new JustResult(cmp);
     }
-    return result.isOK() == CMP.NOT_EQUIV ? result : new JustResult(and(not(cmp), result.isOK()));
   }
 
   @Override
@@ -523,9 +557,12 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   public Result visitSigma(Abstract.SigmaExpression expr, Expression other) {
     if (expr == other) return new JustResult(CMP.EQUALS);
     if (!(other instanceof SigmaExpression)) return new JustResult(CMP.NOT_EQUIV);
+    return compareTypeArguments(expr.getArguments(), ((SigmaExpression) other).getArguments());
+  }
 
+  private List<Abstract.Expression> splitConcreteTypeArgumentsTypes(List<? extends Abstract.TypeArgument> arguments) {
     List<Abstract.Expression> args = new ArrayList<>();
-    for (Abstract.TypeArgument arg : expr.getArguments()) {
+    for (Abstract.TypeArgument arg : arguments) {
       if (arg instanceof Abstract.TelescopeArgument) {
         for (String ignored : ((Abstract.TelescopeArgument) arg).getNames()) {
           args.add(arg.getType());
@@ -534,50 +571,9 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         args.add(arg.getType());
       }
     }
-
-    SigmaExpression otherSigma = (SigmaExpression) other;
-    List<Expression> otherArgs = new ArrayList<>();
-    for (TypeArgument arg : otherSigma.getArguments()) {
-      if (arg instanceof TelescopeArgument) {
-        for (String ignored : ((TelescopeArgument) arg).getNames()) {
-          otherArgs.add(arg.getType());
-        }
-      } else {
-        otherArgs.add(arg.getType());
-      }
-    }
-
-    if (args.size() != otherArgs.size()) return new JustResult(CMP.NOT_EQUIV);
-    CMP cmp = CMP.EQUALS;
-    MaybeResult maybeResult = null;
-    for (int i = 0; i < args.size(); ++i) {
-      if (i > 0 && args.get(i) == args.get(i - 1) && otherArgs.get(i) == otherArgs.get(i - 1)) continue;
-
-      int equationsNumber = myEquations.size();
-      Result result = args.get(i).accept(this, otherArgs.get(i));
-      if (result.isOK() == CMP.NOT_EQUIV) {
-        if (result instanceof MaybeResult) {
-          if (maybeResult == null) {
-            maybeResult = (MaybeResult) result;
-          }
-        } else {
-          return result;
-        }
-      }
-      cmp = and(cmp, result.isOK());
-
-      for (int j = equationsNumber; j < myEquations.size(); ++j) {
-        Expression expr1 = myEquations.get(j).expression.liftIndex(0, -i);
-        if (expr1 != null) {
-          myEquations.get(j).expression = expr1;
-        } else {
-          myEquations.remove(j--);
-        }
-      }
-    }
-
-    return maybeResult == null ? new JustResult(cmp) : maybeResult;
+    return args;
   }
+
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression other) {
@@ -679,6 +675,92 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     return expr.getExpression().accept(this, ((NewExpression) other).getExpression());
   }
 
+  Result compareTypeArguments(List<? extends Abstract.TypeArgument> args1, List<TypeArgument> args2) {
+    try (EquationsLifter lifter = new EquationsLifter(myEquations)) {
+      List<Abstract.Expression> types1 = splitConcreteTypeArgumentsTypes(args1);
+      List<TypeArgument> args2Splitted = new ArrayList<>();
+      splitArguments(args2, args2Splitted);
+
+      if (types1.size() != args2Splitted.size())
+        return new JustResult(CMP.NOT_EQUIV);
+      CMP cmp = CMP.EQUALS;
+      MaybeResult maybeResult = null;
+      for (int i = 0; i < types1.size(); ++i) {
+
+        Result result;
+        if (i > 0 && types1.get(i) == types1.get(i - 1)) {
+          Expression downLiftedType2 = args2Splitted.get(i).getType().liftIndex(0, -1);
+          if (downLiftedType2 == null) {
+            return new JustResult(CMP.NOT_EQUIV);
+          }
+          lifter.lift(1);
+          result = types1.get(i).accept(this, downLiftedType2);
+        } else {
+          result = types1.get(i).accept(this, args2Splitted.get(i).getType());
+        }
+
+
+        if (result.isOK() == CMP.NOT_EQUIV) {
+          if (result instanceof MaybeResult) {
+            if (maybeResult == null)
+              maybeResult = (MaybeResult) result;
+          } else {
+            return result;
+          }
+        }
+        cmp = and(cmp, result.isOK());
+        lifter.lift(-1);
+      }
+
+      return maybeResult == null ? new JustResult(cmp) : maybeResult;
+    }
+  }
+
+  @Override
+  public Result visitLet(Abstract.LetExpression expr, Expression other) {
+    try (EquationsLifter lifter = new EquationsLifter(myEquations)) {
+      if (expr == other)
+        return new JustResult(CMP.EQUALS);
+      if (!(other instanceof LetExpression))
+        return new JustResult(CMP.NOT_EQUIV);
+      LetExpression otherLet = (LetExpression) other;
+
+      if (otherLet.getClauses().size() != expr.getClauses().size())
+        return new JustResult(CMP.NOT_EQUIV);
+
+      CMP cmp = CMP.EQUALS;
+      for (int i = 0; i < expr.getClauses().size(); i++) {
+        List<Abstract.TypeArgument> letTypeArgs = new ArrayList<>();
+        List<TypeArgument> otherTypeArgs = new ArrayList<>();
+        for (Abstract.Argument arg : expr.getClauses().get(i).getArguments()) {
+          letTypeArgs.add((Abstract.TypeArgument) arg);
+        }
+        for (Argument arg : otherLet.getClauses().get(i).getArguments()) {
+          otherTypeArgs.add((TypeArgument) arg);
+        }
+
+        Result result = compareTypeArguments(letTypeArgs, otherTypeArgs);
+        if (result.isOK() != CMP.EQUIV && result.isOK() != CMP.EQUALS)
+          return new JustResult(CMP.NOT_EQUIV);
+        cmp = and(cmp, result.isOK());
+
+        try (EquationsLifter ignore = new EquationsLifter(myEquations, letTypeArgs.size())) {
+          result = expr.getClauses().get(i).getTerm().accept(this, ((LetExpression) other).getClauses().get(i).getTerm());
+        }
+
+        if (result.isOK() != CMP.EQUIV && result.isOK() != CMP.EQUALS)
+          return new JustResult(CMP.NOT_EQUIV);
+        cmp = and(cmp, result.isOK());
+
+        lifter.lift(-1);
+      }
+      Result result = expr.getExpression().accept(this, otherLet.getExpression());
+      if (result.isOK() == CMP.NOT_EQUIV)
+        return result;
+      return new JustResult(and(cmp, result.isOK()));
+    }
+  }
+
   @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression other) {
     if (expr == other) return new JustResult(CMP.EQUALS);
@@ -708,7 +790,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
 
     if (expr.getOtherwise() == otherElim.getOtherwise()) return maybeResult == null ? new JustResult(cmp) : maybeResult;
-    if (expr.getOtherwise() == null || otherElim.getOtherwise() == null || expr.getOtherwise().getArrow() != otherElim.getOtherwise().getArrow()) return new JustResult(CMP.NOT_EQUIV);
+    if (expr.getOtherwise() == null || otherElim.getOtherwise() == null || expr.getOtherwise().getArrow() != otherElim.getOtherwise().getArrow())
+      return new JustResult(CMP.NOT_EQUIV);
     result = expr.getExpression().accept(this, otherElim.getOtherwise().getExpression());
     if (result.isOK() == CMP.NOT_EQUIV) {
       if (result instanceof MaybeResult) {
@@ -726,7 +809,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (clause == other) return new JustResult(CMP.EQUALS);
     if (clause == null || other == null) return new JustResult(CMP.NOT_EQUIV);
 
-    if (!other.getName().equals(clause.getName()) || clause.getArrow() != other.getArrow()) return new JustResult(CMP.NOT_EQUIV);
+    if (!other.getName().equals(clause.getName()) || clause.getArrow() != other.getArrow())
+      return new JustResult(CMP.NOT_EQUIV);
     List<Abstract.Expression> args1 = new ArrayList<>();
     Abstract.Expression expr1 = lamArgs(clause.getExpression(), args1);
     List<Abstract.Expression> args2 = new ArrayList<>();

@@ -3,12 +3,17 @@ package com.jetbrains.jetpad.vclang.parser;
 import com.jetbrains.jetpad.vclang.module.DummyOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.Clause;
+import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -22,6 +27,26 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class ParserTest {
+  @Test
+  public void parserLetToTheRight() {
+    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\lam x => \\let | x => Nat \\in x x");
+    Concrete.Expression expr1 = parseExpr(new ModuleLoader(), "\\let | x => Nat \\in \\lam x => x x");
+    assertTrue(compare(Lam("x", Let(lets(let("x", lamArgs(), Nat())), Apps(Var("x"), Var("x")))), expr));
+    assertTrue(compare(Let(lets(let("x", lamArgs(), Nat())), Lam("x", Apps(Var("x"), Var("x")))), expr1));
+  }
+
+  @Test
+  public void parseLetMultiple() {
+    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\let | x => Nat | y => x \\in y");
+    assertTrue(compare(Let(lets(let("x", Nat()), let("y", Var("x"))), Var("y")), expr));
+  }
+
+  @Test
+  public void parseLetTyped() {
+    Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\let | x : Nat => zero \\in x");
+    assertTrue(compare(Let(lets(let("x", lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Var("x")), expr));
+  }
+
   @Test
   public void parserLam() {
     ModuleLoader moduleLoader = new ModuleLoader();

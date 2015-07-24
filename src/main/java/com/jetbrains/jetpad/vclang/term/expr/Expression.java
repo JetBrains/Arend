@@ -59,6 +59,10 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return substExprs.isEmpty() ? this : accept(new SubstVisitor(substExprs, from));
   }
 
+  public final Expression normalize(NormalizeVisitor.Mode mode, List<Binding> context) {
+    return accept(new NormalizeVisitor(mode, context));
+  }
+
   public final Expression normalize(NormalizeVisitor.Mode mode) {
     return accept(new NormalizeVisitor(mode));
   }

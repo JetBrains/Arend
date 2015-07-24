@@ -87,6 +87,16 @@ public final class Abstract {
     Expression getBody();
   }
 
+  public interface LetClause extends Function, PrettyPrintable {
+  }
+
+  public interface LetExpression extends Expression {
+    byte PREC = -9;
+
+    List<? extends LetClause> getClauses();
+    Expression getExpression();
+  }
+
   public interface TupleExpression extends Expression {
     byte PREC = 12;
     List<? extends Expression> getFields();
@@ -187,7 +197,7 @@ public final class Abstract {
       }
     }
 
-    Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
+    static Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
     Universe getUniverse();
     Precedence getPrecedence();
@@ -195,13 +205,16 @@ public final class Abstract {
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
-  public interface FunctionDefinition extends Definition {
+  public interface Function extends Binding {
     Definition.Arrow getArrow();
-    boolean isAbstract();
-    boolean isOverridden();
     Expression getTerm();
     List<? extends Argument> getArguments();
     Expression getResultType();
+  }
+
+  public interface FunctionDefinition extends Definition, Function {
+    boolean isAbstract();
+    boolean isOverridden();
   }
 
   public interface DataDefinition extends Definition {
