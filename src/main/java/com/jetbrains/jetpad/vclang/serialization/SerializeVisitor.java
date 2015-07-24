@@ -248,10 +248,11 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitLet(LetExpression letExpression) {
     myStream.write(17);
     try {
-      myDataStream.write(letExpression.getClauses().size());
+      myDataStream.writeInt(letExpression.getClauses().size());
       for (LetClause letClause : letExpression.getClauses()) {
         visitLetClause(letClause);
       }
+      letExpression.getExpression().accept(this);
     } catch (IOException e) {
       throw new IllegalStateException();
     }

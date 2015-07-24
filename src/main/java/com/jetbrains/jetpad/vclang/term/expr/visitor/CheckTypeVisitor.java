@@ -8,7 +8,10 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.*;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.*;
 
@@ -17,8 +20,6 @@ import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Definition myParent;
@@ -643,9 +644,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitIndex(Abstract.IndexExpression expr, Expression expectedType) {
+    OKResult result = getIndex(expr);
+    result.type = result.type.liftIndex(0, ((IndexExpression) result.expression).getIndex() + 1);
+    return checkResultImplicit(expectedType, result, expr);
+  }
+
+  private OKResult getIndex(Abstract.IndexExpression expr) {
     assert expr.getIndex() < myLocalContext.size();
-    Expression actualType = myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getType().liftIndex(0, expr.getIndex() + 1);
-    return checkResultImplicit(expectedType, new OKResult(Index(expr.getIndex()), actualType, null), expr);
+    Expression actualType = myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getType();
+    return new OKResult(Index(expr.getIndex()), actualType, null);
   }
 
   @Override
@@ -872,12 +879,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitVar(Abstract.VarExpression expr, Expression expectedType) {
+    OKResult result = getLocalVar(expr);
+    if (result == null) {
+      return null;
+    }
+    result.type = result.type.liftIndex(0, ((IndexExpression) result.expression).getIndex() + 1);
+    return checkResultImplicit(expectedType, result, expr);
+  }
+
+  private OKResult getLocalVar(Abstract.VarExpression expr) {
     ListIterator<Binding> it = myLocalContext.listIterator(myLocalContext.size());
     int index = 0;
     while (it.hasPrevious()) {
       Binding def = it.previous();
       if (expr.getName().equals(def.getName())) {
-        return checkResultImplicit(expectedType, new OKResult(Index(index), def.getType().liftIndex(0, index + 1), null), expr);
+        return new OKResult(Index(index), def.getType(), null);
       }
       ++index;
     }
@@ -1047,11 +1063,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       error = new TypeCheckingError(myParent, "\\elim is allowed only at the root of a definition", expr, getNames(myLocalContext));
     }
 
-    Result exprResult = typeCheck(expr.getExpression(), null);
-    if (!(exprResult instanceof OKResult)) return exprResult;
-    OKResult exprOKResult = (OKResult) exprResult;
-    if (!(exprOKResult.expression instanceof IndexExpression) && error == null) {
-      error = new TypeCheckingError(myParent, "\\elim can be applied only to a local variable", expr.getExpression(), getNames(myLocalContext));
+    OKResult exprOKResult;
+    if (expr.getExpression() instanceof Abstract.VarExpression) {
+      exprOKResult = getLocalVar((Abstract.VarExpression) expr.getExpression());
+      if (exprOKResult == null) return null;
+    } else
+    if (expr.getExpression() instanceof Abstract.IndexExpression) {
+      exprOKResult = getIndex((Abstract.IndexExpression) expr.getExpression());
+    } else {
+      if (error == null) {
+        error = new TypeCheckingError(myParent, "\\elim can be applied only to a local variable", expr.getExpression(), getNames(myLocalContext));
+      }
+      expr.setWellTyped(Error(null, error));
+      myModuleLoader.getTypeCheckingErrors().add(error);
+      return null;
     }
 
     List<Expression> parameters = new ArrayList<>();
@@ -1069,13 +1094,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     int varIndex = ((IndexExpression) exprOKResult.expression).getIndex();
-    for (int i = 0; i < parameters.size(); ++i) {
-      parameters.set(i, parameters.get(i).liftIndex(0, -(varIndex + 1)));
-      if (parameters.get(i) == null) {
-        throw new IllegalStateException();
-      }
-    }
-
     DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
     List<Constructor> constructors = new ArrayList<>(dataType.getConstructors());
     List<Clause> clauses = new ArrayList<>(dataType.getConstructors().size());
@@ -1170,7 +1188,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       Expression substExpr = DefCall(null, constructor, parameters);
       for (int j = 0; j < constructorArguments.size(); ++j) {
-        substExpr = Apps(substExpr, new ArgumentExpression(Index(j + varIndex), constructorArguments.get(j).getExplicit(), !constructorArguments.get(j).getExplicit()));
+        substExpr = Apps(substExpr, new ArgumentExpression(Index(constructorArguments.size() - 1 - j), constructorArguments.get(j).getExplicit(), !constructorArguments.get(j).getExplicit()));
       }
       Expression clauseExpectedType = expectedType.liftIndex(varIndex + 1, constructorArguments.size()).subst(substExpr, varIndex);
 
@@ -1420,7 +1438,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         addLiftedEquations((OKResult) clauseResult, equations, i);
         clauses.add(((LetClauseOKResult) clauseResult).clause);
       }
-      Result result = typeCheck(expr.getExpression(), expectedType);
+      Result result = typeCheck(expr.getExpression(), expectedType == null ? null : expectedType.liftIndex(0, expr.getClauses().size()));
       if (!(result instanceof OKResult)) return result;
       OKResult okResult = (OKResult) result;
       addLiftedEquations(okResult, equations, expr.getClauses().size());

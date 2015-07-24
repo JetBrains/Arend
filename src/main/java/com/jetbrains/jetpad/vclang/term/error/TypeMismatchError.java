@@ -20,7 +20,7 @@ public class TypeMismatchError extends TypeCheckingError {
     String message = printPosition();
     message += "Type mismatch:\n" +
         "\tExpected type: " + (myExpected instanceof Abstract.Expression ? prettyPrint((Abstract.Expression) myExpected) : myExpected.toString()) + "\n" +
-        "\tActual type: " + prettyPrint(myActual);
+        "\t  Actual type: " + prettyPrint(myActual);
     if (getExpression() instanceof Abstract.PrettyPrintableSourceNode) {
       message += "\n" +
           "\tIn expression: " + prettyPrint((Abstract.PrettyPrintableSourceNode) getExpression());

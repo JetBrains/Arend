@@ -31,9 +31,17 @@ public abstract class ParseSource implements Source {
 
   @Override
   public boolean load(ClassDefinition classDefinition) throws IOException {
-    VcgrammarParser parser = new VcgrammarParser(new CommonTokenStream(new VcgrammarLexer(new ANTLRInputStream(myStream))));
+    VcgrammarLexer lexer = new VcgrammarLexer(new ANTLRInputStream(myStream));
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(new BaseErrorListener() {
+      @Override
+      public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
+        myModuleLoader.getErrors().add(new ParserError(myModule, new Concrete.Position(line, pos), msg));
+      }
+    });
+
+    VcgrammarParser parser = new VcgrammarParser(new CommonTokenStream(lexer));
     parser.removeErrorListeners();
-    int errorsCount = myModuleLoader.getErrors().size();
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
@@ -41,6 +49,7 @@ public abstract class ParseSource implements Source {
       }
     });
 
+    int errorsCount = myModuleLoader.getErrors().size();
     VcgrammarParser.DefsContext tree = parser.defs();
     if (errorsCount != myModuleLoader.getErrors().size()) return false;
     new BuildVisitor(classDefinition, myModuleLoader, !classDefinition.hasErrors()).visitDefs(tree);

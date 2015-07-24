@@ -196,7 +196,7 @@ public class ModuleDeserialization {
       if (field.getParent() == definition) {
         deserializeDefinition(stream, definitionMap, field);
       }
-      definition.addPublicField(field, myModuleLoader.getErrors());
+      definition.addField(field, myModuleLoader.getErrors());
       if (!definition.hasErrors()) {
         TypeChecking.checkOnlyStatic(myModuleLoader, definition, field, field.getName());
       }
@@ -407,7 +407,7 @@ public class ModuleDeserialization {
 
   private LetClause readLetClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     final String name = stream.readUTF();
-    final List<Argument> arguments = new ArrayList<Argument>(readTypeArguments(stream, definitionMap));
+    final List<Argument> arguments = readArguments(stream, definitionMap);
     final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
     final Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
     final Expression term = readExpression(stream, definitionMap);

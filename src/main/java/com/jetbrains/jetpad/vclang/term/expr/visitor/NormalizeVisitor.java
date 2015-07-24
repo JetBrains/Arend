@@ -220,8 +220,8 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         if (clause != null && clause.getArguments().size() == constructorArgs.size()) {
           int var = ((ElimExpression) result).getExpression().getIndex();
           args2.remove(var);
-          for (int i = constructorArgs.size() - 1; i >= 0; --i) {
-            args2.add(var++, constructorArgs.get(i));
+          for (Expression arg : constructorArgs) {
+            args2.add(var++, arg);
           }
           result = clause.getExpression();
           arrow = clause.getArrow();

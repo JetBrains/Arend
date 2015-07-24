@@ -82,12 +82,15 @@ public class ModuleLoader {
     myLoadingModules.add(module);
     try {
       if (compile) {
+        int errors = myTypeCheckingErrors.size();
         if (source.load(moduleDefinition)) {
           moduleDefinition.hasErrors(false);
           if (output.canWrite()) {
             output.write(moduleDefinition);
           }
-          System.out.println("[OK] " + moduleDefinition.getFullName());
+          if (errors == myTypeCheckingErrors.size()) {
+            System.out.println("[OK] " + moduleDefinition.getFullName());
+          }
         }
       } else {
         int errorsNumber = output.read(moduleDefinition);
