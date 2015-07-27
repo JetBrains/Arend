@@ -423,8 +423,9 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       Result codomainResult = codomain1.accept(this, codomain2);
       if (codomainResult.isOK() == CMP.NOT_EQUIV) {
         if (codomainResult instanceof MaybeResult) {
-          if (maybeResult != null)
+          if (maybeResult == null) {
             maybeResult = codomainResult;
+          }
         } else {
           return codomainResult;
         }

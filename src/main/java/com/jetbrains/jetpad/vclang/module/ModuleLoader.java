@@ -102,7 +102,7 @@ public class ModuleLoader {
         moduleDefinition.hasErrors(false);
       }
     } catch (EOFException e) {
-      myErrors.add(new ModuleError(module, "Incorrect format"));
+      myErrors.add(new ModuleError(module, "Incorrect format: Unexpected EOF"));
     } catch (ModuleDeserialization.DeserializationException e) {
       myErrors.add(new ModuleError(module, e.toString()));
     } catch (IOException e) {

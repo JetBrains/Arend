@@ -8,10 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
@@ -60,7 +57,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
 
     if (expr instanceof DefCallExpression) {
-      return visitDefCall(((DefCallExpression) expr).getDefinition(), expr, exprs);
+      return visitDefCall((DefCallExpression) expr, exprs);
     } else if (expr instanceof IndexExpression && ((IndexExpression) expr).getIndex() < myContext.size()) {
       Binding binding = getBinding(myContext, ((IndexExpression) expr).getIndex());
       if (binding != null && binding instanceof Function) {
@@ -138,27 +135,48 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     return expr;
   }
 
-  public Expression visitDefCall(Definition def, Expression defCallExpr, List<ArgumentExpression> args) {
-    if (def.hasErrors()) {
+  public Expression visitDefCall(DefCallExpression defCallExpr, List<ArgumentExpression> args) {
+    if (defCallExpr.getDefinition().hasErrors()) {
       return myMode == Mode.TOP ? null : applyDefCall(defCallExpr, args);
     }
 
-    if (def instanceof Function) {
-      return visitFunctionCall((Function) def, defCallExpr, args);
+    if (defCallExpr.getDefinition() instanceof Function) {
+      return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr, args);
     }
 
     if (myMode == Mode.TOP) return null;
 
-    if (def instanceof ClassDefinition) {
+    if (defCallExpr.getDefinition() instanceof ClassDefinition) {
       return applyDefCall(defCallExpr, args);
     }
 
     List<TypeArgument> arguments;
-    if (def instanceof DataDefinition) {
-      arguments = ((DataDefinition) def).getParameters();
+    if (defCallExpr.getDefinition() instanceof DataDefinition) {
+      arguments = ((DataDefinition) defCallExpr.getDefinition()).getParameters();
     } else
-    if (def instanceof Constructor) {
-      arguments = ((Constructor) def).getArguments();
+    if (defCallExpr.getDefinition() instanceof Constructor) {
+      List<TypeArgument> arguments1 = ((Constructor) defCallExpr.getDefinition()).getArguments();
+      if (defCallExpr.getParameters() != null && !defCallExpr.getParameters().isEmpty()) {
+        List<Expression> substExprs = new ArrayList<>(defCallExpr.getParameters());
+        Collections.reverse(substExprs);
+        arguments = new ArrayList<>(arguments1.size());
+        for (int j = 0; j < arguments1.size(); ++j) {
+          int num;
+          if (arguments1.get(j) instanceof TelescopeArgument) {
+            arguments.add(Tele(arguments1.get(j).getExplicit(), ((TelescopeArgument) arguments1.get(j)).getNames(), arguments1.get(j).getType().subst(substExprs, 0)));
+            num = ((TelescopeArgument) arguments1.get(j)).getNames().size();
+          } else {
+            arguments.add(TypeArg(arguments1.get(j).getExplicit(), arguments1.get(j).getType().subst(substExprs, j)));
+            num = 1;
+          }
+
+          for (int i = 0; i < substExprs.size(); ++i) {
+            substExprs.set(i, substExprs.get(i).liftIndex(0, num));
+          }
+        }
+      } else {
+        arguments = arguments1;
+      }
     } else {
       throw new IllegalStateException();
     }
@@ -265,7 +283,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return visitDefCall(expr.getDefinition(), expr.getExpression() == null ? expr : DefCall(expr.getExpression().normalize(Mode.WHNF, myContext), expr.getDefinition(), expr.getParameters()), new ArrayList<ArgumentExpression>(0));
+    return visitDefCall(expr.getExpression() == null ? expr : DefCall(expr.getExpression().normalize(Mode.WHNF, myContext), expr.getDefinition(), expr.getParameters()), new ArrayList<ArgumentExpression>(0));
   }
 
   @Override

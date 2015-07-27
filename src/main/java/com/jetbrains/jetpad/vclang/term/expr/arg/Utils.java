@@ -183,11 +183,28 @@ public class Utils {
     }
   }
 
+  public static void prettyPrintName(StringBuilder builder, String name, Abstract.Definition.Fixity fixity) {
+    if (fixity == Abstract.Definition.Fixity.PREFIX) {
+      builder.append(name);
+    } else {
+      builder.append('(').append(name).append(')');
+    }
+  }
+
+  public static String nameToString(String name, Abstract.Definition.Fixity fixity) {
+    if (fixity == Abstract.Definition.Fixity.PREFIX) {
+      return name;
+    } else {
+      return "(" + name + ")";
+    }
+  }
+
   public static void prettyPrintClause(Abstract.ElimCaseExpression expr, Abstract.Clause clause, StringBuilder builder, List<String> names, int indent) {
     if (clause == null) return;
 
     PrettyPrintVisitor.printIndent(builder, indent);
-    builder.append("| ").append(clause.getName());
+    builder.append("| ");
+    prettyPrintName(builder, clause.getName(), clause.getFixity());
     int startIndex = names.size();
     for (Abstract.Argument argument : clause.getArguments()){
       builder.append(' ');

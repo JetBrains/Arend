@@ -17,6 +17,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   private final StringBuilder myBuilder;
   private final List<String> myNames;
   private int myIndent;
+  private static final int INDENT = 4;
 
   public PrettyPrintVisitor(StringBuilder builder, List<String> names, int indent) {
     myBuilder = builder;
@@ -115,9 +116,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Byte prec) {
-    if (expr.getFixity() == Abstract.Definition.Fixity.INFIX) myBuilder.append('(');
-    myBuilder.append(expr.getDefinition() == Prelude.ZERO ? "0" : expr.getName());
-    if (expr.getFixity() == Abstract.Definition.Fixity.INFIX) myBuilder.append(')');
+    if (expr.getDefinition() == Prelude.ZERO) {
+      myBuilder.append("0");
+    } else {
+      prettyPrintName(myBuilder, expr.getName(), expr.getFixity());
+    }
     return null;
   }
 
@@ -254,7 +257,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append(expr instanceof Abstract.ElimExpression ? "\\elim " : "\\case ");
     expr.getExpression().accept(this, Abstract.Expression.PREC);
     myBuilder.append('\n');
-    ++myIndent;
+    myIndent += INDENT;
     for (Abstract.Clause clause : expr.getClauses()) {
       prettyPrintClause(expr, clause, myBuilder, myNames, myIndent);
     }
@@ -268,7 +271,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     printIndent(myBuilder, myIndent);
     myBuilder.append(';');
-    --myIndent;
+    myIndent -= INDENT;
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append(')');
   }
 
@@ -297,13 +300,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitClassExt(Abstract.ClassExtExpression expr, Byte prec) {
     if (prec > Abstract.ClassExtExpression.PREC) myBuilder.append('(');
     myBuilder.append(expr.getBaseClass().getName()).append(" {\n");
-    ++myIndent;
+    myIndent += INDENT;
     DefinitionPrettyPrintVisitor visitor = new DefinitionPrettyPrintVisitor(myBuilder, myNames, myIndent);
     for (Abstract.FunctionDefinition definition : expr.getDefinitions()) {
       visitor.visitFunction(definition, null);
       myBuilder.append("\n");
     }
-    --myIndent;
+    myIndent -= INDENT;
     if (prec > Abstract.ClassExtExpression.PREC) myBuilder.append(')');
     return null;
   }
@@ -321,22 +324,31 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitLet(Abstract.LetExpression expr, Byte prec) {
     final int oldNamesSize = myNames.size();
     if (prec > Abstract.LetExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\let ");
+    myBuilder.append("\n");
+    myIndent += INDENT;
+    printIndent(myBuilder, myIndent);
+    String let = "\\let ";
+    myBuilder.append(let);
 
-    final int INDENT0 = "\\ let | ".length();
+    final int INDENT0 = let.length();
     myIndent += INDENT0;
-    for (Abstract.LetClause letClause : expr.getClauses()) {
-      prettyPrintLetClause(letClause, myBuilder, myNames, myIndent);
+    for (int i = 0; i < expr.getClauses().size(); ++i) {
+      prettyPrintLetClause(expr.getClauses().get(i), myBuilder, myNames, myIndent);
       myBuilder.append("\n");
-      myNames.add(letClause.getName());
+      if (i == expr.getClauses().size() - 1) {
+        myIndent -= INDENT0;
+      }
+      printIndent(myBuilder, myIndent);
+      myNames.add(expr.getClauses().get(i).getName());
     }
-    myIndent -= INDENT0;
 
-    myBuilder.append("\\in ");
-    final int INDENT1 = "\\in ".length();
+    String in = "\\in ";
+    myBuilder.append(in);
+    final int INDENT1 = in.length();
     myIndent += INDENT1;
     expr.getExpression().accept(this, Abstract.LetExpression.PREC);
     myIndent -= INDENT1;
+    myIndent -= INDENT;
 
     trimToSize(myNames, oldNamesSize);
     return null;
@@ -344,7 +356,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   public static void printIndent(StringBuilder builder, int indent) {
     for (int i = 0; i < indent; ++i) {
-      builder.append("    ");
+      builder.append(' ');
     }
   }
 }

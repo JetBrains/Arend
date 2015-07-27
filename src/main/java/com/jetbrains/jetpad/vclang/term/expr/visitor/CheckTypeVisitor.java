@@ -581,7 +581,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             } else {
               Expression resultType = constructor.getType().subst(arguments, 0);
               Collections.reverse(arguments);
-              return checkResult(expectedType, new OKResult(DefCall(null, constructor, arguments), resultType, okExprResult.equations), expr);
+              return checkResultImplicit(expectedType, new OKResult(DefCall(null, constructor, arguments), resultType, okExprResult.equations), expr);
             }
           }
         }
@@ -624,7 +624,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         result.type = result.type.accept(new ReplaceDefCallVisitor(parent, ((DefCallExpression) result.expression).getExpression()));
       }
     }
-    return checkResultImplicit(expectedType, result, expr);
+    return result;
   }
 
   @Override
@@ -632,14 +632,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result result = typeCheckDefCall(expr, expectedType);
     if (result instanceof OKResult && result.expression instanceof DefCallExpression) {
       DefCallExpression defCall = (DefCallExpression) result.expression;
-      if (defCall.getDefinition() instanceof Constructor && !((Constructor) defCall.getDefinition()).getDataType().getParameters().isEmpty() && defCall.getParameters() == null) {
-        TypeCheckingError error = new TypeCheckingError(myParent, "Cannot infer parameters of constructor " + expr.getName(), expr, getNames(myLocalContext));
-        expr.setWellTyped(Error(DefCall(expr.getDefinition()), error));
-        myModuleLoader.getTypeCheckingErrors().add(error);
-        return null;
+      if (defCall.getDefinition() instanceof Constructor) {
+        if (defCall.getParameters() != null) {
+          return result;
+        }
+        if (!((Constructor) defCall.getDefinition()).getDataType().getParameters().isEmpty()) {
+          return typeCheckApps(expr, 0, (OKResult) result, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr);
+        }
       }
     }
-    return result;
+    return result instanceof OKResult ? checkResultImplicit(expectedType, (OKResult) result, expr) : result;
   }
 
   @Override
@@ -920,8 +922,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitTuple(Abstract.TupleExpression expr, Expression expectedType) {
+    Expression expectedTypeNorm = null;
     if (expectedType != null) {
-      Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
+      expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
+      if (!(expectedTypeNorm instanceof SigmaExpression || expectedType instanceof InferHoleExpression)) {
+        Expression fExpectedTypeNorm = expectedTypeNorm.getFunction(new ArrayList<Expression>());
+        if (fExpectedTypeNorm instanceof InferHoleExpression) {
+          return new InferErrorResult((InferHoleExpression) fExpectedTypeNorm, ((InferHoleExpression) fExpectedTypeNorm).getError(), null);
+        }
+
+        TypeCheckingError error = new TypeMismatchError(myParent, expectedTypeNorm, Sigma(args(TypeArg(Error(null, null)), TypeArg(Error(null, null)))), expr, getNames(myLocalContext));
+        expr.setWellTyped(Error(null, error));
+        myModuleLoader.getTypeCheckingErrors().add(error);
+        return null;
+      }
+
       if (expectedTypeNorm instanceof SigmaExpression) {
         InferHoleExpression hole = expectedTypeNorm.accept(new FindHoleVisitor());
         if (hole != null) {
@@ -957,16 +972,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           }
         }
         return new OKResult(expression, expectedType, equations);
-      } else {
-        Expression fexpectedTypeNorm = expectedTypeNorm.getFunction(new ArrayList<Expression>());
-        if (fexpectedTypeNorm instanceof InferHoleExpression) {
-          return new InferErrorResult((InferHoleExpression) fexpectedTypeNorm, ((InferHoleExpression) fexpectedTypeNorm).getError(), null);
-        }
-
-        TypeCheckingError error = new TypeMismatchError(myParent, expectedTypeNorm, Sigma(args(TypeArg(Error(null, null)), TypeArg(Error(null, null)))), expr, getNames(myLocalContext));
-        expr.setWellTyped(Error(null, error));
-        myModuleLoader.getTypeCheckingErrors().add(error);
-        return null;
       }
     }
 
@@ -984,6 +989,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (okResult.equations != null) {
         equations.addAll(okResult.equations);
       }
+    }
+
+    if (expectedTypeNorm instanceof InferHoleExpression) {
+      equations.add(new CompareVisitor.Equation((InferHoleExpression) expectedTypeNorm, type));
     }
     return new OKResult(expression, type, equations);
   }
@@ -1053,7 +1062,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression expectedType) {
     TypeCheckingError error = null;
-    if (expectedType == null && error == null) {
+    if (expectedType == null) {
       error = new TypeCheckingError(myParent, "Cannot infer type of the expression", expr, getNames(myLocalContext));
     }
     if (mySide != Side.LHS && error == null) {
@@ -1187,7 +1196,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       for (int j = 0; j < constructorArguments.size(); ++j) {
         substExpr = Apps(substExpr, new ArgumentExpression(Index(constructorArguments.size() - 1 - j), constructorArguments.get(j).getExplicit(), !constructorArguments.get(j).getExplicit()));
       }
-      Expression clauseExpectedType = expectedType.liftIndex(varIndex + 1, constructorArguments.size()).subst(substExpr, varIndex);
 
       List<Binding> localContext = new ArrayList<>(myLocalContext.size() - 1 + constructorArguments.size());
       for (int i = 0; i < myLocalContext.size() - 1 - varIndex; ++i) {
@@ -1207,11 +1215,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       for (int i = myLocalContext.size() - varIndex; i < myLocalContext.size(); ++i) {
         int i0 = i - myLocalContext.size() + varIndex;
-        if (i0 > 0) {
-          substExpr = substExpr.liftIndex(0, 1);
-        }
         localContext.add(new TypedBinding(myLocalContext.get(i).getName(), myLocalContext.get(i).getType().liftIndex(i0 + 1, constructorArguments.size()).subst(substExpr, i0)));
+        substExpr = substExpr.liftIndex(0, 1);
       }
+      Expression clauseExpectedType = expectedType.liftIndex(varIndex + 1, constructorArguments.size()).subst(substExpr, varIndex);
 
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
       Result clauseResult = new CheckTypeVisitor(myParent, localContext, myAbstractCalls, myModuleLoader, side).typeCheck(clause.getExpression(), clauseExpectedType);
@@ -1238,7 +1245,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         msg += ". Unhandled constructors: ";
         for (int i = 0; i < constructors.size(); ++i) {
           if (i > 0) msg += ", ";
-          msg += constructors.get(i).getName();
+          msg += nameToString(constructors.get(i).getName(), constructors.get(i).getFixity());
         }
       }
       error = new TypeCheckingError(myParent, msg, expr, getNames(myLocalContext));
@@ -1479,7 +1486,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         addLiftedEquations((OKResult) clauseResult, equations, i);
         clauses.add(((LetClauseOKResult) clauseResult).clause);
       }
-      Result result = typeCheck(expr.getExpression(), null);
+      Result result = typeCheck(expr.getExpression(), expectedType == null ? null : expectedType.liftIndex(0, expr.getClauses().size()));
       if (!(result instanceof OKResult)) return result;
       OKResult okResult = (OKResult) result;
       addLiftedEquations(okResult, equations, expr.getClauses().size());
@@ -1493,6 +1500,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       finalResult = new OKResult(Let(clauses, okResult.expression), normalizedResultType, equations);
     }
-    return checkResultImplicit(expectedType, finalResult, expr);
+    return finalResult;
   }
 }

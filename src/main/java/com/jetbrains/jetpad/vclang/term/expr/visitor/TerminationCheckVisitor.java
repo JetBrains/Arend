@@ -148,18 +148,17 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
           throw new IllegalStateException();
         }
       }
-      boolean result = (body1 == null ? true : body1.accept(this)) && (body2 == null ? true : body2.accept(this));
-      return result;
+      return (body1 == null ? true : body1.accept(this)) && (body2 == null ? true : body2.accept(this));
     }
   }
   
   private Boolean visitArguments(List<? extends Argument> arguments, Expression codomain, PatternLifter lifter) {
-    int total = 0;
     for (Argument argument : arguments) {
       if (argument instanceof NameArgument) {
         lifter.liftPatterns();
-      } else if (argument instanceof TypeArgument) {
-        if (!((TypeArgument)argument).getType().accept(this)) {
+      } else
+      if (argument instanceof TypeArgument) {
+        if (!((TypeArgument) argument).getType().accept(this)) {
           return false;
         }
         if (argument instanceof TelescopeArgument) {
@@ -170,12 +169,10 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
       }
     }
 
-    boolean result = codomain != null ? codomain.accept(this) : true;
-    return result;
+    return codomain != null ? codomain.accept(this) : true;
   }
 
-  private Boolean visitArguments(List<? extends Argument> arguments, PatternLifter lifter)
-  {
+  private Boolean visitArguments(List<? extends Argument> arguments, PatternLifter lifter) {
     return visitArguments(arguments, null, lifter);
   }
 
@@ -294,14 +291,21 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   public Boolean visitLet(LetExpression letExpression) {
     try (PatternLifter lifter = new PatternLifter()) {
       for (LetClause clause : letExpression.getClauses()) {
-        if (!visitLetClause(clause, lifter)) return false;
+        if (!visitLetClause(clause)) {
+          return false;
+        }
+        lifter.liftPatterns();
       }
       return letExpression.getExpression().accept(this);
     }
   }
 
-  private boolean visitLetClause(LetClause clause, PatternLifter lifter) {
-    if (!visitArguments(clause.getArguments(), lifter)) return false;
+  private boolean visitLetClause(LetClause clause) {
+    try (PatternLifter lifter1 = new PatternLifter()) {
+      if (!visitArguments(clause.getArguments(), lifter1)) {
+        return false;
+      }
+    }
     return clause.getTerm().accept(this);
   }
 }

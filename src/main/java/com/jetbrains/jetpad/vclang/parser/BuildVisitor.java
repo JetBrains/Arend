@@ -438,7 +438,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         myContext.add(name);
       } else
       if (literalContext instanceof UnknownContext) {
-        arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, "_"));
+        arguments.add(new Concrete.NameArgument(tokenPosition(literalContext.getStart()), true, null));
         myContext.add(null);
       } else {
         myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(literalContext.getStart()), "Unexpected token. Expected an identifier."));

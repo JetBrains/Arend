@@ -343,6 +343,9 @@ public class TypeChecking {
       return null;
     }
 
+    if (expectedType == null) {
+      result.typeHasErrors(true);
+    }
     return result;
   }
 
@@ -359,10 +362,6 @@ public class TypeChecking {
           moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, "Termination check failed", term, getNames(localContext)));
           termResult = null;
         }
-      } else {
-        if (definition.getResultType() == null) {
-          definition.typeHasErrors(true);
-        }
       }
 
       if (termResult == null) {
@@ -373,6 +372,7 @@ public class TypeChecking {
       }
     }
 
+    definition.typeHasErrors(definition.getResultType() == null);
     Expression type = definition.getType();
     if (type != null) {
       type = type.getType(new ArrayList<Binding>(2));

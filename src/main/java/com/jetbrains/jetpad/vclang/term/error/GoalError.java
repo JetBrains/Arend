@@ -39,7 +39,7 @@ public class GoalError extends TypeCheckingError {
       builder.append("\n\tContext:");
       List<String> names = new ArrayList<>(myContext.size());
       for (Binding binding : myContext) {
-        builder.append("\n\t\t").append(binding.getName()).append(" : ");
+        builder.append("\n\t\t").append(binding.getName() == null ? "_" : binding.getName()).append(" : ");
         Expression type = binding.getType();
         if (type != null) {
           type.prettyPrint(builder, names, Abstract.Expression.PREC);
