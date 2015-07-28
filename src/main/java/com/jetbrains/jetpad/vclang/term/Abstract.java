@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
 import java.util.Collection;
@@ -141,8 +140,6 @@ public final class Abstract {
   }
 
   public interface ElimCaseExpression extends Expression {
-    enum ElimType {CASE, ELIM};
-
     byte PREC = -8;
     Expression getExpression();
     List<? extends Clause> getClauses();
@@ -205,7 +202,7 @@ public final class Abstract {
       }
     }
 
-    static Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
+    Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
     Universe getUniverse();
     Precedence getPrecedence();

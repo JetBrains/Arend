@@ -228,9 +228,8 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
 
     Abstract.Definition.Arrow arrow = func.getArrow();
-    while (result instanceof ElimExpression && ((ElimExpression) result).getElimType() == Abstract.ElimExpression.ElimType.ELIM) {
+    while (result instanceof ElimExpression) {
       List<Expression> constructorArgs = new ArrayList<>();
-      // TODO: check that we shouldn't lift something
       Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0).normalize(Mode.WHNF, myContext).getFunction(constructorArgs);
       if (expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor) {
         Constructor constructor = (Constructor) ((DefCallExpression) expr).getDefinition();

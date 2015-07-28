@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import java.util.List;
 
 public class ElimExpression extends Expression implements Abstract.ElimExpression {
-  // TODO: separate elim and case expressions.
   private final IndexExpression myExpression;
   private final List<Clause> myClauses;
   private final Clause myOtherwise;
@@ -17,10 +16,6 @@ public class ElimExpression extends Expression implements Abstract.ElimExpressio
     myExpression = expression;
     myClauses = clauses;
     myOtherwise = otherwise;
-  }
-
-  public ElimType getElimType() {
-    return ElimType.ELIM;
   }
 
   @Override

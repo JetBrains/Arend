@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -232,39 +231,27 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
       }
     }
 
-    if (expr.getElimType() == Abstract.ElimExpression.ElimType.ELIM && expr.getExpression() instanceof IndexExpression) {
-      int var = expr.getExpression().getIndex();
-      for (Clause clause : expr.getClauses()) {
-        if (clause == null) continue;
+    int var = expr.getExpression().getIndex();
+    for (Clause clause : expr.getClauses()) {
+      if (clause == null) continue;
 
-        int vars = numberOfVariables(clause.getArguments());
-        Expression newExpr = DefCall(clause.getConstructor());
-        for (int i = var + vars - 1; i >= var; --i) {
-          newExpr = Apps(newExpr, Index(i));
-        }
-
-        List<Expression> patterns = new ArrayList<>(myPatterns.size());
-        for (Expression pattern : myPatterns) {
-          patterns.add(pattern.liftIndex(var + 1, vars).subst(newExpr, var));
-        }
-
-        if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns))) {
-          return false;
-        }
+      int vars = numberOfVariables(clause.getArguments());
+      Expression newExpr = DefCall(clause.getConstructor());
+      for (int i = var + vars - 1; i >= var; --i) {
+        newExpr = Apps(newExpr, Index(i));
       }
 
-      if (expr.getOtherwise() != null && !expr.getExpression().accept(this)) {
+      List<Expression> patterns = new ArrayList<>(myPatterns.size());
+      for (Expression pattern : myPatterns) {
+        patterns.add(pattern.liftIndex(var + 1, vars).subst(newExpr, var));
+      }
+
+      if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns))) {
         return false;
-      }
-    } else {
-      for (Clause clause : expr.getClauses()) {
-        if (clause != null && !clause.getExpression().accept(this)) {
-          return false;
-        }
       }
     }
 
-    return true;
+    return expr.getOtherwise() == null || expr.getExpression().accept(this);
   }
 
   @Override
