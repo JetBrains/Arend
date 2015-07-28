@@ -32,6 +32,11 @@ public class OverriddenDefinition extends FunctionDefinition {
   }
 
   @Override
+  public String getOriginalName() {
+    return myOverriddenFunction.getName();
+  }
+
+  @Override
   public List<Argument> getArguments() {
     if (super.getArguments() == null) return myOverriddenFunction.getArguments();
     return super.getArguments();

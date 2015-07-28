@@ -113,11 +113,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (DefContext def : ctx.def()) {
       if (def instanceof DefOverrideContext) {
         DefOverrideContext defOverride = (DefOverrideContext) def;
-        Concrete.FunctionDefinition definition = visitFunctionRawBegin(true, null, defOverride.name(), defOverride.tele(), defOverride.expr().size() == 1 ? null : defOverride.expr(0), defOverride.arrow());
+        FunctionContext functionCtx = (FunctionContext) visit(defOverride.typeTermOpt());
+        Concrete.FunctionDefinition definition = visitFunctionRawBegin(true, defOverride.name().size() == 1 ? null : defOverride.name(0), null, defOverride.name().size() == 1 ? defOverride.name(0) : defOverride.name(1), defOverride.tele(), functionCtx);
         if (definition != null) {
-          ExprContext termCtx = defOverride.expr(defOverride.expr().size() == 1 ? 0 : 1);
-          if (termCtx != null) {
-            definition.setTerm(visitExpr(termCtx));
+          if (functionCtx.termCtx != null) {
+            definition.setTerm(visitExpr(functionCtx.termCtx));
           }
           visitFunctionRawEnd(definition);
           definitions.add(definition);
@@ -160,7 +160,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else
     if (ctx instanceof DefOverrideContext) {
       if (myOnlyStatics) {
-        TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, getName(((DefOverrideContext) ctx).name()).name);
+        List<NameContext> names = ((DefOverrideContext) ctx).name();
+        Name name = getName(names.size() == 1 ? names.get(0) : names.get(1));
+        if (name == null) {
+          return null;
+        }
+        TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, name.name);
         return null;
       } else {
         return visitDefOverride((DefOverrideContext) ctx);
@@ -217,27 +222,63 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return null;
   }
 
+  private static class FunctionContext {
+    ExprContext typeCtx;
+    ArrowContext arrowCtx;
+    ExprContext termCtx;
+  }
+
+  @Override
+  public FunctionContext visitWithType(WithTypeContext ctx) {
+    FunctionContext result = new FunctionContext();
+    result.typeCtx = ctx.expr();
+    result.arrowCtx = null;
+    result.termCtx = null;
+    return result;
+  }
+
+  @Override
+  public FunctionContext visitWithTypeAndTerm(WithTypeAndTermContext ctx) {
+    FunctionContext result = new FunctionContext();
+    result.typeCtx = ctx.expr(0);
+    result.arrowCtx = ctx.arrow();
+    result.termCtx = ctx.expr(1);
+    return result;
+  }
+
+  @Override
+  public FunctionContext visitWithTerm(WithTermContext ctx) {
+    FunctionContext result = new FunctionContext();
+    result.typeCtx = null;
+    result.arrowCtx = ctx.arrow();
+    result.termCtx = ctx.expr();
+    return result;
+  }
+
   @Override
   public FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
     if (ctx == null) return null;
-    ExprContext typeCtx = ctx.typeTermOpt() instanceof WithTypeContext ? ((WithTypeContext) ctx.typeTermOpt()).expr() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).expr(0) : null;
-    ArrowContext arrowCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).arrow() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).arrow() : null;
-    ExprContext termCtx = ctx.typeTermOpt() instanceof WithTermContext ? ((WithTermContext) ctx.typeTermOpt()).expr() : ctx.typeTermOpt() instanceof WithTypeAndTermContext ? ((WithTypeAndTermContext) ctx.typeTermOpt()).expr(1) : null;
-    if (termCtx == null && myOnlyStatics) {
-      TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, getName(ctx.name()).name);
+    FunctionContext functionCtx = (FunctionContext) visit(ctx.typeTermOpt());
+    if (functionCtx.termCtx == null && myOnlyStatics) {
+      Name name = getName(ctx.name());
+      if (name == null) {
+        return null;
+      }
+      TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, name.name);
       return null;
     }
-    return visitDefFunction(false, ctx.precedence(), ctx.name(), ctx.tele(), typeCtx, arrowCtx, termCtx);
+    return visitDefFunction(false, null, ctx.precedence(), ctx.name(), ctx.tele(), functionCtx);
   }
 
   @Override
   public FunctionDefinition visitDefOverride(DefOverrideContext ctx) {
     if (ctx == null) return null;
-    return visitDefFunction(true, null, ctx.name(), ctx.tele(), ctx.expr().size() == 1 ? null : ctx.expr(0), ctx.arrow(), ctx.expr(ctx.expr().size() == 1 ? 0 : 1));
+    FunctionContext functionCtx = (FunctionContext) visit(ctx.typeTermOpt());
+    return visitDefFunction(true, ctx.name().size() == 1 ? null : ctx.name(0), null, ctx.name().size() == 1 ? ctx.name(0) : ctx.name(1), ctx.tele(), functionCtx);
   }
 
-  private FunctionDefinition visitDefFunction(boolean overridden, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, ExprContext typeCtx, ArrowContext arrowCtx, ExprContext termCtx) {
-    Concrete.FunctionDefinition def = visitFunctionRawBegin(overridden, precCtx, nameCtx, teleCtx, typeCtx, arrowCtx);
+  private FunctionDefinition visitDefFunction(boolean overridden, NameContext originalName, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, FunctionContext functionCtx) {
+    Concrete.FunctionDefinition def = visitFunctionRawBegin(overridden, originalName, precCtx, nameCtx, teleCtx, functionCtx);
     if (def == null) {
       return null;
     }
@@ -245,14 +286,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(myModuleLoader, myParent, def, localContext, null);
     if (typedDef != null) {
-      TypeChecking.typeCheckFunctionEnd(myModuleLoader, myParent, termCtx == null ? null : visitExpr(termCtx), typedDef, localContext, null, myOnlyStatics);
+      TypeChecking.typeCheckFunctionEnd(myModuleLoader, myParent, functionCtx.termCtx == null ? null : visitExpr(functionCtx.termCtx), typedDef, localContext, null, myOnlyStatics);
     }
     visitFunctionRawEnd(def);
     return typedDef;
   }
 
-  private Concrete.FunctionDefinition visitFunctionRawBegin(boolean overridden, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, ExprContext typeCtx, ArrowContext arrowCtx) {
+  private Concrete.FunctionDefinition visitFunctionRawBegin(boolean overridden, NameContext originalNameCtx, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, FunctionContext functionCtx) {
     Name name = getName(nameCtx);
+    if (name == null) {
+      return null;
+    }
+
+    Name originalName = getName(originalNameCtx);
     int size = myContext.size();
     List<Concrete.Argument> arguments = visitFunctionArguments(teleCtx, overridden);
     if (arguments == null) {
@@ -260,9 +306,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
-    Definition.Arrow arrow = arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
-    return new Concrete.FunctionDefinition(name.position, name.name, precCtx == null ? null : visitPrecedence(precCtx), name.fixity, arguments, type, arrow, null, overridden);
+    Concrete.Expression type = functionCtx.typeCtx == null ? null : visitExpr(functionCtx.typeCtx);
+    Definition.Arrow arrow = functionCtx.arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : functionCtx.arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
+    return new Concrete.FunctionDefinition(name.position, name.name, precCtx == null ? null : visitPrecedence(precCtx), name.fixity, arguments, type, arrow, null, overridden, originalName == null ? null : originalName.name);
   }
 
   private void visitFunctionRawEnd(Concrete.FunctionDefinition definition) {
@@ -348,6 +394,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public DataDefinition visitDefData(DefDataContext ctx) {
     if (ctx == null) return null;
     Name name = getName(ctx.name());
+    if (name == null) {
+      return null;
+    }
     int origSize = myContext.size();
     List<Concrete.TypeArgument> parameters = visitTeles(ctx.tele());
     if (parameters == null) {
@@ -371,9 +420,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     int index = 0;
     for (int i = 0; i < ctx.constructor().size(); ++i) {
       Name conName = getName(ctx.constructor(i).name());
+      if (conName == null) {
+        continue;
+      }
+
       List<Concrete.TypeArgument> arguments = visitTeles(ctx.constructor(i).tele());
       trimToSize(myContext, size);
-      if (arguments == null) continue;
+      if (arguments == null) {
+        continue;
+      }
       Concrete.Constructor con = new Concrete.Constructor(conName.position, conName.name, visitPrecedence(ctx.constructor(i).precedence()), conName.fixity, new Universe.Type(), arguments, def);
       if (TypeChecking.typeCheckConstructor(myModuleLoader, typedDef, con, localContext, index) != null) {
         ++index;
@@ -669,6 +724,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (FieldAccContext field : fieldAccs) {
       if (field instanceof ClassFieldContext) {
         Name name = getName(((ClassFieldContext) field).name());
+        if (name == null) {
+          return null;
+        }
+
         if (expr instanceof Concrete.DefCallExpression && ((Concrete.DefCallExpression) expr).getDefinition() != null) {
           Definition definition = ((Concrete.DefCallExpression) expr).getDefinition();
           Definition classField = definition.getStaticField(name.name);
@@ -1014,6 +1073,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private static Name getName(NameContext ctx) {
+    if (ctx == null) {
+      return null;
+    }
+
     Name result = new Name();
     result.fixity = ctx instanceof NameIdContext ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
     if (result.fixity == Abstract.Definition.Fixity.PREFIX) {

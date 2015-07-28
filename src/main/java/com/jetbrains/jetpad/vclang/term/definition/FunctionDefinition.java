@@ -52,6 +52,11 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
+  public String getOriginalName() {
+    return null;
+  }
+
+  @Override
   public Expression getTerm() {
     return myTerm;
   }

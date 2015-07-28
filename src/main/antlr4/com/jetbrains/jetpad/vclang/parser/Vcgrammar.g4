@@ -3,11 +3,14 @@ grammar Vcgrammar;
 defs  : def*;
 
 def   : '\\function' precedence name tele* typeTermOpt          # defFunction
-      | '\\override' name tele* (':' expr)? arrow expr          # defOverride
+      | '\\override' name ('\\as' name)? tele* typeTermOpt      # defOverride
       | '\\data' precedence name tele* (':' expr)? constructor* # defData
       | '\\class' ID tele* classFields                          # defClass
+      | '\\extends' ID                                          # defExtends
       | nsCmd name fieldAcc* ('(' name (',' name)* ')')?        # defCmd
       ;
+
+renamingClause : name '\\to' name;
 
 classFields : '{' defs '}';
 
@@ -40,13 +43,13 @@ name  : ID                              # nameId
       | '(' BIN_OP ')'                  # nameBinOp
       ;
 
-expr  : binOpLeft* maybeNew atomFieldsAcc argument*  # binOp
-      | <assoc=right> expr '->' expr                 # arr
-      | '\\Pi' tele+ '->' expr                       # pi
-      | '\\Sigma' tele+                              # sigma
-      | '\\lam' tele+ '=>' expr                      # lam
+expr  : binOpLeft* maybeNew atomFieldsAcc argument*         # binOp
+      | <assoc=right> expr '->' expr                        # arr
+      | '\\Pi' tele+ '->' expr                              # pi
+      | '\\Sigma' tele+                                     # sigma
+      | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | elimCase expr clause* ';'?                   # exprElim
+      | elimCase expr clause* ';'?                          # exprElim
       ;
 
 letClause : ID tele* typeAnnotation? arrow expr;

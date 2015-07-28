@@ -220,6 +220,7 @@ public final class Abstract {
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
     boolean isOverridden();
+    String getOriginalName();
   }
 
   public interface DataDefinition extends Definition {

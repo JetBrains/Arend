@@ -762,15 +762,17 @@ public final class Concrete {
     private final List<Argument> myArguments;
     private final Expression myResultType;
     private final boolean myOverridden;
+    private final String myOriginalName;
     private Expression myTerm;
 
-    public FunctionDefinition(Position position, String name, Precedence precedence, Fixity fixity, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden) {
+    public FunctionDefinition(Position position, String name, Precedence precedence, Fixity fixity, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, String originalName) {
       super(position, name, precedence, fixity, null);
       myArguments = arguments;
       myResultType = resultType;
       myArrow = arrow;
       myTerm = term;
       myOverridden = overridden;
+      myOriginalName = originalName;
     }
 
     @Override
@@ -786,6 +788,11 @@ public final class Concrete {
     @Override
     public boolean isOverridden() {
       return myOverridden;
+    }
+
+    @Override
+    public String getOriginalName() {
+      return myOriginalName;
     }
 
     @Override
