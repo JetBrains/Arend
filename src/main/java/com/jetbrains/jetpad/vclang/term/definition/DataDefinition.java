@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVis
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.List;
 
@@ -14,13 +15,13 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   private List<Constructor> myConstructors;
   private List<TypeArgument> myParameters;
 
-  public DataDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<Constructor> constructors) {
-    super(name, parent, precedence, fixity);
+  public DataDefinition(Utils.Name name, Definition parent, Precedence precedence, List<Constructor> constructors) {
+    super(name, parent, precedence);
     myConstructors = constructors;
   }
 
-  public DataDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
-    super(name, parent, precedence, fixity);
+  public DataDefinition(Utils.Name name, Definition parent, Precedence precedence, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+    super(name, parent, precedence);
     setUniverse(universe);
     hasErrors(false);
     myConstructors = constructors;
@@ -60,7 +61,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   public Constructor getStaticField(String name) {
     if (myConstructors == null) return null;
     for (Constructor constructor : myConstructors) {
-      if (constructor.getName().equals(name)) {
+      if (constructor.getName().name.equals(name)) {
         return constructor;
       }
     }

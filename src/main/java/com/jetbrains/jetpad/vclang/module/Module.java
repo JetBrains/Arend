@@ -16,7 +16,7 @@ public class Module {
   }
 
   private File getFile(File dir, Definition def) {
-    return def == null || def.getParent() == null ? dir : new File(getFile(dir, def.getParent()), def.getName());
+    return def == null || def.getParent() == null ? dir : new File(getFile(dir, def.getParent()), def.getName().name);
   }
 
   public File getFile(File dir, String ext) {

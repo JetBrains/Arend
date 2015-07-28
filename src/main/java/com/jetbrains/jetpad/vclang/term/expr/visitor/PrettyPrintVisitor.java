@@ -27,7 +27,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   private void visitApps(Abstract.Expression expr, List<Abstract.ArgumentExpression> args, byte prec) {
     if (expr instanceof Abstract.DefCallExpression) {
-      if (((Abstract.DefCallExpression) expr).getFixity() == Abstract.Definition.Fixity.INFIX) {
+      if (((Abstract.DefCallExpression) expr).getName().fixity == Abstract.Definition.Fixity.INFIX) {
         int numberOfVisibleArgs = 0;
         List<Abstract.Expression> visibleArgs = new ArrayList<>(2);
         for (Abstract.ArgumentExpression arg : args) {
@@ -119,7 +119,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (expr.getDefinition() == Prelude.ZERO) {
       myBuilder.append("0");
     } else {
-      prettyPrintName(myBuilder, expr.getName(), expr.getFixity());
+      myBuilder.append(expr.getName());
     }
     return null;
   }
@@ -339,7 +339,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         myIndent -= INDENT0;
       }
       printIndent(myBuilder, myIndent);
-      myNames.add(expr.getClauses().get(i).getName());
+      myNames.add(expr.getClauses().get(i).getName() == null ? null : expr.getClauses().get(i).getName().name);
     }
 
     String in = "\\in ";

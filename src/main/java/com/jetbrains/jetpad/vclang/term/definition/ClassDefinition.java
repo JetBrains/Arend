@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.*;
 
@@ -15,7 +16,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   private Map<String, Definition> myPrivateFields;
 
   public ClassDefinition(String name, Definition parent) {
-    super(name, parent, DEFAULT_PRECEDENCE, Fixity.PREFIX);
+    super(new Utils.Name(name, Fixity.PREFIX), parent, DEFAULT_PRECEDENCE);
     hasErrors(false);
   }
 
@@ -42,7 +43,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   public Definition getPublicField(String name) {
     if (myPublicFields == null) return null;
     for (Definition field : myPublicFields) {
-      if (field.getName().equals(name)) {
+      if (field.getName().name.equals(name)) {
         return field;
       }
     }
@@ -80,7 +81,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     if (myPrivateFields == null) {
       myPrivateFields = new HashMap<>();
     }
-    myPrivateFields.put(result.getName(), result);
+    myPrivateFields.put(result.getName().name, result);
     return result;
   }
 
@@ -93,9 +94,9 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   }
 
   public boolean addPublicField(Definition definition, List<ModuleError> errors) {
-    Definition oldDefinition = getPublicField(definition.getName());
+    Definition oldDefinition = getPublicField(definition.getName().name);
     if (oldDefinition != null && !(oldDefinition instanceof ClassDefinition && definition instanceof ClassDefinition && (!((ClassDefinition) oldDefinition).hasAbstracts() || !((ClassDefinition) definition).hasAbstracts()))) {
-      errors.add(new ModuleError(new Module(this, definition.getName()), "Name is already defined"));
+      errors.add(new ModuleError(new Module(this, definition.getName().name), "Name is already defined"));
       return false;
     }
 
@@ -110,7 +111,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     if (myPrivateFields == null) {
       myPrivateFields = new HashMap<>();
     }
-    myPrivateFields.put(definition.getName(), definition);
+    myPrivateFields.put(definition.getName().name, definition);
   }
 
   public boolean addStaticField(Definition definition, List<ModuleError> errors) {
@@ -118,7 +119,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       Universe max = getUniverse().max(definition.getUniverse());
       if (max == null) {
         String msg = "Universe " + definition.getUniverse() + " of the field is not compatible with universe " + getUniverse() + " of previous fields";
-        errors.add(new ModuleError(new Module(this, definition.getName()), msg));
+        errors.add(new ModuleError(new Module(this, definition.getName().getPrefixName()), msg));
         return false;
       }
       setUniverse(max);
@@ -131,7 +132,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
         if (myPublicFields.contains(dependency)) {
           isStatic = false;
         } else {
-          addDependecy(dependency);
+          addDependency(dependency);
         }
       }
     }
@@ -139,7 +140,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       if (myStaticFields == null) {
         myStaticFields = new HashMap<>();
       }
-      myStaticFields.put(definition.getName(), definition);
+      myStaticFields.put(definition.getName().name, definition);
     }
 
     return true;
@@ -156,7 +157,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       myPublicFields.remove(definition);
     }
     if (myPrivateFields != null) {
-      myPrivateFields.remove(definition.getName());
+      myPrivateFields.remove(definition.getName().name);
     }
   }
 }

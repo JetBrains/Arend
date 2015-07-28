@@ -1,9 +1,15 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 public class TypedBinding extends Binding {
   private final Expression myType;
+
+  public TypedBinding(Utils.Name name, Expression type) {
+    super(name);
+    myType = type;
+  }
 
   public TypedBinding(String name, Expression type) {
     super(name);

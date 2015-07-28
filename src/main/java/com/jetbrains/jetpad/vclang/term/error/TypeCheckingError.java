@@ -32,7 +32,7 @@ public class TypeCheckingError {
   public static List<String> getNames(List<? extends Abstract.Binding> context) {
     List<String> names = new ArrayList<>(context.size());
     for (Abstract.Binding binding : context) {
-      names.add(binding.getName());
+      names.add(binding.getName() == null ? null : binding.getName().name);
     }
     return names;
   }

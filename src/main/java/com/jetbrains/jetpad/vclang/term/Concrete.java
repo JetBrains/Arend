@@ -239,13 +239,8 @@ public final class Concrete {
     }
 
     @Override
-    public String getName() {
+    public Name getName() {
       return myDefinition.getName();
-    }
-
-    @Override
-    public Abstract.Definition.Fixity getFixity() {
-      return myDefinition.getFixity();
     }
 
     @Override
@@ -256,14 +251,12 @@ public final class Concrete {
 
   public static class DefCallNameExpression extends Expression implements Abstract.DefCallExpression {
     private final Expression myExpression;
-    private final String myName;
-    private final Abstract.Definition.Fixity myFixity;
+    private final Name myName;
 
-    public DefCallNameExpression(Position position, Expression expression, String name, Abstract.Definition.Fixity fixity) {
+    public DefCallNameExpression(Position position, Expression expression, Name name) {
       super(position);
       myExpression = expression;
       myName = name;
-      myFixity = fixity;
     }
 
     @Override
@@ -277,13 +270,8 @@ public final class Concrete {
     }
 
     @Override
-    public String getName() {
+    public Name getName() {
       return myName;
-    }
-
-    @Override
-    public Abstract.Definition.Fixity getFixity() {
-      return myFixity;
     }
 
     @Override
@@ -656,35 +644,28 @@ public final class Concrete {
   }
 
   public static class Clause extends SourceNode implements Abstract.Clause {
-    private final String myName;
-    private final Abstract.Definition.Fixity myFixity;
+    private final Name myName;
     private final List<NameArgument> myArguments;
     private final Definition.Arrow myArrow;
     private final Expression myExpression;
-    private Abstract.ElimCaseExpression myElimCaseExpresson;
+    private Abstract.ElimCaseExpression myElimCaseExpression;
 
-    public Clause(Position position, String name, Abstract.Definition.Fixity fixity, List<NameArgument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
+    public Clause(Position position, Name name, List<NameArgument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
       super(position);
       myName = name;
-      myFixity = fixity;
       myArguments = arguments;
       myArrow = arrow;
       myExpression = expression;
-      myElimCaseExpresson = elimExpression;
+      myElimCaseExpression = elimExpression;
     }
 
     public void setElimExpression(Abstract.ElimCaseExpression elimCaseExpression) {
-      myElimCaseExpresson = elimCaseExpression;
+      myElimCaseExpression = elimCaseExpression;
     }
 
     @Override
-    public String getName() {
+    public Name getName() {
       return myName;
-    }
-
-    @Override
-    public Abstract.Definition.Fixity getFixity() {
-      return myFixity;
     }
 
     @Override
@@ -704,44 +685,42 @@ public final class Concrete {
 
     @Override
     public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      prettyPrintClause(myElimCaseExpresson, this, builder, names, 0);
+      prettyPrintClause(myElimCaseExpression, this, builder, names, 0);
     }
   }
 
   public static abstract class Binding extends SourceNode implements Abstract.Binding {
-    private final String myName;
+    private final Name myName;
 
-    public Binding(Position position, String name) {
+    public Binding(Position position, Name name) {
       super(position);
       myName = name;
     }
 
+    public Binding(Position position, String name) {
+      super(position);
+      myName = new Name(name, Abstract.Definition.Fixity.PREFIX);
+    }
+
     @Override
-    public String getName() {
+    public Name getName() {
       return myName;
     }
   }
 
   public static abstract class Definition extends Binding implements Abstract.Definition {
     private final Precedence myPrecedence;
-    private final Fixity myFixity;
     private final Universe myUniverse;
 
-    public Definition(Position position, String name, Precedence precedence, Fixity fixity, Universe universe) {
+    public Definition(Position position, Name name, Precedence precedence, Universe universe) {
       super(position, name);
       myPrecedence = precedence;
-      myFixity = fixity;
       myUniverse = universe;
     }
 
     @Override
     public Precedence getPrecedence() {
       return myPrecedence;
-    }
-
-    @Override
-    public Fixity getFixity() {
-      return myFixity;
     }
 
     @Override
@@ -762,11 +741,11 @@ public final class Concrete {
     private final List<Argument> myArguments;
     private final Expression myResultType;
     private final boolean myOverridden;
-    private final String myOriginalName;
+    private final Name myOriginalName;
     private Expression myTerm;
 
-    public FunctionDefinition(Position position, String name, Precedence precedence, Fixity fixity, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, String originalName) {
-      super(position, name, precedence, fixity, null);
+    public FunctionDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, Name originalName) {
+      super(position, name, precedence, null);
       myArguments = arguments;
       myResultType = resultType;
       myArrow = arrow;
@@ -791,7 +770,7 @@ public final class Concrete {
     }
 
     @Override
-    public String getOriginalName() {
+    public Name getOriginalName() {
       return myOriginalName;
     }
 
@@ -824,8 +803,8 @@ public final class Concrete {
     private final List<Constructor> myConstructors;
     private final List<TypeArgument> myParameters;
 
-    public DataDefinition(Position position, String name, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
-      super(position, name, precedence, fixity, universe);
+    public DataDefinition(Position position, Name name, Precedence precedence, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+      super(position, name, precedence, universe);
       myParameters = parameters;
       myConstructors = constructors;
     }
@@ -850,7 +829,7 @@ public final class Concrete {
     private final List<Definition> myFields;
 
     public ClassDefinition(Position position, String name, Universe universe, List<Definition> fields) {
-      super(position, name, DEFAULT_PRECEDENCE, Fixity.PREFIX, universe);
+      super(position, new Name(name, Fixity.PREFIX), DEFAULT_PRECEDENCE, universe);
       myFields = fields;
     }
 
@@ -869,8 +848,8 @@ public final class Concrete {
     private final DataDefinition myDataType;
     private final List<TypeArgument> myArguments;
 
-    public Constructor(Position position, String name, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
-      super(position, name, precedence, fixity, universe);
+    public Constructor(Position position, Name name, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
+      super(position, name, precedence, universe);
       myArguments = arguments;
       myDataType = dataType;
     }

@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -97,10 +98,8 @@ public class LiftTest {
   public void liftElim() {
     // lift (\elim <1> | con a b c => <2> <3> <4>, 0, 1) = \elim <2> | con a b c => <2> <4> <5>
     List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition("D", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX,
-            new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
-    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX,
-            new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
+    DataDefinition def = new DataDefinition(new Utils.Name("D"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
+    Constructor con = new Constructor(0, new Utils.Name("con"), def, Abstract.Definition.DEFAULT_PRECEDENCE,  new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
     constructors.add(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
@@ -120,10 +119,8 @@ public class LiftTest {
   public void liftElim2() {
     // lift (\elim <1> | con a b c => <2> <3> <5>, 2, 1) = \elim <1> | con a b c => <2> <3> <6>
     List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition("D", null, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX,
-            new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
-    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX,
-            new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
+    DataDefinition def = new DataDefinition(new Utils.Name("D"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
+    Constructor con = new Constructor(0, new Utils.Name("con"), def, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
     constructors.add(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);

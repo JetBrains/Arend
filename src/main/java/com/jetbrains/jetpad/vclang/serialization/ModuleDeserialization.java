@@ -7,10 +7,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.*;
 
 import java.io.*;
 import java.util.*;
@@ -70,7 +67,7 @@ public class ModuleDeserialization {
             childModule = myModuleLoader.loadModule(new Module((ClassDefinition) parent, name), true);
           }
           if (childModule == null) {
-            childModule = newDefinition(code, name, parent);
+            childModule = newDefinition(code, new Utils.Name(name, Abstract.Definition.Fixity.PREFIX), parent);
           }
         }
       }
@@ -82,24 +79,26 @@ public class ModuleDeserialization {
     return errorsNumber;
   }
 
-  public static Definition newDefinition(int code, String name, Definition parent) throws IncorrectFormat {
+  public static Definition newDefinition(int code, Utils.Name name, Definition parent) throws IncorrectFormat {
     if (code == ModuleSerialization.OVERRIDDEN_CODE) {
-      return new OverriddenDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null);
+      return new OverriddenDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, null);
     }
     if (code == ModuleSerialization.FUNCTION_CODE) {
-      return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null);
+      return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, null);
     }
     if (code == ModuleSerialization.DATA_CODE) {
-      return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null);
+      return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, null);
     }
     if (code == ModuleSerialization.CLASS_CODE) {
-      ClassDefinition definition = new ClassDefinition(name, parent);
+      ClassDefinition definition = new ClassDefinition(name.name, parent);
       definition.hasErrors(true);
       return definition;
     }
     if (code == ModuleSerialization.CONSTRUCTOR_CODE) {
-      if (!(parent instanceof DataDefinition)) throw new IncorrectFormat();
-      return new Constructor(-1, name, (DataDefinition) parent, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX);
+      if (!(parent instanceof DataDefinition)) {
+        throw new IncorrectFormat();
+      }
+      return new Constructor(-1, name, (DataDefinition) parent, Abstract.Definition.DEFAULT_PRECEDENCE);
     }
     throw new IncorrectFormat();
   }

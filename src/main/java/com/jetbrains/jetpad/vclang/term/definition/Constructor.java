@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.List;
 import java.util.Set;
@@ -17,13 +18,13 @@ public class Constructor extends Definition implements Abstract.Constructor {
   private List<TypeArgument> myArguments;
   private int myIndex;
 
-  public Constructor(int index, String name, DataDefinition parent, Precedence precedence, Fixity fixity) {
-    super(name, parent, precedence, fixity);
+  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence) {
+    super(name, parent, precedence);
     myIndex = index;
   }
 
-  public Constructor(int index, String name, DataDefinition parent, Precedence precedence, Fixity fixity, Universe universe, List<TypeArgument> arguments) {
-    super(name, parent, precedence, fixity);
+  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence, Universe universe, List<TypeArgument> arguments) {
+    super(name, parent, precedence);
     setUniverse(universe);
     hasErrors(false);
     myArguments = arguments;

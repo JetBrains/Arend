@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
@@ -21,7 +22,7 @@ public class DefinitionTest {
   public void function() {
     // f : N => 0;
     ModuleLoader moduleLoader = new ModuleLoader();
-    FunctionDefinition def = new FunctionDefinition("f", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition(new Utils.Name("f"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
     assertNotNull(typedDef);
@@ -35,7 +36,7 @@ public class DefinitionTest {
   public void functionUntyped() {
     // f => 0;
     ModuleLoader moduleLoader = new ModuleLoader();
-    FunctionDefinition def = new FunctionDefinition("f", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition(new Utils.Name("f"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
     assertNotNull(typedDef);
@@ -54,7 +55,7 @@ public class DefinitionTest {
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
 
     ModuleLoader moduleLoader = new ModuleLoader();
-    FunctionDefinition def = new FunctionDefinition("f", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, arguments, null, Definition.Arrow.RIGHT, Index(0));
+    FunctionDefinition def = new FunctionDefinition(new Utils.Name("f"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, null, Definition.Arrow.RIGHT, Index(0));
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
     assertNotNull(typedDef);
@@ -76,17 +77,17 @@ public class DefinitionTest {
 
     ModuleLoader moduleLoader = new ModuleLoader();
     List<Constructor> constructors = new ArrayList<>(2);
-    DataDefinition def = new DataDefinition("D", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, parameters, constructors);
+    DataDefinition def = new DataDefinition(new Utils.Name("D"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, null, parameters, constructors);
 
     List<TypeArgument> arguments1 = new ArrayList<>(6);
     arguments1.add(Tele(vars("x"), Index(4)));
     arguments1.add(TypeArg(Apps(Index(3), Index(0), Index(1))));
-    constructors.add(new Constructor(0, "con1", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments1));
+    constructors.add(new Constructor(0, new Utils.Name("con1"), def, Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1));
 
     List<TypeArgument> arguments2 = new ArrayList<>(6);
     arguments2.add(Tele(false, vars("y"), Index(3)));
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
-    constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
+    constructors.add(new Constructor(1, new Utils.Name("con2"), def, Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2));
 
     List<Binding> localContext = new ArrayList<>();
     DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext);
@@ -112,18 +113,18 @@ public class DefinitionTest {
     parameters.add(Tele(vars("A"), Universe(2, 7)));
     ModuleLoader moduleLoader = new ModuleLoader();
     List<Constructor> constructors = new ArrayList<>(2);
-    DataDefinition def = new DataDefinition("D", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, parameters, constructors);
+    DataDefinition def = new DataDefinition(new Utils.Name("D"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, null, parameters, constructors);
 
     List<TypeArgument> arguments1 = new ArrayList<>(3);
     arguments1.add(Tele(vars("X"), Universe(5, 1)));
     arguments1.add(TypeArg(Index(0)));
-    constructors.add(new Constructor(0, "con1", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments1));
+    constructors.add(new Constructor(0, new Utils.Name("con1"), def, Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1));
 
     List<TypeArgument> arguments2 = new ArrayList<>(4);
     arguments2.add(Tele(vars("Y"), Universe(3, 2)));
     arguments2.add(TypeArg(Index(1)));
     arguments2.add(TypeArg(Index(1)));
-    constructors.add(new Constructor(1, "con2", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, arguments2));
+    constructors.add(new Constructor(1, new Utils.Name("con2"), def, Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2));
 
     List<Binding> localContext = new ArrayList<>();
     DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext);
@@ -147,8 +148,8 @@ public class DefinitionTest {
     // \data D (A : \Type0) = con (B : \Type1) A B |- con Nat zero zero : D Nat
     ModuleLoader moduleLoader = new ModuleLoader();
     List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition("D", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("A"), Universe(0))), constructors);
-    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))));
+    DataDefinition def = new DataDefinition(new Utils.Name("D"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))), constructors);
+    Constructor con = new Constructor(0, new Utils.Name("con"), def, Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))));
     constructors.add(con);
 
     Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
@@ -164,8 +165,8 @@ public class DefinitionTest {
     // \data D (A : \Type0) = con (B : \Type1) A B, f : D (Nat -> Nat) -> Nat |- f (con Nat (\lam x => x) zero) : Nat
     List<Constructor> constructors = new ArrayList<>(1);
     ModuleLoader moduleLoader = new ModuleLoader();
-    DataDefinition def = new DataDefinition("D", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("A"), Universe(0))), constructors);
-    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))));
+    DataDefinition def = new DataDefinition(new Utils.Name("D"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))), constructors);
+    Constructor con = new Constructor(0, new Utils.Name("con"), def, Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))));
     constructors.add(con);
 
     Expression expr = Apps(Index(0), Apps(DefCall(con), Nat(), Lam("x", Index(0)), Zero()));
@@ -184,8 +185,8 @@ public class DefinitionTest {
     // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
     List<Constructor> constructors = new ArrayList<>(1);
     ModuleLoader moduleLoader = new ModuleLoader();
-    DataDefinition def = new DataDefinition("D", new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(Tele(vars("A"), Universe(0))), constructors);
-    Constructor con = new Constructor(0, "con", def, Abstract.Definition.DEFAULT_PRECEDENCE, Abstract.Definition.Fixity.PREFIX, null, args(TypeArg(Index(0))));
+    DataDefinition def = new DataDefinition(new Utils.Name("D"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))), constructors);
+    Constructor con = new Constructor(0, new Utils.Name("con"), def, Abstract.Definition.DEFAULT_PRECEDENCE, null, args(TypeArg(Index(0))));
     constructors.add(con);
 
     Expression expr = Apps(Index(0), DefCall(con));

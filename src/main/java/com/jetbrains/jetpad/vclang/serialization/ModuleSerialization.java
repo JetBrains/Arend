@@ -137,7 +137,7 @@ public class ModuleSerialization {
   private static void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
     stream.write(definition.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 1 : 2);
     stream.writeByte(definition.getPrecedence().priority);
-    stream.write(definition.getFixity() == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
+    stream.write(definition.getName().fixity == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
   }
 
   public static void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {

@@ -30,7 +30,7 @@ public class DefinitionsIndices {
       stream.writeInt(entry.getValue());
       if (entry.getValue() != 0) {
         stream.writeInt(myDefinitions.get(entry.getKey().getParent()));
-        stream.writeUTF(entry.getKey().getName());
+        stream.writeUTF(entry.getKey().getName().name);
         stream.write(ModuleSerialization.getDefinitionCode(entry.getKey()));
       }
     }

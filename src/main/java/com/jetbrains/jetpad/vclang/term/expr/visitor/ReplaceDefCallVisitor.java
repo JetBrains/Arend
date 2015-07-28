@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.sun.org.apache.xpath.internal.Arg;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,7 +78,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
         myExpression = myExpression.liftIndex(0, 1);
       }
     }
-    return arguments;
+    return result;
   }
 
   private Expression visitTypeArguments(List<TypeArgument> args, Expression codomain) {
@@ -179,7 +178,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
       Expression resultType = entry.getValue().getResultType() == null ? null : entry.getValue().getResultType().accept(this);
       Expression term = entry.getValue().getTerm() == null ? null : entry.getValue().getTerm().accept(this);
-      OverriddenDefinition definition = new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), entry.getValue().getFixity(), arguments, resultType, entry.getValue().getArrow(), term, entry.getValue().getOverriddenFunction());
+      OverriddenDefinition definition = new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), arguments, resultType, entry.getValue().getArrow(), term, entry.getValue().getOverriddenFunction());
       definitions.put(entry.getKey(), definition);
     }
     return ClassExt(expr.getBaseClass(), definitions, expr.getUniverse());

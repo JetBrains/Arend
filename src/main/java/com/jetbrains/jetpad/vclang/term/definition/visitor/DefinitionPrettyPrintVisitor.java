@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.List;
@@ -32,12 +31,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
     myBuilder.append('\n');
     PrettyPrintVisitor.printIndent(myBuilder, myIndent);
 
-    if (def.getFixity() == Definition.Fixity.PREFIX) {
-      myBuilder.append(def.getName());
-    } else {
-      myBuilder.append('(').append(def.getName()).append(')');
-    }
-
+    myBuilder.append(def.getName());
     if (def.getArguments() != null) {
       for (Abstract.Argument argument : def.getArguments()) {
         myBuilder.append(' ');
@@ -69,11 +63,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
   @Override
   public Void visitData(Abstract.DataDefinition def, Void ignored) {
     myBuilder.append("\\data ");
-    if (def.getFixity() == Abstract.Definition.Fixity.PREFIX) {
-      myBuilder.append(def.getName());
-    } else {
-      myBuilder.append('(').append(def.getName()).append(')');
-    }
+    myBuilder.append(def.getName());
 
     if (def.getParameters() != null) {
       for (Abstract.TypeArgument parameter : def.getParameters()) {

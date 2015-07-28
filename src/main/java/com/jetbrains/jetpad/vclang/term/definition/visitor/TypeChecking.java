@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 
 import java.util.ArrayList;
@@ -49,11 +50,11 @@ public class TypeChecking {
         }
       } else {
         parameters.add(TypeArg(parameter.getExplicit(), result.expression));
-        localContext.add(new TypedBinding(null, result.expression));
+        localContext.add(new TypedBinding((Utils.Name) null, result.expression));
       }
     }
 
-    DataDefinition result = new DataDefinition(def.getName(), parent, def.getPrecedence(), def.getFixity(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters, new ArrayList<Constructor>());
+    DataDefinition result = new DataDefinition(def.getName(), parent, def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters, new ArrayList<Constructor>());
     result.setDependencies(abstractCalls);
     if (!parent.addField(result, moduleLoader.getErrors())) {
       return null;
@@ -135,7 +136,7 @@ public class TypeChecking {
         index += ((Abstract.TelescopeArgument) argument).getNames().size();
       } else {
         arguments.add(TypeArg(argument.getExplicit(), result.expression));
-        localContext.add(new TypedBinding(null, result.expression));
+        localContext.add(new TypedBinding((Utils.Name) null, result.expression));
         ++index;
       }
     }
@@ -145,7 +146,7 @@ public class TypeChecking {
       return null;
     }
 
-    Constructor constructor = new Constructor(conIndex, con.getName(), dataDefinition, con.getPrecedence(), con.getFixity(), universe, arguments);
+    Constructor constructor = new Constructor(conIndex, con.getName(), dataDefinition, con.getPrecedence(), universe, arguments);
     for (int j = 0; j < constructor.getArguments().size(); ++j) {
       Expression type = constructor.getArguments().get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
       while (type instanceof PiExpression) {
@@ -270,7 +271,7 @@ public class TypeChecking {
 
           if (ok) {
             arguments.add(TypeArg(argument.getExplicit(), result.expression));
-            localContext.add(new TypedBinding(null, result.expression));
+            localContext.add(new TypedBinding((Utils.Name) null, result.expression));
             ++index;
           }
         }
@@ -330,11 +331,11 @@ public class TypeChecking {
 
     FunctionDefinition result;
     if (def.isOverridden()) {
-      OverriddenDefinition overriddenDefinition = new OverriddenDefinition(def.getName(), parent, def.getPrecedence(), def.getFixity(), arguments, expectedType, def.getArrow(), null, overriddenFunction);
+      OverriddenDefinition overriddenDefinition = new OverriddenDefinition(def.getName(), parent, def.getPrecedence(), arguments, expectedType, def.getArrow(), null, overriddenFunction);
       overriddenDefinition.setOverriddenFunction(overriddenFunction);
       result = overriddenDefinition;
     } else {
-      result = new FunctionDefinition(def.getName(), parent, def.getPrecedence(), def.getFixity(), arguments, expectedType, def.getArrow(), null);
+      result = new FunctionDefinition(def.getName(), parent, def.getPrecedence(), arguments, expectedType, def.getArrow(), null);
     }
 
     result.setDependencies(abstractCalls);
@@ -400,9 +401,9 @@ public class TypeChecking {
     return true;
   }
 
-  public static boolean checkOnlyStatic(ModuleLoader moduleLoader, ClassDefinition parent, Definition definition, String name) {
+  public static boolean checkOnlyStatic(ModuleLoader moduleLoader, ClassDefinition parent, Definition definition, Utils.Name name) {
     if (definition == null || definition.isAbstract() || definition.getDependencies() != null && !definition.getDependencies().isEmpty()) {
-      moduleLoader.getErrors().add(new ModuleError(new Module(parent, name), "Only static fields are allowed in a class extension of " + parent.getName()));
+      moduleLoader.getErrors().add(new ModuleError(new Module(parent, name.getPrefixName()), "Only static fields are allowed in a class extension of " + parent.getName()));
       if (definition != null) {
         parent.removeField(definition);
       }

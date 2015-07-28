@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 
 import java.util.Collection;
@@ -61,8 +62,7 @@ public final class Abstract {
     byte PREC = 12;
     Expression getExpression();
     com.jetbrains.jetpad.vclang.term.definition.Definition getDefinition();
-    String getName();
-    Definition.Fixity getFixity();
+    Utils.Name getName();
   }
 
   public interface ClassExtExpression extends Expression {
@@ -159,15 +159,14 @@ public final class Abstract {
   }
 
   public interface Clause extends PrettyPrintableSourceNode {
-    String getName();
-    Definition.Fixity getFixity();
+    Utils.Name getName();
     List<? extends NameArgument> getArguments();
     Definition.Arrow getArrow();
     Expression getExpression();
   }
 
   public interface Binding extends SourceNode {
-    String getName();
+    Utils.Name getName();
   }
 
   public interface Definition extends Binding {
@@ -206,7 +205,6 @@ public final class Abstract {
 
     Universe getUniverse();
     Precedence getPrecedence();
-    Fixity getFixity();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
@@ -220,7 +218,7 @@ public final class Abstract {
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
     boolean isOverridden();
-    String getOriginalName();
+    Utils.Name getOriginalName();
   }
 
   public interface DataDefinition extends Definition {

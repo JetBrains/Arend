@@ -15,14 +15,14 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   private Expression myTerm;
   private boolean myTypeHasErrors;
 
-  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, Arrow arrow) {
-    super(name, parent, precedence, fixity);
+  public FunctionDefinition(Utils.Name name, Definition parent, Precedence precedence, Arrow arrow) {
+    super(name, parent, precedence);
     myArrow = arrow;
     myTypeHasErrors = true;
   }
 
-  public FunctionDefinition(String name, Definition parent, Precedence precedence, Fixity fixity, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
-    super(name, parent, precedence, fixity);
+  public FunctionDefinition(Utils.Name name, Definition parent, Precedence precedence, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
+    super(name, parent, precedence);
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);
     myArguments = arguments;
@@ -52,7 +52,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
-  public String getOriginalName() {
+  public Utils.Name getOriginalName() {
     return null;
   }
 

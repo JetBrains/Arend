@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   public BuildVisitor(ClassDefinition parent, ModuleLoader moduleLoader, boolean onlyStatics) {
     myParent = parent;
-    myModule = new Module((ClassDefinition) parent.getParent(), parent.getName());
+    myModule = new Module((ClassDefinition) parent.getParent(), parent.getName().name);
     myModuleLoader = moduleLoader;
     myOnlyStatics = onlyStatics;
   }
@@ -165,7 +166,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         if (name == null) {
           return null;
         }
-        TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, name.name);
+        TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, name);
         return null;
       } else {
         return visitDefOverride((DefOverrideContext) ctx);
@@ -264,7 +265,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (name == null) {
         return null;
       }
-      TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, name.name);
+      TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, name);
       return null;
     }
     return visitDefFunction(false, null, ctx.precedence(), ctx.name(), ctx.tele(), functionCtx);
@@ -308,7 +309,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     Concrete.Expression type = functionCtx.typeCtx == null ? null : visitExpr(functionCtx.typeCtx);
     Definition.Arrow arrow = functionCtx.arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : functionCtx.arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
-    return new Concrete.FunctionDefinition(name.position, name.name, precCtx == null ? null : visitPrecedence(precCtx), name.fixity, arguments, type, arrow, null, overridden, originalName == null ? null : originalName.name);
+    return new Concrete.FunctionDefinition(name.position, name, precCtx == null ? null : visitPrecedence(precCtx), arguments, type, arrow, null, overridden, originalName == null ? null : originalName);
   }
 
   private void visitFunctionRawEnd(Concrete.FunctionDefinition definition) {
@@ -412,7 +413,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     Universe universe = type == null ? null : ((Concrete.UniverseExpression) type).getUniverse();
-    Concrete.DataDefinition def = new Concrete.DataDefinition(name.position, name.name, visitPrecedence(ctx.precedence()), name.fixity, universe, parameters, null);
+    Concrete.DataDefinition def = new Concrete.DataDefinition(name.position, name, visitPrecedence(ctx.precedence()), universe, parameters, null);
     List<Binding> localContext = new ArrayList<>();
     DataDefinition typedDef = TypeChecking.typeCheckDataBegin(myModuleLoader, myParent, def, localContext);
 
@@ -429,7 +430,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (arguments == null) {
         continue;
       }
-      Concrete.Constructor con = new Concrete.Constructor(conName.position, conName.name, visitPrecedence(ctx.constructor(i).precedence()), conName.fixity, new Universe.Type(), arguments, def);
+      Concrete.Constructor con = new Concrete.Constructor(conName.position, conName, visitPrecedence(ctx.constructor(i).precedence()), new Universe.Type(), arguments, def);
       if (TypeChecking.typeCheckConstructor(myModuleLoader, typedDef, con, localContext, index) != null) {
         ++index;
       }
@@ -737,7 +738,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           if (classField == null && definition instanceof FunctionDefinition) {
             FunctionDefinition functionDefinition = (FunctionDefinition) definition;
             if (!functionDefinition.typeHasErrors() && functionDefinition.getArguments().isEmpty() && functionDefinition.getResultType() instanceof DefCallExpression && ((DefCallExpression) functionDefinition.getResultType()).getDefinition() instanceof ClassDefinition) {
-              expr = new Concrete.DefCallNameExpression(expr.getPosition(), expr, name.name, name.fixity);
+              expr = new Concrete.DefCallNameExpression(expr.getPosition(), expr, name);
               continue;
             }
           }
@@ -748,7 +749,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           expr = new Concrete.DefCallExpression(expr.getPosition(), null, classField);
           continue;
         }
-        expr = new Concrete.DefCallNameExpression(expr.getPosition(), expr, name.name, name.fixity);
+        expr = new Concrete.DefCallNameExpression(expr.getPosition(), expr, name);
       } else {
         expr = new Concrete.ProjExpression(expr.getPosition(), expr, Integer.valueOf(((SigmaFieldContext) field).NUMBER().getText()) - 1);
       }
@@ -988,7 +989,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         myContext = oldContext;
         return null;
       }
-      Concrete.Clause clause = new Concrete.Clause(tokenPosition(clauseCtx.getStart()), name1.name, name1.fixity, nameArguments, arrow, expr, null);
+      Concrete.Clause clause = new Concrete.Clause(tokenPosition(clauseCtx.getStart()), name1, nameArguments, arrow, expr, null);
 
       if (name1.name == null) {
         if (otherwise != null) {
@@ -1017,9 +1018,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Name visitClauseNoName(ClauseNoNameContext ctx) {
-    Name name = new Name();
-    name.name = null;
-    name.fixity = Abstract.Definition.Fixity.PREFIX;
+    Name name = new Name(null);
+    name.position = tokenPosition(ctx.getStart());
     return name;
   }
 
@@ -1077,7 +1077,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    Name result = new Name();
+    Name result = new Name(null, null);
     result.fixity = ctx instanceof NameIdContext ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
     if (result.fixity == Abstract.Definition.Fixity.PREFIX) {
       result.name = ((NameIdContext) ctx).ID().getText();
@@ -1089,9 +1089,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return result;
   }
 
-  private static class Name {
-    String name;
+  private static class Name extends Utils.Name {
     Concrete.Position position;
-    Abstract.Definition.Fixity fixity;
+
+    public Name(String name, Abstract.Definition.Fixity fixity) {
+      super(name, fixity);
+    }
+
+    public Name(String name) {
+      super(name);
+    }
   }
 }

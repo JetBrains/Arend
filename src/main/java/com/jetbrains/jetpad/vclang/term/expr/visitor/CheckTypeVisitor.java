@@ -20,6 +20,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.Name;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Definition myParent;
@@ -538,7 +539,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
         parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
-        Definition child = parent.getPublicField(expr.getName());
+        Definition child = parent.getPublicField(expr.getName().name);
         if (child != null) {
           if (child.hasErrors()) {
             TypeCheckingError error = new HasErrors(myParent, child.getName(), expr);
@@ -565,7 +566,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (okExprResult.type instanceof UniverseExpression) {
         Expression expression = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
         if (expression instanceof DefCallExpression && ((DefCallExpression) expression).getDefinition() instanceof ClassDefinition) {
-          Definition field = ((DefCallExpression) expression).getDefinition().getStaticField(expr.getName());
+          Definition field = ((DefCallExpression) expression).getDefinition().getStaticField(expr.getName().name);
           if (field == null) {
             notInScope = true;
           } else {
@@ -575,7 +576,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           List<Expression> arguments = new ArrayList<>();
           Expression function = expression.getFunction(arguments);
           if (function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() instanceof DataDefinition) {
-            Constructor constructor = ((DataDefinition) ((DefCallExpression) function).getDefinition()).getStaticField(expr.getName());
+            Constructor constructor = ((DataDefinition) ((DefCallExpression) function).getDefinition()).getStaticField(expr.getName().name);
             if (constructor == null) {
               notInScope = true;
             } else {
@@ -821,7 +822,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           ++numberOfVars;
         }
       } else {
-        myLocalContext.add(new TypedBinding(null, domainResults[i].expression));
+        myLocalContext.add(new TypedBinding((Name) null, domainResults[i].expression));
         ++numberOfVars;
       }
     }
@@ -894,7 +895,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int index = 0;
     while (it.hasPrevious()) {
       Binding def = it.previous();
-      if (expr.getName().equals(def.getName())) {
+      if (expr.getName().equals(def.getName() == null ? null : def.getName().name)) {
         return new OKResult(Index(index), def.getType(), null);
       }
       ++index;
@@ -1014,7 +1015,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           ++numberOfVars;
         }
       } else {
-        myLocalContext.add(new TypedBinding(null, domainResults[i].expression));
+        myLocalContext.add(new TypedBinding((Name) null, domainResults[i].expression));
         ++numberOfVars;
       }
     }
@@ -1127,7 +1128,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           }
         }
         if (index == dataType.getConstructors().size()) {
-          error = new NotInScopeError(myParent, clause, clause.getName() == null ? "" : clause.getName());
+          error = new NotInScopeError(myParent, clause, clause.getName() == null ? "" : clause.getName().getPrefixName());
         } else {
           error = new TypeCheckingError(myParent, "Overlapping pattern matching: " + dataType.getConstructors().get(index), clause, getNames(myLocalContext));
         }
@@ -1245,7 +1246,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         msg += ". Unhandled constructors: ";
         for (int i = 0; i < constructors.size(); ++i) {
           if (i > 0) msg += ", ";
-          msg += nameToString(constructors.get(i).getName(), constructors.get(i).getFixity());
+          msg += constructors.get(i).getName().getPrefixName();
         }
       }
       error = new TypeCheckingError(myParent, msg, expr, getNames(myLocalContext));
@@ -1287,7 +1288,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private Concrete.Clause copyClause(Concrete.Clause from, Concrete.ElimExpression elim) {
     if (from == null)
       return null;
-    return new Concrete.Clause(from.getPosition(), from.getName(), from.getFixity(), from.getArguments(), from.getArrow(), from.getExpression(), elim);
+    return new Concrete.Clause(from.getPosition(), from.getName(), from.getArguments(), from.getArrow(), from.getExpression(), elim);
   }
 
   @Override
@@ -1314,7 +1315,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (Concrete.Clause clause : caseExpression.getClauses()) {
       elimClauses.add(copyClause(clause, elim));
     }
-    myLocalContext.add(new TypedBinding(null, exprOKResult.type));
+    myLocalContext.add(new TypedBinding((Name) null, exprOKResult.type));
     Result elimResult = typeCheck(elim, expectedType.liftIndex(0, 1));
     if (!(elimResult instanceof OKResult)) return elimResult;
     OKResult elimOKResult = (OKResult) elimResult;
@@ -1373,13 +1374,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Map<String, FunctionDefinition> abstracts = new HashMap<>();
     for (Definition definition : expr.getBaseClass().getPublicFields()) {
       if (definition instanceof FunctionDefinition && definition.isAbstract()) {
-        abstracts.put(definition.getName(), (FunctionDefinition) definition);
+        abstracts.put(definition.getName().name, (FunctionDefinition) definition);
       }
     }
 
     Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
     for (Abstract.FunctionDefinition definition : expr.getDefinitions()) {
-      FunctionDefinition oldDefinition = abstracts.remove(definition.getName());
+      FunctionDefinition oldDefinition = abstracts.remove(definition.getName().name);
       if (oldDefinition == null) {
         myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(myParent, definition.getName() + " is not defined in " + expr.getBaseClass().getFullName(), definition, getNames(myLocalContext)));
       } else {
@@ -1435,7 +1436,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               ++numVarsPassed;
             }
           } else {
-            myLocalContext.add(new TypedBinding(null, okResult.expression));
+            myLocalContext.add(new TypedBinding((Name) null, okResult.expression));
             ++numVarsPassed;
           }
         } else {

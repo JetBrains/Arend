@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.error;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.List;
 
@@ -65,6 +66,10 @@ public class ArgInferenceError extends TypeCheckingError {
 
     public StringPrettyPrintable(String string) {
       myString = string;
+    }
+
+    public StringPrettyPrintable(Utils.Name name) {
+      myString = name.getPrefixName();
     }
 
     @Override

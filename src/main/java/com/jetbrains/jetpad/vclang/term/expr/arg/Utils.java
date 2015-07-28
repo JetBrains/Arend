@@ -106,7 +106,7 @@ public class Utils {
         context.add(new TypedBinding(((TelescopeArgument) argument).getNames().get(i), ((TelescopeArgument) argument).getType().liftIndex(0, i)));
       }
     } else if (argument instanceof TypeArgument) {
-      context.add(new TypedBinding(null, ((TypeArgument)argument).getType()));
+      context.add(new TypedBinding((Name) null, ((TypeArgument)argument).getType()));
     } else if (argument instanceof NameArgument){
       context.add(null);
     }
@@ -183,28 +183,12 @@ public class Utils {
     }
   }
 
-  public static void prettyPrintName(StringBuilder builder, String name, Abstract.Definition.Fixity fixity) {
-    if (fixity == Abstract.Definition.Fixity.PREFIX) {
-      builder.append(name);
-    } else {
-      builder.append('(').append(name).append(')');
-    }
-  }
-
-  public static String nameToString(String name, Abstract.Definition.Fixity fixity) {
-    if (fixity == Abstract.Definition.Fixity.PREFIX) {
-      return name;
-    } else {
-      return "(" + name + ")";
-    }
-  }
-
   public static void prettyPrintClause(Abstract.ElimCaseExpression expr, Abstract.Clause clause, StringBuilder builder, List<String> names, int indent) {
     if (clause == null) return;
 
     PrettyPrintVisitor.printIndent(builder, indent);
     builder.append("| ");
-    prettyPrintName(builder, clause.getName(), clause.getFixity());
+    builder.append(clause.getName());
     int startIndex = names.size();
     for (Abstract.Argument argument : clause.getArguments()){
       builder.append(' ');
@@ -264,4 +248,36 @@ public class Utils {
     trimToSize(names, oldNamesSize);
   }
 
+  public static class Name {
+    public String name;
+    public Abstract.Definition.Fixity fixity;
+
+    public Name(String name, Abstract.Definition.Fixity fixity) {
+      this.name = name;
+      this.fixity = fixity;
+    }
+
+    public Name(String name) {
+      this.name = name;
+      this.fixity = Abstract.Definition.Fixity.PREFIX;
+    }
+
+    public String getPrefixName() {
+      return fixity == Abstract.Definition.Fixity.PREFIX ? name : "(" + name + ")";
+    }
+
+    public String getInfixName() {
+      return fixity == Abstract.Definition.Fixity.PREFIX ? "`" + name + "`" : name;
+    }
+
+    @Override
+    public String toString() {
+      return getPrefixName();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      return other == this || other instanceof Name && ((Name) other).name.equals(name);
+    }
+  }
 }

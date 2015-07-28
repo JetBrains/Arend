@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,13 +34,8 @@ public class Clause implements Abstract.Clause {
   }
 
   @Override
-  public String getName() {
+  public Utils.Name getName() {
     return myConstructor.getName();
-  }
-
-  @Override
-  public Abstract.Definition.Fixity getFixity() {
-    return myConstructor.getFixity();
   }
 
   @Override

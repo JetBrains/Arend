@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
@@ -58,7 +59,7 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
           context.add(new TypedBinding(name, argument.getType()));
         }
       } else {
-        context.add(new TypedBinding(null, argument.getType()));
+        context.add(new TypedBinding((Utils.Name) null, argument.getType()));
       }
     }
 

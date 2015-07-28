@@ -30,7 +30,7 @@ public class GoalError extends TypeCheckingError {
       builder.append("\n\tExpected type: ");
       List<String> names = new ArrayList<>(myContext.size());
       for (Binding binding : myContext) {
-        names.add(binding.getName());
+        names.add(binding.getName() == null ? null : binding.getName().name);
       }
       myType.prettyPrint(builder, names, Abstract.Expression.PREC);
     }
@@ -46,7 +46,7 @@ public class GoalError extends TypeCheckingError {
         } else {
           builder.append("{!error}");
         }
-        names.add(binding.getName());
+        names.add(binding.getName() == null ? null : binding.getName().name);
       }
     }
 

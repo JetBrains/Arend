@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,16 +12,14 @@ import java.util.Set;
 public abstract class Definition extends Binding implements Abstract.Definition {
   private Definition myParent;
   private Precedence myPrecedence;
-  private Fixity myFixity;
   private Universe myUniverse;
   private boolean myHasErrors;
   private Set<Definition> myDependencies;
 
-  public Definition(String name, Definition parent, Precedence precedence, Fixity fixity) {
+  public Definition(Utils.Name name, Definition parent, Precedence precedence) {
     super(name);
     myParent = parent;
     myPrecedence = precedence;
-    myFixity = fixity;
     myUniverse = new Universe.Type(0, Universe.Type.PROP);
     myHasErrors = true;
     myDependencies = null;
@@ -56,15 +55,6 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   }
 
   @Override
-  public Fixity getFixity() {
-    return myFixity;
-  }
-
-  public void setFixity(Fixity fixity) {
-    myFixity = fixity;
-  }
-
-  @Override
   public Universe getUniverse() {
     return myUniverse;
   }
@@ -93,7 +83,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     myDependencies = dependencies;
   }
 
-  public void addDependecy(Definition dependency) {
+  public void addDependency(Definition dependency) {
     if (myDependencies == null) {
       myDependencies = new HashSet<>();
     }
@@ -108,7 +98,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   }
 
   public String getFullName() {
-    return myParent == null || myParent.getParent() == null ? getName() : myParent.getFullName() + "." + (myFixity == Fixity.PREFIX ? getName() : "(" + getName() + ")");
+    return myParent == null || myParent.getParent() == null ? getName().getPrefixName() : myParent.getFullName() + "." + getName();
   }
 
   @Override

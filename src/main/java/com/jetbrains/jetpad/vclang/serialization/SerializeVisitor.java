@@ -260,7 +260,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   private void visitLetClause(LetClause clause) {
     try {
-      myDataStream.writeUTF(clause.getName());
+      myDataStream.writeUTF(clause.getName().name);
       ModuleSerialization.writeArguments(this, clause.getArguments());
       myDataStream.writeBoolean(clause.getResultType() != null);
       if (clause.getResultType() != null) {
