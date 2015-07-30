@@ -283,6 +283,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
         }
         lifter.liftPatterns();
       }
+
       return letExpression.getExpression().accept(this);
     }
   }
@@ -292,7 +293,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
       if (!visitArguments(clause.getArguments(), lifter1)) {
         return false;
       }
+      return clause.getTerm().accept(this);
     }
-    return clause.getTerm().accept(this);
   }
 }

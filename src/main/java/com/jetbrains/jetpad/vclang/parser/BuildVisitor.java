@@ -964,8 +964,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           }
         }
 
-        myContext.clear();
+
         if (ctx.elimCase() instanceof ElimContext) {
+          myContext.clear();
           for (int i = 0; i < elimIndex; ++i) {
             myContext.add(oldContext.get(i));
           }
@@ -1054,6 +1055,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     final int oldContextSize = myContext.size();
     final List<Concrete.LetClause> clauses = new ArrayList<>();
     for (LetClauseContext clauseCtx : ctx.letClause()) {
+      Concrete.LetClause clause = visitLetClause(clauseCtx);
+      if (clause == null)
+        return null;
       clauses.add(visitLetClause(clauseCtx));
     }
 
