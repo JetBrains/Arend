@@ -2,13 +2,15 @@ grammar Vcgrammar;
 
 defs  : def*;
 
-def   : '\\function' precedence name tele* typeTermOpt          # defFunction
-      | '\\override' name ('\\as' name)? tele* typeTermOpt      # defOverride
-      | '\\data' precedence name tele* (':' expr)? constructor* # defData
-      | '\\class' ID tele* classFields                          # defClass
-      | '\\extends' ID                                          # defExtends
-      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?        # defCmd
+def   : '\\function' precedence name tele* typeTermOpt where?     # defFunction
+      | '\\override' name ('\\as' name)? tele* typeTermOpt where? # defOverride
+      | '\\data' precedence name tele* (':' expr)? constructor*   # defData
+      | '\\class' ID tele* classFields                            # defClass
+      | '\\extends' ID                                            # defExtends
+      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?          # defCmd
       ;
+
+where : '\\where' def+ ';'?;
 
 renamingClause : name '\\to' name;
 

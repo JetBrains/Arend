@@ -48,6 +48,7 @@ public class ModuleSerialization {
     }
 
     if (definition instanceof FunctionDefinition) {
+      int errors = definition.hasErrors() ? 1 : 0;
       FunctionDefinition functionDefinition = (FunctionDefinition) definition;
       writeDefinition(visitor.getDataStream(), definition);
       if (definition instanceof OverriddenDefinition) {
@@ -62,7 +63,17 @@ public class ModuleSerialization {
       if (!definition.hasErrors() && !functionDefinition.isAbstract()) {
         functionDefinition.getTerm().accept(visitor);
       }
-      return definition.hasErrors() ? 1 : 0;
+      visitor.getDataStream().writeBoolean(functionDefinition.getNestedDefinitions() != null);
+      if (functionDefinition.getNestedDefinitions() != null) {
+        visitor.getDataStream().writeInt(functionDefinition.getNestedDefinitions().size());
+        for (Definition nestedDef : functionDefinition.getNestedDefinitions()) {
+          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(nestedDef));
+          if (nestedDef.getParent() == definition) {
+            errors += serializeDefinition(visitor, nestedDef);
+          }
+        }
+      }
+      return errors;
     } else if (definition instanceof DataDefinition) {
       int errors = definition.hasErrors() ? 1 : 0;
       DataDefinition dataDefinition = (DataDefinition) definition;

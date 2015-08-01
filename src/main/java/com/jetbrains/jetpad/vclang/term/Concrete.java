@@ -775,6 +775,11 @@ public final class Concrete {
     }
 
     @Override
+    public List<Definition> getNestedDefinitions() {
+      return null;
+    }
+
+    @Override
     public Expression getTerm() {
       return myTerm;
     }

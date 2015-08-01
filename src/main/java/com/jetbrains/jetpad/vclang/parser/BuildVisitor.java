@@ -18,7 +18,7 @@ import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
-  private ClassDefinition myParent;
+  private Definition myParent;
   private List<String> myContext = new ArrayList<>();
   private final Module myModule;
   private final ModuleLoader myModuleLoader;
@@ -99,12 +99,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.Expression) visit(expr);
   }
 
+  private void visitDefList(List<DefContext> defs) {
+    for (DefContext def : defs) {
+      visitDef(def);
+    }
+  }
+
   @Override
   public Void visitDefs(DefsContext ctx) {
     if (ctx == null) return null;
-    for (DefContext def : ctx.def()) {
-      visitDef(def);
-    }
+    visitDefList(ctx.def());
     return null;
   }
 
@@ -138,21 +142,31 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return visitDefData((DefDataContext) ctx);
     } else
     if (ctx instanceof DefClassContext) {
-      ClassDefinition classDef = myParent.getClass(((DefClassContext) ctx).ID().getText(), myModuleLoader.getErrors());
+      ClassDefinition classDef = null;
+      if (myParent instanceof FunctionDefinition) {
+        classDef = ((FunctionDefinition) myParent).getClass(((DefClassContext) ctx).ID().getText(), myModuleLoader.getErrors());
+      } else if (myParent instanceof ClassDefinition) {
+        classDef = ((ClassDefinition) myParent).getClass(((DefClassContext) ctx).ID().getText(), myModuleLoader.getErrors());
+      }
+
       if (classDef == null) return null;
       boolean oldOnlyStatics = myOnlyStatics;
       myOnlyStatics = !classDef.hasErrors();
       classDef.hasErrors(false);
-      ClassDefinition oldParent = myParent;
+      Definition oldParent = myParent;
       myParent = classDef;
       visitDefClass((DefClassContext) ctx);
       myOnlyStatics = oldOnlyStatics;
       myParent = oldParent;
 
-      if (myOnlyStatics && !TypeChecking.checkOnlyStatic(myModuleLoader, myParent, classDef, classDef.getName())) {
-        return null;
+      if (myParent instanceof ClassDefinition) {
+        if (myOnlyStatics && !TypeChecking.checkOnlyStatic(myModuleLoader, (ClassDefinition) myParent, classDef, classDef.getName())) {
+          return null;
+        }
+        ((ClassDefinition)myParent).addStaticField(classDef, myModuleLoader.getErrors());
+      } else if (myParent instanceof FunctionDefinition) {
+        myParent.addDependencies(classDef.getDependencies());
       }
-      myParent.addStaticField(classDef, myModuleLoader.getErrors());
       return classDef;
     } else
     if (ctx instanceof DefCmdContext) {
@@ -160,16 +174,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     } else
     if (ctx instanceof DefOverrideContext) {
-      if (myOnlyStatics) {
-        List<NameContext> names = ((DefOverrideContext) ctx).name();
-        Name name = getName(names.size() == 1 ? names.get(0) : names.get(1));
-        if (name == null) {
+      if (myParent instanceof ClassDefinition) {
+        if (myOnlyStatics) {
+          List<NameContext> names = ((DefOverrideContext) ctx).name();
+          Name name = getName(names.size() == 1 ? names.get(0) : names.get(1));
+          if (name == null) {
+            return null;
+          }
+          TypeChecking.checkOnlyStatic(myModuleLoader, (ClassDefinition) myParent, null, name);
           return null;
+        } else {
+          return visitDefOverride((DefOverrideContext) ctx);
         }
-        TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, name);
-        return null;
       } else {
-        return visitDefOverride((DefOverrideContext) ctx);
+        myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), "\\override is not allowed inside \\where."));
+        return null;
       }
     } else {
       throw new IllegalStateException();
@@ -183,6 +202,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (module == null) return null;
     boolean remove = ctx.nsCmd() instanceof CloseCmdContext;
     boolean export = ctx.nsCmd() instanceof ExportCmdContext;
+
+    if (export && !(myParent instanceof ClassDefinition)) {
+      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), "\\export is not allowed inside \\where."));
+      return null;
+    }
+
     if (ctx.name().size() > 1) {
       for (int i = 1; i < ctx.name().size(); ++i) {
         String name = ctx.name(i) instanceof NameBinOpContext ? ((NameBinOpContext) ctx.name(i)).BIN_OP().getText() : ((NameIdContext) ctx.name(i)).ID().getText();
@@ -191,15 +216,26 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name(i).getStart()), name + " is not a static field of " + module.getFullName()));
           continue;
         }
-
-        if (remove) {
-          myParent.removeField(definition);
-        } else {
-          if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
-            myParent.addPrivateField(definition);
-            if (export) {
-              myParent.addPublicField(definition, myModuleLoader.getErrors());
-              myParent.addStaticField(definition, myModuleLoader.getErrors());
+        if (myParent instanceof ClassDefinition) {
+          ClassDefinition myParentClass = (ClassDefinition) myParent;
+          if (remove) {
+            myParentClass.removeField(definition);
+          } else {
+            if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
+              myParentClass.addPrivateField(definition);
+              if (export) {
+                myParentClass.addPublicField(definition, myModuleLoader.getErrors());
+                myParentClass.addStaticField(definition, myModuleLoader.getErrors());
+              }
+            }
+          }
+        } else if (myParent instanceof FunctionDefinition) {
+          FunctionDefinition myParentClass = (FunctionDefinition) myParent;
+          if (remove) {
+            myParentClass.removeNestedDefinition(definition.getName().name);
+          } else {
+            if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
+              myParentClass.addNestedDefinition(definition, myModuleLoader.getErrors());
             }
           }
         }
@@ -207,14 +243,26 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else {
       if (module.getStaticFields() == null) return null;
       for (Definition definition : module.getStaticFields()) {
-        if (remove) {
-          myParent.removeField(definition);
-        } else {
-          if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
-            myParent.addPrivateField(definition);
-            if (export) {
-              myParent.addPublicField(definition, myModuleLoader.getErrors());
-              myParent.addStaticField(definition, myModuleLoader.getErrors());
+        if (myParent instanceof ClassDefinition) {
+          ClassDefinition myParentClass = (ClassDefinition) myParent;
+          if (remove) {
+            myParentClass.removeField(definition);
+          } else {
+            if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
+              myParentClass.addPrivateField(definition);
+              if (export) {
+                myParentClass.addPublicField(definition, myModuleLoader.getErrors());
+                myParentClass.addStaticField(definition, myModuleLoader.getErrors());
+              }
+            }
+          }
+        } else if (myParent instanceof FunctionDefinition) {
+          FunctionDefinition myParentClass = (FunctionDefinition) myParent;
+          if (remove) {
+            myParentClass.removeNestedDefinition(definition.getName().name);
+          } else {
+            if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
+              myParentClass.addNestedDefinition(definition, myModuleLoader.getErrors());
             }
           }
         }
@@ -265,20 +313,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (name == null) {
         return null;
       }
-      TypeChecking.checkOnlyStatic(myModuleLoader, myParent, null, name);
+      if (myParent instanceof ClassDefinition && !((ClassDefinition) myParent).isLocal())
+        TypeChecking.checkOnlyStatic(myModuleLoader, (ClassDefinition) myParent, null, name);
       return null;
     }
-    return visitDefFunction(false, null, ctx.precedence(), ctx.name(), ctx.tele(), functionCtx);
+    return visitDefFunction(false, null, ctx.precedence(), ctx.name(), ctx.tele(), functionCtx, ctx.where() == null ? null :  ctx.where().def());
   }
 
   @Override
   public FunctionDefinition visitDefOverride(DefOverrideContext ctx) {
     if (ctx == null) return null;
     FunctionContext functionCtx = (FunctionContext) visit(ctx.typeTermOpt());
-    return visitDefFunction(true, ctx.name().size() == 1 ? null : ctx.name(0), null, ctx.name().size() == 1 ? ctx.name(0) : ctx.name(1), ctx.tele(), functionCtx);
+    return visitDefFunction(true, ctx.name().size() == 1 ? null : ctx.name(0), null, ctx.name().size() == 1 ? ctx.name(0) : ctx.name(1), ctx.tele(), functionCtx, ctx.where() == null ? null : ctx.where().def());
   }
 
-  private FunctionDefinition visitDefFunction(boolean overridden, NameContext originalName, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, FunctionContext functionCtx) {
+  private FunctionDefinition visitDefFunction(boolean overridden, NameContext originalName, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, FunctionContext functionCtx, List<DefContext> defs) {
     Concrete.FunctionDefinition def = visitFunctionRawBegin(overridden, originalName, precCtx, nameCtx, teleCtx, functionCtx);
     if (def == null) {
       return null;
@@ -286,9 +335,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<Binding> localContext = new ArrayList<>();
     FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(myModuleLoader, myParent, def, localContext, null);
+
     if (typedDef != null) {
-      TypeChecking.typeCheckFunctionEnd(myModuleLoader, myParent, functionCtx.termCtx == null ? null : visitExpr(functionCtx.termCtx), typedDef, localContext, null, myOnlyStatics);
+      Definition oldParent = myParent;
+      myParent = typedDef;
+      if (defs != null)
+        visitDefList(defs);
+      Concrete.Expression term = functionCtx.termCtx == null ? null : visitExpr(functionCtx.termCtx);
+      myParent = oldParent;
+
+      TypeChecking.typeCheckFunctionEnd(myModuleLoader, myParent, term, typedDef, localContext, null, myOnlyStatics);
+
     }
+
     visitFunctionRawEnd(def);
     return typedDef;
   }
@@ -444,7 +503,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Void visitDefClass(DefClassContext ctx) {
     if (ctx == null) return null;
-    visitDefs(ctx.classFields().defs());
+    visitDefs(ctx.classFields() == null ? null : ctx.classFields().defs());
     return null;
   }
 
@@ -585,13 +644,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     for (Definition definition = myParent; definition != null; definition = definition.getParent()) {
-      if (!(definition instanceof ClassDefinition)) {
-        continue;
-      }
-
-      Definition field = ((ClassDefinition) definition).getPrivateField(name);
-      if (field != null) {
-        return new Concrete.DefCallExpression(position, null, field);
+      if (definition instanceof ClassDefinition) {
+        Definition field = ((ClassDefinition) definition).getPrivateField(name);
+        if (field != null) {
+          return new Concrete.DefCallExpression(position, null, field);
+        }
+      } else if (definition instanceof FunctionDefinition) {
+        Definition nested = ((FunctionDefinition) definition).getNestedDefinition(name);
+        if (nested != null) {
+          return new Concrete.DefCallExpression(position, null, nested);
+        }
       }
     }
 
@@ -773,7 +835,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
 
       ClassDefinition newParent = (ClassDefinition) ((Concrete.DefCallExpression) expr).getDefinition();
-      ClassDefinition oldParent = myParent;
+      Definition oldParent = myParent;
       myParent = newParent;
       List<Concrete.FunctionDefinition> definitions = visitDefsRaw(ctx.classFields().defs());
       myParent = oldParent;

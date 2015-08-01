@@ -219,6 +219,7 @@ public final class Abstract {
     boolean isAbstract();
     boolean isOverridden();
     Utils.Name getOriginalName();
+    Collection<? extends Definition> getNestedDefinitions();
   }
 
   public interface DataDefinition extends Definition {

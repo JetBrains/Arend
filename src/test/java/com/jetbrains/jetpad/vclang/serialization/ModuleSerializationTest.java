@@ -133,4 +133,31 @@ public class ModuleSerializationTest {
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
+
+  @Test
+  public void serializeFunctionTest() throws IOException {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    ClassDefinition def = new ClassDefinition("test", moduleLoader.rootModule());
+    FunctionDefinition funcDef = new FunctionDefinition(new Utils.Name("f"), def, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, null);
+    FunctionDefinition innerFunc = new FunctionDefinition(new Utils.Name("g"), funcDef, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero());
+    funcDef.addNestedDefinition(innerFunc, moduleLoader.getErrors());
+    funcDef.setTerm(DefCall(innerFunc));
+    def.addPublicField(funcDef, null);
+    def.addStaticField(funcDef, null);
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    DataOutputStream dataStream = new DataOutputStream(stream);
+    ModuleSerialization.writeStream(def, dataStream);
+
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    ClassDefinition newDef = new ClassDefinition("test", moduleLoader.rootModule());
+    moduleLoader.rootModule().addPublicField(newDef, null);
+    moduleLoader.rootModule().addStaticField(newDef, null);
+    int errors = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef);
+    assertEquals(0, errors);
+    assertEquals(1, newDef.getPublicFields().size());
+    assertEquals(1, ((FunctionDefinition) newDef.getPublicField("f")).getNestedDefinitions().size());
+    assertEquals(0, moduleLoader.getErrors().size());
+    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+  }
 }

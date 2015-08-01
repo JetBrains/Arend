@@ -14,10 +14,20 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   private List<Definition> myPublicFields;
   private Map<String, Definition> myStaticFields;
   private Map<String, Definition> myPrivateFields;
+  private boolean myIsLocal;
 
   public ClassDefinition(String name, Definition parent) {
+    this(name, parent, false);
+  }
+
+  public ClassDefinition(String name, Definition parent, boolean isLocal) {
     super(new Utils.Name(name, Fixity.PREFIX), parent, DEFAULT_PRECEDENCE);
+    myIsLocal = isLocal;
     hasErrors(false);
+  }
+
+  public boolean isLocal() {
+    return myIsLocal;
   }
 
   @Override
@@ -59,6 +69,21 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return visitor.visitClass(this, params);
   }
 
+  private Module getEnclosingModule() {
+    for (Definition def = this;; def = def.getParent()) {
+      if (def instanceof ClassDefinition && !((ClassDefinition) def).isLocal())
+        return new Module((ClassDefinition)def.getParent(), def.getName().name);
+    }
+  }
+
+  private String getFullNestedName(String name) {
+    String result = name;
+    for (Definition def = this; !(def instanceof ClassDefinition) || ((ClassDefinition) def).isLocal(); def = def.getParent()) {
+      result = def.getName() + "." + result;
+    }
+    return result;
+  }
+
   public ClassDefinition getClass(String name, List<ModuleError> errors) {
     if (myPublicFields != null) {
       Definition definition = getPublicField(name);
@@ -66,13 +91,17 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
         if (definition instanceof ClassDefinition) {
           return (ClassDefinition) definition;
         } else {
-          errors.add(new ModuleError(new Module(this, name), "Name is already defined"));
+          if (!isLocal()) {
+            errors.add(new ModuleError(new Module(this, name), "Name is already defined"));
+          } else {
+            errors.add(new ModuleError(getEnclosingModule(), "Name " + getFullNestedName(name) + " is already defined"));
+          }
           return null;
         }
       }
     }
 
-    ClassDefinition result = new ClassDefinition(name, this);
+    ClassDefinition result = new ClassDefinition(name, this, myIsLocal);
     result.hasErrors(true);
     if (myPublicFields == null) {
       myPublicFields = new ArrayList<>();

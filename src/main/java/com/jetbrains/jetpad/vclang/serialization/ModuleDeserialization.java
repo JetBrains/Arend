@@ -142,6 +142,16 @@ public class ModuleDeserialization {
       if (!functionDefinition.hasErrors() && !functionDefinition.isAbstract()) {
         functionDefinition.setTerm(readExpression(stream, definitionMap));
       }
+      if (stream.readBoolean()) {
+        int size = stream.readInt();
+        for (int i = 0; i < size; ++i) {
+          Definition nestedDef = definitionMap.get(stream.readInt());
+          if (nestedDef.getParent() == definition) {
+            deserializeDefinition(stream, definitionMap, nestedDef);
+          }
+          functionDefinition.addNestedDefinition(nestedDef, myModuleLoader.getErrors());
+        }
+      }
     } else if (code == ModuleSerialization.DATA_CODE) {
       if (!(definition instanceof DataDefinition)) {
         throw new IncorrectFormat();

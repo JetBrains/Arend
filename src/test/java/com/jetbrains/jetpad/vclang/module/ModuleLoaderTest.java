@@ -1,12 +1,21 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import org.junit.Before;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
 import static org.junit.Assert.*;
 
 public class ModuleLoaderTest {
+  ModuleLoader dummyModuleLoader;
+
+  @Before
+  public void initialize() {
+    dummyModuleLoader = new ModuleLoader();
+    dummyModuleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+  }
+
   @Test
   public void recursiveTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
@@ -126,9 +135,7 @@ public class ModuleLoaderTest {
 
   @Test
   public void numberOfFieldsTest() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    ClassDefinition result = parseDefs(moduleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
+    ClassDefinition result = parseDefs(dummyModuleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
     assertNotNull(result.getStaticFields());
     assertEquals(2, result.getStaticFields().size());
     assertNotNull(result.getPublicFields());
@@ -137,64 +144,66 @@ public class ModuleLoaderTest {
 
   @Test
   public void openTest() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\function x : Nat => 0 } \\open A \\function y => x");
+    parseDefs(dummyModuleLoader, "\\class A { \\function x : Nat => 0 } \\open A \\function y => x");
   }
 
   @Test
   public void closeTestError() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\function x : Nat => 0 } \\open A \\function y => x \\close A(x) \\function z => x", 1, 0);
+    parseDefs(dummyModuleLoader, "\\class A { \\function x : Nat => 0 } \\open A \\function y => x \\close A(x) \\function z => x", 1, 0);
   }
 
   @Test
   public void exportTest() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\export B } \\function y => A.x");
+    parseDefs(dummyModuleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\export B } \\function y => A.x");
   }
 
   @Test
   public void openExportTestError() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\open B } \\function y => A.x", 1, 0);
+    parseDefs(dummyModuleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\open B } \\function y => A.x", 1, 0);
   }
 
   @Test
   public void export2TestError() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\export B } \\function y => x", 1, 0);
+    parseDefs(dummyModuleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\export B } \\function y => x", 1, 0);
   }
 
   @Test
   public void openAbstractTestError() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\function x : Nat } \\open A \\function y => x", 1, 0);
+    parseDefs(dummyModuleLoader, "\\class A { \\function x : Nat } \\open A \\function y => x", 1, 0);
   }
 
   @Test
   public void openAbstractTestError2() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\function x : Nat \\function y => x } \\open A \\function z => y", 1, 0);
+    parseDefs(dummyModuleLoader, "\\class A { \\function x : Nat \\function y => x } \\open A \\function z => y", 1, 0);
   }
 
   @Test
   public void staticInOnlyStaticTest() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\function s => 0 \\data D (A : Nat) | foo Nat | bar }");
+    parseDefs(dummyModuleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\function s => 0 \\data D (A : Nat) | foo Nat | bar }");
   }
 
   @Test
   public void nonStaticInOnlyStaticTestError() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\data D (A : Nat) | foo Nat | bar B }", 1, 0);
+    parseDefs(dummyModuleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\data D (A : Nat) | foo Nat | bar B }", 1, 0);
+  }
+
+  @Test
+  public void nonStaticInOnlyStaticTestWhereError() {
+    parseDefs(dummyModuleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\function s => 0 \\where \\function b => B }", 1, 0);
+  }
+
+  @Test
+  public void classExtensionWhere() {
+    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\class A {} \\class A { \\function x => 0 }");
+  }
+
+  @Test
+  public void multipleDefsWhere() {
+    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\function d => 0 \\function d => 0", 1, 0);
+  }
+
+  @Test
+  public void overrideWhere() {
+    parseDefs(dummyModuleLoader, "\\class A { \\function x => 0 } \\function C => A { \\override x => y \\where \\function y => 0 }");
   }
 }

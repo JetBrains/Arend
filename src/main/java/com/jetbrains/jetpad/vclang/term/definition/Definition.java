@@ -90,6 +90,14 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     myDependencies.add(dependency);
   }
 
+  public void addDependencies(Collection<Definition> dependencies) {
+    if (dependencies == null)
+      return;
+    for (Definition dependency : dependencies) {
+      addDependency(dependency);
+    }
+  }
+
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();

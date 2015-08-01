@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -24,6 +25,13 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class ParserTest {
+  ModuleLoader dummyModuleLoader;
+  @Before
+  public void initialize() {
+    dummyModuleLoader = new ModuleLoader();
+    dummyModuleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+  }
+
   @Test
   public void parserLetToTheRight() {
     Concrete.Expression expr = parseExpr(new ModuleLoader(), "\\lam x => \\let | x => Nat \\in x x");
@@ -46,76 +54,58 @@ public class ParserTest {
 
   @Test
   public void parserLam() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression expr = parseExpr(moduleLoader, "\\lam x y z => y");
+    Concrete.Expression expr = parseExpr(dummyModuleLoader, "\\lam x y z => y");
     assertTrue(compare(Lam("x", Lam("y", Lam("z", Var("y")))), expr));
   }
 
   @Test
   public void parserLam2() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression expr = parseExpr(moduleLoader, "\\lam x y => (\\lam z w => y z) y");
+    Concrete.Expression expr = parseExpr(dummyModuleLoader, "\\lam x y => (\\lam z w => y z) y");
     assertTrue(compare(Lam("x'", Lam("y'", Apps(Lam("z'", Lam("w'", Apps(Var("y"), Var("z")))), Var("y")))), expr));
   }
 
   @Test
   public void parserLamTele() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression expr = parseExpr(moduleLoader, "\\lam p {x t : Nat} {y} (a : Nat -> Nat) => (\\lam (z w : Nat) => y z) y");
+    Concrete.Expression expr = parseExpr(dummyModuleLoader, "\\lam p {x t : Nat} {y} (a : Nat -> Nat) => (\\lam (z w : Nat) => y z) y");
     assertTrue(compare(Lam(lamArgs(Name("p"), Tele(false, vars("x", "t"), DefCall(Prelude.NAT)), Name(false, "y"), Tele(vars("a"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Apps(Lam(lamArgs(Tele(vars("z", "w"), DefCall(Prelude.NAT))), Apps(Var("y"), Var("z"))), Var("y"))), expr));
   }
 
   @Test
   public void parserPi() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression expr = parseExpr(moduleLoader, "\\Pi (x y z : Nat) (w t : Nat -> Nat) -> \\Pi (a b : \\Pi (c : Nat) -> Nat c) -> Nat b y w");
+    Concrete.Expression expr = parseExpr(dummyModuleLoader, "\\Pi (x y z : Nat) (w t : Nat -> Nat) -> \\Pi (a b : \\Pi (c : Nat) -> Nat c) -> Nat b y w");
     assertTrue(compare(Pi(args(Tele(vars("x", "y", "z"), DefCall(Prelude.NAT)), Tele(vars("w", "t"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Pi(args(Tele(vars("a", "b"), Pi("c", DefCall(Prelude.NAT), Apps(DefCall(Prelude.NAT), Var("c"))))), Apps(DefCall(Prelude.NAT), Var("b"), Var("y"), Var("w")))), expr));
   }
 
   @Test
   public void parserPi2() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression expr = parseExpr(moduleLoader, "\\Pi (x y : Nat) (z : Nat x -> Nat y) -> Nat z y x");
+    Concrete.Expression expr = parseExpr(dummyModuleLoader, "\\Pi (x y : Nat) (z : Nat x -> Nat y) -> Nat z y x");
     assertTrue(compare(Pi(args(Tele(vars("x", "y"), DefCall(Prelude.NAT)), Tele(vars("z"), Pi(Apps(DefCall(Prelude.NAT), Var("x")), Apps(DefCall(Prelude.NAT), Var("y"))))), Apps(DefCall(Prelude.NAT), Var("z"), Var("y"), Var("x"))), expr));
   }
 
   @Test
   public void parserLamOpenError() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression result = parseExpr(moduleLoader, "\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y", 1);
+    Concrete.Expression result = parseExpr(dummyModuleLoader, "\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y", 1);
     assertNull(result);
   }
 
   @Test
   public void parserPiOpenError() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Concrete.Expression result = parseExpr(moduleLoader, "\\Pi (a b : Nat a) -> Nat a b", 1);
+    Concrete.Expression result = parseExpr(dummyModuleLoader, "\\Pi (a b : Nat a) -> Nat a b", 1);
     assertNull(result);
   }
 
   @Test
   public void parserDef() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    ClassDefinition result = parseDefs(moduleLoader,
-        "\\function x : Nat => zero\n" +
-            "\\function y : Nat => x");
+    ClassDefinition result = parseDefs(dummyModuleLoader,
+            "\\function x : Nat => zero\n" +
+                    "\\function y : Nat => x");
     assertNotNull(result.getStaticFields());
     assertEquals(2, result.getStaticFields().size());
   }
 
   @Test
   public void parserDefType() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    ClassDefinition result = parseDefs(moduleLoader,
+    ClassDefinition result = parseDefs(dummyModuleLoader,
         "\\function x : \\Type0 => Nat\n" +
             "\\function y : x => zero");
     assertNotNull(result.getStaticFields());
@@ -124,9 +114,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    FunctionDefinition def = (FunctionDefinition) parseDef(moduleLoader, "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} (A : Nat -> Nat -> Nat -> Nat -> Nat -> Nat -> \\Type0) : A x y z w t r");
+    FunctionDefinition def = (FunctionDefinition) parseDef(dummyModuleLoader, "\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} (A : Nat -> Nat -> Nat -> Nat -> Nat -> Nat -> \\Type0) : A x y z w t r");
     assertEquals(5, def.getArguments().size());
     assertTrue(def.getArguments().get(0).getExplicit());
     assertFalse(def.getArguments().get(1).getExplicit());
@@ -141,9 +129,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit2() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    FunctionDefinition def = (FunctionDefinition) parseDef(moduleLoader, "\\function f {x : Nat} (_ : Nat) {y z : Nat} (A : Nat -> Nat -> Nat -> \\Type0) (_ : A x y z) : Nat");
+    FunctionDefinition def = (FunctionDefinition) parseDef(dummyModuleLoader, "\\function f {x : Nat} (_ : Nat) {y z : Nat} (A : Nat -> Nat -> Nat -> \\Type0) (_ : A x y z) : Nat");
     assertEquals(5, def.getArguments().size());
     assertFalse(def.getArguments().get(0).getExplicit());
     assertTrue(def.getArguments().get(1).getExplicit());
@@ -175,9 +161,7 @@ public class ParserTest {
 
   @Test
   public void parserInfixDef() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    ClassDefinition result = parseDefs(moduleLoader,
+    ClassDefinition result = parseDefs(dummyModuleLoader,
         "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
             "\\function (*) : Nat -> Nat => \\lam x => x + zero");
     assertNotNull(result.getStaticFields());
@@ -200,17 +184,58 @@ public class ParserTest {
 
   @Test
   public void parserError() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     String text = "A { \\function f (x : Nat) <= elim x | zero => zero | suc x' => zero }";
-    new BuildVisitor(new ClassDefinition("test", moduleLoader.rootModule()), moduleLoader, false).visitExpr(parse(moduleLoader, text).expr());
-    assertTrue(moduleLoader.getErrors().size() > 0);
+    new BuildVisitor(new ClassDefinition("test", dummyModuleLoader.rootModule()), dummyModuleLoader, false).visitExpr(parse(dummyModuleLoader, text).expr());
+    assertTrue(dummyModuleLoader.getErrors().size() > 0);
   }
 
   @Test
   public void parserCase() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseExpr(moduleLoader, "\\case 2 | zero => zero | suc x' => x'");
+    parseExpr(dummyModuleLoader, "\\case 2 | zero => zero | suc x' => x'");
+  }
+
+  @Test
+  public void whereTest() {
+    parseDefs(dummyModuleLoader, "\\function f (x : Nat) => B.b (a x) \\where \\function a (x : Nat) => x \\data D | D1 | D2 \\class B { \\data C | cr \\function b (x : Nat) => D1 }");
+  }
+
+  @Test
+  public void whereTestDefCmd() {
+    parseDefs(dummyModuleLoader, "\\function f (x : Nat) => a \\where \\class A { \\function a => 0 } \\open A");
+  }
+
+  @Test
+  public void whereError() {
+    parseDefs(dummyModuleLoader, "\\function f (x : Nat) => x \\where \\function b => x", 1, 0);
+  }
+
+  @Test
+  public void whereClosedError() {
+    parseDefs(dummyModuleLoader, "\\function f => x \\where \\class A { \\function x => 0 } \\open A \\close A", 1, 0);
+  }
+
+  @Test
+  public void whereOpenFunction() {
+    parseDefs(dummyModuleLoader, "\\function f => x \\where \\function b => 0 \\where \\function x => 0; \\open b(x)");
+  }
+
+  @Test
+  public void whereNoOpenFunctionError() {
+    parseDefs(dummyModuleLoader, "\\function f => x \\where \\function b => 0 \\where \\function x => 0;", 1, 0);
+  }
+
+  @Test
+  public void whereNested() {
+    parseDefs(dummyModuleLoader, "\\function f => x \\where \\data B | b \\function x => a \\where \\function a => b");
+  }
+
+  @Test
+  public void whereOuterScope() {
+    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\function g => 0 \\function h => g");
+  }
+
+  @Test
+  public void whereInSignature() {
+    parseDefs(dummyModuleLoader, "\\function f : D => d \\where \\data D | d");
   }
 }
