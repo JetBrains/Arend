@@ -75,9 +75,9 @@ public class ElimTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     FunctionDefinition function = new FunctionDefinition(new Utils.Name("fun"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
     List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedFun = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) function.getParent(), function, localContext, null);
+    FunctionDefinition typedFun = TypeChecking.typeCheckFunctionBegin(moduleLoader, function.getParent(), function, localContext, null);
     assertNotNull(typedFun);
-    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) function.getParent(), function.getTerm(), typedFun, localContext, null, false);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader , function.getTerm(), typedFun, localContext, null, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedFun.hasErrors());

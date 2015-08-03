@@ -188,11 +188,6 @@ public class ModuleLoaderTest {
   }
 
   @Test
-  public void nonStaticInOnlyStaticTestWhereError() {
-    parseDefs(dummyModuleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\function s => 0 \\where \\function b => B }", 1, 0);
-  }
-
-  @Test
   public void classExtensionWhere() {
     parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\class A {} \\class A { \\function x => 0 }");
   }

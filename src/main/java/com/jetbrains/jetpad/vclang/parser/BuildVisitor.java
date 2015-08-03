@@ -291,28 +291,35 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return visitDefFunction(true, ctx.name().size() == 1 ? null : ctx.name(0), null, ctx.name().size() == 1 ? ctx.name(0) : ctx.name(1), ctx.tele(), functionCtx, ctx.where() == null ? null : ctx.where().def());
   }
 
-  private FunctionDefinition visitDefFunction(boolean overridden, NameContext originalName, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, FunctionContext functionCtx, List<DefContext> defs) {
+  private FunctionDefinition visitDefFunction(boolean overridden, NameContext originalName, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, FunctionContext functionCtx, List<DefContext> defs) {FunctionDefinition typedDef;
+    if (overridden) {
+      typedDef = new OverriddenDefinition(getName(nameCtx), myParent, visitPrecedence(precCtx), null, null, visitArrow(functionCtx.arrowCtx), null, null);
+    } else {
+      typedDef = new FunctionDefinition(getName(nameCtx), myParent, visitPrecedence(precCtx), null, null, visitArrow(functionCtx.arrowCtx), null);
+    }
+
+    Definition oldParent = myParent;
+    myParent = typedDef;
+
+    if (defs != null)
+      visitDefList(defs);
+
     Concrete.FunctionDefinition def = visitFunctionRawBegin(overridden, originalName, precCtx, nameCtx, teleCtx, functionCtx);
     if (def == null) {
+      myParent = oldParent;
       return null;
     }
 
     List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(myModuleLoader, myParent, def, localContext, null);
-
-    if (typedDef != null) {
-      Definition oldParent = myParent;
-      myParent = typedDef;
-      if (defs != null)
-        visitDefList(defs);
+    if (TypeChecking.typeCheckFunctionBegin(myModuleLoader, def, localContext, null, typedDef)) {
       Concrete.Expression term = functionCtx.termCtx == null ? null : visitExpr(functionCtx.termCtx);
-      myParent = oldParent;
-
-      TypeChecking.typeCheckFunctionEnd(myModuleLoader, myParent, term, typedDef, localContext, null, myOnlyStatics);
-
+      TypeChecking.typeCheckFunctionEnd(myModuleLoader, term, typedDef, localContext, null, myOnlyStatics);
+    } else {
+      typedDef = null;
     }
 
     visitFunctionRawEnd(def);
+    myParent = oldParent;
     return typedDef;
   }
 
@@ -331,8 +338,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     Concrete.Expression type = functionCtx.typeCtx == null ? null : visitExpr(functionCtx.typeCtx);
-    Definition.Arrow arrow = functionCtx.arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : functionCtx.arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
+    Definition.Arrow arrow = visitArrow(functionCtx.arrowCtx);
     return new Concrete.FunctionDefinition(name.position, name, precCtx == null ? null : visitPrecedence(precCtx), arguments, type, arrow, null, overridden, originalName == null ? null : originalName);
+  }
+
+  private Abstract.Definition.Arrow visitArrow(ArrowContext arrowCtx) {
+    return arrowCtx instanceof ArrowLeftContext ? Abstract.Definition.Arrow.LEFT : arrowCtx instanceof ArrowRightContext ? Abstract.Definition.Arrow.RIGHT : null;
   }
 
   private void visitFunctionRawEnd(Concrete.FunctionDefinition definition) {

@@ -24,9 +24,9 @@ public class DefinitionTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     FunctionDefinition def = new FunctionDefinition(new Utils.Name("f"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
     List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
+    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, def.getParent(), def, localContext, null);
     assertNotNull(typedDef);
-    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null, false);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, def.getTerm(), typedDef, localContext, null, false);
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertFalse(typedDef.hasErrors());
@@ -38,9 +38,9 @@ public class DefinitionTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     FunctionDefinition def = new FunctionDefinition(new Utils.Name("f"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
     List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
+    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, def.getParent(), def, localContext, null);
     assertNotNull(typedDef);
-    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null, false);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, def.getTerm(), typedDef, localContext, null, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(def.hasErrors());
@@ -57,9 +57,9 @@ public class DefinitionTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     FunctionDefinition def = new FunctionDefinition(new Utils.Name("f"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, null, Definition.Arrow.RIGHT, Index(0));
     List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext, null);
+    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(moduleLoader, def.getParent(), def, localContext, null);
     assertNotNull(typedDef);
-    TypeChecking.typeCheckFunctionEnd(moduleLoader, (ClassDefinition) def.getParent(), def.getTerm(), typedDef, localContext, null, false);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, def.getTerm(), typedDef, localContext, null, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedDef.hasErrors());
@@ -90,12 +90,12 @@ public class DefinitionTest {
     constructors.add(new Constructor(1, new Utils.Name("con2"), def, Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2));
 
     List<Binding> localContext = new ArrayList<>();
-    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext);
+    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, def.getParent(), def, localContext);
     assertNotNull(typedDef);
     for (int i = 0; i < constructors.size(); i++) {
       TypeChecking.typeCheckConstructor(moduleLoader, typedDef, constructors.get(i), localContext, i);
     }
-    TypeChecking.typeCheckDataEnd(moduleLoader, (ClassDefinition) def.getParent(), def, typedDef, localContext, false);
+    TypeChecking.typeCheckDataEnd(moduleLoader, def.getParent(), def, typedDef, localContext, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedDef.hasErrors());
@@ -127,12 +127,12 @@ public class DefinitionTest {
     constructors.add(new Constructor(1, new Utils.Name("con2"), def, Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2));
 
     List<Binding> localContext = new ArrayList<>();
-    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, (ClassDefinition) def.getParent(), def, localContext);
+    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(moduleLoader, def.getParent(), def, localContext);
     assertNotNull(typedDef);
     for (int i = 0; i < constructors.size(); i++) {
       TypeChecking.typeCheckConstructor(moduleLoader, typedDef, constructors.get(i), localContext, i);
     }
-    TypeChecking.typeCheckDataEnd(moduleLoader, (ClassDefinition) def.getParent(), def, typedDef, localContext, false);
+    TypeChecking.typeCheckDataEnd(moduleLoader, def.getParent(), def, typedDef, localContext, false);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedDef.hasErrors());

@@ -178,16 +178,29 @@ public class TypeChecking {
   }
 
   public static FunctionDefinition typeCheckFunctionBegin(ModuleLoader moduleLoader, Definition parent, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction) {
+    FunctionDefinition typedDef;
+    if (def.isOverridden()) {
+      typedDef = new OverriddenDefinition(def.getName(), parent, def.getPrecedence(), null, null, def.getArrow(), null, overriddenFunction);
+    } else {
+      typedDef = new FunctionDefinition(def.getName(), parent, def.getPrecedence(), null, null, def.getArrow(), null);
+    }
+    if (!typeCheckFunctionBegin(moduleLoader, def, localContext, overriddenFunction, typedDef)) {
+      return null;
+    }
+    return typedDef;
+  }
+
+  public static boolean typeCheckFunctionBegin(ModuleLoader moduleLoader, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction, FunctionDefinition typedDef) {
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
       // myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, "Cannot find function " + def.getName() + " in the parent class", def, getNames(localContext)));
-      moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, "Overridden function " + def.getName() + " cannot be defined in a base class", def, getNames(localContext)));
-      return null;
+      moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(typedDef.getParent(), "Overridden function " + def.getName() + " cannot be defined in a base class", def, getNames(localContext)));
+      return false;
     }
 
     List<Argument> arguments = new ArrayList<>(def.getArguments().size());
     Set<Definition> abstractCalls = new HashSet<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(parent, localContext, abstractCalls, moduleLoader, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(typedDef.getParent(), localContext, abstractCalls, moduleLoader, CheckTypeVisitor.Side.RHS);
 
     List<TypeArgument> splitArgs = null;
     Expression splitResult = null;
@@ -222,14 +235,14 @@ public class TypeChecking {
         }
 
         if (!ok) {
-          moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, "Type of the argument does not match the type in the overridden function", argument, null));
-          return null;
+          moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(typedDef.getParent(), "Type of the argument does not match the type in the overridden function", argument, null));
+          return false;
         }
       }
 
       if (index == -1) {
-        moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, "Function has more arguments than overridden function", def, null));
-        return null;
+        moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(typedDef.getParent(), "Function has more arguments than overridden function", def, null));
+        return false;
       }
     }
 
@@ -241,7 +254,7 @@ public class TypeChecking {
         CheckTypeVisitor.OKResult result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
         if (result == null) {
           trimToSize(localContext, origSize);
-          return null;
+          return false;
         }
 
         boolean ok = true;
@@ -278,15 +291,15 @@ public class TypeChecking {
         }
 
         if (!ok) {
-          moduleLoader.getTypeCheckingErrors().add(new ArgInferenceError(parent, typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+          moduleLoader.getTypeCheckingErrors().add(new ArgInferenceError(typedDef.getParent(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
           trimToSize(localContext, origSize);
-          return null;
+          return false;
         }
       } else {
         if (splitArgs == null) {
-          moduleLoader.getTypeCheckingErrors().add(new ArgInferenceError(parent, typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+          moduleLoader.getTypeCheckingErrors().add(new ArgInferenceError(typedDef.getParent(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
           trimToSize(localContext, origSize);
-          return null;
+          return false;
         } else {
           List<String> names = new ArrayList<>(1);
           names.add(((Abstract.NameArgument) argument).getName());
@@ -318,9 +331,9 @@ public class TypeChecking {
           List<CompareVisitor.Equation> equations = new ArrayList<>(0);
           CompareVisitor.Result cmpResult = compare(expectedType, overriddenResultType, equations);
           if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
-            moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, "Result type of the function does not match the result type in the overridden function", def.getResultType(), null));
+            moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(typedDef.getParent(), "Result type of the function does not match the result type in the overridden function", def.getResultType(), null));
             trimToSize(localContext, origSize);
-            return null;
+            return false;
           }
         }
       }
@@ -330,30 +343,28 @@ public class TypeChecking {
       expectedType = overriddenResultType;
     }
 
-    FunctionDefinition result;
-    if (def.isOverridden()) {
-      OverriddenDefinition overriddenDefinition = new OverriddenDefinition(def.getName(), parent, def.getPrecedence(), arguments, expectedType, def.getArrow(), null, overriddenFunction);
-      overriddenDefinition.setOverriddenFunction(overriddenFunction);
-      result = overriddenDefinition;
-    } else {
-      result = new FunctionDefinition(def.getName(), parent, def.getPrecedence(), arguments, expectedType, def.getArrow(), null);
+    typedDef.setArguments(arguments);
+    typedDef.setResultType(expectedType);
+    if (typedDef instanceof OverriddenDefinition) {
+      ((OverriddenDefinition) typedDef).setOverriddenFunction(overriddenFunction);
     }
 
-    result.setDependencies(abstractCalls);
+    typedDef.setDependencies(abstractCalls);
     if (!def.isOverridden()) {
-      if (!parent.getNamespace().addMember(result, moduleLoader.getErrors())) {
+      if (!typedDef.getParent().getNamespace().addMember(typedDef, moduleLoader.getErrors())) {
         trimToSize(localContext, origSize);
-        return null;
+        return false;
       }
     }
 
     if (expectedType == null) {
-      result.typeHasErrors(true);
+      typedDef.typeHasErrors(true);
     }
-    return result;
+
+    return true;
   }
 
-  public static boolean typeCheckFunctionEnd(ModuleLoader moduleLoader, Definition parent, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction, boolean onlyStatics) {
+  public static boolean typeCheckFunctionEnd(ModuleLoader moduleLoader, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction, boolean onlyStatics) {
     if (term != null) {
       CheckTypeVisitor visitor = new CheckTypeVisitor(overriddenFunction, localContext, definition.getDependencies(), moduleLoader, CheckTypeVisitor.Side.LHS);
       CheckTypeVisitor.OKResult termResult = visitor.checkType(term, definition.getResultType());
@@ -363,7 +374,7 @@ public class TypeChecking {
         definition.setResultType(termResult.type);
 
         if (!termResult.expression.accept(new TerminationCheckVisitor(overriddenFunction == null ? definition : overriddenFunction))) {
-          moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, "Termination check failed", term, getNames(localContext)));
+          moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(definition.getParent(), "Termination check failed", term, getNames(localContext)));
           termResult = null;
         }
       }
@@ -397,10 +408,10 @@ public class TypeChecking {
       }
     }
 
-    if (onlyStatics && parent instanceof ClassDefinition && !checkOnlyStatic(moduleLoader, (ClassDefinition) parent, definition, definition.getName())) {
+    if (onlyStatics && definition.getParent() instanceof ClassDefinition && !checkOnlyStatic(moduleLoader, (ClassDefinition) definition.getParent(), definition, definition.getName())) {
       return false;
     }
-    parent.getNamespace().checkDepsAddStaticMember(definition, moduleLoader.getErrors());
+    definition.getParent().getNamespace().checkDepsAddStaticMember(definition, moduleLoader.getErrors());
 
     return true;
   }
