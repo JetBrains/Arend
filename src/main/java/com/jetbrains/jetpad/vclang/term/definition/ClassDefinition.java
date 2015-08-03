@@ -24,6 +24,11 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     myNamespace = new Namespace(this);
   }
 
+  @Override
+  public Namespace getNamespace() {
+    return myNamespace;
+  }
+
   public boolean isLocal() {
     return myIsLocal;
   }

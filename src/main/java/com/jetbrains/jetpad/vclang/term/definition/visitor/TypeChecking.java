@@ -56,10 +56,7 @@ public class TypeChecking {
 
     DataDefinition result = new DataDefinition(def.getName(), parent, def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters, new ArrayList<Constructor>());
     result.setDependencies(abstractCalls);
-    if (parent instanceof ClassDefinition && !((ClassDefinition) parent).addField(result, moduleLoader.getErrors())) {
-      return null;
-    }
-    if (parent instanceof FunctionDefinition && !((FunctionDefinition) parent).addNestedDefinition(result, moduleLoader.getErrors())) {
+    if (!parent.getNamespace().addMember(result, moduleLoader.getErrors())) {
       return null;
     }
     return result;
@@ -97,18 +94,10 @@ public class TypeChecking {
     if (onlyStatics && parent instanceof ClassDefinition && !checkOnlyStatic(moduleLoader, (ClassDefinition) parent, definition, definition.getName())) {
       return false;
     }
-    if (parent instanceof ClassDefinition) {
-      ((ClassDefinition) parent).addStaticField(definition, moduleLoader.getErrors());
-    } else if (parent instanceof FunctionDefinition) {
-      parent.addDependencies(definition.getDependencies());
-    }
+    parent.getNamespace().checkDepsAddStaticMember(definition, moduleLoader.getErrors());
     for (Constructor constructor : definition.getConstructors()) {
-      if (parent instanceof ClassDefinition) {
-        ((ClassDefinition) parent).addPublicField(constructor, moduleLoader.getErrors());
-        ((ClassDefinition) parent).addStaticField(constructor, moduleLoader.getErrors());
-      } else if (parent instanceof FunctionDefinition) {
-        parent.addDependencies(constructor.getDependencies());
-      }
+        parent.getNamespace().addPublicMember(constructor, moduleLoader.getErrors());
+        parent.getNamespace().checkDepsAddStaticMember(constructor, moduleLoader.getErrors());
     }
     return true;
   }
@@ -183,11 +172,8 @@ public class TypeChecking {
     }
 
     dataDefinition.getConstructors().add(constructor);
-    if (dataDefinition.getParent() instanceof ClassDefinition) {
-      ((ClassDefinition) dataDefinition.getParent()).addPrivateField(constructor);
-    } else if (dataDefinition.getParent() instanceof FunctionDefinition) {
-      ((FunctionDefinition) dataDefinition.getParent()).addNestedDefinition(constructor, moduleLoader.getErrors());
-    }
+    dataDefinition.getParent().getNamespace().addPrivateMember(constructor);
+
     return constructor;
   }
 
@@ -355,8 +341,7 @@ public class TypeChecking {
 
     result.setDependencies(abstractCalls);
     if (!def.isOverridden()) {
-      if (parent instanceof ClassDefinition && !((ClassDefinition) parent).addField(result, moduleLoader.getErrors()) ||
-              parent instanceof FunctionDefinition && !((FunctionDefinition) parent).addNestedDefinition(result, moduleLoader.getErrors())) {
+      if (!parent.getNamespace().addMember(result, moduleLoader.getErrors())) {
         trimToSize(localContext, origSize);
         return null;
       }
@@ -415,11 +400,7 @@ public class TypeChecking {
     if (onlyStatics && parent instanceof ClassDefinition && !checkOnlyStatic(moduleLoader, (ClassDefinition) parent, definition, definition.getName())) {
       return false;
     }
-    if (parent instanceof ClassDefinition) {
-      ((ClassDefinition) parent).addStaticField(definition, moduleLoader.getErrors());
-    } else if (parent instanceof FunctionDefinition) {
-      parent.addDependencies(definition.getDependencies());
-    }
+    parent.getNamespace().checkDepsAddStaticMember(definition, moduleLoader.getErrors());
 
     return true;
   }

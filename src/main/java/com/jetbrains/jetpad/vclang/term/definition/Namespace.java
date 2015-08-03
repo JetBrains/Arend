@@ -16,6 +16,10 @@ public class Namespace {
     myOwner = owner;
   }
 
+  public Definition getOwner() {
+    return myOwner;
+  }
+
   public Collection<Definition> getPrivateMembers() {
     return myPrivateMembers.values();
   }

@@ -29,6 +29,10 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return myParent;
   }
 
+  public Namespace getNamespace() {
+    return null;
+  }
+
   public void setParent(Definition parent) {
     myParent = parent;
   }
@@ -88,14 +92,6 @@ public abstract class Definition extends Binding implements Abstract.Definition 
       myDependencies = new HashSet<>();
     }
     myDependencies.add(dependency);
-  }
-
-  public void addDependencies(Collection<Definition> dependencies) {
-    if (dependencies == null)
-      return;
-    for (Definition dependency : dependencies) {
-      addDependency(dependency);
-    }
   }
 
   @Override

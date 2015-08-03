@@ -63,16 +63,7 @@ public class ModuleSerialization {
       if (!definition.hasErrors() && !functionDefinition.isAbstract()) {
         functionDefinition.getTerm().accept(visitor);
       }
-      visitor.getDataStream().writeBoolean(functionDefinition.getNestedDefinitions() != null);
-      if (functionDefinition.getNestedDefinitions() != null) {
-        visitor.getDataStream().writeInt(functionDefinition.getNestedDefinitions().size());
-        for (Definition nestedDef : functionDefinition.getNestedDefinitions()) {
-          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(nestedDef));
-          if (nestedDef.getParent() == definition) {
-            errors += serializeDefinition(visitor, nestedDef);
-          }
-        }
-      }
+      errors += serializeNamespace(visitor, functionDefinition.getNamespace());
       return errors;
     } else if (definition instanceof DataDefinition) {
       int errors = definition.hasErrors() ? 1 : 0;
@@ -119,13 +110,16 @@ public class ModuleSerialization {
 
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
+    return serializeNamespace(visitor, definition.getNamespace());
+  }
 
+  private static int serializeNamespace(SerializeVisitor visitor, Namespace ns) throws IOException {
     int errors = 0;
-    if (definition.getPublicFields() != null) {
-      visitor.getDataStream().writeInt(definition.getPublicFields().size());
-      for (Definition field : definition.getPublicFields()) {
+    if (ns.getPublicMembers() != null) {
+      visitor.getDataStream().writeInt(ns.getPublicMembers().size());
+      for (Definition field : ns.getPublicMembers()) {
         visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
-        if (field.getParent() == definition) {
+        if (field.getParent() == ns.getOwner()) {
           errors += serializeDefinition(visitor, field);
         }
       }
@@ -133,15 +127,14 @@ public class ModuleSerialization {
       visitor.getDataStream().writeInt(0);
     }
 
-    if (definition.getStaticFields() != null) {
-      visitor.getDataStream().writeInt(definition.getStaticFields().size());
-      for (Definition field : definition.getStaticFields()) {
+    if (ns.getStaticMembers() != null) {
+      visitor.getDataStream().writeInt(ns.getStaticMembers().size());
+      for (Definition field : ns.getStaticMembers()) {
         visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
       }
     } else {
       visitor.getDataStream().writeInt(0);
     }
-
     return errors;
   }
 

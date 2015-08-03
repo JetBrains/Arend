@@ -540,7 +540,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
         parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
-        Definition child = parent.getPublicField(expr.getName().name);
+        Definition child = parent.getNamespace().getPublicMember(expr.getName().name);
         if (child != null) {
           if (child.hasErrors()) {
             TypeCheckingError error = new HasErrors(myParent, child.getName(), expr);
@@ -1396,7 +1396,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     // TODO
     Map<String, FunctionDefinition> abstracts = new HashMap<>();
-    for (Definition definition : expr.getBaseClass().getPublicFields()) {
+    for (Definition definition : expr.getBaseClass().getNamespace().getPublicMembers()) {
       if (definition instanceof FunctionDefinition && definition.isAbstract()) {
         abstracts.put(definition.getName().name, (FunctionDefinition) definition);
       }

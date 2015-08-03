@@ -141,7 +141,7 @@ public class ModuleSerializationTest {
     ClassDefinition def = new ClassDefinition("test", moduleLoader.rootModule());
     FunctionDefinition funcDef = new FunctionDefinition(new Utils.Name("f"), def, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, null);
     FunctionDefinition innerFunc = new FunctionDefinition(new Utils.Name("g"), funcDef, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero());
-    funcDef.addNestedDefinition(innerFunc, moduleLoader.getErrors());
+    funcDef.getNamespace().addMember(innerFunc, moduleLoader.getErrors());
     funcDef.setTerm(DefCall(innerFunc));
     def.addPublicField(funcDef, null);
     def.addStaticField(funcDef, null);

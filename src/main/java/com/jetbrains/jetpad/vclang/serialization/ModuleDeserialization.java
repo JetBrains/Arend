@@ -142,16 +142,7 @@ public class ModuleDeserialization {
       if (!functionDefinition.hasErrors() && !functionDefinition.isAbstract()) {
         functionDefinition.setTerm(readExpression(stream, definitionMap));
       }
-      if (stream.readBoolean()) {
-        int size = stream.readInt();
-        for (int i = 0; i < size; ++i) {
-          Definition nestedDef = definitionMap.get(stream.readInt());
-          if (nestedDef.getParent() == definition) {
-            deserializeDefinition(stream, definitionMap, nestedDef);
-          }
-          functionDefinition.addNestedDefinition(nestedDef, myModuleLoader.getErrors());
-        }
-      }
+      deserializeNamespace(stream, definitionMap, functionDefinition.getNamespace());
     } else if (code == ModuleSerialization.DATA_CODE) {
       if (!(definition instanceof DataDefinition)) {
         throw new IncorrectFormat();
@@ -199,24 +190,28 @@ public class ModuleDeserialization {
   private void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
     definition.setUniverse(readUniverse(stream));
 
+    deserializeNamespace(stream, definitionMap, definition.getNamespace());
+
+    definition.hasErrors(false);
+  }
+
+  private void deserializeNamespace(DataInputStream stream, Map<Integer, Definition> definitionMap, Namespace ns) throws IOException {
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
-      Definition field = definitionMap.get(stream.readInt());
-      if (field.getParent() == definition) {
-        deserializeDefinition(stream, definitionMap, field);
+      Definition member = definitionMap.get(stream.readInt());
+      if (member.getParent() == ns.getOwner()) {
+        deserializeDefinition(stream, definitionMap, member);
       }
-      definition.addField(field, myModuleLoader.getErrors());
-      if (!definition.hasErrors()) {
-        TypeChecking.checkOnlyStatic(myModuleLoader, definition, field, field.getName());
+      ns.addMember(member, myModuleLoader.getErrors());
+      if (!ns.getOwner().hasErrors() && ns.getOwner() instanceof ClassDefinition) {
+        TypeChecking.checkOnlyStatic(myModuleLoader, (ClassDefinition) ns.getOwner(), member, member.getName());
       }
     }
 
     size = stream.readInt();
     for (int i = 0; i < size; ++i) {
-      definition.addStaticField(definitionMap.get(stream.readInt()), myModuleLoader.getErrors());
+      ns.checkDepsAddStaticMember(definitionMap.get(stream.readInt()), myModuleLoader.getErrors());
     }
-
-    definition.hasErrors(false);
   }
 
   private void readDefinition(DataInputStream stream, Definition definition) throws IOException {

@@ -238,4 +238,19 @@ public class ParserTest {
   public void whereInSignature() {
     parseDefs(dummyModuleLoader, "\\function f : D => d \\where \\data D | d");
   }
+
+  @Test
+  public void whereAccessOuter() {
+    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\function x => 0; \\function g => f.x");
+  }
+
+  @Test
+  public void whereNonStaticOpen() {
+    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\function x => 0 \\function y => x; \\function g => 0 \\where \\open f(y)");
+  }
+
+  @Test
+  public void whereAbstractError() {
+    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\function x : Nat", 1, 0);
+  }
 }
