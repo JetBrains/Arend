@@ -129,14 +129,14 @@ public class Namespace {
     return result;
   }
 
-  private Module getEnclosingModule() {
+  public Module getEnclosingModule() {
     for (Definition def = myOwner;; def = def.getParent()) {
       if (def instanceof ClassDefinition && !((ClassDefinition) def).isLocal())
         return new Module((ClassDefinition)def.getParent(), def.getName().name);
     }
   }
 
-  private String getFullNestedName(String name) {
+  public String getFullNestedName(String name) {
     String result = name;
     for (Definition def = myOwner; !(def instanceof ClassDefinition) || ((ClassDefinition) def).isLocal(); def = def.getParent()) {
       result = def.getName() + "." + result;

@@ -199,6 +199,6 @@ public class ModuleLoaderTest {
 
   @Test
   public void overrideWhere() {
-    parseDefs(dummyModuleLoader, "\\class A { \\function x => 0 } \\function C => A { \\override x => y \\where \\function y => 0 }");
+    parseDefs(dummyModuleLoader, "\\class A { \\function x => 0 } \\function C => A { \\override x => y \\where \\function y => 0 }", 1, 0);
   }
 }

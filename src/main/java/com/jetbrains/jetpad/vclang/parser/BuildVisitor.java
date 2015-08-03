@@ -101,7 +101,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private void visitDefList(List<DefContext> defs) {
     for (DefContext def : defs) {
-      visitDef(def);
+      Definition result = visitDef(def);
+      if (myParent instanceof FunctionDefinition && result != null && result.isAbstract()) {
+        myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(def.getStart()), "Abstract functions is not allowed in where function."));
+      }
     }
   }
 
@@ -118,8 +121,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (DefContext def : ctx.def()) {
       if (def instanceof DefOverrideContext) {
         DefOverrideContext defOverride = (DefOverrideContext) def;
-        FunctionContext functionCtx = (FunctionContext) visit(defOverride.typeTermOpt());
-        Concrete.FunctionDefinition definition = visitFunctionRawBegin(true, defOverride.name().size() == 1 ? null : defOverride.name(0), null, defOverride.name().size() == 1 ? defOverride.name(0) : defOverride.name(1), defOverride.tele(), functionCtx);
+        if (defOverride.where() != null) {
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), "Where clause is not allowed in expression."));
+          continue;
+        }
+        FunctionContext functionCtx = (FunctionContext) visit(defOverride.typeTermOpt());Concrete.FunctionDefinition definition = visitFunctionRawBegin(true, defOverride.name().size() == 1 ? null : defOverride.name(0), null, defOverride.name().size() == 1 ? defOverride.name(0) : defOverride.name(1), defOverride.tele(), functionCtx);
         if (definition != null) {
           if (functionCtx.termCtx != null) {
             definition.setTerm(visitExpr(functionCtx.termCtx));
