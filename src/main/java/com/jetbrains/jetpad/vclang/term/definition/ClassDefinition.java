@@ -43,16 +43,6 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myNamespace.getPublicMembers();
   }
 
-  @Override
-  public Definition getStaticField(String name) {
-    return myNamespace.getStaticMember(name);
-  }
-
-  @Override
-  public Collection<Definition> getStaticFields() {
-    return myNamespace.getStaticMembers();
-  }
-
   public Definition getPublicField(String name) {
     return myNamespace.getPublicMember(name);
   }

@@ -52,7 +52,7 @@ public class Namespace {
   public boolean addPublicMember(Definition definition, List<ModuleError> errors) {
     Definition oldDefinition = getPublicMember(definition.getName().name);
     if (oldDefinition != null && !(oldDefinition instanceof ClassDefinition && definition instanceof ClassDefinition && (!((ClassDefinition) oldDefinition).hasAbstracts() || !((ClassDefinition) definition).hasAbstracts()))) {
-      errors.add(new ModuleError(getEnclosingModule(), "Name " + getFullNestedName(definition.getName().name) + " is already defined"));
+      errors.add(new ModuleError(myOwner.getEnclosingModule(), "Name " + myOwner.getFullNestedMemberName(definition.getName().name) + " is already defined"));
       return false;
     }
 
@@ -75,8 +75,8 @@ public class Namespace {
     if (definition.isAbstract()) {
       Universe max = myOwner.getUniverse().max(definition.getUniverse());
       if (max == null) {
-        String msg = "Universe " + definition.getUniverse() + " of the field " + getFullNestedName(definition.getName().getPrefixName()) + "is not compatible with universe " + myOwner.getUniverse() + " of previous fields";
-        errors.add(new ModuleError(getEnclosingModule(), msg));
+        String msg = "Universe " + definition.getUniverse() + " of the field " + myOwner.getFullNestedMemberName(definition.getName().getPrefixName()) + "is not compatible with universe " + myOwner.getUniverse() + " of previous fields";
+        errors.add(new ModuleError(myOwner.getEnclosingModule(), msg));
         return false;
       }
       myOwner.setUniverse(max);
@@ -110,7 +110,7 @@ public class Namespace {
         if (definition instanceof ClassDefinition) {
           return (ClassDefinition) definition;
         } else {
-          errors.add(new ModuleError(getEnclosingModule(), "Name " + getFullNestedName(name) + " is already defined"));
+          errors.add(new ModuleError(myOwner.getEnclosingModule(), "Name " + myOwner.getFullNestedMemberName(name) + " is already defined"));
           return null;
         }
       }
@@ -126,21 +126,6 @@ public class Namespace {
       myPrivateMembers = new HashMap<>();
     }
     myPrivateMembers.put(result.getName().name, result);
-    return result;
-  }
-
-  public Module getEnclosingModule() {
-    for (Definition def = myOwner;; def = def.getParent()) {
-      if (def instanceof ClassDefinition && !((ClassDefinition) def).isLocal())
-        return new Module((ClassDefinition)def.getParent(), def.getName().name);
-    }
-  }
-
-  public String getFullNestedName(String name) {
-    String result = name;
-    for (Definition def = myOwner; !(def instanceof ClassDefinition) || ((ClassDefinition) def).isLocal(); def = def.getParent()) {
-      result = def.getName() + "." + result;
-    }
     return result;
   }
 

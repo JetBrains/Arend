@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.module.Module;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
@@ -29,10 +30,6 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return myParent;
   }
 
-  public Namespace getNamespace() {
-    return null;
-  }
-
   public void setParent(Definition parent) {
     myParent = parent;
   }
@@ -41,12 +38,16 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return this == definition || myParent != null && myParent.isDescendantOf(definition);
   }
 
-  public Definition getStaticField(String name) {
+  public Namespace getNamespace() {
     return null;
   }
 
+  public Definition getStaticField(String name) {
+    return getNamespace().getStaticMember(name);
+  }
+
   public Collection<? extends Definition> getStaticFields() {
-    return null;
+    return getNamespace().getStaticMembers();
   }
 
   @Override
@@ -108,5 +109,20 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   @Override
   public Definition lift(int on) {
     return this;
+  }
+
+  public Module getEnclosingModule() {
+    for (Definition def = this;; def = def.getParent()) {
+      if (def instanceof ClassDefinition && !((ClassDefinition) def).isLocal())
+        return new Module((ClassDefinition)def.getParent(), def.getName().name);
+    }
+  }
+
+  public String getFullNestedMemberName(String name) {
+    String result = name;
+    for (Definition def = this; !(def instanceof ClassDefinition) || ((ClassDefinition) def).isLocal(); def = def.getParent()) {
+      result = def.getName() + "." + result;
+    }
+    return result;
   }
 }
