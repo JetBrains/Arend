@@ -97,7 +97,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   public ClassDefinition getClass(String name, List<ModuleError> errors) {
     Definition definition = getField(name);
     if (definition != null) {
-      if (definition instanceof ClassDefinition) {
+      if (definition instanceof ClassDefinition && definition.getParent() == this) {
         ((ClassDefinition) definition).reopen();
         addPrivateField(definition);
         return (ClassDefinition) definition;
@@ -141,6 +141,17 @@ public abstract class Definition extends Binding implements Abstract.Definition 
 
   public boolean isAbstract() {
     return false;
+  }
+
+  public boolean canOpen(Definition definition) {
+    if (definition.getDependencies() == null)
+      return true;
+    for (Definition dependency : definition.getDependencies()) {
+      if (!getFields().contains(dependency) && !(getDependencies() != null && getDependencies().contains(dependency))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public Set<Definition> getDependencies() {

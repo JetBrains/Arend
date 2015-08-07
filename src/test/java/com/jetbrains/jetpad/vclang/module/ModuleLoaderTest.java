@@ -165,9 +165,7 @@ public class ModuleLoaderTest {
 
   @Test
   public void exportPublicFieldsTest() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    ClassDefinition result = parseDefs(moduleLoader, "\\class A { \\function x : Nat \\class B { \\function y => x } \\export B } \\function f (a : A) => a.y");
+    ClassDefinition result = parseDefs(dummyModuleLoader, "\\class A { \\function x : Nat \\class B { \\function y => x } \\export B } \\function f (a : A) => a.y");
     assertEquals(2, result.getFields().size());
     assertTrue(result.getField("A") instanceof ClassDefinition);
     assertEquals(3, result.getField("A").getFields().size());
@@ -210,10 +208,10 @@ public class ModuleLoaderTest {
     assertEquals(classC.getField("w"), classB.getStaticField("w"));
     assertTrue(classA.getField("D") instanceof ClassDefinition);
     ClassDefinition classD = (ClassDefinition) classA.getField("D");
-    assertEquals(1, classC.getFields().size());
-    assertEquals(1, classC.getStaticFields().size());
+    assertEquals(1, classD.getFields().size());
+    assertEquals(1, classD.getStaticFields().size());
     assertEquals(classC.getField("w"), classD.getStaticField("w"));
-    assertEquals(classC.getField("z"), classD.getField("z"));
+    assertEquals(classC.getField("w"), classD.getField("w"));
   }
 
   @Test
@@ -228,9 +226,7 @@ public class ModuleLoaderTest {
 
   @Test
   public void exportExistingTestError2() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class B { \\function y => 0 } \\class A { \\class B { \\function x => 0 } } \\export A", 1, 0);
+    parseDefs(dummyModuleLoader, "\\class B { \\function y => 0 } \\class A { \\class B { \\function x => 0 } } \\export A", 1, 0);
   }
 
   @Test
