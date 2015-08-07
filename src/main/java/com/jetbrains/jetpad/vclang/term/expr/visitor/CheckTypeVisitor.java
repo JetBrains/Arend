@@ -540,7 +540,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
         parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
-        Definition child = parent.getNamespace().getPublicMember(expr.getName().name);
+        Definition child = parent.getField(expr.getName().name);
         if (child != null) {
           if (child.hasErrors()) {
             TypeCheckingError error = new HasErrors(myParent, child.getName(), expr);
@@ -577,7 +577,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           List<Expression> arguments = new ArrayList<>();
           Expression function = expression.getFunction(arguments);
           if (function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() instanceof DataDefinition) {
-            Constructor constructor = ((DataDefinition) ((DefCallExpression) function).getDefinition()).getStaticField(expr.getName().name);
+            Constructor constructor = (Constructor) ((DefCallExpression) function).getDefinition().getStaticField(expr.getName().name);
             if (constructor == null) {
               notInScope = true;
             } else {
@@ -1396,7 +1396,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     // TODO
     Map<String, FunctionDefinition> abstracts = new HashMap<>();
-    for (Definition definition : expr.getBaseClass().getNamespace().getPublicMembers()) {
+    for (Definition definition : expr.getBaseClass().getFields()) {
       if (definition instanceof FunctionDefinition && definition.isAbstract()) {
         abstracts.put(definition.getName().name, (FunctionDefinition) definition);
       }

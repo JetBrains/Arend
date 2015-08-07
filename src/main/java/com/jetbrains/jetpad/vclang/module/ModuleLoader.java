@@ -24,7 +24,7 @@ public class ModuleLoader {
 
   public void init(SourceSupplier sourceSupplier, OutputSupplier outputSupplier, boolean recompile) {
     Prelude.PRELUDE.setParent(myRoot);
-    myRoot.addStaticField(Prelude.PRELUDE, null);
+    myRoot.addField(Prelude.PRELUDE, null);
     mySourceSupplier = sourceSupplier;
     myOutputSupplier = outputSupplier;
     myRecompile = recompile;
@@ -78,7 +78,6 @@ public class ModuleLoader {
       return null;
     }
 
-    module.getParent().addStaticField(moduleDefinition, myErrors);
     myLoadingModules.add(module);
     try {
       if (compile) {
@@ -112,8 +111,9 @@ public class ModuleLoader {
     myLoadedModules.add(module);
 
     if (moduleDefinition.hasErrors()) {
-      module.getParent().removeField(moduleDefinition);
+      module.getParent().removePrivateField(moduleDefinition);
     }
+    module.getParent().addField(moduleDefinition, myErrors);
     return moduleDefinition;
   }
 }

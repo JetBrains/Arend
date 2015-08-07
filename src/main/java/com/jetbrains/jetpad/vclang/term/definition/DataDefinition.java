@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -42,8 +43,16 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
     return myConstructors;
   }
 
-  public void setConstructors(List<Constructor> constructors) {
+  public void addConstructor(Constructor constructor, List<ModuleError> errors) {
+    myConstructors.add(constructor);
+    addStaticField(constructor, errors);
+  }
+
+  public void setConstructors(List<Constructor> constructors, List<ModuleError> errors) {
     myConstructors = constructors;
+    getStaticFields().clear();
+    for (Constructor constructor : constructors)
+      addStaticField(constructor, errors);
   }
 
   @Override
@@ -55,22 +64,5 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   @Override
   public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitData(this, params);
-  }
-
-  @Override
-  public Constructor getStaticField(String name) {
-    if (myConstructors == null) return null;
-    for (Constructor constructor : myConstructors) {
-      if (constructor.getName().name.equals(name)) {
-        return constructor;
-      }
-    }
-
-    return null;
-  }
-
-  @Override
-  public List<Constructor> getStaticFields() {
-    return myConstructors;
   }
 }

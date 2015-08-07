@@ -21,8 +21,8 @@ public class GetTypeTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     ClassDefinition def = parseDefs(moduleLoader, "\\data List (A : \\Type0) | nil | cons A (List A) \\function test => cons 0 nil");
-    assertEquals(Apps(DefCall(def.getPublicField("List")), Nat()), def.getPublicField("test").getType());
-    assertEquals(Apps(DefCall(def.getPublicField("List")), Nat()), ((FunctionDefinition) def.getPublicField("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Apps(DefCall(def.getField("List")), Nat()), def.getField("test").getType());
+    assertEquals(Apps(DefCall(def.getField("List")), Nat()), ((FunctionDefinition) def.getField("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
@@ -30,8 +30,8 @@ public class GetTypeTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     ClassDefinition def = parseDefs(moduleLoader, "\\data List (A : \\Type0) | nil | cons A (List A) \\function test => (List Nat).nil");
-    assertEquals(Apps(DefCall(def.getPublicField("List")), Nat()), def.getPublicField("test").getType());
-    assertEquals(Apps(DefCall(def.getPublicField("List")), Nat()), ((FunctionDefinition) def.getPublicField("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Apps(DefCall(def.getField("List")), Nat()), def.getField("test").getType());
+    assertEquals(Apps(DefCall(def.getField("List")), Nat()), ((FunctionDefinition) def.getField("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
@@ -39,9 +39,9 @@ public class GetTypeTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     ClassDefinition def = parseDefs(moduleLoader, "\\class Test { \\function A : \\Type0 \\function a : A } \\function test => Test { \\override A => Nat }");
-    assertEquals(Universe(1), def.getPublicField("Test").getType());
-    assertEquals(Universe(0, Universe.Type.SET), def.getPublicField("test").getType());
-    assertEquals(Universe(0, Universe.Type.SET), ((FunctionDefinition) def.getPublicField("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Universe(1), def.getField("Test").getType());
+    assertEquals(Universe(0, Universe.Type.SET), def.getField("test").getType());
+    assertEquals(Universe(0, Universe.Type.SET), ((FunctionDefinition) def.getField("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
@@ -67,11 +67,11 @@ public class GetTypeTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     ClassDefinition def = parseDefs(moduleLoader, "\\class C { \\function x : Nat \\function f (p : 0 = x) => p } \\function test (p : Nat -> C) => (p 0).f");
-    Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), DefCall(Apps(Index(0), Zero()), ((ClassDefinition) def.getPublicField("C")).getPublicField("x")));
+    Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), DefCall(Apps(Index(0), Zero()), def.getField("C").getField("x")));
     List<Binding> context = new ArrayList<>(1);
-    context.add(new TypedBinding("p", Pi(Nat(), DefCall(def.getPublicField("C")))));
-    assertEquals(Pi(args(Tele(vars("p"), context.get(0).getType())), Pi(type, type)), def.getPublicField("test").getType());
-    assertEquals(Pi(type, type), ((FunctionDefinition) def.getPublicField("test")).getTerm().getType(context));
+    context.add(new TypedBinding("p", Pi(Nat(), DefCall(def.getField("C")))));
+    assertEquals(Pi(args(Tele(vars("p"), context.get(0).getType())), Pi(type, type)), def.getField("test").getType());
+    assertEquals(Pi(type, type), ((FunctionDefinition) def.getField("test")).getTerm().getType(context));
   }
 
   @Test

@@ -1,11 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
+import java.util.Collection;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition, Function {
@@ -14,13 +16,11 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   private Expression myResultType;
   private Expression myTerm;
   private boolean myTypeHasErrors;
-  private Namespace myNamespace;
 
   public FunctionDefinition(Utils.Name name, Definition parent, Precedence precedence, Arrow arrow) {
     super(name, parent, precedence);
     myArrow = arrow;
     myTypeHasErrors = true;
-    myNamespace = new Namespace(this);
   }
 
   public FunctionDefinition(Utils.Name name, Definition parent, Precedence precedence, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
@@ -32,12 +32,25 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
     myArrow = arrow;
     myTypeHasErrors = false;
     myTerm = term;
-    myNamespace = new Namespace(this);
   }
 
   @Override
-  public Namespace getNamespace() {
-    return myNamespace;
+  public boolean addField(Definition definition, List<ModuleError> errors) {
+    if (!addStaticField(definition, errors))
+      return false;
+    updateDependencies(definition);
+    addPrivateField(definition);
+    return true;
+  }
+
+  @Override
+  public Collection<Definition> getFields() {
+    return getStaticFields();
+  }
+
+  @Override
+  public Definition getField(String name) {
+    return getStaticField(name);
   }
 
   @Override
@@ -62,11 +75,6 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   @Override
   public Utils.Name getOriginalName() {
     return null;
-  }
-
-  @Override
-  public List<Definition> getNestedDefinitions() {
-    return myNamespace.getPublicMembers();
   }
 
   @Override

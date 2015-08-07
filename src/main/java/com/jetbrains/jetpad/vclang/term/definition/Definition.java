@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Module;
+import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
@@ -9,6 +10,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
   private Definition myParent;
@@ -16,6 +20,8 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   private Universe myUniverse;
   private boolean myHasErrors;
   private Set<Definition> myDependencies;
+  private Map<String, Definition> myStaticFields;
+  private Map<String, Definition> myPrivateFields;
 
   public Definition(Utils.Name name, Definition parent, Precedence precedence) {
     super(name);
@@ -24,6 +30,8 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     myUniverse = new Universe.Type(0, Universe.Type.PROP);
     myHasErrors = true;
     myDependencies = null;
+    myStaticFields = new HashMap<>();
+    myPrivateFields = new HashMap<>();
   }
 
   public Definition getParent() {
@@ -38,16 +46,71 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return this == definition || myParent != null && myParent.isDescendantOf(definition);
   }
 
-  public Namespace getNamespace() {
-    return null;
-  }
-
   public Definition getStaticField(String name) {
-    return getNamespace().getStaticMember(name);
+    return myStaticFields.get(name);
   }
 
-  public Collection<? extends Definition> getStaticFields() {
-    return getNamespace().getStaticMembers();
+  public Collection<Definition> getStaticFields() {
+    return myStaticFields.values();
+  }
+
+  protected boolean addStaticField(Definition definition, List<ModuleError> errors) {
+    if (getStaticFields().contains(definition))
+      return true;
+    if (getStaticField(definition.getName().name) != null) {
+      errors.add(new ModuleError(getEnclosingModule(), "Name " + getFullNestedMemberName(definition.getName().name) + " is already defined"));
+      return false;
+    }
+    myStaticFields.put(definition.getName().name, definition);
+    return true;
+  }
+
+ public Definition getPrivateField(String name) {
+    return myPrivateFields.get(name);
+  }
+
+  public Collection<Definition> getPrivateFields() {
+    return myPrivateFields.values();
+  }
+
+
+  public void addPrivateField(Definition definition) {
+    myPrivateFields.put(definition.getName().name, definition);
+  }
+
+  public void removePrivateField(Definition definition) {
+    myPrivateFields.values().remove(definition);
+  }
+
+  public boolean addField(Definition definition, List<ModuleError> errors) {
+    throw new IllegalStateException("Adding fields is not supported.");
+  }
+
+  public Definition getField(String name) {
+    throw new IllegalStateException("Getting fields is not supported.");
+  }
+
+  public Collection<Definition> getFields() {
+    throw new IllegalStateException("Getting fields is not supported.");
+  }
+
+  public ClassDefinition getClass(String name, List<ModuleError> errors) {
+    Definition definition = getField(name);
+    if (definition != null) {
+      if (definition instanceof ClassDefinition) {
+        ((ClassDefinition) definition).reopen();
+        addPrivateField(definition);
+        return (ClassDefinition) definition;
+      } else {
+        errors.add(new ModuleError(getEnclosingModule(), "Name " + getFullNestedMemberName(name) + " is already defined"));
+        return null;
+      }
+    }
+
+    ClassDefinition result = new ClassDefinition(name, this, !(this instanceof ClassDefinition) || ((ClassDefinition) this).isLocal());
+    addPrivateField(result);
+    result.hasErrors(true);
+    return result;
   }
 
   @Override
@@ -93,6 +156,14 @@ public abstract class Definition extends Binding implements Abstract.Definition 
       myDependencies = new HashSet<>();
     }
     myDependencies.add(dependency);
+  }
+
+  public void updateDependencies(Definition definition) {
+    if (definition.getDependencies() != null) {
+      for (Definition dependency : definition.getDependencies()) {
+        addDependency(dependency);
+      }
+    }
   }
 
   @Override

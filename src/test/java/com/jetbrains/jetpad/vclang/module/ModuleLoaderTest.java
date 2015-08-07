@@ -85,9 +85,9 @@ public class ModuleLoaderTest {
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertNotNull(moduleLoader.rootModule().getStaticField("A").getStaticFields());
     assertEquals(1, moduleLoader.rootModule().getStaticField("A").getStaticFields().size());
-    assertEquals(2, ((ClassDefinition) moduleLoader.rootModule().getStaticField("A")).getPublicFields().size());
+    assertEquals(2, moduleLoader.rootModule().getStaticField("A").getFields().size());
     assertTrue(moduleLoader.rootModule().getStaticField("A").getStaticField("C").getStaticFields() == null || moduleLoader.rootModule().getStaticField("A").getStaticField("C").getStaticFields().isEmpty());
-    assertEquals(2, ((ClassDefinition) moduleLoader.rootModule().getStaticField("A").getStaticField("C")).getPublicFields().size());
+    assertEquals(2, moduleLoader.rootModule().getStaticField("A").getStaticField("C").getFields().size());
   }
 
   @Test
@@ -138,8 +138,8 @@ public class ModuleLoaderTest {
     ClassDefinition result = parseDefs(dummyModuleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
     assertNotNull(result.getStaticFields());
     assertEquals(2, result.getStaticFields().size());
-    assertNotNull(result.getPublicFields());
-    assertEquals(2, result.getPublicFields().size());
+    assertNotNull(result.getFields());
+    assertEquals(2, result.getFields().size());
   }
 
   @Test

@@ -148,8 +148,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return visitDefData((DefDataContext) ctx);
     } else
     if (ctx instanceof DefClassContext) {
-      ClassDefinition classDef = myParent.getNamespace().getClass(((DefClassContext) ctx).ID().getText(), myModuleLoader.getErrors());
-
+      ClassDefinition classDef = myParent.getClass(((DefClassContext) ctx).ID().getText(), myModuleLoader.getErrors());
       if (classDef == null) return null;
       boolean oldOnlyStatics = myOnlyStatics;
       myOnlyStatics = !classDef.hasErrors();
@@ -164,8 +163,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           return null;
       }
 
-      myParent.getNamespace().checkDepsAddStaticMember(classDef, myModuleLoader.getErrors());
-
+      myParent.addField(classDef, myModuleLoader.getErrors());
       return classDef;
     } else
     if (ctx instanceof DefCmdContext) {
@@ -205,34 +203,32 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx.name().size() > 1) {
       for (int i = 1; i < ctx.name().size(); ++i) {
         String name = ctx.name(i) instanceof NameBinOpContext ? ((NameBinOpContext) ctx.name(i)).BIN_OP().getText() : ((NameIdContext) ctx.name(i)).ID().getText();
-        Definition definition = module.getNamespace().getStaticMember(name);
+        Definition definition = module.getStaticField(name);
         if (definition == null) {
           myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name(i).getStart()), name + " is not a static field of " + module.getFullName()));
           continue;
         }
         if (remove) {
-          myParent.getNamespace().removeMember(definition);
+          myParent.removePrivateField(definition);
         } else {
           if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
-            myParent.getNamespace().addPrivateMember(definition);
+            myParent.addPrivateField(definition);
             if (export) {
-              myParent.getNamespace().addPublicMember(definition, myModuleLoader.getErrors());
-              myParent.getNamespace().checkDepsAddStaticMember(definition, myModuleLoader.getErrors());
+              myParent.addField(definition, myModuleLoader.getErrors());
             }
           }
         }
       }
     } else {
-      if (module.getStaticFields() == null) return null;
       for (Definition definition : module.getStaticFields()) {
         if (remove) {
-          myParent.getNamespace().removeMember(definition);
+          myParent.removePrivateField(definition);
         } else {
+          //TODO: more thorough check
           if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
-            myParent.getNamespace().addPrivateMember(definition);
+            myParent.addPrivateField(definition);
             if (export) {
-              myParent.getNamespace().addPublicMember(definition, myModuleLoader.getErrors());
-              myParent.getNamespace().checkDepsAddStaticMember(definition, myModuleLoader.getErrors());
+              myParent.addField(definition, myModuleLoader.getErrors());
             }
           }
         }
@@ -625,12 +621,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     for (Definition definition = myParent; definition != null; definition = definition.getParent()) {
-      if (definition.getNamespace() != null) {
-        Definition member = definition.getNamespace().getPrivateMember(name);
+      Definition member = definition.getPrivateField(name);
         if (member != null) {
           return new Concrete.DefCallExpression(position, null, member);
         }
-      }
     }
 
     if (!binOp) {
@@ -769,7 +763,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
         if (expr instanceof Concrete.DefCallExpression && ((Concrete.DefCallExpression) expr).getDefinition() != null) {
           Definition definition = ((Concrete.DefCallExpression) expr).getDefinition();
-          Definition classField = definition.getNamespace().getStaticMember(name.name);
+          Definition classField = definition.getStaticField(name.name);
           if (classField == null && definition instanceof ClassDefinition) {
             classField = myModuleLoader.loadModule(new Module((ClassDefinition) definition, name.name), true);
           }

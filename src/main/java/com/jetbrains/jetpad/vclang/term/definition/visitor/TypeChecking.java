@@ -56,9 +56,7 @@ public class TypeChecking {
 
     DataDefinition result = new DataDefinition(def.getName(), parent, def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters, new ArrayList<Constructor>());
     result.setDependencies(abstractCalls);
-    if (!parent.getNamespace().addMember(result, moduleLoader.getErrors())) {
-      return null;
-    }
+    parent.addPrivateField(result);
     return result;
   }
 
@@ -94,10 +92,9 @@ public class TypeChecking {
     if (onlyStatics && parent instanceof ClassDefinition && !checkOnlyStatic(moduleLoader, (ClassDefinition) parent, definition, definition.getName())) {
       return false;
     }
-    parent.getNamespace().checkDepsAddStaticMember(definition, moduleLoader.getErrors());
+    parent.addField(definition, moduleLoader.getErrors());
     for (Constructor constructor : definition.getConstructors()) {
-        parent.getNamespace().addPublicMember(constructor, moduleLoader.getErrors());
-        parent.getNamespace().checkDepsAddStaticMember(constructor, moduleLoader.getErrors());
+      parent.addField(constructor, moduleLoader.getErrors());
     }
     return true;
   }
@@ -171,8 +168,8 @@ public class TypeChecking {
       }
     }
 
-    dataDefinition.getConstructors().add(constructor);
-    dataDefinition.getParent().getNamespace().addPrivateMember(constructor);
+    dataDefinition.addConstructor(constructor, moduleLoader.getErrors());
+    dataDefinition.getParent().addPrivateField(constructor);
 
     return constructor;
   }
@@ -350,12 +347,7 @@ public class TypeChecking {
     }
 
     typedDef.setDependencies(abstractCalls);
-    if (!def.isOverridden()) {
-      if (!typedDef.getParent().getNamespace().addMember(typedDef, moduleLoader.getErrors())) {
-        trimToSize(localContext, origSize);
-        return false;
-      }
-    }
+    typedDef.getParent().addPrivateField(typedDef);
 
     if (expectedType == null) {
       typedDef.typeHasErrors(true);
@@ -411,7 +403,10 @@ public class TypeChecking {
     if (onlyStatics && definition.getParent() instanceof ClassDefinition && !checkOnlyStatic(moduleLoader, (ClassDefinition) definition.getParent(), definition, definition.getName())) {
       return false;
     }
-    definition.getParent().getNamespace().checkDepsAddStaticMember(definition, moduleLoader.getErrors());
+
+    if (!definition.isOverridden()) {
+      definition.getParent().addField(definition, moduleLoader.getErrors());
+    }
 
     return true;
   }
@@ -420,7 +415,7 @@ public class TypeChecking {
     if (definition == null || definition.isAbstract() || definition.getDependencies() != null && !definition.getDependencies().isEmpty()) {
       moduleLoader.getErrors().add(new ModuleError(new Module(parent, name.getPrefixName()), "Only static fields are allowed in a class extension of " + parent.getName()));
       if (definition != null) {
-        parent.removeField(definition);
+        parent.removePrivateField(definition);
       }
       return false;
     }

@@ -63,7 +63,20 @@ public class ModuleSerialization {
       if (!definition.hasErrors() && !functionDefinition.isAbstract()) {
         functionDefinition.getTerm().accept(visitor);
       }
-      errors += serializeNamespace(visitor, functionDefinition.getNamespace());
+/*
+      if (definition.getStaticNames() != null) {
+        visitor.getDataStream().writeInt(definition.getStaticNames().size());
+        for (Definition field : definition.getStaticNames()) {
+          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
+          if (field.getParent() == definition) {
+            errors += serializeDefinition(visitor, field);
+          }
+        }
+      } else {
+        visitor.getDataStream().writeInt(0);
+      }
+      TODO:fix
+*/
       return errors;
     } else if (definition instanceof DataDefinition) {
       int errors = definition.hasErrors() ? 1 : 0;
@@ -110,31 +123,27 @@ public class ModuleSerialization {
 
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
-    return serializeNamespace(visitor, definition.getNamespace());
-  }
-
-  private static int serializeNamespace(SerializeVisitor visitor, Namespace ns) throws IOException {
     int errors = 0;
-    if (ns.getPublicMembers() != null) {
-      visitor.getDataStream().writeInt(ns.getPublicMembers().size());
-      for (Definition field : ns.getPublicMembers()) {
+    if (definition.getFields() != null) {
+      visitor.getDataStream().writeInt(definition.getFields().size());
+      for (Definition field : definition.getFields()) {
         visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
-        if (field.getParent() == ns.getOwner()) {
+        if (field.getParent() == definition) {
           errors += serializeDefinition(visitor, field);
         }
       }
     } else {
       visitor.getDataStream().writeInt(0);
     }
-
-    if (ns.getStaticMembers() != null) {
-      visitor.getDataStream().writeInt(ns.getStaticMembers().size());
-      for (Definition field : ns.getStaticMembers()) {
-        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
-      }
-    } else {
-      visitor.getDataStream().writeInt(0);
-    }
+// TODO: fix
+//    if (definition.getStaticNames() != null) {
+//      visitor.getDataStream().writeInt(definition.getStaticNames().size());
+//      for (Definition field : definition.getStaticNames()) {
+//        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
+//      }
+//    } else {
+//      visitor.getDataStream().writeInt(0);
+//    }
     return errors;
   }
 

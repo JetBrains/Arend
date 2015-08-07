@@ -57,9 +57,10 @@ public class ModuleDeserialization {
         if (parent == null) {
           throw new IncorrectFormat();
         }
+
         childModule = parent.getStaticField(name);
         if (childModule != null && childModule.getParent() != parent && parent instanceof ClassDefinition) {
-          childModule = ((ClassDefinition) parent).getPublicField(name);
+          childModule = parent.getField(name);
         }
 
         if (childModule == null) {
@@ -142,7 +143,16 @@ public class ModuleDeserialization {
       if (!functionDefinition.hasErrors() && !functionDefinition.isAbstract()) {
         functionDefinition.setTerm(readExpression(stream, definitionMap));
       }
-      deserializeNamespace(stream, definitionMap, functionDefinition.getNamespace());
+
+      int size = stream.readInt();
+      for (int i = 0; i < size; ++i) {
+        Definition member = definitionMap.get(stream.readInt());
+        if (member.getParent() == definition) {
+          deserializeDefinition(stream, definitionMap, member);
+        }
+        definition.addField(member, myModuleLoader.getErrors());
+      }
+
     } else if (code == ModuleSerialization.DATA_CODE) {
       if (!(definition instanceof DataDefinition)) {
         throw new IncorrectFormat();
@@ -155,7 +165,7 @@ public class ModuleDeserialization {
         dataDefinition.setParameters(readTypeArguments(stream, definitionMap));
       }
       int constructorsNumber = stream.readInt();
-      dataDefinition.setConstructors(new ArrayList<Constructor>(constructorsNumber));
+      dataDefinition.setConstructors(new ArrayList<Constructor>(constructorsNumber), myModuleLoader.getErrors());
       for (int i = 0; i < constructorsNumber; ++i) {
         Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
         if (constructor == null) {
@@ -170,10 +180,7 @@ public class ModuleDeserialization {
           constructor.setArguments(readTypeArguments(stream, definitionMap));
         }
 
-        dataDefinition.getConstructors().add(constructor);
-        if (dataDefinition.getParent() instanceof ClassDefinition) {
-          ((ClassDefinition) dataDefinition.getParent()).addStaticField(constructor, myModuleLoader.getErrors());
-        }
+        dataDefinition.addConstructor(constructor, myModuleLoader.getErrors());
       }
     } else
     if (code == ModuleSerialization.CLASS_CODE) {
@@ -190,28 +197,25 @@ public class ModuleDeserialization {
   private void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
     definition.setUniverse(readUniverse(stream));
 
-    deserializeNamespace(stream, definitionMap, definition.getNamespace());
-
-    definition.hasErrors(false);
-  }
-
-  private void deserializeNamespace(DataInputStream stream, Map<Integer, Definition> definitionMap, Namespace ns) throws IOException {
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       Definition member = definitionMap.get(stream.readInt());
-      if (member.getParent() == ns.getOwner()) {
+      if (member.getParent() == definition) {
         deserializeDefinition(stream, definitionMap, member);
       }
-      ns.addMember(member, myModuleLoader.getErrors());
-      if (!ns.getOwner().hasErrors() && ns.getOwner() instanceof ClassDefinition) {
-        TypeChecking.checkOnlyStatic(myModuleLoader, (ClassDefinition) ns.getOwner(), member, member.getName());
+      definition.addField(member, myModuleLoader.getErrors());
+      if (!definition.hasErrors()) {
+        TypeChecking.checkOnlyStatic(myModuleLoader, definition, member, member.getName());
       }
     }
 
     size = stream.readInt();
     for (int i = 0; i < size; ++i) {
-      ns.checkDepsAddStaticMember(definitionMap.get(stream.readInt()), myModuleLoader.getErrors());
+      Definition member = definitionMap.get(stream.readInt());
+      definition.addField(member, myModuleLoader.getErrors());
     }
+
+    definition.hasErrors(false);
   }
 
   private void readDefinition(DataInputStream stream, Definition definition) throws IOException {

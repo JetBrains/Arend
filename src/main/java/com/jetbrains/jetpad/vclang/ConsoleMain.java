@@ -125,7 +125,7 @@ public class ConsoleMain {
       ClassDefinition module1 = module.getClass(moduleNames.get(i), moduleLoader.getErrors());
       if (module1 == null) return;
       module1.hasErrors(false);
-      module.addStaticField(module1, moduleLoader.getErrors());
+      module.addField(module1, moduleLoader.getErrors());
       module = module1;
     }
     Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));

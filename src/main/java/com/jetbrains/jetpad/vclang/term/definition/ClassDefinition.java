@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import java.util.*;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
-  private Namespace myNamespace;
+  private Map<String, Definition> myPublicFields;
   private boolean myIsLocal;
 
   public ClassDefinition(String name, Definition parent) {
@@ -20,13 +20,8 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   public ClassDefinition(String name, Definition parent, boolean isLocal) {
     super(new Utils.Name(name, Fixity.PREFIX), parent, DEFAULT_PRECEDENCE);
     myIsLocal = isLocal;
+    myPublicFields = new HashMap<>();
     hasErrors(false);
-    myNamespace = new Namespace(this);
-  }
-
-  @Override
-  public Namespace getNamespace() {
-    return myNamespace;
   }
 
   public boolean isLocal() {
@@ -39,16 +34,61 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   }
 
   @Override
-  public List<Definition> getPublicFields() {
-    return myNamespace.getPublicMembers();
+  public boolean addField(Definition definition, List<ModuleError> errors) {
+    if (getFields().contains(definition))
+      return true;
+    if (getField(definition.getName().name) != null) {
+      errors.add(new ModuleError(getEnclosingModule(), "Name " + getFullNestedMemberName(definition.getName().name) + " is already defined"));
+      return false;
+    }
+
+    myPublicFields.put(definition.getName().name, definition);
+    updateDependencies(definition);
+    addPrivateField(definition);
+
+    if (definition.isAbstract()) {
+      Universe max = getUniverse().max(definition.getUniverse());
+      if (max == null) {
+        String msg = "Universe " + definition.getUniverse() + " of the field " + getFullNestedMemberName(definition.getName().getPrefixName()) + "is not compatible with universe " + getUniverse() + " of previous fields";
+        errors.add(new ModuleError(getEnclosingModule(), msg));
+        return false;
+      }
+      setUniverse(max);
+      return true;
+    }
+
+    if (isStatic(definition))
+      addStaticField(definition, errors);
+    return true;
   }
 
-  public Definition getPublicField(String name) {
-    return myNamespace.getPublicMember(name);
+  @Override
+  public Definition getField(String name) {
+    return myPublicFields.get(name);
   }
 
-  public Definition getPrivateField(String name) {
-    return myNamespace.getPrivateMember(name);
+  @Override
+  public Collection<Definition> getFields() {
+    return myPublicFields.values();
+  }
+
+  private boolean isStatic(Definition field) {
+    boolean isStatic = true;
+    if (field.getDependencies() != null) {
+      for (Definition dependency : field.getDependencies()) {
+        if (myPublicFields.values().contains(dependency)) {
+          isStatic = false;
+        }
+      }
+    }
+    return isStatic;
+  }
+
+  public void reopen() {
+    getPrivateFields().clear();
+    for (Definition field : myPublicFields.values()) {
+      addPrivateField(field);
+    }
   }
 
   @Override
@@ -56,35 +96,21 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return visitor.visitClass(this, params);
   }
 
-  public ClassDefinition getClass(String name, List<ModuleError> errors) {
-    return myNamespace.getClass(name, errors);
-  }
-
   public boolean hasAbstracts() {
-    if (myNamespace.getPublicMembers() == null) return false;
-    for (Definition field : myNamespace.getPublicMembers()) {
+    for (Definition field : myPublicFields.values()) {
       if (field.isAbstract()) return true;
     }
     return false;
   }
 
-  public boolean addPublicField(Definition definition, List<ModuleError> errors) {
-    return myNamespace.addPublicMember(definition, errors);
-  }
-
-  public void addPrivateField(Definition definition) {
-     myNamespace.addPrivateMember(definition);
-  }
-
-  public boolean addStaticField(Definition definition, List<ModuleError> errors) {
-   return myNamespace.checkDepsAddStaticMember(definition, errors);
-  }
-
-  public boolean addField(Definition definition, List<ModuleError> errors) {
-    return myNamespace.addMember(definition, errors);
-  }
-
-  public void removeField(Definition definition) {
-    myNamespace.removeMember(definition);
+  @Override
+  public void updateDependencies(Definition definition) {
+    if (definition.getDependencies() != null) {
+      for (Definition dependency : definition.getDependencies()) {
+        if (!myPublicFields.values().contains(dependency)) {
+          addDependency(dependency);
+        }
+      }
+    }
   }
 }

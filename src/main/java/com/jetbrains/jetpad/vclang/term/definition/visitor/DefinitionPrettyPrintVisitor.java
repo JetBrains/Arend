@@ -58,13 +58,13 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
       removeFromList(myNames, def.getArguments());
     }
 
-    if (def.getNestedDefinitions() != null) {
+    if (!def.getFields().isEmpty()) {
       myBuilder.append("\n");
       PrettyPrintVisitor.printIndent(myBuilder, myIndent);
       myBuilder.append("\\where ");
       myIndent += "\\where ".length();
       boolean isFirst = true;
-      for (Abstract.Definition nestedDef : def.getNestedDefinitions()) {
+      for (Abstract.Definition nestedDef : def.getFields()) {
         if (!isFirst)
           PrettyPrintVisitor.printIndent(myBuilder, myIndent);
         nestedDef.accept(this, null);
@@ -125,9 +125,9 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
     myBuilder.append("\\class ").append(def.getName()).append(" {");
-    if (def.getPublicFields() != null) {
+    if (def.getFields() != null) {
       ++myIndent;
-      for (Abstract.Definition field : def.getPublicFields()) {
+      for (Abstract.Definition field : def.getFields()) {
         myBuilder.append('\n');
         PrettyPrintVisitor.printIndent(myBuilder, myIndent);
         field.accept(this, null);

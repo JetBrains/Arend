@@ -775,7 +775,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Definition> getNestedDefinitions() {
+    public List<Definition> getFields() {
       return null;
     }
 
@@ -844,7 +844,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Definition> getPublicFields() {
+    public List<Definition> getFields() {
       return myFields;
     }
   }
