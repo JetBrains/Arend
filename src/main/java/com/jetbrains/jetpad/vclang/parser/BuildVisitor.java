@@ -209,7 +209,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           continue;
         }
         if (remove) {
-          myParent.removePrivateField(definition);
+          if (!myParent.getFields().contains(definition))
+            myParent.removePrivateField(definition);
         } else {
           if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
             myParent.addPrivateField(definition);
@@ -222,10 +223,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else {
       for (Definition definition : module.getStaticFields()) {
         if (remove) {
-          myParent.removePrivateField(definition);
+          if (!myParent.getFields().contains(definition))
+            myParent.removePrivateField(definition);
         } else {
-          //TODO: more thorough check
           if (!definition.isAbstract() && (definition.getDependencies() == null || definition.getDependencies().isEmpty())) {
+            if (!myParent.getFields().contains(definition))
             myParent.addPrivateField(definition);
             if (export) {
               myParent.addField(definition, myModuleLoader.getErrors());

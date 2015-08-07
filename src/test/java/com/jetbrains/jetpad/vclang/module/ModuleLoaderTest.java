@@ -217,10 +217,13 @@ public class ModuleLoaderTest {
   }
 
   @Test
+  public void neverCloseField() {
+    parseDefs(dummyModuleLoader, "\\class A { \\function x => 0 } \\class B { \\open A \\export A \\close A \\function y => x }");
+  }
+
+  @Test
   public void exportExistingTestError() {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\class B { \\function x => 0 } } \\export A \\class B { \\function y => 0 }", 1, 0);
+    parseDefs(dummyModuleLoader, "\\class A { \\class B { \\function x => 0 } } \\export A \\class B { \\function y => 0 }", 1, 0);
   }
 
   @Test
