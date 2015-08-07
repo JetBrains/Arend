@@ -2,7 +2,10 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import org.junit.Before;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import org.junit.Test;
+
+import java.util.Collection;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
 import static org.junit.Assert.*;
@@ -155,6 +158,76 @@ public class ModuleLoaderTest {
   @Test
   public void exportTest() {
     parseDefs(dummyModuleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\export B } \\function y => A.x");
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDefs(moduleLoader, "\\class A { \\class B { \\function x : Nat => 0 } \\export B } \\function y => A.x");
+  }
+
+  @Test
+  public void exportPublicFieldsTest() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    ClassDefinition result = parseDefs(moduleLoader, "\\class A { \\function x : Nat \\class B { \\function y => x } \\export B } \\function f (a : A) => a.y");
+    assertEquals(2, result.getPublicFields().size());
+    assertTrue(result.getPublicFields().get(0) instanceof ClassDefinition);
+    assertEquals(3, ((ClassDefinition) result.getPublicFields().get(0)).getPublicFields().size());
+    Collection<Definition> staticFields = ((ClassDefinition) result.getPublicFields().get(0)).getStaticFields();
+    assertTrue(staticFields == null || staticFields.size() == 0);
+  }
+
+  @Test
+  public void exportTest2() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    ClassDefinition result = parseDefs(moduleLoader,
+      "\\function (+) (x y : Nat) : Nat\n" +
+      "\\class A {\n" +
+        "\\function x : Nat\n" +
+        "\\class B {\n" +
+          "\\function y : Nat\n" +
+          "\\class C {\n" +
+            "\\function z => x + y\n" +
+            "\\function w => x\n" +
+          "}\n" +
+          "\\export C\n" +
+        "}\n" +
+        "\\class D { \\export B }\n" +
+        "\\function f (b : B) : b.C.z = x + b.y => path (\\lam _ => x + b.y)\n" +
+      "}");
+    assertEquals(2, result.getPublicFields().size());
+    assertTrue(result.getPublicFields().get(1) instanceof ClassDefinition);
+    ClassDefinition classA = (ClassDefinition) result.getPublicFields().get(1);
+    assertEquals(4, classA.getPublicFields().size());
+    assertTrue(classA.getStaticFields() == null || classA.getStaticFields().size() == 0);
+    assertTrue(classA.getPublicFields().get(1) instanceof ClassDefinition);
+    ClassDefinition classB = (ClassDefinition) classA.getPublicFields().get(1);
+    assertEquals(4, classB.getPublicFields().size());
+    assertEquals(1, classB.getStaticFields().size());
+    assertTrue(classB.getPublicFields().get(1) instanceof ClassDefinition);
+    ClassDefinition classC = (ClassDefinition) classB.getPublicFields().get(1);
+    assertEquals(2, classC.getPublicFields().size());
+    assertEquals(2, classC.getStaticFields().size());
+    assertEquals(classC.getPublicFields().get(1), classB.getStaticField("w"));
+    assertTrue(classA.getPublicFields().get(2) instanceof ClassDefinition);
+    ClassDefinition classD = (ClassDefinition) classA.getPublicFields().get(2);
+    assertEquals(1, classC.getPublicFields().size());
+    assertEquals(1, classC.getStaticFields().size());
+    assertEquals(classC.getPublicFields().get(1), classD.getStaticField("w"));
+    assertEquals(classC.getPublicFields().get(1), classD.getPublicFields().get(0));
+  }
+
+  @Test
+  public void exportExistingTestError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDefs(moduleLoader, "\\class A { \\class B { \\function x => 0 } } \\export A \\class B { \\function y => 0 }", 1, 0);
+  }
+
+  @Test
+  public void exportExistingTestError2() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    parseDefs(moduleLoader, "\\class B { \\function y => 0 } \\class A { \\class B { \\function x => 0 } } \\export A", 1, 0);
   }
 
   @Test
