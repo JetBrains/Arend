@@ -168,10 +168,10 @@ public class ModuleLoaderTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     ClassDefinition result = parseDefs(moduleLoader, "\\class A { \\function x : Nat \\class B { \\function y => x } \\export B } \\function f (a : A) => a.y");
-    assertEquals(2, result.getPublicFields().size());
-    assertTrue(result.getPublicFields().get(0) instanceof ClassDefinition);
-    assertEquals(3, ((ClassDefinition) result.getPublicFields().get(0)).getPublicFields().size());
-    Collection<Definition> staticFields = ((ClassDefinition) result.getPublicFields().get(0)).getStaticFields();
+    assertEquals(2, result.getFields().size());
+    assertTrue(result.getField("A") instanceof ClassDefinition);
+    assertEquals(3, result.getField("A").getFields().size());
+    Collection<Definition> staticFields = result.getField("A").getStaticFields();
     assertTrue(staticFields == null || staticFields.size() == 0);
   }
 
@@ -194,26 +194,26 @@ public class ModuleLoaderTest {
         "\\class D { \\export B }\n" +
         "\\function f (b : B) : b.C.z = x + b.y => path (\\lam _ => x + b.y)\n" +
       "}");
-    assertEquals(2, result.getPublicFields().size());
-    assertTrue(result.getPublicFields().get(1) instanceof ClassDefinition);
-    ClassDefinition classA = (ClassDefinition) result.getPublicFields().get(1);
-    assertEquals(4, classA.getPublicFields().size());
+    assertEquals(2, result.getFields().size());
+    assertTrue(result.getField("A") instanceof ClassDefinition);
+    ClassDefinition classA = (ClassDefinition) result.getField("A");
+    assertEquals(4, classA.getFields().size());
     assertTrue(classA.getStaticFields() == null || classA.getStaticFields().size() == 0);
-    assertTrue(classA.getPublicFields().get(1) instanceof ClassDefinition);
-    ClassDefinition classB = (ClassDefinition) classA.getPublicFields().get(1);
-    assertEquals(4, classB.getPublicFields().size());
+    assertTrue(classA.getField("B") instanceof ClassDefinition);
+    ClassDefinition classB = (ClassDefinition) classA.getField("B");
+    assertEquals(4, classB.getFields().size());
     assertEquals(1, classB.getStaticFields().size());
-    assertTrue(classB.getPublicFields().get(1) instanceof ClassDefinition);
-    ClassDefinition classC = (ClassDefinition) classB.getPublicFields().get(1);
-    assertEquals(2, classC.getPublicFields().size());
+    assertTrue(classB.getField("C") instanceof ClassDefinition);
+    ClassDefinition classC = (ClassDefinition) classB.getField("C");
+    assertEquals(2, classC.getFields().size());
     assertEquals(2, classC.getStaticFields().size());
-    assertEquals(classC.getPublicFields().get(1), classB.getStaticField("w"));
-    assertTrue(classA.getPublicFields().get(2) instanceof ClassDefinition);
-    ClassDefinition classD = (ClassDefinition) classA.getPublicFields().get(2);
-    assertEquals(1, classC.getPublicFields().size());
+    assertEquals(classC.getField("w"), classB.getStaticField("w"));
+    assertTrue(classA.getField("D") instanceof ClassDefinition);
+    ClassDefinition classD = (ClassDefinition) classA.getField("D");
+    assertEquals(1, classC.getFields().size());
     assertEquals(1, classC.getStaticFields().size());
-    assertEquals(classC.getPublicFields().get(1), classD.getStaticField("w"));
-    assertEquals(classC.getPublicFields().get(1), classD.getPublicFields().get(0));
+    assertEquals(classC.getField("w"), classD.getStaticField("w"));
+    assertEquals(classC.getField("z"), classD.getField("z"));
   }
 
   @Test
