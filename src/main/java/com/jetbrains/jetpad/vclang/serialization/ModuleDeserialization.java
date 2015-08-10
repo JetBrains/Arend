@@ -58,10 +58,7 @@ public class ModuleDeserialization {
           throw new IncorrectFormat();
         }
 
-        childModule = parent.getStaticField(name);
-        if (childModule != null && childModule.getParent() != parent && parent instanceof ClassDefinition) {
-          childModule = parent.getField(name);
-        }
+        childModule = parent.getField(name);
 
         if (childModule == null) {
           if (parent instanceof ClassDefinition && code == ModuleSerialization.CLASS_CODE) {
@@ -88,7 +85,7 @@ public class ModuleDeserialization {
       return new FunctionDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, null);
     }
     if (code == ModuleSerialization.DATA_CODE) {
-      return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE, null);
+      return new DataDefinition(name, parent, Abstract.Definition.DEFAULT_PRECEDENCE);
     }
     if (code == ModuleSerialization.CLASS_CODE) {
       ClassDefinition definition = new ClassDefinition(name.name, parent);
@@ -120,39 +117,8 @@ public class ModuleDeserialization {
       if (!(definition instanceof FunctionDefinition)) {
         throw new IncorrectFormat();
       }
-      readDefinition(stream, definition);
-      FunctionDefinition functionDefinition = (FunctionDefinition) definition;
-      if (code == ModuleSerialization.OVERRIDDEN_CODE) {
-        Definition overridden = definitionMap.get(stream.readInt());
-        if (!(overridden instanceof FunctionDefinition && functionDefinition instanceof OverriddenDefinition)) {
-          throw new IncorrectFormat();
-        }
-        ((OverriddenDefinition) functionDefinition).setOverriddenFunction((FunctionDefinition) overridden);
-      }
 
-      functionDefinition.typeHasErrors(stream.readBoolean());
-      if (!functionDefinition.typeHasErrors()) {
-        functionDefinition.setArguments(readArguments(stream, definitionMap));
-        functionDefinition.setResultType(readExpression(stream, definitionMap));
-      }
-      int arrowCode = stream.read();
-      if (arrowCode != 0 && arrowCode != 1 && arrowCode != 2) {
-        throw new IncorrectFormat();
-      }
-      functionDefinition.setArrow(arrowCode == 0 ? null : arrowCode == 1 ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT);
-      if (!functionDefinition.hasErrors() && !functionDefinition.isAbstract()) {
-        functionDefinition.setTerm(readExpression(stream, definitionMap));
-      }
-
-      int size = stream.readInt();
-      for (int i = 0; i < size; ++i) {
-        Definition member = definitionMap.get(stream.readInt());
-        if (member.getParent() == definition) {
-          deserializeDefinition(stream, definitionMap, member);
-        }
-        definition.addField(member, myModuleLoader.getErrors());
-      }
-
+      deserializeFunctionDefinition(stream, definitionMap, (FunctionDefinition) definition, code);
     } else if (code == ModuleSerialization.DATA_CODE) {
       if (!(definition instanceof DataDefinition)) {
         throw new IncorrectFormat();
@@ -165,7 +131,6 @@ public class ModuleDeserialization {
         dataDefinition.setParameters(readTypeArguments(stream, definitionMap));
       }
       int constructorsNumber = stream.readInt();
-      dataDefinition.setConstructors(new ArrayList<Constructor>(constructorsNumber), myModuleLoader.getErrors());
       for (int i = 0; i < constructorsNumber; ++i) {
         Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
         if (constructor == null) {
@@ -180,7 +145,7 @@ public class ModuleDeserialization {
           constructor.setArguments(readTypeArguments(stream, definitionMap));
         }
 
-        dataDefinition.addConstructor(constructor, myModuleLoader.getErrors());
+        dataDefinition.addConstructor(constructor);
       }
     } else
     if (code == ModuleSerialization.CLASS_CODE) {
@@ -194,9 +159,43 @@ public class ModuleDeserialization {
     }
   }
 
+  private void deserializeFunctionDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, FunctionDefinition definition, int code) throws IOException {
+    readDefinition(stream, definition);
+
+    if (code == ModuleSerialization.OVERRIDDEN_CODE) {
+      Definition overridden = definitionMap.get(stream.readInt());
+      if (!(overridden instanceof FunctionDefinition && definition instanceof OverriddenDefinition)) {
+        throw new IncorrectFormat();
+      }
+      ((OverriddenDefinition) definition).setOverriddenFunction((FunctionDefinition) overridden);
+    }
+
+    definition.typeHasErrors(stream.readBoolean());
+    if (!definition.typeHasErrors()) {
+      definition.setArguments(readArguments(stream, definitionMap));
+      definition.setResultType(readExpression(stream, definitionMap));
+    }
+    int arrowCode = stream.read();
+    if (arrowCode != 0 && arrowCode != 1 && arrowCode != 2) {
+      throw new IncorrectFormat();
+    }
+    definition.setArrow(arrowCode == 0 ? null : arrowCode == 1 ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT);
+    if (!definition.hasErrors() && !definition.isAbstract()) {
+      definition.setTerm(readExpression(stream, definitionMap));
+    }
+
+    deserializeFields(stream, definitionMap, definition);
+  }
+
   private void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
     definition.setUniverse(readUniverse(stream));
 
+    deserializeFields(stream, definitionMap, definition);
+
+    definition.hasErrors(false);
+  }
+
+  private void deserializeFields(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition definition) throws IOException {
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       Definition member = definitionMap.get(stream.readInt());
@@ -204,18 +203,10 @@ public class ModuleDeserialization {
         deserializeDefinition(stream, definitionMap, member);
       }
       definition.addField(member, myModuleLoader.getErrors());
-      if (!definition.hasErrors()) {
-        TypeChecking.checkOnlyStatic(myModuleLoader, definition, member, member.getName());
+      if (!definition.hasErrors() && definition instanceof ClassDefinition) {
+        TypeChecking.checkOnlyStatic(myModuleLoader, (ClassDefinition) definition, member, member.getName());
       }
     }
-
-    size = stream.readInt();
-    for (int i = 0; i < size; ++i) {
-      Definition member = definitionMap.get(stream.readInt());
-      definition.addField(member, myModuleLoader.getErrors());
-    }
-
-    definition.hasErrors(false);
   }
 
   private void readDefinition(DataInputStream stream, Definition definition) throws IOException {

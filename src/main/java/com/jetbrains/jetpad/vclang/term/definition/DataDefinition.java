@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -8,6 +7,8 @@ import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
@@ -16,17 +17,17 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   private List<Constructor> myConstructors;
   private List<TypeArgument> myParameters;
 
-  public DataDefinition(Utils.Name name, Definition parent, Precedence precedence, List<Constructor> constructors) {
+  public DataDefinition(Utils.Name name, Definition parent, Precedence precedence) {
     super(name, parent, precedence);
-    myConstructors = constructors;
+    myConstructors = new ArrayList<>();
   }
 
-  public DataDefinition(Utils.Name name, Definition parent, Precedence precedence, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+  public DataDefinition(Utils.Name name, Definition parent, Precedence precedence, Universe universe, List<TypeArgument> parameters) {
     super(name, parent, precedence);
     setUniverse(universe);
     hasErrors(false);
-    myConstructors = constructors;
     myParameters = parameters;
+    myConstructors = new ArrayList<>();
   }
 
   @Override
@@ -43,16 +44,14 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
     return myConstructors;
   }
 
-  public void addConstructor(Constructor constructor, List<ModuleError> errors) {
-    myConstructors.add(constructor);
-    addStaticField(constructor, errors);
+  @Override
+  public Definition getField(String name) {
+    return getStaticField(name);
   }
 
-  public void setConstructors(List<Constructor> constructors, List<ModuleError> errors) {
-    myConstructors = constructors;
-    getStaticFields().clear();
-    for (Constructor constructor : constructors)
-      addStaticField(constructor, errors);
+  public void addConstructor(Constructor constructor) {
+    myConstructors.add(constructor);
+    addStaticField(constructor, Collections.EMPTY_LIST);
   }
 
   @Override

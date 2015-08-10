@@ -97,10 +97,9 @@ public class LiftTest {
   @Test
   public void liftElim() {
     // lift (\elim <1> | con a b c => <2> <3> <4>, 0, 1) = \elim <2> | con a b c => <2> <4> <5>
-    List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition(new Utils.Name("D"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
+    DataDefinition def = new DataDefinition(new Utils.Name("D"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
     Constructor con = new Constructor(0, new Utils.Name("con"), def, Abstract.Definition.DEFAULT_PRECEDENCE,  new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
-    constructors.add(con);
+    def.addConstructor(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
     ElimExpression expr1 = Elim(Index(1), clauses1, null);
@@ -118,10 +117,9 @@ public class LiftTest {
   @Test
   public void liftElim2() {
     // lift (\elim <1> | con a b c => <2> <3> <5>, 2, 1) = \elim <1> | con a b c => <2> <3> <6>
-    List<Constructor> constructors = new ArrayList<>(1);
-    DataDefinition def = new DataDefinition(new Utils.Name("D"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>(), constructors);
+    DataDefinition def = new DataDefinition(new Utils.Name("D"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
     Constructor con = new Constructor(0, new Utils.Name("con"), def, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
-    constructors.add(con);
+    def.addConstructor(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
     ElimExpression expr1 = Elim(Index(1), clauses1, null);

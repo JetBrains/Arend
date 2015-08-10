@@ -48,37 +48,8 @@ public class ModuleSerialization {
     }
 
     if (definition instanceof FunctionDefinition) {
-      int errors = definition.hasErrors() ? 1 : 0;
-      FunctionDefinition functionDefinition = (FunctionDefinition) definition;
-      writeDefinition(visitor.getDataStream(), definition);
-      if (definition instanceof OverriddenDefinition) {
-        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(((OverriddenDefinition) definition).getOverriddenFunction()));
-      }
-      visitor.getDataStream().writeBoolean(functionDefinition.typeHasErrors());
-      if (!functionDefinition.typeHasErrors()) {
-        writeArguments(visitor, functionDefinition.getArguments());
-        functionDefinition.getResultType().accept(visitor);
-      }
-      visitor.getDataStream().write(functionDefinition.getArrow() == null ? 0 : functionDefinition.getArrow() == Abstract.Definition.Arrow.LEFT ? 1 : 2);
-      if (!definition.hasErrors() && !functionDefinition.isAbstract()) {
-        functionDefinition.getTerm().accept(visitor);
-      }
-/*
-      if (definition.getStaticNames() != null) {
-        visitor.getDataStream().writeInt(definition.getStaticNames().size());
-        for (Definition field : definition.getStaticNames()) {
-          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
-          if (field.getParent() == definition) {
-            errors += serializeDefinition(visitor, field);
-          }
-        }
-      } else {
-        visitor.getDataStream().writeInt(0);
-      }
-      TODO:fix
-*/
-      return errors;
-    } else if (definition instanceof DataDefinition) {
+      return serializeFunctionDefinition(visitor, (FunctionDefinition) definition);
+   } else if (definition instanceof DataDefinition) {
       int errors = definition.hasErrors() ? 1 : 0;
       DataDefinition dataDefinition = (DataDefinition) definition;
       writeDefinition(visitor.getDataStream(), definition);
@@ -123,6 +94,30 @@ public class ModuleSerialization {
 
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
+    return serializeFields(visitor, definition);
+  }
+
+  private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
+    int errors = definition.hasErrors() ? 1 : 0;
+
+    writeDefinition(visitor.getDataStream(), definition);
+    if (definition instanceof OverriddenDefinition)
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(((OverriddenDefinition) definition).getOverriddenFunction()));
+
+    visitor.getDataStream().writeBoolean(definition.typeHasErrors());
+    if (!definition.typeHasErrors()) {
+      writeArguments(visitor, definition.getArguments());
+      definition.getResultType().accept(visitor);
+    }
+    visitor.getDataStream().write(definition.getArrow() == null ? 0 : definition.getArrow() == Abstract.Definition.Arrow.LEFT ? 1 : 2);
+    if (!definition.hasErrors() && !definition.isAbstract()) {
+      definition.getTerm().accept(visitor);
+    }
+
+    return errors + serializeFields(visitor, definition);
+  }
+
+  private static int serializeFields(SerializeVisitor visitor, Definition definition) throws IOException {
     int errors = 0;
     if (definition.getFields() != null) {
       visitor.getDataStream().writeInt(definition.getFields().size());
@@ -135,15 +130,6 @@ public class ModuleSerialization {
     } else {
       visitor.getDataStream().writeInt(0);
     }
-// TODO: fix
-//    if (definition.getStaticNames() != null) {
-//      visitor.getDataStream().writeInt(definition.getStaticNames().size());
-//      for (Definition field : definition.getStaticNames()) {
-//        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(field));
-//      }
-//    } else {
-//      visitor.getDataStream().writeInt(0);
-//    }
     return errors;
   }
 

@@ -54,7 +54,7 @@ public class TypeChecking {
       }
     }
 
-    DataDefinition result = new DataDefinition(def.getName(), parent, def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters, new ArrayList<Constructor>());
+    DataDefinition result = new DataDefinition(def.getName(), parent, def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters);
     result.setDependencies(abstractCalls);
     parent.addPrivateField(result);
     return result;
@@ -168,7 +168,7 @@ public class TypeChecking {
       }
     }
 
-    dataDefinition.addConstructor(constructor, moduleLoader.getErrors());
+    dataDefinition.addConstructor(constructor);
     dataDefinition.getParent().addPrivateField(constructor);
 
     return constructor;

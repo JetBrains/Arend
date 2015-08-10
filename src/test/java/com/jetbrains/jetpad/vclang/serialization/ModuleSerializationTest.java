@@ -18,6 +18,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
@@ -97,7 +98,7 @@ public class ModuleSerializationTest {
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
     ClassDefinition newDef = new ClassDefinition("test", moduleLoader.rootModule());
     moduleLoader.rootModule().addField(newDef, null);
-    ClassDefinition bClass = new ClassDefinition("A", def);
+    ClassDefinition bClass = new ClassDefinition("A", newDef);
     newDef.addField(bClass, null);
     bClass.addField(new FunctionDefinition(new Utils.Name("g"), aClass, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), null, null), null);
     int errors = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef);
@@ -109,13 +110,12 @@ public class ModuleSerializationTest {
   @Test
   public void serializeDataTest() throws IOException {
     ClassDefinition def = new ClassDefinition("test", dummyModuleLoader.rootModule());
-    List<Constructor> constructors = new ArrayList<>(2);
-    DataDefinition dataDefinition = new DataDefinition(new Utils.Name("D"), def, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("A"), Universe(0))), constructors);
-    constructors.add(new Constructor(0, new Utils.Name("con1"), dataDefinition, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(TypeArg(Index(0)))));
-    constructors.add(new Constructor(1, new Utils.Name("con2"), dataDefinition, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(TypeArg(Nat()), TypeArg(Index(1)))));
+    DataDefinition dataDefinition = new DataDefinition(new Utils.Name("D"), def, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("A"), Universe(0))));
+    dataDefinition.addConstructor(new Constructor(0, new Utils.Name("con1"), dataDefinition, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(TypeArg(Index(0)))));
+    dataDefinition.addConstructor(new Constructor(1, new Utils.Name("con2"), dataDefinition, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(TypeArg(Nat()), TypeArg(Index(1)))));
     def.addField(dataDefinition, null);
-    def.addField(constructors.get(0), null);
-    def.addField(constructors.get(1), null);
+    def.addField(dataDefinition.getConstructors().get(0), null);
+    def.addField(dataDefinition.getConstructors().get(1), null);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
     ModuleSerialization.writeStream(def, dataStream);
@@ -155,5 +155,21 @@ public class ModuleSerializationTest {
     assertEquals(1, (newDef.getStaticField("f")).getFields().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+  }
+
+  @Test
+  public void serializeNestedTest() throws IOException {
+    ClassDefinition def = (ClassDefinition) parseDef(dummyModuleLoader, "\\class A { \\class B { \\class C { } } }").getParent();
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    DataOutputStream dataStream = new DataOutputStream(stream);
+    ModuleSerialization.writeStream(def, dataStream);
+
+    ModuleLoader moduleLoader = new ModuleLoader();
+    moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+    ClassDefinition newDef = (ClassDefinition) parseDef(moduleLoader, "\\class B {}").getParent();
+    moduleLoader.rootModule().addField(newDef, moduleLoader.getErrors());
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    int errors = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef);
+    assertEquals(0, errors);
   }
 }
