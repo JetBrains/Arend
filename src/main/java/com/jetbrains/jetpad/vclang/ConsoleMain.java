@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import org.apache.commons.cli.*;
 
@@ -120,15 +120,11 @@ public class ConsoleMain {
       return;
     }
 
-    ClassDefinition module = moduleLoader.rootModule();
+    Namespace namespace = moduleLoader.getRoot();
     for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      ClassDefinition module1 = module.getClass(moduleNames.get(i), moduleLoader.getErrors());
-      if (module1 == null) return;
-      module1.hasErrors(false);
-      module.addField(module1, moduleLoader.getErrors());
-      module = module1;
+      namespace = namespace.getChild(moduleNames.get(i));
     }
-    Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));
+    Module newModule = new Module(namespace, moduleNames.get(moduleNames.size() - 1));
     moduleLoader.loadModule(newModule, false);
 
     for (ModuleError moduleError : moduleLoader.getErrors()) {

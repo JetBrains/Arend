@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -17,14 +16,14 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   private Expression myTerm;
   private boolean myTypeHasErrors;
 
-  public FunctionDefinition(Utils.Name name, Definition parent, Precedence precedence, Arrow arrow) {
-    super(name, parent, precedence);
+  public FunctionDefinition(Namespace namespace, Precedence precedence, Arrow arrow) {
+    super(namespace, precedence);
     myArrow = arrow;
     myTypeHasErrors = true;
   }
 
-  public FunctionDefinition(Utils.Name name, Definition parent, Precedence precedence, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
-    super(name, parent, precedence);
+  public FunctionDefinition(Namespace namespace, Precedence precedence, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
+    super(namespace, precedence);
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);
     myArguments = arguments;
@@ -35,22 +34,8 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
-  public boolean addField(Definition definition, List<ModuleError> errors) {
-    if (!addStaticField(definition, errors))
-      return false;
-    updateDependencies(definition);
-    addPrivateField(definition);
-    return true;
-  }
-
-  @Override
   public Collection<Definition> getFields() {
-    return getStaticFields();
-  }
-
-  @Override
-  public Definition getField(String name) {
-    return getStaticField(name);
+    return getDefinitionContext().getNamespace().getMembers();
   }
 
   @Override

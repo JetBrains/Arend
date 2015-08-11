@@ -3,7 +3,9 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -13,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 public class ModuleLoader {
-  private final ClassDefinition myRoot = new ClassDefinition("\\root", null);
+  private final Namespace myRoot = new Namespace(new Utils.Name("\\root"), null);
   private final List<Module> myLoadingModules = new ArrayList<>();
   private SourceSupplier mySourceSupplier;
   private OutputSupplier myOutputSupplier;
@@ -24,13 +26,13 @@ public class ModuleLoader {
 
   public void init(SourceSupplier sourceSupplier, OutputSupplier outputSupplier, boolean recompile) {
     Prelude.PRELUDE.setParent(myRoot);
-    myRoot.addField(Prelude.PRELUDE, null);
+    myRoot.addChild(Prelude.PRELUDE);
     mySourceSupplier = sourceSupplier;
     myOutputSupplier = outputSupplier;
     myRecompile = recompile;
   }
 
-  public ClassDefinition rootModule() {
+  public Namespace getRoot() {
     return myRoot;
   }
 
@@ -73,32 +75,30 @@ public class ModuleLoader {
       compile = false;
     }
 
-    ClassDefinition moduleDefinition = module.getParent().getClass(module.getName(), myErrors);
-    if (moduleDefinition == null) {
-      return null;
-    }
-
     myLoadingModules.add(module);
+    Namespace namespace = module.getParent().getChild(new Utils.Name(module.getName()));
+    ClassDefinition classDefinition = null;
+    if (module.getParent().getMember(module.getName()) == null) {
+      classDefinition = new ClassDefinition(module.getName(), module.getParent());
+    }
     try {
       if (compile) {
         int errors = myTypeCheckingErrors.size();
-        if (source.load(moduleDefinition)) {
-          moduleDefinition.hasErrors(false);
+        if (source.load(namespace, classDefinition)) {
           if (output.canWrite()) {
-            output.write(moduleDefinition);
+            output.write(namespace, classDefinition);
           }
           if (errors == myTypeCheckingErrors.size()) {
-            System.out.println("[OK] " + moduleDefinition.getFullName());
+            System.out.println("[OK] " + namespace.getFullName());
           }
         }
       } else {
-        int errorsNumber = output.read(moduleDefinition);
+        int errorsNumber = output.read(namespace, classDefinition);
         if (errorsNumber != 0) {
           myErrors.add(new ModuleError(module, "module contains " + errorsNumber + (errorsNumber == 1 ? " error" : " errors")));
         } else {
-          System.out.println("[Loaded] " + moduleDefinition.getFullName());
+          System.out.println("[Loaded] " + namespace.getFullName());
         }
-        moduleDefinition.hasErrors(false);
       }
     } catch (EOFException e) {
       myErrors.add(new ModuleError(module, "Incorrect format: Unexpected EOF"));
@@ -110,10 +110,9 @@ public class ModuleLoader {
     myLoadingModules.remove(myLoadingModules.size() - 1);
     myLoadedModules.add(module);
 
-    if (moduleDefinition.hasErrors()) {
-      module.getParent().removePrivateField(moduleDefinition);
+    if (classDefinition != null) {
+      module.getParent().addMember(classDefinition);
     }
-    module.getParent().addField(moduleDefinition, myErrors);
-    return moduleDefinition;
+    return classDefinition;
   }
 }

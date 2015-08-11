@@ -1,146 +1,97 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.Module;
-import com.jetbrains.jetpad.vclang.module.ModuleError;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-public class Namespace {
-  final Definition myOwner;
+public class Namespace implements NamespaceMember {
+  final private Utils.Name myName;
+  private Namespace myParent;
+  private Map<String, Namespace> myChildren;
+  private Map<String, Definition> myMembers;
 
-  private List<Definition> myPublicMembers;
-  private Map<String, Definition> myPrivateMembers;
-  private Map<String, Definition> myStaticMembers;
-
-  public Namespace(Definition owner) {
-    myOwner = owner;
+  public Namespace(Utils.Name name, Namespace parent) {
+    myName = name;
+    myParent = parent;
   }
 
-  public Definition getOwner() {
-    return myOwner;
+  @Override
+  public Utils.Name getName() {
+    return myName;
   }
 
-  public Collection<Definition> getPrivateMembers() {
-    return myPrivateMembers.values();
+  public String getFullName() {
+    return myParent == null || myParent.getParent() == null ? myName.name : myParent.getFullName() + "." + myName.name;
   }
 
-  public Definition getPrivateMember(String name) {
-    return myPrivateMembers == null ? null : myPrivateMembers.get(name);
+  @Override
+  public Namespace getParent() {
+    return myParent;
   }
 
-  public void addPrivateMember(Definition definition) {
-    if (myPrivateMembers == null) {
-      myPrivateMembers = new HashMap<>();
+  public void setParent(Namespace parent) {
+    myParent = parent;
+  }
+
+  public Collection<Definition> getMembers() {
+    return myMembers == null ? Collections.<Definition>emptyList() : myMembers.values();
+  }
+
+  public Collection<Namespace> getChildren() {
+    return myChildren == null ? Collections.<Namespace>emptyList() : myChildren.values();
+  }
+
+  public Namespace getChild(Utils.Name name) {
+    if (myChildren != null) {
+      Namespace child = myChildren.get(name.name);
+      if (child != null) {
+        return child;
+      }
+    } else {
+      myChildren = new HashMap<>();
     }
-    myPrivateMembers.put(definition.getName().name, definition);
+
+    Namespace child = new Namespace(name, this);
+    myChildren.put(name.name, child);
+    return child;
   }
 
-  public List<Definition> getPublicMembers() {
-    return myPublicMembers;
-  }
-
-  public Definition getPublicMember(String name) {
-    if (myPublicMembers == null) return null;
-    for (Definition field : myPublicMembers) {
-      if (field.getName().name.equals(name)) {
-        return field;
+  public Namespace addChild(Namespace child) {
+    if (myChildren == null) {
+      myChildren = new HashMap<>();
+      myChildren.put(child.myName.name, child);
+      return null;
+    } else {
+      Namespace oldChild = myChildren.get(child.myName.name);
+      if (oldChild != null) {
+        return oldChild;
+      } else {
+        myChildren.put(child.myName.name, child);
+        return null;
       }
     }
-    return null;
   }
 
-  public boolean addPublicMember(Definition definition, List<ModuleError> errors) {
-    Definition oldDefinition = getPublicMember(definition.getName().name);
-    if (oldDefinition != null && !(oldDefinition instanceof ClassDefinition && definition instanceof ClassDefinition && (!((ClassDefinition) oldDefinition).hasAbstracts() || !((ClassDefinition) definition).hasAbstracts()))) {
-      errors.add(new ModuleError(myOwner.getEnclosingModule(), "Name " + myOwner.getFullNestedMemberName(definition.getName().name) + " is already defined"));
-      return false;
-    }
-
-    if (myPublicMembers == null) {
-      myPublicMembers = new ArrayList<>();
-    }
-    myPublicMembers.add(definition);
-    return true;
+  public Definition getMember(String name) {
+    return myMembers == null ? null : myMembers.get(name);
   }
 
-  public Collection<Definition> getStaticMembers() {
-    return myStaticMembers == null ? null : myStaticMembers.values();
-  }
-
-  public Definition getStaticMember(String name) {
-    return myStaticMembers == null ? null : myStaticMembers.get(name);
-  }
-
-  public boolean checkDepsAddStaticMember(Definition definition, List<ModuleError> errors) {
-    if (definition.isAbstract()) {
-      Universe max = myOwner.getUniverse().max(definition.getUniverse());
-      if (max == null) {
-        String msg = "Universe " + definition.getUniverse() + " of the field " + myOwner.getFullNestedMemberName(definition.getName().getPrefixName()) + "is not compatible with universe " + myOwner.getUniverse() + " of previous fields";
-        errors.add(new ModuleError(myOwner.getEnclosingModule(), msg));
-        return false;
+  public Definition addMember(Definition member) {
+    if (myMembers == null) {
+      myMembers = new HashMap<>();
+      myMembers.put(member.getName().name, member);
+      return null;
+    } else {
+      Definition oldMember = myMembers.get(member.getName().name);
+      if (oldMember != null) {
+        return oldMember;
+      } else {
+        myMembers.put(member.getName().name, member);
+        return null;
       }
-      myOwner.setUniverse(max);
-      return true;
-    }
-
-    boolean isStatic = true;
-    if (definition.getDependencies() != null) {
-      for (Definition dependency : definition.getDependencies()) {
-        if (myPublicMembers.contains(dependency)) {
-          isStatic = false;
-        } else {
-          myOwner.addDependency(dependency);
-        }
-      }
-    }
-
-    if (isStatic) {
-      if (myStaticMembers == null) {
-        myStaticMembers = new HashMap<>();
-      }
-      myStaticMembers.put(definition.getName().name, definition);
-    }
-    return true;
-  }
-
-  public ClassDefinition getClass(String name, List<ModuleError> errors) {
-    if (myPublicMembers != null) {
-      Definition definition = getPublicMember(name);
-      if (definition != null) {
-        if (definition instanceof ClassDefinition) {
-          return (ClassDefinition) definition;
-        } else {
-          errors.add(new ModuleError(myOwner.getEnclosingModule(), "Name " + myOwner.getFullNestedMemberName(name) + " is already defined"));
-          return null;
-        }
-      }
-    }
-
-    ClassDefinition result = new ClassDefinition(name, myOwner, !(myOwner instanceof ClassDefinition) || ((ClassDefinition) myOwner).isLocal());
-    result.hasErrors(true);
-    if (myPublicMembers == null) {
-      myPublicMembers = new ArrayList<>();
-    }
-    myPublicMembers.add(result);
-    if (myPrivateMembers == null) {
-      myPrivateMembers = new HashMap<>();
-    }
-    myPrivateMembers.put(result.getName().name, result);
-    return result;
-  }
-
-  public boolean addMember(Definition definition, List<ModuleError> errors) {
-    if (!addPublicMember(definition, errors)) return false;
-    addPrivateMember(definition);
-    return true;
-  }
-
-  public void removeMember(Definition definition) {
-    if (myPublicMembers != null) {
-      myPublicMembers.remove(definition);
-    }
-    if (myPrivateMembers != null) {
-      myPrivateMembers.remove(definition.getName().name);
     }
   }
 }

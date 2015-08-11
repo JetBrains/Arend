@@ -1,17 +1,17 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.*;
 
 public class DefinitionsIndices {
-  final private Map<Definition, Integer> myDefinitions = new HashMap<>();
-  final private List<Map.Entry<Definition, Integer>> myDefinitionsList = new ArrayList<>();
+  final private Map<NamespaceMember, Integer> myDefinitions = new HashMap<>();
+  final private List<Map.Entry<NamespaceMember, Integer>> myDefinitionsList = new ArrayList<>();
   private int myCounter = 0;
 
-  public int getDefinitionIndex(Definition definition) {
+  public int getDefinitionIndex(NamespaceMember definition) {
     if (definition == null) return -1;
     Integer index = myDefinitions.get(definition);
     if (index == null) {
@@ -26,7 +26,7 @@ public class DefinitionsIndices {
 
   public void serialize(DataOutputStream stream) throws IOException {
     stream.writeInt(myDefinitionsList.size());
-    for (Map.Entry<Definition, Integer> entry : myDefinitionsList) {
+    for (Map.Entry<NamespaceMember, Integer> entry : myDefinitionsList) {
       stream.writeInt(entry.getValue());
       if (entry.getValue() != 0) {
         stream.writeInt(myDefinitions.get(entry.getKey().getParent()));

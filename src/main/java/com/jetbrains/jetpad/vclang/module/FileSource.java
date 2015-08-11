@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,8 +26,8 @@ public class FileSource extends ParseSource {
   }
 
   @Override
-  public boolean load(ClassDefinition classDefinition) throws IOException {
+  public boolean load(Namespace namespace, ClassDefinition classDefinition) throws IOException {
     setStream(new FileInputStream(myFile));
-    return super.load(classDefinition);
+    return super.load(namespace, classDefinition);
   }
 }

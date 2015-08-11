@@ -1,51 +1,39 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Module;
-import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
 
-public abstract class Definition extends Binding implements Abstract.Definition {
-  private Definition myParent;
+public abstract class Definition extends Binding implements Abstract.Definition, NamespaceMember {
   private Precedence myPrecedence;
   private Universe myUniverse;
   private boolean myHasErrors;
-  private Set<Definition> myDependencies;
-  private Map<String, Definition> myStaticFields;
-  private Map<String, Definition> myPrivateFields;
+  // private Set<Definition> myDependencies;
+  // private Map<String, Definition> myStaticFields;
+  final private DefinitionContext myDefinitionContext;
 
-  public Definition(Utils.Name name, Definition parent, Precedence precedence) {
-    super(name);
-    myParent = parent;
+  public Definition(Namespace namespace, Precedence precedence) {
+    super(namespace.getName());
+    myDefinitionContext = new DefinitionContext(namespace);
     myPrecedence = precedence;
     myUniverse = new Universe.Type(0, Universe.Type.PROP);
     myHasErrors = true;
-    myDependencies = null;
-    myStaticFields = new HashMap<>();
-    myPrivateFields = new HashMap<>();
+    // myDependencies = null;
+    // myStaticFields = new HashMap<>();
   }
 
-  public Definition getParent() {
-    return myParent;
+  @Override
+  public Namespace getParent() {
+    return myDefinitionContext.getNamespace().getParent();
   }
 
-  public void setParent(Definition parent) {
-    myParent = parent;
+  public DefinitionContext getDefinitionContext() {
+    return myDefinitionContext;
   }
 
-  public boolean isDescendantOf(Definition definition) {
-    return this == definition || myParent != null && myParent.isDescendantOf(definition);
-  }
-
+  /*
   public Definition getStaticField(String name) {
     return myStaticFields.get(name);
   }
@@ -63,23 +51,6 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     }
     myStaticFields.put(definition.getName().name, definition);
     return true;
-  }
-
- public Definition getPrivateField(String name) {
-    return myPrivateFields.get(name);
-  }
-
-  public Collection<Definition> getPrivateFields() {
-    return myPrivateFields.values();
-  }
-
-
-  public void addPrivateField(Definition definition) {
-    myPrivateFields.put(definition.getName().name, definition);
-  }
-
-  public void removePrivateField(Definition definition) {
-    myPrivateFields.values().remove(definition);
   }
 
   public boolean addField(Definition definition, List<ModuleError> errors) {
@@ -112,6 +83,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     result.hasErrors(true);
     return result;
   }
+  */
 
   @Override
   public Precedence getPrecedence() {
@@ -143,6 +115,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return false;
   }
 
+  /*
   public boolean canOpen(Definition definition) {
     if (definition.getDependencies() == null)
       return true;
@@ -176,6 +149,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
       }
     }
   }
+  */
 
   @Override
   public String toString() {
@@ -184,27 +158,31 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return builder.toString();
   }
 
-  public String getFullName() {
-    return myParent == null || myParent.getParent() == null ? getName().getPrefixName() : myParent.getFullName() + "." + getName();
-  }
-
   @Override
   public Definition lift(int on) {
     return this;
   }
 
   public Module getEnclosingModule() {
+    /*
     for (Definition def = this;; def = def.getParent()) {
       if (def instanceof ClassDefinition && !((ClassDefinition) def).isLocal())
         return new Module((ClassDefinition)def.getParent(), def.getName().name);
     }
+    */
+    // TODO
+    return null;
   }
 
   public String getFullNestedMemberName(String name) {
+    /*
     String result = name;
     for (Definition def = this; !(def instanceof ClassDefinition) || ((ClassDefinition) def).isLocal(); def = def.getParent()) {
       result = def.getName() + "." + result;
     }
     return result;
+    */
+    // TODO
+    return null;
   }
 }

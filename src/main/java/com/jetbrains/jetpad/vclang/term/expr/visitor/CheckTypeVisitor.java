@@ -567,7 +567,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (okExprResult.type instanceof UniverseExpression) {
         Expression expression = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
         if (expression instanceof DefCallExpression && ((DefCallExpression) expression).getDefinition() instanceof ClassDefinition) {
-          Definition field = ((DefCallExpression) expression).getDefinition().getStaticField(expr.getName().name);
+          // TODO
+          Definition field = null; // ((DefCallExpression) expression).getDefinition().getStaticField(expr.getName().name);
           if (field == null) {
             notInScope = true;
           } else {
@@ -577,7 +578,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           List<Expression> arguments = new ArrayList<>();
           Expression function = expression.getFunction(arguments);
           if (function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() instanceof DataDefinition) {
-            Constructor constructor = (Constructor) ((DefCallExpression) function).getDefinition().getStaticField(expr.getName().name);
+            Constructor constructor = ((DataDefinition) ((DefCallExpression) function).getDefinition()).getConstructor(expr.getName().name);
             if (constructor == null) {
               notInScope = true;
             } else {

@@ -1,27 +1,32 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
   private Map<String, Definition> myPublicFields;
   private boolean myIsLocal;
 
-  public ClassDefinition(String name, Definition parent) {
-    this(name, parent, false);
+  public ClassDefinition(Namespace namespace) {
+    this(namespace, false);
   }
 
-  public ClassDefinition(String name, Definition parent, boolean isLocal) {
-    super(new Utils.Name(name, Fixity.PREFIX), parent, DEFAULT_PRECEDENCE);
+  public ClassDefinition(Namespace namespace, boolean isLocal) {
+    super(namespace, DEFAULT_PRECEDENCE);
     myIsLocal = isLocal;
     myPublicFields = new HashMap<>();
-    hasErrors(false);
+    super.hasErrors(false);
+  }
+
+  @Override
+  public void hasErrors(boolean has) {
+    throw new IllegalStateException();
   }
 
   public boolean isLocal() {
@@ -33,6 +38,8 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return new UniverseExpression(getUniverse());
   }
 
+  // TODO
+  /*
   @Override
   public boolean addField(Definition definition, List<ModuleError> errors) {
     if (getFields().contains(definition))
@@ -61,8 +68,8 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       addStaticField(definition, errors);
     return true;
   }
+  */
 
-  @Override
   public Definition getField(String name) {
     return myPublicFields.get(name);
   }
@@ -72,6 +79,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myPublicFields.values();
   }
 
+  /*
   private boolean isStatic(Definition field) {
     boolean isStatic = true;
     if (field.getDependencies() != null) {
@@ -90,12 +98,14 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       addPrivateField(field);
     }
   }
+  */
 
   @Override
   public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitClass(this, params);
   }
 
+  /*
   public boolean hasAbstracts() {
     for (Definition field : myPublicFields.values()) {
       if (field.isAbstract()) return true;
@@ -113,4 +123,5 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       }
     }
   }
+  */
 }

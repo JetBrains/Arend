@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import org.antlr.v4.runtime.*;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ public abstract class ParseSource implements Source {
   }
 
   @Override
-  public boolean load(ClassDefinition classDefinition) throws IOException {
+  public boolean load(Namespace namespace, ClassDefinition classDefinition) throws IOException {
     VcgrammarLexer lexer = new VcgrammarLexer(new ANTLRInputStream(myStream));
     lexer.removeErrorListeners();
     lexer.addErrorListener(new BaseErrorListener() {

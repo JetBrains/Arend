@@ -9,12 +9,12 @@ import java.util.List;
 public class OverriddenDefinition extends FunctionDefinition {
   private FunctionDefinition myOverriddenFunction;
 
-  public OverriddenDefinition(Utils.Name name, Definition parent, Precedence precedence, Arrow arrow) {
+  public OverriddenDefinition(Utils.Name name, Namespace parent, Precedence precedence, Arrow arrow) {
     super(name, parent, precedence, arrow);
     myOverriddenFunction = null;
   }
 
-  public OverriddenDefinition(Utils.Name name, Definition parent, Precedence precedence, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term, FunctionDefinition overriddenFunction) {
+  public OverriddenDefinition(Utils.Name name, Namespace parent, Precedence precedence, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term, FunctionDefinition overriddenFunction) {
     super(name, parent, precedence, arguments, resultType, arrow, term);
     myOverriddenFunction = overriddenFunction;
   }

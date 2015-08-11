@@ -6,27 +6,28 @@ import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.List;
-import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class Constructor extends Definition implements Abstract.Constructor {
+  private final DataDefinition myDataType;
   private List<TypeArgument> myArguments;
   private int myIndex;
 
-  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence) {
-    super(name, parent, precedence);
+  public Constructor(int index, Namespace namespace, DataDefinition dataType, Precedence precedence) {
+    super(namespace, precedence);
+    myDataType = dataType;
     myIndex = index;
   }
 
-  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence, Universe universe, List<TypeArgument> arguments) {
-    super(name, parent, precedence);
+  public Constructor(int index, Namespace namespace, DataDefinition dataType, Precedence precedence, Universe universe, List<TypeArgument> arguments) {
+    super(namespace, precedence);
     setUniverse(universe);
     hasErrors(false);
+    myDataType = dataType;
     myArguments = arguments;
     myIndex = index;
   }
@@ -42,7 +43,7 @@ public class Constructor extends Definition implements Abstract.Constructor {
 
   @Override
   public DataDefinition getDataType() {
-    return (DataDefinition) super.getParent();
+    return myDataType;
   }
 
   public int getIndex() {
@@ -54,18 +55,8 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public Set<Definition> getDependencies() {
-    return getParent().getDependencies();
-  }
-
-  @Override
-  public void setDependencies(Set<Definition> dependencies) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Expression getType() {
-    Expression resultType = DefCall(getParent());
+    Expression resultType = DefCall(myDataType);
     int numberOfVars = numberOfVariables(myArguments);
     if (getDataType().getParameters() != null) {
       for (int i = numberOfVariables(getDataType().getParameters()) - 1, j = 0; i >= 0; ++j) {

@@ -15,7 +15,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Prelude {
-  public static ClassDefinition PRELUDE;
+  public static Namespace PRELUDE;
 
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
@@ -32,7 +32,7 @@ public class Prelude {
   public static FunctionDefinition AT;
 
   static {
-    PRELUDE = new ClassDefinition("Prelude", null);
+    PRELUDE = new Namespace("Prelude", null);
 
     NAT = new DataDefinition(new Utils.Name("Nat"), PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>());
     ZERO = new Constructor(0, new Utils.Name("zero"), NAT, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>());
@@ -40,9 +40,9 @@ public class Prelude {
     NAT.addConstructor(ZERO);
     NAT.addConstructor(SUC);
 
-    PRELUDE.addField(NAT, null);
-    PRELUDE.addField(ZERO, null);
-    PRELUDE.addField(SUC, null);
+    PRELUDE.addMember(NAT);
+    PRELUDE.addMember(ZERO);
+    PRELUDE.addMember(SUC);
 
     INTERVAL = new DataDefinition(new Utils.Name("I"), PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>());
     LEFT = new Constructor(0, new Utils.Name("left"), INTERVAL, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>());
@@ -51,9 +51,9 @@ public class Prelude {
     INTERVAL.addConstructor(RIGHT);
     INTERVAL.addConstructor(new Constructor(2, new Utils.Name("<abstract>"), INTERVAL, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), new ArrayList<TypeArgument>()));
 
-    PRELUDE.addField(INTERVAL, null);
-    PRELUDE.addField(LEFT, null);
-    PRELUDE.addField(RIGHT, null);
+    PRELUDE.addMember(INTERVAL);
+    PRELUDE.addMember(LEFT);
+    PRELUDE.addMember(RIGHT);
 
     List<Argument> coerceArguments = new ArrayList<>(3);
     coerceArguments.add(Tele(vars("type"), Pi(DefCall(INTERVAL), Universe(Universe.NO_LEVEL))));
@@ -64,7 +64,7 @@ public class Prelude {
     coerceClauses.add(new Clause(LEFT, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(0), coerceTerm));
     COERCE = new FunctionDefinition(new Utils.Name("coe"), PRELUDE, Abstract.Definition.DEFAULT_PRECEDENCE, coerceArguments, Apps(Index(2), Index(0)), Abstract.Definition.Arrow.LEFT, coerceTerm);
 
-    PRELUDE.addField(COERCE, null);
+    PRELUDE.addMember(COERCE);
 
     List<TypeArgument> PathParameters = new ArrayList<>(3);
     PathParameters.add(Tele(vars("A"), Pi(DefCall(INTERVAL), Universe(Universe.NO_LEVEL, Universe.Type.NOT_TRUNCATED))));
@@ -76,8 +76,8 @@ public class Prelude {
     PATH_CON = new Constructor(0, new Utils.Name("path"), PATH, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), pathArguments);
     PATH.addConstructor(PATH_CON);
 
-    PRELUDE.addField(PATH, null);
-    PRELUDE.addField(PATH_CON, null);
+    PRELUDE.addMember(PATH);
+    PRELUDE.addMember(PATH_CON);
 
     List<Argument> pathInfixArguments = new ArrayList<>(3);
     pathInfixArguments.add(Tele(false, vars("A"), Universe(0)));
@@ -85,7 +85,7 @@ public class Prelude {
     Expression pathInfixTerm = Apps(DefCall(PATH), Lam(lamArgs(Tele(vars("_"), DefCall(INTERVAL))), Index(3)), Index(1), Index(0));
     PATH_INFIX = new FunctionDefinition(new Utils.Name("=", Abstract.Definition.Fixity.INFIX), PRELUDE, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixArguments, Universe(0), Abstract.Definition.Arrow.RIGHT, pathInfixTerm);
 
-    PRELUDE.addField(PATH_INFIX, null);
+    PRELUDE.addMember(PATH_INFIX);
 
     List<Argument> atArguments = new ArrayList<>(5);
     atArguments.add(Tele(false, vars("A"), PathParameters.get(0).getType()));
@@ -105,6 +105,6 @@ public class Prelude {
     atClauses.add(new Clause(RIGHT, new ArrayList<NameArgument>(), Abstract.Definition.Arrow.RIGHT, Index(1), atTerm));
     AT = new FunctionDefinition(new Utils.Name("@", Abstract.Definition.Fixity.INFIX), PRELUDE, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);
 
-    PRELUDE.addField(AT, null);
+    PRELUDE.addMember(AT);
   }
 }
