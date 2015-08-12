@@ -3,18 +3,18 @@ package com.jetbrains.jetpad.vclang.term.error;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TypeCheckingError {
-  private final Definition myParent;
+  private final Namespace myParent;
   private final String myMessage;
   private final Abstract.SourceNode myExpression;
   private final List<String> myNames;
 
-  public TypeCheckingError(Definition parent, String message, Abstract.SourceNode expression, List<String> names) {
+  public TypeCheckingError(Namespace parent, String message, Abstract.SourceNode expression, List<String> names) {
     myParent = parent;
     myMessage = message;
     myExpression = expression;
@@ -25,7 +25,7 @@ public class TypeCheckingError {
     return myMessage;
   }
 
-  public Definition getParent() {
+  public Namespace getParent() {
     return myParent;
   }
 

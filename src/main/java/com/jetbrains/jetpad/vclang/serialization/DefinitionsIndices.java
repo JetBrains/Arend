@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 
 import java.io.DataOutputStream;
@@ -9,7 +10,7 @@ import java.util.*;
 public class DefinitionsIndices {
   final private Map<NamespaceMember, Integer> myDefinitions = new HashMap<>();
   final private List<Map.Entry<NamespaceMember, Integer>> myDefinitionsList = new ArrayList<>();
-  private int myCounter = 0;
+  private int myCounter = 1;
 
   public int getDefinitionIndex(NamespaceMember definition) {
     if (definition == null) return -1;
@@ -28,10 +29,13 @@ public class DefinitionsIndices {
     stream.writeInt(myDefinitionsList.size());
     for (Map.Entry<NamespaceMember, Integer> entry : myDefinitionsList) {
       stream.writeInt(entry.getValue());
-      if (entry.getValue() != 0) {
+      if (entry.getKey().getParent() != null) {
         stream.writeInt(myDefinitions.get(entry.getKey().getParent()));
+        stream.writeBoolean(entry.getKey().getName().fixity == Abstract.Definition.Fixity.PREFIX);
         stream.writeUTF(entry.getKey().getName().name);
         stream.write(ModuleSerialization.getDefinitionCode(entry.getKey()));
+      } else {
+        stream.writeInt(0);
       }
     }
   }

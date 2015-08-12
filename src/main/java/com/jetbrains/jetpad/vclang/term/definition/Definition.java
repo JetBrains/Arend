@@ -12,11 +12,11 @@ public abstract class Definition extends Binding implements Abstract.Definition,
   private boolean myHasErrors;
   // private Set<Definition> myDependencies;
   // private Map<String, Definition> myStaticFields;
-  final private DefinitionContext myDefinitionContext;
+  final private Namespace myNamespace;
 
   public Definition(Namespace namespace, Precedence precedence) {
     super(namespace.getName());
-    myDefinitionContext = new DefinitionContext(namespace);
+    myNamespace = namespace;
     myPrecedence = precedence;
     myUniverse = new Universe.Type(0, Universe.Type.PROP);
     myHasErrors = true;
@@ -26,11 +26,7 @@ public abstract class Definition extends Binding implements Abstract.Definition,
 
   @Override
   public Namespace getParent() {
-    return myDefinitionContext.getNamespace().getParent();
-  }
-
-  public DefinitionContext getDefinitionContext() {
-    return myDefinitionContext;
+    return myNamespace.getParent();
   }
 
   /*

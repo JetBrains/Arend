@@ -6,11 +6,9 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
-  private Map<String, Definition> myPublicFields;
+  private Namespace myLocalNamespace;
   private boolean myIsLocal;
 
   public ClassDefinition(Namespace namespace) {
@@ -20,7 +18,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   public ClassDefinition(Namespace namespace, boolean isLocal) {
     super(namespace, DEFAULT_PRECEDENCE);
     myIsLocal = isLocal;
-    myPublicFields = new HashMap<>();
+    myLocalNamespace = new Namespace(null, null);
     super.hasErrors(false);
   }
 
@@ -71,12 +69,20 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   */
 
   public Definition getField(String name) {
-    return myPublicFields.get(name);
+    return myLocalNamespace.getMember(name);
+  }
+
+  public Namespace getLocalNamespace() {
+    return myLocalNamespace;
+  }
+
+  public void setLocalNamespace(Namespace localNamespace) {
+    myLocalNamespace = localNamespace;
   }
 
   @Override
   public Collection<Definition> getFields() {
-    return myPublicFields.values();
+    return myLocalNamespace.getMembers();
   }
 
   /*

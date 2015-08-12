@@ -26,7 +26,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   public BuildVisitor(ClassDefinition parent, ModuleLoader moduleLoader, boolean onlyStatics) {
     myParent = parent;
-    myModule = new Module((ClassDefinition) parent.getParent(), parent.getName().name);
+    myModule = new Module(parent.getParent(), parent.getName().name);
     myModuleLoader = moduleLoader;
     myOnlyStatics = onlyStatics;
   }

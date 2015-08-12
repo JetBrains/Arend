@@ -79,7 +79,7 @@ public class ModuleLoader {
     Namespace namespace = module.getParent().getChild(new Utils.Name(module.getName()));
     ClassDefinition classDefinition = null;
     if (module.getParent().getMember(module.getName()) == null) {
-      classDefinition = new ClassDefinition(module.getName(), module.getParent());
+      classDefinition = new ClassDefinition(namespace);
     }
     try {
       if (compile) {

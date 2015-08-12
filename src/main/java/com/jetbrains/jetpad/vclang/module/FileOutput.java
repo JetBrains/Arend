@@ -34,7 +34,7 @@ public class FileOutput implements Output {
 
   @Override
   public int read(Namespace namespace, ClassDefinition classDefinition) throws IOException {
-    return myModuleDeserialization.readFile(myFile, classDefinition);
+    return myModuleDeserialization.readFile(myFile, namespace, classDefinition);
   }
 
   @Override

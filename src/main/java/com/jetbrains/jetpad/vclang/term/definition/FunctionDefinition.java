@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition, Function {
@@ -35,7 +36,8 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
 
   @Override
   public Collection<Definition> getFields() {
-    return getDefinitionContext().getNamespace().getMembers();
+    // TODO
+    return Collections.emptyList();
   }
 
   @Override
