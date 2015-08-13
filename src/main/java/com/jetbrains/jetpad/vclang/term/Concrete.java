@@ -849,18 +849,71 @@ public final class Concrete {
     }
   }
 
-  public static class Constructor extends Definition implements Abstract.Constructor {
-    private final DataDefinition myDataType;
-    private final List<TypeArgument> myArguments;
-
-    public Constructor(Position position, Name name, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
-      super(position, name, precedence, universe);
-      myArguments = arguments;
-      myDataType = dataType;
+  public static abstract class Pattern extends SourceNode implements Abstract.Pattern {
+    public Pattern(Position position) {
+      super(position);
     }
 
     @Override
-    public List<? extends Abstract.TypeArgument> getArguments() {
+    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+      prettyPrintPattern(this, builder, names, 0);
+    }
+  }
+
+  public static class NamePattern extends Pattern implements Abstract.NamePattern {
+    private final String myName;
+    public NamePattern(Position position, String name) {
+      super(position);
+      myName = name;
+    }
+
+    @Override
+    public String getName() {
+      return null;
+    }
+  }
+
+  public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
+    private final Name myConstructorName;
+    private final List<Pattern> myArguments;
+
+    public ConstructorPattern(Position position, Name constructorName, List<Pattern> arguments) {
+      super(position);
+      myConstructorName = constructorName;
+      myArguments = arguments;
+    }
+
+
+    @Override
+    public Name getConstructorName() {
+      return myConstructorName;
+    }
+
+    @Override
+    public List<? extends Abstract.Pattern> getArguments() {
+      return myArguments;
+    }
+  }
+
+  public static class Constructor extends Definition implements Abstract.Constructor {
+    private final DataDefinition myDataType;
+    private final List<TypeArgument> myArguments;
+    private final List<Pattern> myPatterns;
+
+    public Constructor(Position position, Name name, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
+      super(position, name, precedence, universe);
+      myArguments = arguments;
+      myDataType = dataType;
+      myPatterns = patterns;
+    }
+
+    @Override
+    public List<Pattern> getPatterns() {
+      return myPatterns;
+    }
+
+    @Override
+    public List<TypeArgument> getArguments() {
       return myArguments;
     }
 

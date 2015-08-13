@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class Constructor extends Definition implements Abstract.Constructor {
   private List<TypeArgument> myArguments;
+  private List<Pattern> myPatterns;
   private int myIndex;
 
   public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence) {
@@ -23,12 +25,18 @@ public class Constructor extends Definition implements Abstract.Constructor {
     myIndex = index;
   }
 
-  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence, Universe universe, List<TypeArgument> arguments) {
+  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence, Universe universe, List<TypeArgument> arguments, List<Pattern> patterns) {
     super(name, parent, precedence);
     setUniverse(universe);
     hasErrors(false);
     myArguments = arguments;
     myIndex = index;
+    myPatterns = patterns;
+  }
+
+  @Override
+  public List<Pattern> getPatterns() {
+    return myPatterns;
   }
 
   @Override

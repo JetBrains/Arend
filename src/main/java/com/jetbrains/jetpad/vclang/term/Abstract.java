@@ -231,8 +231,21 @@ public final class Abstract {
     Collection<? extends Definition> getFields();
   }
 
+  public interface Pattern extends PrettyPrintableSourceNode {
+  }
+
+  public interface NamePattern extends Pattern {
+    String getName();
+  }
+
+  public interface ConstructorPattern extends Pattern {
+    Utils.Name getConstructorName();
+    List<? extends Pattern> getArguments();
+  }
+
   public interface Constructor extends Definition {
     List<? extends TypeArgument> getArguments();
     DataDefinition getDataType();
+    List<? extends Pattern> getPatterns();
   }
 }

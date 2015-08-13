@@ -2,12 +2,12 @@ grammar Vcgrammar;
 
 defs  : def*;
 
-def   : '\\function' precedence name tele* typeTermOpt where?     # defFunction
-      | '\\override' name ('\\as' name)? tele* typeTermOpt where? # defOverride
-      | '\\data' precedence name tele* (':' expr)? constructor*   # defData
-      | '\\class' ID tele* classFields                            # defClass
-      | '\\extends' ID                                            # defExtends
-      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?          # defCmd
+def   : '\\function' precedence name tele* typeTermOpt where?      # defFunction
+      | '\\override' name ('\\as' name)? tele* typeTermOpt where?  # defOverride
+      | '\\data' precedence name tele* (':' expr)? constructorDef* # defData
+      | '\\class' ID tele* classFields                             # defClass
+      | '\\extends' ID                                             # defExtends
+      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?           # defCmd
       ;
 
 where : '\\where' def+ ';'?;
@@ -29,6 +29,12 @@ typeTermOpt : ':' expr                  # withType
             | ':' expr arrow expr       # withTypeAndTerm
             | arrow expr                # withTerm
             ;
+constructorDef : name pattern* '=>' constructor ('|' constructor)* ';'?;
+
+pattern : '_'                    # patternAny
+        | ID                     # patternID
+        | '(' name pattern* ')'* # patternConstructor
+        ;
 
 constructor : '|' precedence name tele*;
 
