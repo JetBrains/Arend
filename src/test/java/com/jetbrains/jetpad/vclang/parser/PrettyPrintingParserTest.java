@@ -78,7 +78,7 @@ public class PrettyPrintingParserTest {
     // f {x : Nat} (A : Nat -> \Type0) : A x -> (Nat -> Nat) -> Nat -> Nat => \t y z. y z;
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    FunctionDefinition def = new FunctionDefinition(new Utils.Name("f"), moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(false, vars("x"), Nat()), Tele(vars("A"), Pi(Nat(), Universe(0)))), Pi(Apps(Index(0), Index(1)), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), Definition.Arrow.RIGHT, Lam(lamArgs(Name("t"), Name("y"), Name("z")), Apps(Index(1), Index(0))));
+    FunctionDefinition def = new FunctionDefinition(moduleLoader.getRoot().getChild(new Utils.Name("f")), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(false, vars("x"), Nat()), Tele(vars("A"), Pi(Nat(), Universe(0)))), Pi(Apps(Index(0), Index(1)), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), Definition.Arrow.RIGHT, Lam(lamArgs(Name("t"), Name("y"), Name("z")), Apps(Index(1), Index(0))));
     testDef(moduleLoader, def, def);
   }
 
@@ -90,14 +90,14 @@ public class PrettyPrintingParserTest {
 
     List<Clause> fooClausesActual = new ArrayList<>();
     ElimExpression fooTermActual = Elim(Index(1), fooClausesActual, null);
-    FunctionDefinition fooDef = new FunctionDefinition(new Utils.Name("foo"), moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, fooTermActual);
+    FunctionDefinition fooDef = new FunctionDefinition(moduleLoader.getRoot().getChild(new Utils.Name("foo")), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, fooTermActual);
     fooClausesActual.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), fooTermActual));
     fooClausesActual.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), fooTermActual));
-    moduleLoader.rootModule().addField(fooDef, null);
+    moduleLoader.getRoot().addMember(fooDef);
 
     List<Clause> clausesActual = new ArrayList<>();
     ElimExpression termActual = Elim(Index(1), clausesActual, null);
-    FunctionDefinition def = new FunctionDefinition(new Utils.Name("bar"), moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, termActual);
+    FunctionDefinition def = new FunctionDefinition(moduleLoader.getRoot().getChild(new Utils.Name("bar")), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, termActual);
     clausesActual.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), termActual));
     clausesActual.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), termActual));
 

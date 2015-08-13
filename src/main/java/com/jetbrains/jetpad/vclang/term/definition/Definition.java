@@ -24,6 +24,10 @@ public abstract class Definition extends Binding implements Abstract.Definition,
     // myStaticFields = new HashMap<>();
   }
 
+  public Namespace getNamespace() {
+    return myNamespace;
+  }
+
   @Override
   public Namespace getParent() {
     return myNamespace.getParent();

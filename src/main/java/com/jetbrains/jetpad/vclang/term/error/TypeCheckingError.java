@@ -9,13 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TypeCheckingError {
-  private final Namespace myParent;
+  private final Namespace myNamespace;
   private final String myMessage;
   private final Abstract.SourceNode myExpression;
   private final List<String> myNames;
 
-  public TypeCheckingError(Namespace parent, String message, Abstract.SourceNode expression, List<String> names) {
-    myParent = parent;
+  public TypeCheckingError(Namespace namespace, String message, Abstract.SourceNode expression, List<String> names) {
+    myNamespace = namespace;
     myMessage = message;
     myExpression = expression;
     myNames = names;
@@ -25,8 +25,8 @@ public class TypeCheckingError {
     return myMessage;
   }
 
-  public Namespace getParent() {
-    return myParent;
+  public Namespace getNamespace() {
+    return myNamespace;
   }
 
   public static List<String> getNames(List<? extends Abstract.Binding> context) {
@@ -48,7 +48,7 @@ public class TypeCheckingError {
   }
 
   protected String printPosition() {
-    String msg = myParent == null ? "" : myParent.getFullName() + ":";
+    String msg = myNamespace == null ? "" : myNamespace.getFullName() + ":";
     if (myExpression instanceof Concrete.SourceNode) {
       Concrete.Position position = ((Concrete.SourceNode) myExpression).getPosition();
       msg += position.line + ":" + position.column + ":";

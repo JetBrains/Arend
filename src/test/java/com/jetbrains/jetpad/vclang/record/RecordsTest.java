@@ -224,7 +224,7 @@ public class RecordsTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     ClassDefinition classDef = parseDefs(moduleLoader, "\\class A { \\function x : Nat \\data Foo | foo (x = 0) \\function y : foo = foo } \\function test (p : A) => p.y");
-    Expression resultType = ((FunctionDefinition) classDef.getPrivateField("test")).getResultType();
+    Expression resultType = ((FunctionDefinition) classDef.getLocalNamespace().getMember("test")).getResultType();
     List<Expression> arguments = new ArrayList<>(3);
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
     assertEquals(3, arguments.size());
@@ -232,11 +232,11 @@ public class RecordsTest {
 
     assertTrue(arguments.get(0) instanceof DefCallExpression);
     assertEquals(Index(0), ((DefCallExpression) arguments.get(0)).getExpression());
-    assertEquals(classDef.getPrivateField("A").getPrivateField("foo"), ((DefCallExpression) arguments.get(0)).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("foo"), ((DefCallExpression) arguments.get(0)).getDefinition());
 
     assertTrue(arguments.get(1) instanceof DefCallExpression);
     assertEquals(Index(0), ((DefCallExpression) arguments.get(1)).getExpression());
-    assertEquals(classDef.getPrivateField("A").getPrivateField("foo"), ((DefCallExpression) arguments.get(1)).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("foo"), ((DefCallExpression) arguments.get(1)).getDefinition());
 
     assertTrue(arguments.get(2) instanceof LamExpression);
     assertTrue(((LamExpression) arguments.get(2)).getBody() instanceof PiExpression);
@@ -250,7 +250,7 @@ public class RecordsTest {
 
     assertTrue(domArguments.get(1) instanceof DefCallExpression);
     assertEquals(Index(1), ((DefCallExpression) domArguments.get(1)).getExpression());
-    assertEquals(classDef.getPrivateField("A").getPrivateField("x"), ((DefCallExpression) domArguments.get(1)).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("x"), ((DefCallExpression) domArguments.get(1)).getDefinition());
 
     assertTrue(domArguments.get(2) instanceof LamExpression);
     assertTrue(((LamExpression) domArguments.get(2)).getBody() instanceof DefCallExpression);
@@ -268,7 +268,7 @@ public class RecordsTest {
         "\\function y : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))\n" +
       "}\n" +
       "\\function test (q : A) => q.y");
-    Expression resultType = ((FunctionDefinition) classDef.getPrivateField("test")).getResultType();
+    Expression resultType = ((FunctionDefinition) classDef.getLocalNamespace().getMember("test")).getResultType();
     List<Expression> arguments = new ArrayList<>(3);
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
     assertEquals(3, arguments.size());
@@ -277,7 +277,7 @@ public class RecordsTest {
     assertTrue(arguments.get(0) instanceof AppExpression);
     assertTrue(((AppExpression) arguments.get(0)).getFunction() instanceof DefCallExpression);
     assertEquals(Index(0), ((DefCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getExpression());
-    assertEquals(classDef.getPrivateField("A").getPrivateField("foo"), ((DefCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("foo"), ((DefCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getDefinition());
     assertTrue(((AppExpression) arguments.get(0)).getArgument().getExpression() instanceof AppExpression);
     AppExpression appPath00 = (AppExpression) ((AppExpression) arguments.get(0)).getArgument().getExpression();
     assertTrue(appPath00.getArgument().getExpression() instanceof LamExpression);
@@ -286,12 +286,12 @@ public class RecordsTest {
     assertTrue(appPath01.getArgument().getExpression() instanceof LamExpression);
     assertTrue(((LamExpression) appPath01.getArgument().getExpression()).getBody() instanceof DefCallExpression);
     assertEquals(Index(2), ((DefCallExpression) ((LamExpression) appPath01.getArgument().getExpression()).getBody()).getExpression());
-    assertEquals(classDef.getStaticField("A").getPrivateField("x"), ((DefCallExpression) ((LamExpression) appPath01.getArgument().getExpression()).getBody()).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("x"), ((DefCallExpression) ((LamExpression) appPath01.getArgument().getExpression()).getBody()).getDefinition());
 
     assertTrue(arguments.get(1) instanceof AppExpression);
     assertTrue(((AppExpression) arguments.get(1)).getFunction() instanceof DefCallExpression);
     assertEquals(Index(0), ((DefCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getExpression());
-    assertEquals(classDef.getPrivateField("A").getPrivateField("foo"), ((DefCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("foo"), ((DefCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getDefinition());
     assertTrue(((AppExpression) arguments.get(1)).getArgument().getExpression() instanceof AppExpression);
     AppExpression appPath10 = (AppExpression) ((AppExpression) arguments.get(1)).getArgument().getExpression();
     assertTrue(appPath10.getArgument().getExpression() instanceof LamExpression);
@@ -300,11 +300,11 @@ public class RecordsTest {
     assertTrue(appPath11.getArgument().getExpression() instanceof LamExpression);
     assertTrue(((LamExpression) appPath11.getArgument().getExpression()).getBody() instanceof DefCallExpression);
     assertEquals(Index(2), ((DefCallExpression) ((LamExpression) appPath11.getArgument().getExpression()).getBody()).getExpression());
-    assertEquals(classDef.getStaticField("A").getPrivateField("x"), ((DefCallExpression) ((LamExpression) appPath11.getArgument().getExpression()).getBody()).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("x"), ((DefCallExpression) ((LamExpression) appPath11.getArgument().getExpression()).getBody()).getDefinition());
 
     assertTrue(arguments.get(2) instanceof LamExpression);
     assertTrue(((LamExpression) arguments.get(2)).getBody() instanceof AppExpression);
-    assertEquals(DefCall(classDef.getStaticField("A").getPrivateField("Foo")), ((AppExpression) ((LamExpression) arguments.get(2)).getBody()).getFunction());
+    assertEquals(DefCall(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("Foo")), ((AppExpression) ((LamExpression) arguments.get(2)).getBody()).getFunction());
     List<Expression> parameterArguments = new ArrayList<>(1);
     Expression parameterFunction = ((AppExpression) ((LamExpression) arguments.get(2)).getBody()).getArgument().getExpression().getFunction(parameterArguments);
     assertEquals(1, parameterArguments.size());
@@ -312,7 +312,7 @@ public class RecordsTest {
     assertTrue(parameterArguments.get(0) instanceof LamExpression);
     assertTrue(((LamExpression) parameterArguments.get(0)).getBody() instanceof DefCallExpression);
     assertEquals(Index(2), ((DefCallExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getExpression());
-    assertEquals(classDef.getPrivateField("A").getPrivateField("x"), ((DefCallExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("x"), ((DefCallExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getDefinition());
 
     List<Expression> parameters = ((DefCallExpression) parameterFunction).getParameters();
     assertEquals(3, parameters.size());
@@ -323,11 +323,11 @@ public class RecordsTest {
     parameters.set(1, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
     assertTrue(parameters.get(1) instanceof DefCallExpression);
     assertEquals(Index(1), ((DefCallExpression) parameters.get(1)).getExpression());
-    assertEquals(classDef.getPrivateField("A").getPrivateField("x"), ((DefCallExpression) parameters.get(1)).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("x"), ((DefCallExpression) parameters.get(1)).getDefinition());
 
     parameters.set(2, parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF));
     assertTrue(parameters.get(2) instanceof DefCallExpression);
     assertEquals(Index(1), ((DefCallExpression) parameters.get(2)).getExpression());
-    assertEquals(classDef.getPrivateField("A").getPrivateField("x"), ((DefCallExpression) parameters.get(2)).getDefinition());
+    assertEquals(((ClassDefinition) classDef.getLocalNamespace().getMember("A")).getLocalNamespace().getMember("x"), ((DefCallExpression) parameters.get(2)).getDefinition());
   }
 }

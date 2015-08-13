@@ -14,8 +14,8 @@ public class Module {
     myName = name;
   }
 
-  private File getFile(File dir, Namespace def) {
-    return def == null || def.getParent() == null ? dir : new File(getFile(dir, def.getParent()), def.getShortName());
+  private File getFile(File dir, Namespace namespace) {
+    return namespace == null || namespace.getParent() == null ? dir : new File(getFile(dir, namespace.getParent()), namespace.getName().name);
   }
 
   public File getFile(File dir, String ext) {
@@ -36,7 +36,7 @@ public class Module {
   }
 
   private String toString(Namespace namespace) {
-    return namespace == null || namespace.getParent() == null ? "" : toString(namespace.getParent()) + namespace.getShortName() + ".";
+    return namespace == null || namespace.getParent() == null ? "" : toString(namespace.getParent()) + namespace.getName().name + ".";
   }
 
   @Override

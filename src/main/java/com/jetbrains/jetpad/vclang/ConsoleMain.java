@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -122,7 +123,7 @@ public class ConsoleMain {
 
     Namespace namespace = moduleLoader.getRoot();
     for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      namespace = namespace.getChild(moduleNames.get(i));
+      namespace = namespace.getChild(new Utils.Name(moduleNames.get(i)));
     }
     Module newModule = new Module(namespace, moduleNames.get(moduleNames.size() - 1));
     moduleLoader.loadModule(newModule, false);

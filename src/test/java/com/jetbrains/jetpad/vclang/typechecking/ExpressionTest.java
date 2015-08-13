@@ -26,7 +26,7 @@ public class ExpressionTest {
   public void typeCheckingLam() {
     // \x. x : Nat -> Nat
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseExpr(moduleLoader, "\\lam x => x").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), Pi(Nat(), Nat()));
+    parseExpr(moduleLoader, "\\lam x => x").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), Pi(Nat(), Nat()));
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
@@ -34,7 +34,7 @@ public class ExpressionTest {
   public void typeCheckingLamError() {
     // \x. x : Nat -> Nat -> Nat
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseExpr(moduleLoader, "\\lam x => x").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), Pi(Nat(), Pi(Nat(), Nat())));
+    parseExpr(moduleLoader, "\\lam x => x").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), Pi(Nat(), Pi(Nat(), Nat())));
     assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
   }
 
@@ -43,7 +43,7 @@ public class ExpressionTest {
     // \X x. x : (X : Type0) -> X -> X
     Expression type = Pi("X", Universe(0), Pi(Index(0), Index(0)));
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseExpr(moduleLoader, "\\lam X x => x").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), type);
+    parseExpr(moduleLoader, "\\lam X x => x").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), type);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
@@ -52,7 +52,7 @@ public class ExpressionTest {
     // \X x. X : (X : Type0) -> X -> X
     Expression type = Pi("X", Universe(0), Pi(Index(0), Index(0)));
     ModuleLoader moduleLoader = new ModuleLoader();
-    assertEquals(null, parseExpr(moduleLoader, "\\lam X x => X").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), type));
+    assertEquals(null, parseExpr(moduleLoader, "\\lam X x => X").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), type));
     assertEquals(1, moduleLoader.getTypeCheckingErrors().size());
     assertTrue(moduleLoader.getTypeCheckingErrors().get(0) instanceof TypeMismatchError);
   }
@@ -62,7 +62,7 @@ public class ExpressionTest {
     // \x y. y (y x) : Nat -> (Nat -> Nat) -> Nat
     Expression type = Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat()));
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseExpr(moduleLoader, "\\lam x y => y (y x)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), type);
+    parseExpr(moduleLoader, "\\lam x y => y (y x)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), type);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 

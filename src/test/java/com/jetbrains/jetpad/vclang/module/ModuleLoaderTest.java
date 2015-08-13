@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import org.junit.Before;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import org.junit.Test;
-
-import java.util.Collection;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
 import static org.junit.Assert.*;
@@ -23,8 +21,8 @@ public class ModuleLoaderTest {
   public void recursiveTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
-    Module moduleA = new Module(moduleLoader.rootModule(), "A");
-    Module moduleB = new Module(moduleLoader.rootModule(), "B");
+    Module moduleA = new Module(moduleLoader.getRoot(), "A");
+    Module moduleB = new Module(moduleLoader.getRoot(), "B");
     sourceSupplier.add(moduleA, "\\function f => B.g");
     sourceSupplier.add(moduleB, "\\function g => A.f");
 
@@ -37,8 +35,8 @@ public class ModuleLoaderTest {
   public void recursiveTestError2() {
     ModuleLoader moduleLoader = new ModuleLoader();
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
-    Module moduleA = new Module(moduleLoader.rootModule(), "A");
-    Module moduleB = new Module(moduleLoader.rootModule(), "B");
+    Module moduleA = new Module(moduleLoader.getRoot(), "A");
+    Module moduleB = new Module(moduleLoader.getRoot(), "B");
     sourceSupplier.add(moduleA, "\\function f => B.g");
     sourceSupplier.add(moduleB, "\\function g => A.h");
 
@@ -51,8 +49,8 @@ public class ModuleLoaderTest {
   public void recursiveTestError3() {
     ModuleLoader moduleLoader = new ModuleLoader();
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
-    Module moduleA = new Module(moduleLoader.rootModule(), "A");
-    Module moduleB = new Module(moduleLoader.rootModule(), "B");
+    Module moduleA = new Module(moduleLoader.getRoot(), "A");
+    Module moduleB = new Module(moduleLoader.getRoot(), "B");
     sourceSupplier.add(moduleA, "\\function f => B.g \\function h => 0");
     sourceSupplier.add(moduleB, "\\function g => A.h");
 
@@ -65,8 +63,8 @@ public class ModuleLoaderTest {
   public void nonStaticTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
-    Module moduleA = new Module(moduleLoader.rootModule(), "A");
-    Module moduleB = new Module(moduleLoader.rootModule(), "B");
+    Module moduleA = new Module(moduleLoader.getRoot(), "A");
+    Module moduleB = new Module(moduleLoader.getRoot(), "B");
     sourceSupplier.add(moduleA, "\\function f : Nat \\function h => f");
     sourceSupplier.add(moduleB, "\\function g => A.h");
 
@@ -79,26 +77,25 @@ public class ModuleLoaderTest {
   public void moduleTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
-    Module moduleA = new Module(moduleLoader.rootModule(), "A");
+    Module moduleA = new Module(moduleLoader.getRoot(), "A");
     sourceSupplier.add(moduleA, "\\function f : Nat \\class C { \\function g : Nat \\function h => g }");
 
     moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
     moduleLoader.loadModule(moduleA, false);
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-    assertNotNull(moduleLoader.rootModule().getStaticField("A").getStaticFields());
-    assertEquals(1, moduleLoader.rootModule().getStaticField("A").getStaticFields().size());
-    assertEquals(2, moduleLoader.rootModule().getStaticField("A").getFields().size());
-    assertTrue(moduleLoader.rootModule().getStaticField("A").getStaticField("C").getStaticFields() == null || moduleLoader.rootModule().getStaticField("A").getStaticField("C").getStaticFields().isEmpty());
-    assertEquals(2, moduleLoader.rootModule().getStaticField("A").getStaticField("C").getFields().size());
+    assertEquals(1, moduleLoader.getRoot().getChild(new Utils.Name("A")).getChildren().size());
+    assertEquals(2, moduleLoader.getRoot().getChild(new Utils.Name("A")).getMembers().size());
+    assertTrue(moduleLoader.getRoot().getChild(new Utils.Name("A")).getChild(new Utils.Name("C")).getChildren().isEmpty());
+    assertEquals(2, moduleLoader.getRoot().getChild(new Utils.Name("A")).getChild(new Utils.Name("C")).getMembers().size());
   }
 
   @Test
   public void nonStaticTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
-    Module moduleA = new Module(moduleLoader.rootModule(), "A");
-    Module moduleB = new Module(moduleLoader.rootModule(), "B");
+    Module moduleA = new Module(moduleLoader.getRoot(), "A");
+    Module moduleB = new Module(moduleLoader.getRoot(), "B");
     sourceSupplier.add(moduleA, "\\function f : Nat \\class B { \\function g : Nat \\function h => g }");
     sourceSupplier.add(moduleB, "\\function f (p : A.B) => p.h");
 
@@ -112,8 +109,8 @@ public class ModuleLoaderTest {
   public void nonStaticTestError2() {
     ModuleLoader moduleLoader = new ModuleLoader();
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
-    Module moduleA = new Module(moduleLoader.rootModule(), "A");
-    Module moduleB = new Module(moduleLoader.rootModule(), "B");
+    Module moduleA = new Module(moduleLoader.getRoot(), "A");
+    Module moduleB = new Module(moduleLoader.getRoot(), "B");
     sourceSupplier.add(moduleA, "\\function f : Nat \\class B { \\function g : Nat \\function (+) (f g : Nat) => f \\function h => f + g }");
     sourceSupplier.add(moduleB, "\\function f (p : A.B) => p.h");
 
@@ -126,8 +123,8 @@ public class ModuleLoaderTest {
   public void abstractNonStaticTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
-    Module moduleA = new Module(moduleLoader.rootModule(), "A");
-    Module moduleB = new Module(moduleLoader.rootModule(), "B");
+    Module moduleA = new Module(moduleLoader.getRoot(), "A");
+    Module moduleB = new Module(moduleLoader.getRoot(), "B");
     sourceSupplier.add(moduleA, "\\function f : Nat");
     sourceSupplier.add(moduleB, "\\function g => A.f");
 
@@ -139,8 +136,7 @@ public class ModuleLoaderTest {
   @Test
   public void numberOfFieldsTest() {
     ClassDefinition result = parseDefs(dummyModuleLoader, "\\class Point { \\function x : Nat \\function y : Nat } \\function C => Point { \\override x => 0 }");
-    assertNotNull(result.getStaticFields());
-    assertEquals(2, result.getStaticFields().size());
+    assertEquals(2, result.getNamespace().getChildren().size());
     assertNotNull(result.getFields());
     assertEquals(2, result.getFields().size());
   }
@@ -168,9 +164,8 @@ public class ModuleLoaderTest {
     ClassDefinition result = parseDefs(dummyModuleLoader, "\\class A { \\function x : Nat \\class B { \\function y => x } \\export B } \\function f (a : A) => a.y");
     assertEquals(2, result.getFields().size());
     assertTrue(result.getField("A") instanceof ClassDefinition);
-    assertEquals(3, result.getField("A").getFields().size());
-    Collection<Definition> staticFields = result.getField("A").getStaticFields();
-    assertTrue(staticFields == null || staticFields.size() == 0);
+    assertEquals(3, ((ClassDefinition) result.getField("A")).getFields().size());
+    assertTrue(result.getField("A").getNamespace().getChildren().isEmpty());
   }
 
   @Test
@@ -196,21 +191,21 @@ public class ModuleLoaderTest {
     assertTrue(result.getField("A") instanceof ClassDefinition);
     ClassDefinition classA = (ClassDefinition) result.getField("A");
     assertEquals(4, classA.getFields().size());
-    assertTrue(classA.getStaticFields() == null || classA.getStaticFields().size() == 0);
+    assertTrue(classA.getNamespace().getChildren().isEmpty());
     assertTrue(classA.getField("B") instanceof ClassDefinition);
     ClassDefinition classB = (ClassDefinition) classA.getField("B");
     assertEquals(4, classB.getFields().size());
-    assertEquals(1, classB.getStaticFields().size());
+    assertEquals(1, classB.getNamespace().getChildren().size());
     assertTrue(classB.getField("C") instanceof ClassDefinition);
     ClassDefinition classC = (ClassDefinition) classB.getField("C");
     assertEquals(2, classC.getFields().size());
-    assertEquals(2, classC.getStaticFields().size());
-    assertEquals(classC.getField("w"), classB.getStaticField("w"));
+    assertEquals(2, classC.getNamespace().getChildren().size());
+    assertEquals(classC.getField("w"), classB.getNamespace().getMember("w"));
     assertTrue(classA.getField("D") instanceof ClassDefinition);
     ClassDefinition classD = (ClassDefinition) classA.getField("D");
     assertEquals(1, classD.getFields().size());
-    assertEquals(1, classD.getStaticFields().size());
-    assertEquals(classC.getField("w"), classD.getStaticField("w"));
+    assertEquals(1, classD.getNamespace().getChildren().size());
+    assertEquals(classC.getField("w"), classD.getNamespace().getMember("w"));
     assertEquals(classC.getField("w"), classD.getField("w"));
   }
 

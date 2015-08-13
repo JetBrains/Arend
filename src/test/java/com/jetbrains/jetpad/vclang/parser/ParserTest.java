@@ -6,10 +6,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
@@ -97,19 +94,17 @@ public class ParserTest {
   @Test
   public void parserDef() {
     ClassDefinition result = parseDefs(dummyModuleLoader,
-            "\\function x : Nat => zero\n" +
-                    "\\function y : Nat => x");
-    assertNotNull(result.getStaticFields());
-    assertEquals(2, result.getStaticFields().size());
+      "\\function x : Nat => zero\n" +
+      "\\function y : Nat => x");
+    assertEquals(2, result.getNamespace().getMembers().size());
   }
 
   @Test
   public void parserDefType() {
     ClassDefinition result = parseDefs(dummyModuleLoader,
-        "\\function x : \\Type0 => Nat\n" +
-            "\\function y : x => zero");
-    assertNotNull(result.getStaticFields());
-    assertEquals(2, result.getStaticFields().size());
+      "\\function x : \\Type0 => Nat\n" +
+      "\\function y : x => zero");
+    assertEquals(2, result.getNamespace().getMembers().size());
   }
 
   @Test
@@ -146,13 +141,13 @@ public class ParserTest {
   public void parserInfix() {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
-    Definition plus = new FunctionDefinition(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
-    Definition mul = new FunctionDefinition(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition plus = new FunctionDefinition(new Namespace(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition(new Namespace(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), arguments, Nat(), Definition.Arrow.LEFT, null);
 
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.rootModule().addField(plus, null);
-    moduleLoader.rootModule().addField(mul, null);
-    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
+    moduleLoader.getRoot().addMember(plus);
+    moduleLoader.getRoot().addMember(mul);
+    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
@@ -162,30 +157,30 @@ public class ParserTest {
   @Test
   public void parserInfixDef() {
     ClassDefinition result = parseDefs(dummyModuleLoader,
-        "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
-            "\\function (*) : Nat -> Nat => \\lam x => x + zero");
-    assertNotNull(result.getStaticFields());
-    assertEquals(2, result.getStaticFields().size());
+      "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
+      "\\function (*) : Nat -> Nat => \\lam x => x + zero");
+    assertEquals(2, result.getNamespace().getMembers().size());
   }
 
   @Test
   public void parserInfixError() {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
-    Definition plus = new FunctionDefinition(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
-    Definition mul = new FunctionDefinition(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition plus = new FunctionDefinition(new Namespace(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition(new Namespace(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null), new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
 
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.rootModule().addField(plus, null);
-    moduleLoader.rootModule().addField(mul, null);
-    parseExpr(moduleLoader, "11 + 2 * 3", 1).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
+    moduleLoader.getRoot().addMember(plus);
+    moduleLoader.getRoot().addMember(mul);
+    parseExpr(moduleLoader, "11 + 2 * 3", 1).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
   @Test
   public void parserError() {
     String text = "A { \\function f (x : Nat) <= elim x | zero => zero | suc x' => zero }";
-    new BuildVisitor(new ClassDefinition("test", dummyModuleLoader.rootModule()), dummyModuleLoader, false).visitExpr(parse(dummyModuleLoader, text).expr());
+    Namespace namespace = dummyModuleLoader.getRoot().getChild(new Utils.Name("test"));
+    new BuildVisitor(namespace, new ClassDefinition(namespace), dummyModuleLoader, false).visitExpr(parse(dummyModuleLoader, text).expr());
     assertTrue(dummyModuleLoader.getErrors().size() > 0);
   }
 

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
@@ -97,8 +98,8 @@ public class LiftTest {
   @Test
   public void liftElim() {
     // lift (\elim <1> | con a b c => <2> <3> <4>, 0, 1) = \elim <2> | con a b c => <2> <4> <5>
-    DataDefinition def = new DataDefinition(new Utils.Name("D"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
-    Constructor con = new Constructor(0, new Utils.Name("con"), def, Abstract.Definition.DEFAULT_PRECEDENCE,  new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
+    DataDefinition def = new DataDefinition(new Namespace(new Utils.Name("D"), null), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
+    Constructor con = new Constructor(0, new Namespace(new Utils.Name("con"), def.getNamespace()), Abstract.Definition.DEFAULT_PRECEDENCE,  new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
     def.addConstructor(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
@@ -117,8 +118,8 @@ public class LiftTest {
   @Test
   public void liftElim2() {
     // lift (\elim <1> | con a b c => <2> <3> <5>, 2, 1) = \elim <1> | con a b c => <2> <3> <6>
-    DataDefinition def = new DataDefinition(new Utils.Name("D"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
-    Constructor con = new Constructor(0, new Utils.Name("con"), def, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())));
+    DataDefinition def = new DataDefinition(new Namespace(new Utils.Name("D"), null), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
+    Constructor con = new Constructor(0, new Namespace(new Utils.Name("con"), def.getNamespace()), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
     def.addConstructor(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);

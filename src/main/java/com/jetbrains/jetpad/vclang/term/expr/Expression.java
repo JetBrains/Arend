@@ -4,14 +4,12 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -68,7 +66,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, ModuleLoader moduleLoader) {
-    return new CheckTypeVisitor(null, localContext, new HashSet<Definition>(), moduleLoader, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
+    return new CheckTypeVisitor(null, localContext, moduleLoader, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
   }
 
   public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {

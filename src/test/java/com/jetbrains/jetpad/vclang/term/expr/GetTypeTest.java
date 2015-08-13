@@ -67,7 +67,7 @@ public class GetTypeTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
     ClassDefinition def = parseDefs(moduleLoader, "\\class C { \\function x : Nat \\function f (p : 0 = x) => p } \\function test (p : Nat -> C) => (p 0).f");
-    Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), DefCall(Apps(Index(0), Zero()), def.getField("C").getField("x")));
+    Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), DefCall(Apps(Index(0), Zero()), ((ClassDefinition) def.getField("C")).getField("x")));
     List<Binding> context = new ArrayList<>(1);
     context.add(new TypedBinding("p", Pi(Nat(), DefCall(def.getField("C")))));
     assertEquals(Pi(args(Tele(vars("p"), context.get(0).getType())), Pi(type, type)), def.getField("test").getType());
