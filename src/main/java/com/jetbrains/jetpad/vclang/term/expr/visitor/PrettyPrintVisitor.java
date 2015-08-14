@@ -45,7 +45,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
             myBuilder.append('.');
           }
           visibleArgs.get(0).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
-          myBuilder.append(' ').append(((Abstract.DefCallExpression) expr).getName()).append(' ');
+          myBuilder.append(' ').append(((Abstract.DefCallExpression) expr).getName().name).append(' ');
           visibleArgs.get(1).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
           if (prec > defPrecedence.priority) myBuilder.append(')');
           return;

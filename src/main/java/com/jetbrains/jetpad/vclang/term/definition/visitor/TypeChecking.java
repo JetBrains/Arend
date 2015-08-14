@@ -38,10 +38,10 @@ public class TypeChecking {
     }
   }
 
-  public static DataDefinition typeCheckDataBegin(ModuleLoader moduleLoader, Namespace namespace, Abstract.DataDefinition def, List<Binding> localContext) {
+  public static DataDefinition typeCheckDataBegin(ModuleLoader moduleLoader, Namespace namespace, Namespace localNamespace, Abstract.DataDefinition def, List<Binding> localContext) {
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     int origSize = localContext.size();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localContext, moduleLoader, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localNamespace, localContext, moduleLoader, CheckTypeVisitor.Side.RHS);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
       CheckTypeVisitor.OKResult result = visitor.checkType(parameter.getType(), Universe());
       if (result == null) {
@@ -60,11 +60,12 @@ public class TypeChecking {
       }
     }
 
-    DataDefinition result = new DataDefinition(namespace.getChild(def.getName()), def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters);
-    return addMember(namespace, result, moduleLoader) ? result : null;
+    Namespace parentNamespace = localNamespace != null ? localNamespace : namespace;
+    DataDefinition result = new DataDefinition(parentNamespace.getChild(def.getName()), def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters);
+    return addMember(parentNamespace, result, moduleLoader) ? result : null;
   }
 
-  public static boolean typeCheckDataEnd(ModuleLoader moduleLoader, Namespace namespace, Abstract.DataDefinition def, DataDefinition definition, List<Binding> localContext) {
+  public static void typeCheckDataEnd(ModuleLoader moduleLoader, Namespace namespace, Abstract.DataDefinition def, DataDefinition definition, List<Binding> localContext) {
     if (localContext != null) {
       for (TypeArgument parameter : definition.getParameters()) {
         if (parameter instanceof TelescopeArgument) {
@@ -87,22 +88,24 @@ public class TypeChecking {
         universe = maxUniverse;
       }
     }
-    definition.setUniverse(universe);
 
-    if (def.getUniverse() != null && !universe.lessOrEquals(def.getUniverse())) {
-      moduleLoader.getTypeCheckingErrors().add(new TypeMismatchError(namespace, new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
+    if (def.getUniverse() != null) {
+      if (universe.lessOrEquals(def.getUniverse())) {
+        definition.setUniverse(def.getUniverse());
+      } else {
+        moduleLoader.getTypeCheckingErrors().add(new TypeMismatchError(namespace, new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
+        definition.setUniverse(universe);
+      }
     }
-
-    return addMember(namespace, definition, moduleLoader);
   }
 
-  public static Constructor typeCheckConstructor(ModuleLoader moduleLoader, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext, int conIndex) {
+  public static Constructor typeCheckConstructor(ModuleLoader moduleLoader, Namespace namespace, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext, int conIndex) {
     List<TypeArgument> arguments = new ArrayList<>(con.getArguments().size());
     int origSize = localContext.size();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     int index = 1;
     boolean ok = true;
-    CheckTypeVisitor visitor = new CheckTypeVisitor(dataDefinition.getNamespace(), localContext, moduleLoader, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, namespace == dataDefinition.getParent() ? null : dataDefinition.getParent(), localContext, moduleLoader, CheckTypeVisitor.Side.RHS);
 
     for (Abstract.TypeArgument argument : con.getArguments()) {
       CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
@@ -170,20 +173,25 @@ public class TypeChecking {
     return constructor;
   }
 
-  public static FunctionDefinition typeCheckFunctionBegin(ModuleLoader moduleLoader, Namespace namespace, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction) {
+  public static FunctionDefinition typeCheckFunctionBegin(ModuleLoader moduleLoader, Namespace namespace, Namespace localNamespace, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction) {
+    Namespace parentNamespace = localNamespace != null ? localNamespace : namespace;
     FunctionDefinition typedDef;
     if (def.isOverridden()) {
-      typedDef = new OverriddenDefinition(namespace.getChild(def.getName()), def.getPrecedence(), null, null, def.getArrow(), null, overriddenFunction);
+      if (localNamespace == null) {
+        moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(namespace, "Overridden function cannot be static", def, getNames(localContext)));
+        return null;
+      }
+      typedDef = new OverriddenDefinition(parentNamespace.getChild(def.getName()), def.getPrecedence(), null, null, def.getArrow(), null, overriddenFunction);
     } else {
-      typedDef = new FunctionDefinition(namespace.getChild(def.getName()), def.getPrecedence(), null, null, def.getArrow(), null);
+      typedDef = new FunctionDefinition(parentNamespace.getChild(def.getName()), def.getPrecedence(), null, null, def.getArrow(), null);
     }
-    if (!typeCheckFunctionBegin(moduleLoader, def, localContext, overriddenFunction, typedDef)) {
+    if (!typeCheckFunctionBegin(moduleLoader, namespace, def, localContext, overriddenFunction, typedDef)) {
       return null;
     }
     return typedDef;
   }
 
-  public static boolean typeCheckFunctionBegin(ModuleLoader moduleLoader, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction, FunctionDefinition typedDef) {
+  public static boolean typeCheckFunctionBegin(ModuleLoader moduleLoader, Namespace namespace, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction, FunctionDefinition typedDef) {
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
       // myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, "Cannot find function " + def.getName() + " in the parent class", def, getNames(localContext)));
@@ -192,7 +200,7 @@ public class TypeChecking {
     }
 
     List<Argument> arguments = new ArrayList<>(def.getArguments().size());
-    CheckTypeVisitor visitor = new CheckTypeVisitor(typedDef.getParent(), localContext, moduleLoader, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, typedDef.getParent() == namespace ? namespace : typedDef.getParent(), localContext, moduleLoader, CheckTypeVisitor.Side.RHS);
 
     List<TypeArgument> splitArgs = null;
     Expression splitResult = null;
@@ -349,9 +357,9 @@ public class TypeChecking {
     return true;
   }
 
-  public static boolean typeCheckFunctionEnd(ModuleLoader moduleLoader, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction) {
+  public static boolean typeCheckFunctionEnd(ModuleLoader moduleLoader, Namespace namespace, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction) {
     if (term != null) {
-      CheckTypeVisitor visitor = new CheckTypeVisitor(definition.getNamespace(), localContext, moduleLoader, CheckTypeVisitor.Side.LHS);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, definition.getParent() == namespace ? null : definition.getParent(), localContext, moduleLoader, CheckTypeVisitor.Side.LHS);
       CheckTypeVisitor.OKResult termResult = visitor.checkType(term, definition.getResultType());
 
       if (termResult != null) {
@@ -369,6 +377,11 @@ public class TypeChecking {
         if (!definition.isAbstract()) {
           definition.hasErrors(true);
         }
+      }
+    } else {
+      if (definition.getParent() == namespace) {
+        moduleLoader.getErrors().add(new ModuleError(new Module(namespace, definition.getName().name), "Abstract function cannot be static"));
+        return false;
       }
     }
 

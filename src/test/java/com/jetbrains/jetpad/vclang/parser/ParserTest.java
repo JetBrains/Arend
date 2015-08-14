@@ -147,7 +147,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.getRoot().addMember(plus);
     moduleLoader.getRoot().addMember(mul);
-    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), null);
+    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
@@ -172,7 +172,7 @@ public class ParserTest {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.getRoot().addMember(plus);
     moduleLoader.getRoot().addMember(mul);
-    parseExpr(moduleLoader, "11 + 2 * 3", 1).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), null);
+    parseExpr(moduleLoader, "11 + 2 * 3", 1).accept(new CheckTypeVisitor(null, null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
@@ -180,7 +180,7 @@ public class ParserTest {
   public void parserError() {
     String text = "A { \\function f (x : Nat) <= elim x | zero => zero | suc x' => zero }";
     Namespace namespace = dummyModuleLoader.getRoot().getChild(new Utils.Name("test"));
-    new BuildVisitor(namespace, new ClassDefinition(namespace), dummyModuleLoader, false).visitExpr(parse(dummyModuleLoader, text).expr());
+    new BuildVisitor(namespace, new Namespace(null, null), dummyModuleLoader).visitExpr(parse(dummyModuleLoader, text).expr());
     assertTrue(dummyModuleLoader.getErrors().size() > 0);
   }
 

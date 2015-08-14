@@ -67,6 +67,7 @@ public class ModuleDeserialization {
           child = myModuleLoader.loadModule(new Module((Namespace) parent, name), true);
           if (child == null) {
             child = newDefinition(code, name1, parentNamespace);
+            parentNamespace.addMember((Definition) child);
           }
         }
       }
@@ -189,9 +190,7 @@ public class ModuleDeserialization {
       if (!(member instanceof Namespace)) {
         throw new IncorrectFormat();
       }
-      if (member.getParent() == namespace) {
-        deserializeNamespace(stream, definitionMap, (Namespace) member);
-      }
+      deserializeNamespace(stream, definitionMap, (Namespace) member);
     }
 
     size = stream.readInt();
@@ -200,9 +199,7 @@ public class ModuleDeserialization {
       if (!(member instanceof Definition)) {
         throw new IncorrectFormat();
       }
-      if (member.getParent() == namespace) {
-        deserializeDefinition(stream, definitionMap, (Definition) member);
-      }
+      deserializeDefinition(stream, definitionMap, (Definition) member);
     }
   }
 
@@ -213,7 +210,7 @@ public class ModuleDeserialization {
       throw new IncorrectFormat();
     }
     definition.setLocalNamespace((Namespace) namespaceMember);
-    deserializeNamespace(stream, definitionMap, definition.getLocalNamespace());
+    deserializeNamespace(stream, definitionMap, (Namespace) namespaceMember);
   }
 
   private void readDefinition(DataInputStream stream, Definition definition) throws IOException {

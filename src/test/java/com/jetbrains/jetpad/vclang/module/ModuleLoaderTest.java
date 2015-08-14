@@ -172,7 +172,7 @@ public class ModuleLoaderTest {
 
   @Test
   public void nonStaticClassExportTestError() {
-    parseDefs(dummyModuleLoader, "\\class A { } \\static class B { \\export A }", 1, 0);
+    parseDefs(dummyModuleLoader, "\\class A { } \\static \\class B { \\export A }", 1, 0);
   }
 
   @Test

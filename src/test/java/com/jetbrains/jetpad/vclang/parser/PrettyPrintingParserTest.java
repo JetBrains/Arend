@@ -37,6 +37,7 @@ public class PrettyPrintingParserTest {
 
   private void testDef(ModuleLoader moduleLoader, FunctionDefinition expected, FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
+    builder.append("\\static ");
     def.accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
     FunctionDefinition result = (FunctionDefinition) parseDef(moduleLoader, builder.toString());
     assertEquals(expected.getArguments().size(), result.getArguments().size());

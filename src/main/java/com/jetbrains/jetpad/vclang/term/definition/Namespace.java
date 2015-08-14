@@ -36,6 +36,10 @@ public class Namespace implements NamespaceMember {
     myParent = parent;
   }
 
+  public boolean isLocal() {
+    return myParent == null ? myName == null : myParent.isLocal();
+  }
+
   public Collection<Definition> getMembers() {
     return myMembers == null ? Collections.<Definition>emptyList() : myMembers.values();
   }

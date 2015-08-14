@@ -24,6 +24,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.Name;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Namespace myNamespace;
+  private final Namespace myLocalNamespace;
   private final List<Binding> myLocalContext;
   private final ModuleLoader myModuleLoader;
   private Side mySide;
@@ -76,8 +77,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public enum Side { LHS, RHS }
 
-  public CheckTypeVisitor(Namespace namespace, List<Binding> localContext, ModuleLoader moduleLoader, Side side) {
+  public CheckTypeVisitor(Namespace namespace, Namespace localNamespace, List<Binding> localContext, ModuleLoader moduleLoader, Side side) {
     myNamespace = namespace;
+    myLocalNamespace = localNamespace;
     myLocalContext = localContext;
     myModuleLoader = moduleLoader;
     mySide = side;
@@ -1224,7 +1226,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression clauseExpectedType = expectedType.liftIndex(varIndex + 1, constructorArguments.size()).subst(substExpr, varIndex);
 
       Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
-      Result clauseResult = new CheckTypeVisitor(myNamespace, localContext, myModuleLoader, side).typeCheck(clause.getExpression(), clauseExpectedType);
+      Result clauseResult = new CheckTypeVisitor(myNamespace, myLocalNamespace, localContext, myModuleLoader, side).typeCheck(clause.getExpression(), clauseExpectedType);
       if (!(clauseResult instanceof OKResult)) {
         wasError = true;
         if (errorResult == null) {
@@ -1265,7 +1267,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Clause otherwise = null;
     if (expr.getOtherwise() != null) {
       Side side = expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.RIGHT || !(expr.getOtherwise().getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
-      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myNamespace, myLocalContext, myModuleLoader, side) : this;
+      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myNamespace, myLocalNamespace, myLocalContext, myModuleLoader, side) : this;
       Result clauseResult = visitor.typeCheck(expr.getOtherwise().getExpression(), expectedType);
       if (clauseResult instanceof InferErrorResult) {
         return clauseResult;
@@ -1305,7 +1307,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
 
     myLocalContext.add(new TypedBinding((Name) null, exprOKResult.type));
-    Result elimResult = elim.accept(new CheckTypeVisitor(myNamespace, myLocalContext, myModuleLoader, Side.LHS), expectedType.liftIndex(0, 1));
+    Result elimResult = elim.accept(new CheckTypeVisitor(myNamespace, myLocalNamespace, myLocalContext, myModuleLoader, Side.LHS), expectedType.liftIndex(0, 1));
     if (!(elimResult instanceof OKResult)) return elimResult;
     OKResult elimOKResult = (OKResult) elimResult;
     addLiftedEquations(elimOKResult, equations, 1);
@@ -1409,9 +1411,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (oldDefinition == null) {
         myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(myNamespace, definition.getName() + " is not defined in " + expr.getBaseClass().getNamespace().getFullName(), definition, getNames(myLocalContext)));
       } else {
-        OverriddenDefinition newDefinition = (OverriddenDefinition) TypeChecking.typeCheckFunctionBegin(myModuleLoader, expr.getBaseClass().getLocalNamespace(), definition, myLocalContext, oldDefinition);
+        OverriddenDefinition newDefinition = (OverriddenDefinition) TypeChecking.typeCheckFunctionBegin(myModuleLoader, myNamespace, expr.getBaseClass().getLocalNamespace(), definition, myLocalContext, oldDefinition);
         if (newDefinition == null) return null;
-        TypeChecking.typeCheckFunctionEnd(myModuleLoader, definition.getTerm(), newDefinition, myLocalContext, oldDefinition);
+        TypeChecking.typeCheckFunctionEnd(myModuleLoader, myNamespace, definition.getTerm(), newDefinition, myLocalContext, oldDefinition);
         definitions.put(oldDefinition, newDefinition);
       }
     }
@@ -1476,7 +1478,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         addLiftedEquations(result, equations, numVarsPassed);
         expectedType = result.expression;
       }
-      Result termResult = clause.getTerm().accept(new CheckTypeVisitor(myNamespace, myLocalContext, myModuleLoader, Side.LHS), expectedType);
+      Result termResult = clause.getTerm().accept(new CheckTypeVisitor(myNamespace, myLocalNamespace, myLocalContext, myModuleLoader, Side.LHS), expectedType);
       if (!(termResult instanceof OKResult)) return termResult;
       addLiftedEquations(termResult, equations, numVarsPassed);
 

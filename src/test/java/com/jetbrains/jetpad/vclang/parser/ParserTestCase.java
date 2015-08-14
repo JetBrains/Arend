@@ -35,7 +35,7 @@ public class ParserTestCase {
 
   public static Concrete.Expression parseExpr(ModuleLoader moduleLoader, String text, int errors) {
     Namespace namespace = moduleLoader.getRoot().getChild(new Utils.Name("test"));
-    Concrete.Expression result = new BuildVisitor(namespace, new ClassDefinition(namespace), moduleLoader, false).visitExpr(parse(moduleLoader, text).expr());
+    Concrete.Expression result = new BuildVisitor(namespace, new Namespace(null, null), moduleLoader).visitExpr(parse(moduleLoader, text).expr());
     assertEquals(errors, moduleLoader.getErrors().size());
     return result;
   }
@@ -50,7 +50,7 @@ public class ParserTestCase {
 
   public static Definition parseDef(ModuleLoader moduleLoader, String text, int errors) {
     Namespace namespace = moduleLoader.getRoot().getChild(new Utils.Name("test"));
-    Definition result = new BuildVisitor(namespace, new ClassDefinition(namespace), moduleLoader, false).visitDef(parse(moduleLoader, text).def());
+    Definition result = new BuildVisitor(namespace, new Namespace(null, null), moduleLoader).visitDef(parse(moduleLoader, text).def());
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(errors, moduleLoader.getTypeCheckingErrors().size());
     return result;
@@ -67,7 +67,7 @@ public class ParserTestCase {
   public static ClassDefinition parseDefs(ModuleLoader moduleLoader, String text, int moduleErrors, int errors) {
     Namespace namespace = moduleLoader.getRoot().getChild(new Utils.Name("test"));
     ClassDefinition result = new ClassDefinition(namespace);
-    new BuildVisitor(namespace, result, moduleLoader, false).visitDefs(parse(moduleLoader, text).defs());
+    new BuildVisitor(namespace, result.getLocalNamespace(), moduleLoader).visitDefs(parse(moduleLoader, text).defs());
     assertEquals(moduleErrors, moduleLoader.getErrors().size());
     assertEquals(errors, moduleLoader.getTypeCheckingErrors().size());
     return result;

@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition, Function {
@@ -16,6 +15,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   private Expression myResultType;
   private Expression myTerm;
   private boolean myTypeHasErrors;
+  private Namespace myLocalNamespace = new Namespace(null, null);
 
   public FunctionDefinition(Namespace namespace, Precedence precedence, Arrow arrow) {
     super(namespace, precedence);
@@ -34,10 +34,13 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
     myTerm = term;
   }
 
+  public Namespace getLocalNamespace() {
+    return myLocalNamespace;
+  }
+
   @Override
   public Collection<Definition> getFields() {
-    // TODO
-    return Collections.emptyList();
+    return myLocalNamespace.getMembers();
   }
 
   @Override

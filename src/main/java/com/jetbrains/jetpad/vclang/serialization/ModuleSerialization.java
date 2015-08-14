@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -25,6 +26,8 @@ public class ModuleSerialization {
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
     DefinitionsIndices definitionsIndices = new DefinitionsIndices();
     SerializeVisitor visitor = new SerializeVisitor(definitionsIndices, byteArrayStream, dataStream);
+    definitionsIndices.getDefinitionIndex(Prelude.PRELUDE);
+    definitionsIndices.getDefinitionIndex(namespace);
     int errors = serializeNamespace(visitor, namespace);
     if (classDefinition != null) {
       visitor.getDataStream().writeBoolean(true);
@@ -43,19 +46,31 @@ public class ModuleSerialization {
 
   public static int serializeNamespace(SerializeVisitor visitor, Namespace namespace) throws IOException {
     int errors = 0;
-    visitor.getDataStream().writeInt(namespace.getChildren().size());
+    int size = 0;
     for (Namespace child : namespace.getChildren()) {
       if (child.getParent() == namespace) {
+        ++size;
+      }
+    }
+    visitor.getDataStream().writeInt(size);
+    for (Namespace child : namespace.getChildren()) {
+      if (child.getParent() == namespace) {
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(child));
         errors += serializeNamespace(visitor, child);
       }
     }
-    visitor.getDataStream().writeInt(namespace.getMembers().size());
+
+    size = 0;
+    for (Definition member : namespace.getMembers()) {
+      if (member.getParent() == namespace) {
+        ++size;
+      }
+    }
+    visitor.getDataStream().writeInt(size);
     for (Definition member : namespace.getMembers()) {
       if (member.getParent() == namespace) {
         visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(member));
-        if (member.getParent() == namespace) {
-          errors += serializeDefinition(visitor, member);
-        }
+        errors += serializeDefinition(visitor, member);
       }
     }
     return errors;

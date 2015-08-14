@@ -66,7 +66,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, ModuleLoader moduleLoader) {
-    return new CheckTypeVisitor(null, localContext, moduleLoader, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
+    return new CheckTypeVisitor(null, null, localContext, moduleLoader, CheckTypeVisitor.Side.LHS).checkType(this, expectedType);
   }
 
   public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {

@@ -8,27 +8,11 @@ import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import java.util.Collection;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
-  private Namespace myLocalNamespace;
-  private boolean myIsLocal;
+  private Namespace myLocalNamespace = new Namespace(null, null);
 
   public ClassDefinition(Namespace namespace) {
-    this(namespace, false);
-  }
-
-  public ClassDefinition(Namespace namespace, boolean isLocal) {
     super(namespace, DEFAULT_PRECEDENCE);
-    myIsLocal = isLocal;
-    myLocalNamespace = new Namespace(null, null);
     super.hasErrors(false);
-  }
-
-  @Override
-  public void hasErrors(boolean has) {
-    throw new IllegalStateException();
-  }
-
-  public boolean isLocal() {
-    return myIsLocal;
   }
 
   @Override
