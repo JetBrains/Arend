@@ -86,11 +86,11 @@ public class ElimTest {
   public void elim2() {
     ModuleLoader moduleLoader = new ModuleLoader();
     parseDefs(moduleLoader,
-        "\\data D Nat (x y : Nat) | con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
-        "\\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
+        "\\static \\data D Nat (x y : Nat) | con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
+        "\\static \\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
             "| con2 _ _ _ _ => Nat -> Nat\n" +
             "| con1 _ => Nat\n" +
-        "\\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
+        "\\static \\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
             "| con1 s <= \\elim e\n" +
               "| con2 x y z t => x" +
               "| con1 _ => s" +
@@ -104,8 +104,8 @@ public class ElimTest {
   public void elim3() {
     ModuleLoader moduleLoader = new ModuleLoader();
     parseDefs(moduleLoader,
-        "\\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
-        "\\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
+        "\\static \\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
+        "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
           "| con1 s <= \\elim e\n" +
             "| con2 _ {y} {z} {t} => q t" +
             "| con1 {z} _ => z" +

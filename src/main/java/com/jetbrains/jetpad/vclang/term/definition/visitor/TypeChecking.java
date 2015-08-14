@@ -395,6 +395,5 @@ public class TypeChecking {
 
     // TODO
     return definition.isOverridden() || definition.getParent().addMember(definition) == null;
-
   }
 }
