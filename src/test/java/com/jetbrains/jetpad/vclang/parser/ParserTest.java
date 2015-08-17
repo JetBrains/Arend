@@ -200,52 +200,85 @@ public class ParserTest {
 
   @Test
   public void whereTestDefCmd() {
-    parseDefs(dummyModuleLoader, "\\static \\function f (x : Nat) => a \\where \\static \\class A { \\static \\function a => 0 } \\open A");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f (x : Nat) => a \\where\n" +
+          "\\static \\class A { \\static \\function a => 0 }\n" +
+          "\\open A");
   }
 
   @Test
   public void whereError() {
-    parseDefs(dummyModuleLoader, "\\static \\function f (x : Nat) => x \\where \\static \\function b => x", 1, 0);
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f (x : Nat) => x \\where\n" +
+          "\\static \\function b => x", 1, 0);
   }
 
   @Test
   public void whereClosedError() {
-    parseDefs(dummyModuleLoader, "\\static \\function f => x \\where \\static \\class A { \\static \\function x => 0 } \\open A \\close A", 1, 0);
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => x \\where\n" +
+          "\\static \\class A { \\static \\function x => 0 }\n" +
+          "\\open A\n" +
+          "\\close A", 1, 0);
   }
 
   @Test
   public void whereOpenFunction() {
-    parseDefs(dummyModuleLoader, "\\static \\function f => x \\where \\static \\function b => 0 \\where \\static \\function x => 0; \\open b(x)");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => x \\where\n" +
+          "\\static \\function b => 0 \\where\n" +
+            "\\static \\function x => 0;\n" +
+          "\\open b(x)");
   }
 
   @Test
   public void whereNoOpenFunctionError() {
-    parseDefs(dummyModuleLoader, "\\static \\function f => x \\where \\static \\function b => 0 \\where \\static \\function x => 0;", 1, 0);
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => x \\where\n" +
+          "\\static \\function b => 0 \\where\n" +
+            "\\static \\function x => 0;", 1, 0);
   }
 
   @Test
   public void whereNested() {
-    parseDefs(dummyModuleLoader, "\\static \\function f => x \\where \\static \\data B | b \\static \\function x => a \\where \\static \\function a => b");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => x \\where\n" +
+          "\\static \\data B | b\n" +
+          "\\static \\function x => a \\where\n" +
+            "\\static \\function a => b");
   }
 
   @Test
   public void whereOuterScope() {
-    parseDefs(dummyModuleLoader, "\\static \\function f => 0 \\where \\static \\function g => 0 \\static \\function h => g");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => 0 \\where\n" +
+          "\\static \\function g => 0\n" +
+          "\\static \\function h => g");
   }
 
   @Test
   public void whereInSignature() {
-    parseDefs(dummyModuleLoader, "\\static \\function f : D => d \\where \\static \\data D | d");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f : D => d \\where\n" +
+          "\\static \\data D | d");
   }
 
   @Test
   public void whereAccessOuter() {
-    parseDefs(dummyModuleLoader, "\\static \\function f => 0 \\where \\static \\function x => 0; \\static \\function g => f.x");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => 0 \\where\n" +
+          "\\static \\function x => 0;\n" +
+        "\\static \\function g => f.x");
   }
 
   @Test
   public void whereNonStaticOpen() {
-    parseDefs(dummyModuleLoader, "\\static \\function f => 0 \\where \\static \\function x => 0 \\static \\function y => x; \\static \\function g => 0 \\where \\open f(y)");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => 0 \\where\n" +
+          "\\static \\function x => 0\n" +
+          "\\static \\function y => x;\n" +
+        "\\static \\function g => 0 \\where\n" +
+          "\\open f(y)");
   }
 
   @Test

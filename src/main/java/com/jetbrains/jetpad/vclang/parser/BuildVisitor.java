@@ -21,6 +21,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 public class BuildVisitor extends VcgrammarBaseVisitor {
   private Namespace myNamespace;
   private Namespace myLocalNamespace;
+  private Namespace myPrivateNamespace = new Namespace(null, null);
   private List<String> myContext = new ArrayList<>();
   private final Module myModule;
   private final ModuleLoader myModuleLoader;
@@ -150,9 +151,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return visitDefData((DefDataContext) ctx);
     } else
     if (ctx instanceof DefClassContext) {
+      boolean isStatic = ((DefClassContext) ctx).staticMod() instanceof StaticStaticContext;
+      if (!isStatic && myLocalNamespace == null) {
+        myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.getStart()), "Non-static definition in a static context"));
+        return null;
+      }
+
+      Namespace parentNamespace = isStatic ? myNamespace : myLocalNamespace;
       String name = ((DefClassContext) ctx).ID().getText();
-      Namespace newNamespace = myNamespace.getChild(new Utils.Name(name));
-      if (myNamespace.getMember(name) != null) {
+      Namespace newNamespace = parentNamespace.getChild(new Utils.Name(name));
+      if (parentNamespace.getMember(name) != null) {
         myModuleLoader.getErrors().add(new ModuleError(new Module(myNamespace, name), "Name is already defined"));
         return null;
       }
@@ -160,13 +168,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       Namespace oldNamespace = myNamespace;
       Namespace oldLocalNamespace = myLocalNamespace;
+      Namespace oldPrivateNamespace = myPrivateNamespace;
       myNamespace = newNamespace;
       myLocalNamespace = result.getLocalNamespace();
+      myPrivateNamespace = new Namespace(null, myPrivateNamespace);
       visitDefClass((DefClassContext) ctx);
       myNamespace = oldNamespace;
       myLocalNamespace = oldLocalNamespace;
+      myPrivateNamespace = oldPrivateNamespace;
 
-      myNamespace.addMember(result);
+      parentNamespace.addMember(result);
       return result;
     } else
     if (ctx instanceof DefCmdContext) {
@@ -188,49 +199,42 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Void visitDefCmd(DefCmdContext ctx) {
     if (ctx == null) return null;
-    Definition module = visitModule(ctx.name(0), ctx.fieldAcc());
-    if (module == null) return null;
+    Namespace namespace = (Namespace) visitNamespaceMember(ctx.name(0), ctx.fieldAcc(), true);
+    if (namespace == null) return null;
     boolean remove = ctx.nsCmd() instanceof CloseCmdContext;
     boolean export = ctx.nsCmd() instanceof ExportCmdContext;
 
-    /* TODO
     if (ctx.name().size() > 1) {
       for (int i = 1; i < ctx.name().size(); ++i) {
         String name = ctx.name(i) instanceof NameBinOpContext ? ((NameBinOpContext) ctx.name(i)).BIN_OP().getText() : ((NameIdContext) ctx.name(i)).ID().getText();
-        Definition definition = module.getStaticField(name);
-        if (definition == null) {
-          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name(i).getStart()), name + " is not a static field of " + module.getFullName()));
-          continue;
-        }
-        if (remove) {
-          if (!myNamespace.getFields().contains(definition))
-            myNamespace.removePrivateField(definition);
+        NamespaceMember member = namespace.getMember(name);
+        if (member != null) {
+          processDefCmd(member, export, remove);
         } else {
-          if (!definition.isAbstract() && myNamespace.canOpen(definition)) {
-            myNamespace.addPrivateField(definition);
-            if (export) {
-              myNamespace.addField(definition, myModuleLoader.getErrors());
-            }
-          }
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name(i).getStart()), name + " is not a static field of " + namespace.getFullName()));
         }
       }
     } else {
-      for (Definition definition : module.getStaticFields()) {
-        if (remove) {
-          if (!myNamespace.getFields().contains(definition))
-            myNamespace.removePrivateField(definition);
-        } else {
-          if (!definition.isAbstract() && myNamespace.canOpen(definition)) {
-            myNamespace.addPrivateField(definition);
-            if (export) {
-              myNamespace.addField(definition, myModuleLoader.getErrors());
-            }
-          }
-        }
+      for (Namespace child : namespace.getChildren()) {
+        processDefCmd(child, export, remove);
+      }
+
+      for (Definition member : namespace.getMembers()) {
+        processDefCmd(member, export, remove);
       }
     }
-    */
     return null;
+  }
+
+  private void processDefCmd(NamespaceMember member, boolean export, boolean remove) {
+    if (export) {
+      myNamespace.addMember(member);
+    } else
+    if (remove) {
+      myPrivateNamespace.removeMember(member);
+    } else {
+      myPrivateNamespace.addMember(member);
+    }
   }
 
   private static class FunctionContext {
@@ -279,22 +283,30 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private FunctionDefinition visitDefFunction(boolean isStatic, boolean overridden, Token token, NameContext originalName, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, FunctionContext functionCtx, List<DefContext> defs) {FunctionDefinition typedDef;
+    if (isStatic && functionCtx.termCtx == null) {
+      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(token), "Non-static abstract definition"));
+      return null;
+    }
     if (!isStatic && myLocalNamespace == null) {
       myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(token), "Non-static definition in a static context"));
       return null;
     }
 
     Namespace parentNamespace = isStatic ? myNamespace : myLocalNamespace;
+    Name name = getName(nameCtx);
+    if (name == null) return null;
     if (overridden) {
-      typedDef = new OverriddenDefinition(parentNamespace.getChild(getName(nameCtx)), visitPrecedence(precCtx), null, null, visitArrow(functionCtx.arrowCtx), null, null);
+      typedDef = new OverriddenDefinition(parentNamespace.getChild(name), visitPrecedence(precCtx), null, null, visitArrow(functionCtx.arrowCtx), null, null);
     } else {
-      typedDef = new FunctionDefinition(parentNamespace.getChild(getName(nameCtx)), visitPrecedence(precCtx), null, null, visitArrow(functionCtx.arrowCtx), null);
+      typedDef = new FunctionDefinition(parentNamespace.getChild(name), visitPrecedence(precCtx), null, null, visitArrow(functionCtx.arrowCtx), null);
     }
 
     Namespace oldNamespace = myNamespace;
     Namespace oldLocalNamespace = myLocalNamespace;
-    myNamespace = typedDef.getNamespace();
-    myLocalNamespace = typedDef.getLocalNamespace();
+    Namespace oldPrivateNamespace = myPrivateNamespace;
+    myNamespace = myNamespace.getChild(name);
+    myLocalNamespace = isStatic ? null : typedDef.getNamespace();
+    myPrivateNamespace = new Namespace(null, myPrivateNamespace);
 
     if (defs != null) {
       visitDefList(defs);
@@ -304,6 +316,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (def == null) {
       myNamespace = oldNamespace;
       myLocalNamespace = oldLocalNamespace;
+      myPrivateNamespace = oldPrivateNamespace;
       return null;
     }
 
@@ -318,6 +331,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     visitFunctionRawEnd(def);
     myNamespace = oldNamespace;
     myLocalNamespace = oldLocalNamespace;
+    myPrivateNamespace = oldPrivateNamespace;
     return typedDef;
   }
 
@@ -621,6 +635,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return new Concrete.VarExpression(position, name);
     }
 
+    for (Namespace namespace = myPrivateNamespace; namespace != null; namespace = namespace.getParent()) {
+      Definition member = namespace.getMember(name);
+      if (member != null) {
+        return new Concrete.DefCallExpression(position, null, member);
+      }
+    }
+
     for (Namespace namespace = myLocalNamespace; namespace != null; namespace = namespace.getParent()) {
       Definition member = namespace.getMember(name);
       if (member != null) {
@@ -815,11 +836,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       ClassDefinition parent = (ClassDefinition) ((Concrete.DefCallExpression) expr).getDefinition();
       Namespace oldNamespace = myNamespace;
       Namespace oldLocalNamespace = myLocalNamespace;
+      Namespace oldPrivateNamespace = myPrivateNamespace;
       myNamespace = parent.getNamespace();
       myLocalNamespace = parent.getLocalNamespace();
+      myPrivateNamespace = new Namespace(null, myPrivateNamespace);
       List<Concrete.FunctionDefinition> definitions = visitDefsRaw(ctx.classFields().defs());
       myNamespace = oldNamespace;
       myLocalNamespace = oldLocalNamespace;
+      myPrivateNamespace = oldPrivateNamespace;
 
       expr = new Concrete.ClassExtExpression(tokenPosition(ctx.getStart()), parent, definitions);
     }
@@ -938,27 +962,66 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Definition visitInfixId(InfixIdContext ctx) {
     if (ctx == null) return null;
-    return visitModule(ctx.name(), ctx.fieldAcc());
+    return (Definition) visitNamespaceMember(ctx.name(), ctx.fieldAcc(), false);
   }
 
-  public Definition visitModule(NameContext nameCtx, List<FieldAccContext> fieldAccCtx) {
+  private NamespaceMember visitNamespaceMember(NameContext nameCtx, List<FieldAccContext> fieldAccCtx, boolean isNamespace) {
     boolean binOp = nameCtx instanceof NameBinOpContext;
     String name = binOp ? ((NameBinOpContext) nameCtx).BIN_OP().getText() : ((NameIdContext) nameCtx).ID().getText();
-    Concrete.Expression expr = findId(name, binOp, tokenPosition(nameCtx.getStart()));
-    if (expr == null) return null;
-    if (!(expr instanceof Concrete.DefCallExpression)) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), "Expected a global definition"));
-      return null;
-    }
+    if (isNamespace || !fieldAccCtx.isEmpty()) {
+      Namespace namespace = null;
+      for (Namespace parent = myLocalNamespace; parent != null; parent = parent.getParent()) {
+        namespace = parent.findChild(name);
+        if (namespace != null) {
+          break;
+        }
+      }
 
-    expr = visitFieldsAcc(expr, fieldAccCtx);
-    if (expr == null) return null;
-    if (!(expr instanceof Concrete.DefCallExpression) || ((Concrete.DefCallExpression) expr).getDefinition() == null) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), "Expected a global definition"));
-      return null;
-    }
+      if (namespace == null) {
+        for (Namespace parent = myNamespace; parent != null; parent = parent.getParent()) {
+          namespace = parent.findChild(name);
+          if (namespace != null) {
+            break;
+          }
+        }
+      }
 
-    return ((Concrete.DefCallExpression) expr).getDefinition();
+      if (namespace == null) {
+        myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), "Not in scope: " + name));
+        return null;
+      }
+
+      for (int i = 0; i < fieldAccCtx.size() ; ++i) {
+        if (!(fieldAccCtx.get(i) instanceof ClassFieldContext)) {
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), "Expected a global definition"));
+          return null;
+        }
+
+        Name name1 = getName(((ClassFieldContext) fieldAccCtx.get(i)).name());
+        if (name1 == null) {
+          return null;
+        }
+
+        if (i == fieldAccCtx.size() - 1 && !isNamespace) {
+          Definition definition = namespace.getMember(name1.name);
+          if (definition == null) {
+            myModuleLoader.getErrors().add(new ParserError(new Module(namespace, name1.name), tokenPosition(nameCtx.getStart()), "Not in scope"));
+          }
+          return definition;
+        } else {
+          namespace = namespace.getChild(name1);
+        }
+      }
+      return namespace;
+    } else {
+      Concrete.Expression expr = findId(name, binOp, tokenPosition(nameCtx.getStart()));
+      if (expr == null) return null;
+      if (!(expr instanceof Concrete.DefCallExpression)) {
+        myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(nameCtx.getStart()), "Expected a global definition"));
+        return null;
+      }
+      return ((Concrete.DefCallExpression) expr).getDefinition();
+    }
   }
 
   @Override

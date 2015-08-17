@@ -15,7 +15,6 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   private Expression myResultType;
   private Expression myTerm;
   private boolean myTypeHasErrors;
-  private Namespace myLocalNamespace = new Namespace(null, null);
 
   public FunctionDefinition(Namespace namespace, Precedence precedence, Arrow arrow) {
     super(namespace, precedence);
@@ -34,13 +33,9 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
     myTerm = term;
   }
 
-  public Namespace getLocalNamespace() {
-    return myLocalNamespace;
-  }
-
   @Override
   public Collection<Definition> getFields() {
-    return myLocalNamespace.getMembers();
+    return getNamespace().getMembers();
   }
 
   @Override

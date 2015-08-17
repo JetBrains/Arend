@@ -6,7 +6,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ModuleLoaderTest {
   ModuleLoader dummyModuleLoader;
@@ -65,11 +66,23 @@ public class ModuleLoaderTest {
     MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
     Module moduleA = new Module(moduleLoader.getRoot(), "A");
     Module moduleB = new Module(moduleLoader.getRoot(), "B");
-    sourceSupplier.add(moduleA, "\\static \\function f : Nat \\static \\function h => f");
+    sourceSupplier.add(moduleA, "\\function f : Nat \\function h => f");
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
     moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
     moduleLoader.loadModule(moduleB, false);
+    assertEquals(1, moduleLoader.getErrors().size());
+  }
+
+  @Test
+  public void staticAbstractTestError() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    MemorySourceSupplier sourceSupplier = new MemorySourceSupplier(moduleLoader);
+    Module module = new Module(moduleLoader.getRoot(), "A");
+    sourceSupplier.add(module, "\\static \\function f : Nat");
+
+    moduleLoader.init(sourceSupplier, DummyOutputSupplier.getInstance(), true);
+    moduleLoader.loadModule(module, false);
     assertEquals(1, moduleLoader.getErrors().size());
   }
 
@@ -84,10 +97,10 @@ public class ModuleLoaderTest {
     moduleLoader.loadModule(moduleA, false);
     assertEquals(0, moduleLoader.getErrors().size());
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
-    assertEquals(1, moduleLoader.getRoot().getChild(new Utils.Name("A")).getChildren().size());
-    assertEquals(2, moduleLoader.getRoot().getChild(new Utils.Name("A")).getMembers().size());
-    assertTrue(moduleLoader.getRoot().getChild(new Utils.Name("A")).getChild(new Utils.Name("C")).getChildren().isEmpty());
-    assertEquals(2, moduleLoader.getRoot().getChild(new Utils.Name("A")).getChild(new Utils.Name("C")).getMembers().size());
+    assertEquals(1, moduleLoader.getRoot().getChild(new Utils.Name("A")).getMembers().size());
+    assertEquals(1, ((ClassDefinition) moduleLoader.getRoot().getMember("A")).getLocalNamespace().getMembers().size());
+    assertEquals(0, moduleLoader.getRoot().getMember("A").getNamespace().getMember("C").getNamespace().getMembers().size());
+    assertEquals(2, ((ClassDefinition) moduleLoader.getRoot().getMember("A").getNamespace().getMember("C")).getLocalNamespace().getMembers().size());
   }
 
   @Test
@@ -136,9 +149,10 @@ public class ModuleLoaderTest {
   @Test
   public void numberOfFieldsTest() {
     ClassDefinition result = parseDefs(dummyModuleLoader, "\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x => 0 }");
-    assertEquals(2, result.getNamespace().getChildren().size());
-    assertNotNull(result.getFields());
-    assertEquals(2, result.getFields().size());
+    assertEquals(2, result.getNamespace().getMembers().size());
+    assertEquals(0, result.getLocalNamespace().getMembers().size());
+    assertEquals(0, result.getNamespace().getChild(new Utils.Name("Point")).getMembers().size());
+    assertEquals(2, ((ClassDefinition) result.getNamespace().getMember("Point")).getLocalNamespace().getMembers().size());
   }
 
   @Test
@@ -153,7 +167,7 @@ public class ModuleLoaderTest {
 
   @Test
   public void exportTest() {
-    parseDefs(dummyModuleLoader, "\\static \\class A { \\static \\class B { \\function x => 0 } \\export B } \\static \\function y => A.x");
+    parseDefs(dummyModuleLoader, "\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => A.x");
   }
 
   @Test
@@ -257,13 +271,13 @@ public class ModuleLoaderTest {
   }
 
   @Test
-  public void classExtensionWhere() {
-    parseDefs(dummyModuleLoader, "\\static \\function f => 0 \\where \\static \\class A {} \\static \\class A { \\function x => 0 }");
+  public void classExtensionWhereTestError() {
+    parseDefs(dummyModuleLoader, "\\static \\function f => 0 \\where \\static \\class A {} \\static \\class A { \\function x => 0 }", 1, 0);
   }
 
   @Test
   public void multipleDefsWhere() {
-    parseDefs(dummyModuleLoader, "\\static \\function f => 0 \\where \\static \\function d => 0 \\static \\function d => 0", 1, 0);
+    parseDefs(dummyModuleLoader, "\\static \\function f => 0 \\where \\static \\function d => 0 \\static \\function d => 1", 1, 0);
   }
 
   @Test

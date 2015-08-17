@@ -63,6 +63,16 @@ public class Namespace implements NamespaceMember {
     return child;
   }
 
+  public Namespace findChild(String name) {
+    return myChildren == null ? null : myChildren.get(name);
+  }
+
+  public void removeChild(String name) {
+    if (myChildren != null) {
+      myChildren.remove(name);
+    }
+  }
+
   public Namespace addChild(Namespace child) {
     if (myChildren == null) {
       myChildren = new HashMap<>();
@@ -96,6 +106,36 @@ public class Namespace implements NamespaceMember {
         myMembers.put(member.getName().name, member);
         return null;
       }
+    }
+  }
+
+  public void removeMember(Definition member) {
+    if (myMembers != null) {
+      Definition removed = myMembers.remove(member.getName().name);
+      if (removed != member) {
+        myMembers.put(member.getName().name, removed);
+      }
+    }
+  }
+
+  public NamespaceMember addMember(NamespaceMember member) {
+    if (member instanceof Namespace) {
+      return addChild((Namespace) member);
+    }
+    if (member instanceof Definition) {
+      return addMember((Definition) member);
+    }
+    throw new IllegalStateException();
+  }
+
+  public void removeMember(NamespaceMember member) {
+    if (member instanceof Namespace) {
+      removeChild(member.getName().name);
+    } else
+    if (member instanceof Definition) {
+      removeMember((Definition) member);
+    } else {
+      throw new IllegalStateException();
     }
   }
 }
