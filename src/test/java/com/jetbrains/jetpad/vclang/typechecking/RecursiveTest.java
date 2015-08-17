@@ -15,7 +15,7 @@ public class RecursiveTest {
   public void list() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Definition definition = parseDef(moduleLoader, "\\data List (A : \\Type0) | nil | cons A (List A)");
+    Definition definition = parseDef(moduleLoader, "\\data List (A : \\Type0) | _ => nil | cons A (List A)");
     assertFalse(definition.hasErrors());
   }
 
@@ -23,7 +23,7 @@ public class RecursiveTest {
   public void dataLeftError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Definition definition = parseDef(moduleLoader, "\\data List (A : \\Type0) | nil | cons (List A -> A)", 1);
+    Definition definition = parseDef(moduleLoader, "\\data List (A : \\Type0) | _ => nil | cons (List A -> A)", 1);
     assertFalse(definition.hasErrors());
   }
 
@@ -31,7 +31,7 @@ public class RecursiveTest {
   public void dataRightError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Definition definition = parseDef(moduleLoader, "\\data List (B : \\Type0 -> \\Type0) (A : \\Type0) | nil | cons (B (List B A))", 1);
+    Definition definition = parseDef(moduleLoader, "\\data List (B : \\Type0 -> \\Type0) (A : \\Type0) | _ => nil | cons (B (List B A))", 1);
     assertFalse(definition.hasErrors());
   }
 

@@ -251,12 +251,12 @@ public class ModuleLoaderTest {
 
   @Test
   public void staticInOnlyStaticTest() {
-    parseDefs(dummyModuleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\function s => 0 \\data D (A : Nat) | foo Nat | bar }");
+    parseDefs(dummyModuleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\function s => 0 \\data D (A : Nat) | _ => foo Nat | bar }");
   }
 
   @Test
   public void nonStaticInOnlyStaticTestError() {
-    parseDefs(dummyModuleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\data D (A : Nat) | foo Nat | bar B }", 1, 0);
+    parseDefs(dummyModuleLoader, "\\function B : \\Type0 \\class A {} \\class A { \\data D (A : Nat) | _ => foo Nat | bar B }", 1, 0);
   }
 
   @Test

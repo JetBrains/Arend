@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,6 +30,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 
 public class TypeChecking {
   public static DataDefinition typeCheckDataBegin(ModuleLoader moduleLoader, Definition parent, Abstract.DataDefinition def, List<Binding> localContext) {
@@ -100,78 +102,86 @@ public class TypeChecking {
   }
 
   public static Constructor typeCheckConstructor(ModuleLoader moduleLoader, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext, int conIndex) {
-    List<TypeArgument> arguments = new ArrayList<>(con.getArguments().size());
-    int origSize = localContext.size();
-    Universe universe = new Universe.Type(0, Universe.Type.PROP);
-    int index = 1;
-    boolean ok = true;
-    CheckTypeVisitor visitor = new CheckTypeVisitor(dataDefinition, localContext, dataDefinition.getDependencies(), moduleLoader, CheckTypeVisitor.Side.RHS);
+    try (Utils.CompleteContextSaver ignore = new Utils.CompleteContextSaver(localContext)) {
+      List<TypeArgument> arguments = new ArrayList<>(con.getArguments().size());
+      Universe universe = new Universe.Type(0, Universe.Type.PROP);
+      int index = 1;
+      boolean ok = true;
 
-    for (Abstract.TypeArgument argument : con.getArguments()) {
-      CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
-      if (result == null) {
-        trimToSize(localContext, origSize);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(dataDefinition, localContext, dataDefinition.getDependencies(), moduleLoader, CheckTypeVisitor.Side.RHS);
+      List<Pattern> patterns = null;
+      if (con.getPatterns() != null) {
+        patterns = new ArrayList<>();
+        List<Abstract.Pattern> abstractPatterns = processImplicit(con.getPatterns(), dataDefinition.getParameters());
+        for (int i = 0; i < abstractPatterns.size(); i++) {
+          patterns.add(visitor.expandPatternFor(abstractPatterns.get(i), Index(abstractPatterns.size() - 1 - i)));
+        }
+      }
+
+      for (Abstract.TypeArgument argument : con.getArguments()) {
+        CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
+        if (result == null) {
+          return null;
+        }
+
+        Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
+        Universe maxUniverse = universe.max(argUniverse);
+        if (maxUniverse == null) {
+          String error = "Universe " + argUniverse + " of " + index + suffix(index) + " argument is not compatible with universe " + universe + " of previous arguments";
+          moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(dataDefinition.getParent(), error, con, new ArrayList<String>()));
+          ok = false;
+        } else {
+          universe = maxUniverse;
+        }
+
+        if (argument instanceof Abstract.TelescopeArgument) {
+          arguments.add(Tele(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
+          List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
+          for (int i = 0; i < names.size(); ++i) {
+            localContext.add(new TypedBinding(names.get(i), result.expression.liftIndex(0, i)));
+          }
+          index += ((Abstract.TelescopeArgument) argument).getNames().size();
+        } else {
+          arguments.add(TypeArg(argument.getExplicit(), result.expression));
+          localContext.add(new TypedBinding((Utils.Name) null, result.expression));
+          ++index;
+        }
+      }
+
+      if (!ok) {
         return null;
       }
 
-      Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
-      Universe maxUniverse = universe.max(argUniverse);
-      if (maxUniverse == null) {
-        String error = "Universe " + argUniverse + " of " + index + suffix(index) + " argument is not compatible with universe " + universe + " of previous arguments";
-        moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(dataDefinition.getParent(), error, con, new ArrayList<String>()));
-        ok = false;
-      } else {
-        universe = maxUniverse;
-      }
-
-      if (argument instanceof Abstract.TelescopeArgument) {
-        arguments.add(Tele(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
-        List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-        for (int i = 0; i < names.size(); ++i) {
-          localContext.add(new TypedBinding(names.get(i), result.expression.liftIndex(0, i)));
+      Constructor constructor = new Constructor(conIndex, con.getName(), dataDefinition, con.getPrecedence(), universe, arguments, patterns);
+      for (int j = 0; j < constructor.getArguments().size(); ++j) {
+        Expression type = constructor.getArguments().get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
+        while (type instanceof PiExpression) {
+          for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
+            if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition))) {
+              String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + constructor.getName();
+              moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(dataDefinition.getParent(), msg, con.getArguments().get(j).getType(), getNames(localContext)));
+              return null;
+            }
+          }
+          type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
         }
-        index += ((Abstract.TelescopeArgument) argument).getNames().size();
-      } else {
-        arguments.add(TypeArg(argument.getExplicit(), result.expression));
-        localContext.add(new TypedBinding((Utils.Name) null, result.expression));
-        ++index;
-      }
-    }
 
-    trimToSize(localContext, origSize);
-    if (!ok) {
-      return null;
-    }
-
-    Constructor constructor = new Constructor(conIndex, con.getName(), dataDefinition, con.getPrecedence(), universe, arguments);
-    for (int j = 0; j < constructor.getArguments().size(); ++j) {
-      Expression type = constructor.getArguments().get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
-      while (type instanceof PiExpression) {
-        for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
-          if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition))) {
+        List<Expression> exprs = new ArrayList<>();
+        type.getFunction(exprs);
+        for (Expression expr : exprs) {
+          if (expr.accept(new FindDefCallVisitor(dataDefinition))) {
             String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + constructor.getName();
             moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(dataDefinition.getParent(), msg, con.getArguments().get(j).getType(), getNames(localContext)));
             return null;
           }
         }
-        type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
       }
 
-      List<Expression> exprs = new ArrayList<>();
-      type.getFunction(exprs);
-      for (Expression expr : exprs) {
-        if (expr.accept(new FindDefCallVisitor(dataDefinition))) {
-          String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + constructor.getName();
-          moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(dataDefinition.getParent(), msg, con.getArguments().get(j).getType(), getNames(localContext)));
-          return null;
-        }
-      }
+      dataDefinition.addConstructor(constructor);
+      dataDefinition.getParent().addPrivateField(constructor);
+
+      return constructor;
     }
-
-    dataDefinition.addConstructor(constructor);
-    dataDefinition.getParent().addPrivateField(constructor);
-
-    return constructor;
   }
 
   public static FunctionDefinition typeCheckFunctionBegin(ModuleLoader moduleLoader, Definition parent, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction) {

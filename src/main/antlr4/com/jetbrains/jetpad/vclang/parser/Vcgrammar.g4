@@ -29,14 +29,18 @@ typeTermOpt : ':' expr                  # withType
             | ':' expr arrow expr       # withTypeAndTerm
             | arrow expr                # withTerm
             ;
-constructorDef : name pattern* '=>' constructor ('|' constructor)* ';'?;
+constructorDef : '|' (name patternx*|'_') '=>' constructor ('|' constructor)* ';'?;
 
-pattern : '_'                    # patternAny
-        | ID                     # patternID
-        | '(' name pattern* ')'* # patternConstructor
+pattern : '_'                   # patternAny
+        | ID                    # patternID
+        | '(' name patternx* ')' # patternConstructor
         ;
 
-constructor : '|' precedence name tele*;
+patternx : pattern         # patternExplicit
+         | '{' pattern '}' # patternImplicit
+         ;
+
+constructor : precedence name tele*;
 
 precedence :                            # noPrecedence
            | associativity NUMBER       # withPrecedence

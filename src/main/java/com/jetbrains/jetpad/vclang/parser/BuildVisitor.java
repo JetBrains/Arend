@@ -17,6 +17,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.collectPatternNames;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
   private Definition myParent;
@@ -439,48 +440,60 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.NamePattern(tokenPosition(ctx.getStart()), ctx.ID().getText());
   }
 
-  private List<Concrete.Pattern> visitPatterns(List<PatternContext> pattensContext) {
+  private List<Concrete.Pattern> visitPatterns(List<PatternxContext> patternContexts) {
     List<Concrete.Pattern> patterns = new ArrayList<>();
-    for (PatternContext pattern : pattensContext) {
-      patterns.add((Concrete.Pattern) visit(pattern));
+    for (PatternxContext pattern : patternContexts) {
+      Concrete.Pattern result = null;
+      if (pattern instanceof PatternImplicitContext) {
+        result = (Concrete.Pattern) visit(((PatternImplicitContext) pattern).pattern());
+        result.setExplicit(false);
+      } else if (pattern instanceof PatternExplicitContext){
+        result = (Concrete.Pattern) visit(((PatternExplicitContext) pattern).pattern());
+      }
+      patterns.add(result);
     }
     return patterns;
   }
 
-
-  private void applyPatternToContext(Concrete.Pattern pattern, int varIndex) {
-    if (pattern instanceof Concrete.NamePattern && ((Concrete.NamePattern) pattern).getName() == null)
+  private void applyPatternToContext(Abstract.Pattern pattern, int varIndex) {
+    if (pattern instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern).getName() == null)
       return;
     List<String> names = new ArrayList<>();
     collectPatternNames(pattern, names);
     List<String> oldContext = new ArrayList<>(myContext);
+    int varContextIndex = myContext.size() - 1 - varIndex;
     myContext.clear();
-    for (int i = 0; i < varIndex; ++i) {
+    for (int i = 0; i < varContextIndex; ++i) {
       myContext.add(oldContext.get(i));
     }
     myContext.addAll(names);
-    for (int i = varIndex + 1; i < oldContext.size(); ++i) {
+    for (int i = varContextIndex + 1; i < oldContext.size(); ++i) {
       myContext.add(oldContext.get(i));
     }
   }
 
   @Override
   public Concrete.ConstructorPattern visitPatternConstructor(PatternConstructorContext ctx) {
-    return new Concrete.ConstructorPattern(tokenPosition(ctx.getStart()), getName(ctx.name()), visitPatterns(ctx.pattern()));
+    return new Concrete.ConstructorPattern(tokenPosition(ctx.getStart()), getName(ctx.name()), visitPatterns(ctx.patternx()));
   }
 
   private void visitConstructorDef(ConstructorDefContext ctx, Concrete.DataDefinition def) {
-    Name dataDefName = getName(ctx.name());
-    if (!def.getName().equals(dataDefName)) {
-      myModuleLoader.getErrors().add(new ParserError(myModule, dataDefName.position, "Expected a data type name: " + def.getName()));
-      return;
-    }
-
     List<String> oldContext = new ArrayList<>(myContext);
-    List<Concrete.Pattern> patterns = visitPatterns(ctx.pattern());
+    List<Concrete.Pattern> patterns = null;
 
-    for (int i = 0; i < patterns.size(); i++) {
-      applyPatternToContext(patterns.get(i), patterns.size() - 1 - i);
+    if (ctx.name() != null) {
+      Name dataDefName = getName(ctx.name());
+      if (!def.getName().equals(dataDefName)) {
+        myModuleLoader.getErrors().add(new ParserError(myModule, dataDefName.position, "Expected a data type name: " + def.getName()));
+        return;
+      }
+
+      patterns = visitPatterns(ctx.patternx());
+
+      List<Abstract.Pattern> allPatterns = processImplicit(patterns, def.getParameters());
+      for (int i = 0; i < allPatterns.size(); i++) {
+        applyPatternToContext(allPatterns.get(i), allPatterns.size() - 1 - i);
+      }
     }
 
     for (ConstructorContext conCtx : ctx.constructor()) {
@@ -524,13 +537,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     Universe universe = type == null ? null : ((Concrete.UniverseExpression) type).getUniverse();
-    Concrete.DataDefinition def = new Concrete.DataDefinition(name.position, name, visitPrecedence(ctx.precedence()), universe, parameters, null);
+    Concrete.DataDefinition def = new Concrete.DataDefinition(name.position, name, visitPrecedence(ctx.precedence()), universe, parameters);
+    List<Binding> localContext = new ArrayList<>();
+    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(myModuleLoader, myParent, def, localContext);
     for (ConstructorDefContext constructorDefCtx : ctx.constructorDef()) {
       visitConstructorDef(constructorDefCtx, def);
     }
-
-    List<Binding> localContext = new ArrayList<>();
-    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(myModuleLoader, myParent, def, localContext);
 
     for (int i = 0; i < def.getConstructors().size(); i++) {
       TypeChecking.typeCheckConstructor(myModuleLoader, typedDef, def.getConstructors().get(i), localContext, i);

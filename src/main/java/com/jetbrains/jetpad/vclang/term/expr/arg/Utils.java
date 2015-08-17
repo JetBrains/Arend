@@ -100,6 +100,22 @@ public class Utils {
     }
   }
 
+  public static class CompleteContextSaver implements Closeable {
+    private final List<Binding> myContext;
+    private final List<Binding> myOldContext;
+
+    public CompleteContextSaver(List<Binding> context) {
+      myContext = context;
+      myOldContext = new ArrayList<>(context);
+    }
+
+    @Override
+    public void close() {
+      myContext.clear();
+      myContext.addAll(myOldContext);
+    }
+  }
+
   public static void pushArgument(List<Binding> context, Argument argument) {
     if (argument instanceof TelescopeArgument) {
       for (int i = 0; i < ((TelescopeArgument) argument).getNames().size(); i++) {

@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.module.DummyOutputSupplier;
+import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -9,15 +11,27 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class DefinitionTest {
+  private ModuleLoader dummyModuleLoader;
+
+  @Before
+  public void initialize() {
+    dummyModuleLoader = new ModuleLoader();
+    dummyModuleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+  }
+
   @Test
   public void function() {
     // f : N => 0;
@@ -193,5 +207,55 @@ public class DefinitionTest {
     assertEquals(0, moduleLoader.getErrors().size());
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);
+  }
+
+  @Test
+  public void patternData() {
+    parseDefs(dummyModuleLoader,
+        "\\data C | _ => c1 | c2 \\data D (c : C) | D (c1) => d1  | D (c2) => d2");
+  }
+
+  @Test
+  public void patternVector() {
+    parseDefs(dummyModuleLoader,
+        "\\data Vec (A : \\Type0) (n : Nat) | Vec _ (zero) => Nil | Vec _ (suc m) => Cons A (Vec A m)");
+  }
+
+  @Test
+  public void patternDepParams() {
+    parseDefs(dummyModuleLoader,
+        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {(zero)} (d) => c");
+  }
+
+  @Test(expected = AssertionError.class)
+  public void patternDepParamsError() {
+    parseDefs(dummyModuleLoader,
+        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C (d) => c");
+  }
+
+  @Test
+  public void patternConstructorDepArg() {
+    ClassDefinition def = parseDefs(dummyModuleLoader,
+        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {(zero)} (d) => c (p = p)");
+  }
+
+  @Test
+  public void patternNested() {
+    parseDefs(dummyModuleLoader, "\\data C (n : Nat) | C (suc (suc n)) => c2 (n = n)");
+  }
+
+  @Test
+  public void patternDataLE() {
+    parseDefs(dummyModuleLoader, "\\data LE (n m : Nat) | LE (zero) m => LE-zero ; | LE (suc n) (suc m) => LE-suc (LE n m)");
+  }
+
+  @Test(expected = AssertionError.class)
+  public void patternImplicit() {
+    parseDefs(dummyModuleLoader, "\\data D (A : Nat) | D {A} => d");
+  }
+
+  @Test
+  public void patternConstructorCall() {
+    parseDefs(dummyModuleLoader, "\\data D {n : Nat} (n = n) | D {zero} p => d \\function test => d");
   }
 }

@@ -34,6 +34,10 @@ public class Constructor extends Definition implements Abstract.Constructor {
     myPatterns = patterns;
   }
 
+  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence, Universe universe, List<TypeArgument> arguments) {
+    this(index, name, parent, precedence, universe, arguments, null);
+  }
+
   @Override
   public List<Pattern> getPatterns() {
     return myPatterns;

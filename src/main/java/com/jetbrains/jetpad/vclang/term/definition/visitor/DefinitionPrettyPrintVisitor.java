@@ -109,6 +109,16 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, Void ignored) {
+    if (def.getPatterns() == null) {
+      myBuilder.append("_ ");
+    } else {
+      myBuilder.append(def.getDataType().getName().name).append(' ');
+      for (Abstract.Pattern pattern : def.getPatterns()) {
+        pattern.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+        myBuilder.append(' ');
+      }
+    }
+    myBuilder.append("=> ");
     myBuilder.append(def.getName());
     if (def.getArguments() == null) {
       myBuilder.append("{!error}");

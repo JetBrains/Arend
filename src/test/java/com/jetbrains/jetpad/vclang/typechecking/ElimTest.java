@@ -86,7 +86,7 @@ public class ElimTest {
   public void elim2() {
     ModuleLoader moduleLoader = new ModuleLoader();
     parseDefs(moduleLoader,
-        "\\data D Nat (x y : Nat) | con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
+        "\\data D Nat (x y : Nat) | _ => con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
         "\\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
             "| con2 _ _ _ _ => Nat -> Nat\n" +
             "| con1 _ => Nat\n" +
@@ -104,7 +104,7 @@ public class ElimTest {
   public void elim3() {
     ModuleLoader moduleLoader = new ModuleLoader();
     parseDefs(moduleLoader,
-        "\\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
+        "\\data D (x : Nat -> Nat) (y : Nat) | _ => con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
         "\\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
           "| con1 s <= \\elim e\n" +
             "| con2 _ {y} {z} {t} => q t" +

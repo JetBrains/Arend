@@ -232,6 +232,7 @@ public final class Abstract {
   }
 
   public interface Pattern extends PrettyPrintableSourceNode {
+    boolean getExplicit();
   }
 
   public interface NamePattern extends Pattern {

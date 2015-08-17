@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
 
 public final class Concrete {
   private Concrete() {}
@@ -808,10 +809,10 @@ public final class Concrete {
     private final List<Constructor> myConstructors;
     private final List<TypeArgument> myParameters;
 
-    public DataDefinition(Position position, Name name, Precedence precedence, Universe universe, List<TypeArgument> parameters, List<Constructor> constructors) {
+    public DataDefinition(Position position, Name name, Precedence precedence, Universe universe, List<TypeArgument> parameters) {
       super(position, name, precedence, universe);
       myParameters = parameters;
-      myConstructors = constructors;
+      myConstructors = new ArrayList<>();
     }
 
     @Override
@@ -850,13 +851,25 @@ public final class Concrete {
   }
 
   public static abstract class Pattern extends SourceNode implements Abstract.Pattern {
+    private boolean myExplicit;
+
     public Pattern(Position position) {
       super(position);
+      myExplicit = true;
+    }
+
+    @Override
+    public boolean getExplicit() {
+      return myExplicit;
+    }
+
+    public void setExplicit(boolean isExplicit) {
+      myExplicit = isExplicit;
     }
 
     @Override
     public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      prettyPrintPattern(this, builder, names, 0);
+      prettyPrintPattern(this, builder, names);
     }
   }
 
@@ -869,7 +882,7 @@ public final class Concrete {
 
     @Override
     public String getName() {
-      return null;
+      return myName;
     }
   }
 
