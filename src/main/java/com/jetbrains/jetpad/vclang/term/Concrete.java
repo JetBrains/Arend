@@ -186,11 +186,11 @@ public final class Concrete {
   }
 
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
-    private final ArgumentExpression myLeft;
-    private final ArgumentExpression myRight;
+    private final Expression myLeft;
+    private final Expression myRight;
     private final com.jetbrains.jetpad.vclang.term.definition.Definition myBinOp;
 
-    public BinOpExpression(Position position, ArgumentExpression left, com.jetbrains.jetpad.vclang.term.definition.Definition binOp, ArgumentExpression right) {
+    public BinOpExpression(Position position, Expression left, com.jetbrains.jetpad.vclang.term.definition.Definition binOp, Expression right) {
       super(position);
       myLeft = left;
       myRight = right;
@@ -198,12 +198,12 @@ public final class Concrete {
     }
 
     @Override
-    public ArgumentExpression getLeft() {
+    public Expression getLeft() {
       return myLeft;
     }
 
     @Override
-    public ArgumentExpression getRight() {
+    public Expression getRight() {
       return myRight;
     }
 
