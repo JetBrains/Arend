@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -26,8 +25,7 @@ public class ModuleSerialization {
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
     DefinitionsIndices definitionsIndices = new DefinitionsIndices();
     SerializeVisitor visitor = new SerializeVisitor(definitionsIndices, byteArrayStream, dataStream);
-    definitionsIndices.getDefinitionIndex(Prelude.PRELUDE);
-    definitionsIndices.getDefinitionIndex(namespace);
+    definitionsIndices.getDefinitionIndex(namespace, false);
     int errors = serializeNamespace(visitor, namespace);
     if (classDefinition != null) {
       visitor.getDataStream().writeBoolean(true);
@@ -55,21 +53,21 @@ public class ModuleSerialization {
     visitor.getDataStream().writeInt(size);
     for (Namespace child : namespace.getChildren()) {
       if (child.getParent() == namespace) {
-        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(child));
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(child, false));
         errors += serializeNamespace(visitor, child);
       }
     }
 
     size = 0;
     for (Definition member : namespace.getMembers()) {
-      if (member.getParent() == namespace) {
+      if (!(member instanceof Constructor) && member.getParent() == namespace) {
         ++size;
       }
     }
     visitor.getDataStream().writeInt(size);
     for (Definition member : namespace.getMembers()) {
-      if (member.getParent() == namespace) {
-        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(member));
+      if (!(member instanceof Constructor) && member.getParent() == namespace) {
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(member, true));
         errors += serializeDefinition(visitor, member);
       }
     }
@@ -93,7 +91,7 @@ public class ModuleSerialization {
       }
       visitor.getDataStream().writeInt(dataDefinition.getConstructors().size());
       for (Constructor constructor : dataDefinition.getConstructors()) {
-        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(constructor));
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(constructor, true));
         visitor.getDataStream().writeBoolean(constructor.hasErrors());
         writeDefinition(visitor.getDataStream(), constructor);
         if (!constructor.hasErrors()) {
@@ -131,7 +129,7 @@ public class ModuleSerialization {
 
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
-    visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(definition.getLocalNamespace()));
+    visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(definition.getLocalNamespace(), false));
     return serializeNamespace(visitor, definition.getLocalNamespace());
   }
 
@@ -140,7 +138,7 @@ public class ModuleSerialization {
 
     writeDefinition(visitor.getDataStream(), definition);
     if (definition instanceof OverriddenDefinition)
-      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(((OverriddenDefinition) definition).getOverriddenFunction()));
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(((OverriddenDefinition) definition).getOverriddenFunction(), false));
 
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {

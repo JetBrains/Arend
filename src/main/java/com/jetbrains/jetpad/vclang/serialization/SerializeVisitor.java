@@ -52,7 +52,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   @Override
   public Void visitDefCall(DefCallExpression expr) {
     myStream.write(2);
-    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition());
+    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition(), false);
     try {
       myDataStream.writeBoolean(expr.getExpression() != null);
       if (expr.getExpression() != null) {
@@ -196,7 +196,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
         myDataStream.writeInt(-1);
       } else {
         if (!isOtherwise) {
-          myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(clause.getConstructor()));
+          myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(clause.getConstructor(), false));
           ModuleSerialization.writeArguments(this, clause.getArguments());
         }
         myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
@@ -223,10 +223,10 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitClassExt(ClassExtExpression expr) {
     myStream.write(15);
     try {
-      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getBaseClass()));
+      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getBaseClass(), true));
       myDataStream.writeInt(expr.getDefinitionsMap().size());
       for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey()));
+        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey(), true));
         myErrors += ModuleSerialization.serializeDefinition(this, entry.getValue());
       }
       ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());

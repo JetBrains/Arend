@@ -54,6 +54,10 @@ public class ModuleDeserialization {
         String name = stream.readUTF();
         Utils.Name name1 = new Utils.Name(name, fixity);
         int code = stream.read();
+        boolean isNew = false;
+        if (code != ModuleSerialization.NAMESPACE_CODE) {
+          isNew = stream.readBoolean();
+        }
 
         NamespaceMember parent = definitionMap.get(parentIndex);
         if (!(parent instanceof Namespace)) {
@@ -61,13 +65,20 @@ public class ModuleDeserialization {
         }
 
         Namespace parentNamespace = (Namespace) parent;
-        child = code == ModuleSerialization.NAMESPACE_CODE ? parentNamespace.getChild(name1) : parentNamespace.getMember(name);
-
-        if (child == null) {
-          child = myModuleLoader.loadModule(new Module((Namespace) parent, name), true);
-          if (child == null) {
+        if (code == ModuleSerialization.NAMESPACE_CODE) {
+          ClassDefinition definition = myModuleLoader.loadModule(new Module((Namespace) parent, name), true);
+          child = definition == null ? parentNamespace.getChild(name1) : definition.getNamespace();
+        } else {
+          if (isNew) {
             child = newDefinition(code, name1, parentNamespace);
-            parentNamespace.addMember((Definition) child);
+            if (parentNamespace.addMember((Definition) child) != null) {
+              throw new NameIsAlreadyDefined(name1);
+            }
+          } else {
+            child = parentNamespace.getMember(name);
+            if (child == null) {
+              throw new NameDoesNotDefined(name1);
+            }
           }
         }
       }
@@ -75,7 +86,7 @@ public class ModuleDeserialization {
       definitionMap.put(index, child);
     }
 
-    deserializeNamespace(stream, definitionMap, namespace);
+    deserializeNamespace(stream, definitionMap);
     if (stream.readBoolean()) {
       if (classDefinition == null) {
         myModuleLoader.getErrors().add(new ModuleError(new Module(namespace.getParent(), namespace.getName().name), "Name is already defined"));
@@ -144,6 +155,7 @@ public class ModuleDeserialization {
         }
 
         dataDefinition.addConstructor(constructor);
+        dataDefinition.getParent().addMember(constructor);
       }
     } else
     if (code == ModuleSerialization.CLASS_CODE) {
@@ -183,14 +195,14 @@ public class ModuleDeserialization {
     }
   }
 
-  private void deserializeNamespace(DataInputStream stream, Map<Integer, NamespaceMember> definitionMap, Namespace namespace) throws IOException {
+  private void deserializeNamespace(DataInputStream stream, Map<Integer, NamespaceMember> definitionMap) throws IOException {
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       NamespaceMember member = definitionMap.get(stream.readInt());
       if (!(member instanceof Namespace)) {
         throw new IncorrectFormat();
       }
-      deserializeNamespace(stream, definitionMap, (Namespace) member);
+      deserializeNamespace(stream, definitionMap);
     }
 
     size = stream.readInt();
@@ -210,7 +222,7 @@ public class ModuleDeserialization {
       throw new IncorrectFormat();
     }
     definition.setLocalNamespace((Namespace) namespaceMember);
-    deserializeNamespace(stream, definitionMap, (Namespace) namespaceMember);
+    deserializeNamespace(stream, definitionMap);
   }
 
   private void readDefinition(DataInputStream stream, Definition definition) throws IOException {
@@ -455,9 +467,37 @@ public class ModuleDeserialization {
     }
   }
 
-  public class WrongVersion extends DeserializationException {
+  public static class WrongVersion extends DeserializationException {
     WrongVersion(int version) {
       super("Version of the file format (" + version + ") differs from the version of the program + (" + ModuleSerialization.VERSION + ")");
+    }
+  }
+
+  public static class NameIsAlreadyDefined extends DeserializationException {
+    private final Utils.Name myName;
+
+    public NameIsAlreadyDefined(Utils.Name name) {
+      super("Name is already defined");
+      myName = name;
+    }
+
+    @Override
+    public String toString() {
+      return myName + ": " + super.toString();
+    }
+  }
+
+  public static class NameDoesNotDefined extends DeserializationException {
+    private final Utils.Name myName;
+
+    public NameDoesNotDefined(Utils.Name name) {
+      super("Name does not defined");
+      myName = name;
+    }
+
+    @Override
+    public String toString() {
+      return myName + ": " + super.toString();
     }
   }
 }

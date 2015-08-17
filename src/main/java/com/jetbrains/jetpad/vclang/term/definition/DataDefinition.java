@@ -53,8 +53,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
 
   public void addConstructor(Constructor constructor) {
     myConstructors.add(constructor);
-    // TODO
-    // addStaticField(constructor, Collections.EMPTY_LIST);
+    getNamespace().addMember(constructor);
   }
 
   @Override
