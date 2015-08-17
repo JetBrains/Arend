@@ -19,14 +19,21 @@ public class ModuleLoader {
   private OutputSupplier myOutputSupplier;
   private boolean myRecompile;
   private final Set<Module> myLoadedModules = new HashSet<>();
-  private final List<ModuleError> myErrors = new ArrayList<>();
-  private final List<TypeCheckingError> myTypeCheckingErrors = new ArrayList<>();
+  private List<ModuleError> myErrors;
+  private List<TypeCheckingError> myTypeCheckingErrors;
 
   public void init(SourceSupplier sourceSupplier, OutputSupplier outputSupplier, boolean recompile) {
+    init(sourceSupplier, outputSupplier, new ArrayList<ModuleError>(), new ArrayList<TypeCheckingError>(), recompile);
+  }
+
+  public void init(SourceSupplier sourceSupplier, OutputSupplier outputSupplier,
+                   List<ModuleError> errors, List<TypeCheckingError> typeCheckingErrors, boolean recompile) {
     Prelude.PRELUDE.setParent(myRoot);
     myRoot.addStaticField(Prelude.PRELUDE, null);
     mySourceSupplier = sourceSupplier;
     myOutputSupplier = outputSupplier;
+    myErrors = errors;
+    myTypeCheckingErrors = typeCheckingErrors;
     myRecompile = recompile;
   }
 
