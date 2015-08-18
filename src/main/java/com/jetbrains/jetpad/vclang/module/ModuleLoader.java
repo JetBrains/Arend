@@ -29,7 +29,7 @@ public class ModuleLoader {
     myRoot.addChild(Prelude.PRELUDE);
     mySourceSupplier = sourceSupplier;
     myOutputSupplier = outputSupplier;
-    myRecompile = recompile;
+    myRecompile = true; // recompile; // TODO: Fix serialization.
   }
 
   public Namespace getRoot() {
