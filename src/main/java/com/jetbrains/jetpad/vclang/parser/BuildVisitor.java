@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplcitResult;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
@@ -490,9 +491,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       patterns = visitPatterns(ctx.patternx());
 
-      List<Abstract.Pattern> allPatterns = processImplicit(patterns, def.getParameters());
-      for (int i = 0; i < allPatterns.size(); i++) {
-        applyPatternToContext(allPatterns.get(i), allPatterns.size() - 1 - i);
+      ProcessImplcitResult result = processImplicit(patterns, def.getParameters());
+      if (result.patterns == null) {
+        if (result.wrongImplicitPosition < patterns.size()) {
+          myModuleLoader.getErrors().add(new ParserError(myModule,
+              tokenPosition(ctx.patternx(result.wrongImplicitPosition).start), "Unexpected implicit argument"));
+        } else {
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name().start), "Too few explicit arguments, expected: " + result.numExplicit));
+        }
+        return;
+      }
+      for (int i = 0; i < result.patterns.size(); i++) {
+        applyPatternToContext(result.patterns.get(i), result.patterns.size() - 1 - i);
       }
     }
 

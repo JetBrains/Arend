@@ -112,9 +112,14 @@ public class TypeChecking {
       List<Pattern> patterns = null;
       if (con.getPatterns() != null) {
         patterns = new ArrayList<>();
-        List<Abstract.Pattern> abstractPatterns = processImplicit(con.getPatterns(), dataDefinition.getParameters());
+
+        // Patterns are assumed to be checked during parse phase
+        List<Abstract.Pattern> abstractPatterns = processImplicit(con.getPatterns(), dataDefinition.getParameters()).patterns;
         for (int i = 0; i < abstractPatterns.size(); i++) {
-          patterns.add(visitor.expandPatternFor(abstractPatterns.get(i), Index(abstractPatterns.size() - 1 - i)));
+          Pattern pattern = visitor.expandPatternOn(abstractPatterns.get(i), abstractPatterns.size() - 1 - i, Index(abstractPatterns.size() - 1 - i));
+          if (pattern == null)
+            return null;
+          patterns.add(pattern);
         }
       }
 

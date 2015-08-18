@@ -227,10 +227,10 @@ public class DefinitionTest {
         "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {(zero)} (d) => c");
   }
 
-  @Test(expected = AssertionError.class)
+  @Test
   public void patternDepParamsError() {
     parseDefs(dummyModuleLoader,
-        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C (d) => c");
+        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C (d) => c", 1);
   }
 
   @Test
@@ -249,9 +249,9 @@ public class DefinitionTest {
     parseDefs(dummyModuleLoader, "\\data LE (n m : Nat) | LE (zero) m => LE-zero | LE (suc n) (suc m) => LE-suc (LE n m)");
   }
 
-  @Test(expected = AssertionError.class)
-  public void patternImplicit() {
-    parseDefs(dummyModuleLoader, "\\data D (A : Nat) | D {A} => d");
+  @Test
+  public void patternImplicitError() {
+    parseDefs(dummyModuleLoader, "\\data D (A : Nat) | D {A} => d",  1, 0);
   }
 
   @Test
@@ -265,5 +265,29 @@ public class DefinitionTest {
         "\\data Vehicle (t : VehicleType) " +
         "| Vehicle (carType) => car Wheel Wheel Wheel Wheel" +
         "| Vehicle (bikeType) => bike Wheel Wheel");
+  }
+
+  @Test
+  public void patternUnkownConstructorError() {
+    parseDefs(dummyModuleLoader, "\\data D (n : Nat) | D (suc (luc m)) => d", 1);
+  }
+
+  @Test
+  public void patternLift() {
+    parseDefs(dummyModuleLoader, "\\data D (n : Nat) | D (zero) => d " +
+        "\\data C (m : Nat) (n : Nat) (D m) | C (zero) (zero) (d) => c");
+  }
+
+  @Test
+  public void patternLiftError() {
+    parseDefs(dummyModuleLoader, "\\data D (n : Nat) | D (zero) => d " +
+        "\\data C (m : Nat) (n : Nat) (D m) | C _ (zero) (d) => c", 1);
+  }
+
+  @Test
+  public void patternMultipleSubst() {
+    parseDefs(dummyModuleLoader, "\\data D (n : Nat) (m : Nat) | D (suc n) (zero) => d " +
+        "\\data C | _ => c (n m : Nat) (D m n) " +
+        "\\data E C | E (c (suc (zero)) (zero) (d)) => e");
   }
 }
