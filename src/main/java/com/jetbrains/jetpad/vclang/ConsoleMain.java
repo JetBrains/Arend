@@ -63,7 +63,10 @@ public class ConsoleMain {
 
     final ModuleLoader moduleLoader = new ModuleLoader();
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
-    moduleLoader.init(new FileSourceSupplier(moduleLoader, sourceDir), new FileOutputSupplier(moduleDeserialization, outputDir, libDirs), recompile);
+    List<SourceSupplier> sourceSuppliers = new ArrayList<>(2);
+    sourceSuppliers.add(new FileSourceSupplier(moduleLoader, sourceDir));
+    sourceSuppliers.add(new DirectorySourceSupplier(sourceDir));
+    moduleLoader.init(new CompositeSourceSupplier(sourceSuppliers), new FileOutputSupplier(moduleDeserialization, outputDir, libDirs), recompile);
 
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDirStr == null) return;
@@ -122,11 +125,12 @@ public class ConsoleMain {
     }
 
     Namespace namespace = moduleLoader.getRoot();
-    for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      namespace = namespace.getChild(new Utils.Name(moduleNames.get(i)));
+    for (int i = 0; i < moduleNames.size(); ++i) {
+      moduleLoader.loadModule(new Module(namespace, moduleNames.get(i)), false);
+      if (i < moduleNames.size() - 1) {
+        namespace = namespace.getChild(new Utils.Name(moduleNames.get(i)));
+      }
     }
-    Module newModule = new Module(namespace, moduleNames.get(moduleNames.size() - 1));
-    moduleLoader.loadModule(newModule, false);
 
     for (ModuleError moduleError : moduleLoader.getErrors()) {
       System.err.println(moduleError);
