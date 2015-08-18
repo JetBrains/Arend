@@ -3,9 +3,11 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<Void, Void> {
   private final StringBuilder myBuilder;
@@ -109,9 +111,17 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, Void ignored) {
+    List<String> tail = new ArrayList<>();
+    int origSize = myNames.size();
     if (def.getPatterns() == null) {
       myBuilder.append("_ ");
     } else {
+      if (!myNames.isEmpty()) { //Inside data def remove prev
+         tail.addAll(myNames.subList(myNames.size() - def.getPatterns().size(), myNames.size()));
+         myNames.subList(myNames.size() -  def.getPatterns().size(), myNames.size()).clear();
+         origSize = myNames.size();
+      }
+
       myBuilder.append(def.getDataType().getName().name).append(' ');
       for (Abstract.Pattern pattern : def.getPatterns()) {
         pattern.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
@@ -129,6 +139,8 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
       }
       removeFromList(myNames, def.getArguments());
     }
+    trimToSize(myNames, origSize);
+    myNames.addAll(tail);
     return null;
   }
 

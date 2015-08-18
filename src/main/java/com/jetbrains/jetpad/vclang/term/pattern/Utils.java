@@ -22,7 +22,6 @@ public class Utils {
   }
 
   public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names) {
-    // TODO: names!
     if (!pattern.getExplicit())
       builder.append('{');
     if (pattern instanceof Abstract.NamePattern) {
@@ -31,6 +30,7 @@ public class Utils {
       } else {
         builder.append(((Abstract.NamePattern) pattern).getName());
       }
+      names.add(((Abstract.NamePattern) pattern).getName());
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       builder.append('(');
       builder.append(((Abstract.ConstructorPattern) pattern).getConstructorName());
