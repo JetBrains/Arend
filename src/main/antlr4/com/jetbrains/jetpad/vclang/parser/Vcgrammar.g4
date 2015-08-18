@@ -29,7 +29,7 @@ typeTermOpt : ':' expr                  # withType
             | ':' expr arrow expr       # withTypeAndTerm
             | arrow expr                # withTerm
             ;
-constructorDef : '|' (name patternx*|'_') '=>' constructor ('|' constructor)* ';'?;
+constructorDef : '|' (name patternx*|'_') '=>' constructor ('|' constructor)*;
 
 pattern : '_'                   # patternAny
         | ID                    # patternID

@@ -246,7 +246,7 @@ public class DefinitionTest {
 
   @Test
   public void patternDataLE() {
-    parseDefs(dummyModuleLoader, "\\data LE (n m : Nat) | LE (zero) m => LE-zero ; | LE (suc n) (suc m) => LE-suc (LE n m)");
+    parseDefs(dummyModuleLoader, "\\data LE (n m : Nat) | LE (zero) m => LE-zero | LE (suc n) (suc m) => LE-suc (LE n m)");
   }
 
   @Test(expected = AssertionError.class)
@@ -257,5 +257,13 @@ public class DefinitionTest {
   @Test
   public void patternConstructorCall() {
     parseDefs(dummyModuleLoader, "\\data D {n : Nat} (n = n) | D {zero} p => d \\function test => d");
+  }
+
+  @Test
+  public void patternAbstract() {
+    parseDefs(dummyModuleLoader, "\\data Wheel | _ => wheel \\data VehicleType | _ => bikeType | carType " +
+        "\\data Vehicle (t : VehicleType) " +
+        "| Vehicle (carType) => car Wheel Wheel Wheel Wheel" +
+        "| Vehicle (bikeType) => bike Wheel Wheel");
   }
 }
