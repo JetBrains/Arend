@@ -378,12 +378,13 @@ public class TypeChecking {
           definition.hasErrors(true);
         }
       }
-    } else {
+    } /* TODO
+      else {
       if (definition.getParent() == namespace) {
-        moduleLoader.getErrors().add(new ModuleError(new Module(namespace, definition.getName().name), "Abstract function cannot be static"));
+        moduleLoader.getErrors().add(new ModuleError(new Module(namespace, definition.getName().name), "Non-static abstract definition"));
         return false;
       }
-    }
+    } */
 
     definition.typeHasErrors(definition.getResultType() == null);
     Expression type = definition.getType();

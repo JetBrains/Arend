@@ -20,38 +20,6 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return new UniverseExpression(getUniverse());
   }
 
-  // TODO
-  /*
-  @Override
-  public boolean addField(Definition definition, List<ModuleError> errors) {
-    if (getFields().contains(definition))
-      return true;
-    if (getField(definition.getName().name) != null) {
-      errors.add(new ModuleError(getEnclosingModule(), "Name " + getFullNestedMemberName(definition.getName().name) + " is already defined"));
-      return false;
-    }
-
-    myPublicFields.put(definition.getName().name, definition);
-    updateDependencies(definition);
-    addPrivateField(definition);
-
-    if (definition.isAbstract()) {
-      Universe max = getUniverse().max(definition.getUniverse());
-      if (max == null) {
-        String msg = "Universe " + definition.getUniverse() + " of the field " + getFullNestedMemberName(definition.getName().getPrefixName()) + "is not compatible with universe " + getUniverse() + " of previous fields";
-        errors.add(new ModuleError(getEnclosingModule(), msg));
-        return false;
-      }
-      setUniverse(max);
-      return true;
-    }
-
-    if (isStatic(definition))
-      addStaticField(definition, errors);
-    return true;
-  }
-  */
-
   public Definition getField(String name) {
     return myLocalNamespace.getMember(name);
   }
@@ -69,49 +37,8 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myLocalNamespace.getMembers();
   }
 
-  /*
-  private boolean isStatic(Definition field) {
-    boolean isStatic = true;
-    if (field.getDependencies() != null) {
-      for (Definition dependency : field.getDependencies()) {
-        if (myPublicFields.values().contains(dependency)) {
-          isStatic = false;
-        }
-      }
-    }
-    return isStatic;
-  }
-
-  public void reopen() {
-    getPrivateFields().clear();
-    for (Definition field : myPublicFields.values()) {
-      addPrivateField(field);
-    }
-  }
-  */
-
   @Override
   public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitClass(this, params);
   }
-
-  /*
-  public boolean hasAbstracts() {
-    for (Definition field : myPublicFields.values()) {
-      if (field.isAbstract()) return true;
-    }
-    return false;
-  }
-
-  @Override
-  public void updateDependencies(Definition definition) {
-    if (definition.getDependencies() != null) {
-      for (Definition dependency : definition.getDependencies()) {
-        if (!myPublicFields.values().contains(dependency)) {
-          addDependency(dependency);
-        }
-      }
-    }
-  }
-  */
 }

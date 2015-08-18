@@ -202,7 +202,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression type = signature.get(i).getType().subst(substExprs, 0);
 
       Result result;
-      /* if (argsImp[i].expression instanceof Expression) {
+      /* TODO
+      if (argsImp[i].expression instanceof Expression) {
         List<Expression> context = new ArrayList<>(myLocalContext.size());
         for (Binding binding : myLocalContext) {
           context.add(binding.getType());
