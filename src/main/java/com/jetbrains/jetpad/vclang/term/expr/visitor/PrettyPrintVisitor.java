@@ -234,19 +234,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitBinOp(Abstract.BinOpExpression expr, Byte prec) {
     if (prec > expr.getBinOp().getPrecedence().priority) myBuilder.append('(');
 
-    if (expr.getLeft().isHidden()) {
-      myBuilder.append('_');
-    } else {
-      expr.getLeft().getExpression().accept(this, (byte) (expr.getBinOp().getPrecedence().priority + (expr.getBinOp().getPrecedence().associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
-    }
+    expr.getLeft().accept(this, (byte) (expr.getBinOp().getPrecedence().priority + (expr.getBinOp().getPrecedence().associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
 
     myBuilder.append(' ').append(expr.getBinOp().getName()).append(' ');
 
-    if (expr.getRight().isHidden()) {
-      myBuilder.append('_');
-    } else {
-      expr.getRight().getExpression().accept(this, (byte) (expr.getBinOp().getPrecedence().priority + (expr.getBinOp().getPrecedence().associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
-    }
+    expr.getRight().accept(this, (byte) (expr.getBinOp().getPrecedence().priority + (expr.getBinOp().getPrecedence().associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
 
     if (prec > expr.getBinOp().getPrecedence().priority) myBuilder.append(')');
     return null;

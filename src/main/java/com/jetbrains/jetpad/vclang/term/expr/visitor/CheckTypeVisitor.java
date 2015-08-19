@@ -1056,10 +1056,50 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
+  public Result visitBinOp(final Abstract.BinOpExpression expr, Expression expectedType) {
     List<Abstract.ArgumentExpression> args = new ArrayList<>(2);
-    args.add(expr.getLeft());
-    args.add(expr.getRight());
+    args.add(new Abstract.ArgumentExpression() {
+      @Override
+      public Abstract.Expression getExpression() {
+        return expr.getLeft();
+      }
+
+      @Override
+      public boolean isExplicit() {
+        return true;
+      }
+
+      @Override
+      public boolean isHidden() {
+        return false;
+      }
+
+      @Override
+      public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+        expr.getLeft().prettyPrint(builder, names, prec);
+      }
+    });
+    args.add(new Abstract.ArgumentExpression() {
+      @Override
+      public Abstract.Expression getExpression() {
+        return expr.getRight();
+      }
+
+      @Override
+      public boolean isExplicit() {
+        return true;
+      }
+
+      @Override
+      public boolean isHidden() {
+        return false;
+      }
+
+      @Override
+      public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+        expr.getRight().prettyPrint(builder, names, prec);
+      }
+    });
 
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
     return typeCheckFunctionApps(new Concrete.DefCallExpression(position, null, expr.getBinOp()), args, expectedType, expr);

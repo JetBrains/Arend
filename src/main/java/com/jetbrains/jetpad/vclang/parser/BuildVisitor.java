@@ -900,12 +900,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       myModuleLoader.getErrors().add(new ParserError(myModule, position, msg));
     }
     stack.remove(stack.size() - 1);
-    pushOnStack(stack, new StackElem(new Concrete.BinOpExpression(position, new Concrete.ArgumentExpression(topElem.argument, true, false), topElem.definition, new Concrete.ArgumentExpression(elem.argument, true, false)), elem.definition), position);
+    pushOnStack(stack, new StackElem(new Concrete.BinOpExpression(position, topElem.argument, topElem.definition, elem.argument), elem.definition), position);
   }
 
   private Concrete.Expression rollUpStack(List<StackElem> stack, Concrete.Expression expr) {
     for (int i = stack.size() - 1; i >= 0; --i) {
-      expr = new Concrete.BinOpExpression(stack.get(i).argument.getPosition(), new Concrete.ArgumentExpression(stack.get(i).argument, true, false), stack.get(i).definition, new Concrete.ArgumentExpression(expr, true, false));
+      expr = new Concrete.BinOpExpression(stack.get(i).argument.getPosition(), stack.get(i).argument, stack.get(i).definition, expr);
     }
     return expr;
   }
