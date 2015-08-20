@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -16,6 +17,13 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
 public class GetTypeTest {
+  ModuleLoader dummyModuleLoader;
+  @Before
+  public void initialize() {
+    dummyModuleLoader = new ModuleLoader();
+    dummyModuleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
+  }
+
   @Test
   public void constructorTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
@@ -89,5 +97,35 @@ public class GetTypeTest {
     Definition def = parseDef(moduleLoader, "\\function test => \\lam (F : Nat -> \\Type0) (f : \\Pi (x : Nat) -> F x) => \\let | x => 0 \\in f x");
     assertEquals(Pi(args(Tele(vars("F"), Pi(Nat(), Universe())), Tele(vars("f"), Pi(args(Tele(vars("x"), Nat())), Apps(Index(1), Index(0))))), Apps(Index(1), Zero())),
             ((FunctionDefinition) def).getTerm().getType(new ArrayList<Binding>()));
+  }
+
+  @Test
+  public void patternConstructor1() {
+    ClassDefinition def = parseDefs(dummyModuleLoader,
+        "\\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
+    assertEquals(Apps(DefCall(def.getField("C")), Zero()), def.getField("C").getStaticField("c1").getType());
+    assertEquals(Pi("n", Nat(), Apps(DefCall(def.getField("C")), Suc(Index(1)))), def.getField("C").getStaticField("c2").getType());
+  }
+
+  @Test
+  public void patternConstructor2() {
+    ClassDefinition def = parseDefs(dummyModuleLoader,
+        "\\data Vec (A : \\Type0) (n : Nat) | Vec _ (zero) => Nil | Vec _ (suc n) => Cons A (Vec A n)" +
+        "\\data D (n : Nat) (Vec Nat n) | D (zero) _ => dzero | D (suc n) _ => done");
+    DataDefinition vec = (DataDefinition) def.getField("Vec");
+    DataDefinition d = (DataDefinition) def.getField("D");
+    assertEquals(Apps(DefCall(d), Zero(), Index(0)), d.getStaticField("dzero").getType());
+    assertEquals(Apps(DefCall(d), Suc(Index(1)), Index(0)), d.getStaticField("done").getType());
+    assertEquals(Pi("x", Index(1), Pi("xs", Apps(DefCall(vec), Index(2), Index(1)), Apps(DefCall(vec), Index(3), Suc(Index(2))))), vec.getStaticField("Cons").getType());
+  }
+
+  @Test
+  public void patternConstructor3() {
+    ClassDefinition def = parseDefs(dummyModuleLoader,
+        "\\data D | _ => d \\Type0" +
+            "\\data C D | C (d A) => c A");
+    DataDefinition d = (DataDefinition) def.getField("D");
+    DataDefinition c = (DataDefinition) def.getField("C");
+    assertEquals(Pi("x", Index(0), Apps(DefCall(c), Apps(DefCall(d.getField("d")), Index(1)))), c.getStaticField("c").getType());
   }
 }

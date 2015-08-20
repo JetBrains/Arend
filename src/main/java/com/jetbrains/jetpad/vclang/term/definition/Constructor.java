@@ -8,12 +8,15 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternToArgumentConverter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.collectPatternNames;
 
 public class Constructor extends Definition implements Abstract.Constructor {
   private List<TypeArgument> myArguments;
@@ -80,19 +83,31 @@ public class Constructor extends Definition implements Abstract.Constructor {
     Expression resultType = DefCall(getParent());
     int numberOfVars = numberOfVariables(myArguments);
     if (getDataType().getParameters() != null) {
-      for (int i = numberOfVariables(getDataType().getParameters()) - 1, j = 0; i >= 0; ++j) {
-        if (getDataType().getParameters().get(j) instanceof TelescopeArgument) {
-          for (String ignored : ((TelescopeArgument) getDataType().getParameters().get(j)).getNames()) {
+      if (myPatterns == null) {
+        for (int i = numberOfVariables(getDataType().getParameters()) - 1, j = 0; i >= 0; ++j) {
+          if (getDataType().getParameters().get(j) instanceof TelescopeArgument) {
+            for (String ignored : ((TelescopeArgument) getDataType().getParameters().get(j)).getNames()) {
+              resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
+            }
+          } else {
             resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
           }
-        } else {
-          resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
+        }
+      } else {
+        List<String> names = new ArrayList<>();
+        for (Pattern pattern : myPatterns) {
+          collectPatternNames(pattern, names);
+        }
+        PatternToArgumentConverter converter = new PatternToArgumentConverter(numberOfVars + names.size() - 1);
+        for (int i = 0; i < myPatterns.size(); i++) {
+          resultType = Apps(resultType, converter.patternToArgument(myPatterns.get(i), getDataType().getParameters().get(i).getType()));
         }
       }
     }
-
     return myArguments.isEmpty() ? resultType : Pi(myArguments, resultType);
   }
+
+
 
   @Override
   public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {

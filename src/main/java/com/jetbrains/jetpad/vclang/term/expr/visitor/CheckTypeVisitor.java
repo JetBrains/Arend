@@ -1068,9 +1068,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   public static class ExpandPatternResult {
-    final Expression expression;
-    final Pattern pattern;
-    final int numBindings;
+    public final Expression expression;
+    public final Pattern pattern;
+    public final int numBindings;
 
     public ExpandPatternResult(Expression expression, Pattern pattern, int numBindings) {
       this.expression = expression;
@@ -1136,7 +1136,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           expr.setWellTyped(Error(null, error));
           return null;
         }
-        parameters = matchResult.expressions;
       }
 
       List<TypeArgument> constructorArguments = new ArrayList<>();
@@ -1175,7 +1174,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  public Pattern expandPatternOn(Abstract.Pattern pattern, int varIndex, Abstract.Expression origExpr) {
+  public ExpandPatternResult expandPatternOn(Abstract.Pattern pattern, int varIndex, Abstract.Expression origExpr) {
     int varContextIndex = myLocalContext.size() - 1 - varIndex;
 
     Binding binding = myLocalContext.get(varContextIndex);
@@ -1197,7 +1196,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myLocalContext.add(new TypedBinding(tail.get(i).getName(), type));
     }
 
-    return result.pattern;
+    return result;
   }
 
   public OKResult lookupLocalVar(Abstract.Expression expression) {
