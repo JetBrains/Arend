@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.module.DummyOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import org.junit.Before;
@@ -127,5 +128,15 @@ public class GetTypeTest {
     DataDefinition d = (DataDefinition) def.getField("D");
     DataDefinition c = (DataDefinition) def.getField("C");
     assertEquals(Pi("x", Index(0), Apps(DefCall(c), Apps(DefCall(d.getField("d")), Index(1)))), c.getStaticField("c").getType());
+  }
+
+  @Test
+  public void patternConstructorDep() {
+    ClassDefinition def = parseDefs(dummyModuleLoader,
+        "\\data Box (n : Nat) | _ => box" +
+            "\\data D (n : Nat) (Box n) | D (zero) _ => d");
+    DataDefinition box = (DataDefinition) def.getField("Box");
+    DataDefinition d = (DataDefinition) def.getField("D");
+    assertEquals(Apps(DefCall(d), Zero(), Index(0)), d.getStaticField("d").getType());
   }
 }

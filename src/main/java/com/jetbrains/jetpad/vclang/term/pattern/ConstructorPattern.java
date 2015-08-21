@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchResult;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
@@ -39,6 +40,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   public PatternMatchResult match(Expression expr, List<Binding> context) {
     List<Expression> constructorArgs = new ArrayList<>();
     expr = expr.normalize(NormalizeVisitor.Mode.WHNF, context).getFunction(constructorArgs);
+    Collections.reverse(constructorArgs);
     if (!(expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor) || ((DefCallExpression) expr).getDefinition() != myConstructor) {
       return new PatternMatchResult(this, expr);
     }

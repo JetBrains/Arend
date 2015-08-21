@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplcitResult;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
@@ -491,7 +491,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       patterns = visitPatterns(ctx.patternx());
 
-      ProcessImplcitResult result = processImplicit(patterns, def.getParameters());
+      ProcessImplicitResult result = processImplicit(patterns, def.getParameters());
       if (result.patterns == null) {
         if (result.wrongImplicitPosition < patterns.size()) {
           myModuleLoader.getErrors().add(new ParserError(myModule,
@@ -550,6 +550,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.DataDefinition def = new Concrete.DataDefinition(name.position, name, visitPrecedence(ctx.precedence()), universe, parameters);
     List<Binding> localContext = new ArrayList<>();
     DataDefinition typedDef = TypeChecking.typeCheckDataBegin(myModuleLoader, myParent, def, localContext);
+    if (typedDef == null)
+      return null;
+
     for (ConstructorDefContext constructorDefCtx : ctx.constructorDef()) {
       visitConstructorDef(constructorDefCtx, def);
     }

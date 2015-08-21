@@ -11,9 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DefCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class Utils {
@@ -50,25 +48,25 @@ public class Utils {
       builder.append('}');
   }
 
-  public static class ProcessImplcitResult {
+  public static class ProcessImplicitResult {
     public final List<Abstract.Pattern> patterns;
     public final int wrongImplicitPosition;
     public final int numExplicit;
 
-    public ProcessImplcitResult(List<Abstract.Pattern> patterns, int numExplicit) {
+    public ProcessImplicitResult(List<Abstract.Pattern> patterns, int numExplicit) {
       this.patterns = patterns;
       this.wrongImplicitPosition = -1;
       this.numExplicit = numExplicit;
     }
 
-    public ProcessImplcitResult(int wrongImplicitPosition, int numExplicit) {
+    public ProcessImplicitResult(int wrongImplicitPosition, int numExplicit) {
       this.patterns = null;
       this.wrongImplicitPosition = wrongImplicitPosition;
       this.numExplicit = numExplicit;
     }
   }
 
-  public static ProcessImplcitResult processImplicit(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.TypeArgument> arguments) {
+  public static ProcessImplicitResult processImplicit(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.TypeArgument> arguments) {
     ArrayList<Boolean> argIsExplicit = new ArrayList<>();
     for (Abstract.TypeArgument arg : arguments) {
       if (arg instanceof Abstract.TelescopeArgument) {
@@ -93,11 +91,11 @@ public class Utils {
         indexI++;
       }
       if (curPattern.getExplicit() != argIsExplicit.get(indexJ)) {
-        return new ProcessImplcitResult(indexI, numExplicit);
+        return new ProcessImplicitResult(indexI, numExplicit);
       }
       result.add(curPattern);
     }
-    return new ProcessImplcitResult(result, numExplicit);
+    return new ProcessImplicitResult(result, numExplicit);
   }
 
   public static class PatternMatchResult {
@@ -132,35 +130,104 @@ public class Utils {
     return new PatternMatchResult(result);
   }
 
-  public static class PatternToArgumentConverter {
-    private int myIndex;
+ private static class PatternExpander {
+   private int myIndex;
 
-    public PatternToArgumentConverter(int startIndex) {
-      myIndex = startIndex;
+   private static class Result {
+     private final ArgumentExpression expression;
+     private final List<TypeArgument> args;
+
+     private Result(ArgumentExpression expression, List<TypeArgument> args) {
+       this.expression = expression;
+       this.args = args;
+     }
+   }
+
+   private PatternExpander(int startIndex) {
+     myIndex = startIndex;
+   }
+
+   private Result expandPattern(Pattern pattern, Expression type) {
+     if (pattern instanceof NamePattern) {
+       return new Result(new ArgumentExpression(Index(myIndex--), pattern.getExplicit(), !pattern.getExplicit()),
+           Collections.singletonList(TypeArg(pattern.getExplicit(), type)));
+     } else if (pattern instanceof ConstructorPattern) {
+       ConstructorPattern constructorPattern = (ConstructorPattern) pattern;
+       List<Expression> parameters = new ArrayList<>();
+       type.getFunction(parameters);
+       Collections.reverse(parameters);
+
+       List<Result> nestedResults = expandPatterns(constructorPattern.getArguments(), getConstructorArguments(constructorPattern, parameters));
+
+       List<TypeArgument> resultArgs = new ArrayList<>();
+       Expression resultExpression = DefCall(null, constructorPattern.getConstructor(), parameters);
+       for (Result res : nestedResults) {
+         resultExpression = Apps(resultExpression, res.expression);
+         resultArgs.addAll(res.args);
+       }
+
+       return new Result(new ArgumentExpression(resultExpression, pattern.getExplicit(), !pattern.getExplicit()), resultArgs);
+     } else {
+       throw new IllegalStateException();
+     }
+   }
+
+   private List<Result> expandPatterns(List<Pattern> patterns, List<TypeArgument> args) {
+     List<Result> results = new ArrayList<>();
+
+     List<Expression> substituteExpressions = new ArrayList<>();
+     for (int i = 0; i < patterns.size(); i++) {
+       Result nestedResult = expandPattern(patterns.get(i), args.get(i).getType().subst(substituteExpressions, 0));
+       results.add(nestedResult);
+       substituteExpressions.add(nestedResult.expression.getExpression());
+     }
+     return results;
+   }
+  }
+
+  private static List<TypeArgument> getConstructorArguments(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters) {
+    List<Expression> matchedParameters;
+    if (constructorPattern.getConstructor().getPatterns() != null) {
+      matchedParameters = patternMatchAll(constructorPattern.getConstructor().getPatterns(), dataTypeParameters, new ArrayList<Binding>()).expressions;
+    } else {
+      matchedParameters = dataTypeParameters;
+    }
+    Collections.reverse(matchedParameters);
+
+    List<TypeArgument> constructorArguments = new ArrayList<>();
+    splitArguments(constructorPattern.getConstructor().getType().subst(matchedParameters, 0), constructorArguments);
+    return constructorArguments;
+  }
+
+  public static List<TypeArgument> expandArgs(List<Pattern> pattenrs, List<TypeArgument> args) {
+    List<TypeArgument> argsSplitted = new ArrayList<>();
+    splitArguments(args, argsSplitted);
+
+    List<PatternExpander.Result> results = new PatternExpander(0).expandPatterns(pattenrs, argsSplitted);
+
+    List<TypeArgument> result = new ArrayList<>();
+    for (PatternExpander.Result nestedResult : results) {
+      result.addAll(nestedResult.args);
+    }
+    return result;
+  }
+
+  public static List<ArgumentExpression> patternsToExpessions(List<Pattern> patterns, List<TypeArgument> args, int startIndex) {
+    List<TypeArgument> argsSplitted = new ArrayList<>();
+    splitArguments(args, argsSplitted);
+
+    List<String> names = new ArrayList<>();
+    for (Pattern pattern : patterns) {
+      collectPatternNames(pattern, names);
     }
 
-    public ArgumentExpression patternToArgument(Pattern pattern, Expression type) {
-      if (pattern instanceof NamePattern) {
-        return new ArgumentExpression(Index(myIndex--), pattern.getExplicit(), !pattern.getExplicit());
-      } else if (pattern instanceof ConstructorPattern) {
-        ConstructorPattern constructorPattern = (ConstructorPattern) pattern;
-        List<Expression> parameters = new ArrayList<>();
-        type.getFunction(parameters);
-        Collections.reverse(parameters);
-        List<TypeArgument> constructorArguments = new ArrayList<>();
-        splitArguments(constructorPattern.getConstructor().getType(), constructorArguments);
-        List<Expression> substituteExpressions = new ArrayList<>();
-        Expression result = DefCall(constructorPattern.getConstructor());
-        for (int i = 0; i < constructorPattern.getArguments().size(); i++) {
-          Expression nestedType = constructorArguments.get(i).getType().subst(parameters, i).subst(substituteExpressions, 0);
-          ArgumentExpression nestedResult = patternToArgument(constructorPattern.getArguments().get(i), nestedType);
-          result = Apps(result, nestedResult.getExpression());
-          substituteExpressions.add(nestedResult.getExpression());
-        }
-        return new ArgumentExpression(result, pattern.getExplicit(), !pattern.getExplicit());
-      } else {
-        throw new IllegalStateException();
-      }
+    List<PatternExpander.Result> results = new PatternExpander(startIndex + names.size() - 1).expandPatterns(patterns, argsSplitted);
+
+    List<ArgumentExpression> result = new ArrayList<>();
+    for (PatternExpander.Result nestedResult : results) {
+      result.add(nestedResult.expression);
     }
+
+    return result;
   }
 }

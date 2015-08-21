@@ -8,15 +8,13 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternToArgumentConverter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.collectPatternNames;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternsToExpessions;
 
 public class Constructor extends Definition implements Abstract.Constructor {
   private List<TypeArgument> myArguments;
@@ -94,13 +92,9 @@ public class Constructor extends Definition implements Abstract.Constructor {
           }
         }
       } else {
-        List<String> names = new ArrayList<>();
-        for (Pattern pattern : myPatterns) {
-          collectPatternNames(pattern, names);
-        }
-        PatternToArgumentConverter converter = new PatternToArgumentConverter(numberOfVars + names.size() - 1);
-        for (int i = 0; i < myPatterns.size(); i++) {
-          resultType = Apps(resultType, converter.patternToArgument(myPatterns.get(i), getDataType().getParameters().get(i).getType()));
+        List<ArgumentExpression> args = patternsToExpessions(myPatterns, getDataType().getParameters(), numberOfVars);
+        for (ArgumentExpression arg : args) {
+          resultType = Apps(resultType, arg);
         }
       }
     }

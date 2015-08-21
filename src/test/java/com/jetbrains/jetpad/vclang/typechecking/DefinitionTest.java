@@ -210,12 +210,6 @@ public class DefinitionTest {
   }
 
   @Test
-  public void patternData() {
-    parseDefs(dummyModuleLoader,
-        "\\data C | _ => c1 | c2 \\data D (c : C) | D (c1) => d1  | D (c2) => d2");
-  }
-
-  @Test
   public void patternVector() {
     parseDefs(dummyModuleLoader,
         "\\data Vec (A : \\Type0) (n : Nat) | Vec _ (zero) => Nil | Vec _ (suc m) => Cons A (Vec A m)");
@@ -224,19 +218,13 @@ public class DefinitionTest {
   @Test
   public void patternDepParams() {
     parseDefs(dummyModuleLoader,
-        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {(zero)} (d) => c");
+        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {(zero)} (d) => c (p = p)");
   }
 
   @Test
   public void patternDepParamsError() {
     parseDefs(dummyModuleLoader,
-        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C (d) => c", 1);
-  }
-
-  @Test
-  public void patternConstructorDepArg() {
-    ClassDefinition def = parseDefs(dummyModuleLoader,
-        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {(zero)} (d) => c (p = p)");
+        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C (d) => c (p = p)", 1);
   }
 
   @Test
@@ -256,7 +244,7 @@ public class DefinitionTest {
 
   @Test
   public void patternConstructorCall() {
-    parseDefs(dummyModuleLoader, "\\data D {n : Nat} (n = n) | D {zero} p => d \\function test => d");
+    parseDefs(dummyModuleLoader, "\\data D {n : Nat} | D {(zero)} => d \\function test => d");
   }
 
   @Test
@@ -286,8 +274,44 @@ public class DefinitionTest {
 
   @Test
   public void patternMultipleSubst() {
-    parseDefs(dummyModuleLoader, "\\data D (n : Nat) (m : Nat) | D (suc n) (zero) => d " +
-        "\\data C | _ => c (n m : Nat) (D m n) " +
-        "\\data E C | E (c (suc (zero)) (zero) (d)) => e");
+    parseDefs(dummyModuleLoader, "\\data D (n : Nat) (m : Nat) | _ => d (n = n) (m = m)" +
+        "\\data C | _ => c (n m : Nat) (D n m) " +
+        "\\data E C | E (c (zero) (suc (zero)) (d _ _)) => e" +
+        "\\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
+  }
+
+  @Test
+  public void patternConstructorDefCall() {
+    parseDefs(dummyModuleLoader, "\\data D (n : Nat) (m : Nat) | D (suc n) (suc m) => d (n = n) (m = m)" +
+            "\\function test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
+  }
+
+  @Test
+  public void patternConstructorDefCallError() {
+    parseDefs(dummyModuleLoader, "\\data D (n : Nat) | D (zero) => d \\function test (n : Nat) : D n => d", 1);
+  }
+
+  @Test
+  public void patternSubstTest() {
+    parseDefs(dummyModuleLoader, "\\data E (n : Nat) | E (zero) => e" +
+        "\\data D (n : Nat) (E n) | D (zero) (e) => d" +
+        "\\function test => d");
+  }
+
+  @Test
+  public void patternExpandArgsTest() {
+    parseDefs(dummyModuleLoader,
+        "\\data D (n : Nat) | _ => d (n = n) " +
+        "\\data C (D 1) | C (d p) => c" +
+        "\\function test : C (d (path (\\lam _ => 1))) => c");
+  }
+
+  @Test
+  public void patternExperiments() {
+    parseDefs(dummyModuleLoader,
+        "\\data E (x : 0 = 0) | _ => e" +
+        "\\data C (n : Nat) | C (suc n) => c (n = n)" +
+        "\\data D ((\\lam (x : \\Type0) => x) (C 1)) | D (c p) => x (E p)" +
+        "\\function test => x (E (path (\\lam _ => 0))).e");
   }
 }
