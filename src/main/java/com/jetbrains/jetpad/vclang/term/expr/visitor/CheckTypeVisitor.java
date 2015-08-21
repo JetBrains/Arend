@@ -1118,13 +1118,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
       Expression ftype = type.getFunction(parameters);
       Collections.reverse(parameters);
-
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         error = new TypeMismatchError(myParent, "a data type", type, expr, getNames(myLocalContext));
         expr.setWellTyped(Error(null, error));
         return null;
       }
-
       DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
 
       Constructor constructor = null;
@@ -1141,7 +1139,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return null;
       }
 
-      assert !constructor.hasErrors();
       if (constructor.hasErrors()) {
         error = new HasErrors(myParent, constructor.getName(), pattern);
         myModuleLoader.getTypeCheckingErrors().add(error);

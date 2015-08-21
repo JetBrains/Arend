@@ -14,7 +14,7 @@ import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternsToExpessions;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternsToExpressions;
 
 public class Constructor extends Definition implements Abstract.Constructor {
   private List<TypeArgument> myArguments;
@@ -92,7 +92,7 @@ public class Constructor extends Definition implements Abstract.Constructor {
           }
         }
       } else {
-        List<ArgumentExpression> args = patternsToExpessions(myPatterns, getDataType().getParameters(), numberOfVars);
+        List<ArgumentExpression> args = patternsToExpressions(this.getPatterns(), this.getDataType().getParameters(),numberOfVars);
         for (ArgumentExpression arg : args) {
           resultType = Apps(resultType, arg);
         }

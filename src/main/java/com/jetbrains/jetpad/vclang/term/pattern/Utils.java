@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,8 +39,8 @@ public class Utils {
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       builder.append('(');
       builder.append(((Abstract.ConstructorPattern) pattern).getConstructorName());
-      builder.append(' ');
       for (Abstract.Pattern p : ((Abstract.ConstructorPattern) pattern).getArguments()) {
+        builder.append(' ');
         prettyPrintPattern(p, builder, names);
       }
       builder.append(')');
@@ -149,12 +150,13 @@ public class Utils {
 
    private Result expandPattern(Pattern pattern, Expression type) {
      if (pattern instanceof NamePattern) {
-       return new Result(new ArgumentExpression(Index(myIndex--), pattern.getExplicit(), !pattern.getExplicit()),
+       return new Result(
+           new ArgumentExpression(Index(myIndex--), pattern.getExplicit(), !pattern.getExplicit()),
            Collections.singletonList(TypeArg(pattern.getExplicit(), type)));
      } else if (pattern instanceof ConstructorPattern) {
        ConstructorPattern constructorPattern = (ConstructorPattern) pattern;
        List<Expression> parameters = new ArrayList<>();
-       type.getFunction(parameters);
+       type.normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
        Collections.reverse(parameters);
 
        List<Result> nestedResults = expandPatterns(constructorPattern.getArguments(), getConstructorArguments(constructorPattern, parameters));
@@ -173,6 +175,9 @@ public class Utils {
    }
 
    private List<Result> expandPatterns(List<Pattern> patterns, List<TypeArgument> args) {
+     List<TypeArgument> argsSplitted = new ArrayList<>();
+     splitArguments(args, argsSplitted);
+
      List<Result> results = new ArrayList<>();
 
      List<Expression> substituteExpressions = new ArrayList<>();
@@ -199,11 +204,8 @@ public class Utils {
     return constructorArguments;
   }
 
-  public static List<TypeArgument> expandArgs(List<Pattern> pattenrs, List<TypeArgument> args) {
-    List<TypeArgument> argsSplitted = new ArrayList<>();
-    splitArguments(args, argsSplitted);
-
-    List<PatternExpander.Result> results = new PatternExpander(0).expandPatterns(pattenrs, argsSplitted);
+  public static List<TypeArgument> expandArgs(List<Pattern> patterns, List<TypeArgument> args) {
+   List<PatternExpander.Result> results = new PatternExpander(0).expandPatterns(patterns, args);
 
     List<TypeArgument> result = new ArrayList<>();
     for (PatternExpander.Result nestedResult : results) {
@@ -212,16 +214,13 @@ public class Utils {
     return result;
   }
 
-  public static List<ArgumentExpression> patternsToExpessions(List<Pattern> patterns, List<TypeArgument> args, int startIndex) {
-    List<TypeArgument> argsSplitted = new ArrayList<>();
-    splitArguments(args, argsSplitted);
-
+  public static List<ArgumentExpression> patternsToExpressions(List<Pattern> patterns, List<TypeArgument> args, int startIndex) {
     List<String> names = new ArrayList<>();
     for (Pattern pattern : patterns) {
       collectPatternNames(pattern, names);
     }
 
-    List<PatternExpander.Result> results = new PatternExpander(startIndex + names.size() - 1).expandPatterns(patterns, argsSplitted);
+    List<PatternExpander.Result> results = new PatternExpander(startIndex + names.size() - 1).expandPatterns(patterns, args);
 
     List<ArgumentExpression> result = new ArrayList<>();
     for (PatternExpander.Result nestedResult : results) {

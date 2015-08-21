@@ -307,7 +307,7 @@ public class DefinitionTest {
   }
 
   @Test
-  public void patternExperiments() {
+  public void patternNormalizeTest() {
     parseDefs(dummyModuleLoader,
         "\\data E (x : 0 = 0) | _ => e" +
         "\\data C (n : Nat) | C (suc n) => c (n = n)" +
