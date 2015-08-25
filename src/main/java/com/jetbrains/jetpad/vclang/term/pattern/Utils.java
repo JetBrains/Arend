@@ -7,14 +7,10 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class Utils {
   public static int getNumArguments(Abstract.Pattern pattern) {
@@ -42,6 +38,9 @@ public class Utils {
   }
 
   public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names) {
+    prettyPrintPattern(pattern, builder, names, false);
+  }
+  public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names, boolean topLevel) {
     if (!pattern.getExplicit())
       builder.append('{');
     if (pattern instanceof Abstract.NamePattern) {
@@ -52,13 +51,15 @@ public class Utils {
       }
       names.add(((Abstract.NamePattern) pattern).getName());
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      builder.append('(');
+      if (!topLevel)
+        builder.append('(');
       builder.append(((Abstract.ConstructorPattern) pattern).getConstructorName());
       for (Abstract.Pattern p : ((Abstract.ConstructorPattern) pattern).getArguments()) {
         builder.append(' ');
-        prettyPrintPattern(p, builder, names);
+        prettyPrintPattern(p, builder, names, false);
       }
-      builder.append(')');
+      if (!topLevel)
+        builder.append(')');
     }
     if (!pattern.getExplicit())
       builder.append('}');

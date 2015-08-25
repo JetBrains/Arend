@@ -39,7 +39,7 @@ public class RecursiveTest {
   public void plus() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= \\elim x | (zero) => y | (suc x') => suc (x' + y)");
+    Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => suc (x' + y)");
     assertFalse(definition.hasErrors());
   }
 
@@ -47,7 +47,7 @@ public class RecursiveTest {
   public void doubleRec() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= \\elim x | (zero) => y | (suc x') <= \\elim x' | (zero) => y | (suc x'') => suc x'' + (x'' + y)");
+    Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => suc x'' + (x'' + y)");
     assertFalse(definition.hasErrors());
   }
 
@@ -63,7 +63,7 @@ public class RecursiveTest {
   public void functionError2() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= \\elim x | (zero) => y | (suc x') <= \\elim x' | (zero) => y | (suc x'') => y + y", 1);
+    Definition definition = parseDef(moduleLoader, "\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => y + y", 1);
     assertTrue(definition.hasErrors());
   }
 
@@ -71,7 +71,7 @@ public class RecursiveTest {
   public void functionPartiallyApplied() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    Definition definition = parseDef(moduleLoader, "\\function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \\elim x | (zero) => y | (suc x') => z (foo z x')");
+    Definition definition = parseDef(moduleLoader, "\\function foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' => z (foo z x')");
     assertFalse(definition.hasErrors());
   }
 }

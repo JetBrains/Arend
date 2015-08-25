@@ -206,7 +206,7 @@ public class Utils {
     PrettyPrintVisitor.printIndent(builder, indent);
     builder.append("| ");
     int startIndex = names.size();
-    prettyPrintPattern(clause.getPattern(), builder, names);
+    prettyPrintPattern(clause.getPattern(), builder, names, true);
 
     List<String> newNames = names;
     if (expr.getExpression() instanceof Abstract.IndexExpression) {

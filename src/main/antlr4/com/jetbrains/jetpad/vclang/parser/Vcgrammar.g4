@@ -70,7 +70,7 @@ letClause : ID tele* typeAnnotation? arrow expr;
 
 typeAnnotation : ':' expr;
 
-clause : '|' pattern arrow expr;
+clause : '|' ('_' | name patternx*) arrow expr;
 
 elimCase : '\\elim'                     # elim
          | '\\case'                     # case

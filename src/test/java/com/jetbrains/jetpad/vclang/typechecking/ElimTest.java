@@ -88,16 +88,16 @@ public class ElimTest {
     parseDefs(moduleLoader,
         "\\data D Nat (x y : Nat) | con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
         "\\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
-            "| (con2 _ _ _ _) => Nat -> Nat\n" +
-            "| (con1 _) => Nat\n" +
+            "| con2 _ _ _ _ => Nat -> Nat\n" +
+            "| con1 _ => Nat\n" +
         "\\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
-            "| (con1 s) <= \\elim e\n" +
-              "| (con2 x y z t) => x" +
-              "| (con1 _) => s" +
+            "| con1 s <= \\elim e\n" +
+              "| con2 x y z t => x" +
+              "| con1 _ => s" +
               ";\n" +
-            "| (con2 x y z t) <= \\elim e\n" +
-              "| (con1 s) => x q" +
-              "| (con2 _ y z t) => x");
+            "| con2 x y z t <= \\elim e\n" +
+              "| con1 s => x q" +
+              "| con2 _ y z t => x");
   }
 
   @Test
@@ -106,12 +106,12 @@ public class ElimTest {
     parseDefs(moduleLoader,
         "\\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
         "\\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
-          "| (con1 s) <= \\elim e\n" +
-            "| (con2 _ {y} {z} {t}) => q t" +
-            "| (con1 {z} _) => z" +
+          "| con1 s <= \\elim e\n" +
+            "| con2 _ {y} {z} {t} => q t" +
+            "| con1 {z} _ => z" +
             ";\n" +
-          "| (con2 y) <= \\elim e\n" +
-            "| (con1 s) => y s" +
-            "| (con2 _ {a} {b}) => y (q b)");
+          "| con2 y <= \\elim e\n" +
+            "| con1 s => y s" +
+            "| con2 _ {a} {b} => y (q b)");
   }
 }

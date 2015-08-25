@@ -1067,12 +1067,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<String> oldContext = new ArrayList<>(myContext);
     for (ClauseContext clauseCtx : ctx.clause()) {
-      Concrete.Pattern pattern = null;
-      if (clauseCtx.pattern() != null) {
-        pattern = (Concrete.Pattern) visit(clauseCtx.pattern());
-        if (pattern == null)
-          return null;
+      Concrete.Pattern pattern;
+      if (clauseCtx.name() != null) {
+        pattern = new Concrete.ConstructorPattern(tokenPosition(clauseCtx.name().start), getName(clauseCtx.name()), visitPatterns(clauseCtx.patternx()));
+      } else {
+        pattern = new Concrete.NamePattern(tokenPosition(clauseCtx.start), null);
       }
+
       applyPatternToContext(pattern, ctx.elimCase() instanceof  ElimContext  ? elimIndex : myContext.size());
       Definition.Arrow arrow = clauseCtx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
 

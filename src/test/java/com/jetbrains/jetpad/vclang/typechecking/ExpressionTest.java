@@ -229,14 +229,14 @@ public class ExpressionTest {
   @Test
   public void caseTranslation() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    FunctionDefinition def = (FunctionDefinition) parseDef(moduleLoader, "\\function test : Nat => \\case 1 | (zero) => 0 | (suc y) => y");
-    FunctionDefinition def2 = (FunctionDefinition) parseDef(moduleLoader, "\\function test => \\let | caseF (caseA : Nat) : Nat <= \\elim caseA | (zero) => 0 | (suc y) => y \\in caseF 1");
+    FunctionDefinition def = (FunctionDefinition) parseDef(moduleLoader, "\\function test : Nat => \\case 1 | zero => 0 | suc y => y");
+    FunctionDefinition def2 = (FunctionDefinition) parseDef(moduleLoader, "\\function test => \\let | caseF (caseA : Nat) : Nat <= \\elim caseA | zero => 0 | suc y => y \\in caseF 1");
     assertEquals(def.getTerm(), def2.getTerm());
   }
 
   @Test
   public void caseNoExpectedError() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseDef(moduleLoader, "\\function test => \\case 1 | (zero) => 0 | (suc y) => y", 1);
+    parseDef(moduleLoader, "\\function test => \\case 1 | zero => 0 | suc y => y", 1);
   }
 }
