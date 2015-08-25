@@ -29,7 +29,7 @@ public class GetTypeTest {
   public void constructorTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    ClassDefinition def = parseDefs(moduleLoader, "\\data List (A : \\Type0) | _ => nil | cons A (List A) \\function test => cons 0 nil");
+    ClassDefinition def = parseDefs(moduleLoader, "\\data List (A : \\Type0) | nil | cons A (List A) \\function test => cons 0 nil");
     assertEquals(Apps(DefCall(def.getField("List")), Nat()), def.getField("test").getType());
     assertEquals(Apps(DefCall(def.getField("List")), Nat()), ((FunctionDefinition) def.getField("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
@@ -38,7 +38,7 @@ public class GetTypeTest {
   public void nilConstructorTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    ClassDefinition def = parseDefs(moduleLoader, "\\data List (A : \\Type0) | _ => nil | cons A (List A) \\function test => (List Nat).nil");
+    ClassDefinition def = parseDefs(moduleLoader, "\\data List (A : \\Type0) | nil | cons A (List A) \\function test => (List Nat).nil");
     assertEquals(Apps(DefCall(def.getField("List")), Nat()), def.getField("test").getType());
     assertEquals(Apps(DefCall(def.getField("List")), Nat()), ((FunctionDefinition) def.getField("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
@@ -123,7 +123,7 @@ public class GetTypeTest {
   @Test
   public void patternConstructor3() {
     ClassDefinition def = parseDefs(dummyModuleLoader,
-        "\\data D | _ => d \\Type0" +
+        "\\data D | d \\Type0" +
             "\\data C D | C (d A) => c A");
     DataDefinition d = (DataDefinition) def.getField("D");
     DataDefinition c = (DataDefinition) def.getField("C");
@@ -133,9 +133,8 @@ public class GetTypeTest {
   @Test
   public void patternConstructorDep() {
     ClassDefinition def = parseDefs(dummyModuleLoader,
-        "\\data Box (n : Nat) | _ => box" +
+        "\\data Box (n : Nat) | box" +
             "\\data D (n : Nat) (Box n) | D (zero) _ => d");
-    DataDefinition box = (DataDefinition) def.getField("Box");
     DataDefinition d = (DataDefinition) def.getField("D");
     assertEquals(Apps(DefCall(d), Zero(), Index(0)), d.getStaticField("d").getType());
   }

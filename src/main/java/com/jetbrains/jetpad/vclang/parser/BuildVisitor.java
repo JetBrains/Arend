@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
@@ -481,22 +482,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<String> oldContext = new ArrayList<>(myContext);
     List<Concrete.Pattern> patterns = null;
 
-    if (ctx.name() != null) {
-      Name dataDefName = getName(ctx.name());
+    if (ctx instanceof WithPatternsContext) {
+      WithPatternsContext wpCtx = (WithPatternsContext) ctx;
+      Name dataDefName = getName(wpCtx.name());
       if (!def.getName().equals(dataDefName)) {
         myModuleLoader.getErrors().add(new ParserError(myModule, dataDefName.position, "Expected a data type name: " + def.getName()));
         return;
       }
 
-      patterns = visitPatterns(ctx.patternx());
+      patterns = visitPatterns(wpCtx.patternx());
 
       ProcessImplicitResult result = processImplicit(patterns, def.getParameters());
       if (result.patterns == null) {
         if (result.wrongImplicitPosition < patterns.size()) {
           myModuleLoader.getErrors().add(new ParserError(myModule,
-              tokenPosition(ctx.patternx(result.wrongImplicitPosition).start), "Unexpected implicit argument"));
+              tokenPosition(wpCtx.patternx(result.wrongImplicitPosition).start), "Unexpected implicit argument"));
         } else {
-          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(ctx.name().start), "Too few explicit arguments, expected: " + result.numExplicit));
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(wpCtx.name().start), "Too few explicit arguments, expected: " + result.numExplicit));
         }
         return;
       }
@@ -505,7 +507,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    for (ConstructorContext conCtx : ctx.constructor()) {
+    List<ConstructorContext> constructorCtxs = ctx instanceof WithPatternsContext ?
+        ((WithPatternsContext) ctx).constructor() : Collections.singletonList(((NoPatternsContext) ctx).constructor());
+
+    for (ConstructorContext conCtx : constructorCtxs) {
       Name conName = getName(conCtx.name());
       if (conName == null) {
         continue;

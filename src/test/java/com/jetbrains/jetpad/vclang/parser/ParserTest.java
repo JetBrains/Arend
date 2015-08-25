@@ -196,7 +196,7 @@ public class ParserTest {
 
   @Test
   public void whereTest() {
-    parseDefs(dummyModuleLoader, "\\function f (x : Nat) => B.b (a x) \\where \\function a (x : Nat) => x \\data D | _ => D1 | D2 \\class B { \\data C | _ => cr \\function b (x : Nat) => D1 }");
+    parseDefs(dummyModuleLoader, "\\function f (x : Nat) => B.b (a x) \\where \\function a (x : Nat) => x \\data D | D1 | D2 \\class B { \\data C | cr \\function b (x : Nat) => D1 }");
   }
 
   @Test
@@ -226,7 +226,7 @@ public class ParserTest {
 
   @Test
   public void whereNested() {
-    parseDefs(dummyModuleLoader, "\\function f => x \\where \\data B | _ => b \\function x => a \\where \\function a => b");
+    parseDefs(dummyModuleLoader, "\\function f => x \\where \\data B | b \\function x => a \\where \\function a => b");
   }
 
   @Test
@@ -236,7 +236,7 @@ public class ParserTest {
 
   @Test
   public void whereInSignature() {
-    parseDefs(dummyModuleLoader, "\\function f : D => d \\where \\data D | _ => d");
+    parseDefs(dummyModuleLoader, "\\function f : D => d \\where \\data D | d");
   }
 
   @Test

@@ -249,7 +249,7 @@ public class DefinitionTest {
 
   @Test
   public void patternAbstract() {
-    parseDefs(dummyModuleLoader, "\\data Wheel | _ => wheel \\data VehicleType | _ => bikeType | carType " +
+    parseDefs(dummyModuleLoader, "\\data Wheel | wheel \\data VehicleType | bikeType | carType " +
         "\\data Vehicle (t : VehicleType) " +
         "| Vehicle (carType) => car Wheel Wheel Wheel Wheel" +
         "| Vehicle (bikeType) => bike Wheel Wheel");
@@ -274,8 +274,8 @@ public class DefinitionTest {
 
   @Test
   public void patternMultipleSubst() {
-    parseDefs(dummyModuleLoader, "\\data D (n : Nat) (m : Nat) | _ => d (n = n) (m = m)" +
-        "\\data C | _ => c (n m : Nat) (D n m) " +
+    parseDefs(dummyModuleLoader, "\\data D (n : Nat) (m : Nat) | d (n = n) (m = m)" +
+        "\\data C | c (n m : Nat) (D n m) " +
         "\\data E C | E (c (zero) (suc (zero)) (d _ _)) => e" +
         "\\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
   }
@@ -301,7 +301,7 @@ public class DefinitionTest {
   @Test
   public void patternExpandArgsTest() {
     parseDefs(dummyModuleLoader,
-        "\\data D (n : Nat) | _ => d (n = n) " +
+        "\\data D (n : Nat) | d (n = n) " +
         "\\data C (D 1) | C (d p) => c" +
         "\\function test : C (d (path (\\lam _ => 1))) => c");
   }
@@ -309,7 +309,7 @@ public class DefinitionTest {
   @Test
   public void patternNormalizeTest() {
     parseDefs(dummyModuleLoader,
-        "\\data E (x : 0 = 0) | _ => e" +
+        "\\data E (x : 0 = 0) | e" +
         "\\data C (n : Nat) | C (suc n) => c (n = n)" +
         "\\data D ((\\lam (x : \\Type0) => x) (C 1)) | D (c p) => x (E p)" +
         "\\function test => x (E (path (\\lam _ => 0))).e");

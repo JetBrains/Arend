@@ -223,7 +223,7 @@ public class RecordsTest {
   public void recordConstructorsTest() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    ClassDefinition classDef = parseDefs(moduleLoader, "\\class A { \\function x : Nat \\data Foo | _ => foo (x = 0) \\function y : foo = foo } \\function test (p : A) => p.y");
+    ClassDefinition classDef = parseDefs(moduleLoader, "\\class A { \\function x : Nat \\data Foo | foo (x = 0) \\function y : foo = foo } \\function test (p : A) => p.y");
     Expression resultType = ((FunctionDefinition) classDef.getPrivateField("test")).getResultType();
     List<Expression> arguments = new ArrayList<>(3);
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
@@ -264,7 +264,7 @@ public class RecordsTest {
     ClassDefinition classDef = parseDefs(moduleLoader,
       "\\class A {\n" +
         "\\function x : Nat\n" +
-        "\\data Foo (p : x = x) | _ => foo (p = p)\n" +
+        "\\data Foo (p : x = x) | foo (p = p)\n" +
         "\\function y : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))\n" +
       "}\n" +
       "\\function test (q : A) => q.y");
