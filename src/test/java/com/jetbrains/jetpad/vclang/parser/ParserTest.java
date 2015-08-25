@@ -6,10 +6,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
@@ -97,19 +94,17 @@ public class ParserTest {
   @Test
   public void parserDef() {
     ClassDefinition result = parseDefs(dummyModuleLoader,
-            "\\function x : Nat => zero\n" +
-                    "\\function y : Nat => x");
-    assertNotNull(result.getStaticFields());
-    assertEquals(2, result.getStaticFields().size());
+      "\\static \\function x : Nat => zero\n" +
+      "\\static \\function y : Nat => x");
+    assertEquals(2, result.getNamespace().getMembers().size());
   }
 
   @Test
   public void parserDefType() {
     ClassDefinition result = parseDefs(dummyModuleLoader,
-        "\\function x : \\Type0 => Nat\n" +
-            "\\function y : x => zero");
-    assertNotNull(result.getStaticFields());
-    assertEquals(2, result.getStaticFields().size());
+      "\\static \\function x : \\Type0 => Nat\n" +
+      "\\static \\function y : x => zero");
+    assertEquals(2, result.getNamespace().getMembers().size());
   }
 
   @Test
@@ -146,13 +141,13 @@ public class ParserTest {
   public void parserInfix() {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
-    Definition plus = new FunctionDefinition(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
-    Definition mul = new FunctionDefinition(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition plus = new FunctionDefinition(new Namespace(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition(new Namespace(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), arguments, Nat(), Definition.Arrow.LEFT, null);
 
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.rootModule().addField(plus, null);
-    moduleLoader.rootModule().addField(mul, null);
-    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
+    moduleLoader.getRoot().addMember(plus);
+    moduleLoader.getRoot().addMember(mul);
+    CheckTypeVisitor.Result result = parseExpr(moduleLoader, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)").accept(new CheckTypeVisitor(null, null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
@@ -162,30 +157,30 @@ public class ParserTest {
   @Test
   public void parserInfixDef() {
     ClassDefinition result = parseDefs(dummyModuleLoader,
-        "\\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
-            "\\function (*) : Nat -> Nat => \\lam x => x + zero");
-    assertNotNull(result.getStaticFields());
-    assertEquals(2, result.getStaticFields().size());
+      "\\static \\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
+      "\\static \\function (*) : Nat -> Nat => \\lam x => x + zero");
+    assertEquals(2, result.getNamespace().getMembers().size());
   }
 
   @Test
   public void parserInfixError() {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
-    Definition plus = new FunctionDefinition(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
-    Definition mul = new FunctionDefinition(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition plus = new FunctionDefinition(new Namespace(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition(new Namespace(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null), new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
 
     ModuleLoader moduleLoader = new ModuleLoader();
-    moduleLoader.rootModule().addField(plus, null);
-    moduleLoader.rootModule().addField(mul, null);
-    parseExpr(moduleLoader, "11 + 2 * 3", 1).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), null, moduleLoader, CheckTypeVisitor.Side.RHS), null);
+    moduleLoader.getRoot().addMember(plus);
+    moduleLoader.getRoot().addMember(mul);
+    parseExpr(moduleLoader, "11 + 2 * 3", 1).accept(new CheckTypeVisitor(null, null, new ArrayList<Binding>(), moduleLoader, CheckTypeVisitor.Side.RHS), null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
   }
 
   @Test
   public void parserError() {
     String text = "A { \\function f (x : Nat) <= elim x | zero => zero | suc x' => zero }";
-    new BuildVisitor(new ClassDefinition("test", dummyModuleLoader.rootModule()), dummyModuleLoader, false).visitExpr(parse(dummyModuleLoader, text).expr());
+    Namespace namespace = dummyModuleLoader.getRoot().getChild(new Utils.Name("test"));
+    new BuildVisitor(namespace, new Namespace(null, null), dummyModuleLoader).visitExpr(parse(dummyModuleLoader, text).expr());
     assertTrue(dummyModuleLoader.getErrors().size() > 0);
   }
 
@@ -196,61 +191,98 @@ public class ParserTest {
 
   @Test
   public void whereTest() {
-    parseDefs(dummyModuleLoader, "\\function f (x : Nat) => B.b (a x) \\where \\function a (x : Nat) => x \\data D | D1 | D2 \\class B { \\data C | cr \\function b (x : Nat) => D1 }");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f (x : Nat) => B.b (a x) \\where\n" +
+          "\\static \\function a (x : Nat) => x\n" +
+          "\\static \\data D | D1 | D2\n" +
+          "\\static \\class B { \\static \\data C | cr \\static \\function b (x : Nat) => D1 }");
   }
 
   @Test
   public void whereTestDefCmd() {
-    parseDefs(dummyModuleLoader, "\\function f (x : Nat) => a \\where \\class A { \\function a => 0 } \\open A");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f (x : Nat) => a \\where\n" +
+          "\\static \\class A { \\static \\function a => 0 }\n" +
+          "\\open A");
   }
 
   @Test
   public void whereError() {
-    parseDefs(dummyModuleLoader, "\\function f (x : Nat) => x \\where \\function b => x", 1, 0);
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f (x : Nat) => x \\where\n" +
+          "\\static \\function b => x", 1, 0);
   }
 
   @Test
   public void whereClosedError() {
-    parseDefs(dummyModuleLoader, "\\function f => x \\where \\class A { \\function x => 0 } \\open A \\close A", 1, 0);
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => x \\where\n" +
+          "\\static \\class A { \\static \\function x => 0 }\n" +
+          "\\open A\n" +
+          "\\close A", 1, 0);
   }
 
   @Test
   public void whereOpenFunction() {
-    parseDefs(dummyModuleLoader, "\\function f => x \\where \\function b => 0 \\where \\function x => 0; \\open b(x)");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => x \\where\n" +
+          "\\static \\function b => 0 \\where\n" +
+            "\\static \\function x => 0;\n" +
+          "\\open b(x)");
   }
 
   @Test
   public void whereNoOpenFunctionError() {
-    parseDefs(dummyModuleLoader, "\\function f => x \\where \\function b => 0 \\where \\function x => 0;", 1, 0);
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => x \\where\n" +
+          "\\static \\function b => 0 \\where\n" +
+            "\\static \\function x => 0;", 1, 0);
   }
 
   @Test
   public void whereNested() {
-    parseDefs(dummyModuleLoader, "\\function f => x \\where \\data B | b \\function x => a \\where \\function a => b");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => x \\where\n" +
+          "\\static \\data B | b\n" +
+          "\\static \\function x => a \\where\n" +
+            "\\static \\function a => b");
   }
 
   @Test
   public void whereOuterScope() {
-    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\function g => 0 \\function h => g");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => 0 \\where\n" +
+          "\\static \\function g => 0\n" +
+          "\\static \\function h => g");
   }
 
   @Test
   public void whereInSignature() {
-    parseDefs(dummyModuleLoader, "\\function f : D => d \\where \\data D | d");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f : D => d \\where\n" +
+          "\\static \\data D | d");
   }
 
   @Test
   public void whereAccessOuter() {
-    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\function x => 0; \\function g => f.x");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => 0 \\where\n" +
+          "\\static \\function x => 0;\n" +
+        "\\static \\function g => f.x");
   }
 
   @Test
   public void whereNonStaticOpen() {
-    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\function x => 0 \\function y => x; \\function g => 0 \\where \\open f(y)");
+    parseDefs(dummyModuleLoader,
+        "\\static \\function f => 0 \\where\n" +
+          "\\static \\function x => 0\n" +
+          "\\static \\function y => x;\n" +
+        "\\static \\function g => 0 \\where\n" +
+          "\\open f(y)");
   }
 
   @Test
   public void whereAbstractError() {
-    parseDefs(dummyModuleLoader, "\\function f => 0 \\where \\function x : Nat", 1, 0);
+    parseDefs(dummyModuleLoader, "\\static \\function f => 0 \\where \\function x : Nat", 1, 0);
   }
 }

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -17,11 +17,11 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
-  private final Definition myParent;
+  private final Namespace myNamespace;
   private Expression myExpression;
 
-  public ReplaceDefCallVisitor(Definition parent, Expression expression) {
-    myParent = parent;
+  public ReplaceDefCallVisitor(Namespace namespace, Expression expression) {
+    myNamespace = namespace;
     myExpression = expression;
   }
 
@@ -36,7 +36,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
     if (expr.getExpression() != null) {
       expr1 = expr.getExpression().accept(this);
     } else {
-      expr1 = expr.getDefinition().getParent().isDescendantOf(myParent) ? myExpression : null;
+      expr1 = expr.getDefinition().getParent() == myNamespace ? myExpression : null;
     }
 
     List<Expression> parameters = expr.getParameters() == null ? null : new ArrayList<Expression>(expr.getParameters().size());
@@ -174,7 +174,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
       Expression resultType = entry.getValue().getResultType() == null ? null : entry.getValue().getResultType().accept(this);
       Expression term = entry.getValue().getTerm() == null ? null : entry.getValue().getTerm().accept(this);
-      OverriddenDefinition definition = new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), arguments, resultType, entry.getValue().getArrow(), term, entry.getValue().getOverriddenFunction());
+      OverriddenDefinition definition = new OverriddenDefinition(entry.getValue().getNamespace(), entry.getValue().getPrecedence(), arguments, resultType, entry.getValue().getArrow(), term, entry.getValue().getOverriddenFunction());
       definitions.put(entry.getKey(), definition);
     }
     return ClassExt(expr.getBaseClass(), definitions, expr.getUniverse());

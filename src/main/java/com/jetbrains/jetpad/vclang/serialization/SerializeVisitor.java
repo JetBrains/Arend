@@ -55,7 +55,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   @Override
   public Void visitDefCall(DefCallExpression expr) {
     myStream.write(2);
-    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition());
+    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition(), false);
     try {
       myDataStream.writeBoolean(expr.getExpression() != null);
       if (expr.getExpression() != null) {
@@ -191,9 +191,10 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
       myDataStream.writeBoolean(pattern instanceof NamePattern);
       if (pattern instanceof NamePattern) {
         myDataStream.writeBoolean(((NamePattern) pattern).getName() != null);
-        myDataStream.writeUTF(((NamePattern) pattern).getName());
+        if (((NamePattern) pattern).getName() != null)
+          myDataStream.writeUTF(((NamePattern) pattern).getName());
       } else if (pattern instanceof ConstructorPattern) {
-        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(((ConstructorPattern) pattern).getConstructor()));
+        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(((ConstructorPattern) pattern).getConstructor(), false));
         myDataStream.writeInt(((ConstructorPattern) pattern).getArguments().size());
         for (Pattern nestedPattern : ((ConstructorPattern) pattern).getArguments()) {
           visitPattern(nestedPattern);
@@ -230,10 +231,10 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitClassExt(ClassExtExpression expr) {
     myStream.write(15);
     try {
-      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getBaseClass()));
+      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getBaseClass(), true));
       myDataStream.writeInt(expr.getDefinitionsMap().size());
       for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey()));
+        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey(), true));
         myErrors += ModuleSerialization.serializeDefinition(this, entry.getValue());
       }
       ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());

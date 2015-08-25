@@ -1,22 +1,39 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DefinitionsIndices {
-  final private Map<Definition, Integer> myDefinitions = new HashMap<>();
-  final private List<Map.Entry<Definition, Integer>> myDefinitionsList = new ArrayList<>();
-  private int myCounter = 0;
+  private static class Entry {
+    NamespaceMember member;
+    int index;
+    boolean isNew;
 
-  public int getDefinitionIndex(Definition definition) {
+    public Entry(NamespaceMember member, int index, boolean isNew) {
+      this.member = member;
+      this.index = index;
+      this.isNew = isNew;
+    }
+  }
+
+  final private Map<NamespaceMember, Integer> myDefinitions = new HashMap<>();
+  final private List<Entry> myDefinitionsList = new ArrayList<>();
+  private int myCounter = 1;
+
+  public int getDefinitionIndex(NamespaceMember definition, boolean isNew) {
     if (definition == null) return -1;
     Integer index = myDefinitions.get(definition);
     if (index == null) {
-      getDefinitionIndex(definition.getParent());
-      myDefinitionsList.add(new AbstractMap.SimpleEntry<>(definition, myCounter));
+      getDefinitionIndex(definition.getParent(), false);
+      myDefinitionsList.add(new Entry(definition, myCounter, isNew));
       myDefinitions.put(definition, myCounter++);
       return myCounter - 1;
     } else {
@@ -26,12 +43,18 @@ public class DefinitionsIndices {
 
   public void serialize(DataOutputStream stream) throws IOException {
     stream.writeInt(myDefinitionsList.size());
-    for (Map.Entry<Definition, Integer> entry : myDefinitionsList) {
-      stream.writeInt(entry.getValue());
-      if (entry.getValue() != 0) {
-        stream.writeInt(myDefinitions.get(entry.getKey().getParent()));
-        stream.writeUTF(entry.getKey().getName().name);
-        stream.write(ModuleSerialization.getDefinitionCode(entry.getKey()));
+    for (Entry entry : myDefinitionsList) {
+      stream.writeInt(entry.index);
+      if (entry.member.getParent() != null) {
+        stream.writeInt(myDefinitions.get(entry.member.getParent()));
+        stream.writeBoolean(entry.member.getName().fixity == Abstract.Definition.Fixity.PREFIX);
+        stream.writeUTF(entry.member.getName().name);
+        stream.write(ModuleSerialization.getDefinitionCode(entry.member));
+        if (!(entry.member instanceof Namespace)) {
+          stream.writeBoolean(entry.isNew);
+        }
+      } else {
+        stream.writeInt(0);
       }
     }
   }

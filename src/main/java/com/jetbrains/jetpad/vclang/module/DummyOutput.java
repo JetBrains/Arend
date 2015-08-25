@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 
 import java.io.IOException;
 
@@ -21,12 +22,12 @@ public class DummyOutput implements Output {
   }
 
   @Override
-  public int read(ClassDefinition classDefinition) throws IOException {
+  public int read(Namespace namespace, ClassDefinition classDefinition) throws IOException {
     return 0;
   }
 
   @Override
-  public void write(ClassDefinition classDefinition) throws IOException {
+  public void write(Namespace namespace, ClassDefinition classDefinition) throws IOException {
 
   }
 }

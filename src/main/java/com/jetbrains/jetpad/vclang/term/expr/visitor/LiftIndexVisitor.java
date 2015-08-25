@@ -188,7 +188,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
       Expression resultType = entry.getValue().getResultType() == null ? null : entry.getValue().getResultType().liftIndex(from, myOn);
       Expression term = entry.getValue().getTerm() == null ? null : entry.getValue().getTerm().liftIndex(from, myOn);
-      definitions.put(entry.getKey(), new OverriddenDefinition(entry.getValue().getName(), entry.getValue().getParent(), entry.getValue().getPrecedence(), arguments, resultType, entry.getValue().getArrow(), term, entry.getKey()));
+      definitions.put(entry.getKey(), new OverriddenDefinition(entry.getValue().getNamespace(), entry.getValue().getPrecedence(), arguments, resultType, entry.getValue().getArrow(), term, entry.getKey()));
     }
     return ClassExt(expr.getBaseClass(), definitions, expr.getUniverse());
   }

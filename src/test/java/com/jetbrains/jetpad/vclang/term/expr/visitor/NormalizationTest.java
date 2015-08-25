@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
@@ -33,24 +34,24 @@ public class NormalizationTest {
   public NormalizationTest() {
     List<Clause> plusClauses = new ArrayList<>(2);
     ElimExpression plusTerm = Elim(Index(1), plusClauses);
-    plus = new FunctionDefinition(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, plusTerm);
+    plus = new FunctionDefinition(new Namespace(new Utils.Name("+", Abstract.Definition.Fixity.INFIX), null), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, plusTerm);
     plusClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(0), plusTerm));
     plusClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Suc(BinOp(Index(0), plus, Index(1))), plusTerm));
 
     List<Clause> mulClauses = new ArrayList<>(2);
     ElimExpression mulTerm = Elim(Index(1), mulClauses);
-    mul = new FunctionDefinition(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, mulTerm);
+    mul = new FunctionDefinition(new Namespace(new Utils.Name("*", Abstract.Definition.Fixity.INFIX), null), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, mulTerm);
     mulClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Zero(), mulTerm));
     mulClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0))), mulTerm));
 
     List<Clause> facClauses = new ArrayList<>(2);
     ElimExpression facTerm = Elim(Index(0), facClauses);
-    fac = new FunctionDefinition(new Utils.Name("fac"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, facTerm);
+    fac = new FunctionDefinition(new Namespace(new Utils.Name("fac"), null), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, facTerm);
     facClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Suc(Zero()), facTerm)); facClauses.add(new Clause(match(Prelude.SUC, match("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Suc(Index(0)), mul, Apps(DefCall(fac), Index(0))), facTerm));
 
     List<Clause> nelimClauses = new ArrayList<>(2);
     ElimExpression nelimTerm = Elim(Index(0), nelimClauses);
-    nelim = new FunctionDefinition(new Utils.Name("nelim"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
+    nelim = new FunctionDefinition(new Namespace(new Utils.Name("nelim"), null), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
     nelimClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(1), nelimTerm));
     nelimClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(DefCall(nelim), Index(2), Index(1), Index(0))), nelimTerm));
   }

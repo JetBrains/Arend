@@ -1,29 +1,28 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 
 import java.io.File;
 import java.util.Arrays;
 
 public class Module {
-  private final ClassDefinition myParent;
+  private final Namespace myParent;
   private final String myName;
 
-  public Module(ClassDefinition parent, String name) {
+  public Module(Namespace parent, String name) {
     myParent = parent;
     myName = name;
   }
 
-  private File getFile(File dir, Definition def) {
-    return def == null || def.getParent() == null ? dir : new File(getFile(dir, def.getParent()), def.getName().name);
+  private File getFile(File dir, Namespace namespace) {
+    return namespace == null || namespace.getParent() == null ? dir : new File(getFile(dir, namespace.getParent()), namespace.getName().name);
   }
 
   public File getFile(File dir, String ext) {
     return new File(getFile(dir, myParent), myName + ext);
   }
 
-  public ClassDefinition getParent() {
+  public Namespace getParent() {
     return myParent;
   }
 
@@ -36,8 +35,8 @@ public class Module {
     return this == other || other instanceof Module && myParent == ((Module) other).myParent && myName.equals(((Module) other).myName);
   }
 
-  private String toString(Definition def) {
-    return def == null || def.getParent() == null ? "" : toString(def.getParent()) + def.getName() + ".";
+  private String toString(Namespace namespace) {
+    return namespace == null || namespace.getParent() == null ? "" : toString(namespace.getParent()) + namespace.getName().name + ".";
   }
 
   @Override

@@ -2,8 +2,9 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -62,7 +63,10 @@ public class ConsoleMain {
 
     final ModuleLoader moduleLoader = new ModuleLoader();
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
-    moduleLoader.init(new FileSourceSupplier(moduleLoader, sourceDir), new FileOutputSupplier(moduleDeserialization, outputDir, libDirs), recompile);
+    List<SourceSupplier> sourceSuppliers = new ArrayList<>(2);
+    sourceSuppliers.add(new FileSourceSupplier(moduleLoader, sourceDir));
+    sourceSuppliers.add(new DirectorySourceSupplier(sourceDir));
+    moduleLoader.init(new CompositeSourceSupplier(sourceSuppliers), new FileOutputSupplier(moduleDeserialization, outputDir, libDirs), recompile);
 
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDirStr == null) return;
@@ -120,16 +124,13 @@ public class ConsoleMain {
       return;
     }
 
-    ClassDefinition module = moduleLoader.rootModule();
-    for (int i = 0; i < moduleNames.size() - 1; ++i) {
-      ClassDefinition module1 = module.getClass(moduleNames.get(i), moduleLoader.getErrors());
-      if (module1 == null) return;
-      module1.hasErrors(false);
-      module.addField(module1, moduleLoader.getErrors());
-      module = module1;
+    Namespace namespace = moduleLoader.getRoot();
+    for (int i = 0; i < moduleNames.size(); ++i) {
+      moduleLoader.loadModule(new Module(namespace, moduleNames.get(i)), false);
+      if (i < moduleNames.size() - 1) {
+        namespace = namespace.getChild(new Utils.Name(moduleNames.get(i)));
+      }
     }
-    Module newModule = new Module(module, moduleNames.get(moduleNames.size() - 1));
-    moduleLoader.loadModule(newModule, false);
 
     for (ModuleError moduleError : moduleLoader.getErrors()) {
       System.err.println(moduleError);

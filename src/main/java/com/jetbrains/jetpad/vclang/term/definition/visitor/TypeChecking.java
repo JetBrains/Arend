@@ -19,9 +19,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.term.error.ArgInferenceError.typeOfFunctionArg;
@@ -33,11 +31,19 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 
 public class TypeChecking {
-  public static DataDefinition typeCheckDataBegin(ModuleLoader moduleLoader, Definition parent, Abstract.DataDefinition def, List<Binding> localContext) {
+  private static boolean addMember(Namespace namespace, Definition member, ModuleLoader moduleLoader) {
+    if (namespace.addMember(member) != null) {
+      moduleLoader.getErrors().add(new ModuleError(new Module(namespace, member.getName().name), "Name is already defined"));
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  public static DataDefinition typeCheckDataBegin(ModuleLoader moduleLoader, Namespace namespace, Namespace localNamespace, Abstract.DataDefinition def, List<Binding> localContext) {
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     int origSize = localContext.size();
-    Set<Definition> abstractCalls = new HashSet<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(parent, localContext, abstractCalls, moduleLoader, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localNamespace, localContext, moduleLoader, CheckTypeVisitor.Side.RHS);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
       CheckTypeVisitor.OKResult result = visitor.checkType(parameter.getType(), Universe());
       if (result == null) {
@@ -56,13 +62,12 @@ public class TypeChecking {
       }
     }
 
-    DataDefinition result = new DataDefinition(def.getName(), parent, def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters);
-    result.setDependencies(abstractCalls);
-    parent.addPrivateField(result);
-    return result;
+    Namespace parentNamespace = localNamespace != null ? localNamespace : namespace;
+    DataDefinition result = new DataDefinition(parentNamespace.getChild(def.getName()), def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters);
+    return addMember(parentNamespace, result, moduleLoader) ? result : null;
   }
 
-  public static boolean typeCheckDataEnd(ModuleLoader moduleLoader, Definition parent, Abstract.DataDefinition def, DataDefinition definition, List<Binding> localContext, boolean onlyStatics) {
+  public static void typeCheckDataEnd(ModuleLoader moduleLoader, Namespace namespace, Abstract.DataDefinition def, DataDefinition definition, List<Binding> localContext) {
     if (localContext != null) {
       for (TypeArgument parameter : definition.getParameters()) {
         if (parameter instanceof TelescopeArgument) {
@@ -80,35 +85,30 @@ public class TypeChecking {
       Universe maxUniverse = universe.max(constructor.getUniverse());
       if (maxUniverse == null) {
         String msg = "Universe " + constructor.getUniverse() + " of constructor " + constructor.getName() + " is not compatible with universe " + universe + " of previous constructors";
-        moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, msg, null, null));
+        moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(namespace, msg, null, null));
       } else {
         universe = maxUniverse;
       }
     }
-    definition.setUniverse(universe);
 
-    if (def.getUniverse() != null && !universe.lessOrEquals(def.getUniverse())) {
-      moduleLoader.getTypeCheckingErrors().add(new TypeMismatchError(parent, new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
+    if (def.getUniverse() != null) {
+      if (universe.lessOrEquals(def.getUniverse())) {
+        definition.setUniverse(def.getUniverse());
+      } else {
+        moduleLoader.getTypeCheckingErrors().add(new TypeMismatchError(namespace, new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
+        definition.setUniverse(universe);
+      }
     }
-
-    if (onlyStatics && parent instanceof ClassDefinition && !checkOnlyStatic(moduleLoader, (ClassDefinition) parent, definition, definition.getName())) {
-      return false;
-    }
-    parent.addField(definition, moduleLoader.getErrors());
-    for (Constructor constructor : definition.getConstructors()) {
-      parent.addField(constructor, moduleLoader.getErrors());
-    }
-    return true;
   }
 
-  public static Constructor typeCheckConstructor(ModuleLoader moduleLoader, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext, int conIndex) {
+  public static Constructor typeCheckConstructor(ModuleLoader moduleLoader, Namespace namespace, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext, int conIndex) {
     try (Utils.CompleteContextSaver ignore = new Utils.CompleteContextSaver(localContext)) {
       List<TypeArgument> arguments = new ArrayList<>(con.getArguments().size());
       Universe universe = new Universe.Type(0, Universe.Type.PROP);
       int index = 1;
       boolean ok = true;
 
-      CheckTypeVisitor visitor = new CheckTypeVisitor(dataDefinition, localContext, dataDefinition.getDependencies(), moduleLoader, CheckTypeVisitor.Side.RHS);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, namespace == dataDefinition.getParent() ? null : dataDefinition.getParent(), localContext, moduleLoader, CheckTypeVisitor.Side.RHS);
       List<Pattern> patterns = null;
       if (con.getPatterns() != null) {
         patterns = new ArrayList<>();
@@ -157,7 +157,7 @@ public class TypeChecking {
         return null;
       }
 
-      Constructor constructor = new Constructor(conIndex, con.getName(), dataDefinition, con.getPrecedence(), universe, arguments, patterns);
+      Constructor constructor = new Constructor(conIndex, dataDefinition.getNamespace().getChild(con.getName()), con.getPrecedence(), universe, arguments, dataDefinition, patterns);
       for (int j = 0; j < constructor.getArguments().size(); ++j) {
         Expression type = constructor.getArguments().get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {
@@ -183,26 +183,31 @@ public class TypeChecking {
       }
 
       dataDefinition.addConstructor(constructor);
-      dataDefinition.getParent().addPrivateField(constructor);
+      dataDefinition.getParent().addMember(constructor);
 
       return constructor;
     }
   }
 
-  public static FunctionDefinition typeCheckFunctionBegin(ModuleLoader moduleLoader, Definition parent, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction) {
+  public static FunctionDefinition typeCheckFunctionBegin(ModuleLoader moduleLoader, Namespace namespace, Namespace localNamespace, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction) {
+    Namespace parentNamespace = localNamespace != null ? localNamespace : namespace;
     FunctionDefinition typedDef;
     if (def.isOverridden()) {
-      typedDef = new OverriddenDefinition(def.getName(), parent, def.getPrecedence(), null, null, def.getArrow(), null, overriddenFunction);
+      if (localNamespace == null) {
+        moduleLoader.getTypeCheckingErrors().add(new TypeCheckingError(namespace, "Overridden function cannot be static", def, getNames(localContext)));
+        return null;
+      }
+      typedDef = new OverriddenDefinition(parentNamespace.getChild(def.getName()), def.getPrecedence(), null, null, def.getArrow(), null, overriddenFunction);
     } else {
-      typedDef = new FunctionDefinition(def.getName(), parent, def.getPrecedence(), null, null, def.getArrow(), null);
+      typedDef = new FunctionDefinition(parentNamespace.getChild(def.getName()), def.getPrecedence(), null, null, def.getArrow(), null);
     }
-    if (!typeCheckFunctionBegin(moduleLoader, def, localContext, overriddenFunction, typedDef)) {
+    if (!typeCheckFunctionBegin(moduleLoader, namespace, def, localContext, overriddenFunction, typedDef)) {
       return null;
     }
     return typedDef;
   }
 
-  public static boolean typeCheckFunctionBegin(ModuleLoader moduleLoader, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction, FunctionDefinition typedDef) {
+  public static boolean typeCheckFunctionBegin(ModuleLoader moduleLoader, Namespace namespace, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction, FunctionDefinition typedDef) {
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
       // myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError(parent, "Cannot find function " + def.getName() + " in the parent class", def, getNames(localContext)));
@@ -211,8 +216,7 @@ public class TypeChecking {
     }
 
     List<Argument> arguments = new ArrayList<>(def.getArguments().size());
-    Set<Definition> abstractCalls = new HashSet<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(typedDef.getParent(), localContext, abstractCalls, moduleLoader, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, typedDef.getParent() == namespace ? namespace : typedDef.getParent(), localContext, moduleLoader, CheckTypeVisitor.Side.RHS);
 
     List<TypeArgument> splitArgs = null;
     Expression splitResult = null;
@@ -361,9 +365,7 @@ public class TypeChecking {
       ((OverriddenDefinition) typedDef).setOverriddenFunction(overriddenFunction);
     }
 
-    typedDef.setDependencies(abstractCalls);
-    typedDef.getParent().addPrivateField(typedDef);
-
+    typedDef.getParent().addMember(typedDef);
     if (expectedType == null) {
       typedDef.typeHasErrors(true);
     }
@@ -371,9 +373,9 @@ public class TypeChecking {
     return true;
   }
 
-  public static boolean typeCheckFunctionEnd(ModuleLoader moduleLoader, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction, boolean onlyStatics) {
+  public static boolean typeCheckFunctionEnd(ModuleLoader moduleLoader, Namespace namespace, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction) {
     if (term != null) {
-      CheckTypeVisitor visitor = new CheckTypeVisitor(overriddenFunction, localContext, definition.getDependencies(), moduleLoader, CheckTypeVisitor.Side.LHS);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, definition.getParent() == namespace ? null : definition.getParent(), localContext, moduleLoader, CheckTypeVisitor.Side.LHS);
       CheckTypeVisitor.OKResult termResult = visitor.checkType(term, definition.getResultType());
 
       if (termResult != null) {
@@ -392,7 +394,13 @@ public class TypeChecking {
           definition.hasErrors(true);
         }
       }
-    }
+    } /* TODO
+      else {
+      if (definition.getParent() == namespace) {
+        moduleLoader.getErrors().add(new ModuleError(new Module(namespace, definition.getName().name), "Non-static abstract definition"));
+        return false;
+      }
+    } */
 
     definition.typeHasErrors(definition.getResultType() == null);
     Expression type = definition.getType();
@@ -415,25 +423,7 @@ public class TypeChecking {
       }
     }
 
-    if (onlyStatics && definition.getParent() instanceof ClassDefinition && !checkOnlyStatic(moduleLoader, (ClassDefinition) definition.getParent(), definition, definition.getName())) {
-      return false;
-    }
-
-    if (!definition.isOverridden()) {
-      definition.getParent().addField(definition, moduleLoader.getErrors());
-    }
-
-    return true;
-  }
-
-  public static boolean checkOnlyStatic(ModuleLoader moduleLoader, ClassDefinition parent, Definition definition, Utils.Name name) {
-    if (definition == null || definition.isAbstract() || definition.getDependencies() != null && !definition.getDependencies().isEmpty()) {
-      moduleLoader.getErrors().add(new ModuleError(new Module(parent, name.getPrefixName()), "Only static fields are allowed in a class extension of " + parent.getName()));
-      if (definition != null) {
-        parent.removePrivateField(definition);
-      }
-      return false;
-    }
-    return true;
+    // TODO
+    return definition.isOverridden() || definition.getParent().addMember(definition) == null;
   }
 }

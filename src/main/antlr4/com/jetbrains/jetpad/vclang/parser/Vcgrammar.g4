@@ -2,13 +2,17 @@ grammar Vcgrammar;
 
 defs  : def*;
 
-def   : '\\function' precedence name tele* typeTermOpt where?      # defFunction
-      | '\\override' name ('\\as' name)? tele* typeTermOpt where?  # defOverride
-      | '\\data' precedence name tele* (':' expr)? constructorDef* # defData
-      | '\\class' ID tele* classFields                             # defClass
-      | '\\extends' ID                                             # defExtends
-      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?           # defCmd
+def   : staticMod '\\function' precedence name tele* typeTermOpt where?      # defFunction
+      | '\\override' name ('\\as' name)? tele* typeTermOpt where?            # defOverride
+      | staticMod '\\data' precedence name tele* (':' expr)? constructorDef* # defData
+      | staticMod '\\class' ID tele* classFields                             # defClass
+      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?                     # defCmd
       ;
+
+staticMod : '\\static'                  # staticStatic
+          | '\\dynamic'                 # dynamicStatic
+          |                             # noStatic
+          ;
 
 where : '\\where' def+ ';'?;
 

@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
+
 public class Utils {
   public static int getNumArguments(Abstract.Pattern pattern) {
     if (pattern instanceof Abstract.NamePattern) {
@@ -149,33 +151,33 @@ public class Utils {
 
 
   public static List<TypeArgument> expandConstructorParameters(Constructor constructor) {
-    List<PatternExpander.Result> results = new PatternExpander(0).expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters());
+    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters());
 
     List<TypeArgument> result = new ArrayList<>();
-    for (PatternExpander.Result nestedResult : results) {
+    for (PatternExpansion.Result nestedResult : results) {
       result.addAll(nestedResult.args);
     }
     return result;
   }
 
-  public static List<ArgumentExpression> patternsToExpressions(List<Pattern> patterns, List<TypeArgument> args, int startIndex) {
-    int numberOfArguments = 0;
-    for (Pattern pattern : patterns) {
-      numberOfArguments += getNumArguments(pattern);
-    }
-
-    List<PatternExpander.Result> results = new PatternExpander(startIndex + numberOfArguments - 1).expandPatterns(patterns, args);
+  public static List<ArgumentExpression> constructorPatternsToExpressions(Constructor constructor) {
+    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters());
 
     List<ArgumentExpression> result = new ArrayList<>();
-    for (PatternExpander.Result nestedResult : results) {
-      result.add(nestedResult.expression);
+    int shift = numberOfVariables(constructor.getArguments());
+    int numArguments = 0;
+    for (int i = results.size() - 1; i >= 0; i--) {
+      result.add(new ArgumentExpression(results.get(i).expression.getExpression().liftIndex(0, numArguments + shift),
+          results.get(i).expression.isExplicit(), results.get(i).expression.isHidden()));
+      numArguments += results.get(i).args.size();
     }
+    Collections.reverse(result);
 
     return result;
   }
 
   public static ArgumentExpression patternToExpression(Pattern pattern) {
-    return new PatternExpander(getNumArguments(pattern) - 1).expandPattern(pattern);
+    return PatternExpansion.expandPattern(pattern);
   }
 
   public static Expression expandPatternSubstitute(Pattern pattern, int varIndex, Expression what, Expression where) {

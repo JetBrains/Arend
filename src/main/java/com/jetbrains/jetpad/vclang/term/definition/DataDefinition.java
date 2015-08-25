@@ -5,10 +5,8 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVis
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
@@ -17,13 +15,13 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   private List<Constructor> myConstructors;
   private List<TypeArgument> myParameters;
 
-  public DataDefinition(Utils.Name name, Definition parent, Precedence precedence) {
-    super(name, parent, precedence);
+  public DataDefinition(Namespace namespace, Precedence precedence) {
+    super(namespace, precedence);
     myConstructors = new ArrayList<>();
   }
 
-  public DataDefinition(Utils.Name name, Definition parent, Precedence precedence, Universe universe, List<TypeArgument> parameters) {
-    super(name, parent, precedence);
+  public DataDefinition(Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> parameters) {
+    super(namespace, precedence);
     setUniverse(universe);
     hasErrors(false);
     myParameters = parameters;
@@ -44,14 +42,18 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
     return myConstructors;
   }
 
-  @Override
-  public Definition getField(String name) {
-    return getStaticField(name);
+  public Constructor getConstructor(String name) {
+    for (Constructor constructor : myConstructors) {
+      if (constructor.getName().name.equals(name)) {
+        return constructor;
+      }
+    }
+    return null;
   }
 
   public void addConstructor(Constructor constructor) {
     myConstructors.add(constructor);
-    addStaticField(constructor, Collections.EMPTY_LIST);
+    getNamespace().addMember(constructor);
   }
 
   @Override

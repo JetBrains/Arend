@@ -12,11 +12,11 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
-class PatternExpander {
-  private int myIndex;
-
+class PatternExpansion {
   static class Result {
     final ArgumentExpression expression;
     final List<TypeArgument> args;
@@ -27,27 +27,23 @@ class PatternExpander {
     }
   }
 
-  PatternExpander(int startIndex) {
-    myIndex = startIndex;
-  }
-
-  ArgumentExpression expandPattern(Pattern pattern) {
+  static ArgumentExpression expandPattern(Pattern pattern) {
     if (pattern instanceof NamePattern)  {
-      return new ArgumentExpression(Index(myIndex--), pattern.getExplicit(), !pattern.getExplicit());
+      return new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit());
     } else if (pattern instanceof ConstructorPattern) {
       Expression resultExpression = DefCall(((ConstructorPattern) pattern).getConstructor());
-      for (Pattern nestedPattern : ((ConstructorPattern) pattern).getArguments()) {
-        resultExpression = Apps(resultExpression, expandPattern(nestedPattern));
-      }
+      for (Pattern nestedPattern : ((ConstructorPattern) pattern).getArguments())
+        resultExpression = Apps(resultExpression.liftIndex(0, getNumArguments(nestedPattern)), expandPattern(nestedPattern));
+
       return new ArgumentExpression(resultExpression, pattern.getExplicit(), !pattern.getExplicit());
     } else {
       throw new IllegalStateException();
     }
   }
 
-  Result expandPattern(Pattern pattern, Expression type) {
+  static Result expandPattern(Pattern pattern, Expression type) {
     if (pattern instanceof NamePattern) {
-      return new Result(new ArgumentExpression(Index(myIndex--), pattern.getExplicit(), !pattern.getExplicit()),
+      return new Result(new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit()),
           Collections.singletonList(TypeArg(pattern.getExplicit(), type)));
     } else if (pattern instanceof ConstructorPattern) {
       ConstructorPattern constructorPattern = (ConstructorPattern) pattern;
@@ -60,7 +56,7 @@ class PatternExpander {
       Expression resultExpression = DefCall(null, constructorPattern.getConstructor(), parameters);
       List<TypeArgument> resultArgs = new ArrayList<>();
       for (Result res : nestedResults) {
-        resultExpression = Apps(resultExpression, res.expression);
+        resultExpression = Apps(resultExpression.liftIndex(0, res.args.size()), res.expression);
         resultArgs.addAll(res.args);
       }
 
@@ -70,16 +66,17 @@ class PatternExpander {
     }
   }
 
-  List<Result> expandPatterns(List<Pattern> patterns, List<TypeArgument> args) {
+  static List<Result> expandPatterns(List<Pattern> patterns, List<TypeArgument> args) {
     List<TypeArgument> argsSplitted = new ArrayList<>();
     splitArguments(args, argsSplitted);
 
     List<Result> results = new ArrayList<>();
-    List<Expression> substituteExpressions = new ArrayList<>();
     for (int i = 0; i < patterns.size(); i++) {
-      Result nestedResult = expandPattern(patterns.get(i), argsSplitted.get(i).getType().subst(substituteExpressions, 0));
+      Expression argumentType = argsSplitted.get(i).getType();
+      for (int j = 0; j < i; j++)
+        argumentType = expandPatternSubstitute(patterns.get(j), i - j - 1, results.get(j).expression.getExpression(), argumentType);
+      Result nestedResult = expandPattern(patterns.get(i), argumentType);
       results.add(nestedResult);
-      substituteExpressions.add(nestedResult.expression.getExpression());
     }
     return results;
   }

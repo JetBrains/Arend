@@ -6,39 +6,39 @@ import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.List;
-import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternsToExpressions;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.constructorPatternsToExpressions;
 
 public class Constructor extends Definition implements Abstract.Constructor {
+  private DataDefinition myDataType;
   private List<TypeArgument> myArguments;
   private List<Pattern> myPatterns;
   private int myIndex;
 
-  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence) {
-    super(name, parent, precedence);
+  public Constructor(int index, Namespace namespace, Precedence precedence, DataDefinition dataType) {
+    super(namespace, precedence);
+    myDataType = dataType;
     myIndex = index;
   }
 
-  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence, Universe universe, List<TypeArgument> arguments, List<Pattern> patterns) {
-    super(name, parent, precedence);
+  public Constructor(int index, Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
+    super(namespace, precedence);
     setUniverse(universe);
     hasErrors(false);
+    myDataType = dataType;
     myArguments = arguments;
     myIndex = index;
     myPatterns = patterns;
   }
 
-  public Constructor(int index, Utils.Name name, DataDefinition parent, Precedence precedence, Universe universe, List<TypeArgument> arguments) {
-    this(index, name, parent, precedence, universe, arguments, null);
+  public Constructor(int index, Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
+    this(index, namespace, precedence, universe, arguments, dataType, null);
   }
-
   @Override
   public List<Pattern> getPatterns() {
     return myPatterns;
@@ -55,7 +55,11 @@ public class Constructor extends Definition implements Abstract.Constructor {
 
   @Override
   public DataDefinition getDataType() {
-    return (DataDefinition) super.getParent();
+    return myDataType;
+  }
+
+  public void setDataType(DataDefinition dataType) {
+    myDataType = dataType;
   }
 
   public int getIndex() {
@@ -67,18 +71,8 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public Set<Definition> getDependencies() {
-    return getParent().getDependencies();
-  }
-
-  @Override
-  public void setDependencies(Set<Definition> dependencies) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Expression getType() {
-    Expression resultType = DefCall(getParent());
+    Expression resultType = DefCall(myDataType);
     int numberOfVars = numberOfVariables(myArguments);
     if (getDataType().getParameters() != null) {
       if (myPatterns == null) {
@@ -92,7 +86,7 @@ public class Constructor extends Definition implements Abstract.Constructor {
           }
         }
       } else {
-        List<ArgumentExpression> args = patternsToExpressions(this.getPatterns(), this.getDataType().getParameters(),numberOfVars);
+        List<ArgumentExpression> args = constructorPatternsToExpressions(this);
         for (ArgumentExpression arg : args) {
           resultType = Apps(resultType, arg);
         }

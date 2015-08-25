@@ -31,9 +31,9 @@ public class ElimTest {
     arguments1.add(TypeArg(Nat()));
     arguments2.add(TypeArg(Pi(Nat(), Nat())));
     arguments2.add(Tele(vars("a", "b", "c"), Nat()));
-    DataDefinition dataType = new DataDefinition(new Utils.Name("D"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), parameters);
-    dataType.addConstructor(new Constructor(0, new Utils.Name("con1"), dataType, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments1));
-    dataType.addConstructor(new Constructor(1, new Utils.Name("con2"), dataType, Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments2));
+    DataDefinition dataType = new DataDefinition(new Namespace(new Utils.Name("D"), null), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), parameters);
+    dataType.addConstructor(new Constructor(0, dataType.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments1, dataType));
+    dataType.addConstructor(new Constructor(1, dataType.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments2, dataType));
 
     List<Argument> arguments3 = new ArrayList<>(4);
     arguments3.add(Tele(vars("a1", "b1", "c1"), Nat()));
@@ -49,9 +49,9 @@ public class ElimTest {
     arguments12.add(Name("t"));
     List<Clause> clauses1 = new ArrayList<>(2);
     ElimExpression pTerm = Elim(Index(4), clauses1);
-    clauses1.add(new Clause(match((Constructor) dataType.getStaticField("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Nat(), pTerm));
-    clauses1.add(new Clause(match((Constructor) dataType.getStaticField("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Pi(Nat(), Nat()), pTerm));
-    FunctionDefinition pFunction = new FunctionDefinition(new Utils.Name("P"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
+    clauses1.add(new Clause(match(dataType.getConstructor("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Nat(), pTerm));
+    clauses1.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Pi(Nat(), Nat()), pTerm));
+    FunctionDefinition pFunction = new FunctionDefinition(new Namespace(new Utils.Name("P"), null), Abstract.Definition.DEFAULT_PRECEDENCE, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
 
     List<Argument> arguments = new ArrayList<>(3);
     arguments.add(Tele(vars("q", "w"), Nat()));
@@ -64,19 +64,19 @@ public class ElimTest {
     ElimExpression term2 = Elim(Index(0) /* r */, clauses2);
     ElimExpression term3 = Elim(Index(1) /* e */, clauses3);
     ElimExpression term4 = Elim(Index(4) /* e */, clauses4);
-    clauses2.add(new Clause(match((Constructor) dataType.getStaticField("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.LEFT, term4, term2));
-    clauses2.add(new Clause(match((Constructor) dataType.getStaticField("con1"), match("s")), Abstract.Definition.Arrow.LEFT, term3, term2));
-    clauses3.add(new Clause(match((Constructor) dataType.getStaticField("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Index(4), term3));
-    clauses3.add(new Clause(match((Constructor) dataType.getStaticField("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Index(0), term3));
-    clauses4.add(new Clause(match((Constructor) dataType.getStaticField("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Apps(Index(3), Index(2)), term4));
-    clauses4.add(new Clause(match((Constructor) dataType.getStaticField("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Index(7), term4));
+    clauses2.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.LEFT, term4, term2));
+    clauses2.add(new Clause(match(dataType.getConstructor("con1"), match("s")), Abstract.Definition.Arrow.LEFT, term3, term2));
+    clauses3.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Index(4), term3));
+    clauses3.add(new Clause(match(dataType.getConstructor("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Index(0), term3));
+    clauses4.add(new Clause(match(dataType.getConstructor("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Apps(Index(3), Index(2)), term4));
+    clauses4.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Index(7), term4));
 
     ModuleLoader moduleLoader = new ModuleLoader();
-    FunctionDefinition function = new FunctionDefinition(new Utils.Name("fun"), new ClassDefinition("test", moduleLoader.rootModule()), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
+    FunctionDefinition function = new FunctionDefinition(moduleLoader.getRoot().getChild(new Utils.Name("test")).getChild(new Utils.Name("fun")), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
     List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedFun = TypeChecking.typeCheckFunctionBegin(moduleLoader, function.getParent(), function, localContext, null);
+    FunctionDefinition typedFun = TypeChecking.typeCheckFunctionBegin(moduleLoader, function.getParent(), null, function, localContext, null);
     assertNotNull(typedFun);
-    TypeChecking.typeCheckFunctionEnd(moduleLoader , function.getTerm(), typedFun, localContext, null, false);
+    TypeChecking.typeCheckFunctionEnd(moduleLoader, function.getParent(), function.getTerm(), typedFun, localContext, null);
     assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
     assertEquals(0, moduleLoader.getErrors().size());
     assertFalse(typedFun.hasErrors());
@@ -86,11 +86,11 @@ public class ElimTest {
   public void elim2() {
     ModuleLoader moduleLoader = new ModuleLoader();
     parseDefs(moduleLoader,
-        "\\data D Nat (x y : Nat) | con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
-        "\\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
+        "\\static \\data D Nat (x y : Nat) | con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
+        "\\static \\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
             "| con2 _ _ _ _ => Nat -> Nat\n" +
             "| con1 _ => Nat\n" +
-        "\\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
+        "\\static \\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
             "| con1 s <= \\elim e\n" +
               "| con2 x y z t => x" +
               "| con1 _ => s" +
@@ -104,8 +104,8 @@ public class ElimTest {
   public void elim3() {
     ModuleLoader moduleLoader = new ModuleLoader();
     parseDefs(moduleLoader,
-        "\\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
-        "\\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
+        "\\static \\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
+        "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
           "| con1 s <= \\elim e\n" +
             "| con2 _ {y} {z} {t} => q t" +
             "| con1 {z} _ => z" +
