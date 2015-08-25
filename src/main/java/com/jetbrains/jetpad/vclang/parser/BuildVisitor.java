@@ -462,13 +462,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<String> names = new ArrayList<>();
     collectPatternNames(pattern, names);
     List<String> oldContext = new ArrayList<>(myContext);
-    int varContextIndex = myContext.size() - 1 - varIndex;
     myContext.clear();
-    for (int i = 0; i < varContextIndex; ++i) {
+    for (int i = 0; i < varIndex; ++i) {
       myContext.add(oldContext.get(i));
     }
     myContext.addAll(names);
-    for (int i = varContextIndex + 1; i < oldContext.size(); ++i) {
+    for (int i = varIndex + 1; i < oldContext.size(); ++i) {
       myContext.add(oldContext.get(i));
     }
   }
@@ -502,7 +501,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         return;
       }
       for (int i = 0; i < result.patterns.size(); i++) {
-        applyPatternToContext(result.patterns.get(i), result.patterns.size() - 1 - i);
+        applyPatternToContext(result.patterns.get(i), myContext.size() - result.patterns.size() + i);
       }
     }
 
@@ -1043,7 +1042,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Expression visitExprElim(ExprElimContext ctx) {
     if (ctx == null) return null;
     List<Concrete.Clause> clauses = new ArrayList<>(ctx.clause().size());
-    Concrete.Clause otherwise = null;
 
     Concrete.Expression elimExpr = visitExpr(ctx.expr());
     if (elimExpr == null) return null;
@@ -1064,91 +1062,33 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<String> oldContext = new ArrayList<>(myContext);
     for (ClauseContext clauseCtx : ctx.clause()) {
-      Name name1 = (Name) visit(clauseCtx.clauseName());
-      Definition.Arrow arrow = clauseCtx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
-      List<Concrete.NameArgument> nameArguments = null;
-      if (clauseCtx.clauseName() instanceof ClauseNameArgsContext) {
-        List<Concrete.Argument> arguments = visitLamTeles(((ClauseNameArgsContext) clauseCtx.clauseName()).tele());
-        if (arguments == null) {
-          myContext = oldContext;
+      Concrete.Pattern pattern = null;
+      if (clauseCtx.pattern() != null) {
+        pattern = (Concrete.Pattern) visit(clauseCtx.pattern());
+        if (pattern == null)
           return null;
-        }
-
-        nameArguments = new ArrayList<>(arguments.size());
-        for (Concrete.Argument argument : arguments) {
-          if (argument instanceof Concrete.NameArgument) {
-            nameArguments.add((Concrete.NameArgument) argument);
-          } else {
-            myModuleLoader.getErrors().add(new ParserError(myModule, argument.getPosition(), "Expected a variable"));
-            myContext = oldContext;
-            return null;
-          }
-        }
-
-
-        if (ctx.elimCase() instanceof ElimContext) {
-          myContext.clear();
-          for (int i = 0; i < elimIndex; ++i) {
-            myContext.add(oldContext.get(i));
-          }
-          for (Concrete.NameArgument argument : nameArguments) {
-            myContext.add(argument.getName());
-          }
-          for (int i = elimIndex + 1; i < oldContext.size(); ++i) {
-            myContext.add(oldContext.get(i));
-          }
-        } else {
-          for (Concrete.NameArgument argument : nameArguments) {
-            myContext.add(argument.getName());
-          }
-        }
-      } else {
-        myContext = new ArrayList<>(oldContext);
       }
+      applyPatternToContext(pattern, ctx.elimCase() instanceof  ElimContext  ? elimIndex : myContext.size());
+      Definition.Arrow arrow = clauseCtx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
 
       Concrete.Expression expr = visitExpr(clauseCtx.expr());
       if (expr == null) {
         myContext = oldContext;
         return null;
       }
-      Concrete.Clause clause = new Concrete.Clause(tokenPosition(clauseCtx.getStart()), name1, nameArguments, arrow, expr, null);
-
-      if (name1.name == null) {
-        if (otherwise != null) {
-          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(clauseCtx.clauseName().getStart()), "Overlapping pattern matching"));
-        }
-        otherwise = clause;
-      } else {
-        clauses.add(clause);
-      }
+      clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.getStart()), pattern, arrow, expr, null));
 
       myContext = new ArrayList<>(oldContext);
     }
 
     Concrete.ElimCaseExpression result = ctx.elimCase() instanceof ElimContext ?
-            new Concrete.ElimExpression(tokenPosition(ctx.getStart()), elimExpr, clauses, otherwise) :
-            new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExpr, clauses, otherwise);
+            new Concrete.ElimExpression(tokenPosition(ctx.getStart()), elimExpr, clauses) :
+            new Concrete.CaseExpression(tokenPosition(ctx.getStart()), elimExpr, clauses);
 
     for (Concrete.Clause clause : clauses) {
       clause.setElimExpression(result);
     }
-    if (otherwise != null) {
-      otherwise.setElimExpression(result);
-    }
     return result;
-  }
-
-  @Override
-  public Name visitClauseNoName(ClauseNoNameContext ctx) {
-    Name name = new Name(null);
-    name.position = tokenPosition(ctx.getStart());
-    return name;
-  }
-
-  @Override
-  public Name visitClauseNameArgs(ClauseNameArgsContext ctx) {
-    if (ctx == null) return null;
-    return getName(ctx.name());
   }
 
   @Override

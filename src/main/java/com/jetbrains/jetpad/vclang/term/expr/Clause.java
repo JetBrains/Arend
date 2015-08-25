@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,36 +9,26 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintClause;
 
 public class Clause implements Abstract.Clause {
-  private final Constructor myConstructor;
-  private final List<NameArgument> myArguments;
+  private final Pattern myPattern;
   private final Abstract.Definition.Arrow myArrow;
   private final Expression myExpression;
   private ElimExpression myElimExpression;
 
-  public Clause(Constructor constructor, List<NameArgument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
-    myConstructor = constructor;
-    myArguments = arguments;
+  public Clause(Pattern pattern, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
+    myPattern = pattern;
     myArrow = arrow;
     myExpression = expression;
     myElimExpression = elimExpression;
   }
 
-  public Constructor getConstructor() {
-    return myConstructor;
-  }
 
   public void setElimExpression(ElimExpression elimExpression) {
     myElimExpression = elimExpression;
   }
 
   @Override
-  public Utils.Name getName() {
-    return myConstructor.getName();
-  }
-
-  @Override
-  public List<NameArgument> getArguments() {
-    return myArguments;
+  public Pattern getPattern() {
+    return myPattern;
   }
 
   @Override

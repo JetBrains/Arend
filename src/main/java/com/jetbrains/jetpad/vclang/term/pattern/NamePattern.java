@@ -24,4 +24,9 @@ public class NamePattern extends Pattern implements Abstract.NamePattern{
   public Utils.PatternMatchResult match(Expression expr, List<Binding> context) {
     return new Utils.PatternMatchResult(Collections.singletonList(expr));
   }
+
+  @Override
+  public boolean equals(Object other) {
+    return other == this || other instanceof NamePattern && ((Pattern) other).getExplicit() == getExplicit();
+  }
 }

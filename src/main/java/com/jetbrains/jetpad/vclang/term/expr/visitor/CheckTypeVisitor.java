@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.error.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
@@ -25,9 +24,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.Name;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandArgs;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Definition myParent;
@@ -280,7 +277,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (((Constructor) def).getPatterns() == null) {
           parametersNumber = numberOfVariables(((Constructor) def).getDataType().getParameters());
         } else {
-          parametersNumber = expandArgs(((Constructor) def).getPatterns(), ((Constructor) def).getDataType().getParameters()).size();
+          parametersNumber = expandConstructorParameters((Constructor) def).size();
         }
       }
     }
@@ -641,9 +638,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result.expression instanceof DefCallExpression) {
       if (((DefCallExpression) result.expression).getDefinition() instanceof Constructor) {
         Constructor constructor = ((Constructor) ((DefCallExpression) result.expression).getDefinition());
-        List<TypeArgument> parameters = constructor.getDataType().getParameters();
+        List<TypeArgument> parameters;
         if (constructor.getPatterns() != null) {
-          parameters = expandArgs(constructor.getPatterns(), parameters);
+          parameters = expandConstructorParameters(constructor);
+        } else {
+          parameters = constructor.getDataType().getParameters();
         }
 
         if (parameters != null && !parameters.isEmpty()) {
@@ -1209,14 +1208,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     for (int i = 0; i < tail.size(); i++) {
       // TODO: check let clause... move subst to binding?
-      Expression type = tail.get(i).getType();
-      Expression expression = result.expression.liftIndex(0, i);
-      if (result.numBindings > 0) {
-        type = type.liftIndex(i + 1, result.numBindings - 1).subst(expression, i);
-      } else {
-        type = type.subst(expression.liftIndex(0, 1), i).liftIndex(i + 1, result.numBindings - 1);
-      }
-      myLocalContext.add(new TypedBinding(tail.get(i).getName(), type));
+      myLocalContext.add(new TypedBinding(tail.get(i).getName(), expandPatternSubstitute(result.pattern, i, result.expression, tail.get(i).getType())));
     }
 
     return result;
@@ -1245,6 +1237,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       error = new TypeCheckingError(myParent, "\\elim is allowed only at the root of a definition", expr, getNames(myLocalContext));
     }
 
+    if (error != null) {
+      myModuleLoader.getTypeCheckingErrors().add(error);
+      expr.setWellTyped(Error(null, error));
+      return null;
+     }
+
     if (!(expr.getExpression() instanceof Abstract.IndexExpression || expr.getExpression() instanceof Abstract.VarExpression)) {
       error = new TypeCheckingError(myParent, "\\elim can be applied only to a local variable", expr.getExpression(), getNames(myLocalContext));
       myModuleLoader.getTypeCheckingErrors().add(error);
@@ -1258,153 +1256,31 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    List<Expression> parameters = new ArrayList<>();
-    Expression type = exprOKResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
-    Expression ftype = type.getFunction(parameters);
-    Collections.reverse(parameters);
-    if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition) && error == null) {
-      error = new TypeMismatchError(myParent, "a data type", type, expr.getExpression(), getNames(myLocalContext));
-    }
-
-    if (error != null) {
-      expr.setWellTyped(Error(null, error));
-      myModuleLoader.getTypeCheckingErrors().add(error);
-      return null;
-    }
-
     int varIndex = ((IndexExpression) exprOKResult.expression).getIndex();
-    DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
-    List<Constructor> constructors = new ArrayList<>(dataType.getConstructors());
-    List<Clause> clauses = new ArrayList<>(dataType.getConstructors().size());
-    for (int i = 0; i < dataType.getConstructors().size(); ++i) {
-      clauses.add(null);
-    }
 
     Result errorResult = null;
     boolean wasError = false;
 
-    clause_loop:
+    List<Clause> clauses = new ArrayList<>();
     for (Abstract.Clause clause : expr.getClauses()) {
-      if (clause == null) continue;
-
-      int index;
-      for (index = 0; index < constructors.size(); ++index) {
-        if (constructors.get(index).getName().equals(clause.getName())) {
-          break;
-        }
-      }
-      if (index == constructors.size()) {
-        for (index = 0; index < dataType.getConstructors().size(); ++index) {
-          if (dataType.getConstructors().get(index).getName().equals(clause.getName())) {
-            break;
+      try (CompleteContextSaver ignore = new CompleteContextSaver(myLocalContext)) {
+        ExpandPatternResult result = expandPatternOn(clause.getPattern(), varIndex, expr.getExpression());
+        if (result.pattern == null)
+          return null;
+        Expression clauseExpectedType = expandPatternSubstitute(result.pattern, varIndex, result.expression, expectedType);
+        Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
+        Result clauseResult = new CheckTypeVisitor(myParent, myLocalContext, myAbstractCalls, myModuleLoader, side).typeCheck(clause.getExpression(), clauseExpectedType);
+        if (!(clauseResult instanceof OKResult)) {
+          wasError = true;
+          if (errorResult == null) {
+            errorResult = clauseResult;
+          } else if (clauseResult instanceof InferErrorResult) {
+            myModuleLoader.getTypeCheckingErrors().add(((InferErrorResult) errorResult).error);
+            errorResult = clauseResult;
           }
-        }
-        if (index == dataType.getConstructors().size()) {
-          error = new NotInScopeError(myParent, clause, clause.getName() == null ? "" : clause.getName().getPrefixName());
         } else {
-          error = new TypeCheckingError(myParent, "Overlapping pattern matching: " + dataType.getConstructors().get(index), clause, getNames(myLocalContext));
+          clauses.add(new Clause(result.pattern, clause.getArrow(), clauseResult.expression, null));
         }
-        expr.setWellTyped(Error(null, error));
-        myModuleLoader.getTypeCheckingErrors().add(error);
-        continue;
-      }
-
-      Constructor constructor = constructors.get(index);
-      constructors.remove(index);
-
-      if (constructor.hasErrors()) {
-        error = new HasErrors(myParent, constructor.getName(), clause);
-        clause.getExpression().setWellTyped(Error(null, error));
-        myModuleLoader.getTypeCheckingErrors().add(error);
-        continue;
-      }
-
-      List<TypeArgument> constructorArguments = new ArrayList<>();
-      splitArguments(constructor.getType(), constructorArguments);
-
-      List<NameArgument> arguments = new ArrayList<>(clause.getArguments().size());
-      int indexI = 0, indexJ = 0;
-      for (; indexI < clause.getArguments().size() && indexJ < constructorArguments.size(); ++indexJ) {
-        if (clause.getArguments().get(indexI).getExplicit() == constructorArguments.get(indexJ).getExplicit()) {
-          arguments.add(new NameArgument(clause.getArguments().get(indexI).getExplicit(), clause.getArguments().get(indexI).getName()));
-          ++indexI;
-        } else
-        if (!clause.getArguments().get(indexI).getExplicit()) {
-          error = new TypeCheckingError(myParent, "Unexpected implicit argument", clause.getArguments().get(indexI), getNames(myLocalContext));
-          clause.getExpression().setWellTyped(Error(null, error));
-          myModuleLoader.getTypeCheckingErrors().add(error);
-          continue clause_loop;
-        } else {
-          String name = constructorArguments.get(indexJ) instanceof TelescopeArgument ? ((TelescopeArgument) constructorArguments.get(indexJ)).getNames().get(0) : null;
-          arguments.add(new NameArgument(false, name));
-        }
-      }
-
-      if (indexI < clause.getArguments().size()) {
-        String msg = "Expected " + constructorArguments.size() + " arguments to " + constructor.getName() + ", but given " + (constructorArguments.size() + clause.getArguments().size() - indexI);
-        error = new TypeCheckingError(myParent, msg, clause, getNames(myLocalContext));
-        clause.getExpression().setWellTyped(Error(null, error));
-        myModuleLoader.getTypeCheckingErrors().add(error);
-        continue;
-      }
-
-      int explicitCount = 0;
-      for (; indexJ < constructorArguments.size(); ++indexJ) {
-        if (constructorArguments.get(indexJ).getExplicit()) {
-          ++explicitCount;
-        } else {
-          String name = constructorArguments.get(indexJ) instanceof TelescopeArgument ? ((TelescopeArgument) constructorArguments.get(indexJ)).getNames().get(0) : null;
-          arguments.add(new NameArgument(false, name));
-        }
-      }
-      if (explicitCount > 0) {
-        String msg = "Expected " + constructorArguments.size() + " arguments to " + constructor.getName() + ", but given " + (constructorArguments.size() - explicitCount);
-        error = new TypeCheckingError(myParent, msg, clause, getNames(myLocalContext));
-        clause.getExpression().setWellTyped(Error(null, error));
-        myModuleLoader.getTypeCheckingErrors().add(error);
-        continue;
-      }
-
-      Expression substExpr = DefCall(null, constructor, parameters);
-      for (int j = 0; j < constructorArguments.size(); ++j) {
-        substExpr = Apps(substExpr, new ArgumentExpression(Index(constructorArguments.size() - 1 - j), constructorArguments.get(j).getExplicit(), !constructorArguments.get(j).getExplicit()));
-      }
-
-      List<Binding> localContext = new ArrayList<>(myLocalContext.size() - 1 + constructorArguments.size());
-      for (int i = 0; i < myLocalContext.size() - 1 - varIndex; ++i) {
-        localContext.add(myLocalContext.get(i));
-      }
-      if (!constructorArguments.isEmpty()) {
-        List<Expression> parameters1 = new ArrayList<>(parameters);
-        Collections.reverse(parameters1);
-        for (int i = 0; i < constructorArguments.size(); ++i) {
-          if (i > 0) {
-            for (int j = 0; j < parameters1.size(); ++j) {
-              parameters1.set(j, parameters1.get(j).liftIndex(0, 1));
-            }
-          }
-          localContext.add(new TypedBinding(arguments.get(i).getName(), constructorArguments.get(i).getType().subst(parameters1, i)));
-        }
-      }
-      for (int i = myLocalContext.size() - varIndex; i < myLocalContext.size(); ++i) {
-        int i0 = i - myLocalContext.size() + varIndex;
-        localContext.add(new TypedBinding(myLocalContext.get(i).getName(), myLocalContext.get(i).getType().liftIndex(i0 + 1, constructorArguments.size()).subst(substExpr, i0)));
-        substExpr = substExpr.liftIndex(0, 1);
-      }
-      Expression clauseExpectedType = expectedType.liftIndex(varIndex + 1, constructorArguments.size()).subst(substExpr, varIndex);
-
-      Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
-      Result clauseResult = new CheckTypeVisitor(myParent, localContext, myAbstractCalls, myModuleLoader, side).typeCheck(clause.getExpression(), clauseExpectedType);
-      if (!(clauseResult instanceof OKResult)) {
-        wasError = true;
-        if (errorResult == null) {
-          errorResult = clauseResult;
-        } else if (clauseResult instanceof InferErrorResult) {
-          myModuleLoader.getTypeCheckingErrors().add(((InferErrorResult) errorResult).error);
-          errorResult = clauseResult;
-        }
-      } else {
-        clauses.set(constructor.getIndex(), new Clause(constructor, arguments, clause.getArrow(), clauseResult.expression, null));
       }
     }
 
@@ -1412,48 +1288,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return errorResult;
     }
 
-    if (!constructors.isEmpty() && expr.getOtherwise() == null) {
-      String msg = "Incomplete pattern matching";
-      if (!dataType.equals(Prelude.INTERVAL)) {
-        msg += ". Unhandled constructors: ";
-        for (int i = 0; i < constructors.size(); ++i) {
-          if (i > 0) msg += ", ";
-          msg += constructors.get(i).getName().getPrefixName();
-        }
-      }
-      error = new TypeCheckingError(myParent, msg, expr, getNames(myLocalContext));
-      expr.setWellTyped(Error(null, error));
-      myModuleLoader.getTypeCheckingErrors().add(error);
-    }
-    if (constructors.isEmpty() && expr.getOtherwise() != null) {
-      String msg = "Overlapping pattern matching";
-      error = new TypeCheckingError(myParent, msg, expr.getOtherwise(), getNames(myLocalContext));
-      expr.setWellTyped(Error(null, error));
-      myModuleLoader.getTypeCheckingErrors().add(error);
-    }
-
-    Clause otherwise = null;
-    if (expr.getOtherwise() != null) {
-      Side side = expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.RIGHT || !(expr.getOtherwise().getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
-      CheckTypeVisitor visitor = side != mySide ? new CheckTypeVisitor(myParent, myLocalContext, myAbstractCalls, myModuleLoader, side) : this;
-      Result clauseResult = visitor.typeCheck(expr.getOtherwise().getExpression(), expectedType);
-      if (clauseResult instanceof InferErrorResult) {
-        return clauseResult;
-      }
-      if (clauseResult != null) {
-        otherwise = new Clause(null, null, expr.getOtherwise().getArrow(), clauseResult.expression, null);
-      }
-    }
-
-    ElimExpression result = Elim((IndexExpression) exprOKResult.expression, clauses, otherwise);
+    ElimExpression result = Elim((IndexExpression) exprOKResult.expression, clauses);
     for (Clause clause : clauses) {
       if (clause != null) {
         clause.setElimExpression(result);
       }
     }
-    if (otherwise != null) {
-      otherwise.setElimExpression(result);
-    }
+
     return new OKResult(result, expectedType, null);
   }
 
@@ -1499,11 +1340,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       @Override
       public List<? extends Abstract.Clause> getClauses() {
         return expr.getClauses();
-      }
-
-      @Override
-      public Abstract.Clause getOtherwise() {
-        return expr.getOtherwise();
       }
 
       @Override

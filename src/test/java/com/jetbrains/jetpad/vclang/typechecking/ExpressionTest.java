@@ -204,9 +204,9 @@ public class ExpressionTest {
     //   \let | x (y : Nat) : Nat <= \elim y | zero => zero
     //                                       | suc x' => suc x' \in f x)
     List<Clause> clauses = new ArrayList<>();
-    ElimExpression elim = Elim(Index(0), clauses, null);
-    clauses.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
-    clauses.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Suc(), Index(0)), elim));
+    ElimExpression elim = Elim(Index(0), clauses);
+    clauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
+    clauses.add(new Clause(match(Prelude.SUC, match("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Suc(), Index(0)), elim));
     Expression expr = Lam(lamArgs(
                     Tele(vars("F"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
                     Tele(vars("f"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
@@ -229,14 +229,14 @@ public class ExpressionTest {
   @Test
   public void caseTranslation() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    FunctionDefinition def = (FunctionDefinition) parseDef(moduleLoader, "\\function test : Nat => \\case 1 | zero => 0 | suc y => y");
-    FunctionDefinition def2 = (FunctionDefinition) parseDef(moduleLoader, "\\function test => \\let | caseF (caseA : Nat) : Nat <= \\elim caseA | zero => 0 | suc y => y \\in caseF 1");
+    FunctionDefinition def = (FunctionDefinition) parseDef(moduleLoader, "\\function test : Nat => \\case 1 | (zero) => 0 | (suc y) => y");
+    FunctionDefinition def2 = (FunctionDefinition) parseDef(moduleLoader, "\\function test => \\let | caseF (caseA : Nat) : Nat <= \\elim caseA | (zero) => 0 | (suc y) => y \\in caseF 1");
     assertEquals(def.getTerm(), def2.getTerm());
   }
 
   @Test
   public void caseNoExpectedError() {
     ModuleLoader moduleLoader = new ModuleLoader();
-    parseDef(moduleLoader, "\\function test => \\case 1 | zero => 0 | suc y => y", 1);
+    parseDef(moduleLoader, "\\function test => \\case 1 | (zero) => 0 | (suc y) => y", 1);
   }
 }

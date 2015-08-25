@@ -116,7 +116,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
     if (def.getPatterns() == null) {
       myBuilder.append("_ ");
     } else {
-      if (!myNames.isEmpty()) { //Inside data def remove prev
+      if (!myNames.isEmpty()) { //Inside data def, so remove previous
          tail.addAll(myNames.subList(myNames.size() - def.getPatterns().size(), myNames.size()));
          myNames.subList(myNames.size() -  def.getPatterns().size(), myNames.size()).clear();
          origSize = myNames.size();

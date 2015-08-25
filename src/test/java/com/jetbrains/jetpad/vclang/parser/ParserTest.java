@@ -191,7 +191,7 @@ public class ParserTest {
 
   @Test
   public void parserCase() {
-    parseExpr(dummyModuleLoader, "\\case 2 | zero => zero | suc x' => x'");
+    parseExpr(dummyModuleLoader, "\\case 2 | (zero) => zero | (suc x') => x'");
   }
 
   @Test

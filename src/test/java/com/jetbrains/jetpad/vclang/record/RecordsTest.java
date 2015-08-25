@@ -81,7 +81,7 @@ public class RecordsTest {
   public void recursiveTestError() {
     ModuleLoader moduleLoader = new ModuleLoader();
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
-    parseDefs(moduleLoader, "\\class A { \\function f : Nat -> Nat } \\function B => A { \\override f n <= \\elim n | zero => zero | suc n' => f (suc n') }", 1);
+    parseDefs(moduleLoader, "\\class A { \\function f : Nat -> Nat } \\function B => A { \\override f n <= \\elim n | (zero) => zero | (suc n') => f (suc n') }", 1);
   }
 
   @Test

@@ -68,12 +68,7 @@ letClause : ID tele* typeAnnotation? arrow expr;
 
 typeAnnotation : ':' expr;
 
-clauseName
-      : '_'                             # clauseNoName
-      | name tele*                      # clauseNameArgs
-      ;
-
-clause : '|' clauseName arrow expr;
+clause : '|' pattern arrow expr;
 
 elimCase : '\\elim'                     # elim
          | '\\case'                     # case

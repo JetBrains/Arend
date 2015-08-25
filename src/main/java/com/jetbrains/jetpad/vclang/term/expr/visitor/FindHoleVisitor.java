@@ -78,13 +78,10 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
     InferHoleExpression result = expr.getExpression().accept(this);
     if (result != null) return result;
     for (Clause clause : expr.getClauses()) {
-      if (clause == null) continue;
       result = clause.getExpression().accept(this);
       if (result != null) return result;
-      result = visitArguments(clause.getArguments());
-      if (result != null) return result;
     }
-    return expr.getOtherwise() == null ? null : expr.getOtherwise().getExpression().accept(this);
+    return null;
   }
 
   private InferHoleExpression visitArguments(List<? extends Argument> arguments) {

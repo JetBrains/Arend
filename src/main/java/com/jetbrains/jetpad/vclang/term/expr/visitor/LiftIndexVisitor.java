@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 
 public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   private final int myFrom;
@@ -157,18 +158,14 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   }
 
   private Clause visitClause(Clause clause, ElimExpression elimExpr) {
-    if (clause == null)
-      return null;
-    return new Clause(clause.getConstructor(), clause.getArguments(), clause.getArrow(),
-            clause.getExpression().liftIndex(myFrom + clause.getArguments().size(), myOn), elimExpr);
+    return new Clause(clause.getPattern(), clause.getArrow(),
+            clause.getExpression().liftIndex(myFrom + getNumArguments(clause.getPattern()), myOn), elimExpr);
   }
 
   @Override
   public Expression visitElim(ElimExpression expr) {
     List<Clause> clauses = new ArrayList<>();
-    ElimExpression result = Elim((IndexExpression) expr.getExpression().liftIndex(myFrom, myOn), clauses, visitClause(expr.getOtherwise(), null));
-    if (result.getOtherwise() != null)
-      result.getOtherwise().setElimExpression(result);
+    ElimExpression result = Elim((IndexExpression) expr.getExpression().liftIndex(myFrom, myOn), clauses);
     for (Clause clause : expr.getClauses()) {
       clauses.add(visitClause(clause, result));
     }

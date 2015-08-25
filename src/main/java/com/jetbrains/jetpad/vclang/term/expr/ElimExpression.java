@@ -10,12 +10,10 @@ import java.util.List;
 public class ElimExpression extends Expression implements Abstract.ElimExpression {
   private final IndexExpression myExpression;
   private final List<Clause> myClauses;
-  private final Clause myOtherwise;
 
-  public ElimExpression(IndexExpression expression, List<Clause> clauses, Clause otherwise) {
+  public ElimExpression(IndexExpression expression, List<Clause> clauses) {
     myExpression = expression;
     myClauses = clauses;
-    myOtherwise = otherwise;
   }
 
   @Override
@@ -26,11 +24,6 @@ public class ElimExpression extends Expression implements Abstract.ElimExpressio
   @Override
   public List<Clause> getClauses() {
     return myClauses;
-  }
-
-  @Override
-  public Clause getOtherwise() {
-    return myOtherwise;
   }
 
   @Override

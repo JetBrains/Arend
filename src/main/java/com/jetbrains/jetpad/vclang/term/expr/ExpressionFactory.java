@@ -8,6 +8,9 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
+import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -211,7 +214,23 @@ public class ExpressionFactory {
     return Apps(DefCall(binOp), left, right);
   }
 
-  public static ElimExpression Elim(IndexExpression expression, List<Clause> clauses, Clause otherwise) {
-    return new ElimExpression(expression, clauses, otherwise);
+  public static ElimExpression Elim(IndexExpression expression, List<Clause> clauses) {
+    return new ElimExpression(expression, clauses);
+  }
+
+  public static ConstructorPattern match(boolean isExplicit, Constructor constructor, Pattern... patterns) {
+    return new ConstructorPattern(constructor, Arrays.asList(patterns), isExplicit);
+  }
+
+  public static ConstructorPattern match(Constructor constructor, Pattern... patterns) {
+    return match(true, constructor, patterns);
+  }
+
+  public static NamePattern match(boolean isExplicit, String name) {
+    return new NamePattern(name, isExplicit);
+  }
+
+  public static NamePattern match(String name) {
+    return match(true, name);
   }
 }

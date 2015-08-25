@@ -56,4 +56,15 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     }
     return new PatternMatchResult(result);
   }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other == this)
+      return true;
+    if (!(other instanceof ConstructorPattern))
+      return false;
+    if (((ConstructorPattern) other).getConstructor() != myConstructor)
+      return false;
+    return ((ConstructorPattern) other).getArguments().equals(myArguments) && ((Pattern) other).getExplicit() == getExplicit();
+  }
 }

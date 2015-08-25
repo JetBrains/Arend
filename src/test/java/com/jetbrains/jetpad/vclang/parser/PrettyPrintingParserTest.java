@@ -89,17 +89,17 @@ public class PrettyPrintingParserTest {
     moduleLoader.init(DummySourceSupplier.getInstance(), DummyOutputSupplier.getInstance(), false);
 
     List<Clause> fooClausesActual = new ArrayList<>();
-    ElimExpression fooTermActual = Elim(Index(1), fooClausesActual, null);
+    ElimExpression fooTermActual = Elim(Index(1), fooClausesActual);
     FunctionDefinition fooDef = new FunctionDefinition(new Utils.Name("foo"), moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, fooTermActual);
-    fooClausesActual.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), fooTermActual));
-    fooClausesActual.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), fooTermActual));
+    fooClausesActual.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(0), fooTermActual));
+    fooClausesActual.add(new Clause(match(Prelude.SUC, match("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), fooTermActual));
     moduleLoader.rootModule().addField(fooDef, null);
 
     List<Clause> clausesActual = new ArrayList<>();
-    ElimExpression termActual = Elim(Index(1), clausesActual, null);
+    ElimExpression termActual = Elim(Index(1), clausesActual);
     FunctionDefinition def = new FunctionDefinition(new Utils.Name("bar"), moduleLoader.rootModule(), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Pi(Pi(Nat(), Nat()), Nat())), Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, termActual);
-    clausesActual.add(new Clause(Prelude.ZERO, nameArgs(), Abstract.Definition.Arrow.RIGHT, Index(0), termActual));
-    clausesActual.add(new Clause(Prelude.SUC, nameArgs(Name("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), termActual));
+    clausesActual.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(0), termActual));
+    clausesActual.add(new Clause(match(Prelude.SUC, match("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Apps(DefCall(fooDef), Index(2), Index(1))), termActual));
 
     testDef(moduleLoader, def, def);
   }

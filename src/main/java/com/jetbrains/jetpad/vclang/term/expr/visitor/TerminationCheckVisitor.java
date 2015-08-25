@@ -13,6 +13,8 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternToExpression;
 
 public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   private final FunctionDefinition myDef;
@@ -220,30 +222,13 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
       return false;
     }
 
-    for (Clause clause : expr.getClauses()) {
-      if (clause == null) continue;
-      for (Argument argument : clause.getArguments()) {
-        if (argument instanceof TypeArgument) {
-          if (!((TypeArgument) argument).getType().accept(this)) {
-            return false;
-          }
-        }
-      }
-    }
-
     int var = expr.getExpression().getIndex();
     for (Clause clause : expr.getClauses()) {
-      if (clause == null) continue;
-
-      int vars = numberOfVariables(clause.getArguments());
-      Expression newExpr = DefCall(clause.getConstructor());
-      for (int i = var + vars - 1; i >= var; --i) {
-        newExpr = Apps(newExpr, Index(i));
-      }
-
+      Expression newExpr = patternToExpression(clause.getPattern()).getExpression();
       List<Expression> patterns = new ArrayList<>(myPatterns.size());
+
       for (Expression pattern : myPatterns) {
-        patterns.add(pattern.liftIndex(var + 1, vars).subst(newExpr, var));
+        patterns.add(expandPatternSubstitute(clause.getPattern(), var, newExpr, pattern));
       }
 
       if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns))) {
@@ -251,7 +236,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
       }
     }
 
-    return expr.getOtherwise() == null || expr.getExpression().accept(this);
+    return expr.getExpression().accept(this);
   }
 
   @Override

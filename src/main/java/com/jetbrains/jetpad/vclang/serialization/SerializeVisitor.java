@@ -5,6 +5,9 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
+import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -177,31 +180,35 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
       throw new IllegalStateException();
     }
     for (Clause clause : expr.getClauses()) {
-      visitClause(clause, false);
-    }
-    try {
-      myDataStream.writeBoolean(expr.getOtherwise() != null);
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
-    if (expr.getOtherwise() != null) {
-      visitClause(expr.getOtherwise(), true);
+      visitClause(clause);
     }
     return null;
   }
 
-  private void visitClause(Clause clause, boolean isOtherwise) {
+  private void visitPattern(Pattern pattern) {
     try {
-      if (clause == null) {
-        myDataStream.writeInt(-1);
-      } else {
-        if (!isOtherwise) {
-          myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(clause.getConstructor()));
-          ModuleSerialization.writeArguments(this, clause.getArguments());
+      myDataStream.writeBoolean(pattern.getExplicit());
+      myDataStream.writeBoolean(pattern instanceof NamePattern);
+      if (pattern instanceof NamePattern) {
+        myDataStream.writeBoolean(((NamePattern) pattern).getName() != null);
+        myDataStream.writeUTF(((NamePattern) pattern).getName());
+      } else if (pattern instanceof ConstructorPattern) {
+        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(((ConstructorPattern) pattern).getConstructor()));
+        myDataStream.writeInt(((ConstructorPattern) pattern).getArguments().size());
+        for (Pattern nestedPattern : ((ConstructorPattern) pattern).getArguments()) {
+          visitPattern(nestedPattern);
         }
-        myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
-        clause.getExpression().accept(this);
       }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void visitClause(Clause clause) {
+    try {
+      visitPattern(clause.getPattern());
+      myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
+      clause.getExpression().accept(this);
     } catch (IOException e) {
       throw new IllegalStateException();
     }

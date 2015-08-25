@@ -143,7 +143,6 @@ public final class Abstract {
     byte PREC = -8;
     Expression getExpression();
     List<? extends Clause> getClauses();
-    Clause getOtherwise();
   }
 
   public interface CaseExpression extends ElimCaseExpression {
@@ -159,8 +158,7 @@ public final class Abstract {
   }
 
   public interface Clause extends PrettyPrintableSourceNode {
-    Utils.Name getName();
-    List<? extends NameArgument> getArguments();
+    Pattern getPattern();
     Definition.Arrow getArrow();
     Expression getExpression();
   }

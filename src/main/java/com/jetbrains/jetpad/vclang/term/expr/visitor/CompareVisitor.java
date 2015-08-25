@@ -800,19 +800,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       cmp = and(cmp, result.isOK());
     }
 
-    if (expr.getOtherwise() == otherElim.getOtherwise()) return maybeResult == null ? new JustResult(cmp) : maybeResult;
-    if (expr.getOtherwise() == null || otherElim.getOtherwise() == null || expr.getOtherwise().getArrow() != otherElim.getOtherwise().getArrow())
-      return new JustResult(CMP.NOT_EQUIV);
-    result = expr.getExpression().accept(this, otherElim.getOtherwise().getExpression());
-    if (result.isOK() == CMP.NOT_EQUIV) {
-      if (result instanceof MaybeResult) {
-        if (maybeResult == null) {
-          maybeResult = (MaybeResult) result;
-        }
-      } else {
-        return result;
-      }
-    }
     return maybeResult == null ? new JustResult(and(cmp, result.isOK())) : maybeResult;
   }
 
@@ -825,7 +812,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (clause == other) return new JustResult(CMP.EQUALS);
     if (clause == null || other == null) return new JustResult(CMP.NOT_EQUIV);
 
-    if (!other.getName().equals(clause.getName()) || clause.getArrow() != other.getArrow())
+    if (!other.getPattern().equals(clause.getPattern()) || clause.getArrow() != other.getArrow())
       return new JustResult(CMP.NOT_EQUIV);
     List<Abstract.Expression> args1 = new ArrayList<>();
     Abstract.Expression expr1 = lamArgs(clause.getExpression(), args1);

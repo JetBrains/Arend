@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
 import java.util.*;
 
@@ -228,27 +229,21 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
 
     Abstract.Definition.Arrow arrow = func.getArrow();
+    elim_loop:
     while (result instanceof ElimExpression) {
-      List<Expression> constructorArgs = new ArrayList<>();
-      Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0).normalize(Mode.WHNF, myContext).getFunction(constructorArgs);
-      if (expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor) {
-        Constructor constructor = (Constructor) ((DefCallExpression) expr).getDefinition();
-        Clause clause = constructor.getIndex() < ((ElimExpression) result).getClauses().size() ? ((ElimExpression) result).getClauses().get(constructor.getIndex()) : null;
-        if (clause != null && clause.getArguments().size() == constructorArgs.size()) {
+      Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0);
+      for (Clause clause : ((ElimExpression) result).getClauses()) {
+        Utils.PatternMatchResult matchResult = clause.getPattern().match(expr, myContext);
+        if (matchResult.expressions != null) {
           int var = ((ElimExpression) result).getExpression().getIndex();
           args2.remove(var);
-          for (Expression arg : constructorArgs) {
-            args2.add(var++, arg);
+          for (Expression match : matchResult.expressions) {
+            args2.add(var++, match);
           }
           result = clause.getExpression();
           arrow = clause.getArrow();
-          continue;
+          continue elim_loop;
         }
-      }
-      if (((ElimExpression) result).getOtherwise() != null) {
-        arrow = ((ElimExpression) result).getOtherwise().getArrow();
-        result = ((ElimExpression) result).getOtherwise().getExpression();
-        continue;
       }
       return applyDefCall(defCallExpr, args);
     }

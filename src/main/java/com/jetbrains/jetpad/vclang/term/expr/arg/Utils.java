@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
 
 public class Utils {
   public static String renameVar(List<String> names, String var) {
@@ -204,12 +205,8 @@ public class Utils {
 
     PrettyPrintVisitor.printIndent(builder, indent);
     builder.append("| ");
-    builder.append(clause.getName());
     int startIndex = names.size();
-    for (Abstract.Argument argument : clause.getArguments()){
-      builder.append(' ');
-      prettyPrintArgument(argument, builder, names, (byte) (Abstract.AppExpression.PREC + 1), indent);
-    }
+    prettyPrintPattern(clause.getPattern(), builder, names);
 
     List<String> newNames = names;
     if (expr.getExpression() instanceof Abstract.IndexExpression) {
@@ -223,12 +220,12 @@ public class Utils {
           newNames.add(null);
         }
       }
+      names.subList(startIndex, names.size()).clear();
     }
 
     builder.append(prettyArrow(clause.getArrow()));
     clause.getExpression().accept(new PrettyPrintVisitor(builder, newNames, indent), Abstract.Expression.PREC);
     builder.append('\n');
-    removeFromList(names, clause.getArguments());
   }
 
   private static String prettyArrow(Abstract.Definition.Arrow arrow) {

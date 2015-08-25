@@ -595,13 +595,11 @@ public final class Concrete {
   public static abstract class ElimCaseExpression extends Expression implements Abstract.ElimCaseExpression {
     private final Expression myExpression;
     private final List<Clause> myClauses;
-    private final Clause myOtherwise;
 
-    public ElimCaseExpression(Position position, Expression expression, List<Clause> clauses, Clause otherwise) {
+    public ElimCaseExpression(Position position, Expression expression, List<Clause> clauses) {
       super(position);
       myExpression = expression;
       myClauses = clauses;
-      myOtherwise = otherwise;
     }
 
     @Override
@@ -613,17 +611,12 @@ public final class Concrete {
     public List<Clause> getClauses() {
       return myClauses;
     }
-
-    @Override
-    public Clause getOtherwise() {
-      return myOtherwise;
-    }
   }
 
   public static class ElimExpression extends ElimCaseExpression implements Abstract.ElimExpression {
 
-    public ElimExpression(Position position, Expression expression, List<Clause> clauses, Clause otherwise) {
-      super(position, expression, clauses, otherwise);
+    public ElimExpression(Position position, Expression expression, List<Clause> clauses) {
+      super(position, expression, clauses);
     }
 
     @Override
@@ -634,8 +627,8 @@ public final class Concrete {
 
   public static class CaseExpression extends ElimCaseExpression implements Abstract.CaseExpression {
 
-    public CaseExpression(Position position, Expression expression, List<Clause> clauses, Clause otherwise) {
-      super(position, expression, clauses, otherwise);
+    public CaseExpression(Position position, Expression expression, List<Clause> clauses) {
+      super(position, expression, clauses);
     }
 
     @Override
@@ -645,16 +638,14 @@ public final class Concrete {
   }
 
   public static class Clause extends SourceNode implements Abstract.Clause {
-    private final Name myName;
-    private final List<NameArgument> myArguments;
+    private final Pattern myPattern;
     private final Definition.Arrow myArrow;
     private final Expression myExpression;
     private Abstract.ElimCaseExpression myElimCaseExpression;
 
-    public Clause(Position position, Name name, List<NameArgument> arguments, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
+    public Clause(Position position, Pattern pattern, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
       super(position);
-      myName = name;
-      myArguments = arguments;
+      myPattern = pattern;
       myArrow = arrow;
       myExpression = expression;
       myElimCaseExpression = elimExpression;
@@ -665,13 +656,8 @@ public final class Concrete {
     }
 
     @Override
-    public Name getName() {
-      return myName;
-    }
-
-    @Override
-    public List<NameArgument> getArguments() {
-      return myArguments;
+    public Abstract.Pattern getPattern() {
+      return myPattern;
     }
 
     @Override

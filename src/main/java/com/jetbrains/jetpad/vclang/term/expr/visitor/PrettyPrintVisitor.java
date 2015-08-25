@@ -262,13 +262,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       prettyPrintClause(expr, clause, myBuilder, myNames, myIndent);
     }
 
-    if (expr.getOtherwise() != null) {
-      printIndent(myBuilder, myIndent);
-      myBuilder.append("| _ ").append(expr.getOtherwise().getArrow() == Abstract.Definition.Arrow.LEFT ? "<= " : "=> ");
-      expr.getOtherwise().getExpression().accept(this, Abstract.Expression.PREC);
-      myBuilder.append('\n');
-    }
-
     printIndent(myBuilder, myIndent);
     myBuilder.append(';');
     myIndent -= INDENT;
