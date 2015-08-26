@@ -232,16 +232,19 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     elim_loop:
     while (result instanceof ElimExpression) {
       Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0);
-      for (Clause clause : ((ElimExpression) result).getClauses()) {
-        Utils.PatternMatchResult matchResult = clause.getPattern().match(expr, myContext);
-        if (matchResult.expressions != null) {
-          int var = ((ElimExpression) result).getExpression().getIndex();
-          args2.remove(var);
-          Collections.reverse(matchResult.expressions);
-          args2.addAll(var, matchResult.expressions);
-          result = clause.getExpression();
-          arrow = clause.getArrow();
-          continue elim_loop;
+      Expression call = expr.normalize(Mode.WHNF, myContext).getFunction(new ArrayList<Expression>());
+      if (call instanceof DefCallExpression && ((DefCallExpression) call).getDefinition() instanceof Constructor || func == Prelude.AT) {
+        for (Clause clause : ((ElimExpression) result).getClauses()) {
+          Utils.PatternMatchResult matchResult = clause.getPattern().match(expr, myContext);
+          if (matchResult.expressions != null) {
+            int var = ((ElimExpression) result).getExpression().getIndex();
+            args2.remove(var);
+            Collections.reverse(matchResult.expressions);
+            args2.addAll(var, matchResult.expressions);
+            result = clause.getExpression();
+            arrow = clause.getArrow();
+            continue elim_loop;
+          }
         }
       }
       return applyDefCall(defCallExpr, args);

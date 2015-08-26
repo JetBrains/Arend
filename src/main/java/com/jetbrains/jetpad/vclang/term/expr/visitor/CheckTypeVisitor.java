@@ -1265,6 +1265,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
+    Expression ftype = exprOKResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(new ArrayList<Expression>());
+    if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
+      error = new TypeCheckingError(myNamespace, "Elimination is allowed only for a data type variable.", expr.getExpression(), getNames(myLocalContext));
+      myModuleLoader.getTypeCheckingErrors().add(error);
+      expr.getExpression().setWellTyped(Error(null, error));
+      return null;
+    }
+
     int varIndex = ((IndexExpression) exprOKResult.expression).getIndex();
 
     Result errorResult = null;
