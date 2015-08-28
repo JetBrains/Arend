@@ -5,8 +5,10 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,6 +44,7 @@ public class Utils {
   public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names) {
     prettyPrintPattern(pattern, builder, names, false);
   }
+
   public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names, boolean topLevel) {
     if (!pattern.getExplicit())
       builder.append('{');
@@ -167,6 +170,56 @@ public class Utils {
     return maybe != null ? maybe : new PatternMatchOKResult(result);
   }
 
+  public static List<Pattern> patternMultipleMatch(List<Pattern> patterns, Expression expr, List<Binding> ctx) {
+    List<NamePattern> namePatterns = new ArrayList<>();
+    List<ConstructorPattern> constructorPatterns = new ArrayList<>();
+    for (Pattern pattern : patterns) {
+      if (pattern instanceof NamePattern) {
+        namePatterns.add((NamePattern) pattern);
+      } else if (pattern instanceof ConstructorPattern) {
+        constructorPatterns.add((ConstructorPattern) pattern);
+      }
+    }
+    if (constructorPatterns.isEmpty())
+      return new ArrayList<Pattern>(namePatterns);
+    List<Expression> constructorArgs = new ArrayList<>();
+    expr = expr.normalize(NormalizeVisitor.Mode.WHNF, ctx).getFunction(constructorArgs);
+    if (!(expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor)) {
+      return Collections.EMPTY_LIST;
+    }
+    List<ConstructorPattern> goodConstructorPatterns = new ArrayList<>();
+    List<List<Pattern>> goodConstructorNestedPatterns = new ArrayList<>();
+    for (int i = 0; i < constructorArgs.size(); i++) {
+      goodConstructorNestedPatterns.add(new ArrayList<Pattern>());
+    }
+
+    for (ConstructorPattern pattern : constructorPatterns) {
+      if (pattern.getConstructor() == ((DefCallExpression) expr).getDefinition()) {
+        goodConstructorPatterns.add(pattern);
+        for (int i = 0; i < constructorArgs.size(); i++) {
+          goodConstructorNestedPatterns.get(i).add(pattern.getArguments().get(i));
+        }
+      }
+    }
+
+    for (int i = 0; i < constructorArgs.size(); i++) {
+      List<Pattern> nestedGoodPatterns = patternMultipleMatch(goodConstructorNestedPatterns.get(i), constructorArgs.get(i), ctx);
+      for (int j = 0; j < goodConstructorPatterns.size(); j++) {
+        if (!nestedGoodPatterns.contains(goodConstructorNestedPatterns.get(i).get(j))) {
+          goodConstructorPatterns.remove(j);
+          for (List<Pattern> nestedPatterns : goodConstructorNestedPatterns) {
+            nestedPatterns.remove(j);
+          }
+          j--;
+        }
+      }
+    }
+
+    List<Pattern> result = new ArrayList<>();
+    result.addAll(namePatterns);
+    result.addAll(goodConstructorPatterns);
+    return result;
+  }
 
   public static List<TypeArgument> expandConstructorParameters(Constructor constructor) {
     List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters());
