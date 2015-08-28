@@ -594,14 +594,22 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             } else {
               if (constructor.getPatterns() != null) {
                 Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), arguments, myLocalContext);
-                if (matchResult.expressions == null) {
-                  TypeCheckingError error = new TypeCheckingError(myNamespace, "Constructor is not appropriate, failed to match data type parameters. " +
-                      "Expected " + matchResult.failedPattern + ", got " + matchResult.actualExpression, expr, getNames(myLocalContext));
-                  myModuleLoader.getTypeCheckingErrors().add(error);
+                TypeCheckingError error = null;
+                if (matchResult instanceof PatternMatchMaybeResult) {
+                  error = new TypeCheckingError(myNamespace, "Constructor is not appropriate, failed to match data type parameters. " +
+                      "Expected " + ((PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((PatternMatchMaybeResult) matchResult).actualExpression, expr, getNames(myLocalContext));
+                } else if (matchResult instanceof PatternMatchFailedResult) {
+                  error = new TypeCheckingError(myNamespace, "Constructor is not appropriate, failed to match data type parameters. " +
+                      "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression, expr, getNames(myLocalContext));
+                } else if (matchResult instanceof PatternMatchOKResult) {
+                  arguments = ((PatternMatchOKResult) matchResult).expressions;
+                }
+
+                if (error != null) {
                   expr.setWellTyped(Error(null, error));
+                  myModuleLoader.getTypeCheckingErrors().add(error);
                   return null;
                 }
-                arguments = matchResult.expressions;
               }
               Collections.reverse(arguments);
               Expression resultType = constructor.getType().subst(arguments, 0);
@@ -1115,7 +1123,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       return new ExpandPatternResult(Index(0), new NamePattern(name, pattern.getExplicit()), 1);
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      TypeCheckingError error;
+      TypeCheckingError error = null;
       Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
 
       List<Expression> parameters = new ArrayList<>();
@@ -1150,17 +1158,24 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return null;
       }
 
-      List<Expression> matchedParameters;
+      List<Expression> matchedParameters = null;
       if (constructor.getPatterns() != null) {
         Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, myLocalContext);
-        if (matchResult.expressions == null) {
+        if (matchResult instanceof PatternMatchMaybeResult) {
           error = new TypeCheckingError(myNamespace, "Constructor is not appropriate, failed to match data type parameters. " +
-              "Expected " + matchResult.failedPattern + ", got " + matchResult.actualExpression, pattern, getNames(myLocalContext));
+              "Expected " + ((PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((PatternMatchMaybeResult) matchResult).actualExpression, pattern, getNames(myLocalContext));
+        } else if (matchResult instanceof PatternMatchFailedResult) {
+          error = new TypeCheckingError(myNamespace, "Constructor is not appropriate, failed to match data type parameters. " +
+              "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression, pattern, getNames(myLocalContext));
+        } else if (matchResult instanceof PatternMatchOKResult) {
+          matchedParameters = ((PatternMatchOKResult) matchResult).expressions;
+        }
+
+        if (error != null) {
           myModuleLoader.getTypeCheckingErrors().add(error);
           expr.setWellTyped(Error(null, error));
           return null;
         }
-        matchedParameters = matchResult.expressions;
       } else {
         matchedParameters = parameters;
       }

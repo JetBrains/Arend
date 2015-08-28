@@ -117,21 +117,32 @@ public class Utils {
     return new ProcessImplicitResult(result, numExplicit);
   }
 
-  public static class PatternMatchResult {
+  public static class PatternMatchResult {}
+
+  public static class PatternMatchOKResult extends PatternMatchResult {
     public final List<Expression> expressions;
 
+    PatternMatchOKResult(List<Expression> expressions) {
+      this.expressions = expressions;
+    }
+  }
+
+  public static class PatternMatchFailedResult extends PatternMatchResult {
     public final ConstructorPattern failedPattern;
     public final Expression actualExpression;
 
-    PatternMatchResult(List<Expression> expressions) {
-      this.expressions = expressions;
-      this.failedPattern = null;
-      this.actualExpression = null;
-    }
-
-    PatternMatchResult(ConstructorPattern failedPattern, Expression actualExpression) {
-      this.expressions = null;
+    PatternMatchFailedResult(ConstructorPattern failedPattern, Expression actualExpression) {
       this.failedPattern = failedPattern;
+      this.actualExpression = actualExpression;
+    }
+  }
+
+  public static class PatternMatchMaybeResult extends PatternMatchResult {
+    public final ConstructorPattern maybePattern;
+    public final Expression actualExpression;
+
+    PatternMatchMaybeResult(ConstructorPattern maybePattern, Expression actualExpression) {
+      this.maybePattern = maybePattern;
       this.actualExpression = actualExpression;
     }
   }
@@ -139,14 +150,21 @@ public class Utils {
   public static PatternMatchResult patternMatchAll(List<Pattern> patterns, List<Expression> exprs, List<Binding> context) {
     List<Expression> result = new ArrayList<>();
     assert patterns.size() == exprs.size();
+
+    PatternMatchMaybeResult maybe = null;
     for (int i = 0; i < patterns.size(); i++) {
       PatternMatchResult subMatch = patterns.get(i).match(exprs.get(i), context);
-      if (subMatch.expressions == null) {
+      if (subMatch instanceof PatternMatchFailedResult) {
         return subMatch;
+      } else if (subMatch instanceof PatternMatchMaybeResult) {
+        if (maybe == null)
+          maybe = (PatternMatchMaybeResult) subMatch;
+      } else if (subMatch instanceof PatternMatchOKResult) {
+        result.addAll(((PatternMatchOKResult) subMatch).expressions);
       }
-      result.addAll(subMatch.expressions);
     }
-    return new PatternMatchResult(result);
+
+    return maybe != null ? maybe : new PatternMatchOKResult(result);
   }
 
 

@@ -7,6 +7,9 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchFailedResult;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchMaybeResult;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchOKResult;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchResult;
 
 import java.util.ArrayList;
@@ -42,19 +45,24 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     expr = expr.normalize(NormalizeVisitor.Mode.WHNF, context).getFunction(constructorArgs);
     Collections.reverse(constructorArgs);
     if (!(expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor) || ((DefCallExpression) expr).getDefinition() != myConstructor) {
-      return new PatternMatchResult(this, expr);
+      return new PatternMatchMaybeResult(this, expr);
     }
     if (constructorArgs.size() != myArguments.size()) {
-      return new PatternMatchResult(this, expr);
+      throw new IllegalStateException();
     }
     List<Expression> result = new ArrayList<>();
+    PatternMatchMaybeResult maybe = null;
     for (int i  = 0; i < constructorArgs.size(); i++) {
       PatternMatchResult subMatch = myArguments.get(i).match(constructorArgs.get(i), context);
-      if (subMatch.expressions == null)
+      if (subMatch instanceof PatternMatchFailedResult)
         return subMatch;
-      result.addAll(subMatch.expressions);
+      if (subMatch instanceof PatternMatchMaybeResult) {
+        if (maybe == null)
+          maybe = (PatternMatchMaybeResult) subMatch;
+      } else if (subMatch instanceof PatternMatchOKResult)
+      result.addAll(((PatternMatchOKResult) subMatch).expressions);
     }
-    return new PatternMatchResult(result);
+    return maybe != null ? maybe : new PatternMatchOKResult(result);
   }
 
   @Override

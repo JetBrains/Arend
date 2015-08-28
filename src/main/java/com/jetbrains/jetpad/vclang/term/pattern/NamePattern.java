@@ -22,7 +22,7 @@ public class NamePattern extends Pattern implements Abstract.NamePattern{
 
   @Override
   public Utils.PatternMatchResult match(Expression expr, List<Binding> context) {
-    return new Utils.PatternMatchResult(Collections.singletonList(expr));
+    return new Utils.PatternMatchOKResult(Collections.singletonList(expr));
   }
 
   @Override

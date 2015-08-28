@@ -84,7 +84,7 @@ class PatternExpansion {
   private static List<TypeArgument> getConstructorArguments(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters) {
     List<Expression> matchedParameters;
     if (constructorPattern.getConstructor().getPatterns() != null) {
-     matchedParameters = patternMatchAll(constructorPattern.getConstructor().getPatterns(), dataTypeParameters, new ArrayList<Binding>()).expressions;
+      matchedParameters = ((Utils.PatternMatchOKResult) patternMatchAll(constructorPattern.getConstructor().getPatterns(), dataTypeParameters, new ArrayList<Binding>())).expressions;
     } else {
       matchedParameters = dataTypeParameters;
     }

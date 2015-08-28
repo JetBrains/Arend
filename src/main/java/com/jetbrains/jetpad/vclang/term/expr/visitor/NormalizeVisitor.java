@@ -236,11 +236,11 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
       if (call instanceof DefCallExpression && ((DefCallExpression) call).getDefinition() instanceof Constructor || func == Prelude.AT) {
         for (Clause clause : ((ElimExpression) result).getClauses()) {
           Utils.PatternMatchResult matchResult = clause.getPattern().match(expr, myContext);
-          if (matchResult.expressions != null) {
+          if (matchResult instanceof Utils.PatternMatchOKResult) {
             int var = ((ElimExpression) result).getExpression().getIndex();
             args2.remove(var);
-            Collections.reverse(matchResult.expressions);
-            args2.addAll(var, matchResult.expressions);
+            Collections.reverse(((Utils.PatternMatchOKResult) matchResult).expressions);
+            args2.addAll(var, ((Utils.PatternMatchOKResult) matchResult).expressions);
             result = clause.getExpression();
             arrow = clause.getArrow();
             continue elim_loop;
