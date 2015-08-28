@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import org.antlr.v4.runtime.Token;
 
@@ -1159,11 +1160,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     List<String> oldContext = new ArrayList<>(myContext);
+    boolean wasOtherwise = false;
     for (ClauseContext clauseCtx : ctx.clause()) {
-      Concrete.Pattern pattern;
+      Concrete.Pattern pattern = null;
       if (clauseCtx.name() != null) {
         pattern = new Concrete.ConstructorPattern(tokenPosition(clauseCtx.name().start), getName(clauseCtx.name()), visitPatterns(clauseCtx.patternx()));
+        for (Concrete.Pattern subPattern : ((Concrete.ConstructorPattern) pattern).getArguments()) {
+          if (subPattern instanceof Concrete.ConstructorPattern) {
+            myModuleLoader.getErrors().add(new ParserError(myModule, subPattern.getPosition(), "Only simple constructor patterns are allowed under elim"));
+            return null;
+          }
+        }
       } else {
+        if (wasOtherwise) {
+          myModuleLoader.getErrors().add(new ParserError(myModule, tokenPosition(clauseCtx.start), "Multiple otherwise clauses"));
+          continue;
+        }
+        wasOtherwise = true;
         pattern = new Concrete.NamePattern(tokenPosition(clauseCtx.start), null);
       }
 
@@ -1175,8 +1188,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         myContext = oldContext;
         return null;
       }
-      clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.getStart()), pattern, arrow, expr, null));
 
+      clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.getStart()), pattern, arrow, expr, null));
       myContext = new ArrayList<>(oldContext);
     }
 

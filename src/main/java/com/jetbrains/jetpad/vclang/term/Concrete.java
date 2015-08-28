@@ -889,7 +889,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<? extends Abstract.Pattern> getArguments() {
+    public List<Concrete.Pattern> getArguments() {
       return myArguments;
     }
   }

@@ -7,6 +7,8 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
+import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
 import java.util.*;
@@ -234,17 +236,34 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
       Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0);
       Expression call = expr.normalize(Mode.WHNF, myContext).getFunction(new ArrayList<Expression>());
       if (call instanceof DefCallExpression && ((DefCallExpression) call).getDefinition() instanceof Constructor || func == Prelude.AT) {
+        Utils.PatternMatchOKResult matchOKResult = null;
+        Clause clauseOK = null;
+        Clause otherwise = null;
+
         for (Clause clause : ((ElimExpression) result).getClauses()) {
+          if (clause.getPattern() instanceof NamePattern) {
+            otherwise = clause;
+            continue;
+          }
           Utils.PatternMatchResult matchResult = clause.getPattern().match(expr, myContext);
           if (matchResult instanceof Utils.PatternMatchOKResult) {
-            int var = ((ElimExpression) result).getExpression().getIndex();
-            args2.remove(var);
-            Collections.reverse(((Utils.PatternMatchOKResult) matchResult).expressions);
-            args2.addAll(var, ((Utils.PatternMatchOKResult) matchResult).expressions);
-            result = clause.getExpression();
-            arrow = clause.getArrow();
-            continue elim_loop;
+            matchOKResult = (Utils.PatternMatchOKResult) matchResult;
+            clauseOK = clause;
           }
+        }
+        if (clauseOK == null && otherwise != null) {
+          clauseOK = otherwise;
+          matchOKResult = (Utils.PatternMatchOKResult) clauseOK.getPattern().match(expr, myContext);
+        }
+
+        if (clauseOK != null) {
+          int var = ((ElimExpression) result).getExpression().getIndex();
+          args2.remove(var);
+          Collections.reverse(matchOKResult.expressions);
+          args2.addAll(var, matchOKResult.expressions);
+          result = clauseOK.getExpression();
+          arrow = clauseOK.getArrow();
+          continue elim_loop;
         }
       }
       return applyDefCall(defCallExpr, args);

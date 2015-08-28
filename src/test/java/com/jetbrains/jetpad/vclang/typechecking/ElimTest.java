@@ -114,4 +114,20 @@ public class ElimTest {
             "| con1 s => y s" +
             "| con2 _ {a} {b} => y (q b)");
   }
+
+  @Test
+  public void elim4() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    parseDefs(moduleLoader,
+        "\\static \\function test (x : Nat) : Nat <= \\elim x | zero => 0 | _ => 1" +
+        "\\static \\function test2 (x : Nat) : 1 = 1 => path (\\lam _ => test x)", 1);
+  }
+
+  @Test
+  public void elim5() {
+    ModuleLoader moduleLoader = new ModuleLoader();
+    parseDefs(moduleLoader,
+        "\\static \\data D (x : Nat) | D zero => d0 | D (suc n) => d1" +
+        "\\static \\function test (x : D 0) : Nat => \\elim x | d0 => 0");
+  }
 }
