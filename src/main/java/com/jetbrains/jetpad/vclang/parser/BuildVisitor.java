@@ -1205,6 +1205,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         return null;
       }
 
+      clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.getStart()), pattern, arrow, expr, null));
       myContext = new ArrayList<>(oldContext);
     }
 

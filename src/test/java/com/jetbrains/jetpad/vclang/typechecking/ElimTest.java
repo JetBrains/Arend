@@ -86,11 +86,11 @@ public class ElimTest {
             "| con1 _ => Nat\n" +
         "\\static \\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
             "| con1 s <= \\elim e\n" +
-              "| con2 x y z t => x" +
-              "| con1 _ => s" +
+              "| con2 x y z t => x\n" +
+              "| con1 _ => s\n" +
               ";\n" +
             "| con2 x y z t <= \\elim e\n" +
-              "| con1 s => x q" +
+              "| con1 s => x q\n" +
               "| con2 _ y z t => x");
   }
 
@@ -100,25 +100,25 @@ public class ElimTest {
         "\\static \\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
         "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
           "| con1 s <= \\elim e\n" +
-            "| con2 _ {y} {z} {t} => q t" +
-            "| con1 {z} _ => z" +
+            "| con2 _ {y} {z} {t} => q t\n" +
+            "| con1 {z} _ => z\n" +
             ";\n" +
           "| con2 y <= \\elim e\n" +
-            "| con1 s => y s" +
+            "| con1 s => y s\n" +
             "| con2 _ {a} {b} => y (q b)");
   }
 
   @Test
   public void elim4() {
     parseDefs(
-        "\\static \\function test (x : Nat) : Nat <= \\elim x | zero => 0 | _ => 1" +
+        "\\static \\function test (x : Nat) : Nat <= \\elim x | zero => 0 | _ => 1\n" +
         "\\static \\function test2 (x : Nat) : 1 = 1 => path (\\lam _ => test x)", 1);
   }
 
   @Test
   public void elim5() {
     parseDefs(
-        "\\static \\data D (x : Nat) | D zero => d0 | D (suc n) => d1" +
+        "\\static \\data D (x : Nat) | D zero => d0 | D (suc n) => d1\n" +
         "\\static \\function test (x : D 0) : Nat => \\elim x | d0 => 0");
   }
 }

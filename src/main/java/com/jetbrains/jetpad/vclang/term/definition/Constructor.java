@@ -40,6 +40,7 @@ public class Constructor extends Definition implements Abstract.Constructor {
   public Constructor(int index, Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
     this(index, namespace, precedence, universe, arguments, dataType, null);
   }
+
   @Override
   public List<Pattern> getPatterns() {
     return myPatterns;
