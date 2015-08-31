@@ -1,16 +1,16 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.typechecking.error.ListErrorReporter;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -161,10 +161,9 @@ public class NormalizationTest {
   }
 
   private static Expression typecheckExpression(Expression expr, List<Binding> ctx) {
-    ModuleLoader moduleLoader = new ModuleLoader();
-    CheckTypeVisitor.Result result = expr.checkType(ctx, null, moduleLoader);
-    assertEquals(0, moduleLoader.getErrors().size());
-    assertEquals(0, moduleLoader.getTypeCheckingErrors().size());
+    ListErrorReporter errorReporter = new ListErrorReporter();
+    CheckTypeVisitor.Result result = expr.checkType(ctx, null, errorReporter);
+    assertEquals(0, errorReporter.getErrorList().size());
     assertTrue(result.equations.isEmpty());
     return result.expression;
   }

@@ -1,16 +1,17 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.Module;
-import com.jetbrains.jetpad.vclang.module.ModuleError;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
+import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.*;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.io.*;
 import java.util.*;
@@ -44,14 +45,14 @@ public class ModuleDeserialization {
     int errorsNumber = stream.readInt();
 
     Map<Integer, NamespaceMember> definitionMap = new HashMap<>();
-    definitionMap.put(0, myModuleLoader.getRoot());
+    definitionMap.put(0, RootModule.ROOT);
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
       int index = stream.readInt();
       int parentIndex = stream.readInt();
       NamespaceMember child;
       if (parentIndex == 0) {
-        child = index == 1 ? myModuleLoader.getRoot() : new Namespace(null, null);
+        child = index == 1 ? RootModule.ROOT : new Namespace(new Utils.Name("<local>"), null);
       } else {
         Abstract.Definition.Fixity fixity = stream.readBoolean() ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
         String name = stream.readUTF();
@@ -69,16 +70,16 @@ public class ModuleDeserialization {
 
         Namespace parentNamespace = (Namespace) parent;
         if (code == ModuleSerialization.NAMESPACE_CODE) {
-          ClassDefinition definition = myModuleLoader.loadModule(new Module((Namespace) parent, name), true);
-          child = definition == null ? parentNamespace.getChild(name1) : definition.getNamespace();
+          ModuleLoadingResult result = myModuleLoader.load(((Namespace) parent).getChild(new Utils.Name(name)), true);
+          child = result == null || result.classDefinition == null ? parentNamespace.getChild(name1) : result.classDefinition.getNamespace();
         } else {
           if (isNew) {
             child = newDefinition(code, name1, parentNamespace);
-            if (parentNamespace.addMember((Definition) child) != null) {
+            if (parentNamespace.addDefinition((Definition) child) != null) {
               throw new NameIsAlreadyDefined(name1);
             }
           } else {
-            child = parentNamespace.getMember(name);
+            child = parentNamespace.getDefinition(name);
             if (child == null) {
               throw new NameDoesNotDefined(name1);
             }
@@ -92,7 +93,7 @@ public class ModuleDeserialization {
     deserializeNamespace(stream, definitionMap);
     if (stream.readBoolean()) {
       if (classDefinition == null) {
-        myModuleLoader.getErrors().add(new ModuleError(new Module(namespace.getParent(), namespace.getName().name), "Name is already defined"));
+        throw new NameIsAlreadyDefined(namespace.getName());
       } else {
         deserializeClassDefinition(stream, definitionMap, classDefinition);
       }
@@ -158,7 +159,7 @@ public class ModuleDeserialization {
         }
 
         dataDefinition.addConstructor(constructor);
-        dataDefinition.getParent().addMember(constructor);
+        dataDefinition.getNamespace().getParent().addDefinition(constructor);
       }
     } else
     if (code == ModuleSerialization.CLASS_CODE) {
@@ -394,7 +395,7 @@ public class ModuleDeserialization {
           if (!(overridden instanceof FunctionDefinition)) {
             throw new IncorrectFormat();
           }
-          OverriddenDefinition overriding = (OverriddenDefinition) newDefinition(ModuleSerialization.OVERRIDDEN_CODE, overridden.getName(), overridden.getParent());
+          OverriddenDefinition overriding = (OverriddenDefinition) newDefinition(ModuleSerialization.OVERRIDDEN_CODE, overridden.getName(), overridden.getNamespace().getParent());
           deserializeDefinition(stream, definitionMap, overriding);
           map.put((FunctionDefinition) overridden, overriding);
         }

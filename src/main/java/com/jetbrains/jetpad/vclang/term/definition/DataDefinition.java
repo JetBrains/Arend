@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -53,7 +54,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
 
   public void addConstructor(Constructor constructor) {
     myConstructors.add(constructor);
-    getNamespace().addMember(constructor);
+    getNamespace().addDefinition(constructor);
   }
 
   @Override

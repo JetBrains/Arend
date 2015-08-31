@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -36,7 +36,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
     if (expr.getExpression() != null) {
       expr1 = expr.getExpression().accept(this);
     } else {
-      expr1 = expr.getDefinition().getParent() == myNamespace ? myExpression : null;
+      expr1 = expr.getDefinition().getNamespace().getParent() == myNamespace ? myExpression : null;
     }
 
     List<Expression> parameters = expr.getParameters() == null ? null : new ArrayList<Expression>(expr.getParameters().size());

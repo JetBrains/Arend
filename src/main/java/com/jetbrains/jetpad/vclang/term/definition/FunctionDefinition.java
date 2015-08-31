@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -35,7 +36,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
 
   @Override
   public Collection<Definition> getFields() {
-    return getNamespace().getMembers();
+    return getNamespace().getDefinitions();
   }
 
   @Override

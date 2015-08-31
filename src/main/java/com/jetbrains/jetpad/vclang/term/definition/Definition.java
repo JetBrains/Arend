@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 
@@ -21,11 +22,6 @@ public abstract class Definition extends Binding implements Abstract.Definition,
 
   public Namespace getNamespace() {
     return myNamespace;
-  }
-
-  @Override
-  public Namespace getParent() {
-    return myNamespace.getParent();
   }
 
   @Override

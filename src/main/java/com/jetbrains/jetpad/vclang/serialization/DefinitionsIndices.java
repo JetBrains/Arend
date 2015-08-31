@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 
 import java.io.DataOutputStream;
@@ -32,7 +32,7 @@ public class DefinitionsIndices {
     if (definition == null) return -1;
     Integer index = myDefinitions.get(definition);
     if (index == null) {
-      getDefinitionIndex(definition.getParent(), false);
+      getDefinitionIndex(definition.getNamespace().getParent(), false);
       myDefinitionsList.add(new Entry(definition, myCounter, isNew));
       myDefinitions.put(definition, myCounter++);
       return myCounter - 1;
@@ -45,8 +45,8 @@ public class DefinitionsIndices {
     stream.writeInt(myDefinitionsList.size());
     for (Entry entry : myDefinitionsList) {
       stream.writeInt(entry.index);
-      if (entry.member.getParent() != null) {
-        stream.writeInt(myDefinitions.get(entry.member.getParent()));
+      if (entry.member.getNamespace().getParent() != null) {
+        stream.writeInt(myDefinitions.get(entry.member.getNamespace().getParent()));
         stream.writeBoolean(entry.member.getName().fixity == Abstract.Definition.Fixity.PREFIX);
         stream.writeUTF(entry.member.getName().name);
         stream.write(ModuleSerialization.getDefinitionCode(entry.member));
