@@ -51,7 +51,7 @@ public class ArgInferenceError extends TypeCheckingError {
   @Override
   public String toString() {
     String msg = printPosition() + getMessage();
-    if (getExpression() == null) {
+    if (getCause() == null) {
       return msg;
     } else {
       if (myWhere != null) {

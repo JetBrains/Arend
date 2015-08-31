@@ -26,7 +26,8 @@ public class TypeCheckingError extends GeneralError {
     return names;
   }
 
-  public Abstract.SourceNode getExpression() {
+  @Override
+  public Abstract.SourceNode getCause() {
     return myExpression;
   }
 

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.IOException;
 
@@ -11,6 +12,10 @@ public class GeneralError {
   public GeneralError(Namespace namespace, String message) {
     myNamespace = namespace;
     myMessage = message;
+  }
+
+  public Abstract.SourceNode getCause() {
+    return null;
   }
 
   public String getMessage() {
