@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 import java.io.EOFException;
@@ -41,7 +42,12 @@ public abstract class BaseModuleLoader implements ModuleLoader {
   }
 
   @Override
-  public ModuleLoadingResult load(Namespace module, boolean tryLoad) {
+  public ModuleLoadingResult load(Namespace parent, String name, boolean tryLoad) {
+    Namespace module = parent.findChild(name);
+    if (module == null) {
+      module = new Namespace(new Utils.Name(name), parent);
+    }
+
     int index = myLoadingModules.indexOf(module);
     if (index != -1) {
       loadingError(new CycleError(module, new ArrayList<>(myLoadingModules.subList(index, myLoadingModules.size()))));
@@ -71,7 +77,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
 
     myLoadingModules.add(module);
     ClassDefinition classDefinition = null;
-    if (module.getParent().getDefinition(module.getName().name) == null) {
+    if (parent.getDefinition(name) == null) {
       classDefinition = new ClassDefinition(module);
     }
 
@@ -85,9 +91,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
             output.write(module, classDefinition);
           }
           loadingSucceeded(module, classDefinition, true);
-          return new ModuleLoadingResult(classDefinition, true);
         } else {
-          classDefinition = null;
           return null;
         }
       } else {
@@ -100,22 +104,23 @@ public abstract class BaseModuleLoader implements ModuleLoader {
         } else {
           loadingSucceeded(module, classDefinition, false);
         }
-        return new ModuleLoadingResult(classDefinition, false);
       }
+
+      parent.addChild(module);
+      if (classDefinition != null) {
+        parent.addDefinition(classDefinition);
+      }
+      return new ModuleLoadingResult(module, classDefinition, compile);
     } catch (EOFException e) {
       loadingError(new GeneralError(module, "Incorrect format: Unexpected EOF"));
-      return null;
     } catch (ModuleDeserialization.DeserializationException e) {
       loadingError(new GeneralError(module, e.toString()));
-      return null;
     } catch (IOException e) {
       loadingError(new GeneralError(module, GeneralError.ioError(e)));
-      return null;
     } finally {
       myLoadingModules.remove(myLoadingModules.size() - 1);
-      if (classDefinition != null) {
-        module.getParent().addDefinition(classDefinition);
-      }
     }
+
+    return null;
   }
 }

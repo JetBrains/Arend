@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.ListErrorReporter;
 import org.apache.commons.cli.*;
@@ -144,8 +143,11 @@ public class ConsoleMain {
 
     Namespace namespace = RootModule.ROOT;
     for (String moduleName : moduleNames) {
-      namespace = namespace.getChild(new Utils.Name(moduleName));
-      moduleLoader.load(namespace, false);
+      ModuleLoadingResult result = moduleLoader.load(namespace, moduleName, false);
+      if (result == null) {
+        break;
+      }
+      namespace = result.namespace;
     }
 
     for (GeneralError error : errorReporter.getErrorList()) {

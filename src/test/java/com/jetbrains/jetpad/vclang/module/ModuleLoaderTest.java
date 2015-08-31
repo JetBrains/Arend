@@ -27,7 +27,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function g => A.f");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleA, false);
+    moduleLoader.load(RootModule.ROOT, "A", false);
     assertFalse(moduleLoader.getErrorReporter().getErrorList().isEmpty());
   }
 
@@ -39,7 +39,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleA, false);
+    moduleLoader.load(RootModule.ROOT, "A", false);
     assertFalse(moduleLoader.getErrorReporter().getErrorList().isEmpty());
   }
 
@@ -51,7 +51,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleA, false);
+    moduleLoader.load(RootModule.ROOT, "A", false);
     assertFalse(moduleLoader.getErrorReporter().getErrorList().isEmpty());
   }
 
@@ -63,7 +63,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleB, false);
+    moduleLoader.load(RootModule.ROOT, "B", false);
     assertEquals(1, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
@@ -73,16 +73,16 @@ public class ModuleLoaderTest {
     sourceSupplier.add(module, "\\static \\function f : Nat");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(module, false);
+    moduleLoader.load(RootModule.ROOT, "A", false);
     assertEquals(1, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
   @Test
   public void moduleTest() {
-    Namespace moduleA = RootModule.ROOT.getChild(new Utils.Name("A"));
-    sourceSupplier.add(moduleA, "\\function f : Nat \\static \\class C { \\function g : Nat \\function h => g }");
+    Namespace module = RootModule.ROOT.getChild(new Utils.Name("A"));
+    sourceSupplier.add(module, "\\function f : Nat \\static \\class C { \\function g : Nat \\function h => g }");
     moduleLoader.setSourceSupplier(sourceSupplier);
-    ModuleLoadingResult result = moduleLoader.load(moduleA, false);
+    ModuleLoadingResult result = moduleLoader.load(RootModule.ROOT, "A", false);
     assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
     assertEquals(1, RootModule.ROOT.getChild(new Utils.Name("A")).getDefinitions().size());
     assertEquals(1, result.classDefinition.getLocalNamespace().getDefinitions().size());
@@ -98,7 +98,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function f (p : A.B) => p.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleB, false);
+    moduleLoader.load(RootModule.ROOT, "B", false);
     assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
@@ -111,7 +111,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function f (p : A.B) => p.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleB, false);
+    moduleLoader.load(RootModule.ROOT, "B", false);
     assertEquals(1, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
@@ -123,7 +123,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\function g => A.f");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleB, false);
+    moduleLoader.load(RootModule.ROOT, "B", false);
     assertEquals(1, moduleLoader.getErrorReporter().getErrorList().size());
   }
 }

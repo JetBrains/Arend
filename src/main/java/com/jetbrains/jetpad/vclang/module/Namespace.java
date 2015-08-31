@@ -62,13 +62,6 @@ public class Namespace implements NamespaceMember {
     return child;
   }
 
-  // TODO: remove this method
-  public void removeChild(Namespace child) {
-    if (myChildren != null) {
-      myChildren.remove(child.getName().name);
-    }
-  }
-
   public Namespace findChild(String name) {
     return myChildren == null ? null : myChildren.get(name);
   }

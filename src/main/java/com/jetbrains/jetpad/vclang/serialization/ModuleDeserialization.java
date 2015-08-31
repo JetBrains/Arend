@@ -70,7 +70,7 @@ public class ModuleDeserialization {
 
         Namespace parentNamespace = (Namespace) parent;
         if (code == ModuleSerialization.NAMESPACE_CODE) {
-          ModuleLoadingResult result = myModuleLoader.load(((Namespace) parent).getChild(new Utils.Name(name)), true);
+          ModuleLoadingResult result = myModuleLoader.load((Namespace) parent, name, true);
           child = result == null || result.classDefinition == null ? parentNamespace.getChild(name1) : result.classDefinition.getNamespace();
         } else {
           if (isNew) {
