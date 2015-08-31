@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.typechecking.error.ListErrorReporter;
@@ -120,5 +119,58 @@ public class ElimTest {
     parseDefs(
         "\\static \\data D (x : Nat) | D zero => d0 | D (suc n) => d1\n" +
         "\\static \\function test (x : D 0) : Nat => \\elim x | d0 => 0");
+  }
+
+  @Test
+  public void elimUnknownIndex1() {
+    parseDefs(
+        "\\static \\data D (x : Nat) | D zero => d0 | D (suc _) => d1\n" +
+        "\\static \\function test (x : Nat) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1", 1);
+  }
+
+  @Test
+  public void elimUnknownIndex2() {
+    parseDefs(
+        "\\static \\data D (x : Nat) | D zero => d0 | D (suc _) => d1\n" +
+        "\\static \\function test (x : Nat) (y : D x) : Nat <= \\elim y | d0 => 0 | _ => 1", 1);
+  }
+
+  @Test
+  public void elimUnknownIndex3() {
+    parseDefs(
+        "\\static \\data D (x : Nat) | D zero => d0 | D (suc _) => d1\n" +
+        "\\static \\function test (x : Nat) (y : D x) : Nat <= \\elim y | _ => 0", 1);
+  }
+
+  @Test
+  public void elimUnknownIndex4() {
+    parseDefs(
+        "\\static \\data E | A | B | C\n" +
+        "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1", 1);
+  }
+
+  @Test
+  public void elimUnknownIndex5() {
+    parseDefs(
+        "\\static \\data E | A | B | C\n" +
+        "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | d2 => 2", 1);
+  }
+
+  @Test
+  public void elimUnknownIndex6() {
+    parseDefs(
+        "\\static \\data E | A | B | C\n" +
+        "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | _ => 2", 1);
+  }
+
+  @Test
+  public void elimUnknownIndex7() {
+    parseDefs(
+        "\\static \\data E | A | B | C\n" +
+        "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | _ => 0", 1);
   }
 }
