@@ -1224,7 +1224,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           return null;
         }
       } else {
-        matchedParameters = parameters;
+        matchedParameters = new ArrayList<>(parameters);
       }
       Collections.reverse(matchedParameters);
       List<TypeArgument> constructorArguments = new ArrayList<>();

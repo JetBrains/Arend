@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.typechecking.error.ErrorReporter;
@@ -485,8 +486,22 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.NamePattern visitPatternID(PatternIDContext ctx) {
-    return new Concrete.NamePattern(tokenPosition(ctx.getStart()), ctx.ID().getText());
+  public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
+    String name = ctx.ID().getText();
+    Concrete.Position pos = tokenPosition(ctx.getStart());
+    Concrete.Expression constructorCall = findId(name, false, pos, false);
+    if (constructorCall != null && constructorCall instanceof Concrete.DefCallExpression
+        && ((Concrete.DefCallExpression) constructorCall).getDefinition() instanceof Constructor) {
+      Constructor constructor = (Constructor) ((Concrete.DefCallExpression) constructorCall).getDefinition();
+      boolean hasExplicit = false;
+      for (TypeArgument arg : constructor.getArguments()) {
+        if (arg.getExplicit())
+          hasExplicit = true;
+      }
+      if (!hasExplicit)
+        return new Concrete.ConstructorPattern(pos, new Name(name), new ArrayList<Concrete.Pattern>());
+    }
+    return new Concrete.NamePattern(pos, name);
   }
 
   private List<Concrete.Pattern> visitPatterns(List<PatternxContext> patternContexts) {
@@ -761,6 +776,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Concrete.Expression findId(String name, boolean binOp, Concrete.Position position) {
+    return findId(name, binOp, position, true);
+  }
+
+  private Concrete.Expression findId(String name, boolean binOp, Concrete.Position position, boolean reportError) {
     Definition child = Prelude.PRELUDE.getDefinition(name);
     if (child != null) {
       return new Concrete.DefCallExpression(position, null, child);
@@ -777,10 +796,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (member instanceof Definition) {
       return new Concrete.DefCallExpression(position, null, (Definition) member);
     } else
-    if (member != null) {
-      myErrorReporter.report(new ParserError(myNamespace, position, "Cannot find '" + name + "'"));
-    } else {
-      myErrorReporter.report(new ParserError(myNamespace, position, "Not in scope: " + name));
+    if (reportError) {
+      if (member != null) {
+        myErrorReporter.report(new ParserError(myNamespace, position, "Cannot find '" + name + "'"));
+      } else {
+        myErrorReporter.report(new ParserError(myNamespace, position, "Not in scope: " + name));
+      }
     }
     return null;
   }
