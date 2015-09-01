@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.module.source.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
@@ -76,41 +75,28 @@ public abstract class BaseModuleLoader implements ModuleLoader {
     }
 
     myLoadingModules.add(module);
-    ClassDefinition classDefinition = null;
-    if (parent.getDefinition(name) == null) {
-      classDefinition = new ClassDefinition(module);
-    }
-
     try {
+      ModuleLoadingResult result;
       if (compile) {
-        if (source.load(module, classDefinition)) {
-          if (classDefinition != null && classDefinition.getFields().isEmpty()) {
-            classDefinition = null;
-          }
-          if (output.canWrite()) {
-            output.write(module, classDefinition);
-          }
-          loadingSucceeded(module, classDefinition, true);
-        } else {
-          return null;
+        result = source.load(module);
+        if (result != null && result.errorsNumber == 0 && result.classDefinition != null && output.canWrite()) {
+          output.write(module, result.classDefinition);
         }
       } else {
-        int errorsNumber = output.read(module, classDefinition);
-        if (classDefinition != null && !classDefinition.getFields().isEmpty()) {
-          classDefinition = null;
-        }
-        if (errorsNumber != 0) {
-          loadingError(new GeneralError(module, "module contains " + errorsNumber + (errorsNumber == 1 ? " error" : " errors")));
-        } else {
-          loadingSucceeded(module, classDefinition, false);
-        }
+        result = output.read(module);
+      }
+
+      if (result == null || result.errorsNumber != 0) {
+        loadingError(new GeneralError(module, result == null ? "cannot load module" : "module contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors")));
+      } else {
+        loadingSucceeded(module, result.classDefinition, result.compiled);
       }
 
       parent.addChild(module);
-      if (classDefinition != null) {
-        parent.addDefinition(classDefinition);
+      if (result != null && result.classDefinition != null) {
+        parent.addDefinition(result.classDefinition);
       }
-      return new ModuleLoadingResult(module, classDefinition, compile);
+      return result;
     } catch (EOFException e) {
       loadingError(new GeneralError(module, "Incorrect format: Unexpected EOF"));
     } catch (ModuleDeserialization.DeserializationException e) {

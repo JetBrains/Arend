@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
@@ -40,7 +41,7 @@ public abstract class ParseSource implements Source {
   }
 
   @Override
-  public boolean load(Namespace namespace, ClassDefinition classDefinition) throws IOException {
+  public ModuleLoadingResult load(Namespace namespace) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter errorReporter = new CompositeErrorReporter();
     errorReporter.addErrorReporter(myErrorReporter);
@@ -64,12 +65,14 @@ public abstract class ParseSource implements Source {
       }
     });
 
-    int errorsCount = countingErrorReporter.getErrorsNumber();
     VcgrammarParser.DefsContext tree = parser.defs();
-    if (tree == null || errorsCount != countingErrorReporter.getErrorsNumber()) return false;
+    if (tree == null || countingErrorReporter.getErrorsNumber() != 0) {
+      return new ModuleLoadingResult(namespace, null, true, countingErrorReporter.getErrorsNumber());
+    }
 
     NameResolver nameResolver = new LoadingNameResolver(myModuleLoader, new DeepNamespaceNameResolver(namespace.getParent()));
-    new BuildVisitor(namespace, classDefinition == null ? null : classDefinition.getLocalNamespace(), nameResolver, errorReporter).visitDefs(tree);
-    return errorsCount == countingErrorReporter.getErrorsNumber();
+    ClassDefinition classDefinition = new ClassDefinition(namespace);
+    new BuildVisitor(namespace, classDefinition.getLocalNamespace(), nameResolver, errorReporter).visitDefs(tree);
+    return new ModuleLoadingResult(namespace, classDefinition, true, countingErrorReporter.getErrorsNumber());
   }
 }

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
 import java.io.IOException;
 
@@ -17,7 +17,7 @@ public class DummySource implements Source {
   }
 
   @Override
-  public boolean load(Namespace namespace, ClassDefinition classDefinition) throws IOException {
-    return false;
+  public ModuleLoadingResult load(Namespace namespace) throws IOException {
+    return null;
   }
 }

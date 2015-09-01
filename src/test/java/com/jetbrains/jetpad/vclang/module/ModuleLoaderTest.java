@@ -64,7 +64,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "B", false);
-    assertEquals(1, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(2, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
   @Test
@@ -74,7 +74,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "A", false);
-    assertEquals(1, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(2, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
   @Test
@@ -112,7 +112,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "B", false);
-    assertEquals(1, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(2, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
   @Test
@@ -124,6 +124,6 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "B", false);
-    assertEquals(1, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(2, moduleLoader.getErrorReporter().getErrorList().size());
   }
 }

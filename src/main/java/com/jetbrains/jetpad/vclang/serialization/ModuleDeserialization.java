@@ -27,11 +27,13 @@ public class ModuleDeserialization {
     myModuleLoader = moduleLoader;
   }
 
-  public int readFile(File file, Namespace namespace, ClassDefinition classDefinition) throws IOException {
-    return readStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), namespace, classDefinition);
+  public ModuleLoadingResult readFile(File file, Namespace namespace) throws IOException {
+    return readStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), namespace);
   }
 
-  public int readStream(DataInputStream stream, Namespace namespace, ClassDefinition classDefinition) throws IOException {
+  public ModuleLoadingResult readStream(DataInputStream stream, Namespace namespace) throws IOException {
+    ClassDefinition classDefinition = new ClassDefinition(namespace);
+
     myParent = namespace;
     byte[] signature = new byte[4];
     stream.readFully(signature);
@@ -92,13 +94,9 @@ public class ModuleDeserialization {
 
     deserializeNamespace(stream, definitionMap);
     if (stream.readBoolean()) {
-      if (classDefinition == null) {
-        throw new NameIsAlreadyDefined(namespace.getName());
-      } else {
-        deserializeClassDefinition(stream, definitionMap, classDefinition);
-      }
+      deserializeClassDefinition(stream, definitionMap, classDefinition);
     }
-    return errorsNumber;
+    return new ModuleLoadingResult(namespace, classDefinition, false, errorsNumber);
   }
 
   public static Definition newDefinition(int code, Utils.Name name, Namespace parent) throws IncorrectFormat {

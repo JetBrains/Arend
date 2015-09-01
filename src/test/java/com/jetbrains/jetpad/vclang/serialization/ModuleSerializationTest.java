@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.module.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -21,6 +22,7 @@ import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class ModuleSerializationTest {
   SimpleModuleLoader moduleLoader;
@@ -41,11 +43,11 @@ public class ModuleSerializationTest {
     ModuleSerialization.writeStream(def.getNamespace(), def, dataStream);
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
-    ClassDefinition newDef = new ClassDefinition(RootModule.ROOT.getChild(new Utils.Name("test")));
-    RootModule.ROOT.addDefinition(newDef);
-    int errors = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef.getNamespace(), newDef);
-    assertEquals(0, errors);
-    assertEquals(CompareVisitor.CMP.EQUALS, compare(((FunctionDefinition) def.getLocalNamespace().getDefinition("f")).getTerm(), ((FunctionDefinition) newDef.getLocalNamespace().getDefinition("f")).getTerm(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
+    ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), RootModule.ROOT.getChild(new Utils.Name("test")));
+    assertNotNull(result);
+    assertNotNull(result.classDefinition);
+    assertEquals(0, result.errorsNumber);
+    assertEquals(CompareVisitor.CMP.EQUALS, compare(((FunctionDefinition) def.getLocalNamespace().getDefinition("f")).getTerm(), ((FunctionDefinition) result.classDefinition.getLocalNamespace().getDefinition("f")).getTerm(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
     assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
@@ -67,11 +69,11 @@ public class ModuleSerializationTest {
     ModuleSerialization.writeStream(def.getNamespace(), def, dataStream);
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
-    ClassDefinition newDef = new ClassDefinition(RootModule.ROOT.getChild(new Utils.Name("test")));
-    RootModule.ROOT.addDefinition(newDef);
-    int errors = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef.getNamespace(), newDef);
-    assertEquals(0, errors);
-    assertEquals(CompareVisitor.CMP.EQUALS, compare(((FunctionDefinition) def.getLocalNamespace().getDefinition("f")).getTerm(), ((FunctionDefinition) newDef.getLocalNamespace().getDefinition("f")).getTerm(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
+    ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), RootModule.ROOT.getChild(new Utils.Name("test")));
+    assertNotNull(result);
+    assertNotNull(result.classDefinition);
+    assertEquals(0, result.errorsNumber);
+    assertEquals(CompareVisitor.CMP.EQUALS, compare(((FunctionDefinition) def.getLocalNamespace().getDefinition("f")).getTerm(), ((FunctionDefinition) result.classDefinition.getLocalNamespace().getDefinition("f")).getTerm(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
     assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
@@ -93,7 +95,7 @@ public class ModuleSerializationTest {
     ClassDefinition bClass = new ClassDefinition(newDef.getNamespace().getChild(new Utils.Name("A")));
     newDef.getNamespace().addDefinition(bClass);
     bClass.getLocalNamespace().addDefinition(new FunctionDefinition(aClass.getNamespace().getChild(new Utils.Name("g")), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), null, null));
-    moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef.getNamespace(), newDef);
+    moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef.getNamespace());
   }
 
   @Test
@@ -111,13 +113,13 @@ public class ModuleSerializationTest {
 
     RootModule.initialize();
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
-    ClassDefinition newDef = new ClassDefinition(RootModule.ROOT.getChild(new Utils.Name("test")));
-    RootModule.ROOT.addDefinition(newDef);
-    int errors = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef.getNamespace(), newDef);
-    assertEquals(0, errors);
-    assertEquals(def.getFields().size(), newDef.getFields().size());
-    assertEquals(def.getNamespace().getDefinitions().size(), newDef.getNamespace().getDefinitions().size());
-    assertEquals(CompareVisitor.CMP.EQUALS, compare(dataDefinition.getType(), newDef.getNamespace().getDefinition("D").getType(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
+    ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), RootModule.ROOT.getChild(new Utils.Name("test")));
+    assertNotNull(result);
+    assertNotNull(result.classDefinition);
+    assertEquals(0, result.errorsNumber);
+    assertEquals(def.getFields().size(), result.classDefinition.getFields().size());
+    assertEquals(def.getNamespace().getDefinitions().size(), result.classDefinition.getNamespace().getDefinitions().size());
+    assertEquals(CompareVisitor.CMP.EQUALS, compare(dataDefinition.getType(), result.classDefinition.getNamespace().getDefinition("D").getType(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
     assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
@@ -134,13 +136,13 @@ public class ModuleSerializationTest {
     ModuleSerialization.writeStream(def.getNamespace(), def, dataStream);
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
-    ClassDefinition newDef = new ClassDefinition(RootModule.ROOT.getChild(new Utils.Name("test")));
-    RootModule.ROOT.addDefinition(newDef);
-    int errors = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef.getNamespace(), newDef);
-    assertEquals(0, errors);
-    assertEquals(1, newDef.getNamespace().getChildren().size());
-    assertEquals(1, newDef.getNamespace().getDefinitions().size());
-    assertEquals(1, newDef.getNamespace().getDefinition("f").getNamespace().getDefinitions().size());
+    ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), RootModule.ROOT.getChild(new Utils.Name("test")));
+    assertNotNull(result);
+    assertNotNull(result.classDefinition);
+    assertEquals(0, result.errorsNumber);
+    assertEquals(1, result.classDefinition.getNamespace().getChildren().size());
+    assertEquals(1, result.classDefinition.getNamespace().getDefinitions().size());
+    assertEquals(1, result.classDefinition.getNamespace().getDefinition("f").getNamespace().getDefinitions().size());
     assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
   }
 
@@ -154,7 +156,9 @@ public class ModuleSerializationTest {
     ClassDefinition newDef = (ClassDefinition) parseDef("\\class B {}");
     RootModule.ROOT.addDefinition(newDef);
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
-    int errors = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef.getNamespace(), newDef);
-    assertEquals(0, errors);
+    ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), newDef.getNamespace());
+    assertNotNull(result);
+    assertNotNull(result.classDefinition);
+    assertEquals(0, result.errorsNumber);
   }
 }

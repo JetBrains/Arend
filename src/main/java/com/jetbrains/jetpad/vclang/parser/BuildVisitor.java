@@ -312,7 +312,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private FunctionDefinition visitDefFunction(boolean isStatic, boolean overridden, Token token, NameContext originalName, PrecedenceContext precCtx, NameContext nameCtx, List<TeleContext> teleCtx, FunctionContext functionCtx, List<DefContext> defs) {
     if (isStatic && functionCtx.termCtx == null) {
-      myErrorReporter.report(new ParserError(myNamespace, tokenPosition(token), "Non-static abstract definition"));
+      myErrorReporter.report(new ParserError(myNamespace, tokenPosition(token), "Static abstract definition"));
       return null;
     }
     if (!isStatic && myLocalNamespace == null) {

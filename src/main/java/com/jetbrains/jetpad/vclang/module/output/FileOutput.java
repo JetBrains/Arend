@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
@@ -33,8 +34,8 @@ public class FileOutput implements Output {
   }
 
   @Override
-  public int read(Namespace namespace, ClassDefinition classDefinition) throws IOException {
-    return myModuleDeserialization.readFile(myFile, namespace, classDefinition);
+  public ModuleLoadingResult read(Namespace namespace) throws IOException {
+    return myModuleDeserialization.readFile(myFile, namespace);
   }
 
   @Override

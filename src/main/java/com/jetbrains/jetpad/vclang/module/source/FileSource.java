@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.module.FileOperations;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.typechecking.error.ErrorReporter;
 
@@ -36,7 +36,7 @@ public class FileSource extends ParseSource {
   }
 
   @Override
-  public boolean load(Namespace namespace, ClassDefinition classDefinition) throws IOException {
+  public ModuleLoadingResult load(Namespace namespace) throws IOException {
     boolean ok = false;
     if (myDirectory != null) {
       File[] files = myDirectory.listFiles();
@@ -57,9 +57,9 @@ public class FileSource extends ParseSource {
 
     if (myFile != null && myFile.exists()) {
       setStream(new FileInputStream(myFile));
-      return super.load(namespace, classDefinition);
+      return super.load(namespace);
     } else {
-      return ok;
+      return ok ? new ModuleLoadingResult(namespace, null, true, 0) : null;
     }
   }
 }

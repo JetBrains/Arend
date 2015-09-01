@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
+import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
@@ -22,8 +23,8 @@ public class DummyOutput implements Output {
   }
 
   @Override
-  public int read(Namespace namespace, ClassDefinition classDefinition) throws IOException {
-    return 0;
+  public ModuleLoadingResult read(Namespace namespace) throws IOException {
+    return null;
   }
 
   @Override

@@ -387,7 +387,7 @@ public class TypeChecking {
     } /* TODO
       else {
       if (definition.getParent() == namespace) {
-        errorReporter.report(new GeneralError(definition.getNamespace(), "Non-static abstract definition"));
+        errorReporter.report(new GeneralError(definition.getNamespace(), "Static abstract definition"));
         return false;
       }
     } */
