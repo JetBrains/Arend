@@ -25,8 +25,8 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.Name;
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
+import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Namespace myNamespace;
@@ -1111,10 +1111,38 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
+  public Result visitBinOp(Abstract.BinOpExpression expr, final Expression expectedType) {
+    class AbstractArgumentExpression implements Abstract.ArgumentExpression {
+      Abstract.Expression expression;
+
+      public AbstractArgumentExpression(Abstract.Expression expression) {
+        this.expression = expression;
+      }
+
+      @Override
+      public Abstract.Expression getExpression() {
+        return expression;
+      }
+
+      @Override
+      public boolean isExplicit() {
+        return true;
+      }
+
+      @Override
+      public boolean isHidden() {
+        return false;
+      }
+
+      @Override
+      public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+        expression.prettyPrint(builder, names, prec);
+      }
+    }
+
     List<Abstract.ArgumentExpression> args = new ArrayList<>(2);
-    args.add(expr.getLeft());
-    args.add(expr.getRight());
+    args.add(new AbstractArgumentExpression(expr.getLeft()));
+    args.add(new AbstractArgumentExpression(expr.getRight()));
 
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
     return typeCheckFunctionApps(new Concrete.DefCallExpression(position, null, expr.getBinOp()), args, expectedType, expr);
