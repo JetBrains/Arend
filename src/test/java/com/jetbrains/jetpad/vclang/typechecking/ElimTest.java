@@ -173,4 +173,9 @@ public class ElimTest {
         "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
         "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | _ => 0", 1);
   }
+
+  @Test
+  public void elimTooManyArgs() {
+    parseDefs("\\static \\data A | a Nat Nat \\static \\function test (a : A) : Nat <= \\elim a | a _ _ _ =>0", 1);
+  }
 }

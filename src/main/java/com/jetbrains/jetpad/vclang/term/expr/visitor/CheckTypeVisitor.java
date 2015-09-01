@@ -1232,7 +1232,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       Utils.ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getArguments(), constructorArguments);
       if (implicitResult.patterns == null) {
-        if (implicitResult.wrongImplicitPosition < constructorPattern.getArguments().size()) {
+        if (implicitResult.numExcessive != 0) {
+          error = new TypeCheckingError(myNamespace, "Too many arguments: " + implicitResult.numExcessive + " excessive", constructorPattern,
+              getNames(myLocalContext));
+        } else if (implicitResult.wrongImplicitPosition < constructorPattern.getArguments().size()) {
           error = new TypeCheckingError(myNamespace, "Unexpected implicit argument", constructorPattern.getArguments().get(implicitResult.wrongImplicitPosition), getNames(myLocalContext));
         } else {
           error = new TypeCheckingError(myNamespace, "Too few explicit arguments, expected: " + implicitResult.numExplicit, constructorPattern, getNames(myLocalContext));
@@ -1365,7 +1368,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (Abstract.Clause clause : expr.getClauses()) {
       try (CompleteContextSaver ignore = new CompleteContextSaver(myLocalContext)) {
         ExpandPatternResult result = expandPatternOn(clause.getPattern(), varIndex, expr.getExpression());
-        if (result.pattern == null)
+        if (result == null)
           return null;
         if (result.pattern instanceof NamePattern) {
           otherwiseClause = clause;

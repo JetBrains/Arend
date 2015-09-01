@@ -559,7 +559,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       ProcessImplicitResult result = processImplicit(patterns, def.getParameters());
       if (result.patterns == null) {
-        if (result.wrongImplicitPosition < patterns.size()) {
+        if (result.numExcessive != 0) {
+          myErrorReporter.report(new ParserError(myNamespace,
+              tokenPosition(wpCtx.patternx(wpCtx.patternx().size() - result.numExcessive).start), "Too many arguments: " + result.numExcessive + " excessive"));
+        } else if (result.wrongImplicitPosition < patterns.size()) {
           myErrorReporter.report(new ParserError(myNamespace,
               tokenPosition(wpCtx.patternx(result.wrongImplicitPosition).start), "Unexpected implicit argument"));
         } else {
