@@ -37,29 +37,29 @@ public class FileSource extends ParseSource {
 
   @Override
   public boolean load(Namespace namespace, ClassDefinition classDefinition) throws IOException {
-    if (myFile != null && myFile.exists()) {
-      setStream(new FileInputStream(myFile));
-      return super.load(namespace, classDefinition);
-    }
-
-    if (myDirectory == null) {
-      return false;
-    }
-    File[] files = myDirectory.listFiles();
-    if (files == null) {
-      return false;
-    }
-    for (File file : files) {
-      if (file.isDirectory()) {
-        namespace.getChild(new Utils.Name(file.getName()));
-      } else
-      if (file.isFile()) {
-        String name = FileOperations.getVcFileName(file);
-        if (name != null) {
-          namespace.getChild(new Utils.Name(name));
+    boolean ok = false;
+    if (myDirectory != null) {
+      File[] files = myDirectory.listFiles();
+      if (files != null) {
+        ok = true;
+        for (File file : files) {
+          if (file.isDirectory()) {
+            namespace.getChild(new Utils.Name(file.getName()));
+          } else if (file.isFile()) {
+            String name = FileOperations.getVcFileName(file);
+            if (name != null) {
+              namespace.getChild(new Utils.Name(name));
+            }
+          }
         }
       }
     }
-    return true;
+
+    if (myFile != null && myFile.exists()) {
+      setStream(new FileInputStream(myFile));
+      return super.load(namespace, classDefinition);
+    } else {
+      return ok;
+    }
   }
 }
