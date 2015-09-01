@@ -116,8 +116,8 @@ public final class Abstract {
 
   public interface BinOpExpression extends Expression {
     com.jetbrains.jetpad.vclang.term.definition.Definition getBinOp();
-    ArgumentExpression getLeft();
-    ArgumentExpression getRight();
+    Expression getLeft();
+    Expression getRight();
   }
 
   public interface UniverseExpression extends Expression {

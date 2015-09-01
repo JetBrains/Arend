@@ -62,7 +62,7 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
       Collections.reverse(parameters);
       resultType = resultType.subst(parameters, 0);
     }
-    return myExpression == null ? resultType : resultType.accept(new ReplaceDefCallVisitor(myDefinition.getParent(), myExpression));
+    return myExpression == null ? resultType : resultType.accept(new ReplaceDefCallVisitor(myDefinition.getNamespace().getParent(), myExpression));
   }
 
   @Override

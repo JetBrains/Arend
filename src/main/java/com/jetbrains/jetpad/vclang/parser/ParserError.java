@@ -1,20 +1,20 @@
 package com.jetbrains.jetpad.vclang.parser;
 
-import com.jetbrains.jetpad.vclang.module.Module;
-import com.jetbrains.jetpad.vclang.module.ModuleError;
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
-public class ParserError extends ModuleError {
+public class ParserError extends GeneralError {
   private final Concrete.Position myPosition;
 
-  public ParserError(Module module, Concrete.Position position, String message) {
+  public ParserError(Namespace module, Concrete.Position position, String message) {
     super(module, message);
     myPosition = position;
   }
 
   @Override
   public String toString() {
-    String msg = getModule().getFile(null, ".vc") + ":" + myPosition.line + ":" + myPosition.column + ": Parser error";
+    String msg = getNamespace() + ":" + myPosition.line + ":" + myPosition.column + ": Parser error";
     if (getMessage() != null) {
       msg += ": " + getMessage();
     }

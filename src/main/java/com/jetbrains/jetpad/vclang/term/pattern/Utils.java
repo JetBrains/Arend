@@ -74,17 +74,27 @@ public class Utils {
     public final List<Abstract.Pattern> patterns;
     public final int wrongImplicitPosition;
     public final int numExplicit;
+    public final int numExcessive;
 
     public ProcessImplicitResult(List<Abstract.Pattern> patterns, int numExplicit) {
       this.patterns = patterns;
       this.wrongImplicitPosition = -1;
       this.numExplicit = numExplicit;
+      this.numExcessive = 0;
     }
 
     public ProcessImplicitResult(int wrongImplicitPosition, int numExplicit) {
       this.patterns = null;
       this.wrongImplicitPosition = wrongImplicitPosition;
       this.numExplicit = numExplicit;
+      this.numExcessive = 0;
+    }
+
+    public ProcessImplicitResult(int numExcessive) {
+      this.patterns = null;
+      this.numExcessive = numExcessive;
+      this.numExplicit = -1;
+      this.wrongImplicitPosition = -1;
     }
   }
 
@@ -105,17 +115,21 @@ public class Utils {
     }
 
     List<Abstract.Pattern> result = new ArrayList<>();
-    for (int indexI = 0, indexJ = 0; indexJ < argIsExplicit.size(); ++indexJ) {
+    int indexI = 0;
+    for (boolean isExplicit : argIsExplicit) {
       Abstract.Pattern curPattern = indexI < patterns.size() ? patterns.get(indexI) : new NamePattern(null, false);
-      if (curPattern.getExplicit() && !argIsExplicit.get(indexJ)) {
+      if (curPattern.getExplicit() && !isExplicit) {
         curPattern = new NamePattern(null, false);
       } else {
         indexI++;
       }
-      if (curPattern.getExplicit() != argIsExplicit.get(indexJ)) {
+      if (curPattern.getExplicit() != isExplicit) {
         return new ProcessImplicitResult(indexI, numExplicit);
       }
       result.add(curPattern);
+    }
+    if (indexI < patterns.size()) {
+      return new ProcessImplicitResult(patterns.size() - indexI);
     }
     return new ProcessImplicitResult(result, numExplicit);
   }
