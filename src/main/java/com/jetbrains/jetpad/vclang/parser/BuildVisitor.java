@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
-import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.typechecking.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
@@ -324,6 +323,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Name name = getName(nameCtx);
     if (name == null) return null;
 
+    // TODO: Do not create child namespace if the definition does not type check.
     FunctionDefinition typedDef;
     if (overridden) {
       typedDef = new OverriddenDefinition(parentNamespace.getChild(name), visitPrecedence(precCtx), null, null, visitArrow(functionCtx.arrowCtx), null, null);

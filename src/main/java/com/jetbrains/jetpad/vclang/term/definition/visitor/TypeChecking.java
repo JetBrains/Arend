@@ -11,8 +11,8 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
-import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.typechecking.error.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,10 +21,10 @@ import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 
 public class TypeChecking {
   private static boolean addMember(Namespace namespace, Definition member, ErrorReporter errorReporter) {
@@ -153,6 +153,7 @@ public class TypeChecking {
         return null;
       }
 
+      // TODO: Do not create child namespace if the definition does not type check.
       Constructor constructor = new Constructor(conIndex, dataDefinition.getNamespace().getChild(con.getName()), con.getPrecedence(), universe, arguments, dataDefinition, patterns);
       for (int j = 0; j < constructor.getArguments().size(); ++j) {
         Expression type = constructor.getArguments().get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
@@ -187,6 +188,7 @@ public class TypeChecking {
   public static FunctionDefinition typeCheckFunctionBegin(ErrorReporter errorReporter, Namespace namespace, Namespace localNamespace, Abstract.FunctionDefinition def, List<Binding> localContext, FunctionDefinition overriddenFunction) {
     Namespace parentNamespace = localNamespace != null ? localNamespace : namespace;
     FunctionDefinition typedDef;
+    // TODO: Do not create child namespace if the definition does not type check.
     if (def.isOverridden()) {
       if (localNamespace == null) {
         errorReporter.report(new TypeCheckingError(namespace, "Overridden function cannot be static", def, getNames(localContext)));
