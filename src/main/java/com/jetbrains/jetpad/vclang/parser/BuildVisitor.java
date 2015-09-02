@@ -1205,12 +1205,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       Concrete.Pattern pattern;
       if (clauseCtx.name() != null) {
         pattern = new Concrete.ConstructorPattern(tokenPosition(clauseCtx.name().start), getName(clauseCtx.name()), visitPatterns(clauseCtx.patternx()));
-        for (Concrete.Pattern subPattern : ((Concrete.ConstructorPattern) pattern).getArguments()) {
-          if (subPattern instanceof Concrete.ConstructorPattern) {
-            myErrorReporter.report(new ParserError(myNamespace, subPattern.getPosition(), "Only simple constructor patterns are allowed under elim"));
-            return null;
-          }
-        }
       } else {
         if (wasOtherwise) {
           myErrorReporter.report(new ParserError(myNamespace, tokenPosition(clauseCtx.start), "Multiple otherwise clauses"));

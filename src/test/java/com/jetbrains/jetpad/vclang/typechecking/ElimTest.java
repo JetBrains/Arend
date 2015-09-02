@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.ListErrorReporter;
 import org.junit.Test;
 
@@ -22,6 +23,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class ElimTest {
+
   @Test
   public void elim() {
     List<TypeArgument> parameters = new ArrayList<>(2);
@@ -97,12 +99,12 @@ public class ElimTest {
   public void elim3() {
     parseDefs(
         "\\static \\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
-        "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
-          "| con1 s <= \\elim e\n" +
+            "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
+            "| con1 s <= \\elim e\n" +
             "| con2 _ {y} {z} {t} => q t\n" +
             "| con1 {z} _ => z\n" +
             ";\n" +
-          "| con2 y <= \\elim e\n" +
+            "| con2 y <= \\elim e\n" +
             "| con1 s => y s\n" +
             "| con2 _ {a} {b} => y (q b)");
   }
@@ -125,7 +127,7 @@ public class ElimTest {
   public void elimUnknownIndex1() {
     parseDefs(
         "\\static \\data D (x : Nat) | D zero => d0 | D (suc _) => d1\n" +
-        "\\static \\function test (x : Nat) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1", 1);
+        "\\static \\function test (x : Nat) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1", 2);
   }
 
   @Test
@@ -139,7 +141,7 @@ public class ElimTest {
   public void elimUnknownIndex3() {
     parseDefs(
         "\\static \\data D (x : Nat) | D zero => d0 | D (suc _) => d1\n" +
-        "\\static \\function test (x : Nat) (y : D x) : Nat <= \\elim y | _ => 0", 1);
+        "\\static \\function test (x : Nat) (y : D x) : Nat <= \\elim y | _ => 0", 0);
   }
 
   @Test
@@ -147,7 +149,7 @@ public class ElimTest {
     parseDefs(
         "\\static \\data E | A | B | C\n" +
         "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
-        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1", 1);
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1", 2);
   }
 
   @Test
@@ -155,15 +157,15 @@ public class ElimTest {
     parseDefs(
         "\\static \\data E | A | B | C\n" +
         "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
-        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | d2 => 2", 1);
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | d2 => 2", 2);
   }
 
   @Test
   public void elimUnknownIndex6() {
     parseDefs(
         "\\static \\data E | A | B | C\n" +
-        "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
-        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | _ => 2", 1);
+            "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
+            "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | _ => 2", 2);
   }
 
   @Test
@@ -171,11 +173,38 @@ public class ElimTest {
     parseDefs(
         "\\static \\data E | A | B | C\n" +
         "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
-        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | _ => 0", 1);
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | _ => 0", 0);
   }
 
   @Test
   public void elimTooManyArgs() {
     parseDefs("\\static \\data A | a Nat Nat \\static \\function test (a : A) : Nat <= \\elim a | a _ _ _ =>0", 1);
+  }
+
+  @Test
+  public void elim6() {
+    parseDefs(
+        "\\static \\data D | d Nat Nat" +
+        "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc _) _ => 1 | d _ (suc _) => 2");
+  }
+
+  @Test
+  public void elim7() {
+    parseDefs(
+        "\\static \\data D | d Nat Nat"+
+        "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc (suc _)) zero => 0", 1);
+  }
+
+  @Test
+  public void elim8() {
+    ClassDefinition defs = parseDefs(
+        "\\static \\data D | d Nat Nat" +
+        "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d _ _ => 1");
+    FunctionDefinition test = (FunctionDefinition) defs.getNamespace().getMember("test");
+    Constructor d = (Constructor) defs.getNamespace().getMember("d");
+    Expression call1 = Apps(DefCall(d), Zero(), Index(0));
+    Expression call2 = Apps(DefCall(d), Suc(Zero()), Index(0));
+    assertEquals(Apps(DefCall(test), call1), Apps(DefCall(test), call1).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), Apps(DefCall(test), call2).normalize(NormalizeVisitor.Mode.NF));
   }
 }

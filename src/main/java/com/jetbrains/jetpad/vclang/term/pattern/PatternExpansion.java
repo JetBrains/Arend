@@ -86,7 +86,7 @@ class PatternExpansion {
     if (constructorPattern.getConstructor().getPatterns() != null) {
       matchedParameters = ((Utils.PatternMatchOKResult) patternMatchAll(constructorPattern.getConstructor().getPatterns(), dataTypeParameters, new ArrayList<Binding>())).expressions;
     } else {
-      matchedParameters = dataTypeParameters;
+      matchedParameters = new ArrayList<>(dataTypeParameters);
     }
     Collections.reverse(matchedParameters);
 
