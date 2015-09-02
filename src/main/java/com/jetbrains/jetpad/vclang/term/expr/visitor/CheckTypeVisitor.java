@@ -15,8 +15,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.DummyNameResolver;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 
 import java.util.*;
 
@@ -31,7 +29,6 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final Namespace myNamespace;
   private final List<Binding> myLocalContext;
-  private NameResolver myNameResolver;
   private final ErrorReporter myErrorReporter;
   private Side mySide;
 
@@ -86,13 +83,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public CheckTypeVisitor(Namespace namespace, List<Binding> localContext, ErrorReporter errorReporter, Side side) {
     myNamespace = namespace;
     myLocalContext = localContext;
-    myNameResolver = DummyNameResolver.getInstance();
     myErrorReporter = errorReporter;
     mySide = side;
-  }
-
-  public void setNameResolver(NameResolver nameResolver) {
-    myNameResolver = nameResolver;
   }
 
   private Result checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
