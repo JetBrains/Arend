@@ -87,7 +87,9 @@ public abstract class BaseModuleLoader implements ModuleLoader {
       }
 
       if (result == null || result.errorsNumber != 0) {
-        loadingError(new GeneralError(module, result == null ? "cannot load module" : "module contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors")));
+        GeneralError error = new GeneralError(module, result == null ? "cannot load module" : "module contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
+        error.setLevel(GeneralError.Level.INFO);
+        loadingError(error);
       } else {
         loadingSucceeded(module, result.classDefinition, result.compiled);
       }

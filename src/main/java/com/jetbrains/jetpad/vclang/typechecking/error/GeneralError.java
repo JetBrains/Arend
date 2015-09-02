@@ -8,10 +8,22 @@ import java.io.IOException;
 public class GeneralError {
   private final Namespace myNamespace;
   private final String myMessage;
+  private Level myLevel;
+
+  public enum Level { ERROR, WARNING, INFO }
 
   public GeneralError(Namespace namespace, String message) {
     myNamespace = namespace;
     myMessage = message;
+    myLevel = Level.ERROR;
+  }
+
+  public Level getLevel() {
+    return myLevel;
+  }
+
+  public void setLevel(Level level) {
+    myLevel = level;
   }
 
   public Abstract.SourceNode getCause() {
@@ -26,8 +38,8 @@ public class GeneralError {
     return myNamespace;
   }
 
-  public String printPosition() {
-    return myNamespace == null ? "" : myNamespace.getFullName() + ": ";
+  public String printHeader() {
+    return "[" + myLevel + "] " + (myNamespace == null ? "" : myNamespace.getFullName() + ": ");
   }
 
   public static String ioError(IOException e) {
@@ -36,6 +48,6 @@ public class GeneralError {
 
   @Override
   public String toString() {
-    return printPosition() + (myMessage == null ? "Unknown error" : myMessage);
+    return printHeader() + (myMessage == null ? "Unknown error" : myMessage);
   }
 }

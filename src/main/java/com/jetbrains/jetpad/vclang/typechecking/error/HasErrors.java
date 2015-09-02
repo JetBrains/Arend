@@ -15,6 +15,6 @@ public class HasErrors extends TypeCheckingError {
 
   @Override
   public String toString() {
-    return printPosition() + getMessage();
+    return printHeader() + getMessage();
   }
 }

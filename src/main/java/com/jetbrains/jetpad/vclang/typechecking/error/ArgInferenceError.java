@@ -50,7 +50,7 @@ public class ArgInferenceError extends TypeCheckingError {
 
   @Override
   public String toString() {
-    String msg = printPosition() + getMessage();
+    String msg = printHeader() + getMessage();
     if (getCause() == null) {
       return msg;
     } else {
