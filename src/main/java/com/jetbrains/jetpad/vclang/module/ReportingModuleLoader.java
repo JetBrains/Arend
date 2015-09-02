@@ -1,24 +1,19 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.typechecking.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
-import com.jetbrains.jetpad.vclang.typechecking.error.ListErrorReporter;
 
-public class SimpleModuleLoader extends BaseModuleLoader {
-  private final ListErrorReporter myErrorReporter;
+public class ReportingModuleLoader extends BaseModuleLoader {
+  private ErrorReporter myErrorReporter;
 
-  public SimpleModuleLoader(boolean recompile) {
-    super(recompile);
-    myErrorReporter = new ListErrorReporter();
-  }
-
-  public SimpleModuleLoader(ListErrorReporter errorReporter, boolean recompile) {
+  public ReportingModuleLoader(ErrorReporter errorReporter, boolean recompile) {
     super(recompile);
     myErrorReporter = errorReporter;
   }
 
-  public ListErrorReporter getErrorReporter() {
-    return myErrorReporter;
+  public void setErrorReporter(ErrorReporter errorReporter) {
+    myErrorReporter = errorReporter;
   }
 
   @Override

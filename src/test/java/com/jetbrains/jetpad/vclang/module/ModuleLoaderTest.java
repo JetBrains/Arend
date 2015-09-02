@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.typechecking.error.ListErrorReporter;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -9,14 +10,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public class ModuleLoaderTest {
-  SimpleModuleLoader moduleLoader;
+  ListErrorReporter errorReporter;
+  ReportingModuleLoader moduleLoader;
   MemorySourceSupplier sourceSupplier;
 
   @Before
   public void initialize() {
     RootModule.initialize();
-    moduleLoader = new SimpleModuleLoader(true);
-    sourceSupplier = new MemorySourceSupplier(moduleLoader, moduleLoader.getErrorReporter());
+    errorReporter = new ListErrorReporter();
+    moduleLoader = new ReportingModuleLoader(errorReporter, true);
+    sourceSupplier = new MemorySourceSupplier(moduleLoader, errorReporter);
   }
 
   @Test
@@ -28,7 +31,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "A", false);
-    assertFalse(moduleLoader.getErrorReporter().getErrorList().isEmpty());
+    assertFalse(errorReporter.getErrorList().isEmpty());
   }
 
   @Test
@@ -40,7 +43,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "A", false);
-    assertFalse(moduleLoader.getErrorReporter().getErrorList().isEmpty());
+    assertFalse(errorReporter.getErrorList().isEmpty());
   }
 
   @Test
@@ -52,7 +55,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "A", false);
-    assertFalse(moduleLoader.getErrorReporter().getErrorList().isEmpty());
+    assertFalse(errorReporter.getErrorList().isEmpty());
   }
 
   @Test
@@ -64,7 +67,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "B", false);
-    assertEquals(2, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(2, errorReporter.getErrorList().size());
   }
 
   @Test
@@ -74,7 +77,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "A", false);
-    assertEquals(2, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(2, errorReporter.getErrorList().size());
   }
 
   @Test
@@ -83,7 +86,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(module, "\\function f : Nat \\static \\class C { \\function g : Nat \\function h => g }");
     moduleLoader.setSourceSupplier(sourceSupplier);
     ModuleLoadingResult result = moduleLoader.load(RootModule.ROOT, "A", false);
-    assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(1, RootModule.ROOT.getChild(new Utils.Name("A")).getDefinitions().size());
     assertEquals(1, result.classDefinition.getLocalNamespace().getDefinitions().size());
     assertEquals(0, result.classDefinition.getNamespace().getDefinition("C").getNamespace().getDefinitions().size());
@@ -99,7 +102,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "B", false);
-    assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
@@ -112,7 +115,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "B", false);
-    assertEquals(2, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(2, errorReporter.getErrorList().size());
   }
 
   @Test
@@ -124,6 +127,6 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(RootModule.ROOT, "B", false);
-    assertEquals(2, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(2, errorReporter.getErrorList().size());
   }
 }

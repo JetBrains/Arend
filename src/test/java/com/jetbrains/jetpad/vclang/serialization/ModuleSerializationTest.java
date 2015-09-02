@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
+import com.jetbrains.jetpad.vclang.module.ReportingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.RootModule;
-import com.jetbrains.jetpad.vclang.module.SimpleModuleLoader;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.ListErrorReporter;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -25,11 +26,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class ModuleSerializationTest {
-  SimpleModuleLoader moduleLoader;
+  ListErrorReporter errorReporter;
+  ReportingModuleLoader moduleLoader;
+
   @Before
   public void initialize() {
     RootModule.initialize();
-    moduleLoader = new SimpleModuleLoader(false);
+    errorReporter = new ListErrorReporter();
+    moduleLoader = new ReportingModuleLoader(errorReporter, false);
   }
 
   @Test
@@ -48,7 +52,7 @@ public class ModuleSerializationTest {
     assertNotNull(result.classDefinition);
     assertEquals(0, result.errorsNumber);
     assertEquals(CompareVisitor.CMP.EQUALS, compare(((FunctionDefinition) def.getLocalNamespace().getDefinition("f")).getTerm(), ((FunctionDefinition) result.classDefinition.getLocalNamespace().getDefinition("f")).getTerm(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
-    assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
@@ -74,7 +78,7 @@ public class ModuleSerializationTest {
     assertNotNull(result.classDefinition);
     assertEquals(0, result.errorsNumber);
     assertEquals(CompareVisitor.CMP.EQUALS, compare(((FunctionDefinition) def.getLocalNamespace().getDefinition("f")).getTerm(), ((FunctionDefinition) result.classDefinition.getLocalNamespace().getDefinition("f")).getTerm(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
-    assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test(expected = ModuleDeserialization.NameIsAlreadyDefined.class)
@@ -120,7 +124,7 @@ public class ModuleSerializationTest {
     assertEquals(def.getFields().size(), result.classDefinition.getFields().size());
     assertEquals(def.getNamespace().getDefinitions().size(), result.classDefinition.getNamespace().getDefinitions().size());
     assertEquals(CompareVisitor.CMP.EQUALS, compare(dataDefinition.getType(), result.classDefinition.getNamespace().getDefinition("D").getType(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
-    assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
@@ -143,7 +147,7 @@ public class ModuleSerializationTest {
     assertEquals(1, result.classDefinition.getNamespace().getChildren().size());
     assertEquals(1, result.classDefinition.getNamespace().getDefinitions().size());
     assertEquals(1, result.classDefinition.getNamespace().getDefinition("f").getNamespace().getDefinitions().size());
-    assertEquals(0, moduleLoader.getErrorReporter().getErrorList().size());
+    assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
