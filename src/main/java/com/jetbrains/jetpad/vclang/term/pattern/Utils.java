@@ -225,6 +225,14 @@ public class Utils {
     return result;
   }
 
+  public static List<Integer> patternMultipleMatch(List<List<Pattern>> patterns, List<Expression> expressions, List<Binding> ctx, int numPatterns) {
+    List<Integer> origIndicies = new ArrayList<>();
+    for (int i = 0; i < numPatterns; i++) {
+      origIndicies.add(i);
+    }
+    return patternMultipleMatch(patterns, expressions, ctx, origIndicies);
+  }
+
   public static List<Integer> patternMultipleMatch(List<List<Pattern>> patterns, List<Expression> expressions, List<Binding> ctx, List<Integer> origIndicies) {
     for (int i = 0; i < expressions.size(); i++) {
       List<Integer> goodPatterns = patternMultipleMatch(patterns.get(i), expressions.get(i), ctx);

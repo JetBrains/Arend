@@ -117,6 +117,13 @@ public class Utils {
     }
   }
 
+  public static List<Expression> getTypes(List<TypeArgument> args) {
+    List<Expression> result = new ArrayList<>();
+    for (TypeArgument arg : args)
+      result.add(arg.getType());
+    return result;
+  }
+
   public static void pushArgument(List<Binding> context, Argument argument) {
     if (argument instanceof TelescopeArgument) {
       for (int i = 0; i < ((TelescopeArgument) argument).getNames().size(); i++) {

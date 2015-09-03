@@ -8,13 +8,16 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingBranch;
 import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingFailedBranch;
 import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingIncompleteBranch;
+import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingOKBranch;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getTypes;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
 public class CoverageCheker {
@@ -59,10 +62,8 @@ public class CoverageCheker {
   }
 
   public List<CoverageCheckingBranch> checkCoverage(List<Pattern> patterns, Expression type) {
-    return checkCoverage(patterns, type, true);
-  }
-
-  public List<CoverageCheckingBranch> checkCoverage(List<Pattern> patterns, Expression type, boolean isExplicit) {
+    // no patterns only on top level and they are explicit
+    boolean isExplicit = patterns.isEmpty() || patterns.get(0).getExplicit();
     List<Integer> namePatternIdxs = new ArrayList<>();
     boolean hasConstructorPattern = false;
     for (int i = 0; i < patterns.size(); i++) {
@@ -148,48 +149,27 @@ public class CoverageCheker {
         continue;
       }
 
-      List<ArgsCoverageCheckingBranch> nestedBranches = new ArgsCoverageChecker(myLocalContext).checkCoverage(validConstructorArgs.get(i), goodPatternNested, goodPatternIdxs.size());
+      List<ArgsCoverageCheckingBranch> nestedBranches = new ArgsCoverageChecker(myLocalContext).checkCoverage(getTypes(validConstructorArgs.get(i)), goodPatternNested, goodPatternIdxs.size());
       for (ArgsCoverageCheckingBranch branch : nestedBranches) {
         if (branch instanceof ArgsCoverageCheckingIncompleteBranch) {
-          ConstructorPattern pattern = new ConstructorPattern(validConstructors.get(i), new ArrayList<Pattern>(), isExplicit);
-          for (CoverageCheckingOKBranch okBranch : branch.okBranches)
-            pattern.getArguments().add(okBranch.branchPattern);
-          pattern.getArguments().add(((ArgsCoverageCheckingIncompleteBranch) branch).incompleteBranch.noncoveredPattern);
-          for (int j = pattern.getArguments().size(); j < validConstructorArgs.get(i).size(); j++)
-            pattern.getArguments().add(match(validConstructorArgs.get(i).get(j).getExplicit(), null));
-
-          result.add(new CoverageCheckingIncompleteBranch(pattern));
+          result.add(new CoverageCheckingIncompleteBranch(new ConstructorPattern(validConstructors.get(i), ((ArgsCoverageCheckingIncompleteBranch) branch).incompletePatterns, isExplicit)));
         } else if (branch instanceof ArgsCoverageCheckingFailedBranch) {
-          ConstructorPattern pattern = new ConstructorPattern(validConstructors.get(i), new ArrayList<Pattern>(), isExplicit);
-          for (CoverageCheckingOKBranch okBranch : branch.okBranches)
-            pattern.getArguments().add(okBranch.branchPattern);
-          pattern.getArguments().add(((ArgsCoverageCheckingFailedBranch) branch).failedBranch.failedPattern);
-          for (int j = pattern.getArguments().size(); j < validConstructorArgs.get(i).size(); j++)
-            pattern.getArguments().add(match(validConstructorArgs.get(i).get(j).getExplicit(), null));
-
           List<Integer> bad = new ArrayList<>();
-          for (int j : ((ArgsCoverageCheckingFailedBranch) branch).failedBranch.bad)
+          for (int j : ((ArgsCoverageCheckingFailedBranch) branch).bad)
             bad.add(j);
-
-          result.add(new CoverageCheckingFailedBranch(bad, pattern));
-        } else {
-          ConstructorPattern pattern = new ConstructorPattern(validConstructors.get(i), new ArrayList<Pattern>(), isExplicit);
-          List<Binding> context = new ArrayList<>();
+          result.add(new CoverageCheckingFailedBranch(bad, new ConstructorPattern(validConstructors.get(i), ((ArgsCoverageCheckingFailedBranch) branch).failedPatterns, isExplicit)));
+        } else if (branch instanceof ArgsCoverageCheckingOKBranch){
+          ArgsCoverageCheckingOKBranch okBranch = (ArgsCoverageCheckingOKBranch) branch;
           Expression expr = DefCall(null, validConstructors.get(i), parameters);
-          for (CoverageCheckingOKBranch okBranch : branch.okBranches) {
-            context.addAll(okBranch.context);
-            pattern.getArguments().add(okBranch.branchPattern);
-            expr = Apps(expr.liftIndex(0, okBranch.context.size()), okBranch.expression);
+          for (int j = 0; j < okBranch.expressions.size(); j++) {
+            expr = Apps(expr.liftIndex(0, getNumArguments(okBranch.patterns.get(j))), okBranch.expressions.get(j));
           }
           List<Integer> good = new ArrayList<>();
-          if (branch.okBranches.isEmpty()) {
-            good.addAll(goodPatternIdxs);
-          } else {
-            for (int j : branch.okBranches.get(branch.okBranches.size() - 1).good)
-              good.add(goodPatternIdxs.get(j));
-          }
+          for (int j : okBranch.good)
+            good.add(goodPatternIdxs.get(j));
 
-          result.add(new CoverageCheckingOKBranch(expr, context, good, pattern));
+          result.add(new CoverageCheckingOKBranch(expr, okBranch.context,
+              good, new ConstructorPattern(validConstructors.get(i), okBranch.patterns, isExplicit)));
         }
       }
     }

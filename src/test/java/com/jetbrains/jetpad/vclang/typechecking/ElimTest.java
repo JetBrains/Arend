@@ -207,4 +207,10 @@ public class ElimTest {
     assertEquals(Apps(DefCall(test), call1), Apps(DefCall(test), call1).normalize(NormalizeVisitor.Mode.NF));
     assertEquals(Suc(Zero()), Apps(DefCall(test), call2).normalize(NormalizeVisitor.Mode.NF));
   }
+
+  @Test
+  public void elim9() {
+    parseDefs("\\static \\data D Nat | D (suc n) => d1 | D _ => d | D zero => d0" +
+      "\\static \\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d => 0", 1);
+  }
 }
