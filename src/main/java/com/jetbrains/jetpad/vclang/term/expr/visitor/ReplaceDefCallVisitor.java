@@ -133,13 +133,13 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
   }
 
   private Clause visitClause(Clause clause, ElimExpression elimExpression) {
-    return new Clause(clause.getPattern(), clause.getArrow(), clause.getExpression().accept(this), elimExpression);
+    return new Clause(clause.getPatterns(), clause.getArrow(), clause.getExpression().accept(this), elimExpression);
   }
 
   @Override
   public ElimExpression visitElim(ElimExpression expr) {
     List<Clause> clauses = new ArrayList<>(expr.getClauses().size());
-    ElimExpression elimExpression = Elim(expr.getExpression(), clauses);
+    ElimExpression elimExpression = Elim(expr.getExpressions(), clauses);
     for (Clause clause : expr.getClauses()) {
       clauses.add(visitClause(clause, elimExpression));
     }

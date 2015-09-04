@@ -170,7 +170,9 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitElim(ElimExpression expr) {
     myStream.write(12);
     try {
-      myDataStream.writeInt(expr.getExpression().getIndex());
+      myDataStream.writeInt(expr.getExpressions().size());
+      for (IndexExpression var : expr.getExpressions())
+        myDataStream.writeInt(var.getIndex());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -207,7 +209,9 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   private void visitClause(Clause clause) {
     try {
-      visitPattern(clause.getPattern());
+      myDataStream.writeInt(clause.getPatterns().size());
+      for (Pattern pattern : clause.getPatterns())
+        visitPattern(pattern);
       myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
       clause.getExpression().accept(this);
     } catch (IOException e) {

@@ -158,17 +158,25 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   }
 
   private Clause visitClause(Clause clause, ElimExpression elimExpr) {
-    return new Clause(clause.getPattern(), clause.getArrow(),
-            clause.getExpression().liftIndex(myFrom + getNumArguments(clause.getPattern()), myOn), elimExpr);
+    int liftShift = 0;
+    for (int i = 0; i < clause.getPatterns().size(); i++) {
+      if (elimExpr.getExpressions().get(i).getIndex() < myFrom) {
+        liftShift += getNumArguments(clause.getPatterns().get(i)) - 1;
+      }
+    }
+    return new Clause(clause.getPatterns(), clause.getArrow(),
+            clause.getExpression().liftIndex(myFrom + liftShift, myOn), elimExpr);
   }
 
   @Override
   public Expression visitElim(ElimExpression expr) {
     List<Clause> clauses = new ArrayList<>();
-    ElimExpression result = Elim((IndexExpression) expr.getExpression().liftIndex(myFrom, myOn), clauses);
-    for (Clause clause : expr.getClauses()) {
+    List<IndexExpression> expressions = new ArrayList<>(expr.getExpressions().size());
+    ElimExpression result = Elim(expressions, clauses);
+    for (IndexExpression var : expr.getExpressions())
+      expressions.add((IndexExpression) var.liftIndex(myFrom, myOn));
+    for (Clause clause : expr.getClauses())
       clauses.add(visitClause(clause, result));
-    }
     return result;
   }
 

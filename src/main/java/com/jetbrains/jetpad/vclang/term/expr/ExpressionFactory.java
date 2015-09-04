@@ -12,10 +12,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
@@ -216,6 +213,10 @@ public class ExpressionFactory {
 
   public static ElimExpression Elim(IndexExpression expression, List<Clause> clauses) {
     return new ElimExpression(expression, clauses);
+  }
+
+  public static ElimExpression Elim(List<IndexExpression> expressions, List<Clause> clauses) {
+    return new ElimExpression(expressions, clauses);
   }
 
   public static ConstructorPattern match(boolean isExplicit, Constructor constructor, Pattern... patterns) {

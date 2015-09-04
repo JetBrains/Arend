@@ -366,13 +366,17 @@ public class ModuleDeserialization {
         return Sigma(readTypeArguments(stream, definitionMap));
       }
       case 12: {
-        int index = stream.readInt();
+        int numExpressions = stream.readInt();
+        List<IndexExpression> expressions = new ArrayList<>(numExpressions);
+        for (int i = 0; i < numExpressions; i++) {
+          expressions.add(Index(stream.readInt()));
+        }
         int clausesNumber = stream.readInt();
         List<Clause> clauses = new ArrayList<>(clausesNumber);
         for (int i = 0; i < clausesNumber; ++i) {
           clauses.add(readClause(stream, definitionMap));
         }
-        ElimExpression result = Elim(Index(index), clauses);
+        ElimExpression result = Elim(expressions, clauses);
         for (Clause clause : result.getClauses()) {
           clause.setElimExpression(result);
         }
@@ -448,9 +452,12 @@ public class ModuleDeserialization {
   }
 
   public Clause readClause(DataInputStream stream, Map<Integer, NamespaceMember> definitionMap) throws IOException {
-    Pattern pattern = readPattern(stream, definitionMap);
+    int numPatterns = stream.readInt();
+    List<Pattern> patterns = new ArrayList<>(numPatterns);
+    for (int i = 0; i < numPatterns; i++)
+      patterns.add(readPattern(stream, definitionMap));
     Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
-    return new Clause(pattern, arrow, readExpression(stream, definitionMap), null);
+    return new Clause(patterns, arrow, readExpression(stream, definitionMap), null);
   }
 
   public static class DeserializationException extends IOException {

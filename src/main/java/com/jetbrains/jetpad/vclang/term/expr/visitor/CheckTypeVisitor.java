@@ -11,6 +11,9 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
+import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingBranch;
+import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingFailedBranch;
+import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingIncompleteBranch;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.DummyNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
@@ -1314,43 +1317,50 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
      }
 
-    if (!(expr.getExpression() instanceof Abstract.IndexExpression || expr.getExpression() instanceof Abstract.VarExpression)) {
-      error = new TypeCheckingError(myNamespace, "\\elim can be applied only to a local variable", expr.getExpression(), getNames(myLocalContext));
-      myErrorReporter.report(error);
-      expr.setWellTyped(Error(null, error));
-      return null;
+    List<IndexExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
+    for (Abstract.Expression var : expr.getExpressions()){
+      if (!(var instanceof Abstract.IndexExpression || var instanceof Abstract.VarExpression)) {
+        error = new TypeCheckingError(myNamespace, "\\elim can be applied only to a local variable", var, getNames(myLocalContext));
+        myErrorReporter.report(error);
+        expr.setWellTyped(Error(null, error));
+        return null;
+      }
+
+      OKResult exprOKResult = lookupLocalVar(var);
+
+      if (exprOKResult == null) {
+        return null;
+      }
+
+      Expression ftype = exprOKResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(new ArrayList<Expression>());
+      if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
+        error = new TypeCheckingError(myNamespace, "Elimination is allowed only for a data type variable.", var, getNames(myLocalContext));
+        myErrorReporter.report(error);
+        var.setWellTyped(Error(null, error));
+        return null;
+      }
+      elimExprs.add((IndexExpression) exprOKResult.expression);
     }
 
-    OKResult exprOKResult = lookupLocalVar(expr.getExpression());
-
-    if (exprOKResult == null) {
-      return null;
-    }
-
-    List<Expression> parameters = new ArrayList<>();
-    Expression ftype = exprOKResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(parameters);
-    Collections.reverse(parameters);
-    if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-      error = new TypeCheckingError(myNamespace, "Elimination is allowed only for a data type variable.", expr.getExpression(), getNames(myLocalContext));
-      myErrorReporter.report(error);
-      expr.getExpression().setWellTyped(Error(null, error));
-      return null;
-    }
-
-    int varIndex = ((IndexExpression) exprOKResult.expression).getIndex();
 
     Result errorResult = null;
     boolean wasError = false;
 
     List<Clause> clauses = new ArrayList<>();
+    clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
       try (CompleteContextSaver ignore = new CompleteContextSaver(myLocalContext)) {
-        ExpandPatternResult result = expandPatternOn(clause.getPattern(), varIndex, expr.getExpression());
-        if (result == null) {
-          wasError = true;
-          continue;
+        List<Pattern> patterns = new ArrayList<>();
+        Expression clauseExpectedType = expectedType;
+        for (int i = 0; i < clause.getPatterns().size(); i++) {
+          ExpandPatternResult result = expandPatternOn(clause.getPatterns().get(i), elimExprs.get(i).getIndex(), expr.getExpressions().get(i));
+          if (result == null) {
+            wasError = true;
+            continue clause_loop;
+          }
+          patterns.add(result.pattern);
+          clauseExpectedType = expandPatternSubstitute(result.pattern, elimExprs.get(i).getIndex(), result.expression, clauseExpectedType);
         }
-        Expression clauseExpectedType = expandPatternSubstitute(result.pattern, varIndex, result.expression, expectedType);
         Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
         Result clauseResult = new CheckTypeVisitor(myNamespace, myLocalContext, myErrorReporter, side).typeCheck(clause.getExpression(), clauseExpectedType);
         if (!(clauseResult instanceof OKResult)) {
@@ -1362,7 +1372,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             errorResult = clauseResult;
           }
         } else {
-          clauses.add(new Clause(result.pattern, clause.getArrow(), clauseResult.expression, null));
+          clauses.add(new Clause(patterns, clause.getArrow(), clauseResult.expression, null));
         }
       }
     }
@@ -1371,26 +1381,45 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return errorResult;
     }
 
-    // Coverage checking
-    List<Pattern> patterns = new ArrayList<>();
-    for (Clause clause : clauses)
-      patterns.add(clause.getPattern());
+    List<List<Pattern>> patterns = new ArrayList<>();
+    List<Expression> types = new ArrayList<>();
+    for (int i = elimExprs.get(0).getIndex(); i >= 0; i--) {
+      patterns.add(new ArrayList<Pattern>(Collections.nCopies(clauses.size(), match(null))));
+      types.add(myLocalContext.get(myLocalContext.size() - 1 - i).getType());
+    }
 
-    List<CoverageCheker.CoverageCheckingBranch> branches = new CoverageCheker(myLocalContext).checkCoverage(patterns, exprOKResult.type);
+    for (int j = 0; j < clauses.size(); j++) {
+     for (int i = 0; i < clauses.get(j).getPatterns().size(); i++) {
+        patterns.get(types.size() - 1 - elimExprs.get(i).getIndex()).set(j, clauses.get(j).getPatterns().get(i));
+      }
+    }
+
+    List<Binding> tail = new ArrayList<>(myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()));
+    List<ArgsCoverageCheckingBranch> branches = new ArgsCoverageChecker(myLocalContext).checkCoverage(types, patterns, clauses.size());
+    myLocalContext.addAll(tail);
     if (branches == null)
       return null;
 
     StringBuilder msg = new StringBuilder();
     msg.append("Coverage checking failed: \n");
-    for (CoverageCheker.CoverageCheckingBranch branch : branches) {
-      if (branch instanceof CoverageCheker.CoverageCheckingIncompleteBranch) {
-        msg.append("missing pattern: ").append(((CoverageCheker.CoverageCheckingIncompleteBranch) branch).noncoveredPattern).append("\n");
+    for (ArgsCoverageCheckingBranch branch : branches) {
+      if (branch instanceof ArgsCoverageCheckingIncompleteBranch) {
+        ArgsCoverageCheckingIncompleteBranch  incompleteBranch = (ArgsCoverageCheckingIncompleteBranch) branch;
+        msg.append("missing pattern: ");
+        for (IndexExpression elimIdx : elimExprs)
+          msg.append(incompleteBranch.incompletePatterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+        msg.append("\n");
         wasError = true;
-      } else if (branch instanceof CoverageCheker.CoverageCheckingFailedBranch) {
-        msg.append("failed match in branch: ").append(((CoverageCheker.CoverageCheckingFailedBranch) branch).failedPattern);
+      } else if (branch instanceof ArgsCoverageCheckingFailedBranch) {
+        ArgsCoverageCheckingFailedBranch failedBranch = (ArgsCoverageCheckingFailedBranch) branch;
+        msg.append("failed match in branch: ");
+        for (IndexExpression elimIdx : elimExprs)
+          msg.append(failedBranch.failedPatterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
         msg.append(" because of ");
-        for (int i : ((CoverageCheker.CoverageCheckingFailedBranch) branch).bad) {
-          msg.append(patterns.get(i).toString());
+        for (int i : ((ArgsCoverageCheckingFailedBranch) branch).bad) {
+          for (Pattern pattern : clauses.get(i).getPatterns()) {
+            msg.append(pattern.toString()).append(" ");
+          }
         }
         wasError = true;
       }
@@ -1403,7 +1432,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    ElimExpression result = Elim((IndexExpression) exprOKResult.expression, clauses);
+    ElimExpression result = Elim(elimExprs, clauses);
     for (Clause clause : clauses) {
         clause.setElimExpression(result);
     }
@@ -1421,33 +1450,40 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     List<CompareVisitor.Equation> equations = new ArrayList<>();
-
-    Result exprResult = typeCheck(expr.getExpression(), null);
-    if (!(exprResult instanceof OKResult)) return exprResult;
-    OKResult exprOKResult = (OKResult) exprResult;
-    equations.addAll(exprOKResult.equations);
+    Expression letTerm = Index(0);
+    List<Argument> args = new ArrayList<>();
+    for (int i = 0; i < expr.getExpressions().size(); i++) {
+      Result exprResult = typeCheck(expr.getExpressions().get(i), null);
+      if (!(exprResult instanceof OKResult)) return exprResult;
+      OKResult exprOKResult = (OKResult) exprResult;
+      equations.addAll(exprOKResult.equations);
+      myLocalContext.add(new TypedBinding((Name) null, exprOKResult.type.liftIndex(0, i)));
+      args.add(TypeArg(exprOKResult.type.liftIndex(0, i)));
+      letTerm = Apps(letTerm, exprOKResult.expression);
+    }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
-
-    myLocalContext.add(new TypedBinding((Name) null, exprOKResult.type));
     Result elimResult = elim.accept(new CheckTypeVisitor(myNamespace, myLocalContext, myErrorReporter, Side.LHS), expectedType.liftIndex(0, 1));
     if (!(elimResult instanceof OKResult)) return elimResult;
     OKResult elimOKResult = (OKResult) elimResult;
     addLiftedEquations(elimOKResult, equations, 1);
     myLocalContext.remove(myLocalContext.size() - 1);
 
-    LetExpression letExpression = Let(lets(let("caseF", lamArgs(Tele(vars("caseA"), exprOKResult.type)), elimOKResult.type,
-                    Abstract.Definition.Arrow.LEFT, elimOKResult.expression)), Apps(Index(0), exprOKResult.expression));
+    LetExpression letExpression = Let(lets(let("caseF", args, elimOKResult.type,
+        Abstract.Definition.Arrow.LEFT, elimOKResult.expression)), letTerm);
 
-    expr.setWellTyped(exprOKResult.type.liftIndex(0, -1));
-    return new OKResult(letExpression, exprOKResult.type.liftIndex(0, -1), equations);
+    expr.setWellTyped(elimOKResult.type.liftIndex(0, -expr.getExpressions().size()));
+    return new OKResult(letExpression, elimOKResult.type.liftIndex(0, -expr.getExpressions().size()), equations);
   }
 
 
   private Abstract.ElimExpression wrapCaseToElim(final Abstract.CaseExpression expr) {
+    final List<Abstract.Expression> expressions = new ArrayList<>();
+    for (int i = 0; i < expr.getExpressions().size(); i++)
+      expressions.add(Index(expr.getExpressions().size() - 1 - i));
     return new Abstract.ElimExpression() {
       @Override
-      public Abstract.Expression getExpression() {
-        return Index(0);
+      public List<Abstract.Expression> getExpressions() {
+        return expressions;
       }
 
       @Override
@@ -1563,7 +1599,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression term;
     List<CompareVisitor.Equation> equations = new ArrayList<>();
 
-    try (ContextSaver saver = new ContextSaver(myLocalContext)) {
+    try (ContextSaver ignore = new ContextSaver(myLocalContext)) {
       int numVarsPassed = 0;
       for (int i = 0; i < clause.getArguments().size(); i++) {
         if (clause.getArguments().get(i) instanceof Abstract.TypeArgument) {
@@ -1622,7 +1658,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitLet(Abstract.LetExpression expr, Expression expectedType) {
     OKResult finalResult;
-    try (ContextSaver saver = new ContextSaver(myLocalContext)) {
+    try (ContextSaver ignore = new ContextSaver(myLocalContext)) {
       List<LetClause> clauses = new ArrayList<>();
       List<CompareVisitor.Equation> equations = new ArrayList<>();
       for (int i = 0; i < expr.getClauses().size(); i++) {

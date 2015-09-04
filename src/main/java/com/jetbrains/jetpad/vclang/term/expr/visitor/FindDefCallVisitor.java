@@ -88,7 +88,6 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitElim(ElimExpression expr) {
-    if (expr.getExpression().accept(this)) return true;
     for (Clause clause : expr.getClauses()) {
       if (clause.getExpression().accept(this)) return true;
     }

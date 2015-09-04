@@ -232,23 +232,30 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
     Abstract.Definition.Arrow arrow = func.getArrow();
     while (result instanceof ElimExpression) {
-      Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0);
-      Expression call = expr.normalize(Mode.WHNF, myContext).getFunction(new ArrayList<Expression>());
-      List<Pattern> patterns = new ArrayList<>();
-      for (Clause clause : ((ElimExpression) result).getClauses())
-        patterns.add(clause.getPattern());
-      List<Integer> validClauses = patternMultipleMatch(patterns, expr, myContext);
+      List<Expression> exprs = new ArrayList<>();
+      List<List<Pattern>> patterns = new ArrayList<>();
+      for (Expression expr : ((ElimExpression) result).getExpressions()) {
+        exprs.add(expr.subst(args2, 0));
+        patterns.add(new ArrayList<Pattern>());
+      }
+      for (Clause clause : ((ElimExpression) result).getClauses()) {
+        for (int i = 0; i < clause.getPatterns().size(); i++)
+          patterns.get(i).add(clause.getPatterns().get(i));
+      }
+      List<Integer> validClauses = patternMultipleMatch(patterns, exprs, myContext, ((ElimExpression) result).getClauses().size());
       if (validClauses.isEmpty() && func == Prelude.AT && ((ElimExpression) result).getClauses().size() == 3) {
         validClauses = Collections.singletonList(2);
       }
       if (!validClauses.isEmpty()) {
         Clause clauseOK = ((ElimExpression) result).getClauses().get(validClauses.get(0));
-        Utils.PatternMatchOKResult matchOKResult = (Utils.PatternMatchOKResult) clauseOK.getPattern().match(expr, myContext);
+        for (int i = 0; i < ((ElimExpression) result).getExpressions().size(); i++) {
+          Utils.PatternMatchOKResult matchOKResult = (Utils.PatternMatchOKResult) clauseOK.getPatterns().get(i).match(exprs.get(i), myContext);
 
-        int var = ((ElimExpression) result).getExpression().getIndex();
-        args2.remove(var);
-        Collections.reverse(matchOKResult.expressions);
-        args2.addAll(var, matchOKResult.expressions);
+          int var = ((ElimExpression) result).getExpressions().get(i).getIndex();
+          args2.remove(var);
+          Collections.reverse(matchOKResult.expressions);
+          args2.addAll(var, matchOKResult.expressions);
+        }
         result = clauseOK.getExpression();
         arrow = clauseOK.getArrow();
         continue;

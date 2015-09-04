@@ -218,17 +218,13 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitElim(ElimExpression expr) {
-    if (!expr.getExpression().accept(this)) {
-      return false;
-    }
-
-    int var = expr.getExpression().getIndex();
     for (Clause clause : expr.getClauses()) {
-      Expression newExpr = patternToExpression(clause.getPattern()).getExpression();
-      List<Expression> patterns = new ArrayList<>(myPatterns.size());
-
-      for (Expression pattern : myPatterns) {
-        patterns.add(expandPatternSubstitute(clause.getPattern(), var, newExpr, pattern));
+      List<Expression> patterns = new ArrayList<>(myPatterns);
+      for (int i = 0; i < clause.getPatterns().size(); i++) {
+        Expression newExpr = patternToExpression(clause.getPatterns().get(i)).getExpression();
+        for (int j = 0; j < patterns.size(); j++) {
+          patterns.set(j, expandPatternSubstitute(clause.getPatterns().get(i), expr.getExpressions().get(i).getIndex(), newExpr, patterns.get(j)));
+        }
       }
 
       if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns))) {
@@ -236,7 +232,7 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
       }
     }
 
-    return expr.getExpression().accept(this);
+    return true;
   }
 
   @Override

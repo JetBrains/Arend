@@ -67,14 +67,19 @@ expr  : binOpLeft* maybeNew atomFieldsAcc argument*         # binOp
       | '\\Sigma' tele+                                     # sigma
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | elimCase expr clause* ';'?                          # exprElim
+      | elimCase expr (',' expr)* clause* ';'?                          # exprElim
       ;
 
 letClause : ID tele* typeAnnotation? arrow expr;
 
 typeAnnotation : ':' expr;
 
-clause : '|' ('_' | name patternx*) arrow expr;
+clause : '|' clausePattern (',' clausePattern)* arrow expr;
+
+clausePattern : '_'
+              | name patternx*
+              ;
+
 
 elimCase : '\\elim'                     # elim
          | '\\case'                     # case
