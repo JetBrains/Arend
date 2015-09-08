@@ -116,7 +116,7 @@ public class ModuleDeserialization {
       return new ClassDefinition(parent.getChild(name));
     }
     if (code == ModuleSerialization.CONSTRUCTOR_CODE) {
-      return new Constructor(-1, parent.getChild(name), Abstract.Definition.DEFAULT_PRECEDENCE, null);
+      return new Constructor(parent.getChild(name), Abstract.Definition.DEFAULT_PRECEDENCE, null);
     }
     throw new IncorrectFormat();
   }
@@ -149,7 +149,6 @@ public class ModuleDeserialization {
         if (constructor == null) {
           throw new IncorrectFormat();
         }
-        constructor.setIndex(i);
         constructor.setDataType(dataDefinition);
         constructor.hasErrors(stream.readBoolean());
         readDefinition(stream, constructor);

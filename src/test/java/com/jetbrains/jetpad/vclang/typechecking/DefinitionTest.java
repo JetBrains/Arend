@@ -85,18 +85,18 @@ public class DefinitionTest {
     List<TypeArgument> arguments1 = new ArrayList<>(6);
     arguments1.add(Tele(vars("x"), Index(4)));
     arguments1.add(TypeArg(Apps(Index(3), Index(0), Index(1))));
-    def.addConstructor(new Constructor(0, def.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
+    def.addConstructor(new Constructor(def.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(6);
     arguments2.add(Tele(false, vars("y"), Index(3)));
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
-    def.addConstructor(new Constructor(1, def.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
+    def.addConstructor(new Constructor(def.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
 
     List<Binding> localContext = new ArrayList<>();
     DataDefinition typedDef = TypeChecking.typeCheckDataBegin(errorReporter, def.getNamespace().getParent(), null, def, localContext);
     assertNotNull(typedDef);
     for (int i = 0; i < def.getConstructors().size(); i++) {
-      TypeChecking.typeCheckConstructor(errorReporter, def.getNamespace().getParent(), typedDef, def.getConstructors().get(i), localContext, i);
+      TypeChecking.typeCheckConstructor(errorReporter, def.getNamespace().getParent(), typedDef, def.getConstructors().get(i), localContext);
     }
     TypeChecking.typeCheckDataEnd(errorReporter, def.getNamespace().getParent(), def, typedDef, localContext);
     assertEquals(0, errorReporter.getErrorList().size());
@@ -118,19 +118,19 @@ public class DefinitionTest {
     List<TypeArgument> arguments1 = new ArrayList<>(3);
     arguments1.add(Tele(vars("X"), Universe(5, 1)));
     arguments1.add(TypeArg(Index(0)));
-    def.addConstructor(new Constructor(0, def.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
+    def.addConstructor(new Constructor(def.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(4);
     arguments2.add(Tele(vars("Y"), Universe(3, 2)));
     arguments2.add(TypeArg(Index(1)));
     arguments2.add(TypeArg(Index(1)));
-    def.addConstructor(new Constructor(1, def.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
+    def.addConstructor(new Constructor(def.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
 
     List<Binding> localContext = new ArrayList<>();
     DataDefinition typedDef = TypeChecking.typeCheckDataBegin(errorReporter, def.getNamespace().getParent(), null, def, localContext);
     assertNotNull(typedDef);
     for (int i = 0; i < def.getConstructors().size(); i++) {
-      TypeChecking.typeCheckConstructor(errorReporter, def.getNamespace().getParent(), typedDef, def.getConstructors().get(i), localContext, i);
+      TypeChecking.typeCheckConstructor(errorReporter, def.getNamespace().getParent(), typedDef, def.getConstructors().get(i), localContext);
     }
     TypeChecking.typeCheckDataEnd(errorReporter, def.getNamespace().getParent(), def, typedDef, localContext);
     assertEquals(0, errorReporter.getErrorList().size());
@@ -146,7 +146,7 @@ public class DefinitionTest {
   public void constructor() {
     // \data D (A : \Type0) = con (B : \Type1) A B |- con Nat zero zero : D Nat
     DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Utils.Name("test")).getChild(new Utils.Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
-    Constructor con = new Constructor(0, def.getNamespace().getChild(new Utils.Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    Constructor con = new Constructor(def.getNamespace().getChild(new Utils.Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
     Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
@@ -160,7 +160,7 @@ public class DefinitionTest {
   public void constructorInfer() {
     // \data D (A : \Type0) = con (B : \Type1) A B, f : D (Nat -> Nat) -> Nat |- f (con Nat (\lam x => x) zero) : Nat
     DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Utils.Name("test")).getChild(new Utils.Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
-    Constructor con = new Constructor(0, def.getNamespace().getChild(new Utils.Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    Constructor con = new Constructor(def.getNamespace().getChild(new Utils.Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
     Expression expr = Apps(Index(0), Apps(DefCall(con), Nat(), Lam("x", Index(0)), Zero()));
@@ -177,7 +177,7 @@ public class DefinitionTest {
   public void constructorConst() {
     // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
     DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Utils.Name("test")).getChild(new Utils.Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
-    Constructor con = new Constructor(0, def.getNamespace().getChild(new Utils.Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(TypeArg(Index(0))), def);
+    Constructor con = new Constructor(def.getNamespace().getChild(new Utils.Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(TypeArg(Index(0))), def);
     def.addConstructor(con);
 
     Expression expr = Apps(Index(0), DefCall(con));

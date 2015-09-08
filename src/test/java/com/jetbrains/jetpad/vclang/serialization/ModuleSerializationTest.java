@@ -100,8 +100,8 @@ public class ModuleSerializationTest {
   public void serializeDataTest() throws IOException {
     ClassDefinition def = new ClassDefinition(RootModule.ROOT.getChild(new Utils.Name("test")));
     DataDefinition dataDefinition = new DataDefinition(def.getNamespace().getChild(new Utils.Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("A"), Universe(0))));
-    dataDefinition.addConstructor(new Constructor(0, dataDefinition.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(TypeArg(Index(0))), dataDefinition));
-    dataDefinition.addConstructor(new Constructor(1, dataDefinition.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(TypeArg(Nat()), TypeArg(Index(1))), dataDefinition));
+    dataDefinition.addConstructor(new Constructor(dataDefinition.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(TypeArg(Index(0))), dataDefinition));
+    dataDefinition.addConstructor(new Constructor(dataDefinition.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(TypeArg(Nat()), TypeArg(Index(1))), dataDefinition));
     def.getNamespace().addDefinition(dataDefinition);
     def.getNamespace().addDefinition(dataDefinition.getConstructors().get(0));
     def.getNamespace().addDefinition(dataDefinition.getConstructors().get(1));

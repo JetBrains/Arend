@@ -666,7 +666,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     //TODO: indexing
     for (int i = 0; i < def.getConstructors().size(); i++) {
-      TypeChecking.typeCheckConstructor(myErrorReporter, myNamespace, typedDef, def.getConstructors().get(i), localContext, i);
+      TypeChecking.typeCheckConstructor(myErrorReporter, myNamespace, typedDef, def.getConstructors().get(i), localContext);
     }
 
     trimToSize(myContext, origSize);

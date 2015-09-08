@@ -97,7 +97,7 @@ public class TypeChecking {
     }
   }
 
-  public static Constructor typeCheckConstructor(ErrorReporter errorReporter, Namespace namespace, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext, int conIndex) {
+  public static Constructor typeCheckConstructor(ErrorReporter errorReporter, Namespace namespace, DataDefinition dataDefinition, Abstract.Constructor con, List<Binding> localContext) {
     try (Utils.CompleteContextSaver ignore = new Utils.CompleteContextSaver(localContext)) {
       List<TypeArgument> arguments = new ArrayList<>(con.getArguments().size());
       Universe universe = new Universe.Type(0, Universe.Type.PROP);
@@ -154,7 +154,7 @@ public class TypeChecking {
       }
 
       // TODO: Do not create child namespace if the definition does not type check.
-      Constructor constructor = new Constructor(conIndex, dataDefinition.getNamespace().getChild(con.getName()), con.getPrecedence(), universe, arguments, dataDefinition, patterns);
+      Constructor constructor = new Constructor(dataDefinition.getNamespace().getChild(con.getName()), con.getPrecedence(), universe, arguments, dataDefinition, patterns);
       for (int j = 0; j < constructor.getArguments().size(); ++j) {
         Expression type = constructor.getArguments().get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {

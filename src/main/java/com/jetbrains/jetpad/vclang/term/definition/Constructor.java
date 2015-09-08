@@ -19,26 +19,23 @@ public class Constructor extends Definition implements Abstract.Constructor {
   private DataDefinition myDataType;
   private List<TypeArgument> myArguments;
   private List<Pattern> myPatterns;
-  private int myIndex;
 
-  public Constructor(int index, Namespace namespace, Precedence precedence, DataDefinition dataType) {
+  public Constructor(Namespace namespace, Precedence precedence, DataDefinition dataType) {
     super(namespace, precedence);
     myDataType = dataType;
-    myIndex = index;
   }
 
-  public Constructor(int index, Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
+  public Constructor(Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
     super(namespace, precedence);
     setUniverse(universe);
     hasErrors(false);
     myDataType = dataType;
     myArguments = arguments;
-    myIndex = index;
     myPatterns = patterns;
   }
 
-  public Constructor(int index, Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
-    this(index, namespace, precedence, universe, arguments, dataType, null);
+  public Constructor(Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
+    this(namespace, precedence, universe, arguments, dataType, null);
   }
 
   @Override
@@ -62,14 +59,6 @@ public class Constructor extends Definition implements Abstract.Constructor {
 
   public void setDataType(DataDefinition dataType) {
     myDataType = dataType;
-  }
-
-  public int getIndex() {
-    return myIndex;
-  }
-
-  public void setIndex(int index) {
-    myIndex = index;
   }
 
   @Override

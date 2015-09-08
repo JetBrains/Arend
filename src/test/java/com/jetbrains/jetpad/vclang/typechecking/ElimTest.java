@@ -35,8 +35,8 @@ public class ElimTest {
     arguments2.add(TypeArg(Pi(Nat(), Nat())));
     arguments2.add(Tele(vars("a", "b", "c"), Nat()));
     DataDefinition dataType = new DataDefinition(new Namespace(new Utils.Name("D"), null), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), parameters);
-    dataType.addConstructor(new Constructor(0, dataType.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments1, dataType));
-    dataType.addConstructor(new Constructor(1, dataType.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments2, dataType));
+    dataType.addConstructor(new Constructor(dataType.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments1, dataType));
+    dataType.addConstructor(new Constructor(dataType.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments2, dataType));
 
     List<Argument> arguments3 = new ArrayList<>(4);
     arguments3.add(Tele(vars("a1", "b1", "c1"), Nat()));
@@ -224,5 +224,12 @@ public class ElimTest {
   public void elimEmptyBranchError() {
     parseDefs("\\static \\data D Nat | D (suc n) => dsuc" +
         "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | suc n, _! | zero, _! => 0", 1);
+  }
+
+  @Test
+  public void elimManyMistmatch() {
+    parseDefs("\\static \\data D Nat | D (suc n) => dsuc" +
+        "\\static \\function tests (n : Nat) (d : D n) : Nat <= \\elim n d" +
+        "| suc n => 0", 1);
   }
 }
