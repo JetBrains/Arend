@@ -199,7 +199,7 @@ public class DefinitionTest {
   @Test
   public void patternDepParams() {
     parseDefs(
-        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {(zero)} (d) => c (p = p)");
+        "\\data D (n : Nat) (p : n = n) | D (zero) _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {zero} (d) => c (p = p)");
   }
 
   @Test
@@ -225,7 +225,7 @@ public class DefinitionTest {
 
   @Test
   public void patternConstructorCall() {
-    parseDefs("\\data D {n : Nat} | D {(zero)} => d \\function test => d");
+    parseDefs("\\data D {n : Nat} | D {zero} => d \\function test => d");
   }
 
   @Test

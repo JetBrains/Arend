@@ -483,13 +483,51 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.NamePattern visitPatternAny(PatternAnyContext ctx) {
-    return new Concrete.NamePattern(tokenPosition(ctx.getStart()), null);
+    return new Concrete.NamePattern(tokenPosition(ctx.start), null);
   }
 
   @Override
-  public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
-    String name = ctx.ID().getText();
-    Concrete.Position pos = tokenPosition(ctx.getStart());
+  public Concrete.AnyConstructorPattern visitPatternAnyConstructor(PatternAnyConstructorContext ctx) {
+    return new Concrete.AnyConstructorPattern(tokenPosition(ctx.start));
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternSpec(PatternSpecContext ctx) {
+    return (Concrete.Pattern) visit(ctx.specPattern());
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
+    if (ctx.name() instanceof NameIdContext && ctx.patternx().size() == 0) {
+      return visitPatternName(((NameIdContext) ctx.name()).ID().getText(), tokenPosition(ctx.start));
+    } else {
+      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), getName(ctx.name()), visitPatternxs(ctx.patternx()));
+    }
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternxExplicit(PatternxExplicitContext ctx) {
+    return (Concrete.Pattern) visit(ctx.pattern());
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternxImplicit(PatternxImplicitContext ctx) {
+    Concrete.Pattern result = (Concrete.Pattern) visit(ctx.pattern());
+    result.setExplicit(false);
+    return result;
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternxSpec(PatternxSpecContext ctx) {
+    return (Concrete.Pattern) visit(ctx.specPattern());
+  }
+
+  @Override
+  public Concrete.Pattern visitPatternxID(PatternxIDContext ctx) {
+    return visitPatternName(ctx.ID().getText(), tokenPosition(ctx.start));
+  }
+
+  private Concrete.Pattern visitPatternName(String name, Concrete.Position pos) {
     Concrete.Expression constructorCall = findId(name, false, pos, false);
     if (constructorCall != null && constructorCall instanceof Concrete.DefCallExpression
         && ((Concrete.DefCallExpression) constructorCall).getDefinition() instanceof Constructor) {
@@ -508,22 +546,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<Concrete.Pattern> visitPatternxs(List<PatternxContext> patternContexts) {
     List<Concrete.Pattern> patterns = new ArrayList<>();
     for (PatternxContext pattern : patternContexts) {
-      Concrete.Pattern result = null;
-      if (pattern instanceof PatternImplicitContext) {
-        result = (Concrete.Pattern) visit(((PatternImplicitContext) pattern).pattern());
-        result.setExplicit(false);
-      } else if (pattern instanceof PatternExplicitContext){
-        result = (Concrete.Pattern) visit(((PatternExplicitContext) pattern).pattern());
-      }
-      patterns.add(result);
+      patterns.add((Concrete.Pattern) visit(pattern));
     }
-    return patterns;
-  }
-
-  private List<Concrete.Pattern> visitPatterns(List<PatternContext> patternContexts) {
-    List<Concrete.Pattern> patterns = new ArrayList<>(patternContexts.size());
-    for (PatternContext patternCtx : patternContexts)
-      patterns.add((Concrete.Pattern) visit(patternCtx));
     return patterns;
   }
 
@@ -541,11 +565,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (int i = varIndex + 1; i < oldContext.size(); ++i) {
       myContext.add(oldContext.get(i));
     }
-  }
-
-  @Override
-  public Concrete.ConstructorPattern visitPatternConstructor(PatternConstructorContext ctx) {
-    return new Concrete.ConstructorPattern(tokenPosition(ctx.getStart()), getName(ctx.name()), visitPatternxs(ctx.patternx()));
   }
 
   private void visitConstructorDef(ConstructorDefContext ctx, Concrete.DataDefinition def) {
@@ -1222,12 +1241,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<String> oldContext = new ArrayList<>(myContext);
     for (ClauseContext clauseCtx : ctx.clause()) {
       List<Concrete.Pattern> patterns = new ArrayList<>();
-      for (ClausePatternContext patternCtx : clauseCtx.clausePattern()) {
-        if (patternCtx.name() != null) {
-          patterns.add(new Concrete.ConstructorPattern(tokenPosition(patternCtx.start), getName(patternCtx.name()), visitPatternxs(patternCtx.patternx())));
-        } else {
-          patterns.add(new Concrete.NamePattern(tokenPosition(patternCtx.start), null));
-        }
+      for (PatternContext patternCtx : clauseCtx.pattern()) {
+        patterns.add((Concrete.Pattern) visit(patternCtx));
       }
 
       if (patterns.size() != ctx.expr().size()) {
@@ -1235,18 +1250,22 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         return null;
       }
 
-      for (int i = 0, shift = 0; i < patterns.size(); shift += getNumArguments(patterns.get(i)), i++)
+      for (int i = 0, shift = 0; i < patterns.size(); shift += getNumArguments(patterns.get(i)) - 1, i++)
         applyPatternToContext(patterns.get(i), ctx.elimCase() instanceof  ElimContext  ? elimCtxIndicies.get(i) + shift : myContext.size());
 
-      Definition.Arrow arrow = clauseCtx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
+      if (clauseCtx.arrow() == null) {
+        clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.start), patterns, null, null, null));
+      } else {
+        Definition.Arrow arrow = clauseCtx.arrow() instanceof ArrowRightContext ? Definition.Arrow.RIGHT : Definition.Arrow.LEFT;
 
-      Concrete.Expression expr = visitExpr(clauseCtx.expr());
-      if (expr == null) {
-        myContext = oldContext;
-        return null;
+        Concrete.Expression expr = visitExpr(clauseCtx.expr());
+        if (expr == null) {
+          myContext = oldContext;
+          return null;
+        }
+
+        clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.getStart()), patterns, arrow, expr, null));
       }
-
-      clauses.add(new Concrete.Clause(tokenPosition(clauseCtx.getStart()), patterns, arrow, expr, null));
       myContext = new ArrayList<>(oldContext);
     }
 

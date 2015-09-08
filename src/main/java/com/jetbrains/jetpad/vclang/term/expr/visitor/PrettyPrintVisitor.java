@@ -247,9 +247,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   private void visitElimCaseExpression(Abstract.ElimCaseExpression expr, Byte prec) {
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append('(');
     myBuilder.append(expr instanceof Abstract.ElimExpression ? "\\elim" : "\\case");
-    for (Abstract.Expression var : expr.getExpressions()) {
+    for (int i = 0; i < expr.getExpressions().size(); i++) {
       myBuilder.append(" ");
-      var.accept(this, Abstract.Expression.PREC);
+      expr.getExpressions().get(i).accept(this, Abstract.Expression.PREC);
+      if (i != expr.getExpressions().size() - 1)
+        myBuilder.append(",");
     }
     myBuilder.append('\n');
     myIndent += INDENT;

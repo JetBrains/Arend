@@ -127,7 +127,7 @@ public class CoverageCheker {
       }
 
       for (int j = 0; j < patterns.size(); j++) {
-        if (patterns.get(j) instanceof NamePattern) {
+        if (patterns.get(j) instanceof NamePattern || patterns.get(j) instanceof AnyConstructorPattern) {
           goodPatternIdxs.add(j);
           for (int k = 0; k < goodPatternNested.size(); k++) {
             goodPatternNested.get(k).add(match(validConstructorArgs.get(i).get(k).getExplicit(), null));

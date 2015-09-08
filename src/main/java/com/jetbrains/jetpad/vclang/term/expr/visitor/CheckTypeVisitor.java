@@ -1169,6 +1169,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         myLocalContext.add(new TypedBinding(((Abstract.NamePattern) pattern).getName(), binding.getType()));
       }
       return new ExpandPatternResult(Index(0), new NamePattern(name, pattern.getExplicit()), 1);
+    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
+      Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
+      Expression ftype = type.getFunction(new ArrayList<Expression>());
+      if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
+        TypeCheckingError error = new TypeMismatchError(myNamespace, "a data type", type, expr, getNames(myLocalContext));
+        expr.setWellTyped(Error(null, error));
+        return null;
+      }
+      myLocalContext.add(binding);
+      return new ExpandPatternResult(Index(0), new AnyConstructorPattern(pattern.getExplicit()), 1);
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       TypeCheckingError error = null;
       Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
@@ -1347,6 +1357,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     boolean wasError = false;
 
     List<Clause> clauses = new ArrayList<>();
+    List<List<Pattern>> emptyPatterns = new ArrayList<>();
+    List<Abstract.Clause> emptyClauses = new ArrayList<>();
     clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
       try (CompleteContextSaver ignore = new CompleteContextSaver(myLocalContext)) {
@@ -1360,6 +1372,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           }
           patterns.add(result.pattern);
           clauseExpectedType = expandPatternSubstitute(result.pattern, elimExprs.get(i).getIndex(), result.expression, clauseExpectedType);
+        }
+        if (clause.getExpression() == null) {
+          emptyPatterns.add(patterns);
+          emptyClauses.add(clause);
+          continue;
         }
         Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
         Result clauseResult = new CheckTypeVisitor(myNamespace, myLocalContext, myErrorReporter, side).typeCheck(clause.getExpression(), clauseExpectedType);
@@ -1384,7 +1401,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     List<List<Pattern>> patterns = new ArrayList<>();
     List<Expression> types = new ArrayList<>();
     for (int i = elimExprs.get(0).getIndex(); i >= 0; i--) {
-      patterns.add(new ArrayList<Pattern>(Collections.nCopies(clauses.size(), match(null))));
+      patterns.add(new ArrayList<Pattern>(Collections.nCopies(clauses.size() + emptyPatterns.size(), match(null))));
       types.add(myLocalContext.get(myLocalContext.size() - 1 - i).getType());
     }
 
@@ -1394,31 +1411,37 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
+    for (int j = 0; j < emptyPatterns.size(); j++) {
+      for (int i = 0; i < emptyPatterns.get(j).size(); i++) {
+        patterns.get(types.size() - 1 - elimExprs.get(i).getIndex()).set(clauses.size() + j, emptyPatterns.get(j).get(i));
+      }
+    }
+
     List<Binding> tail = new ArrayList<>(myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()));
-    List<ArgsCoverageCheckingBranch> branches = new ArgsCoverageChecker(myLocalContext).checkCoverage(types, patterns, clauses.size());
+    List<ArgsCoverageCheckingBranch> branches = new ArgsCoverageChecker(myLocalContext).checkCoverage(types, patterns, clauses.size() + emptyPatterns.size());
     myLocalContext.addAll(tail);
     if (branches == null)
       return null;
 
-    StringBuilder msg = new StringBuilder();
-    msg.append("Coverage checking failed: \n");
+    StringBuilder coverageCheckMsg = new StringBuilder();
+    coverageCheckMsg.append("Coverage checking failed: \n");
     for (ArgsCoverageCheckingBranch branch : branches) {
       if (branch instanceof ArgsCoverageCheckingIncompleteBranch) {
         ArgsCoverageCheckingIncompleteBranch  incompleteBranch = (ArgsCoverageCheckingIncompleteBranch) branch;
-        msg.append("missing pattern: ");
+        coverageCheckMsg.append("missing pattern: ");
         for (IndexExpression elimIdx : elimExprs)
-          msg.append(incompleteBranch.incompletePatterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
-        msg.append("\n");
+          coverageCheckMsg.append(incompleteBranch.incompletePatterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+        coverageCheckMsg.append("\n");
         wasError = true;
       } else if (branch instanceof ArgsCoverageCheckingFailedBranch) {
         ArgsCoverageCheckingFailedBranch failedBranch = (ArgsCoverageCheckingFailedBranch) branch;
-        msg.append("failed match in branch: ");
+        coverageCheckMsg.append("failed match in branch: ");
         for (IndexExpression elimIdx : elimExprs)
-          msg.append(failedBranch.failedPatterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
-        msg.append(" because of ");
+          coverageCheckMsg.append(failedBranch.failedPatterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+        coverageCheckMsg.append(" because of ");
         for (int i : ((ArgsCoverageCheckingFailedBranch) branch).bad) {
           for (Pattern pattern : clauses.get(i).getPatterns()) {
-            msg.append(pattern.toString()).append(" ");
+            coverageCheckMsg.append(pattern.toString()).append(" ");
           }
         }
         wasError = true;
@@ -1426,11 +1449,30 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (wasError) {
-      error = new TypeCheckingError(myNamespace, msg.toString(), expr, getNames(myLocalContext));
+      error = new TypeCheckingError(myNamespace, coverageCheckMsg.toString(), expr, getNames(myLocalContext));
       expr.setWellTyped(Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
+
+    for (int i = 0; i < emptyPatterns.size(); i++) {
+      for (ArgsCoverageCheckingBranch branch : branches) {
+        if (branch instanceof ArgsCoverageChecker.ArgsCoverageCheckingOKBranch
+            && ((ArgsCoverageChecker.ArgsCoverageCheckingOKBranch) branch).good.contains(clauses.size() + i)) {
+          StringBuilder errorMsg = new StringBuilder();
+          errorMsg.append("Empty clause is reachable through: ");
+          for (IndexExpression elimIdx : elimExprs)
+            errorMsg.append(((ArgsCoverageChecker.ArgsCoverageCheckingOKBranch) branch).patterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+          error = new TypeCheckingError(myNamespace, errorMsg.toString(), emptyClauses.get(i), getNames(myLocalContext));
+          expr.setWellTyped(Error(null, error));
+          myErrorReporter.report(error);
+          wasError = true;
+        }
+      }
+    }
+
+    if (wasError)
+      return null;
 
     ElimExpression result = Elim(elimExprs, clauses);
     for (Clause clause : clauses) {

@@ -211,6 +211,18 @@ public class ElimTest {
   @Test
   public void elim9() {
     parseDefs("\\static \\data D Nat | D (suc n) => d1 | D _ => d | D zero => d0" +
-      "\\static \\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d => 0", 1);
+        "\\static \\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d => 0", 1);
+  }
+
+  @Test
+  public void elimEmptyBranch() {
+    parseDefs("\\static \\data D Nat | D (suc n) => dsuc" +
+      "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | zero, _! | suc n, dsuc => 0");
+  }
+
+  @Test
+  public void elimEmptyBranchError() {
+    parseDefs("\\static \\data D Nat | D (suc n) => dsuc" +
+        "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | suc n, _! | zero, _! => 0", 1);
   }
 }

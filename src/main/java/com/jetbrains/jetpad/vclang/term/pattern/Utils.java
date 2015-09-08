@@ -18,7 +18,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class Utils {
   public static int getNumArguments(Abstract.Pattern pattern) {
-    if (pattern instanceof Abstract.NamePattern) {
+    if (pattern instanceof Abstract.NamePattern || pattern instanceof Abstract.AnyConstructorPattern) {
       return 1;
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       int result = 0;
@@ -34,6 +34,8 @@ public class Utils {
   public static void collectPatternNames(Abstract.Pattern pattern, List<String> names) {
     if (pattern instanceof Abstract.NamePattern) {
       names.add(((Abstract.NamePattern) pattern).getName());
+    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
+      names.add(null);
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       for (Abstract.Pattern nestedPattern : ((Abstract.ConstructorPattern) pattern).getArguments()) {
         collectPatternNames(nestedPattern, names);
@@ -55,15 +57,17 @@ public class Utils {
         builder.append(((Abstract.NamePattern) pattern).getName());
       }
       names.add(((Abstract.NamePattern) pattern).getName());
+    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
+      builder.append("_!");
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      if (!topLevel)
+      if (!topLevel && pattern.getExplicit())
         builder.append('(');
       builder.append(((Abstract.ConstructorPattern) pattern).getConstructorName());
       for (Abstract.Pattern p : ((Abstract.ConstructorPattern) pattern).getArguments()) {
         builder.append(' ');
         prettyPrintPattern(p, builder, names, false);
       }
-      if (!topLevel)
+      if (!topLevel && pattern.getExplicit())
         builder.append(')');
     }
     if (!pattern.getExplicit())
@@ -217,6 +221,8 @@ public class Utils {
             goodConstructorNestedPatterns.get(j).add(((ConstructorPattern) patterns.get(i)).getArguments().get(j));
           }
         }
+      } else if (patterns.get(i) instanceof AnyConstructorPattern) {
+        result.add(i);
       }
     }
 

@@ -894,6 +894,12 @@ public final class Concrete {
     }
   }
 
+  public static class AnyConstructorPattern extends Pattern implements Abstract.AnyConstructorPattern {
+    public AnyConstructorPattern(Position position) {
+      super(position);
+    }
+  }
+
   public static class Constructor extends Definition implements Abstract.Constructor {
     private final DataDefinition myDataType;
     private final List<TypeArgument> myArguments;

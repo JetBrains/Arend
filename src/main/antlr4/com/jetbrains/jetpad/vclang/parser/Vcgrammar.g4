@@ -37,13 +37,18 @@ constructorDef : '|' name patternx* '=>' constructor ('|' constructor)* ';'? #wi
                | '|' constructor                                             #noPatterns
                ;
 
-pattern : '_'                   # patternAny
-        | ID                    # patternID
-        | '(' name patternx* ')' # patternConstructor
+specPattern : '_'  # patternAny
+            | '_!' # patternAnyConstructor
+            ;
+
+pattern : specPattern    # patternSpec
+        | name patternx* # patternConstructor
         ;
 
-patternx : pattern         # patternExplicit
-         | '{' pattern '}' # patternImplicit
+patternx : '(' pattern ')' # patternxExplicit
+         | '{' pattern '}' # patternxImplicit
+         | specPattern     # patternxSpec
+         | ID              # patternxID
          ;
 
 constructor : precedence name tele*;
@@ -67,19 +72,14 @@ expr  : binOpLeft* maybeNew atomFieldsAcc argument*         # binOp
       | '\\Sigma' tele+                                     # sigma
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
-      | elimCase expr (',' expr)* clause* ';'?                          # exprElim
+      | elimCase expr (',' expr)* clause* ';'?              # exprElim
       ;
 
 letClause : ID tele* typeAnnotation? arrow expr;
 
 typeAnnotation : ':' expr;
 
-clause : '|' clausePattern (',' clausePattern)* arrow expr;
-
-clausePattern : '_'
-              | name patternx*
-              ;
-
+clause : '|' pattern (',' pattern)* (arrow expr)?;
 
 elimCase : '\\elim'                     # elim
          | '\\case'                     # case

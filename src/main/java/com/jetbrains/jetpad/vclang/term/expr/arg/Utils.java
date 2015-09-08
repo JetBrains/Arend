@@ -227,13 +227,18 @@ public class Utils {
       }
     } else {
       newNames = new ArrayList<>(names);
-      for (Abstract.Pattern pattern : clause.getPatterns()) {
-        prettyPrintPattern(pattern, builder, newNames, true);
+      for (int i = 0; i < clause.getPatterns().size(); i++) {
+        prettyPrintPattern(clause.getPatterns().get(i), builder, newNames, true);
+        if (i != clause.getPatterns().size() - 1) {
+          builder.append(", ");
+        }
       }
     }
 
-    builder.append(prettyArrow(clause.getArrow()));
-    clause.getExpression().accept(new PrettyPrintVisitor(builder, newNames, indent), Abstract.Expression.PREC);
+    if (clause.getArrow() != null && clause.getExpression() != null) {
+      builder.append(prettyArrow(clause.getArrow()));
+      clause.getExpression().accept(new PrettyPrintVisitor(builder, newNames, indent), Abstract.Expression.PREC);
+    }
     builder.append('\n');
   }
 

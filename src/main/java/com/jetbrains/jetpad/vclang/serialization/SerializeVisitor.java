@@ -190,7 +190,12 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   private void visitPattern(Pattern pattern) {
     try {
       myDataStream.writeBoolean(pattern.getExplicit());
-      myDataStream.writeBoolean(pattern instanceof NamePattern);
+      if (pattern instanceof NamePattern)
+        myDataStream.writeInt(0);
+      else if (pattern instanceof Abstract.AnyConstructorPattern)
+        myDataStream.writeInt(1);
+      else if (pattern instanceof Abstract.ConstructorPattern)
+        myDataStream.writeInt(2);
       if (pattern instanceof NamePattern) {
         myDataStream.writeBoolean(((NamePattern) pattern).getName() != null);
         if (((NamePattern) pattern).getName() != null)

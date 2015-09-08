@@ -242,6 +242,8 @@ public final class Abstract {
     List<? extends Pattern> getArguments();
   }
 
+  public interface AnyConstructorPattern extends Pattern {}
+
   public interface Constructor extends Definition {
     List<? extends TypeArgument> getArguments();
     DataDefinition getDataType();
