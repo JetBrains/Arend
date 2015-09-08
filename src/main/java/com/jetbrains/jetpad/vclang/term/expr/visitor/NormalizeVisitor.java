@@ -7,14 +7,14 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMultipleMatch;
 
 public class NormalizeVisitor implements ExpressionVisitor<Expression> {
   public enum Mode { WHNF, NF, TOP }
@@ -231,40 +231,34 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     }
 
     Abstract.Definition.Arrow arrow = func.getArrow();
-    elim_loop:
     while (result instanceof ElimExpression) {
-      Expression expr = ((ElimExpression) result).getExpression().subst(args2, 0);
-      Expression call = expr.normalize(Mode.WHNF, myContext).getFunction(new ArrayList<Expression>());
-      if (call instanceof DefCallExpression && ((DefCallExpression) call).getDefinition() instanceof Constructor || func == Prelude.AT) {
-        Utils.PatternMatchOKResult matchOKResult = null;
-        Clause clauseOK = null;
-        Clause otherwise = null;
+      List<Expression> exprs = new ArrayList<>();
+      List<List<Pattern>> patterns = new ArrayList<>();
+      for (Expression expr : ((ElimExpression) result).getExpressions()) {
+        exprs.add(expr.subst(args2, 0));
+        patterns.add(new ArrayList<Pattern>());
+      }
+      for (Clause clause : ((ElimExpression) result).getClauses()) {
+        for (int i = 0; i < clause.getPatterns().size(); i++)
+          patterns.get(i).add(clause.getPatterns().get(i));
+      }
+      List<Integer> validClauses = patternMultipleMatch(patterns, exprs, myContext, ((ElimExpression) result).getClauses().size());
+      if (validClauses.isEmpty() && func == Prelude.AT && ((ElimExpression) result).getClauses().size() == 3) {
+        validClauses = Collections.singletonList(2);
+      }
+      if (!validClauses.isEmpty()) {
+        Clause clauseOK = ((ElimExpression) result).getClauses().get(validClauses.get(0));
+        for (int i = 0; i < ((ElimExpression) result).getExpressions().size(); i++) {
+          Utils.PatternMatchOKResult matchOKResult = (Utils.PatternMatchOKResult) clauseOK.getPatterns().get(i).match(exprs.get(i), myContext);
 
-        for (Clause clause : ((ElimExpression) result).getClauses()) {
-          if (clause.getPattern() instanceof NamePattern) {
-            otherwise = clause;
-            continue;
-          }
-          Utils.PatternMatchResult matchResult = clause.getPattern().match(expr, myContext);
-          if (matchResult instanceof Utils.PatternMatchOKResult) {
-            matchOKResult = (Utils.PatternMatchOKResult) matchResult;
-            clauseOK = clause;
-          }
-        }
-        if (clauseOK == null && otherwise != null) {
-          clauseOK = otherwise;
-          matchOKResult = (Utils.PatternMatchOKResult) clauseOK.getPattern().match(expr, myContext);
-        }
-
-        if (clauseOK != null) {
-          int var = ((ElimExpression) result).getExpression().getIndex();
+          int var = ((ElimExpression) result).getExpressions().get(i).getIndex();
           args2.remove(var);
           Collections.reverse(matchOKResult.expressions);
           args2.addAll(var, matchOKResult.expressions);
-          result = clauseOK.getExpression();
-          arrow = clauseOK.getArrow();
-          continue elim_loop;
         }
+        result = clauseOK.getExpression();
+        arrow = clauseOK.getArrow();
+        continue;
       }
       return applyDefCall(defCallExpr, args);
     }

@@ -4,18 +4,23 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintClause;
 
 public class Clause implements Abstract.Clause {
-  private final Pattern myPattern;
+  private final List<Pattern> myPatterns;
   private final Abstract.Definition.Arrow myArrow;
   private final Expression myExpression;
   private ElimExpression myElimExpression;
 
   public Clause(Pattern pattern, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
-    myPattern = pattern;
+    this(Collections.singletonList(pattern), arrow, expression, elimExpression);
+  }
+
+  public Clause(List<Pattern> patterns, Abstract.Definition.Arrow arrow, Expression expression, ElimExpression elimExpression) {
+    myPatterns = patterns;
     myArrow = arrow;
     myExpression = expression;
     myElimExpression = elimExpression;
@@ -27,8 +32,8 @@ public class Clause implements Abstract.Clause {
   }
 
   @Override
-  public Pattern getPattern() {
-    return myPattern;
+  public List<Pattern> getPatterns() {
+    return myPatterns;
   }
 
   @Override

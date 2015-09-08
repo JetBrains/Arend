@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.*;
+import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -113,7 +114,7 @@ public class ModuleDeserialization {
       return new ClassDefinition(parent.getChild(name));
     }
     if (code == ModuleSerialization.CONSTRUCTOR_CODE) {
-      return new Constructor(-1, parent.getChild(name), Abstract.Definition.DEFAULT_PRECEDENCE, null);
+      return new Constructor(parent.getChild(name), Abstract.Definition.DEFAULT_PRECEDENCE, null);
     }
     throw new IncorrectFormat();
   }
@@ -146,7 +147,6 @@ public class ModuleDeserialization {
         if (constructor == null) {
           throw new IncorrectFormat();
         }
-        constructor.setIndex(i);
         constructor.setDataType(dataDefinition);
         constructor.hasErrors(stream.readBoolean());
         readDefinition(stream, constructor);
@@ -364,13 +364,17 @@ public class ModuleDeserialization {
         return Sigma(readTypeArguments(stream, definitionMap));
       }
       case 12: {
-        int index = stream.readInt();
+        int numExpressions = stream.readInt();
+        List<IndexExpression> expressions = new ArrayList<>(numExpressions);
+        for (int i = 0; i < numExpressions; i++) {
+          expressions.add(Index(stream.readInt()));
+        }
         int clausesNumber = stream.readInt();
         List<Clause> clauses = new ArrayList<>(clausesNumber);
         for (int i = 0; i < clausesNumber; ++i) {
           clauses.add(readClause(stream, definitionMap));
         }
-        ElimExpression result = Elim(Index(index), clauses);
+        ElimExpression result = Elim(expressions, clauses);
         for (Clause clause : result.getClauses()) {
           clause.setElimExpression(result);
         }
@@ -428,27 +432,39 @@ public class ModuleDeserialization {
 
   public Pattern readPattern(DataInputStream stream, Map<Integer, NamespaceMember> definitionMap) throws IOException {
     boolean isExplicit = stream.readBoolean();
-    if (stream.readBoolean()) {
-      String name = stream.readBoolean() ? stream.readUTF() : null;
-      return new NamePattern(name, isExplicit);
-    } else {
-      NamespaceMember constructor = definitionMap.get(stream.readInt());
-      if (!(constructor instanceof Constructor)) {
-        throw new IncorrectFormat();
+    switch (stream.readInt()) {
+      case 0: {
+        String name = stream.readBoolean() ? stream.readUTF() : null;
+        return new NamePattern(name, isExplicit);
       }
-      int size = stream.readInt();
-      List<Pattern> arguments = new ArrayList<>(size);
-      for (int i = 0; i < size; ++i) {
-        arguments.add(readPattern(stream, definitionMap));
+      case 1: {
+        return new AnyConstructorPattern(isExplicit);
       }
-      return new ConstructorPattern((Constructor) constructor, arguments, isExplicit);
+      case 2: {
+        NamespaceMember constructor = definitionMap.get(stream.readInt());
+        if (!(constructor instanceof Constructor)) {
+          throw new IncorrectFormat();
+        }
+        int size = stream.readInt();
+        List<Pattern> arguments = new ArrayList<>(size);
+        for (int i = 0; i < size; ++i) {
+          arguments.add(readPattern(stream, definitionMap));
+        }
+        return new ConstructorPattern((Constructor) constructor, arguments, isExplicit);
+      }
+      default: {
+        throw new IllegalStateException();
+      }
     }
   }
 
   public Clause readClause(DataInputStream stream, Map<Integer, NamespaceMember> definitionMap) throws IOException {
-    Pattern pattern = readPattern(stream, definitionMap);
+    int numPatterns = stream.readInt();
+    List<Pattern> patterns = new ArrayList<>(numPatterns);
+    for (int i = 0; i < numPatterns; i++)
+      patterns.add(readPattern(stream, definitionMap));
     Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
-    return new Clause(pattern, arrow, readExpression(stream, definitionMap), null);
+    return new Clause(patterns, arrow, readExpression(stream, definitionMap), null);
   }
 
   public static class DeserializationException extends IOException {

@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.io.Closeable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -117,6 +118,13 @@ public class Utils {
     }
   }
 
+  public static List<Expression> getTypes(List<TypeArgument> args) {
+    List<Expression> result = new ArrayList<>();
+    for (TypeArgument arg : args)
+      result.add(arg.getType());
+    return result;
+  }
+
   public static void pushArgument(List<Binding> context, Argument argument) {
     if (argument instanceof TelescopeArgument) {
       for (int i = 0; i < ((TelescopeArgument) argument).getNames().size(); i++) {
@@ -200,31 +208,37 @@ public class Utils {
     }
   }
 
-  public static void prettyPrintClause(Abstract.ElimCaseExpression expr, Abstract.Clause clause, StringBuilder builder, List<String> names, int indent) {
+  public static void prettyPrintClause(Abstract.ElimCaseExpression elimExpr, Abstract.Clause clause, StringBuilder builder, List<String> names, int indent) {
     if (clause == null) return;
 
     PrettyPrintVisitor.printIndent(builder, indent);
     builder.append("| ");
-    int startIndex = names.size();
-    prettyPrintPattern(clause.getPattern(), builder, names, true);
-
-    List<String> newNames = names;
-    if (expr.getExpression() instanceof Abstract.IndexExpression) {
-      int varIndex = ((Abstract.IndexExpression) expr.getExpression()).getIndex();
-      newNames = new ArrayList<>(names.subList(0, startIndex - varIndex - 1 > 0 ? startIndex - varIndex - 1 : 0));
-      newNames.addAll(names.subList(startIndex, names.size()));
-      if (startIndex >= varIndex) {
-        newNames.addAll(names.subList(startIndex - varIndex, startIndex));
-      } else {
-        for (int i = 0; i < varIndex; ++i) {
-          newNames.add(null);
+    List<String> newNames;
+    if (elimExpr.getExpressions().get(0) instanceof Abstract.IndexExpression) {
+      int highestCtxIndex = names.size() - 1 - ((Abstract.IndexExpression) elimExpr.getExpressions().get(0)).getIndex();
+      names.addAll(0, Collections.<String>nCopies(Math.max(0, -highestCtxIndex), null));
+      highestCtxIndex = Math.max(0, highestCtxIndex);
+      newNames = new ArrayList<>(names.subList(0, highestCtxIndex));
+      for (int i = 0; i < clause.getPatterns().size(); i++) {
+        prettyPrintPattern(clause.getPatterns().get(i), builder, newNames, true);
+        int exprCtxIndex = names.size() - 1 - ((Abstract.IndexExpression) elimExpr.getExpressions().get(i)).getIndex();
+        int nextExprCtxIndex = i == elimExpr.getExpressions().size() - 1 ? names.size() : names.size() - 1 - ((Abstract.IndexExpression) elimExpr.getExpressions().get(i + 1)).getIndex();
+        newNames.addAll(names.subList(exprCtxIndex + 1, nextExprCtxIndex));
+      }
+    } else {
+      newNames = new ArrayList<>(names);
+      for (int i = 0; i < clause.getPatterns().size(); i++) {
+        prettyPrintPattern(clause.getPatterns().get(i), builder, newNames, true);
+        if (i != clause.getPatterns().size() - 1) {
+          builder.append(", ");
         }
       }
-      names.subList(startIndex, names.size()).clear();
     }
 
-    builder.append(prettyArrow(clause.getArrow()));
-    clause.getExpression().accept(new PrettyPrintVisitor(builder, newNames, indent), Abstract.Expression.PREC);
+    if (clause.getArrow() != null && clause.getExpression() != null) {
+      builder.append(prettyArrow(clause.getArrow()));
+      clause.getExpression().accept(new PrettyPrintVisitor(builder, newNames, indent), Abstract.Expression.PREC);
+    }
     builder.append('\n');
   }
 

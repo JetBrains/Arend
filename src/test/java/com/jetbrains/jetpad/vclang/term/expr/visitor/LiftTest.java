@@ -97,9 +97,9 @@ public class LiftTest {
 
   @Test
   public void liftElim() {
-    // lift (\elim <1> | con a b c => <2> <3> <4>, 0, 1) = \elim <2> | con a b c => <2> <4> <5>
+    // lift (\elim <1> | con a b c => <2> <3> <4>, 0, 1) = \elim <2> | con a b c => <3> <4> <5>
     DataDefinition def = new DataDefinition(new Namespace(new Utils.Name("D"), null), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
-    Constructor con = new Constructor(0, new Namespace(new Utils.Name("con"), def.getNamespace()), Abstract.Definition.DEFAULT_PRECEDENCE,  new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
+    Constructor con = new Constructor(new Namespace(new Utils.Name("con"), def.getNamespace()), Abstract.Definition.DEFAULT_PRECEDENCE,  new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
     def.addConstructor(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
@@ -109,7 +109,7 @@ public class LiftTest {
 
     List<Clause> clauses2 = new ArrayList<>(1);
     ElimExpression expr2 = Elim(Index(2), clauses2);
-    clauses2.add(new Clause(match(con, match("a"), match("b"), match("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(4), Index(5)), expr2));
+    clauses2.add(new Clause(match(con, match("a"), match("b"), match("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(3), Index(4), Index(5)), expr2));
 
 
     assertEquals(expr2, expr1.liftIndex(0, 1));
@@ -119,7 +119,7 @@ public class LiftTest {
   public void liftElim2() {
     // lift (\elim <1> | con a b c => <2> <3> <5>, 2, 1) = \elim <1> | con a b c => <2> <3> <6>
     DataDefinition def = new DataDefinition(new Namespace(new Utils.Name("D"), null), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
-    Constructor con = new Constructor(0, new Namespace(new Utils.Name("con"), def.getNamespace()), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
+    Constructor con = new Constructor(new Namespace(new Utils.Name("con"), def.getNamespace()), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
     def.addConstructor(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);

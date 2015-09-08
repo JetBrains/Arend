@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -211,5 +213,13 @@ public class NormalizationTest {
     clauses.add(new Clause(match(Prelude.SUC, match(null)), Abstract.Definition.Arrow.RIGHT, Universe(1), elim));
     Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Universe(2), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(0), Zero())));
     assertEquals(Universe(0), expr.normalize(NormalizeVisitor.Mode.NF));
+  }
+
+  @Test
+  public void normalizeElimAnyConstructor() {
+    ClassDefinition def = parseDefs("\\static \\data D | d Nat"
+        + "\\static \\function test (x : D) : Nat => \\elim x | _! => 0");
+    FunctionDefinition test = (FunctionDefinition) def.getNamespace().getMember("test");
+    assertEquals(Apps(DefCall(test), Index(0)).normalize(NormalizeVisitor.Mode.NF), Apps(DefCall(test), Index(0)));
   }
 }

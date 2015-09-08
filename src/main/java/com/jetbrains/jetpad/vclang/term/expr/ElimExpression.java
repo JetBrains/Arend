@@ -5,20 +5,25 @@ import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ElimExpression extends Expression implements Abstract.ElimExpression {
-  private final IndexExpression myExpression;
+  private final List<IndexExpression> myExpressions;
   private final List<Clause> myClauses;
 
   public ElimExpression(IndexExpression expression, List<Clause> clauses) {
-    myExpression = expression;
+    this(Collections.singletonList(expression), clauses);
+  }
+
+  public ElimExpression(List<IndexExpression> expression, List<Clause> clauses) {
+    myExpressions = expression;
     myClauses = clauses;
   }
 
   @Override
-  public IndexExpression getExpression() {
-    return myExpression;
+  public List<IndexExpression> getExpressions() {
+    return myExpressions;
   }
 
   @Override

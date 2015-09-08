@@ -781,13 +781,19 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (expr.getClauses().size() != otherElim.getClauses().size()) {
       return new JustResult(CMP.NOT_EQUIV);
     }
-    Result result = expr.getExpression().accept(this, otherElim.getExpression());
-    if (result.isOK() == CMP.NOT_EQUIV) return result;
+    if (expr.getExpressions().size() != otherElim.getExpressions().size())
+      return new JustResult(CMP.NOT_EQUIV);
 
-    CMP cmp = result.isOK();
+    CMP cmp = CMP.EQUALS;
+    for (int i = 0; i < expr.getExpressions().size(); i++) {
+      Result result = expr.getExpressions().get(i).accept(this, otherElim.getExpressions().get(i));
+      if (result.isOK() == CMP.NOT_EQUIV) return result;
+      cmp = and(cmp, result.isOK());
+    }
+
     MaybeResult maybeResult = null;
     for (int i = 0; i < expr.getClauses().size(); ++i) {
-      result = visitClause(expr.getClauses().get(i), otherElim.getClauses().get(i));
+      Result result = visitClause(expr.getClauses().get(i), otherElim.getClauses().get(i));
       if (result.isOK() == CMP.NOT_EQUIV) {
         if (result instanceof MaybeResult) {
           if (maybeResult == null) {
@@ -800,7 +806,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       cmp = and(cmp, result.isOK());
     }
 
-    return maybeResult == null ? new JustResult(and(cmp, result.isOK())) : maybeResult;
+    return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 
   @Override
@@ -812,7 +818,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (clause == other) return new JustResult(CMP.EQUALS);
     if (clause == null || other == null) return new JustResult(CMP.NOT_EQUIV);
 
-    if (!other.getPattern().equals(clause.getPattern()) || clause.getArrow() != other.getArrow())
+    if (!other.getPatterns().equals(clause.getPatterns()) || clause.getArrow() != other.getArrow())
       return new JustResult(CMP.NOT_EQUIV);
     List<Abstract.Expression> args1 = new ArrayList<>();
     Abstract.Expression expr1 = lamArgs(clause.getExpression(), args1);

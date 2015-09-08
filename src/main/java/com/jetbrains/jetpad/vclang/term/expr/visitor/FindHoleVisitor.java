@@ -75,10 +75,8 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
 
   @Override
   public InferHoleExpression visitElim(ElimExpression expr) {
-    InferHoleExpression result = expr.getExpression().accept(this);
-    if (result != null) return result;
     for (Clause clause : expr.getClauses()) {
-      result = clause.getExpression().accept(this);
+      InferHoleExpression result = clause.getExpression().accept(this);
       if (result != null) return result;
     }
     return null;

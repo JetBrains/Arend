@@ -170,7 +170,9 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitElim(ElimExpression expr) {
     myStream.write(12);
     try {
-      myDataStream.writeInt(expr.getExpression().getIndex());
+      myDataStream.writeInt(expr.getExpressions().size());
+      for (IndexExpression var : expr.getExpressions())
+        myDataStream.writeInt(var.getIndex());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -188,7 +190,12 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   private void visitPattern(Pattern pattern) {
     try {
       myDataStream.writeBoolean(pattern.getExplicit());
-      myDataStream.writeBoolean(pattern instanceof NamePattern);
+      if (pattern instanceof NamePattern)
+        myDataStream.writeInt(0);
+      else if (pattern instanceof Abstract.AnyConstructorPattern)
+        myDataStream.writeInt(1);
+      else if (pattern instanceof Abstract.ConstructorPattern)
+        myDataStream.writeInt(2);
       if (pattern instanceof NamePattern) {
         myDataStream.writeBoolean(((NamePattern) pattern).getName() != null);
         if (((NamePattern) pattern).getName() != null)
@@ -207,7 +214,9 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   private void visitClause(Clause clause) {
     try {
-      visitPattern(clause.getPattern());
+      myDataStream.writeInt(clause.getPatterns().size());
+      for (Pattern pattern : clause.getPatterns())
+        visitPattern(pattern);
       myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
       clause.getExpression().accept(this);
     } catch (IOException e) {
