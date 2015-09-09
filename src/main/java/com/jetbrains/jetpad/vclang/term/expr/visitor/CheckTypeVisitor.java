@@ -1166,6 +1166,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression ftype = type.getFunction(new ArrayList<Expression>());
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         TypeCheckingError error = new TypeMismatchError(myNamespace, "a data type", type, expr, getNames(myLocalContext));
+        myErrorReporter.report(error);
         expr.setWellTyped(Error(null, error));
         return null;
       }
@@ -1181,6 +1182,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Collections.reverse(parameters);
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         error = new TypeMismatchError(myNamespace, "a data type", type, expr, getNames(myLocalContext));
+        myErrorReporter.report(error);
         expr.setWellTyped(Error(null, error));
         return null;
       }
@@ -1283,7 +1285,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result == null)
       return null;
     for (int i = 0; i < tail.size(); i++) {
-      // TODO: check let clause... move subst to binding?
       myLocalContext.add(new TypedBinding(tail.get(i).getName(), expandPatternSubstitute(result.pattern, i, result.expression, tail.get(i).getType())));
     }
 

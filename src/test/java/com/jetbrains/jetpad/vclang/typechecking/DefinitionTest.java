@@ -295,4 +295,11 @@ public class DefinitionTest {
         "\\data D ((\\lam (x : \\Type0) => x) (C 1)) | D (c p) => x (E p)" +
         "\\function test => x (E (path (\\lam _ => 0))).e");
   }
+
+  @Test
+  public void patternTypeCheck() {
+    parseDefs("\\static \\function f (x : Nat -> Nat) => x 0" +
+      "\\static \\data Test (A : \\Set0)" +
+      "| Test (suc n) => foo (f n)", 1);
+  }
 }
