@@ -1140,19 +1140,29 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return typeCheckFunctionApps(new Concrete.DefCallExpression(position, null, expr.getBinOp()), args, expectedType, expr);
   }
 
-  public static class ExpandPatternResult {
+  public abstract static class ExpandPatternResult {}
+
+  public static class ExpandPatternOKResult extends ExpandPatternResult {
     public final Expression expression;
     public final Pattern pattern;
     public final int numBindings;
 
-    public ExpandPatternResult(Expression expression, Pattern pattern, int numBindings) {
+    public ExpandPatternOKResult(Expression expression, Pattern pattern, int numBindings) {
       this.expression = expression;
       this.pattern = pattern;
       this.numBindings = numBindings;
     }
   }
 
- private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, Abstract.Expression expr) {
+  public static class ExpandPatternErrorResult extends  ExpandPatternResult {
+    public final TypeCheckingError error;
+
+    public ExpandPatternErrorResult(TypeCheckingError error) {
+      this.error = error;
+    }
+  }
+
+ private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding) {
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null) {
@@ -1160,18 +1170,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       } else {
         myLocalContext.add(new TypedBinding(((Abstract.NamePattern) pattern).getName(), binding.getType()));
       }
-      return new ExpandPatternResult(Index(0), new NamePattern(name, pattern.getExplicit()), 1);
+      return new ExpandPatternOKResult(Index(0), new NamePattern(name, pattern.getExplicit()), 1);
     } else if (pattern instanceof Abstract.AnyConstructorPattern) {
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
       Expression ftype = type.getFunction(new ArrayList<Expression>());
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-        TypeCheckingError error = new TypeMismatchError(myNamespace, "a data type", type, expr, getNames(myLocalContext));
+        TypeCheckingError error = new TypeCheckingError(myNamespace, "Pattern expected a data type, got: " + type, pattern, getNames(myLocalContext));
         myErrorReporter.report(error);
-        expr.setWellTyped(Error(null, error));
-        return null;
+        return new ExpandPatternErrorResult(error);
       }
       myLocalContext.add(binding);
-      return new ExpandPatternResult(Index(0), new AnyConstructorPattern(pattern.getExplicit()), 1);
+      return new ExpandPatternOKResult(Index(0), new AnyConstructorPattern(pattern.getExplicit()), 1);
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       TypeCheckingError error = null;
       Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
@@ -1181,10 +1190,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression ftype = type.getFunction(parameters);
       Collections.reverse(parameters);
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-        error = new TypeMismatchError(myNamespace, "a data type", type, expr, getNames(myLocalContext));
+        error = new TypeCheckingError(myNamespace, "Pattern expected a data type, got: " + type, pattern, getNames(myLocalContext));
         myErrorReporter.report(error);
-        expr.setWellTyped(Error(null, error));
-        return null;
+        return new ExpandPatternErrorResult(error);
       }
       DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
 
@@ -1198,15 +1206,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (constructor == null) {
         error = new NotInScopeError(myNamespace, pattern, constructorPattern.getConstructorName());
         myErrorReporter.report(error);
-        expr.setWellTyped(Error(null, error));
-        return null;
+        return new ExpandPatternErrorResult(error);
       }
 
       if (constructor.hasErrors()) {
         error = new HasErrors(myNamespace, constructor.getName(), pattern);
         myErrorReporter.report(error);
-        expr.setWellTyped(Error(null, error));
-        return null;
+        return new ExpandPatternErrorResult(error);
       }
 
       List<Expression> matchedParameters = null;
@@ -1224,8 +1230,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
         if (error != null) {
           myErrorReporter.report(error);
-          expr.setWellTyped(Error(null, error));
-          return null;
+          return new ExpandPatternErrorResult(error);
         }
       } else {
         matchedParameters = new ArrayList<>(parameters);
@@ -1245,8 +1250,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           error = new TypeCheckingError(myNamespace, "Too few explicit arguments, expected: " + implicitResult.numExplicit, constructorPattern, getNames(myLocalContext));
         }
         myErrorReporter.report(error);
-        expr.setWellTyped(Error(null, error));
-        return null;
+        return new ExpandPatternErrorResult(error);
       }
       List<Abstract.Pattern> patterns = implicitResult.patterns;
 
@@ -1259,33 +1263,35 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         for (int j = 0; j < i; j++) {
           argumentType = expandPatternSubstitute(resultPatterns.get(j), i - j - 1, substituteExpressions.get(j), argumentType);
         }
-        ExpandPatternResult result = expandPattern(patterns.get(i), new TypedBinding((String) null, argumentType), expr);
-        if (result == null)
-          return null;
-        substituteExpressions.add(result.expression);
-        substExpression = Apps(substExpression.liftIndex(0, result.numBindings), result.expression);
-        resultPatterns.add(result.pattern);
-        numBindings += result.numBindings;
+        ExpandPatternResult result = expandPattern(patterns.get(i), new TypedBinding((String) null, argumentType));
+        if (result instanceof ExpandPatternErrorResult)
+          return result;
+        ExpandPatternOKResult okResult  = (ExpandPatternOKResult) result;
+        substituteExpressions.add(okResult.expression);
+        substExpression = Apps(substExpression.liftIndex(0, okResult.numBindings), okResult.expression);
+        resultPatterns.add(okResult.pattern);
+        numBindings += okResult.numBindings;
       }
 
-      return new ExpandPatternResult(substExpression, new ConstructorPattern(constructor, resultPatterns, pattern.getExplicit()), numBindings);
+      return new ExpandPatternOKResult(substExpression, new ConstructorPattern(constructor, resultPatterns, pattern.getExplicit()), numBindings);
     } else {
       throw new IllegalStateException();
     }
   }
 
-  public ExpandPatternResult expandPatternOn(Abstract.Pattern pattern, int varIndex, Abstract.Expression origExpr) {
+  public ExpandPatternResult expandPatternOn(Abstract.Pattern pattern, int varIndex) {
     int varContextIndex = myLocalContext.size() - 1 - varIndex;
 
     Binding binding = myLocalContext.get(varContextIndex);
     List<Binding> tail = new ArrayList<>(myLocalContext.subList(varContextIndex + 1, myLocalContext.size()));
     myLocalContext.subList(varContextIndex, myLocalContext.size()).clear();
 
-    ExpandPatternResult result = expandPattern(pattern, binding, origExpr);
-    if (result == null)
-      return null;
+    ExpandPatternResult result = expandPattern(pattern, binding);
+    if (result instanceof ExpandPatternErrorResult)
+      return result;
+    ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
     for (int i = 0; i < tail.size(); i++) {
-      myLocalContext.add(new TypedBinding(tail.get(i).getName(), expandPatternSubstitute(result.pattern, i, result.expression, tail.get(i).getType())));
+      myLocalContext.add(new TypedBinding(tail.get(i).getName(), expandPatternSubstitute(okResult.pattern, i, okResult.expression, tail.get(i).getType())));
     }
 
     return result;
@@ -1358,13 +1364,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         List<Pattern> patterns = new ArrayList<>();
         Expression clauseExpectedType = expectedType;
         for (int i = 0; i < clause.getPatterns().size(); i++) {
-          ExpandPatternResult result = expandPatternOn(clause.getPatterns().get(i), elimExprs.get(i).getIndex(), expr.getExpressions().get(i));
-          if (result == null) {
+          ExpandPatternResult result = expandPatternOn(clause.getPatterns().get(i), elimExprs.get(i).getIndex());
+          if (result instanceof ExpandPatternErrorResult) {
+            expr.getExpressions().get(i).setWellTyped(Error(null, ((ExpandPatternErrorResult) result).error));
             wasError = true;
             continue clause_loop;
           }
-          patterns.add(result.pattern);
-          clauseExpectedType = expandPatternSubstitute(result.pattern, elimExprs.get(i).getIndex(), result.expression, clauseExpectedType);
+          ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
+          patterns.add(okResult.pattern);
+          clauseExpectedType = expandPatternSubstitute(okResult.pattern, elimExprs.get(i).getIndex(), okResult.expression, clauseExpectedType);
         }
         if (clause.getExpression() == null) {
           emptyPatterns.add(patterns);
