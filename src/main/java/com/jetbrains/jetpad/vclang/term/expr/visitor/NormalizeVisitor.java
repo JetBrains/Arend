@@ -265,7 +265,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
     result = result.liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0).subst(args2, 0);
     if (arrow == Abstract.Definition.Arrow.LEFT) {
-      try (ContextSaver saver = new ContextSaver(myContext)) {
+      try (ContextSaver ignore = new ContextSaver(myContext)) {
         for (TypeArgument arg : args1) {
           pushArgument(myContext, arg);
         }
@@ -448,14 +448,5 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
       return term.liftIndex(0, -letExpression.getClauses().size());
     else
       return Let(letExpression.getClauses(), term);
-  }
-
-  private LetClause visitLetClause(LetClause clause) {
-    try (ContextSaver saver = new ContextSaver(myContext)) {
-      List<Argument> arguments = visitArguments(clause.getArguments());
-      Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this);
-      Expression term = clause.getTerm().accept(this);
-      return new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), term);
-    }
   }
 }

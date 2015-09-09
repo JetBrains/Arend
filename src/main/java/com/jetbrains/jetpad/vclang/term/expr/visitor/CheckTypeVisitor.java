@@ -30,7 +30,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private final Namespace myNamespace;
   private final List<Binding> myLocalContext;
   private final ErrorReporter myErrorReporter;
-  private Side mySide;
+  private final Integer myArgsStartCtxIndex;
 
   private static class Arg {
     boolean isExplicit;
@@ -78,13 +78,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  public enum Side { LHS, RHS }
+  public CheckTypeVisitor(Namespace namespace, List<Binding> localContext, ErrorReporter errorReporter) {
+    this(namespace, localContext, null, errorReporter);
+  }
 
-  public CheckTypeVisitor(Namespace namespace, List<Binding> localContext, ErrorReporter errorReporter, Side side) {
+  public CheckTypeVisitor(Namespace namespace, List<Binding> localContext, Integer argsStartCtxIndex, ErrorReporter errorReporter) {
     myNamespace = namespace;
     myLocalContext = localContext;
     myErrorReporter = errorReporter;
-    mySide = side;
+    myArgsStartCtxIndex = argsStartCtxIndex;
   }
 
   private Result checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
@@ -130,6 +132,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private Result typeCheck(Abstract.Expression expr, Expression expectedType) {
     if (expr == null) {
       return null;
+    } else if (!(expr instanceof Abstract.ElimExpression) && myArgsStartCtxIndex != null){
+      return new CheckTypeVisitor(myNamespace, myLocalContext, myErrorReporter).typeCheck(expr, expectedType);
     } else {
       return expr.accept(this, expectedType);
     }
@@ -1316,7 +1320,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (expectedType == null) {
       error = new TypeCheckingError(myNamespace, "Cannot infer type of the expression", expr, getNames(myLocalContext));
     }
-    if (mySide != Side.LHS && error == null) {
+    if (myArgsStartCtxIndex == null && error == null) {
       error = new TypeCheckingError(myNamespace, "\\elim is allowed only at the root of a definition", expr, getNames(myLocalContext));
     }
 
@@ -1338,6 +1342,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       OKResult exprOKResult = lookupLocalVar(var);
 
       if (exprOKResult == null) {
+        return null;
+      }
+
+      if (myLocalContext.size() - 1 - ((IndexExpression) exprOKResult.expression).getIndex() < myArgsStartCtxIndex) {
+        error = new TypeCheckingError(myNamespace, "\\elim can be applied only to arguments of the innermost definition", var, getNames(myLocalContext));
+        myErrorReporter.report(error);
+        var.setWellTyped(Error(null, error));
         return null;
       }
 
@@ -1379,8 +1390,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           emptyClauses.add(clause);
           continue;
         }
-        Side side = clause.getArrow() == Abstract.Definition.Arrow.RIGHT || !(clause.getExpression() instanceof Abstract.ElimExpression) ? Side.RHS : Side.LHS;
-        Result clauseResult = new CheckTypeVisitor(myNamespace, myLocalContext, myErrorReporter, side).typeCheck(clause.getExpression(), clauseExpectedType);
+        Result clauseResult = new CheckTypeVisitor(myNamespace, myLocalContext, clause.getArrow() == Abstract.Definition.Arrow.RIGHT ? null : myArgsStartCtxIndex, myErrorReporter).typeCheck(clause.getExpression(), clauseExpectedType);
         if (!(clauseResult instanceof OKResult)) {
           wasError = true;
           if (errorResult == null) {
@@ -1505,7 +1515,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       letTerm = Apps(letTerm, exprOKResult.expression);
     }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
-    Result elimResult = elim.accept(new CheckTypeVisitor(myNamespace, myLocalContext, myErrorReporter, Side.LHS), expectedType.liftIndex(0, 1));
+    Result elimResult = elim.accept(new CheckTypeVisitor(myNamespace, myLocalContext, myLocalContext.size() - args.size(), myErrorReporter), expectedType.liftIndex(0, 1));
     if (!(elimResult instanceof OKResult)) return elimResult;
     OKResult elimOKResult = (OKResult) elimResult;
     addLiftedEquations(elimOKResult, equations, 1);
@@ -1674,7 +1684,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         addLiftedEquations(result, equations, numVarsPassed);
         expectedType = result.expression;
       }
-      Result termResult = clause.getTerm().accept(new CheckTypeVisitor(myNamespace, myLocalContext, myErrorReporter, Side.LHS), expectedType);
+      Result termResult = clause.getTerm().accept(new CheckTypeVisitor(myNamespace, myLocalContext, myLocalContext.size() - numVarsPassed, myErrorReporter), expectedType);
       if (!(termResult instanceof OKResult)) return termResult;
       addLiftedEquations(termResult, equations, numVarsPassed);
 
@@ -1710,7 +1720,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         addLiftedEquations(clauseResult, equations, i);
         clauses.add(((LetClauseResult) clauseResult).letClause);
       }
-      Result result = typeCheck(expr.getExpression(), expectedType == null ? null : expectedType.liftIndex(0, expr.getClauses().size()));
+      Result result = new CheckTypeVisitor(myNamespace, myLocalContext, myErrorReporter).typeCheck(expr.getExpression(), expectedType == null ? null : expectedType.liftIndex(0, expr.getClauses().size()));
       if (!(result instanceof OKResult)) return result;
       OKResult okResult = (OKResult) result;
       addLiftedEquations(okResult, equations, expr.getClauses().size());

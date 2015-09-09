@@ -39,7 +39,7 @@ public class TypeChecking {
   public static DataDefinition typeCheckDataBegin(ErrorReporter errorReporter, Namespace namespace, Namespace localNamespace, Abstract.DataDefinition def, List<Binding> localContext) {
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     int origSize = localContext.size();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localContext, errorReporter, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localContext, errorReporter);
     for (Abstract.TypeArgument parameter : def.getParameters()) {
       CheckTypeVisitor.OKResult result = visitor.checkType(parameter.getType(), Universe());
       if (result == null) {
@@ -104,7 +104,7 @@ public class TypeChecking {
       int index = 1;
       boolean ok = true;
 
-      CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localContext, errorReporter, CheckTypeVisitor.Side.RHS);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localContext, errorReporter);
       List<Pattern> patterns = null;
       if (con.getPatterns() != null) {
         patterns = new ArrayList<>();
@@ -214,7 +214,7 @@ public class TypeChecking {
     }
 
     List<Argument> arguments = new ArrayList<>(def.getArguments().size());
-    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localContext, errorReporter, CheckTypeVisitor.Side.RHS);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localContext, errorReporter);
 
     List<TypeArgument> splitArgs = null;
     Expression splitResult = null;
@@ -369,7 +369,7 @@ public class TypeChecking {
 
   public static boolean typeCheckFunctionEnd(ErrorReporter errorReporter, Namespace namespace, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction) {
     if (term != null) {
-      CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localContext, errorReporter, CheckTypeVisitor.Side.LHS);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(namespace, localContext, 0, errorReporter);
       CheckTypeVisitor.OKResult termResult = visitor.checkType(term, definition.getResultType());
 
       if (termResult != null) {

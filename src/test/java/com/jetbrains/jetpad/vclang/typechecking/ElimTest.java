@@ -232,4 +232,25 @@ public class ElimTest {
         "\\static \\function tests (n : Nat) (d : D n) : Nat <= \\elim n d" +
         "| suc n => 0", 1);
   }
+
+  @Test
+  public void elimUnderLetError() {
+    parseDefs("\\static \\function test (n : Nat) : Nat <= \\let x => 0 \\in \\elim n | _! => 0", 1);
+  }
+
+  @Test
+  public void elimOutOfDefinitionError() {
+    parseDefs("\\static \\function test (n : Nat) : Nat <= \\let x : Nat <= \\elim n | _ => 0 \\in 1", 1);
+  }
+
+  @Test
+  public void elimLetError() {
+    parseDefs("\\static \\function test => \\let x => 0 \\in \\let y : Nat <= \\elim x | _ => 0 \\in 1", 1);
+  }
+
+  @Test
+  public void testSide() {
+    parseDefs("\\static \\function test (n : Nat) <= suc (\\elim n | suc n => n | zero => 0)", 1);
+  }
 }
+

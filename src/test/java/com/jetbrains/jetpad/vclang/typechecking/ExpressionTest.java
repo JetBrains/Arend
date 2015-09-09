@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
 public class ExpressionTest {
   Collection<? extends GeneralError> typeCheckExpr(String expr, Expression expectedType) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    parseExpr(expr).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), errorReporter, CheckTypeVisitor.Side.RHS), expectedType);
+    parseExpr(expr).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), errorReporter), expectedType);
     return errorReporter.getErrorList();
   }
 

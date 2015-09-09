@@ -143,7 +143,7 @@ public class ParserTest {
     namespace.addDefinition(mul);
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = parseExpr(new NamespaceNameResolver(namespace), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)", 0).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), errorReporter, CheckTypeVisitor.Side.RHS), null);
+    CheckTypeVisitor.Result result = parseExpr(new NamespaceNameResolver(namespace), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)", 0).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), errorReporter), null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertTrue(result instanceof CheckTypeVisitor.OKResult);
     assertTrue(compare(BinOp(BinOp(Zero(), plus, BinOp(Suc(Zero()), mul, Suc(Suc(Zero())))), plus, BinOp(BinOp(Suc(Suc(Suc(Zero()))), mul, BinOp(Suc(Suc(Suc(Suc(Zero())))), mul, Suc(Suc(Suc(Suc(Suc(Zero()))))))), mul, BinOp(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), plus, Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))))))), result.expression));
@@ -168,7 +168,7 @@ public class ParserTest {
     namespace.addDefinition(mul);
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    parseExpr(new NamespaceNameResolver(namespace), "11 + 2 * 3", 1).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), errorReporter, CheckTypeVisitor.Side.RHS), null);
+    parseExpr(new NamespaceNameResolver(namespace), "11 + 2 * 3", 1).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), errorReporter), null);
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
