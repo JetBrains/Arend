@@ -92,7 +92,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private Result checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
     if (result == null) return null;
     if (expectedType == null) {
-      expression.setWellTyped(result.expression);
+      expression.setWellTyped(myLocalContext, result.expression);
       return result;
     }
     Expression actualNorm = result.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
@@ -105,11 +105,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       } else {
         result.equations = equations;
       }
-      expression.setWellTyped(result.expression);
+      expression.setWellTyped(myLocalContext, result.expression);
       return result;
     } else {
       TypeCheckingError error = new TypeMismatchError(myNamespace, expectedNorm, actualNorm, expression, getNames(myLocalContext));
-      expression.setWellTyped(Error(result.expression, error));
+      expression.setWellTyped(myLocalContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return null;
     }
@@ -118,7 +118,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private Result checkResultImplicit(Expression expectedType, OKResult result, Abstract.Expression expression) {
     if (result == null) return null;
     if (expectedType == null) {
-      expression.setWellTyped(result.expression);
+      expression.setWellTyped(myLocalContext, result.expression);
       return result;
     }
 
@@ -312,7 +312,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         argsImp[i] = new Arg(true, null, new InferHoleExpression(new ArgInferenceError(myNamespace, functionArg(i - parametersNumber + 1), fun, getNames(myLocalContext), fun)));
       } else {
         TypeCheckingError error = new TypeCheckingError(myNamespace, "Unexpected implicit argument", args.get(j).getExpression(), getNames(myLocalContext));
-        args.get(j).getExpression().setWellTyped(Error(null, error));
+        args.get(j).getExpression().setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         for (Abstract.ArgumentExpression arg : args) {
           typeCheck(arg.getExpression(), null);
@@ -323,7 +323,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (j < args.size() && signatureArguments.isEmpty()) {
       TypeCheckingError error = new TypeCheckingError(myNamespace, "Function expects " + (argsSkipped + i) + " arguments, but is applied to " + (argsSkipped + i + args.size() - j), fun, getNames(myLocalContext));
-      fun.setWellTyped(Error(okFunction.expression, error));
+      fun.setWellTyped(myLocalContext, Error(okFunction.expression, error));
       myErrorReporter.report(error);
       for (Abstract.ArgumentExpression arg : args) {
         typeCheck(arg.getExpression(), null);
@@ -409,7 +409,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result[] resultArgs = new Result[argsNumber];
     List<CompareVisitor.Equation> resultEquations = new ArrayList<>();
     if (!typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, 0, parametersNumber, fun)) {
-      expression.setWellTyped(Error(null, null)); // TODO
+      expression.setWellTyped(myLocalContext, Error(null, null)); // TODO
       return null;
     }
 
@@ -451,7 +451,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
 
         TypeCheckingError error = new TypeMismatchError(myNamespace, expectedNorm, actualNorm, expression, getNames(myLocalContext));
-        expression.setWellTyped(Error(resultExpr, error));
+        expression.setWellTyped(myLocalContext, Error(resultExpr, error));
         myErrorReporter.report(error);
         return null;
       }
@@ -462,7 +462,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         for (i = parametersNumber; i < argsNumber; ++i) {
           resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i] == null ? new InferHoleExpression(null) : resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
         }
-        expression.setWellTyped(Error(resultExpr, result1.error));
+        expression.setWellTyped(myLocalContext, Error(resultExpr, result1.error));
         return null;
       }
 
@@ -528,7 +528,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           error = new ArgInferenceError(myNamespace, parameter(argIndex), fun, null, new StringPrettyPrintable(((Constructor) ((DefCallExpression) okFunction.expression).getDefinition()).getDataType().getName()));
         }
       }
-      expression.setWellTyped(Error(resultExpr, error));
+      expression.setWellTyped(myLocalContext, Error(resultExpr, error));
       return new InferErrorResult(new InferHoleExpression(error), error, resultEquations);
     }
   }
@@ -566,7 +566,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (child != null) {
           if (child.hasErrors()) {
             TypeCheckingError error = new HasErrors(myNamespace, child.getName(), expr);
-            expr.setWellTyped(Error(DefCall(child), error));
+            expr.setWellTyped(myLocalContext, Error(DefCall(child), error));
             myErrorReporter.report(error);
             return null;
           } else {
@@ -619,7 +619,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
                 }
 
                 if (error != null) {
-                  expr.setWellTyped(Error(null, error));
+                  expr.setWellTyped(myLocalContext, Error(null, error));
                   myErrorReporter.report(error);
                   return null;
                 }
@@ -640,14 +640,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         } else {
           error = new TypeCheckingError(myNamespace, "Expected an expression of a class type or a data type", expr.getExpression(), getNames(myLocalContext));
         }
-        expr.setWellTyped(Error(null, error));
+        expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
       }
     } else {
       if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).typeHasErrors() || !(expr.getDefinition() instanceof FunctionDefinition) && expr.getDefinition().hasErrors()) {
         TypeCheckingError error = new HasErrors(myNamespace, expr.getName(), expr);
-        expr.setWellTyped(Error(DefCall(expr.getDefinition()), error));
+        expr.setWellTyped(myLocalContext, Error(DefCall(expr.getDefinition()), error));
         myErrorReporter.report(error);
         return null;
       }
@@ -751,7 +751,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (piArgs.size() < lambdaArgs.size()) {
       TypeCheckingError error = new TypeCheckingError(myNamespace, "Expected a function of " + piArgs.size() + " arguments, but the lambda has " + lambdaArgs.size(), expr, getNames(myLocalContext));
-      expr.setWellTyped(Error(null, error));
+      expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
@@ -762,7 +762,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         TypeCheckingError error = new ArgInferenceError(myNamespace, lambdaArg(i + 1), expr, getNames(myLocalContext), expr);
         errors.add(error);
         if (fresultType instanceof InferHoleExpression) {
-          expr.setWellTyped(Error(null, error));
+          expr.setWellTyped(myLocalContext, Error(null, error));
           return new InferErrorResult((InferHoleExpression) fresultType, error, null);
         }
       } else
@@ -773,7 +773,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             break;
           } else {
             TypeCheckingError error = new ArgInferenceError(myNamespace, lambdaArg(i + 1), expr, getNames(myLocalContext), expr);
-            expr.setWellTyped(Error(null, error));
+            expr.setWellTyped(myLocalContext, Error(null, error));
             return new InferErrorResult(hole, error, null);
           }
         }
@@ -785,7 +785,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
     if (!errors.isEmpty()) {
-      expr.setWellTyped(Error(null, errors.get(0)));
+      expr.setWellTyped(myLocalContext, Error(null, errors.get(0)));
       for (TypeCheckingError error : errors) {
         myErrorReporter.report(error);
       }
@@ -857,7 +857,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       resultLambdaArgs.add(argumentType);
     }
     OKResult result = new OKResult(Lam(resultLambdaArgs, okBodyResult.expression), Pi(argumentTypes, okBodyResult.type), resultEquations);
-    expr.setWellTyped(result.expression);
+    expr.setWellTyped(myLocalContext, result.expression);
     return result;
   }
 
@@ -897,7 +897,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (maxUniverse == null) {
         String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
         TypeCheckingError error = new TypeCheckingError(myNamespace, msg, expr, getNames(myLocalContext));
-        expr.setWellTyped(Error(null, error));
+        expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
       }
@@ -908,7 +908,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (maxUniverse == null) {
       String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
       TypeCheckingError error = new TypeCheckingError(myNamespace, msg, expr, getNames(myLocalContext));
-      expr.setWellTyped(Error(null, error));
+      expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
@@ -958,7 +958,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     NotInScopeError error = new NotInScopeError(myNamespace, expr, expr.getName());
-    expr.setWellTyped(Error(null, error));
+    expr.setWellTyped(myLocalContext, Error(null, error));
     myErrorReporter.report(error);
     return null;
   }
@@ -972,7 +972,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitInferHole(Abstract.InferHoleExpression expr, Expression expectedType) {
     TypeCheckingError error = new ArgInferenceError(myNamespace, expression(), expr, getNames(myLocalContext), null);
-    expr.setWellTyped(Error(null, error));
+    expr.setWellTyped(myLocalContext, Error(null, error));
     myErrorReporter.report(error);
     return null;
   }
@@ -989,7 +989,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
 
         TypeCheckingError error = new TypeMismatchError(myNamespace, expectedTypeNorm, Sigma(args(TypeArg(Error(null, null)), TypeArg(Error(null, null)))), expr, getNames(myLocalContext));
-        expr.setWellTyped(Error(null, error));
+        expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
       }
@@ -1005,7 +1005,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
         if (expr.getFields().size() != sigmaArgs.size()) {
           TypeCheckingError error = new TypeCheckingError(myNamespace, "Expected a tuple with " + sigmaArgs.size() + " fields, but given " + expr.getFields().size(), expr, getNames(myLocalContext));
-          expr.setWellTyped(Error(null, error));
+          expr.setWellTyped(myLocalContext, Error(null, error));
           myErrorReporter.report(error);
           return null;
         }
@@ -1087,7 +1087,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (maxUniverse == null) {
         String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
         TypeCheckingError error = new TypeCheckingError(myNamespace, msg, expr, getNames(myLocalContext));
-        expr.setWellTyped(Error(null, error));
+        expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
       }
@@ -1326,7 +1326,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (error != null) {
       myErrorReporter.report(error);
-      expr.setWellTyped(Error(null, error));
+      expr.setWellTyped(myLocalContext, Error(null, error));
       return null;
      }
 
@@ -1335,7 +1335,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (!(var instanceof Abstract.IndexExpression || var instanceof Abstract.VarExpression)) {
         error = new TypeCheckingError(myNamespace, "\\elim can be applied only to a local variable", var, getNames(myLocalContext));
         myErrorReporter.report(error);
-        expr.setWellTyped(Error(null, error));
+        expr.setWellTyped(myLocalContext, Error(null, error));
         return null;
       }
 
@@ -1348,7 +1348,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (myLocalContext.size() - 1 - ((IndexExpression) exprOKResult.expression).getIndex() < myArgsStartCtxIndex) {
         error = new TypeCheckingError(myNamespace, "\\elim can be applied only to arguments of the innermost definition", var, getNames(myLocalContext));
         myErrorReporter.report(error);
-        var.setWellTyped(Error(null, error));
+        var.setWellTyped(myLocalContext, Error(null, error));
         return null;
       }
 
@@ -1356,7 +1356,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         error = new TypeCheckingError(myNamespace, "Elimination is allowed only for a data type variable.", var, getNames(myLocalContext));
         myErrorReporter.report(error);
-        var.setWellTyped(Error(null, error));
+        var.setWellTyped(myLocalContext, Error(null, error));
         return null;
       }
       elimExprs.add((IndexExpression) exprOKResult.expression);
@@ -1377,7 +1377,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         for (int i = 0; i < clause.getPatterns().size(); i++) {
           ExpandPatternResult result = expandPatternOn(clause.getPatterns().get(i), elimExprs.get(i).getIndex());
           if (result instanceof ExpandPatternErrorResult) {
-            expr.getExpressions().get(i).setWellTyped(Error(null, ((ExpandPatternErrorResult) result).error));
+            expr.getExpressions().get(i).setWellTyped(myLocalContext, Error(null, ((ExpandPatternErrorResult) result).error));
             wasError = true;
             continue clause_loop;
           }
@@ -1461,7 +1461,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (wasError) {
       error = new TypeCheckingError(myNamespace, coverageCheckMsg.toString(), expr, getNames(myLocalContext));
-      expr.setWellTyped(Error(null, error));
+      expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
@@ -1475,7 +1475,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           for (IndexExpression elimIdx : elimExprs)
             errorMsg.append(((ArgsCoverageChecker.ArgsCoverageCheckingOKBranch) branch).patterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
           error = new TypeCheckingError(myNamespace, errorMsg.toString(), emptyClauses.get(i), getNames(myLocalContext));
-          expr.setWellTyped(Error(null, error));
+          expr.setWellTyped(myLocalContext, Error(null, error));
           myErrorReporter.report(error);
           wasError = true;
         }
@@ -1497,7 +1497,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitCase(Abstract.CaseExpression expr, Expression expectedType) {
     if (expectedType == null) {
       TypeCheckingError error = new TypeCheckingError(myNamespace, "Cannot infer type of the expression", expr, getNames(myLocalContext));
-      expr.setWellTyped(Error(null, error));
+      expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
@@ -1524,7 +1524,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     LetExpression letExpression = Let(lets(let("caseF", args, elimOKResult.type,
         Abstract.Definition.Arrow.LEFT, elimOKResult.expression)), letTerm);
 
-    expr.setWellTyped(elimOKResult.type.liftIndex(0, -expr.getExpressions().size()));
+    expr.setWellTyped(myLocalContext, elimOKResult.type.liftIndex(0, -expr.getExpressions().size()));
     return new OKResult(letExpression, elimOKResult.type.liftIndex(0, -expr.getExpressions().size()), equations);
   }
 
@@ -1550,7 +1550,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       @Override
-      public void setWellTyped(Expression wellTyped) {
+      public void setWellTyped(List<Binding> context, Expression wellTyped) {
 
       }
 
@@ -1569,7 +1569,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
     if (!(type instanceof SigmaExpression)) {
       TypeCheckingError error = new TypeCheckingError(myNamespace, "Expected an expression of a sigma type", expr, getNames(myLocalContext));
-      expr.setWellTyped(Error(null, error));
+      expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
@@ -1578,7 +1578,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     splitArguments(((SigmaExpression) type).getArguments(), splitArgs);
     if (expr.getField() < 0 || expr.getField() >= splitArgs.size()) {
       TypeCheckingError error = new TypeCheckingError(myNamespace, "Index " + (expr.getField() + 1) + " out of range", expr, getNames(myLocalContext));
-      expr.setWellTyped(Error(null, error));
+      expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
@@ -1594,7 +1594,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitClassExt(Abstract.ClassExtExpression expr, Expression expectedType) {
     if (expr.getBaseClass().hasErrors()) {
       TypeCheckingError error = new HasErrors(myNamespace, expr.getBaseClass().getName(), expr);
-      expr.setWellTyped(Error(DefCall(expr.getBaseClass()), error));
+      expr.setWellTyped(myLocalContext, Error(DefCall(expr.getBaseClass()), error));
       myErrorReporter.report(error);
       return null;
     }
@@ -1639,7 +1639,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression normExpr = okExprResult.expression.accept(new NormalizeVisitor(NormalizeVisitor.Mode.WHNF, myLocalContext));
     if (!(normExpr instanceof DefCallExpression && ((DefCallExpression) normExpr).getDefinition() instanceof ClassDefinition || normExpr instanceof ClassExtExpression)) {
       TypeCheckingError error = new TypeCheckingError(myNamespace, "Expected a class", expr.getExpression(), getNames(myLocalContext));
-      expr.setWellTyped(Error(null, error));
+      expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
@@ -1728,7 +1728,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression normalizedResultType = okResult.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext).liftIndex(0, -expr.getClauses().size());
       if (normalizedResultType == null) {
         TypeCheckingError error = new TypeCheckingError(myNamespace, "Let result type depends on a bound variable.", expr, getNames(myLocalContext));
-        expr.setWellTyped(Error(null, error));
+        expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
       }

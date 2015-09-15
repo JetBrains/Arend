@@ -43,7 +43,7 @@ public final class Concrete {
     }
 
     @Override
-    public void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
+    public void setWellTyped(List<com.jetbrains.jetpad.vclang.term.definition.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
     }
 
     @Override

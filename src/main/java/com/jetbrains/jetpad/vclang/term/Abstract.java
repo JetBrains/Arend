@@ -18,7 +18,7 @@ public final class Abstract {
   public interface Expression extends PrettyPrintableSourceNode {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    void setWellTyped(com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
+    void setWellTyped(List<com.jetbrains.jetpad.vclang.term.definition.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
   public interface Argument extends PrettyPrintableSourceNode {

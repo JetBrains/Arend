@@ -20,7 +20,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   public abstract Expression getType(List<Binding> context);
 
   @Override
-  public void setWellTyped(Expression wellTyped) {}
+  public void setWellTyped(List<Binding> context, Expression wellTyped) {}
 
   @Override
   public String toString() {
