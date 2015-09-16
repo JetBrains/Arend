@@ -74,13 +74,9 @@ public class CoverageCheker {
       }
     }
 
-    if (!hasConstructorPattern) {
-      if (patterns.isEmpty()) {
-        return new ArrayList<>();
-      } else {
-        return Collections.<CoverageCheckingBranch>singletonList(new CoverageCheckingOKBranch(Index(0),
-            Collections.<Binding>singletonList(new TypedBinding((String) null, type)), namePatternIdxs, match(isExplicit, null)));
-      }
+    if (!hasConstructorPattern && !patterns.isEmpty()) {
+      return Collections.<CoverageCheckingBranch>singletonList(new CoverageCheckingOKBranch(Index(0),
+          Collections.<Binding>singletonList(new TypedBinding((String) null, type)), namePatternIdxs, match(isExplicit, null)));
     }
 
     List<Expression> parameters = new ArrayList<>();

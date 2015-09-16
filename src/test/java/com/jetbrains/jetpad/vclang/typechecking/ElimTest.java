@@ -252,5 +252,10 @@ public class ElimTest {
   public void testSide() {
     parseDefs("\\static \\function test (n : Nat) <= suc (\\elim n | suc n => n | zero => 0)", 1);
   }
+
+  @Test
+  public void testNo() {
+    parseDefs("\\static \\function test (n : Nat) : 0 = 1 <= \\elim n", 1);
+  }
 }
 
