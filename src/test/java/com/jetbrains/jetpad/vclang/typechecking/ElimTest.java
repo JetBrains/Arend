@@ -254,8 +254,30 @@ public class ElimTest {
   }
 
   @Test
-  public void testNo() {
+  public void testNoPatterns() {
     parseDefs("\\static \\function test (n : Nat) : 0 = 1 <= \\elim n", 1);
+  }
+
+  @Test
+  public void testAuto() {
+    parseDefs("\\static \\data Empty " +
+        "\\static \\function test (n : Nat) (e : Empty) : Empty <= \\elim n, e");
+  }
+
+  @Test
+  public void testAuto1() {
+    parseDefs("\\static \\data Geq Nat Nat | Geq _ zero => Geq-zero | Geq (suc n) (suc m) => Geq-suc (Geq n m)" +
+        "\\static \\function test (n m : Nat) (p : Geq n m) : Nat <= \\elim n, m, p " +
+        "| _, zero, Geq-zero => 0 " +
+        "| suc n, suc m, Geq-suc p => 1");
+  }
+
+  @Test
+  public void testAutoNonData() {
+    parseDefs("\\static \\data D Nat | D zero => dcons" +
+        "\\static \\data E (n : Nat) (Nat -> Nat) (D n) | econs" +
+        "\\static \\function test (n : Nat) (d : D n) (e : E n (\\lam x => x) d) : Nat <= \\elim n, d, e" +
+        "| zero, dcons, econs => 1");
   }
 }
 

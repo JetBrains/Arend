@@ -45,9 +45,11 @@ public class CoverageCheker {
 
   public static class CoverageCheckingIncompleteBranch extends CoverageCheckingBranch {
     public final Pattern noncoveredPattern;
+    public final List<CoverageCheckingOKBranch> maybeBranches;
 
-    CoverageCheckingIncompleteBranch(Pattern noncoveredPattern) {
+    CoverageCheckingIncompleteBranch(Pattern noncoveredPattern, List<CoverageCheckingOKBranch> maybeBranches) {
       this.noncoveredPattern = noncoveredPattern;
+      this.maybeBranches = maybeBranches;
     }
   }
 
@@ -61,9 +63,7 @@ public class CoverageCheker {
     }
   }
 
-  public List<CoverageCheckingBranch> checkCoverage(List<Pattern> patterns, Expression type) {
-    // no patterns only on top level and they are explicit
-    boolean isExplicit = patterns.isEmpty() || patterns.get(0).getExplicit();
+  public List<CoverageCheckingBranch> checkCoverage(List<Pattern> patterns, Expression type, boolean isExplicit) {
     List<Integer> namePatternIdxs = new ArrayList<>();
     boolean hasConstructorPattern = false;
     for (int i = 0; i < patterns.size(); i++) {
@@ -82,12 +82,14 @@ public class CoverageCheker {
     List<Expression> parameters = new ArrayList<>();
     Expression ftype = type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(parameters);
     Collections.reverse(parameters);
+    if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
+      return Collections.<CoverageCheckingBranch>singletonList(new CoverageCheckingIncompleteBranch(match(isExplicit, null), Collections.singletonList(
+          new CoverageCheckingOKBranch(Index(0), Collections.<Binding>singletonList(new TypedBinding((String) null, type)), null, match(isExplicit, null)))));
+    }
     DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
     List<Constructor> validConstructors = new ArrayList<>();
     List<List<TypeArgument>> validConstructorArgs = new ArrayList<>();
     for (Constructor constructor : dataType.getConstructors()) {
-      if (constructor.hasErrors())
-        continue;
       if (constructor.hasErrors())
         continue;
       List<Expression> matchedParameters = null;
@@ -141,14 +143,31 @@ public class CoverageCheker {
         List<Pattern> args = new ArrayList<>();
         for (TypeArgument arg : validConstructors.get(i).getArguments())
           args.add(match(arg.getExplicit(), null));
-        result.add(new CoverageCheckingIncompleteBranch(new ConstructorPattern(validConstructors.get(i), args, isExplicit)));
+        List<Binding> ctx = new ArrayList<>();
+        Expression expr = DefCall(null, validConstructors.get(i), parameters);
+        for (int j = 0; j < validConstructorArgs.get(i).size(); j++) {
+          ctx.add(new TypedBinding((String) null, validConstructorArgs.get(i).get(j).getType()));
+          expr = Apps(expr.liftIndex(0, 1), Index(0));
+        }
+        ConstructorPattern incompletePattern = new ConstructorPattern(validConstructors.get(i), args, isExplicit);
+        result.add(new CoverageCheckingIncompleteBranch(incompletePattern, Collections.singletonList(
+            new CoverageCheckingOKBranch(expr, ctx, null, incompletePattern))));
         continue;
       }
 
       List<ArgsCoverageCheckingBranch> nestedBranches = new ArgsCoverageChecker(myLocalContext).checkCoverage(getTypes(validConstructorArgs.get(i)), goodPatternNested, goodPatternIdxs.size());
       for (ArgsCoverageCheckingBranch branch : nestedBranches) {
         if (branch instanceof ArgsCoverageCheckingIncompleteBranch) {
-          result.add(new CoverageCheckingIncompleteBranch(new ConstructorPattern(validConstructors.get(i), ((ArgsCoverageCheckingIncompleteBranch) branch).incompletePatterns, isExplicit)));
+          List<CoverageCheckingOKBranch> maybeBranches = new ArrayList<>();
+          for (ArgsCoverageCheckingOKBranch maybeBranch : ((ArgsCoverageCheckingIncompleteBranch) branch).maybeBranches) {
+            Expression expr = DefCall(null, validConstructors.get(i), parameters);
+            for (int j = 0; j < maybeBranch.expressions.size(); j++) {
+              expr = Apps(expr.liftIndex(0, getNumArguments(maybeBranch.patterns.get(j))), maybeBranch.expressions.get(j));
+            }
+            maybeBranches.add(new CoverageCheckingOKBranch(expr, maybeBranch.context, null,
+                new ConstructorPattern(validConstructors.get(i), maybeBranch.patterns, isExplicit)));
+          }
+          result.add(new CoverageCheckingIncompleteBranch(new ConstructorPattern(validConstructors.get(i), ((ArgsCoverageCheckingIncompleteBranch) branch).incompletePatterns, isExplicit), maybeBranches));
         } else if (branch instanceof ArgsCoverageCheckingFailedBranch) {
           List<Integer> bad = new ArrayList<>();
           for (int j : ((ArgsCoverageCheckingFailedBranch) branch).bad)

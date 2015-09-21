@@ -33,9 +33,11 @@ public class ArgsCoverageChecker {
 
   public static class ArgsCoverageCheckingIncompleteBranch extends ArgsCoverageCheckingBranch {
     public final List<Pattern> incompletePatterns;
+    public final List<ArgsCoverageCheckingOKBranch> maybeBranches;
 
-    private ArgsCoverageCheckingIncompleteBranch(List<Pattern> incompletePatterns) {
+    private ArgsCoverageCheckingIncompleteBranch(List<Pattern> incompletePatterns, List<ArgsCoverageCheckingOKBranch> maybeBranches) {
       this.incompletePatterns = incompletePatterns;
+      this.maybeBranches = maybeBranches;
     }
   }
 
@@ -70,27 +72,36 @@ public class ArgsCoverageChecker {
       valid.add(i);
     result = new ArrayList<>();
 
-    return checkCoverageRecurse(valid, types);
+    return checkCoverageRecurse(valid, types, null);
   }
 
-  private List<ArgsCoverageCheckingBranch> checkCoverageRecurse(List<Integer> valid, List<Expression> types) {
+  private List<ArgsCoverageCheckingBranch> checkCoverageRecurse(List<Integer> valid, List<Expression> types, ArgsCoverageCheckingIncompleteBranch incomplete) {
     if (types.isEmpty()) {
-      result.add(new ArgsCoverageCheckingOKBranch(new ArrayList<>(currentExpressions),
-          new ArrayList<>(myLocalContext.subList(myOldContextSize, myLocalContext.size())),
-          valid, new ArrayList<>(currentPatterns)));
+      ArgsCoverageCheckingOKBranch okBranch = new ArgsCoverageCheckingOKBranch(new ArrayList<>(currentExpressions),
+            new ArrayList<>(myLocalContext.subList(myOldContextSize, myLocalContext.size())),
+            valid, new ArrayList<>(currentPatterns));
+      if (incomplete == null) {
+        result.add(okBranch);
+      } else {
+        if (incomplete.maybeBranches.isEmpty())
+          result.add(incomplete);
+        incomplete.maybeBranches.add(okBranch);
+      }
       return result;
     }
 
     List<Pattern> patterns = new ArrayList<>();
     for (int i : valid)
       patterns.add(myNestedPatterns.get(myNestedPatterns.size() - types.size()).get(i));
+    final boolean isExplicit = myNestedPatterns.get(myNestedPatterns.size() - types.size()).isEmpty() || myNestedPatterns.get(myNestedPatterns.size() - types.size()).get(0).getExplicit();
+    List<CoverageCheckingBranch> nestedBranches = new CoverageCheker(myLocalContext).checkCoverage(patterns, types.get(0), isExplicit);
 
-    List<CoverageCheckingBranch> nestedBranches = new CoverageCheker(myLocalContext).checkCoverage(patterns, types.get(0));
     if (nestedBranches == null)
       return null;
 
     for (CoverageCheckingBranch branch : nestedBranches) {
       if (branch instanceof CoverageCheckingOKBranch) {
+        assert incomplete == null;
         try (Utils.ContextSaver ignore = new Utils.ContextSaver(myLocalContext)) {
           CoverageCheckingOKBranch okBranch = (CoverageCheckingOKBranch) branch;
           myLocalContext.addAll(okBranch.context);
@@ -102,33 +113,49 @@ public class ArgsCoverageChecker {
           for (int i : okBranch.good)
             newValid.add(valid.get(i));
 
-          List<Expression> newTypes = new ArrayList<>();
-          for (int i = 1; i < types.size(); i++)
-            newTypes.add(expandPatternSubstitute(okBranch.context.size(), i - 1, okBranch.expression, types.get(i)));
-
-          checkCoverageRecurse(newValid, newTypes);
+          checkCoverageRecurse(newValid, substituteInTypes(types, okBranch), null);
 
           currentExpressions.remove(currentExpressions.size() - 1);
           currentPatterns.remove(currentPatterns.size() - 1);
         }
       } else if (branch instanceof CoverageCheckingIncompleteBranch) {
-        List<Pattern> incompletePatterns = new ArrayList<>(currentPatterns);
-        incompletePatterns.add(((CoverageCheckingIncompleteBranch) branch).noncoveredPattern);
-        for (int i = myNestedPatterns.size() - types.size() + 1; i < myNestedPatterns.size(); i++)
-          incompletePatterns.add(match(myNestedPatterns.get(i).isEmpty() || myNestedPatterns.get(i).get(0).getExplicit(), null));
-        result.add(new ArgsCoverageCheckingIncompleteBranch(incompletePatterns));
+        ArgsCoverageCheckingIncompleteBranch newIncomplete = incomplete != null ? incomplete
+            : new ArgsCoverageCheckingIncompleteBranch(fillAnyPatterns(((CoverageCheckingIncompleteBranch) branch).noncoveredPattern), new ArrayList<ArgsCoverageCheckingOKBranch>());
+
+        for (CoverageCheckingOKBranch maybeBranch : ((CoverageCheckingIncompleteBranch) branch).maybeBranches) {
+          try (Utils.ContextSaver ignore = new Utils.ContextSaver(myLocalContext)) {
+            myLocalContext.addAll(maybeBranch.context);
+            currentPatterns.add(maybeBranch.branchPattern);
+            currentExpressions.add(maybeBranch.expression);
+            checkCoverageRecurse(new ArrayList<Integer>(), substituteInTypes(types, maybeBranch), newIncomplete);
+            currentExpressions.remove(currentExpressions.size() - 1);
+            currentPatterns.remove(currentPatterns.size() - 1);
+          }
+        }
       } else if (branch instanceof CoverageCheckingFailedBranch) {
-        List<Pattern>  failedPatterns = new ArrayList<>(currentPatterns);
-        failedPatterns.add(((CoverageCheckingFailedBranch) branch).failedPattern);
-        for (int i = myNestedPatterns.size() - types.size() + 1; i < myNestedPatterns.size(); i++)
-          failedPatterns.add(match(myNestedPatterns.get(i).isEmpty() || myNestedPatterns.get(i).get(0).getExplicit(), null));
+        assert incomplete == null;
         ArrayList<Integer> bad = new ArrayList<>();
         for (int i : ((CoverageCheckingFailedBranch) branch).bad)
           bad.add(valid.get(i));
-        result.add(new ArgsCoverageCheckingFailedBranch(failedPatterns, bad));
+        result.add(new ArgsCoverageCheckingFailedBranch(fillAnyPatterns(((CoverageCheckingFailedBranch) branch).failedPattern), bad));
       }
     }
 
     return result;
+  }
+
+  private List<Pattern> fillAnyPatterns(Pattern lastPattern) {
+    List<Pattern> failedPatterns = new ArrayList<>(currentPatterns);
+    failedPatterns.add(lastPattern);
+    for (int i = currentPatterns.size() + 1; i < myNestedPatterns.size(); i++)
+      failedPatterns.add(match(myNestedPatterns.get(i).isEmpty() || myNestedPatterns.get(i).get(0).getExplicit(), null));
+    return failedPatterns;
+  }
+
+  private List<Expression> substituteInTypes(List<Expression> types, CoverageCheckingOKBranch okBranch) {
+    List<Expression> newTypes = new ArrayList<>();
+    for (int i = 1; i < types.size(); i++)
+      newTypes.add(expandPatternSubstitute(okBranch.context.size(), i - 1, okBranch.expression, types.get(i)));
+    return newTypes;
   }
 }
