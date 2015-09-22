@@ -1487,9 +1487,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     ElimExpression result = Elim(elimExprs, clauses);
     for (Clause clause : clauses) {
-        clause.setElimExpression(result);
+      clause.setElimExpression(result);
     }
 
+    expr.setWellTyped(myLocalContext, result);
     return new OKResult(result, expectedType, null);
   }
 
