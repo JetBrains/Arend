@@ -1510,7 +1510,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Result exprResult = typeCheck(expr.getExpressions().get(i), null);
       if (!(exprResult instanceof OKResult)) return exprResult;
       OKResult exprOKResult = (OKResult) exprResult;
-      equations.addAll(exprOKResult.equations);
+      if (exprOKResult.equations != null) {
+        equations.addAll(exprOKResult.equations);
+      }
       myLocalContext.add(new TypedBinding((Name) null, exprOKResult.type.liftIndex(0, i)));
       args.add(TypeArg(exprOKResult.type.liftIndex(0, i)));
       letTerm = Apps(letTerm, exprOKResult.expression);
