@@ -1514,7 +1514,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         equations.addAll(exprOKResult.equations);
       }
       myLocalContext.add(new TypedBinding((Name) null, exprOKResult.type.liftIndex(0, i)));
-      args.add(TypeArg(exprOKResult.type.liftIndex(0, i)));
+      args.add(Tele(vars("caseA" + i), exprOKResult.type.liftIndex(0, i)));
       letTerm = Apps(letTerm, exprOKResult.expression);
     }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
