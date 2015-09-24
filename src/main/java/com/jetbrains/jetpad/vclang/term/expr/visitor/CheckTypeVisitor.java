@@ -1527,7 +1527,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     LetExpression letExpression = Let(lets(let("caseF", args, elimOKResult.type,
         Abstract.Definition.Arrow.LEFT, elimOKResult.expression)), letTerm);
 
-    expr.setWellTyped(myLocalContext, elimOKResult.type.liftIndex(0, -expr.getExpressions().size()));
+    expr.setWellTyped(myLocalContext, letExpression);
     return new OKResult(letExpression, elimOKResult.type.liftIndex(0, -expr.getExpressions().size()), equations);
   }
 
