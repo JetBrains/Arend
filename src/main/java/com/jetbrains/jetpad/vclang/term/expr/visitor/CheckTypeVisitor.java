@@ -1429,6 +1429,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     List<Binding> tail = new ArrayList<>(myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()));
+    myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()).clear();
     List<ArgsCoverageCheckingBranch> branches = new ArgsCoverageChecker(myLocalContext).checkCoverage(types, patterns, clauses.size() + emptyPatterns.size());
     myLocalContext.addAll(tail);
     if (branches == null)
