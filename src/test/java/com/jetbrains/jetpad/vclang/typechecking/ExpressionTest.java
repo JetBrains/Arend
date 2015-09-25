@@ -222,8 +222,8 @@ public class ExpressionTest {
 
   @Test
   public void caseTranslation() {
-    FunctionDefinition def = (FunctionDefinition) parseDef("\\function test : Nat => \\case 1 | zero => 0 | suc y => y");
-    FunctionDefinition def2 = (FunctionDefinition) parseDef("\\function test => \\let | caseF (caseA : Nat) : Nat <= \\elim caseA | zero => 0 | suc y => y \\in caseF 1");
+    FunctionDefinition def = (FunctionDefinition) parseDef("\\function test (n : Nat) : Nat => \\case n, n | zero, _ => 0 | suc y, _ => y");
+    FunctionDefinition def2 = (FunctionDefinition) parseDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat <= \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
     assertEquals(def.getTerm(), def2.getTerm());
   }
 

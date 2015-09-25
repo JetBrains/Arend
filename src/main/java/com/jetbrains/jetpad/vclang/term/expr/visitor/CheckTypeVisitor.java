@@ -1514,9 +1514,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (exprOKResult.equations != null) {
         equations.addAll(exprOKResult.equations);
       }
-      myLocalContext.add(new TypedBinding((Name) null, exprOKResult.type.liftIndex(0, i)));
       args.add(Tele(vars("caseA" + i), exprOKResult.type.liftIndex(0, i)));
-      letTerm = Apps(letTerm, exprOKResult.expression);
+      letTerm = Apps(letTerm, exprOKResult.expression.liftIndex(0, 1));
+    }
+    for (int i = 0; i < args.size(); i++) {
+      myLocalContext.add(new TypedBinding("caseA" + i, ((TelescopeArgument) args.get(i)).getType()));
     }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
     Result elimResult = elim.accept(new CheckTypeVisitor(myNamespace, myLocalContext, myLocalContext.size() - args.size(), myErrorReporter), expectedType.liftIndex(0, 1));
