@@ -35,7 +35,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitDefCall(DefCallExpression expr) {
+  public DefCallExpression visitDefCall(DefCallExpression expr) {
     if (expr.getExpression() == null && expr.getParameters() == null) return expr;
     Expression expr1 = null;
     if (expr.getExpression() != null) {
@@ -196,9 +196,10 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
       Expression resultType = entry.getValue().getResultType() == null ? null : entry.getValue().getResultType().liftIndex(from, myOn);
       Expression term = entry.getValue().getTerm() == null ? null : entry.getValue().getTerm().liftIndex(from, myOn);
-      definitions.put(entry.getKey(), new OverriddenDefinition(entry.getValue().getNamespace(), entry.getValue().getPrecedence(), arguments, resultType, entry.getValue().getArrow(), term, entry.getKey()));
+      definitions.put(entry.getKey(), new OverriddenDefinition(entry.getValue().getStaticNamespace(), entry.getValue().getDynamicNamespace(), entry.getValue().getPrecedence(), arguments, resultType, entry.getValue().getArrow(), term, entry.getKey()));
     }
-    return ClassExt(expr.getBaseClass(), definitions, expr.getUniverse());
+    DefCallExpression expr1 = visitDefCall(expr.getBaseClassExpression());
+    return expr1 == null ? null : ClassExt(expr1, definitions, expr.getUniverse());
   }
 
   @Override

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
@@ -9,12 +10,21 @@ import java.util.*;
 public class Namespace implements NamespaceMember {
   final private Utils.Name myName;
   private Namespace myParent;
-  private Map<String, Namespace> myChildren;
-  private Map<String, Definition> myDefinitions;
+  private Map<String, DefinitionPair> myMembers;
 
-  public Namespace(Utils.Name name, Namespace parent) {
+  private Namespace(Utils.Name name, Namespace parent) {
     myName = name;
     myParent = parent;
+  }
+
+  public Namespace(Utils.Name name) {
+    myName = name;
+    myParent = null;
+  }
+
+  public Namespace(String name) {
+    myName = new Utils.Name(name);
+    myParent = null;
   }
 
   @Override
@@ -39,70 +49,53 @@ public class Namespace implements NamespaceMember {
     myParent = parent;
   }
 
-  public Collection<Definition> getDefinitions() {
-    return myDefinitions == null ? Collections.<Definition>emptyList() : myDefinitions.values();
-  }
-
-  public Collection<Namespace> getChildren() {
-    return myChildren == null ? Collections.<Namespace>emptyList() : myChildren.values();
+  public Collection<DefinitionPair> getMembers() {
+    return myMembers == null ? Collections.<DefinitionPair>emptyList() : myMembers.values();
   }
 
   public Namespace getChild(Utils.Name name) {
-    if (myChildren != null) {
-      Namespace child = myChildren.get(name.name);
-      if (child != null) {
-        return child;
+    if (myMembers != null) {
+      DefinitionPair member = myMembers.get(name.name);
+      if (member != null) {
+        return member.namespace;
       }
     } else {
-      myChildren = new HashMap<>();
+      myMembers = new HashMap<>();
     }
 
     Namespace child = new Namespace(name, this);
-    myChildren.put(name.name, child);
+    myMembers.put(name.name, new DefinitionPair(child, null, null));
     return child;
   }
 
-  public Namespace findChild(String name) {
-    return myChildren == null ? null : myChildren.get(name);
-  }
-
-  public void removeChild(String name) {
-    if (myChildren != null) {
-      myChildren.remove(name);
-    }
-  }
-
-  public Namespace addChild(Namespace child) {
-    if (myChildren == null) {
-      myChildren = new HashMap<>();
-      myChildren.put(child.myName.name, child);
+  public DefinitionPair addChild(Namespace child) {
+    if (myMembers == null) {
+      myMembers = new HashMap<>();
+      myMembers.put(child.myName.name, new DefinitionPair(child, null, null));
       return null;
     } else {
-      Namespace oldChild = myChildren.get(child.myName.name);
-      if (oldChild != null) {
-        return oldChild;
+      DefinitionPair oldMember = myMembers.get(child.myName.name);
+      if (oldMember != null) {
+        return oldMember;
       } else {
-        myChildren.put(child.myName.name, child);
+        myMembers.put(child.myName.name, new DefinitionPair(child, null, null));
         return null;
       }
     }
   }
 
+  public DefinitionPair getMember(String name) {
+    return myMembers == null ? null : myMembers.get(name);
+  }
+
   public Definition getDefinition(String name) {
-    return myDefinitions == null ? null : myDefinitions.get(name);
+    DefinitionPair member = getMember(name);
+    return member == null ? null : member.definition;
   }
 
-  public NamespaceMember getMember(String name) {
-    NamespaceMember member = getDefinition(name);
-    if (member != null) {
-      return member;
-    }
-    return findChild(name);
-  }
-
-  public NamespaceMember locateName(String name) {
+  public DefinitionPair locateName(String name) {
     for (Namespace namespace = this; namespace != null; namespace = namespace.getParent()) {
-      NamespaceMember member = namespace.getMember(name);
+      DefinitionPair member = namespace.getMember(name);
       if (member != null) {
         return member;
       }
@@ -110,55 +103,71 @@ public class Namespace implements NamespaceMember {
     return null;
   }
 
+  public DefinitionPair addAbstractDefinition(Abstract.Definition definition) {
+    if (myMembers == null) {
+      myMembers = new HashMap<>();
+    } else {
+      DefinitionPair oldMember = myMembers.get(definition.getName().name);
+      if (oldMember != null) {
+        if (oldMember.abstractDefinition != null) {
+          return null;
+        } else {
+          oldMember.abstractDefinition = definition;
+          return oldMember;
+        }
+      }
+    }
+
+    DefinitionPair result = new DefinitionPair(getChild(definition.getName()), definition, null);
+    myMembers.put(definition.getName().name, result);
+    return result;
+  }
+
   public Definition addDefinition(Definition definition) {
-    if (myDefinitions == null) {
-      myDefinitions = new HashMap<>();
-      myDefinitions.put(definition.getName().name, definition);
-      return null;
+    if (myMembers == null) {
+      myMembers = new HashMap<>();
     } else {
-      Definition oldDefinition = myDefinitions.get(definition.getName().name);
-      if (oldDefinition != null) {
-        return oldDefinition;
-      } else {
-        myDefinitions.put(definition.getName().name, definition);
-        return null;
+      DefinitionPair oldMember = myMembers.get(definition.getName().name);
+      if (oldMember != null) {
+        if (oldMember.definition != null) {
+          return oldMember.definition;
+        } else {
+          oldMember.definition = definition;
+          return null;
+        }
       }
     }
+
+    myMembers.put(definition.getName().name, new DefinitionPair(definition.getNamespace(), null, definition));
+    return null;
   }
 
-  public void removeDefinition(Definition definition) {
-    if (myDefinitions != null) {
-      Definition removed = myDefinitions.remove(definition.getName().name);
-      if (removed != definition) {
-        myDefinitions.put(definition.getName().name, removed);
+  public DefinitionPair addMember(DefinitionPair member) {
+    if (myMembers == null) {
+      myMembers = new HashMap<>();
+    } else {
+      DefinitionPair oldMember = myMembers.get(member.namespace.getName().name);
+      if (oldMember != null) {
+        if (oldMember.definition != null || oldMember.abstractDefinition != null) {
+          return oldMember;
+        } else {
+          oldMember.abstractDefinition = member.abstractDefinition;
+          oldMember.definition = member.definition;
+          return null;
+        }
       }
     }
+
+    myMembers.put(member.namespace.getName().name, member);
+    return null;
   }
 
-  public NamespaceMember addMember(NamespaceMember member) {
-    if (member instanceof Namespace) {
-      return addChild((Namespace) member);
-    }
-    if (member instanceof Definition) {
-      return addDefinition((Definition) member);
-    }
-    throw new IllegalStateException();
-  }
-
-  public void removeMember(NamespaceMember member) {
-    if (member instanceof Namespace) {
-      removeChild(member.getName().name);
-    } else
-    if (member instanceof Definition) {
-      removeDefinition((Definition) member);
-    } else {
-      throw new IllegalStateException();
-    }
+  public DefinitionPair removeMember(DefinitionPair member) {
+    return myMembers.remove(member.namespace.getName().name);
   }
 
   public void clear() {
-    myChildren = null;
-    myDefinitions = null;
+    myMembers = null;
   }
 
   @Override

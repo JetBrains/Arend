@@ -19,7 +19,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 public class CompareVisitor implements AbstractExpressionVisitor<Expression, CompareVisitor.Result> {
   private final List<Equation> myEquations;
 
-  public enum CMP {EQUIV, EQUALS, GREATER, LESS, NOT_EQUIV}
+  public enum CMP { EQUIV, EQUALS, GREATER, LESS, NOT_EQUIV }
 
   public interface Result {
     CMP isOK();
@@ -225,10 +225,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       return new MaybeResult(expr1);
     }
 
-    if (expr1 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr1).getDefinition() == Prelude.PATH_CON && args.size() == 1 && args.get(0).getExpression() instanceof Abstract.LamExpression) {
+    if (expr1 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr1).getDefinitionPair() != null && ((Abstract.DefCallExpression) expr1).getDefinitionPair().definition == Prelude.PATH_CON && args.size() == 1 && args.get(0).getExpression() instanceof Abstract.LamExpression) {
       List<Abstract.ArgumentExpression> args1 = new ArrayList<>();
       Abstract.Expression expr2 = Abstract.getFunction(((Abstract.LamExpression) args.get(0).getExpression()).getBody(), args1);
-      if (expr2 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr2).getDefinition() == Prelude.AT && args1.size() == 5 && args1.get(4).getExpression() instanceof Abstract.IndexExpression && ((Abstract.IndexExpression) args1.get(4).getExpression()).getIndex() == 0) {
+      if (expr2 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr2).getDefinitionPair().definition == Prelude.AT && args1.size() == 5 && args1.get(4).getExpression() instanceof Abstract.IndexExpression && ((Abstract.IndexExpression) args1.get(4).getExpression()).getIndex() == 0) {
         List<Equation> equations = new ArrayList<>();
         Result result = args1.get(3).getExpression().accept(new CompareVisitor(equations), other.liftIndex(0, 1));
         if (result.isOK() != CMP.NOT_EQUIV) {
@@ -281,9 +281,14 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (tupleResult != null) return tupleResult;
     Result lamResult = checkLam(expr, other);
     if (lamResult != null) return lamResult;
+
+    if (expr.getDefinitionPair() == null && other instanceof Abstract.VarExpression) {
+      return new JustResult(expr.getName().name.equals(((Abstract.VarExpression) other).getName().name) ? CMP.EQUALS : CMP.NOT_EQUIV);
+    }
+
     if (!(other instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
     DefCallExpression otherDefCall = (DefCallExpression) other;
-    Definition definition1 = expr.getDefinition() instanceof OverriddenDefinition ? ((OverriddenDefinition) expr.getDefinition()).getOverriddenFunction() : expr.getDefinition();
+    Definition definition1 = expr.getDefinitionPair().definition instanceof OverriddenDefinition ? ((OverriddenDefinition) expr.getDefinitionPair().definition).getOverriddenFunction() : expr.getDefinitionPair().definition;
     Definition definition2 = otherDefCall.getDefinition() instanceof OverriddenDefinition ? ((OverriddenDefinition) otherDefCall.getDefinition()).getOverriddenFunction() : otherDefCall.getDefinition();
     if (definition1 == null) {
       if (!expr.getName().equals(definition2.getName())) return new JustResult(CMP.NOT_EQUIV);
@@ -575,7 +580,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     return args;
   }
 
-
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression other) {
     if (expr == other) return new JustResult(CMP.EQUALS);
@@ -592,12 +596,17 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (!(otherApp2.getFunction() instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
     DefCallExpression otherDefCall = (DefCallExpression) otherApp2.getFunction();
 
-    if (expr.getBinOp() != otherDefCall.getDefinition()) return new JustResult(CMP.NOT_EQUIV);
+    if (expr.getBinOp().definition != otherDefCall.getDefinition()) return new JustResult(CMP.NOT_EQUIV);
     Result result = expr.getLeft().accept(this, otherApp2.getArgument().getExpression());
     if (result.isOK() == CMP.NOT_EQUIV) return result;
     Result result1 = expr.getRight().accept(this, otherApp1.getArgument().getExpression());
     if (result1.isOK() == CMP.NOT_EQUIV) return result1;
     return new JustResult(and(result.isOK(), result1.isOK()));
+  }
+
+  @Override
+  public Result visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Expression other) {
+    return expr.getSequence().isEmpty() ? expr.getLeft().accept(this, other) : new JustResult(CMP.NOT_EQUIV);
   }
 
   @Override
@@ -629,9 +638,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
     ClassExtExpression classExt = (ClassExtExpression) expr;
     ClassExtExpression otherClassExt = (ClassExtExpression) other;
-    if (classExt.getBaseClass() != otherClassExt.getBaseClass() || classExt.getDefinitions().size() != otherClassExt.getDefinitions().size()) return new JustResult(CMP.NOT_EQUIV);
+    if (classExt.getStatements().size() != otherClassExt.getStatements().size()) return new JustResult(CMP.NOT_EQUIV);
+    Result result = classExt.getBaseClassExpression().accept(this, otherClassExt.getBaseClassExpression());
+    if (result.isOK() == CMP.NOT_EQUIV) return result;
 
-    CMP cmp = CMP.EQUALS;
+    CMP cmp = result.isOK();
     MaybeResult maybeResult = null;
     for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : classExt.getDefinitionsMap().entrySet()) {
       OverriddenDefinition otherDef = otherClassExt.getDefinitionsMap().get(entry.getKey());
@@ -641,7 +652,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       List<Abstract.Expression> args2 = new ArrayList<>();
       lamArgsToTypes(otherDef.getArguments(), args1);
 
-      Result result;
       if (args1.size() == 0 && args2.size() == 0) {
         result = entry.getValue().getTerm().accept(this, otherDef.getTerm());
       } else {

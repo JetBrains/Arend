@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
-import com.jetbrains.jetpad.vclang.typechecking.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +66,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, ErrorReporter errorReporter) {
-    return new CheckTypeVisitor(null, localContext, 0, errorReporter).checkType(this, expectedType);
+    return new CheckTypeVisitor(localContext, 0, errorReporter).checkType(this, expectedType);
   }
 
   public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {

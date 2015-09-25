@@ -20,7 +20,7 @@ public class FileOutputSupplier implements OutputSupplier {
 
   @Override
   public FileOutput getOutput(Namespace module) {
-    return new FileOutput(myModuleDeserialization, myDirectory == null ? null : FileOperations.getFile(myDirectory, module, ".vcc"));
+    return new FileOutput(myModuleDeserialization, module, myDirectory == null ? null : FileOperations.getFile(myDirectory, module, ".vcc"));
   }
 
   @Override
@@ -28,10 +28,10 @@ public class FileOutputSupplier implements OutputSupplier {
     for (File dir : myLibDirs) {
       File file = FileOperations.getFile(dir, module, ".vcc");
       if (file.exists()) {
-        return new FileOutput(myModuleDeserialization, file);
+        return new FileOutput(myModuleDeserialization, module, file);
       }
     }
 
-    return new FileOutput(myModuleDeserialization, null);
+    return new FileOutput(myModuleDeserialization, module, null);
   }
 }

@@ -1,8 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.typechecking.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
+import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 public class ReportingModuleLoader extends BaseModuleLoader {
   private ErrorReporter myErrorReporter;
@@ -22,7 +21,7 @@ public class ReportingModuleLoader extends BaseModuleLoader {
   }
 
   @Override
-  public void loadingSucceeded(Namespace namespace, ClassDefinition classDefinition, boolean compiled) {
+  public void loadingSucceeded(Namespace namespace, DefinitionPair definitionPair, boolean compiled) {
 
   }
 }

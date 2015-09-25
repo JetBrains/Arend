@@ -15,6 +15,11 @@ public class ArgInferenceError extends TypeCheckingError {
     myWhere = where;
   }
 
+  public ArgInferenceError(String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, PrettyPrintable where) {
+    super(message, expression, names);
+    myWhere = where;
+  }
+
   public static String functionArg(int index) {
     return "Cannot infer " + index + suffix(index) + " argument to function";
   }

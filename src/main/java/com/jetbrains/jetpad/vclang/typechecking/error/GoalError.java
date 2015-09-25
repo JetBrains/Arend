@@ -18,6 +18,12 @@ public class GoalError extends TypeCheckingError {
     myType = type;
   }
 
+  public GoalError(List<Binding> context, Expression type, Abstract.PrettyPrintableSourceNode expression) {
+    super("Goal", expression, getNames(context));
+    myContext = new ArrayList<>(context);
+    myType = type;
+  }
+
   @Override
   public String toString() {
     if (myContext.isEmpty() && myType == null) {

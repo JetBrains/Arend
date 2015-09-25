@@ -9,8 +9,16 @@ public class HasErrors extends TypeCheckingError {
     super(namespace, name + " has errors", expression, null);
   }
 
+  public HasErrors(String name, Abstract.SourceNode expression) {
+    super(name + " has errors", expression, null);
+  }
+
   public HasErrors(Namespace namespace, Utils.Name name, Abstract.SourceNode expression) {
     this(namespace, name.getPrefixName(), expression);
+  }
+
+  public HasErrors(Utils.Name name, Abstract.SourceNode expression) {
+    this(name.getPrefixName(), expression);
   }
 
   @Override

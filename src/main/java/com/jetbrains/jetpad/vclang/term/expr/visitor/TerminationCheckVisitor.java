@@ -11,7 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternToExpression;

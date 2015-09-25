@@ -202,8 +202,8 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
           myDataStream.writeUTF(((NamePattern) pattern).getName());
       } else if (pattern instanceof ConstructorPattern) {
         myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(((ConstructorPattern) pattern).getConstructor(), false));
-        myDataStream.writeInt(((ConstructorPattern) pattern).getArguments().size());
-        for (Pattern nestedPattern : ((ConstructorPattern) pattern).getArguments()) {
+        myDataStream.writeInt(((ConstructorPattern) pattern).getPatterns().size());
+        for (Pattern nestedPattern : ((ConstructorPattern) pattern).getPatterns()) {
           visitPattern(nestedPattern);
         }
       }
@@ -240,7 +240,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   public Void visitClassExt(ClassExtExpression expr) {
     myStream.write(15);
     try {
-      myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(expr.getBaseClass(), true));
+      expr.getBaseClassExpression().accept(this);
       myDataStream.writeInt(expr.getDefinitionsMap().size());
       for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
         myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey(), true));

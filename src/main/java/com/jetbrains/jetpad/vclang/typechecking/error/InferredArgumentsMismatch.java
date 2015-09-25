@@ -17,6 +17,12 @@ public class InferredArgumentsMismatch extends TypeCheckingError {
     myOptions = options;
   }
 
+  public InferredArgumentsMismatch(int argument, List<Abstract.Expression> options, Abstract.Expression expression, List<String> names) {
+    super(null, expression, names);
+    myArgument = argument;
+    myOptions = options;
+  }
+
   @Override
   public String toString() {
     String msg = printHeader();

@@ -1,24 +1,25 @@
 grammar Vcgrammar;
 
-defs  : def*;
+statements : statement*;
 
-def   : staticMod '\\function' precedence name tele* typeTermOpt where?      # defFunction
-      | '\\override' name ('\\as' name)? tele* typeTermOpt where?            # defOverride
-      | staticMod '\\data' precedence name tele* (':' expr)? constructorDef* # defData
-      | staticMod '\\class' ID tele* classFields                             # defClass
-      | nsCmd name fieldAcc* ('(' name (',' name)* ')')?                     # defCmd
-      ;
+statement : staticMod definition                              # statDef
+          | nsCmd name fieldAcc* ('(' name (',' name)* ')')?  # statCmd
+          ;
+
+definition  : '\\function' precedence name tele* typeTermOpt where?         # defFunction
+            // | '\\override' name ('\\as' name)? tele* typeTermOpt where?     # defOverride
+            | '\\data' precedence name tele* (':' literal)? constructorDef* # defData
+            | '\\class' ID tele* classFields                                # defClass
+            ;
 
 staticMod : '\\static'                  # staticStatic
           | '\\dynamic'                 # dynamicStatic
           |                             # noStatic
           ;
 
-where : '\\where' def+ ';'?;
+where : '\\where' statement+ ';'?;
 
-renamingClause : name '\\to' name;
-
-classFields : '{' defs '}';
+classFields : '{' statement* '}';
 
 nsCmd : '\\open'                        # openCmd
       | '\\close'                       # closeCmd
@@ -29,12 +30,12 @@ arrow : '<='                            # arrowLeft
       | '=>'                            # arrowRight
       ;
 
-typeTermOpt : ':' expr                  # withType
-            | ':' expr arrow expr       # withTypeAndTerm
-            | arrow expr                # withTerm
+typeTermOpt : ':' expr (arrow expr)?    # withType
+            | arrow expr                # withoutType
             ;
-constructorDef : '|' name patternx* '=>' constructor ('|' constructor)* ';'? #withPatterns
-               | '|' constructor                                             #noPatterns
+
+constructorDef : '|' name patternx* '=>' constructor ('|' constructor)* ';'? # withPatterns
+               | '|' constructor                                             # noPatterns
                ;
 
 specPattern : '_'  # patternAny
@@ -96,7 +97,7 @@ fieldAcc : '.' name                     # classField
          ;
 
 infix : BIN_OP                          # infixBinOp
-      | '`' name fieldAcc* '`'          # infixId
+      | '`' ID '`'                      # infixId
       ;
 
 atom  : '(' expr (',' expr)* ')'        # tuple

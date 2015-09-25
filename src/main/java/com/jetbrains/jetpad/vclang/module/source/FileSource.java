@@ -1,11 +1,8 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
-import com.jetbrains.jetpad.vclang.module.FileOperations;
-import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
-import com.jetbrains.jetpad.vclang.typechecking.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,7 +33,7 @@ public class FileSource extends ParseSource {
   }
 
   @Override
-  public ModuleLoadingResult load(Namespace namespace) throws IOException {
+  public ModuleLoadingResult load() throws IOException {
     boolean ok = false;
     if (myDirectory != null) {
       File[] files = myDirectory.listFiles();
@@ -44,11 +41,11 @@ public class FileSource extends ParseSource {
         ok = true;
         for (File file : files) {
           if (file.isDirectory()) {
-            namespace.getChild(new Utils.Name(file.getName()));
+            getModule().getChild(new Utils.Name(file.getName()));
           } else if (file.isFile()) {
             String name = FileOperations.getVcFileName(file);
             if (name != null) {
-              namespace.getChild(new Utils.Name(name));
+              getModule().getChild(new Utils.Name(name));
             }
           }
         }
@@ -57,9 +54,9 @@ public class FileSource extends ParseSource {
 
     if (myFile != null && myFile.exists()) {
       setStream(new FileInputStream(myFile));
-      return super.load(namespace);
+      return super.load();
     } else {
-      return ok ? new ModuleLoadingResult(namespace, null, true, 0) : null;
+      return ok ? new ModuleLoadingResult(getModule(), new DefinitionPair(getModule(), null, null), true, 0) : null;
     }
   }
 }

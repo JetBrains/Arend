@@ -100,7 +100,7 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
 
   @Override
   public InferHoleExpression visitClassExt(ClassExtExpression expr) {
-    for (OverriddenDefinition definition : expr.getDefinitions()) {
+    for (OverriddenDefinition definition : expr.getDefinitionsMap().values()) {
       if (definition.getArguments() != null) {
         InferHoleExpression result = visitArguments(definition.getArguments());
         if (result != null) return result;

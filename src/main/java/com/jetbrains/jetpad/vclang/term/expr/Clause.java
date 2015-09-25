@@ -57,4 +57,9 @@ public class Clause implements Abstract.Clause {
     prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     return builder.toString();
   }
+
+  @Override
+  public void replacePatternWithConstructor(int index) {
+    throw new IllegalStateException();
+  }
 }

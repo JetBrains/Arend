@@ -11,10 +11,12 @@ import java.io.IOException;
 
 public class FileOutput implements Output {
   private final File myFile;
+  private final Namespace myModule;
   private final ModuleDeserialization myModuleDeserialization;
 
-  public FileOutput(ModuleDeserialization moduleDeserialization, File file) {
+  public FileOutput(ModuleDeserialization moduleDeserialization, Namespace module, File file) {
     myFile = file;
+    myModule = module;
     myModuleDeserialization = moduleDeserialization;
   }
 
@@ -34,8 +36,8 @@ public class FileOutput implements Output {
   }
 
   @Override
-  public ModuleLoadingResult read(Namespace namespace) throws IOException {
-    return myModuleDeserialization.readFile(myFile, namespace);
+  public ModuleLoadingResult read() throws IOException {
+    return myModuleDeserialization.readFile(myFile, myModule);
   }
 
   @Override

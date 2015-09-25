@@ -8,9 +8,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static org.junit.Assert.*;
 
 public class ComparisonTest {
@@ -145,8 +145,8 @@ public class ComparisonTest {
 
   @Test
   public void letsNested() {
-    Definition def1 = parseDef("\\function test => \\let | x => 0 \\in \\let  | y => 1 \\in zero");
-    Definition def2 = parseDef("\\function test => \\let | x => 0 | y => 1 \\in zero");
+    Definition def1 = typeCheckDef("\\function test => \\let | x => 0 \\in \\let  | y => 1 \\in zero");
+    Definition def2 = typeCheckDef("\\function test => \\let | x => 0 | y => 1 \\in zero");
     assertEquals(((FunctionDefinition) def1).getTerm(), ((FunctionDefinition) def2).getTerm());
   }
 }
