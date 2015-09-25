@@ -96,6 +96,10 @@ public class CoverageCheker {
       if (constructor.getPatterns() != null) {
         Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, myLocalContext);
         if (matchResult instanceof Utils.PatternMatchMaybeResult) {
+          if (patterns.isEmpty()) {
+            return Collections.<CoverageCheckingBranch>singletonList(new CoverageCheckingIncompleteBranch(match(isExplicit, null), Collections.singletonList(
+                new CoverageCheckingOKBranch(Index(0), Collections.<Binding>singletonList(new TypedBinding((String) null, type)), null, match(isExplicit, null)))));
+          }
           List<Integer> bad = new ArrayList<>();
           for (int i = 0; i < patterns.size(); i++) {
             if (patterns.get(i) instanceof ConstructorPattern)

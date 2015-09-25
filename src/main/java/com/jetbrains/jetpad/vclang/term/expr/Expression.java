@@ -43,6 +43,12 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     accept(new PrettyPrintVisitor(builder, names, 0), prec);
   }
 
+  public String prettyPrint(List<String> names) {
+    StringBuilder sb = new StringBuilder();
+    prettyPrint(sb, names, PREC);
+    return sb.toString();
+  }
+
   public final Expression liftIndex(int from, int on) {
     return on == 0 ? this : accept(new LiftIndexVisitor(from, on));
   }

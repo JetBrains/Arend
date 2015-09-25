@@ -279,5 +279,18 @@ public class ElimTest {
         "\\static \\function test (n : Nat) (d : D n) (e : E n (\\lam x => x) d) : Nat <= \\elim n, d, e" +
         "| zero, dcons, econs => 1");
   }
+
+  @Test
+  public void testSmthing() {
+    parseDefs("\\static \\data Geq (x y : Nat)\n" +
+        "| Geq m zero => EqBase \n" +
+        "| Geq (suc n) (suc m) => EqSuc (p : Geq n m)\n" +
+        "\n" +
+        "\\static \\function f (x y : Nat) (p : Geq x y) : Nat <=\n" +
+        "  \\case x, y, p\n" +
+        "    | m, zero, EqBase <= zero \n" +
+        "    | zero, suc _, x <= \\elim x ;\n" +
+        "    | suc _, suc _, EqSuc q <= suc zero", 3);
+  }
 }
 

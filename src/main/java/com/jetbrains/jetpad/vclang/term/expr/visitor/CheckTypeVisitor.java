@@ -610,10 +610,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
                 TypeCheckingError error = null;
                 if (matchResult instanceof PatternMatchMaybeResult) {
                   error = new TypeCheckingError(myNamespace, "Constructor is not appropriate, failed to match data type parameters. " +
-                      "Expected " + ((PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((PatternMatchMaybeResult) matchResult).actualExpression, expr, getNames(myLocalContext));
+                      "Expected " + ((PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((PatternMatchMaybeResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), expr, getNames(myLocalContext));
                 } else if (matchResult instanceof PatternMatchFailedResult) {
                   error = new TypeCheckingError(myNamespace, "Constructor is not appropriate, failed to match data type parameters. " +
-                      "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression, expr, getNames(myLocalContext));
+                      "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), expr, getNames(myLocalContext));
                 } else if (matchResult instanceof PatternMatchOKResult) {
                   arguments = ((PatternMatchOKResult) matchResult).expressions;
                 }
@@ -1179,7 +1179,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
       Expression ftype = type.getFunction(new ArrayList<Expression>());
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-        TypeCheckingError error = new TypeCheckingError(myNamespace, "Pattern expected a data type, got: " + type, pattern, getNames(myLocalContext));
+        TypeCheckingError error = new TypeCheckingError(myNamespace, "Pattern expected a data type, got: " + type.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
         myErrorReporter.report(error);
         return new ExpandPatternErrorResult(error);
       }
@@ -1194,7 +1194,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression ftype = type.getFunction(parameters);
       Collections.reverse(parameters);
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-        error = new TypeCheckingError(myNamespace, "Pattern expected a data type, got: " + type, pattern, getNames(myLocalContext));
+        error = new TypeCheckingError(myNamespace, "Pattern expected a data type, got: " + type.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
         myErrorReporter.report(error);
         return new ExpandPatternErrorResult(error);
       }
@@ -1224,10 +1224,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, myLocalContext);
         if (matchResult instanceof PatternMatchMaybeResult) {
           error = new TypeCheckingError(myNamespace, "Constructor is not appropriate, failed to match data type parameters. " +
-              "Expected " + ((PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((PatternMatchMaybeResult) matchResult).actualExpression, pattern, getNames(myLocalContext));
+              "Expected " + ((PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((PatternMatchMaybeResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
         } else if (matchResult instanceof PatternMatchFailedResult) {
           error = new TypeCheckingError(myNamespace, "Constructor is not appropriate, failed to match data type parameters. " +
-              "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression, pattern, getNames(myLocalContext));
+              "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
         } else if (matchResult instanceof PatternMatchOKResult) {
           matchedParameters = ((PatternMatchOKResult) matchResult).expressions;
         }
