@@ -1522,7 +1522,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (!(elimResult instanceof OKResult)) return elimResult;
     OKResult elimOKResult = (OKResult) elimResult;
     addLiftedEquations(elimOKResult, equations, 1);
-    myLocalContext.remove(myLocalContext.size() - 1);
+    myLocalContext.subList(myLocalContext.size() - expr.getExpressions().size(), myLocalContext.size()).clear();
 
     LetExpression letExpression = Let(lets(let("caseF", args, elimOKResult.type,
         Abstract.Definition.Arrow.LEFT, elimOKResult.expression)), letTerm);
