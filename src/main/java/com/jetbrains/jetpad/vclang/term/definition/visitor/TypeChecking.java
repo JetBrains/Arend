@@ -372,7 +372,7 @@ public class TypeChecking {
 
   public static boolean typeCheckFunctionEnd(ErrorReporter errorReporter, Abstract.Expression term, FunctionDefinition definition, List<Binding> localContext, FunctionDefinition overriddenFunction) {
     if (term != null) {
-      CheckTypeVisitor visitor = new CheckTypeVisitor(localContext, errorReporter);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(localContext, 0, errorReporter);
       CheckTypeVisitor.OKResult termResult = visitor.checkType(term, definition.getResultType());
 
       if (termResult != null) {

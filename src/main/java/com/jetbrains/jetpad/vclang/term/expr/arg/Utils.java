@@ -222,7 +222,7 @@ public class Utils {
     PrettyPrintVisitor.printIndent(builder, indent);
     builder.append("| ");
     List<String> newNames;
-    if (elimExpr.getExpressions().get(0) instanceof Abstract.IndexExpression) {
+    if (elimExpr != null && elimExpr.getExpressions().get(0) instanceof Abstract.IndexExpression) {
       int highestCtxIndex = names.size() - 1 - ((Abstract.IndexExpression) elimExpr.getExpressions().get(0)).getIndex();
       names.addAll(0, Collections.<String>nCopies(Math.max(0, -highestCtxIndex), null));
       highestCtxIndex = Math.max(0, highestCtxIndex);

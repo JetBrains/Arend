@@ -696,7 +696,9 @@ public final class Concrete {
 
     @Override
     public void replacePatternWithConstructor(int index) {
-      myPatterns.set(index, new ConstructorPattern(myPatterns.get(index).getPosition(), new Utils.Name(myPatterns.get(index).getName()), new ArrayList<Pattern>(0)));
+      Pattern pattern = myPatterns.get(index);
+      myPatterns.set(index, new ConstructorPattern(pattern.getPosition(), new Utils.Name(pattern.getName()), new ArrayList<Pattern>(0)));
+      myPatterns.get(index).setExplicit(pattern.getExplicit());
     }
   }
 
@@ -952,6 +954,7 @@ public final class Concrete {
     public void replacePatternWithConstructor(int index) {
       Pattern pattern = myArguments.get(index);
       myArguments.set(index, new ConstructorPattern(pattern.getPosition(), new Utils.Name(pattern.getName()), new ArrayList<Pattern>(0)));
+      myArguments.get(index).setExplicit(pattern.getExplicit());
     }
 
     @Override
@@ -992,6 +995,7 @@ public final class Concrete {
     public void replacePatternWithConstructor(int index) {
       Pattern pattern = myPatterns.get(index);
       myPatterns.set(index, new ConstructorPattern(pattern.getPosition(), new Utils.Name(pattern.getName()), new ArrayList<Pattern>(0)));
+      myPatterns.get(index).setExplicit(pattern.getExplicit());
     }
 
     @Override

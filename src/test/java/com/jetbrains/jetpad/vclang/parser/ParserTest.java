@@ -104,4 +104,12 @@ public class ParserTest {
   public void parserCase() {
     parseExpr("\\case 2 | zero => zero | suc x' => x'");
   }
+
+  @Test
+  public void elimManyMistmatch() {
+    parseExpr(
+        "\\static \\data D Nat | D (suc n) => dsuc\n" +
+        "\\static \\function tests (n : Nat) (d : D n) : Nat <= \\elim n d\n" +
+          "| suc n => 0", 1);
+  }
 }

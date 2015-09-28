@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.FindDefCallVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandConstructorParameters;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
@@ -374,11 +376,21 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
       if (def.getPatterns() != null) {
         patterns = new ArrayList<>();
 
-        // Implicits are assumed to be checked during parse phase
-        List<Abstract.Pattern> abstractPatterns = processImplicit(def.getPatterns(), dataDefinition.getParameters()).patterns;
-        for (int i = 0; i < abstractPatterns.size(); i++) {
-          CheckTypeVisitor.ExpandPatternResult result = visitor.expandPatternOn(abstractPatterns.get(i), abstractPatterns.size() - 1 - i);
-          if (result == null)
+        ProcessImplicitResult processImplicitResult = processImplicit(def.getPatterns(), dataDefinition.getParameters());
+        if (processImplicitResult.patterns == null) {
+          if (processImplicitResult.numExcessive != 0) {
+            myErrorReporter.report(new TypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", def, getNames(myContext)));
+          } else if (processImplicitResult.wrongImplicitPosition < patterns.size()) {
+            myErrorReporter.report(new TypeCheckingError("Unexpected implicit argument", def.getPatterns().get(processImplicitResult.wrongImplicitPosition), getNames(myContext)));
+          } else {
+            myErrorReporter.report(new TypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, def, getNames(myContext)));
+          }
+          return null;
+        }
+        List<Abstract.Pattern> processedPatterns = processImplicitResult.patterns;
+        for (int i = 0; i < processImplicitResult.patterns.size(); i++) {
+          CheckTypeVisitor.ExpandPatternResult result = visitor.expandPatternOn(processedPatterns.get(i), processedPatterns.size() - 1 - i);
+          if (result == null || result instanceof CheckTypeVisitor.ExpandPatternErrorResult)
             return null;
           patterns.add(((CheckTypeVisitor.ExpandPatternOKResult)result).pattern);
         }

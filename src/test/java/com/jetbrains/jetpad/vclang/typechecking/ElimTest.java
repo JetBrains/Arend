@@ -229,14 +229,6 @@ public class ElimTest {
   }
 
   @Test
-  public void elimManyMistmatch() {
-    typeCheckClass(
-        "\\static \\data D Nat | D (suc n) => dsuc\n" +
-        "\\static \\function tests (n : Nat) (d : D n) : Nat <= \\elim n d\n" +
-          "| suc n => 0", 1);
-  }
-
-  @Test
   public void elimUnderLetError() {
     typeCheckClass("\\static \\function test (n : Nat) : Nat <= \\let x => 0 \\in \\elim n | _! => 0", 1);
   }

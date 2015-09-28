@@ -213,7 +213,8 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
           visitPattern(clause, i);
         }
 
-        clause.getExpression().accept(this, null);
+        if (clause.getExpression() != null)
+          clause.getExpression().accept(this, null);
       }
     }
   }
@@ -222,19 +223,29 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
     Abstract.Pattern pattern = con.getPatterns().get(index);
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
-      DefinitionPair member = name == null ? null : myNameResolver.locateName(name, myStatic);
+      if (name == null)
+        return;
+      DefinitionPair member = myNameResolver.locateName(name, myStatic);
       if (member != null && (member.definition instanceof Constructor || member.abstractDefinition instanceof Abstract.Constructor)) {
-        con.replacePatternWithConstructor(index);
-      } else {
-        myContext.add(name);
+        List<Abstract.Argument> args = new ArrayList<>();
+        args.addAll(member.definition != null ? ((Constructor) member.definition).getArguments() : ((Abstract.Constructor) member.abstractDefinition).getArguments());
+        boolean hasExplicit = false;
+        for (Abstract.Argument arg : args) {
+          if (arg.getExplicit())
+            hasExplicit = true;
+        }
+        if (!hasExplicit) {
+          con.replacePatternWithConstructor(index);
+          return;
+        }
       }
-    } else
-    if (pattern instanceof Abstract.ConstructorPattern) {
+      myContext.add(name);
+    } else if (pattern instanceof Abstract.ConstructorPattern) {
       List<? extends Abstract.Pattern> patterns = ((Abstract.ConstructorPattern) pattern).getPatterns();
       for (int i = 0; i < patterns.size(); ++i) {
         visitPattern((Abstract.ConstructorPattern) pattern, i);
       }
-    } else {
+    } else if (!(pattern instanceof Abstract.AnyConstructorPattern)) {
       throw new IllegalStateException();
     }
   }
