@@ -12,9 +12,13 @@ public class ParserError extends GeneralError {
     myPosition = position;
   }
 
+  public ParserError(Concrete.Position position, String message) {
+    this(null, position, message);
+  }
+
   @Override
   public String toString() {
-    String msg = getNamespace() + ":" + myPosition.line + ":" + myPosition.column + ": Parser error";
+    String msg = printHeader() + myPosition.line + ":" + myPosition.column + ": Parser error";
     if (getMessage() != null) {
       msg += ": " + getMessage();
     }

@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
+import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+
 import java.util.ArrayList;
 import java.util.List;
 

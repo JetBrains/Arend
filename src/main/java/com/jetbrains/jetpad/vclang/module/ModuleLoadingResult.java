@@ -1,15 +1,13 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-
 public class ModuleLoadingResult {
   public Namespace namespace;
-  public ClassDefinition classDefinition;
+  public DefinitionPair definition;
   public boolean compiled;
   public int errorsNumber;
 
-  public ModuleLoadingResult(Namespace namespace, ClassDefinition classDefinition, boolean compiled, int errorsNumber) {
-    this.classDefinition = classDefinition;
+  public ModuleLoadingResult(Namespace namespace, DefinitionPair definition, boolean compiled, int errorsNumber) {
+    this.definition = definition;
     this.compiled = compiled;
     this.namespace = namespace;
     this.errorsNumber = errorsNumber;

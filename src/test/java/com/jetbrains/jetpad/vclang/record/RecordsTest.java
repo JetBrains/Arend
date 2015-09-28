@@ -11,46 +11,46 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDefs;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DefCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class RecordsTest {
   @Test
   public void recordTest() {
-    parseDefs("\\static \\class B { \\function f : Nat -> \\Type0 \\function g : f 0 } \\static \\function f (p : B) : p.f 0 => p.g ");
+    typeCheckClass("\\static \\class B { \\function f : Nat -> \\Type0 \\function g : f 0 } \\static \\function f (p : B) : p.f 0 => p.g ");
   }
 
   @Test
   public void unknownExtTestError() {
-    parseDefs("\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x => 0 \\override z => 0 \\override y => 0 }", 1);
+    typeCheckClass("\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x => 0 \\override z => 0 \\override y => 0 }", 1);
   }
 
   @Test
   public void typeMismatchMoreTestError() {
-    parseDefs("\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x (a : Nat) => a }", 1);
+    typeCheckClass("\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x (a : Nat) => a }", 1);
   }
 
   @Test
   public void typeMismatchLessTest() {
-    parseDefs("\\static \\class C { \\function f (x y z : Nat) : Nat } \\static \\function D => C { \\override f a => \\lam z w => z }");
+    typeCheckClass("\\static \\class C { \\function f (x y z : Nat) : Nat } \\static \\function D => C { \\override f a => \\lam z w => z }");
   }
 
   @Test
   public void argTypeMismatchTestError() {
-    parseDefs("\\static \\class C { \\function f (a : Nat) : Nat } \\static \\function D => C { \\override f (a : Nat -> Nat) => 0 }", 1);
+    typeCheckClass("\\static \\class C { \\function f (a : Nat) : Nat } \\static \\function D => C { \\override f (a : Nat -> Nat) => 0 }", 1);
   }
 
   @Test
   public void resultTypeMismatchTestError() {
-    parseDefs("\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x => \\lam (t : Nat) => t }", 1);
+    typeCheckClass("\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x => \\lam (t : Nat) => t }", 1);
   }
 
   @Test
   public void parentCallTest() {
-    parseDefs(
+    typeCheckClass(
         "\\static \\class A {\n" +
           "\\function c : Nat -> Nat -> Nat\n" +
           "\\function f : Nat -> Nat\n" +
@@ -62,12 +62,12 @@ public class RecordsTest {
 
   @Test
   public void recursiveTestError() {
-    parseDefs("\\static \\class A { \\function f : Nat -> Nat } \\static \\function B => A { \\override f n <= \\elim n | zero => zero | suc n' => f (suc n') }", 1);
+    typeCheckClass("\\static \\class A { \\function f : Nat -> Nat } \\static \\function B => A { \\override f n <= \\elim n | zero => zero | suc n' => f (suc n') }", 1);
   }
 
   @Test
   public void duplicateNameTestError() {
-    parseDefs(
+    typeCheckClass(
         "\\static \\class A {\n" +
           "\\function f : Nat -> Nat\n" +
         "}\n" +
@@ -78,7 +78,7 @@ public class RecordsTest {
 
   @Test
   public void overriddenFieldAccTest() {
-    parseDefs(
+    typeCheckClass(
         "\\static \\class Point {\n" +
           "\\function x : Nat\n" +
           "\\function y : Nat\n" +
@@ -92,7 +92,7 @@ public class RecordsTest {
 
   @Test
   public void newAbstractTestError() {
-    parseDefs(
+    typeCheckClass(
         "\\static \\class Point {\n" +
           "\\function x : Nat\n" +
           "\\function y : Nat\n" +
@@ -105,7 +105,7 @@ public class RecordsTest {
 
   @Test
   public void newTest() {
-    parseDefs(
+    typeCheckClass(
         "\\static \\class Point {\n" +
           "\\function x : Nat\n" +
           "\\function y : Nat\n" +
@@ -123,7 +123,7 @@ public class RecordsTest {
 
   @Test
   public void mutualRecursionTestError() {
-    parseDefs(
+    typeCheckClass(
         "\\static \\class Point {\n" +
           "\\function x : Nat\n" +
           "\\function y : Nat\n" +
@@ -136,7 +136,7 @@ public class RecordsTest {
 
   @Test
   public void splitClassTestError() {
-    parseDefs(
+    typeCheckClass(
         "\\static \\class A {\n" +
           "\\static \\function x => 0\n" +
         "}\n" +
@@ -147,14 +147,14 @@ public class RecordsTest {
 
   @Test
   public void recordUniverseTest() {
-    ClassDefinition result = parseDefs("\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x => 0 }");
+    ClassDefinition result = typeCheckClass("\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x => 0 }");
     assertEquals(new Universe.Type(0, Universe.Type.SET), result.getNamespace().getDefinition("Point").getUniverse());
     assertEquals(new Universe.Type(0, Universe.Type.SET), result.getNamespace().getDefinition("C").getUniverse());
   }
 
   @Test
   public void recordConstructorsTest() {
-    ClassDefinition classDef = parseDefs("\\static \\class A { \\function x : Nat \\data Foo | foo (x = 0) \\function y : foo = foo } \\static \\function test (p : A) => p.y");
+    ClassDefinition classDef = typeCheckClass("\\static \\class A { \\function x : Nat \\data Foo | foo (x = 0) \\function y : foo = foo } \\static \\function test (p : A) => p.y");
     Expression resultType = ((FunctionDefinition) classDef.getNamespace().getDefinition("test")).getResultType();
     List<Expression> arguments = new ArrayList<>(3);
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
@@ -190,7 +190,7 @@ public class RecordsTest {
 
   @Test
   public void recordConstructorsParametersTest() {
-    ClassDefinition classDef = parseDefs(
+    ClassDefinition classDef = typeCheckClass(
       "\\static \\class A {\n" +
         "\\function x : Nat\n" +
         "\\data Foo (p : x = x) | foo (p = p)\n" +

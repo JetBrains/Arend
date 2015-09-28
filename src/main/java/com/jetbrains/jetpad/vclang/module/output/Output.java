@@ -10,6 +10,6 @@ public interface Output {
   boolean canRead();
   boolean canWrite();
   long lastModified();
-  ModuleLoadingResult read(Namespace namespace) throws IOException;
+  ModuleLoadingResult read() throws IOException;
   void write(Namespace namespace, ClassDefinition classDefinition) throws IOException;
 }

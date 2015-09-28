@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
@@ -15,7 +16,7 @@ import java.util.List;
 
 public class DefCallExpression extends Expression implements Abstract.DefCallExpression {
   private final Expression myExpression;
-  private final Definition myDefinition;
+  private Definition myDefinition;
   private List<Expression> myParameters;
 
   public DefCallExpression(Expression expression, Definition definition, List<Expression> parameters) {
@@ -38,6 +39,10 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   }
 
   @Override
+  public DefinitionPair getDefinitionPair() {
+    return new DefinitionPair(myDefinition.getNamespace(), null, myDefinition);
+  }
+
   public Definition getDefinition() {
     return myDefinition;
   }
@@ -45,6 +50,11 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   @Override
   public Utils.Name getName() {
     return myDefinition.getName();
+  }
+
+  @Override
+  public void replaceWithDefCall(DefinitionPair definition) {
+    throw new IllegalStateException();
   }
 
   @Override

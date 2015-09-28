@@ -33,7 +33,6 @@ public abstract class Definition extends Binding implements Abstract.Definition,
     myPrecedence = precedence;
   }
 
-  @Override
   public Universe getUniverse() {
     return myUniverse;
   }
@@ -50,7 +49,7 @@ public abstract class Definition extends Binding implements Abstract.Definition,
     myHasErrors = has;
   }
 
-  public boolean isAbstract() {
+ public boolean isAbstract() {
     return false;
   }
 

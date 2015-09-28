@@ -2,8 +2,10 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
@@ -60,16 +62,16 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
       removeFromList(myNames, def.getArguments());
     }
 
-    if (!def.getFields().isEmpty()) {
+    if (!def.getStatements().isEmpty()) {
       myBuilder.append("\n");
       PrettyPrintVisitor.printIndent(myBuilder, myIndent);
       myBuilder.append("\\where ");
       myIndent += "\\where ".length();
       boolean isFirst = true;
-      for (Abstract.Definition nestedDef : def.getFields()) {
+      for (Abstract.Statement statement : def.getStatements()) {
         if (!isFirst)
           PrettyPrintVisitor.printIndent(myBuilder, myIndent);
-        nestedDef.accept(this, null);
+        statement.accept(new StatementPrettyPrintVisitor(myBuilder, myNames, myIndent), null);
         myBuilder.append("\n");
         isFirst = false;
       }
@@ -147,12 +149,14 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
     myBuilder.append("\\class ").append(def.getName()).append(" {");
-    if (def.getFields() != null) {
+    Collection<? extends Abstract.Statement> statements = def.getStatements();
+    if (statements != null) {
       ++myIndent;
-      for (Abstract.Definition field : def.getFields()) {
+      StatementPrettyPrintVisitor visitor = new StatementPrettyPrintVisitor(myBuilder, myNames, myIndent);
+      for (Abstract.Statement statement : statements) {
         myBuilder.append('\n');
         PrettyPrintVisitor.printIndent(myBuilder, myIndent);
-        field.accept(this, null);
+        statement.accept(visitor, null);
         myBuilder.append('\n');
       }
       --myIndent;

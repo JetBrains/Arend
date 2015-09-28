@@ -87,10 +87,10 @@ public class Utils {
   }
 
   public static class ContextSaver implements Closeable {
-    private final List<Binding> myContext;
+    private final List myContext;
     private final int myOldContextSize;
 
-    public ContextSaver(List<Binding> context) {
+    public ContextSaver(List context) {
       myContext = context;
       myOldContextSize = context.size();
     }
@@ -102,13 +102,21 @@ public class Utils {
     }
   }
 
-  public static class CompleteContextSaver implements Closeable {
-    private final List<Binding> myContext;
-    private final List<Binding> myOldContext;
+  public static class CompleteContextSaver<T> implements Closeable {
+    private final List<T> myContext;
+    private final List<T> myOldContext;
 
-    public CompleteContextSaver(List<Binding> context) {
+    public CompleteContextSaver(List<T> context) {
       myContext = context;
       myOldContext = new ArrayList<>(context);
+    }
+
+    public List<T> getCurrentContext() {
+      return myContext;
+    }
+
+    public List<T> getOldContext() {
+      return myOldContext;
     }
 
     @Override
@@ -214,7 +222,7 @@ public class Utils {
     PrettyPrintVisitor.printIndent(builder, indent);
     builder.append("| ");
     List<String> newNames;
-    if (elimExpr.getExpressions().get(0) instanceof Abstract.IndexExpression) {
+    if (elimExpr != null && elimExpr.getExpressions().get(0) instanceof Abstract.IndexExpression) {
       int highestCtxIndex = names.size() - 1 - ((Abstract.IndexExpression) elimExpr.getExpressions().get(0)).getIndex();
       names.addAll(0, Collections.<String>nCopies(Math.max(0, -highestCtxIndex), null));
       highestCtxIndex = Math.max(0, highestCtxIndex);
@@ -286,7 +294,7 @@ public class Utils {
 
     public Name(String name) {
       this.name = name;
-      this.fixity = Abstract.Definition.Fixity.PREFIX;
+      this.fixity = name.isEmpty() || Character.isJavaIdentifierStart(name.charAt(0)) ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
     }
 
     public String getPrefixName() {

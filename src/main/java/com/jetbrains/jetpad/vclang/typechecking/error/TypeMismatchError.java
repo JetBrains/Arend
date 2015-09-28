@@ -15,6 +15,12 @@ public class TypeMismatchError extends TypeCheckingError {
     myActual = actual;
   }
 
+  public TypeMismatchError(Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
+    super(null, expression, names);
+    myExpected = expected;
+    myActual = actual;
+  }
+
   @Override
   public String toString() {
     String message = printHeader();

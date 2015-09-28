@@ -23,7 +23,7 @@ public class DummyOutput implements Output {
   }
 
   @Override
-  public ModuleLoadingResult read(Namespace namespace) throws IOException {
+  public ModuleLoadingResult read() throws IOException {
     return null;
   }
 

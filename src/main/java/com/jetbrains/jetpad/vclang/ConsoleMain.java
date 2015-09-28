@@ -4,9 +4,8 @@ import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
-import com.jetbrains.jetpad.vclang.typechecking.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -71,7 +70,7 @@ public class ConsoleMain {
       }
 
       @Override
-      public void loadingSucceeded(Namespace namespace, ClassDefinition classDefinition, boolean compiled) {
+      public void loadingSucceeded(Namespace namespace, DefinitionPair definitionPair, boolean compiled) {
         if (compiled) {
           System.out.println("[OK] " + namespace.getFullName());
         } else {

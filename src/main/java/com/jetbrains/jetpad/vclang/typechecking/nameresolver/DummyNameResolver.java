@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
+import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 
 public class DummyNameResolver implements NameResolver {
   private DummyNameResolver() {
@@ -14,12 +14,12 @@ public class DummyNameResolver implements NameResolver {
   }
 
   @Override
-  public NamespaceMember locateName(String name) {
+  public DefinitionPair locateName(String name, boolean isStatic) {
     return null;
   }
 
   @Override
-  public NamespaceMember getMember(Namespace parent, String name) {
+  public DefinitionPair getMember(Namespace parent, String name) {
     return parent.getMember(name);
   }
 }

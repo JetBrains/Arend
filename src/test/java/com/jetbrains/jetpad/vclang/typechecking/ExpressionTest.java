@@ -9,57 +9,50 @@ import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
-import com.jetbrains.jetpad.vclang.typechecking.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
-import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseExpr;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static org.junit.Assert.*;
 
 public class ExpressionTest {
-  Collection<? extends GeneralError> typeCheckExpr(String expr, Expression expectedType) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    parseExpr(expr).accept(new CheckTypeVisitor(null, new ArrayList<Binding>(), errorReporter), expectedType);
-    return errorReporter.getErrorList();
-  }
-
   @Test
   public void typeCheckingLam() {
     // \x. x : Nat -> Nat
-    assertEquals(0, typeCheckExpr("\\lam x => x", Pi(Nat(), Nat())).size());
+    typeCheckExpr("\\lam x => x", Pi(Nat(), Nat()));
   }
 
   @Test
   public void typeCheckingLamError() {
     // \x. x : Nat -> Nat -> Nat
-    assertEquals(1, typeCheckExpr("\\lam x => x", Pi(Nat(), Pi(Nat(), Nat()))).size());
+    typeCheckExpr("\\lam x => x", Pi(Nat(), Pi(Nat(), Nat())), 1);
   }
 
   @Test
   public void typeCheckingId() {
     // \X x. x : (X : Type0) -> X -> X
-    assertEquals(0, typeCheckExpr("\\lam X x => x", Pi("X", Universe(0), Pi(Index(0), Index(0)))).size());
+    typeCheckExpr("\\lam X x => x", Pi("X", Universe(0), Pi(Index(0), Index(0))));
   }
 
   @Test
   public void typeCheckingIdError() {
     // \X x. X : (X : Type0) -> X -> X
-    Collection<? extends GeneralError> errors = typeCheckExpr("\\lam X x => X", Pi("X", Universe(0), Pi(Index(0), Index(0))));
-    assertEquals(1, errors.size());
-    assertTrue(errors.iterator().next() instanceof TypeMismatchError);
+    ListErrorReporter errorReporter = new ListErrorReporter();
+    typeCheckExpr("\\lam X x => X", Pi("X", Universe(0), Pi(Index(0), Index(0))), errorReporter);
+    assertEquals(1, errorReporter.getErrorList().size());
+    assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
   }
 
   @Test
   public void typeCheckingApp() {
     // \x y. y (y x) : Nat -> (Nat -> Nat) -> Nat
-    assertEquals(0, typeCheckExpr("\\lam x y => y (y x)", Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat()))).size());
+    typeCheckExpr("\\lam x y => y (y x)", Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
   }
 
   @Test
@@ -222,13 +215,13 @@ public class ExpressionTest {
 
   @Test
   public void caseTranslation() {
-    FunctionDefinition def = (FunctionDefinition) parseDef("\\function test (n : Nat) : Nat => \\case n, n | zero, _ => 0 | suc y, _ => y");
-    FunctionDefinition def2 = (FunctionDefinition) parseDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat <= \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) : Nat => \\case n, n | zero, _ => 0 | suc y, _ => y");
+    FunctionDefinition def2 = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat <= \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
     assertEquals(def.getTerm(), def2.getTerm());
   }
 
   @Test
   public void caseNoExpectedError() {
-    parseDef("\\function test => \\case 1 | zero => 0 | suc y => y", 1);
+    typeCheckDef("\\function test => \\case 1 | zero => 0 | suc y => y", 1);
   }
 }

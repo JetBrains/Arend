@@ -1,9 +1,11 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -14,6 +16,10 @@ public final class Abstract {
 
   public interface SourceNode {}
   public interface PrettyPrintableSourceNode extends SourceNode, PrettyPrintable {}
+
+  public interface Identifier extends SourceNode {
+    Utils.Name getName();
+  }
 
   public interface Expression extends PrettyPrintableSourceNode {
     byte PREC = -12;
@@ -58,17 +64,16 @@ public final class Abstract {
     return expr;
   }
 
-  public interface DefCallExpression extends Expression {
+  public interface DefCallExpression extends VarExpression {
     byte PREC = 12;
     Expression getExpression();
-    com.jetbrains.jetpad.vclang.term.definition.Definition getDefinition();
-    Utils.Name getName();
+    DefinitionPair getDefinitionPair();
   }
 
   public interface ClassExtExpression extends Expression {
     byte PREC = 12;
-    com.jetbrains.jetpad.vclang.term.definition.ClassDefinition getBaseClass();
-    Collection<? extends FunctionDefinition> getDefinitions();
+    Expression getBaseClassExpression();
+    Collection<? extends Statement> getStatements();
   }
 
   public interface NewExpression extends Expression {
@@ -79,7 +84,6 @@ public final class Abstract {
   public interface IndexExpression extends Expression {
     byte PREC = 12;
     int getIndex();
-
   }
 
   public interface LamExpression extends Expression {
@@ -115,9 +119,27 @@ public final class Abstract {
   }
 
   public interface BinOpExpression extends Expression {
-    com.jetbrains.jetpad.vclang.term.definition.Definition getBinOp();
+    DefinitionPair getBinOp();
     Expression getLeft();
     Expression getRight();
+  }
+
+  public static class BinOpSequenceElem {
+    public VarExpression binOp;
+    public Expression argument;
+
+    public BinOpSequenceElem(VarExpression binOp, Expression argument) {
+      this.binOp = binOp;
+      this.argument = argument;
+    }
+  }
+
+  public interface BinOpSequenceExpression extends Expression {
+    byte PREC = 0;
+    Expression getLeft();
+    List<BinOpSequenceElem> getSequence();
+    BinOpExpression makeBinOp(Expression left, DefinitionPair definition, VarExpression var, Expression right);
+    void replace(Expression expression);
   }
 
   public interface UniverseExpression extends Expression {
@@ -127,7 +149,8 @@ public final class Abstract {
 
   public interface VarExpression extends Expression {
     byte PREC = 12;
-    String getName();
+    Utils.Name getName();
+    void replaceWithDefCall(DefinitionPair definition);
   }
 
   public interface InferHoleExpression extends Expression {
@@ -157,14 +180,22 @@ public final class Abstract {
     int getField();
   }
 
-  public interface Clause extends PrettyPrintableSourceNode {
-    List<? extends Pattern> getPatterns();
+  public interface Clause extends PatternContainer, PrettyPrintableSourceNode {
     Definition.Arrow getArrow();
     Expression getExpression();
   }
 
   public interface Binding extends SourceNode {
     Utils.Name getName();
+  }
+
+  public interface Statement extends SourceNode {
+    <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params);
+  }
+
+  public interface DefineStatement extends Statement {
+    boolean isStatic();
+    Definition getDefinition();
   }
 
   public interface Definition extends Binding {
@@ -201,7 +232,6 @@ public final class Abstract {
 
     Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
-    Universe getUniverse();
     Precedence getPrecedence();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
@@ -217,16 +247,17 @@ public final class Abstract {
     boolean isAbstract();
     boolean isOverridden();
     Utils.Name getOriginalName();
-    Collection<? extends Definition> getFields();
+    Collection<? extends Statement> getStatements();
   }
 
   public interface DataDefinition extends Definition {
     List<? extends TypeArgument> getParameters();
     List<? extends Constructor> getConstructors();
+    Universe getUniverse();
   }
 
   public interface ClassDefinition extends Definition {
-    Collection<? extends Definition> getFields();
+    Collection<? extends Statement> getStatements();
   }
 
   public interface Pattern extends PrettyPrintableSourceNode {
@@ -237,16 +268,27 @@ public final class Abstract {
     String getName();
   }
 
-  public interface ConstructorPattern extends Pattern {
+  public interface ConstructorPattern extends Pattern, PatternContainer {
     Utils.Name getConstructorName();
-    List<? extends Pattern> getArguments();
   }
 
   public interface AnyConstructorPattern extends Pattern {}
 
-  public interface Constructor extends Definition {
+  public interface PatternContainer {
+    List<? extends Pattern> getPatterns();
+    void replacePatternWithConstructor(int index);
+  }
+
+  public interface Constructor extends Definition, PatternContainer {
     List<? extends TypeArgument> getArguments();
     DataDefinition getDataType();
-    List<? extends Pattern> getPatterns();
+  }
+
+  public interface NamespaceCommandStatement extends Statement {
+    enum Kind { OPEN, CLOSE, EXPORT }
+
+    Kind getKind();
+    List<? extends Identifier> getPath();
+    List<? extends Identifier> getNames();
   }
 }

@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 public class RootModule {
-  public static Namespace ROOT = new Namespace(new Utils.Name("\\root"), null);
+  public static Namespace ROOT = new Namespace("\\root");
 
   public static void initialize() {
     Prelude.PRELUDE.setParent(ROOT);

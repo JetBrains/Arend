@@ -12,9 +12,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 
 class PatternExpansion {
   static class Result {
@@ -32,7 +30,7 @@ class PatternExpansion {
       return new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit());
     } else if (pattern instanceof ConstructorPattern) {
       Expression resultExpression = DefCall(((ConstructorPattern) pattern).getConstructor());
-      for (Pattern nestedPattern : ((ConstructorPattern) pattern).getArguments())
+      for (Pattern nestedPattern : ((ConstructorPattern) pattern).getPatterns())
         resultExpression = Apps(resultExpression.liftIndex(0, getNumArguments(nestedPattern)), expandPattern(nestedPattern));
 
       return new ArgumentExpression(resultExpression, pattern.getExplicit(), !pattern.getExplicit());
@@ -51,7 +49,7 @@ class PatternExpansion {
       List<Expression> parameters = new ArrayList<>();
       type.normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
       Collections.reverse(parameters);
-      List<Result> nestedResults = expandPatterns(constructorPattern.getArguments(), getConstructorArguments(constructorPattern, parameters));
+      List<Result> nestedResults = expandPatterns(constructorPattern.getPatterns(), getConstructorArguments(constructorPattern, parameters));
 
       Expression resultExpression = DefCall(null, constructorPattern.getConstructor(), parameters);
       List<TypeArgument> resultArgs = new ArrayList<>();

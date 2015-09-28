@@ -18,6 +18,12 @@ public class TypeCheckingError extends GeneralError {
     myNames = names;
   }
 
+  public TypeCheckingError(String message, Abstract.SourceNode expression, List<String> names) {
+    super(message);
+    myExpression = expression;
+    myNames = names;
+  }
+
   public static List<String> getNames(List<? extends Abstract.Binding> context) {
     List<String> names = new ArrayList<>(context.size());
     for (Abstract.Binding binding : context) {

@@ -4,30 +4,39 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.statement.DefineStatement;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class ClassExtExpression extends Expression implements Abstract.ClassExtExpression {
-  private final ClassDefinition myBaseClass;
+  private final DefCallExpression myBaseClassExpression;
   private final Map<FunctionDefinition, OverriddenDefinition> myDefinitions;
   private final Universe myUniverse;
 
-  public ClassExtExpression(ClassDefinition baseClass, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
-    myBaseClass = baseClass;
+  public ClassExtExpression(DefCallExpression baseClassExpression, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
+    myBaseClassExpression = baseClassExpression;
     myDefinitions = definitions;
     myUniverse = universe;
   }
 
   @Override
+  public DefCallExpression getBaseClassExpression() {
+    return myBaseClassExpression;
+  }
+
   public ClassDefinition getBaseClass() {
-    return myBaseClass;
+    return (ClassDefinition) myBaseClassExpression.getDefinition();
   }
 
   @Override
-  public Collection<OverriddenDefinition> getDefinitions() {
-    return myDefinitions.values();
+  public List<DefineStatement> getStatements() {
+    List<DefineStatement> statements = new ArrayList<>(myDefinitions.size());
+    for (OverriddenDefinition overriddenDefinition : myDefinitions.values()) {
+      statements.add(new DefineStatement(overriddenDefinition, false));
+    }
+    return statements;
   }
 
   public Map<FunctionDefinition, OverriddenDefinition> getDefinitionsMap() {

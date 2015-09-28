@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
+import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +11,12 @@ public class CompositeNameResolver implements NameResolver {
 
   public CompositeNameResolver() {
     myNameResolvers = new ArrayList<>(2);
+  }
+
+  public CompositeNameResolver(NameResolver nameResolver1, NameResolver nameResolver2) {
+    myNameResolvers = new ArrayList<>(2);
+    myNameResolvers.add(nameResolver1);
+    myNameResolvers.add(nameResolver2);
   }
 
   public CompositeNameResolver(List<NameResolver> nameResolvers) {
@@ -26,9 +32,9 @@ public class CompositeNameResolver implements NameResolver {
   }
 
   @Override
-  public NamespaceMember locateName(String name) {
+  public DefinitionPair locateName(String name, boolean isStatic) {
     for (int i = myNameResolvers.size() - 1; i >= 0; --i) {
-      NamespaceMember result = myNameResolvers.get(i).locateName(name);
+      DefinitionPair result = myNameResolvers.get(i).locateName(name, isStatic);
       if (result != null) {
         return result;
       }
@@ -37,9 +43,9 @@ public class CompositeNameResolver implements NameResolver {
   }
 
   @Override
-  public NamespaceMember getMember(Namespace parent, String name) {
+  public DefinitionPair getMember(Namespace parent, String name) {
     for (int i = myNameResolvers.size() - 1; i >= 0; --i) {
-      NamespaceMember result = myNameResolvers.get(i).getMember(parent, name);
+      DefinitionPair result = myNameResolvers.get(i).getMember(parent, name);
       if (result != null) {
         return result;
       }
