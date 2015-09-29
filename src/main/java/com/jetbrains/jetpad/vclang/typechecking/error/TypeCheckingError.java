@@ -48,7 +48,9 @@ public class TypeCheckingError extends GeneralError {
     String msg = super.printHeader();
     if (myExpression instanceof Concrete.SourceNode) {
       Concrete.Position position = ((Concrete.SourceNode) myExpression).getPosition();
-      msg += position.line + ":" + position.column + ": ";
+      if (position != null) {
+        msg += position.line + ":" + position.column + ": ";
+      }
     }
     return msg;
   }
