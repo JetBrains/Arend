@@ -45,9 +45,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       expr.getExpression().accept(this, null);
     }
 
-    if (expr.getDefinitionPair() != null) {
-      // TODO
-    } else {
+    if (expr.getDefinitionPair() == null) {
       if (expr.getExpression() != null) {
         if (expr.getExpression() instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr.getExpression()).getExpression() == null) {
           if (((Abstract.DefCallExpression) expr.getExpression()).getDefinitionPair() == null) {

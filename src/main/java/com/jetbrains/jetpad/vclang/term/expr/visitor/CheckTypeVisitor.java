@@ -557,11 +557,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private Result typeCheckDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     ClassDefinition parent = null;
     OKResult result = null;
-    if (expr.getDefinitionPair() == null) {
-      if (expr.getExpression() == null) {
-        return visitVar(expr, expectedType);
-      }
 
+    if (expr.getExpression() != null) {
       Result exprResult = typeCheck(expr.getExpression(), null);
       if (!(exprResult instanceof OKResult)) return exprResult;
       OKResult okExprResult = (OKResult) exprResult;
@@ -656,6 +653,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return null;
       }
     } else {
+      if (expr.getDefinitionPair() == null) {
+        return visitVar(expr, expectedType);
+      }
+
       if (expr.getDefinitionPair().definition == null) {
         DefinitionPair member = expr.getDefinitionPair().namespace.getParent().getMember(expr.getDefinitionPair().namespace.getName().name);
         if (member == null) {
@@ -1248,6 +1249,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
         } else if (matchResult instanceof PatternMatchOKResult) {
           matchedParameters = ((PatternMatchOKResult) matchResult).expressions;
+        } else {
+          throw new IllegalStateException();
         }
 
         if (error != null) {

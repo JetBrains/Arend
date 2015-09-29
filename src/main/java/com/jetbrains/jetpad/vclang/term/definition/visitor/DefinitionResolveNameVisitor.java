@@ -21,7 +21,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<V
 
   public DefinitionResolveNameVisitor(ErrorReporter errorReporter, Namespace namespace, NameResolver nameResolver) {
     this(errorReporter, namespace, null, new CompositeNameResolver(), new ArrayList<String>());
-    myNameResolver.pushNameResolver(nameResolver);
+    if (nameResolver != DummyNameResolver.getInstance()) {
+      myNameResolver.pushNameResolver(nameResolver);
+    }
   }
 
   public DefinitionResolveNameVisitor(ErrorReporter errorReporter, Namespace staticNamespace, Namespace dynamicNamespace, CompositeNameResolver nameResolver, List<String> context) {

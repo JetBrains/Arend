@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandConstructorParameters;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
@@ -253,13 +252,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
         if (termResult == null) {
           typedDef.setTerm(null);
         }
-      } /* TODO
-      else {
-      if (definition.getParent() == namespace) {
-        myErrorReporter.report(new GeneralError("Static abstract definition"));
-        return false;
       }
-    } */
 
       if (typedDef.getTerm() != null || typedDef.isAbstract()) {
         typedDef.hasErrors(false);
@@ -325,16 +318,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
 
       myNamespace = dataDefinition.getNamespace();
       for (Abstract.Constructor constructor : def.getConstructors()) {
+        Constructor typedConstructor = visitConstructor(constructor, dataDefinition);
+        if (typedConstructor == null) {
+          continue;
+        }
+
         DefinitionPair member = myNamespace.getMember(constructor.getName().name);
         if (member == null) {
           member = new DefinitionPair(myNamespace.getChild(constructor.getName()), constructor, null);
           myNamespace.addMember(member);
         }
-        member.definition = visitConstructor(constructor, dataDefinition);
-        if (member.definition == null) {
-          // TODO
-          continue;
-        }
+        member.definition = typedConstructor;
 
         Universe maxUniverse = universe.max(member.definition.getUniverse());
         if (maxUniverse == null) {
@@ -430,14 +424,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
         return null;
       }
 
-      // TODO: Do not create child namespace if the definition does not type check.
-      Constructor constructor = new Constructor(dataDefinition.getNamespace().getChild(def.getName()), def.getPrecedence(), universe, arguments, dataDefinition, patterns);
-      for (int j = 0; j < constructor.getArguments().size(); ++j) {
-        Expression type = constructor.getArguments().get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
+      for (int j = 0; j < arguments.size(); ++j) {
+        Expression type = arguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
             if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition))) {
-              String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + constructor.getName();
+              String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + def.getName();
               myErrorReporter.report(new TypeCheckingError(dataDefinition.getNamespace().getParent(), msg, def.getArguments().get(j).getType(), getNames(myContext)));
               return null;
             }
@@ -449,13 +441,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
         type.getFunction(exprs);
         for (Expression expr : exprs) {
           if (expr.accept(new FindDefCallVisitor(dataDefinition))) {
-            String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + constructor.getName();
+            String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + def.getName();
             myErrorReporter.report(new TypeCheckingError(dataDefinition.getNamespace().getParent(), msg, def.getArguments().get(j).getType(), getNames(myContext)));
             return null;
           }
         }
       }
 
+      Constructor constructor = new Constructor(dataDefinition.getNamespace().getChild(def.getName()), def.getPrecedence(), universe, arguments, dataDefinition, patterns);
       dataDefinition.addConstructor(constructor);
       dataDefinition.getNamespace().getParent().addDefinition(constructor);
       return constructor;
