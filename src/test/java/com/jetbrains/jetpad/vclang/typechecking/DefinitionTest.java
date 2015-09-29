@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -30,14 +30,18 @@ public class DefinitionTest {
     errorReporter = new ListErrorReporter();
   }
 
+  private Definition typeCheckDefinition(Definition definition) {
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(definition.getNamespace().getParent(), errorReporter);
+    visitor.setDefinitionPair(definition.getNamespace().getParent().getMember(definition.getName().name));
+    return definition.accept(visitor, null);
+  }
+
   @Test
   public void function() {
     // f : N => 0;
     FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Utils.Name("test")).getChild(new Utils.Name("f")), null, Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
-    List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(errorReporter, def.getNamespace().getParent(), null, def, localContext, null);
+    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
-    TypeChecking.typeCheckFunctionEnd(errorReporter, def.getTerm(), typedDef, localContext, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());
   }
@@ -46,10 +50,8 @@ public class DefinitionTest {
   public void functionUntyped() {
     // f => 0;
     FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Utils.Name("test")).getChild(new Utils.Name("f")), null, Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
-    List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(errorReporter, def.getNamespace().getParent(), null, def, localContext, null);
+    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
-    TypeChecking.typeCheckFunctionEnd(errorReporter, def.getTerm(), typedDef, localContext, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(def.hasErrors());
     assertEquals(Nat(), typedDef.getType());
@@ -63,10 +65,8 @@ public class DefinitionTest {
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
 
     FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Utils.Name("test")).getChild(new Utils.Name("f")), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, null, Definition.Arrow.RIGHT, Index(0));
-    List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedDef = TypeChecking.typeCheckFunctionBegin(errorReporter, def.getNamespace().getParent(), null, def, localContext, null);
+    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
-    TypeChecking.typeCheckFunctionEnd(errorReporter, def.getTerm(), typedDef, localContext, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), typedDef.getType());
@@ -93,13 +93,8 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
     def.addConstructor(new Constructor(def.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
 
-    List<Binding> localContext = new ArrayList<>();
-    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(errorReporter, def.getNamespace().getParent(), null, def, localContext);
+    DataDefinition typedDef = (DataDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
-    for (int i = 0; i < def.getConstructors().size(); i++) {
-      TypeChecking.typeCheckConstructor(errorReporter, typedDef, def.getConstructors().get(i), localContext, i);
-    }
-    TypeChecking.typeCheckDataEnd(errorReporter, def.getNamespace().getParent(), def, typedDef, localContext);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(parameters, Universe(0)), typedDef.getType());
@@ -127,13 +122,8 @@ public class DefinitionTest {
     arguments2.add(TypeArg(Index(1)));
     def.addConstructor(new Constructor(def.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
 
-    List<Binding> localContext = new ArrayList<>();
-    DataDefinition typedDef = TypeChecking.typeCheckDataBegin(errorReporter, def.getNamespace().getParent(), null, def, localContext);
+    DataDefinition typedDef = (DataDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
-    for (int i = 0; i < def.getConstructors().size(); i++) {
-      TypeChecking.typeCheckConstructor(errorReporter, typedDef, def.getConstructors().get(i), localContext, i);
-    }
-    TypeChecking.typeCheckDataEnd(errorReporter, def.getNamespace().getParent(), def, typedDef, localContext);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(parameters, Universe(6, 7)), typedDef.getType());
@@ -243,30 +233,30 @@ public class DefinitionTest {
   public void patternLift() {
     typeCheckClass(
         "\\data D (n : Nat) | D (zero) => d\n" +
-        "\\data C (m : Nat) (n : Nat) (D m) | C (zero) (zero) (d) => c");
+            "\\data C (m : Nat) (n : Nat) (D m) | C (zero) (zero) (d) => c");
   }
 
   @Test
   public void patternLiftError() {
     typeCheckClass(
         "\\data D (n : Nat) | D (zero) => d\n" +
-        "\\data C (m : Nat) (n : Nat) (D m) | C _ (zero) (d) => c", 1);
+            "\\data C (m : Nat) (n : Nat) (D m) | C _ (zero) (d) => c", 1);
   }
 
   @Test
   public void patternMultipleSubst() {
     typeCheckClass(
         "\\data D (n : Nat) (m : Nat) | d (n = n) (m = m)\n" +
-        "\\data C | c (n m : Nat) (D n m)\n" +
-        "\\data E C | E (c (zero) (suc (zero)) (d _ _)) => e\n" +
-        "\\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
+            "\\data C | c (n m : Nat) (D n m)\n" +
+            "\\data E C | E (c (zero) (suc (zero)) (d _ _)) => e\n" +
+            "\\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
   }
 
   @Test
   public void patternConstructorDefCall() {
     typeCheckClass(
         "\\data D (n : Nat) (m : Nat) | D (suc n) (suc m) => d (n = n) (m = m)\n" +
-        "\\function test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
+            "\\function test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
   }
 
   @Test
@@ -278,32 +268,32 @@ public class DefinitionTest {
   public void patternSubstTest() {
     typeCheckClass(
         "\\data E (n : Nat) | E (zero) => e\n" +
-        "\\data D (n : Nat) (E n) | D (zero) (e) => d\n" +
-        "\\function test => d");
+            "\\data D (n : Nat) (E n) | D (zero) (e) => d\n" +
+            "\\function test => d");
   }
 
   @Test
   public void patternExpandArgsTest() {
     typeCheckClass(
         "\\data D (n : Nat) | d (n = n)\n" +
-        "\\data C (D 1) | C (d p) => c\n" +
-        "\\function test : C (d (path (\\lam _ => 1))) => c");
+            "\\data C (D 1) | C (d p) => c\n" +
+            "\\function test : C (d (path (\\lam _ => 1))) => c");
   }
 
   @Test
   public void patternNormalizeTest() {
     typeCheckClass(
         "\\data E (x : 0 = 0) | e\n" +
-        "\\data C (n : Nat) | C (suc n) => c (n = n)\n" +
-        "\\data D ((\\lam (x : \\Type0) => x) (C 1)) | D (c p) => x (E p)\n" +
-        "\\function test => x (E (path (\\lam _ => 0))).e");
+            "\\data C (n : Nat) | C (suc n) => c (n = n)\n" +
+            "\\data D ((\\lam (x : \\Type0) => x) (C 1)) | D (c p) => x (E p)\n" +
+            "\\function test => x (E (path (\\lam _ => 0))).e");
   }
 
   @Test
   public void patternTypeCheck() {
     typeCheckClass(
         "\\static \\function f (x : Nat -> Nat) => x 0\n" +
-        "\\static \\data Test (A : \\Set0)\n" +
-          "| Test (suc n) => foo (f n)", 1);
+            "\\static \\data Test (A : \\Set0)\n" +
+            "| Test (suc n) => foo (f n)", 1);
   }
 }

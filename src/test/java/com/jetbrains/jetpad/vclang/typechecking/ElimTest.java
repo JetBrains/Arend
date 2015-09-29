@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.TypeChecking;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -69,10 +69,10 @@ public class ElimTest {
     RootModule.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
     FunctionDefinition function = new FunctionDefinition(RootModule.ROOT.getChild(new Utils.Name("test")).getChild(new Utils.Name("fun")), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
-    List<Binding> localContext = new ArrayList<>();
-    FunctionDefinition typedFun = TypeChecking.typeCheckFunctionBegin(errorReporter, function.getNamespace().getParent(), null, function, localContext, null);
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(function.getNamespace().getParent(), errorReporter);
+    visitor.setDefinitionPair(function.getNamespace().getParent().getMember(function.getName().name));
+    FunctionDefinition typedFun = visitor.visitFunction(function, function.getDynamicNamespace());
     assertNotNull(typedFun);
-    TypeChecking.typeCheckFunctionEnd(errorReporter, function.getTerm(), typedFun, localContext, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedFun.hasErrors());
   }
@@ -184,21 +184,21 @@ public class ElimTest {
   public void elim6() {
     typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
-        "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc _) _ => 1 | d _ (suc _) => 2");
+            "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc _) _ => 1 | d _ (suc _) => 2");
   }
 
   @Test
   public void elim7() {
     typeCheckClass(
-        "\\static \\data D | d Nat Nat\n"+
-        "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc (suc _)) zero => 0", 1);
+        "\\static \\data D | d Nat Nat\n" +
+            "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc (suc _)) zero => 0", 1);
   }
 
   @Test
   public void elim8() {
     ClassDefinition defs = typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
-        "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d _ _ => 1");
+            "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d _ _ => 1");
     FunctionDefinition test = (FunctionDefinition) defs.getNamespace().getMember("test").definition;
     Constructor d = (Constructor) defs.getNamespace().getMember("d").definition;
     Expression call1 = Apps(DefCall(d), Zero(), Index(0));
@@ -211,21 +211,21 @@ public class ElimTest {
   public void elim9() {
     typeCheckClass(
         "\\static \\data D Nat | D (suc n) => d1 | D _ => d | D zero => d0\n" +
-        "\\static \\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d => 0", 1);
+            "\\static \\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d => 0", 1);
   }
 
   @Test
   public void elimEmptyBranch() {
     typeCheckClass(
         "\\static \\data D Nat | D (suc n) => dsuc\n" +
-        "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | zero, _! | suc n, dsuc => 0");
+            "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | zero, _! | suc n, dsuc => 0");
   }
 
   @Test
   public void elimEmptyBranchError() {
     typeCheckClass(
         "\\static \\data D Nat | D (suc n) => dsuc\n" +
-        "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | suc n, _! | zero, _! => 0", 1);
+            "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | suc n, _! | zero, _! => 0", 1);
   }
 
   @Test
@@ -257,25 +257,25 @@ public class ElimTest {
   public void testAuto() {
     typeCheckClass(
         "\\static \\data Empty\n" +
-        "\\static \\function test (n : Nat) (e : Empty) : Empty <= \\elim n, e");
+            "\\static \\function test (n : Nat) (e : Empty) : Empty <= \\elim n, e");
   }
 
   @Test
   public void testAuto1() {
     typeCheckClass(
         "\\static \\data Geq Nat Nat | Geq _ zero => Geq-zero | Geq (suc n) (suc m) => Geq-suc (Geq n m)\n" +
-        "\\static \\function test (n m : Nat) (p : Geq n m) : Nat <= \\elim n, m, p\n" +
-          "| _, zero, Geq-zero => 0\n" +
-          "| suc n, suc m, Geq-suc p => 1");
+            "\\static \\function test (n m : Nat) (p : Geq n m) : Nat <= \\elim n, m, p\n" +
+            "| _, zero, Geq-zero => 0\n" +
+            "| suc n, suc m, Geq-suc p => 1");
   }
 
   @Test
   public void testAutoNonData() {
     typeCheckClass(
         "\\static \\data D Nat | D zero => dcons\n" +
-        "\\static \\data E (n : Nat) (Nat -> Nat) (D n) | econs\n" +
-        "\\static \\function test (n : Nat) (d : D n) (e : E n (\\lam x => x) d) : Nat <= \\elim n, d, e\n" +
-          "| zero, dcons, econs => 1");
+            "\\static \\data E (n : Nat) (Nat -> Nat) (D n) | econs\n" +
+            "\\static \\function test (n : Nat) (d : D n) (e : E n (\\lam x => x) d) : Nat <= \\elim n, d, e\n" +
+            "| zero, dcons, econs => 1");
   }
 
   @Test
