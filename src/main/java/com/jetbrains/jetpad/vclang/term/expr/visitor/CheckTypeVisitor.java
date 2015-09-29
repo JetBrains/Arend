@@ -595,7 +595,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
         notInScope = true;
       } else
-      if (okExprResult.type instanceof UniverseExpression) {
+      if (type instanceof UniverseExpression) {
         Expression expression = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
         if (expression instanceof DefCallExpression && ((DefCallExpression) expression).getDefinition() instanceof ClassDefinition) {
           // TODO

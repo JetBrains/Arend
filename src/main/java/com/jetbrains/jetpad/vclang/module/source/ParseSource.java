@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.CompositeErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporter;
@@ -51,7 +52,7 @@ public abstract class ParseSource implements Source {
 
   @Override
   public ModuleLoadingResult load() throws IOException {
-    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+    CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     final CompositeErrorReporter errorReporter = new CompositeErrorReporter();
     errorReporter.addErrorReporter(new LocalErrorReporter(myModule, myErrorReporter));
     errorReporter.addErrorReporter(countingErrorReporter);

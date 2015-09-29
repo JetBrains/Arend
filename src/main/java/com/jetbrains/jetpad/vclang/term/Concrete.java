@@ -275,7 +275,7 @@ public final class Concrete {
   }
 
   public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
-    private final Expression myExpression;
+    private Expression myExpression;
     private Utils.Name myName;
     private DefinitionPair myDefinition;
 
@@ -317,6 +317,7 @@ public final class Concrete {
 
     @Override
     public void replaceWithDefCall(DefinitionPair definition) {
+      myExpression = null;
       myDefinition = definition;
       myName = myDefinition.namespace.getName();
     }

@@ -4,6 +4,15 @@ import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 public class CountingErrorReporter implements ErrorReporter {
   private int myCounter = 0;
+  private final GeneralError.Level myLevel;
+
+  public CountingErrorReporter(GeneralError.Level level) {
+    myLevel = level;
+  }
+
+  public CountingErrorReporter() {
+    myLevel = null;
+  }
 
   public int getErrorsNumber() {
     return myCounter;
@@ -11,6 +20,8 @@ public class CountingErrorReporter implements ErrorReporter {
 
   @Override
   public void report(GeneralError error) {
-    ++myCounter;
+    if (myLevel == null || myLevel == error.getLevel()) {
+      ++myCounter;
+    }
   }
 }

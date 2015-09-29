@@ -138,7 +138,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Voi
     }
 
     if (!ok) {
-      GeneralError error = new NameDefinedError(remove, sourceNode, member.namespace.getName(), null);
+      GeneralError error = new NameDefinedError(!remove, sourceNode, member.namespace.getName(), null);
       error.setLevel(GeneralError.Level.WARNING);
       myErrorReporter.report(error);
     }
