@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.List;
 
@@ -46,7 +45,7 @@ public class Constructor extends Definition implements Abstract.Constructor {
 
   @Override
   public void replacePatternWithConstructor(int index) {
-    throw new NotImplementedException(); // TODO
+    throw new UnsupportedOperationException();
   }
 
   @Override

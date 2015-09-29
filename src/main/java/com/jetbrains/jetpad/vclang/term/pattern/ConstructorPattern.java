@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchFailedResult;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchMaybeResult;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchOKResult;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchResult;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +41,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
 
   @Override
   public void replacePatternWithConstructor(int index) {
-    throw new NotImplementedException(); // TODO
+    throw new UnsupportedOperationException();
   }
 
   @Override
