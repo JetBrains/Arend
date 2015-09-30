@@ -9,8 +9,8 @@ import java.util.List;
 public class CycleError extends GeneralError {
   private final List<Namespace> myCycle;
 
-  public CycleError(Namespace namespace, List<Namespace> cycle) {
-    super(namespace, "modules dependencies form a cycle: ");
+  public CycleError(List<Namespace> cycle) {
+    super(null, "modules dependencies form a cycle: ");
     myCycle = cycle;
   }
 
@@ -20,10 +20,10 @@ public class CycleError extends GeneralError {
 
   @Override
   public String toString() {
-    String msg = getMessage();
+    String msg = printHeader() + getMessage();
     for (Namespace namespace : myCycle) {
       msg += namespace + " - ";
     }
-    return msg + getNamespace();
+    return msg + myCycle.get(0);
   }
 }

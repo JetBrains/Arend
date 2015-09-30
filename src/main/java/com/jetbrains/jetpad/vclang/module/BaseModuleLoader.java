@@ -48,7 +48,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
 
     int index = myLoadingModules.indexOf(module);
     if (index != -1) {
-      loadingError(new CycleError(module, new ArrayList<>(myLoadingModules.subList(index, myLoadingModules.size()))));
+      loadingError(new CycleError(new ArrayList<>(myLoadingModules.subList(index, myLoadingModules.size()))));
       return null;
     }
 

@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
@@ -655,11 +656,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       if (definitionPair.definition == null) {
-        DefinitionPair member = definitionPair.namespace.getParent().getMember(definitionPair.namespace.getName().name);
-        if (member == null) {
+        definitionPair = definitionPair.namespace.getParent().getMember(definitionPair.namespace.getName().name);
+        if (definitionPair == null) {
           throw new IllegalStateException();
         }
-        definitionPair.definition = member.definition;
+      }
+
+      if (definitionPair.definition == null) {
+        // TODO: Type check in a correct order
+        DefinitionCheckTypeVisitor.typeCheck(definitionPair, myLocalContext, definitionPair.namespace.getParent(), myErrorReporter);
       }
 
       if (definitionPair.definition == null || definitionPair.definition instanceof FunctionDefinition && ((FunctionDefinition) definitionPair.definition).typeHasErrors() || !(definitionPair.definition instanceof FunctionDefinition) && definitionPair.definition.hasErrors()) {
