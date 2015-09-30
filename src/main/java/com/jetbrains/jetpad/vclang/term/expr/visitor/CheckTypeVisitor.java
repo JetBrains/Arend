@@ -1252,6 +1252,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       } else {
         matchedParameters = new ArrayList<>(parameters);
       }
+      Expression substExpression = DefCall(null, constructor, matchedParameters);
       Collections.reverse(matchedParameters);
       List<TypeArgument> constructorArguments = new ArrayList<>();
       splitArguments(constructor.getType().subst(matchedParameters, 0), constructorArguments);
@@ -1274,7 +1275,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       List<Pattern> resultPatterns = new ArrayList<>();
       List<Expression> substituteExpressions = new ArrayList<>();
       int numBindings = 0;
-      Expression substExpression = DefCall(null, constructor, parameters);
       for (int i = 0; i < constructorArguments.size(); ++i) {
         Expression argumentType = constructorArguments.get(i).getType();
         for (int j = 0; j < i; j++) {

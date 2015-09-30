@@ -88,6 +88,7 @@ public class CoverageCheker {
     }
     DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
     List<Constructor> validConstructors = new ArrayList<>();
+    List<List<Expression>> constructorMatchedParameters = new ArrayList<>();
     List<List<TypeArgument>> validConstructorArgs = new ArrayList<>();
     for (Constructor constructor : dataType.getConstructors()) {
       if (constructor.hasErrors())
@@ -115,6 +116,7 @@ public class CoverageCheker {
       } else {
         matchedParameters = parameters;
       }
+      constructorMatchedParameters.add(matchedParameters);
       validConstructors.add(constructor);
       validConstructorArgs.add(new ArrayList<TypeArgument>());
       splitArguments(constructor.getType().subst(matchedParameters, 0), validConstructorArgs.get(validConstructorArgs.size() - 1));
@@ -148,7 +150,7 @@ public class CoverageCheker {
         for (TypeArgument arg : validConstructors.get(i).getArguments())
           args.add(match(arg.getExplicit(), null));
         List<Binding> ctx = new ArrayList<>();
-        Expression expr = DefCall(null, validConstructors.get(i), parameters);
+        Expression expr = DefCall(null, validConstructors.get(i), constructorMatchedParameters.get(i));
         for (int j = 0; j < validConstructorArgs.get(i).size(); j++) {
           ctx.add(new TypedBinding((String) null, validConstructorArgs.get(i).get(j).getType()));
           expr = Apps(expr.liftIndex(0, 1), Index(0));
@@ -164,7 +166,7 @@ public class CoverageCheker {
         if (branch instanceof ArgsCoverageCheckingIncompleteBranch) {
           List<CoverageCheckingOKBranch> maybeBranches = new ArrayList<>();
           for (ArgsCoverageCheckingOKBranch maybeBranch : ((ArgsCoverageCheckingIncompleteBranch) branch).maybeBranches) {
-            Expression expr = DefCall(null, validConstructors.get(i), parameters);
+            Expression expr = DefCall(null, validConstructors.get(i), constructorMatchedParameters.get(i));
             for (int j = 0; j < maybeBranch.expressions.size(); j++) {
               expr = Apps(expr.liftIndex(0, getNumArguments(maybeBranch.patterns.get(j))), maybeBranch.expressions.get(j));
             }
@@ -179,7 +181,7 @@ public class CoverageCheker {
           result.add(new CoverageCheckingFailedBranch(bad, new ConstructorPattern(validConstructors.get(i), ((ArgsCoverageCheckingFailedBranch) branch).failedPatterns, isExplicit)));
         } else if (branch instanceof ArgsCoverageCheckingOKBranch){
           ArgsCoverageCheckingOKBranch okBranch = (ArgsCoverageCheckingOKBranch) branch;
-          Expression expr = DefCall(null, validConstructors.get(i), parameters);
+          Expression expr = DefCall(null, validConstructors.get(i), constructorMatchedParameters.get(i));
           for (int j = 0; j < okBranch.expressions.size(); j++) {
             expr = Apps(expr.liftIndex(0, getNumArguments(okBranch.patterns.get(j))), okBranch.expressions.get(j));
           }

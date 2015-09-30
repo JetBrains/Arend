@@ -66,7 +66,7 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   public Expression getType(List<Binding> context) {
     Expression resultType;
     resultType = myDefinition.getType();
-    // TODO: pattern match
+
     if (myDefinition instanceof Constructor && !((Constructor) myDefinition).getDataType().getParameters().isEmpty()) {
       List<Expression> parameters = new ArrayList<>(myParameters);
       Collections.reverse(parameters);

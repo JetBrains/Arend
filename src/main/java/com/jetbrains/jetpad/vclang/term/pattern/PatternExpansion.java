@@ -51,7 +51,7 @@ class PatternExpansion {
       Collections.reverse(parameters);
       List<Result> nestedResults = expandPatterns(constructorPattern.getPatterns(), getConstructorArguments(constructorPattern, parameters));
 
-      Expression resultExpression = DefCall(null, constructorPattern.getConstructor(), parameters);
+      Expression resultExpression = DefCall(null, constructorPattern.getConstructor(), getMatchedParameters(constructorPattern, parameters));
       List<TypeArgument> resultArgs = new ArrayList<>();
       for (Result res : nestedResults) {
         resultExpression = Apps(resultExpression.liftIndex(0, res.args.size()), res.expression);
@@ -79,13 +79,16 @@ class PatternExpansion {
     return results;
   }
 
-  private static List<TypeArgument> getConstructorArguments(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters) {
-    List<Expression> matchedParameters;
+  private static List<Expression> getMatchedParameters(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters) {
     if (constructorPattern.getConstructor().getPatterns() != null) {
-      matchedParameters = ((Utils.PatternMatchOKResult) patternMatchAll(constructorPattern.getConstructor().getPatterns(), dataTypeParameters, new ArrayList<Binding>())).expressions;
+      return ((Utils.PatternMatchOKResult) patternMatchAll(constructorPattern.getConstructor().getPatterns(), dataTypeParameters, new ArrayList<Binding>())).expressions;
     } else {
-      matchedParameters = new ArrayList<>(dataTypeParameters);
+      return new ArrayList<>(dataTypeParameters);
     }
+   }
+
+  private static List<TypeArgument> getConstructorArguments(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters) {
+    List<Expression> matchedParameters = getMatchedParameters(constructorPattern, dataTypeParameters);
     Collections.reverse(matchedParameters);
 
     List<TypeArgument> constructorArguments = new ArrayList<>();
