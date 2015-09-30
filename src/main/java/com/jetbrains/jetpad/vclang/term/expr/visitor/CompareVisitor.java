@@ -282,8 +282,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     Result lamResult = checkLam(expr, other);
     if (lamResult != null) return lamResult;
 
-    if (expr.getDefinitionPair() == null && other instanceof Abstract.VarExpression) {
-      return new JustResult(expr.getName().name.equals(((Abstract.VarExpression) other).getName().name) ? CMP.EQUALS : CMP.NOT_EQUIV);
+    if (expr.getDefinitionPair() == null && other instanceof Abstract.DefCallExpression) {
+      return new JustResult(expr.getName().name.equals(((Abstract.DefCallExpression) other).getName().name) ? CMP.EQUALS : CMP.NOT_EQUIV);
     }
 
     if (!(other instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
@@ -454,18 +454,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         return new JustResult(CMP.GREATER);
     }
     return new JustResult(CMP.NOT_EQUIV);
-  }
-
-  @Override
-  public Result visitVar(Abstract.VarExpression expr, Expression other) {
-    if (expr == other) return new JustResult(CMP.EQUALS);
-    Result result = checkPath(expr, other);
-    if (result != null) return result;
-    Result tupleResult = checkTuple(expr, other);
-    if (tupleResult != null) return tupleResult;
-    Result lamResult = checkLam(expr, other);
-    if (lamResult != null) return lamResult;
-    return new JustResult(other instanceof Abstract.VarExpression && expr.getName().equals(((Abstract.VarExpression) other).getName()) ? CMP.EQUALS : CMP.NOT_EQUIV);
   }
 
   @Override

@@ -64,10 +64,12 @@ public final class Abstract {
     return expr;
   }
 
-  public interface DefCallExpression extends VarExpression {
+  public interface DefCallExpression extends Expression {
     byte PREC = 12;
+    Utils.Name getName();
     Expression getExpression();
     DefinitionPair getDefinitionPair();
+    void replaceWithDefCall(DefinitionPair definition);
   }
 
   public interface ClassExtExpression extends Expression {
@@ -125,10 +127,10 @@ public final class Abstract {
   }
 
   public static class BinOpSequenceElem {
-    public VarExpression binOp;
+    public DefCallExpression binOp;
     public Expression argument;
 
-    public BinOpSequenceElem(VarExpression binOp, Expression argument) {
+    public BinOpSequenceElem(DefCallExpression binOp, Expression argument) {
       this.binOp = binOp;
       this.argument = argument;
     }
@@ -138,19 +140,13 @@ public final class Abstract {
     byte PREC = 0;
     Expression getLeft();
     List<BinOpSequenceElem> getSequence();
-    BinOpExpression makeBinOp(Expression left, DefinitionPair definition, VarExpression var, Expression right);
+    BinOpExpression makeBinOp(Expression left, DefinitionPair definition, DefCallExpression var, Expression right);
     void replace(Expression expression);
   }
 
   public interface UniverseExpression extends Expression {
     byte PREC = 12;
     Universe getUniverse();
-  }
-
-  public interface VarExpression extends Expression {
-    byte PREC = 12;
-    Utils.Name getName();
-    void replaceWithDefCall(DefinitionPair definition);
   }
 
   public interface InferHoleExpression extends Expression {

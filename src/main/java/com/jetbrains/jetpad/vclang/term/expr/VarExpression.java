@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
 
-public class VarExpression extends Expression implements Abstract.VarExpression {
+public class VarExpression extends Expression implements Abstract.DefCallExpression {
   private final Utils.Name myName;
 
   public VarExpression(String name) {
@@ -27,6 +27,16 @@ public class VarExpression extends Expression implements Abstract.VarExpression 
   }
 
   @Override
+  public Abstract.Expression getExpression() {
+    return null;
+  }
+
+  @Override
+  public DefinitionPair getDefinitionPair() {
+    return null;
+  }
+
+  @Override
   public void replaceWithDefCall(DefinitionPair definition) {
     throw new IllegalStateException();
   }
@@ -38,6 +48,6 @@ public class VarExpression extends Expression implements Abstract.VarExpression 
 
   @Override
   public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitVar(this, params);
+    return visitor.visitDefCall(this, params);
   }
 }

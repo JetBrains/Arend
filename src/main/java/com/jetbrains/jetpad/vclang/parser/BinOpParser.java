@@ -20,16 +20,16 @@ public class BinOpParser {
   public class StackElem {
     public Abstract.Expression argument;
     public DefinitionPair binOp;
-    public Abstract.VarExpression var;
+    public Abstract.DefCallExpression var;
 
-    public StackElem(Abstract.Expression argument, DefinitionPair binOp, Abstract.VarExpression var) {
+    public StackElem(Abstract.Expression argument, DefinitionPair binOp, Abstract.DefCallExpression var) {
       this.argument = argument;
       this.binOp = binOp;
       this.var = var;
     }
   }
 
-  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, DefinitionPair binOp, Abstract.VarExpression var) {
+  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, DefinitionPair binOp, Abstract.DefCallExpression var) {
     StackElem elem = new StackElem(argument, binOp, var);
     if (stack.isEmpty()) {
       stack.add(elem);

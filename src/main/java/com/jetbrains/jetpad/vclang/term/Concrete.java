@@ -223,7 +223,7 @@ public final class Concrete {
     }
 
     @Override
-    public BinOpExpression makeBinOp(Abstract.Expression left, DefinitionPair binOp, Abstract.VarExpression var, Abstract.Expression right) {
+    public BinOpExpression makeBinOp(Abstract.Expression left, DefinitionPair binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
       assert left instanceof Expression && right instanceof Expression && var instanceof Expression;
       return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, binOp, (Expression) right);
     }

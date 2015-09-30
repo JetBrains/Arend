@@ -654,7 +654,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     } else {
       if (expr.getDefinitionPair() == null) {
-        return visitVar(expr, expectedType);
+        OKResult result1 = getLocalVar(expr);
+        if (result1 == null) {
+          return null;
+        }
+        result1.type = result1.type.liftIndex(0, ((IndexExpression) result1.expression).getIndex() + 1);
+        return checkResultImplicit(expectedType, result1, expr);
       }
 
       if (expr.getDefinitionPair().definition == null) {
@@ -950,17 +955,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new OKResult(new UniverseExpression(expr.getUniverse()), new UniverseExpression(expr.getUniverse().succ()), null), expr);
   }
 
-  @Override
-  public Result visitVar(Abstract.VarExpression expr, Expression expectedType) {
-    OKResult result = getLocalVar(expr);
-    if (result == null) {
-      return null;
-    }
-    result.type = result.type.liftIndex(0, ((IndexExpression) result.expression).getIndex() + 1);
-    return checkResultImplicit(expectedType, result, expr);
-  }
-
-  private OKResult getLocalVar(Abstract.VarExpression expr) {
+  private OKResult getLocalVar(Abstract.DefCallExpression expr) {
     ListIterator<Binding> it = myLocalContext.listIterator(myLocalContext.size());
     int index = 0;
     while (it.hasPrevious()) {
@@ -1322,15 +1317,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return result;
   }
 
-  public OKResult lookupLocalVar(Abstract.Expression expression) {
+  public OKResult lookupLocalVar(Abstract.Expression expression, Abstract.Expression expr) {
     OKResult exprOKResult;
-    if (expression instanceof Abstract.VarExpression) {
-      exprOKResult = getLocalVar((Abstract.VarExpression) expression);
-      if (exprOKResult == null) return null;
+    if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getDefinitionPair() == null) {
+      exprOKResult = getLocalVar((Abstract.DefCallExpression) expression);
     } else if (expression instanceof Abstract.IndexExpression) {
       exprOKResult = getIndex((Abstract.IndexExpression) expression);
     } else {
-      throw new IllegalStateException();
+      TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expression, getNames(myLocalContext));
+      myErrorReporter.report(error);
+      expr.setWellTyped(myLocalContext, Error(null, error));
+      return null;
     }
     return exprOKResult;
   }
@@ -1353,15 +1350,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<IndexExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
     for (Abstract.Expression var : expr.getExpressions()){
-      if (!(var instanceof Abstract.IndexExpression || var instanceof Abstract.VarExpression)) {
-        error = new TypeCheckingError("\\elim can be applied only to a local variable", var, getNames(myLocalContext));
-        myErrorReporter.report(error);
-        expr.setWellTyped(myLocalContext, Error(null, error));
-        return null;
-      }
-
-      OKResult exprOKResult = lookupLocalVar(var);
-
+      OKResult exprOKResult = lookupLocalVar(var, expr);
       if (exprOKResult == null) {
         return null;
       }

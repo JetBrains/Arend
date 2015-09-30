@@ -39,7 +39,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
     if (def.getArguments() != null) {
       for (Abstract.Argument argument : def.getArguments()) {
         myBuilder.append(' ');
-        argument.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+        argument.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
       }
     } else {
       myBuilder.append("{!error}");
@@ -88,7 +88,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
     if (def.getParameters() != null) {
       for (Abstract.TypeArgument parameter : def.getParameters()) {
         myBuilder.append(' ');
-        parameter.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+        parameter.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
       }
     } else {
       myBuilder.append("{!error}");
@@ -126,7 +126,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
 
       myBuilder.append(def.getDataType().getName().name).append(' ');
       for (Abstract.Pattern pattern : def.getPatterns()) {
-        pattern.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+        pattern.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
         myBuilder.append(' ');
       }
     }
@@ -137,7 +137,7 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
     } else {
       for (Abstract.TypeArgument argument : def.getArguments()) {
         myBuilder.append(' ');
-        argument.prettyPrint(myBuilder, myNames, Abstract.VarExpression.PREC);
+        argument.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
       }
       removeFromList(myNames, def.getArguments());
     }

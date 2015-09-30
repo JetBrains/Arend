@@ -58,7 +58,12 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
           }
         }
       } else {
-        visitVar(expr, null);
+        if (expr.getName().fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(expr.getName().name)) {
+          DefinitionPair member = NameResolver.Helper.locateName(myNameResolver, expr.getName().name, expr, myStatic, myErrorReporter);
+          if (member != null) {
+            expr.replaceWithDefCall(member);
+          }
+        }
       }
     }
     return null;
@@ -109,17 +114,6 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
 
   @Override
   public Void visitUniverse(Abstract.UniverseExpression expr, Void params) {
-    return null;
-  }
-
-  @Override
-  public Void visitVar(Abstract.VarExpression expr, Void params) {
-    if (expr.getName().fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(expr.getName().name)) {
-      DefinitionPair member = NameResolver.Helper.locateName(myNameResolver, expr.getName().name, expr, myStatic, myErrorReporter);
-      if (member != null) {
-        expr.replaceWithDefCall(member);
-      }
-    }
     return null;
   }
 
