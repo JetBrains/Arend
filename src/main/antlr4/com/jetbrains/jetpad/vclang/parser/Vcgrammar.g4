@@ -17,7 +17,7 @@ staticMod : '\\static'                  # staticStatic
           |                             # noStatic
           ;
 
-where : '\\where' statement+ ';'?;
+where : '\\where' ('{' statement+ '}' | statement);
 
 classFields : '{' statement* '}';
 

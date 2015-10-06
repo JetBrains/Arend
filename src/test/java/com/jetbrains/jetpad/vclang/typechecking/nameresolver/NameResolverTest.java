@@ -66,18 +66,20 @@ public class NameResolverTest {
   @Test
   public void whereTest() {
     resolveNamesClass("test",
-        "\\static \\function f (x : Nat) => B.b (a x) \\where\n" +
+        "\\static \\function f (x : Nat) => B.b (a x) \\where {\n" +
             "\\static \\function a (x : Nat) => x\n" +
             "\\static \\data D | D1 | D2\n" +
-            "\\static \\class B { \\static \\data C | cr \\static \\function b (x : Nat) => D1 }");
+            "\\static \\class B { \\static \\data C | cr \\static \\function b (x : Nat) => D1 }\n" +
+        "}");
   }
 
   @Test
   public void whereTestDefCmd() {
     resolveNamesClass("test",
-        "\\static \\function f (x : Nat) => a \\where\n" +
+        "\\static \\function f (x : Nat) => a \\where {\n" +
             "\\static \\class A { \\static \\function a => 0 }\n" +
-            "\\open A");
+            "\\open A\n" +
+        "}");
   }
 
   @Test
@@ -90,19 +92,21 @@ public class NameResolverTest {
   @Test
   public void whereClosedError() {
     resolveNamesClass("test",
-        "\\static \\function f => x \\where\n" +
+        "\\static \\function f => x \\where {\n" +
             "\\static \\class A { \\static \\function x => 0 }\n" +
             "\\open A\n" +
-            "\\close A", 1);
+            "\\close A\n" +
+        "}", 1);
   }
 
   @Test
   public void whereOpenFunction() {
     resolveNamesClass("test",
-        "\\static \\function f => x \\where\n" +
+        "\\static \\function f => x \\where {\n" +
             "\\static \\function b => 0 \\where\n" +
-            "\\static \\function x => 0;\n" +
-            "\\open b(x)");
+              "\\static \\function x => 0\n" +
+            "\\open b(x)\n" +
+        "}");
   }
 
   @Test
@@ -110,24 +114,26 @@ public class NameResolverTest {
     resolveNamesClass("test",
         "\\static \\function f => x \\where\n" +
             "\\static \\function b => 0 \\where\n" +
-            "\\static \\function x => 0;", 1);
+              "\\static \\function x => 0", 1);
   }
 
   @Test
   public void whereNested() {
     resolveNamesClass("test",
-        "\\static \\function f => x \\where\n" +
+        "\\static \\function f => x \\where {\n" +
             "\\static \\data B | b\n" +
             "\\static \\function x => a \\where\n" +
-            "\\static \\function a => b");
+              "\\static \\function a => b\n" +
+        "}");
   }
 
   @Test
   public void whereOuterScope() {
     resolveNamesClass("test",
-        "\\static \\function f => 0 \\where\n" +
+        "\\static \\function f => 0 \\where {\n" +
             "\\static \\function g => 0\n" +
-            "\\static \\function h => g");
+            "\\static \\function h => g\n" +
+        "}");
   }
 
   @Test
@@ -141,17 +147,18 @@ public class NameResolverTest {
   public void whereAccessOuter() {
     resolveNamesClass("test",
         "\\static \\function f => 0 \\where\n" +
-            "\\static \\function x => 0;\n" +
-            "\\static \\function g => f.x");
+            "\\static \\function x => 0\n" +
+        "\\static \\function g => f.x");
   }
 
   @Test
   public void whereNonStaticOpen() {
     resolveNamesClass("test",
-        "\\static \\function f => 0 \\where\n" +
+        "\\static \\function f => 0 \\where {\n" +
             "\\static \\function x => 0\n" +
-            "\\static \\function y => x;\n" +
-            "\\static \\function g => 0 \\where\n" +
+            "\\static \\function y => x\n" +
+        "}\n" +
+        "\\static \\function g => 0 \\where\n" +
             "\\open f(y)");
   }
 
@@ -328,12 +335,20 @@ public class NameResolverTest {
 
   @Test
   public void classExtensionWhereTestError() {
-    resolveNamesClass("test", "\\static \\function f => 0 \\where \\static \\class A {} \\static \\class A { \\function x => 0 }", 1);
+    resolveNamesClass("test",
+        "\\static \\function f => 0 \\where {\n" +
+          "\\static \\class A {}\n" +
+          "\\static \\class A { \\function x => 0 }\n" +
+        "}", 1);
   }
 
   @Test
   public void multipleDefsWhere() {
-    resolveNamesClass("test", "\\static \\function f => 0 \\where \\static \\function d => 0 \\static \\function d => 1", 1);
+    resolveNamesClass("test",
+        "\\static \\function f => 0 \\where {\n" +
+          "\\static \\function d => 0\n" +
+          "\\static \\function d => 1\n" +
+        "}", 1);
   }
 
   @Test
