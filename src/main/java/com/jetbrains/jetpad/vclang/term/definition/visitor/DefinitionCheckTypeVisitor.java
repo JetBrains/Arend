@@ -23,6 +23,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -65,6 +66,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
   @Override
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Namespace localNamespace) {
     FunctionDefinition typedDef = new FunctionDefinition(myNamespace.getChild(def.getName()), localNamespace, def.getPrecedence(), def.getArrow());
+    typeCheckStatements(def.getStatements(), typedDef.getNamespace(), localNamespace);
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -455,16 +457,20 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
     }
   }
 
+  private void typeCheckStatements(Collection<? extends Abstract.Statement> statements, Namespace staticNamespace, Namespace dynamicNamespace) {
+    for (Abstract.Statement statement : statements) {
+      if (statement instanceof Abstract.DefineStatement) {
+        Namespace parentNamespace = ((Abstract.DefineStatement) statement).isStatic() ? staticNamespace : dynamicNamespace;
+        typeCheck(parentNamespace.getMember(((Abstract.DefineStatement) statement).getDefinition().getName().name), myContext, parentNamespace, myErrorReporter);
+      }
+    }
+  }
+
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Namespace localNamespace) {
     ClassDefinition typedDef = new ClassDefinition(myNamespace.getChild(def.getName()));
     typedDef.setLocalNamespace(localNamespace);
-    for (Abstract.Statement statement : def.getStatements()) {
-      if (statement instanceof Abstract.DefineStatement) {
-        Namespace parentNamespace = ((Abstract.DefineStatement) statement).isStatic() ? typedDef.getNamespace() : localNamespace;
-        typeCheck(parentNamespace.getMember(((Abstract.DefineStatement) statement).getDefinition().getName().name), myContext, parentNamespace, myErrorReporter);
-      }
-    }
+    typeCheckStatements(def.getStatements(), typedDef.getNamespace(), localNamespace);
     return typedDef;
   }
 }
