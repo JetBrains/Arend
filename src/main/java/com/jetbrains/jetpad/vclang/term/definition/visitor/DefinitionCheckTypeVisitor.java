@@ -165,7 +165,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
 
             // if (ok) {
             arguments.add(TypeArg(argument.getExplicit(), result.expression));
-            myContext.add(new TypedBinding((Utils.Name) null, result.expression));
+            myContext.add(new TypedBinding((Name) null, result.expression));
             ++index;
             // }
           }
@@ -311,7 +311,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
           }
         } else {
           parameters.add(TypeArg(parameter.getExplicit(), result.expression));
-          myContext.add(new TypedBinding((Utils.Name) null, result.expression));
+          myContext.add(new TypedBinding((Name) null, result.expression));
         }
       }
 
@@ -417,7 +417,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
           index += ((Abstract.TelescopeArgument) argument).getNames().size();
         } else {
           arguments.add(TypeArg(argument.getExplicit(), result.expression));
-          myContext.add(new TypedBinding((Utils.Name) null, result.expression));
+          myContext.add(new TypedBinding((Name) null, result.expression));
           ++index;
         }
       }

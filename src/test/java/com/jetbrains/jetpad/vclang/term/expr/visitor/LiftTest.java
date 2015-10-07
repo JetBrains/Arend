@@ -2,14 +2,15 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ public class LiftTest {
   @Test
   public void liftConst() {
     // lift( null -> zero , 0, 1) = null -> zero
-    Expression expr = Pi(Zero(), DefCall(null));
+    Expression expr = Pi(Zero(), DefCall(Prelude.NAT));
     assertEquals(expr, expr.liftIndex(0, 1));
   }
 
@@ -98,8 +99,8 @@ public class LiftTest {
   @Test
   public void liftElim() {
     // lift (\elim <1> | con a b c => <2> <3> <4>, 0, 1) = \elim <2> | con a b c => <3> <4> <5>
-    DataDefinition def = new DataDefinition(new Namespace(new Utils.Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
-    Constructor con = new Constructor(def.getNamespace().getChild(new Utils.Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE,  new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
+    DataDefinition def = new DataDefinition(new Namespace(new Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
+    Constructor con = new Constructor(def.getNamespace().getChild(new Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE,  new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
     def.addConstructor(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);
@@ -118,8 +119,8 @@ public class LiftTest {
   @Test
   public void liftElim2() {
     // lift (\elim <1> | con a b c => <2> <3> <5>, 2, 1) = \elim <1> | con a b c => <2> <3> <6>
-    DataDefinition def = new DataDefinition(new Namespace(new Utils.Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
-    Constructor con = new Constructor(def.getNamespace().getChild(new Utils.Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
+    DataDefinition def = new DataDefinition(new Namespace(new Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
+    Constructor con = new Constructor(def.getNamespace().getChild(new Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
     def.addConstructor(con);
 
     List<Clause> clauses1 = new ArrayList<>(1);

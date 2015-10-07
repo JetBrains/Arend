@@ -6,9 +6,9 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -45,8 +45,8 @@ public class TypeCheckingTestCase {
 
   public static Definition typeCheckDef(Concrete.Definition definition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(RootModule.ROOT, errorReporter);
-    visitor.setDefinitionPair(RootModule.ROOT.getChild(new Utils.Name("test")).getMember(definition.getName().name));
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(RootModule.ROOT.getChild(new Name("test")), errorReporter);
+    visitor.setDefinitionPair(RootModule.ROOT.getChild(new Name("test")).getMember(definition.getName().name));
     Definition result = definition.accept(visitor, null);
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
     return result;

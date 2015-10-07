@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -45,23 +46,22 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       expr.getExpression().accept(this, null);
     }
 
-    if (expr.getDefinitionPair() == null) {
+    if (expr.getResolvedName() == null) {
       if (expr.getExpression() != null) {
         if (expr.getExpression() instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr.getExpression()).getExpression() == null) {
-          if (((Abstract.DefCallExpression) expr.getExpression()).getDefinitionPair() == null) {
+          if (((Abstract.DefCallExpression) expr.getExpression()).getResolvedName() == null) {
             return null;
           }
-          Namespace namespace = ((Abstract.DefCallExpression) expr.getExpression()).getDefinitionPair().namespace;
-          DefinitionPair member = myNameResolver.getMember(namespace, expr.getName().name);
-          if (member != null) {
-            expr.replaceWithDefCall(member);
+          Namespace namespace = ((Abstract.DefCallExpression) expr.getExpression()).getResolvedName().toNamespace();
+          if (myNameResolver.getMember(namespace, expr.getName().name) != null) {
+            expr.setResolvedName(new ResolvedName(namespace, expr.getName().name));
           }
         }
       } else {
         if (expr.getName().fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(expr.getName().name)) {
           DefinitionPair member = NameResolver.Helper.locateName(myNameResolver, expr.getName().name, expr, myStatic, myErrorReporter);
           if (member != null) {
-            expr.replaceWithDefCall(member);
+            expr.setResolvedName(new ResolvedName(member.namespace.getParent(), member.namespace.getName()));
           }
         }
       }
@@ -174,7 +174,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
         DefinitionPair member = NameResolver.Helper.locateName(myNameResolver, elem.binOp.getName().name, elem.binOp, myStatic, myErrorReporter);
         if (member != null) {
-          parser.pushOnStack(stack, expression, member, elem.binOp);
+          parser.pushOnStack(stack, expression, new ResolvedName(member.namespace.getParent(), member.namespace.getName()), member.getPrecedence(), elem.binOp);
           expression = elem.argument;
           expression.accept(this, null);
         }

@@ -1,29 +1,28 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 
 import java.util.*;
 
 public class Namespace implements NamespaceMember {
-  final private Utils.Name myName;
+  final private Name myName;
   private Namespace myParent;
   private Map<String, DefinitionPair> myMembers;
 
-  private Namespace(Utils.Name name, Namespace parent) {
+  private Namespace(Name name, Namespace parent) {
     myName = name;
     myParent = parent;
   }
 
-  public Namespace(Utils.Name name) {
+  public Namespace(Name name) {
     myName = name;
     myParent = null;
   }
 
   public Namespace(String name) {
-    myName = new Utils.Name(name);
+    myName = new Name(name);
     myParent = null;
   }
 
@@ -33,7 +32,7 @@ public class Namespace implements NamespaceMember {
   }
 
   @Override
-  public Utils.Name getName() {
+  public Name getName() {
     return myName;
   }
 
@@ -53,7 +52,7 @@ public class Namespace implements NamespaceMember {
     return myMembers == null ? Collections.<DefinitionPair>emptyList() : myMembers.values();
   }
 
-  public Namespace getChild(Utils.Name name) {
+  public Namespace getChild(Name name) {
     if (myMembers != null) {
       DefinitionPair member = myMembers.get(name.name);
       if (member != null) {

@@ -2,21 +2,20 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 
 public abstract class Binding implements Abstract.Binding {
-  private final Utils.Name myName;
+  private final Name myName;
 
-  public Binding(Utils.Name name) {
+  public Binding(Name name) {
     myName = name;
   }
 
   public Binding(String name) {
-    myName = new Utils.Name(name, Abstract.Definition.Fixity.PREFIX);
+    myName = new Name(name, Abstract.Definition.Fixity.PREFIX);
   }
 
   @Override
-  public Utils.Name getName() {
+  public Name getName() {
     return myName;
   }
 

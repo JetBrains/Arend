@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
@@ -9,8 +10,8 @@ import static org.junit.Assert.assertEquals;
 public class SubstTest {
   @Test
   public void substConst() {
-    // zero -> null [0 := S] = zero -> null
-    Expression expr = Pi(Zero(), DefCall(null));
+    // zero -> N [0 := S] = zero -> N
+    Expression expr = Pi(Zero(), DefCall(Prelude.NAT));
     assertEquals(expr, expr.subst(Suc(), 0));
   }
 

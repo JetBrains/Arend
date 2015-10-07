@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LiftIndexVisitor;
 
 import java.util.List;
@@ -18,7 +18,7 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
   private final Abstract.Definition.Arrow myArrow;
   private final Expression myTerm;
 
-  public LetClause(Utils.Name name, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+  public LetClause(Name name, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
     super(name);
     myArguments = arguments;
     myResultType = resultType;

@@ -1,19 +1,19 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
 
 public class VarExpression extends Expression implements Abstract.DefCallExpression {
-  private final Utils.Name myName;
+  private final Name myName;
 
   public VarExpression(String name) {
-    myName = new Utils.Name(name);
+    myName = new Name(name);
   }
 
   @Override
@@ -22,7 +22,7 @@ public class VarExpression extends Expression implements Abstract.DefCallExpress
   }
 
   @Override
-  public Utils.Name getName() {
+  public Name getName() {
     return myName;
   }
 
@@ -32,12 +32,12 @@ public class VarExpression extends Expression implements Abstract.DefCallExpress
   }
 
   @Override
-  public DefinitionPair getDefinitionPair() {
+  public ResolvedName getResolvedName() {
     return null;
   }
 
   @Override
-  public void replaceWithDefCall(DefinitionPair definition) {
+  public void setResolvedName(ResolvedName name) {
     throw new IllegalStateException();
   }
 

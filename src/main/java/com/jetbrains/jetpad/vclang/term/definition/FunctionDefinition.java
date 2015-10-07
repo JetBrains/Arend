@@ -68,7 +68,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
-  public Utils.Name getOriginalName() {
+  public Name getOriginalName() {
     return null;
   }
 

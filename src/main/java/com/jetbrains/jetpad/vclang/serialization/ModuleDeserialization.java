@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.serialization;
 import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.*;
 import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
@@ -56,7 +57,7 @@ public class ModuleDeserialization {
       } else {
         Abstract.Definition.Fixity fixity = stream.readBoolean() ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
         String name = stream.readUTF();
-        Utils.Name name1 = new Utils.Name(name, fixity);
+        Name name1 = new Name(name, fixity);
         int code = stream.read();
         boolean isNew = false;
         if (code != ModuleSerialization.NAMESPACE_CODE) {
@@ -97,7 +98,7 @@ public class ModuleDeserialization {
     return new ModuleLoadingResult(namespace, new DefinitionPair(namespace, null, classDefinition), false, errorsNumber);
   }
 
-  public static Definition newDefinition(int code, Utils.Name name, Namespace parent) throws IncorrectFormat {
+  public static Definition newDefinition(int code, Name name, Namespace parent) throws IncorrectFormat {
     if (code == ModuleSerialization.OVERRIDDEN_CODE) {
       return new OverriddenDefinition(parent.getChild(name), null /* TODO */, Abstract.Definition.DEFAULT_PRECEDENCE, null);
     }
@@ -488,9 +489,9 @@ public class ModuleDeserialization {
   }
 
   public static class NameIsAlreadyDefined extends DeserializationException {
-    private final Utils.Name myName;
+    private final Name myName;
 
-    public NameIsAlreadyDefined(Utils.Name name) {
+    public NameIsAlreadyDefined(Name name) {
       super("Name is already defined");
       myName = name;
     }
@@ -502,9 +503,9 @@ public class ModuleDeserialization {
   }
 
   public static class NameDoesNotDefined extends DeserializationException {
-    private final Utils.Name myName;
+    private final Name myName;
 
-    public NameDoesNotDefined(Utils.Name name) {
+    public NameDoesNotDefined(Name name) {
       super("Name is not defined");
       myName = name;
     }

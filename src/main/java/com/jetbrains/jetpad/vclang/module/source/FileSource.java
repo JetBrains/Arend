@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.module.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.io.File;
@@ -41,11 +41,11 @@ public class FileSource extends ParseSource {
         ok = true;
         for (File file : files) {
           if (file.isDirectory()) {
-            getModule().getChild(new Utils.Name(file.getName()));
+            getModule().getChild(new Name(file.getName()));
           } else if (file.isFile()) {
             String name = FileOperations.getVcFileName(file);
             if (name != null) {
-              getModule().getChild(new Utils.Name(name));
+              getModule().getChild(new Name(name));
             }
           }
         }

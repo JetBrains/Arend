@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 
 public class HasErrors extends TypeCheckingError {
   public HasErrors(Namespace namespace, String name, Abstract.SourceNode expression) {
@@ -13,11 +13,11 @@ public class HasErrors extends TypeCheckingError {
     super(name + " has errors", expression, null);
   }
 
-  public HasErrors(Namespace namespace, Utils.Name name, Abstract.SourceNode expression) {
+  public HasErrors(Namespace namespace, Name name, Abstract.SourceNode expression) {
     this(namespace, name.getPrefixName(), expression);
   }
 
-  public HasErrors(Utils.Name name, Abstract.SourceNode expression) {
+  public HasErrors(Name name, Abstract.SourceNode expression) {
     this(name.getPrefixName(), expression);
   }
 

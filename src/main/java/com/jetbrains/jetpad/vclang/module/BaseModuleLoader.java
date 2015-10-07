@@ -9,8 +9,7 @@ import com.jetbrains.jetpad.vclang.module.source.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 import java.io.EOFException;
@@ -44,7 +43,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
     if (member != null && (member.abstractDefinition != null || member.definition != null)) {
       return null;
     }
-    Namespace module = member == null ? parent.getChild(new Utils.Name(name)) : member.namespace;
+    Namespace module = member == null ? parent.getChild(new Name(name)) : member.namespace;
 
     int index = myLoadingModules.indexOf(module);
     if (index != -1) {

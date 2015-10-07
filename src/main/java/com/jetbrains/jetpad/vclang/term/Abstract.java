@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
@@ -18,7 +18,7 @@ public final class Abstract {
   public interface PrettyPrintableSourceNode extends SourceNode, PrettyPrintable {}
 
   public interface Identifier extends SourceNode {
-    Utils.Name getName();
+    Name getName();
   }
 
   public interface Expression extends PrettyPrintableSourceNode {
@@ -66,10 +66,10 @@ public final class Abstract {
 
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
-    Utils.Name getName();
+    Name getName();
     Expression getExpression();
-    DefinitionPair getDefinitionPair();
-    void replaceWithDefCall(DefinitionPair definition);
+    ResolvedName getResolvedName();
+    void setResolvedName(ResolvedName name);
   }
 
   public interface ClassExtExpression extends Expression {
@@ -121,7 +121,7 @@ public final class Abstract {
   }
 
   public interface BinOpExpression extends Expression {
-    DefinitionPair getBinOp();
+    ResolvedName getResolvedBinOpName();
     Expression getLeft();
     Expression getRight();
   }
@@ -140,7 +140,7 @@ public final class Abstract {
     byte PREC = 0;
     Expression getLeft();
     List<BinOpSequenceElem> getSequence();
-    BinOpExpression makeBinOp(Expression left, DefinitionPair definition, DefCallExpression var, Expression right);
+    BinOpExpression makeBinOp(Expression left, ResolvedName name, DefCallExpression var, Expression right);
     void replace(Expression expression);
   }
 
@@ -182,7 +182,7 @@ public final class Abstract {
   }
 
   public interface Binding extends SourceNode {
-    Utils.Name getName();
+    Name getName();
   }
 
   public interface Statement extends SourceNode {
@@ -242,7 +242,7 @@ public final class Abstract {
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
     boolean isOverridden();
-    Utils.Name getOriginalName();
+    Name getOriginalName();
     Collection<? extends Statement> getStatements();
   }
 
@@ -265,7 +265,7 @@ public final class Abstract {
   }
 
   public interface ConstructorPattern extends Pattern, PatternContainer {
-    Utils.Name getConstructorName();
+    Name getConstructorName();
   }
 
   public interface AnyConstructorPattern extends Pattern {}

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -26,7 +25,8 @@ import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.Name;
+
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
 
@@ -267,7 +267,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   private Result typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
     Result function;
-    if (fun instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) fun).getDefinitionPair() != null && ((Abstract.DefCallExpression) fun).getDefinitionPair().definition instanceof Constructor && !((Constructor) ((Abstract.DefCallExpression) fun).getDefinitionPair().definition).getDataType().getParameters().isEmpty()) {
+    if (fun instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) fun).getResolvedName() != null
+        && ((Abstract.DefCallExpression) fun).getResolvedName().toDefinition() instanceof Constructor
+        && !((Constructor) ((Abstract.DefCallExpression) fun).getResolvedName().toDefinition()).getDataType().getParameters().isEmpty()) {
       function = typeCheckDefCall((Abstract.DefCallExpression) fun, null);
       if (function instanceof OKResult) {
         return typeCheckApps(fun, 0, (OKResult) function, args, expectedType, expression);
@@ -644,8 +646,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return null;
       }
     } else {
-      DefinitionPair definitionPair = expr.getDefinitionPair();
-      if (definitionPair == null) {
+      if (expr.getResolvedName() == null) {
         OKResult result1 = getLocalVar(name, expr);
         if (result1 == null) {
           return null;
@@ -654,21 +655,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return checkResultImplicit(expectedType, result1, expr);
       }
 
-      if (definitionPair.definition == null) {
-        definitionPair = definitionPair.namespace.getParent().getMember(definitionPair.namespace.getName().name);
-        if (definitionPair == null) {
-          throw new IllegalStateException();
-        }
+      Definition definition = expr.getResolvedName().toDefinition();
+      if (definition == null) {
+        throw new IllegalStateException();
       }
 
-      if (definitionPair.definition == null || definitionPair.definition instanceof FunctionDefinition && ((FunctionDefinition) definitionPair.definition).typeHasErrors() || !(definitionPair.definition instanceof FunctionDefinition) && definitionPair.definition.hasErrors()) {
+      if (definition instanceof FunctionDefinition && ((FunctionDefinition) definition).typeHasErrors() || !(definition instanceof FunctionDefinition) && definition.hasErrors()) {
         TypeCheckingError error = new HasErrors(name, expr);
-        expr.setWellTyped(myLocalContext, Error(DefCall(definitionPair.definition), error));
+        expr.setWellTyped(myLocalContext, Error(DefCall(definition), error));
         myErrorReporter.report(error);
         return null;
       }
 
-      result = new OKResult(DefCall(definitionPair.definition), definitionPair.definition.getType(), null);
+      result = new OKResult(DefCall(definition), definition.getType(), null);
     }
 
     if (result.expression instanceof DefCallExpression) {
@@ -1140,7 +1139,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     args.add(new AbstractArgumentExpression(expr.getRight()));
 
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
-    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getBinOp()), args, expectedType, expr);
+    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), args, expectedType, expr);
   }
 
   @Override
@@ -1310,8 +1309,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public OKResult lookupLocalVar(Abstract.Expression expression, Abstract.Expression expr) {
     OKResult exprOKResult;
-    if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getDefinitionPair() == null) {
-      exprOKResult = getLocalVar(((Abstract.DefCallExpression) expression).getName(), (Abstract.DefCallExpression) expression);
+    if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getResolvedName() == null) {
+      exprOKResult = getLocalVar(((Abstract.DefCallExpression) expression).getName(), expression);
     } else if (expression instanceof Abstract.IndexExpression) {
       exprOKResult = getIndex((Abstract.IndexExpression) expression);
     } else {

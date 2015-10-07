@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
@@ -40,15 +41,15 @@ public final class Concrete {
   }
 
   public static class Identifier extends SourceNode implements Abstract.Identifier {
-    private final Utils.Name myName;
+    private final Name myName;
 
     public Identifier(Position position, String name, Abstract.Definition.Fixity fixity) {
       super(position);
-      myName = new Utils.Name(name, fixity);
+      myName = new Name(name, fixity);
     }
 
     @Override
-    public Utils.Name getName() {
+    public Name getName() {
       return myName;
     }
   }
@@ -223,9 +224,9 @@ public final class Concrete {
     }
 
     @Override
-    public BinOpExpression makeBinOp(Abstract.Expression left, DefinitionPair binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
+    public BinOpExpression makeBinOp(Abstract.Expression left, ResolvedName name, Abstract.DefCallExpression var, Abstract.Expression right) {
       assert left instanceof Expression && right instanceof Expression && var instanceof Expression;
-      return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, binOp, (Expression) right);
+      return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, name, (Expression) right);
     }
 
     @Override
@@ -242,20 +243,20 @@ public final class Concrete {
   }
 
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
+    private final ResolvedName myName;
     private final Expression myLeft;
-    private final DefinitionPair myBinOp;
     private final Expression myRight;
 
-    public BinOpExpression(Position position, Expression left, DefinitionPair binOp, Expression right) {
+    public BinOpExpression(Position position, Expression left, ResolvedName name, Expression right) {
       super(position);
       myLeft = left;
-      myBinOp = binOp;
+      myName = name;
       myRight = right;
     }
 
     @Override
-    public DefinitionPair getBinOp() {
-      return myBinOp;
+    public ResolvedName getResolvedBinOpName() {
+      return myName;
     }
 
     @Override
@@ -276,28 +277,28 @@ public final class Concrete {
 
   public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
     private Expression myExpression;
-    private Utils.Name myName;
-    private DefinitionPair myDefinition;
+    private Name myName;
+    private ResolvedName myResolvedName;
 
-    public DefCallExpression(Position position, Expression expression, Utils.Name name) {
+    public DefCallExpression(Position position, Expression expression, Name name) {
       super(position);
       myExpression = expression;
-      myDefinition = null;
       myName = name;
+      myResolvedName = null;
+    }
+
+    public DefCallExpression(Position position, ResolvedName resolvedName) {
+      super(position);
+      myExpression = null;
+      myName = resolvedName.name;
+      myResolvedName = resolvedName;
     }
 
     public DefCallExpression(Position position, com.jetbrains.jetpad.vclang.term.definition.Definition definition) {
       super(position);
       myExpression = null;
       myName = definition.getName();
-      myDefinition = new DefinitionPair(definition.getNamespace(), null, definition);
-    }
-
-    public DefCallExpression(Position position, DefinitionPair definition) {
-      super(position);
-      myExpression = null;
-      myName = definition.namespace.getName();
-      myDefinition = definition;
+      myResolvedName = new ResolvedName(definition.getNamespace().getParent(), definition.getName());
     }
 
     @Override
@@ -306,20 +307,19 @@ public final class Concrete {
     }
 
     @Override
-    public DefinitionPair getDefinitionPair() {
-      return myDefinition;
+    public ResolvedName getResolvedName() {
+      return myResolvedName;
     }
 
     @Override
-    public Utils.Name getName() {
-      return myName;
-    }
-
-    @Override
-    public void replaceWithDefCall(DefinitionPair definition) {
+    public void setResolvedName(ResolvedName name) {
       myExpression = null;
-      myDefinition = definition;
-      myName = myDefinition.namespace.getName();
+      myResolvedName = name;
+    }
+
+    @Override
+    public Name getName() {
+      return myName;
     }
 
     @Override
@@ -698,26 +698,26 @@ public final class Concrete {
     @Override
     public void replacePatternWithConstructor(int index) {
       Pattern pattern = myPatterns.get(index);
-      myPatterns.set(index, new ConstructorPattern(pattern.getPosition(), new Utils.Name(pattern.getName()), new ArrayList<Pattern>(0)));
+      myPatterns.set(index, new ConstructorPattern(pattern.getPosition(), new Name(pattern.getName()), new ArrayList<Pattern>(0)));
       myPatterns.get(index).setExplicit(pattern.getExplicit());
     }
   }
 
   public static abstract class Binding extends SourceNode implements Abstract.Binding {
-    private final Utils.Name myName;
+    private final Name myName;
 
-    public Binding(Position position, Utils.Name name) {
+    public Binding(Position position, Name name) {
       super(position);
       myName = name;
     }
 
     public Binding(Position position, String name) {
       super(position);
-      myName = new Utils.Name(name, Abstract.Definition.Fixity.PREFIX);
+      myName = new Name(name, Abstract.Definition.Fixity.PREFIX);
     }
 
     @Override
-    public Utils.Name getName() {
+    public Name getName() {
       return myName;
     }
   }
@@ -757,7 +757,7 @@ public final class Concrete {
   public static abstract class Definition extends Binding implements Abstract.Definition {
     private final Precedence myPrecedence;
 
-    public Definition(Position position, Utils.Name name, Precedence precedence) {
+    public Definition(Position position, Name name, Precedence precedence) {
       super(position, name);
       myPrecedence = precedence;
     }
@@ -780,11 +780,11 @@ public final class Concrete {
     private final List<Argument> myArguments;
     private final Expression myResultType;
     private final boolean myOverridden;
-    private final Utils.Name myOriginalName;
+    private final Name myOriginalName;
     private final Expression myTerm;
     private final List<Statement> myStatements;
 
-    public FunctionDefinition(Position position, Utils.Name name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, Utils.Name originalName, List<Statement> statements) {
+    public FunctionDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, Name originalName, List<Statement> statements) {
       super(position, name, precedence);
       myArguments = arguments;
       myResultType = resultType;
@@ -811,7 +811,7 @@ public final class Concrete {
     }
 
     @Override
-    public Utils.Name getOriginalName() {
+    public Name getOriginalName() {
       return myOriginalName;
     }
 
@@ -846,7 +846,7 @@ public final class Concrete {
     private final List<TypeArgument> myParameters;
     private final Universe myUniverse;
 
-    public DataDefinition(Position position, Utils.Name name, Precedence precedence, List<TypeArgument> parameters, Universe universe, List<Concrete.Constructor> constructors) {
+    public DataDefinition(Position position, Name name, Precedence precedence, List<TypeArgument> parameters, Universe universe, List<Concrete.Constructor> constructors) {
       super(position, name, precedence);
       myParameters = parameters;
       myConstructors = constructors;
@@ -878,7 +878,7 @@ public final class Concrete {
     private final List<Statement> myFields;
 
     public ClassDefinition(Position position, String name, List<Statement> fields) {
-      super(position, new Utils.Name(name, Fixity.PREFIX), DEFAULT_PRECEDENCE);
+      super(position, new Name(name, Fixity.PREFIX), DEFAULT_PRECEDENCE);
       myFields = fields;
     }
 
@@ -932,17 +932,17 @@ public final class Concrete {
   }
 
   public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
-    private final Utils.Name myConstructorName;
+    private final Name myConstructorName;
     private final List<Pattern> myArguments;
 
-    public ConstructorPattern(Position position, Utils.Name constructorName, List<Pattern> arguments) {
+    public ConstructorPattern(Position position, Name constructorName, List<Pattern> arguments) {
       super(position);
       myConstructorName = constructorName;
       myArguments = arguments;
     }
 
     @Override
-    public Utils.Name getConstructorName() {
+    public Name getConstructorName() {
       return myConstructorName;
     }
 
@@ -954,7 +954,7 @@ public final class Concrete {
     @Override
     public void replacePatternWithConstructor(int index) {
       Pattern pattern = myArguments.get(index);
-      myArguments.set(index, new ConstructorPattern(pattern.getPosition(), new Utils.Name(pattern.getName()), new ArrayList<Pattern>(0)));
+      myArguments.set(index, new ConstructorPattern(pattern.getPosition(), new Name(pattern.getName()), new ArrayList<Pattern>(0)));
       myArguments.get(index).setExplicit(pattern.getExplicit());
     }
 
@@ -980,7 +980,7 @@ public final class Concrete {
     private final List<TypeArgument> myArguments;
     private final List<Pattern> myPatterns;
 
-    public Constructor(Position position, Utils.Name name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
+    public Constructor(Position position, Name name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
       super(position, name, precedence);
       myArguments = arguments;
       myDataType = dataType;
@@ -995,7 +995,7 @@ public final class Concrete {
     @Override
     public void replacePatternWithConstructor(int index) {
       Pattern pattern = myPatterns.get(index);
-      myPatterns.set(index, new ConstructorPattern(pattern.getPosition(), new Utils.Name(pattern.getName()), new ArrayList<Pattern>(0)));
+      myPatterns.set(index, new ConstructorPattern(pattern.getPosition(), new Name(pattern.getName()), new ArrayList<Pattern>(0)));
       myPatterns.get(index).setExplicit(pattern.getExplicit());
     }
 

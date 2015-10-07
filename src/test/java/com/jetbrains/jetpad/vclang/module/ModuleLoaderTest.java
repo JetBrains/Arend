@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -32,8 +32,8 @@ public class ModuleLoaderTest {
 
   @Test
   public void recursiveTestError() {
-    Namespace moduleA = RootModule.ROOT.getChild(new Utils.Name("A"));
-    Namespace moduleB = RootModule.ROOT.getChild(new Utils.Name("B"));
+    Namespace moduleA = RootModule.ROOT.getChild(new com.jetbrains.jetpad.vclang.term.definition.Name("A"));
+    Namespace moduleB = RootModule.ROOT.getChild(new Name("B"));
     sourceSupplier.add(moduleA, "\\static \\function f => B.g");
     sourceSupplier.add(moduleB, "\\static \\function g => A.f");
 
@@ -44,8 +44,8 @@ public class ModuleLoaderTest {
 
   @Test
   public void recursiveTestError2() {
-    Namespace moduleA = RootModule.ROOT.getChild(new Utils.Name("A"));
-    Namespace moduleB = RootModule.ROOT.getChild(new Utils.Name("B"));
+    Namespace moduleA = RootModule.ROOT.getChild(new Name("A"));
+    Namespace moduleB = RootModule.ROOT.getChild(new Name("B"));
     sourceSupplier.add(moduleA, "\\static \\function f => B.g");
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
@@ -56,8 +56,8 @@ public class ModuleLoaderTest {
 
   @Test
   public void recursiveTestError3() {
-    Namespace moduleA = RootModule.ROOT.getChild(new Utils.Name("A"));
-    Namespace moduleB = RootModule.ROOT.getChild(new Utils.Name("B"));
+    Namespace moduleA = RootModule.ROOT.getChild(new Name("A"));
+    Namespace moduleB = RootModule.ROOT.getChild(new Name("B"));
     sourceSupplier.add(moduleA, "\\static \\function f => B.g \\static \\function h => 0");
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
@@ -68,8 +68,8 @@ public class ModuleLoaderTest {
 
   @Test
   public void nonStaticTestError() {
-    Namespace moduleA = RootModule.ROOT.getChild(new Utils.Name("A"));
-    Namespace moduleB = RootModule.ROOT.getChild(new Utils.Name("B"));
+    Namespace moduleA = RootModule.ROOT.getChild(new Name("A"));
+    Namespace moduleB = RootModule.ROOT.getChild(new Name("B"));
     sourceSupplier.add(moduleA, "\\function f : Nat \\function h => f");
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
@@ -80,7 +80,7 @@ public class ModuleLoaderTest {
 
   @Test
   public void staticAbstractTestError() {
-    Namespace module = RootModule.ROOT.getChild(new Utils.Name("A"));
+    Namespace module = RootModule.ROOT.getChild(new Name("A"));
     sourceSupplier.add(module, "\\static \\function f : Nat");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
@@ -90,13 +90,13 @@ public class ModuleLoaderTest {
 
   @Test
   public void moduleTest() {
-    Namespace module = RootModule.ROOT.getChild(new Utils.Name("A"));
+    Namespace module = RootModule.ROOT.getChild(new Name("A"));
     sourceSupplier.add(module, "\\function f : Nat \\static \\class C { \\function g : Nat \\function h => g }");
     moduleLoader.setSourceSupplier(sourceSupplier);
     ModuleLoadingResult result = moduleLoader.load(RootModule.ROOT, "A", false);
     assertNotNull(result);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
-    assertEquals(1, RootModule.ROOT.getChild(new Utils.Name("A")).getMembers().size());
+    assertEquals(1, RootModule.ROOT.getChild(new Name("A")).getMembers().size());
     assertEquals(1, ((ClassDefinition) result.definition.definition).getLocalNamespace().getMembers().size());
     assertEquals(0, result.definition.namespace.getDefinition("C").getNamespace().getMembers().size());
     assertEquals(2, ((ClassDefinition) result.namespace.getDefinition("C")).getLocalNamespace().getMembers().size());
@@ -104,8 +104,8 @@ public class ModuleLoaderTest {
 
   @Test
   public void nonStaticTest() {
-    Namespace moduleA = RootModule.ROOT.getChild(new Utils.Name("A"));
-    Namespace moduleB = RootModule.ROOT.getChild(new Utils.Name("B"));
+    Namespace moduleA = RootModule.ROOT.getChild(new Name("A"));
+    Namespace moduleB = RootModule.ROOT.getChild(new Name("B"));
     sourceSupplier.add(moduleA, "\\function f : Nat \\static \\class B { \\function g : Nat \\function h => g }");
     sourceSupplier.add(moduleB, "\\static \\function f (p : A.B) => p.h");
 
@@ -116,8 +116,8 @@ public class ModuleLoaderTest {
 
   @Test
   public void nonStaticTestError2() {
-    Namespace moduleA = RootModule.ROOT.getChild(new Utils.Name("A"));
-    Namespace moduleB = RootModule.ROOT.getChild(new Utils.Name("B"));
+    Namespace moduleA = RootModule.ROOT.getChild(new Name("A"));
+    Namespace moduleB = RootModule.ROOT.getChild(new Name("B"));
     sourceSupplier.add(moduleA, "\\function f : Nat \\static \\class B { \\function g : Nat \\function h => g }");
     sourceSupplier.add(moduleA, "\\function f : Nat \\class B { \\function g : Nat \\static \\function (+) (f g : Nat) => f \\function h => f + g }");
     sourceSupplier.add(moduleB, "\\static \\function f (p : A.B) => p.h");
@@ -129,8 +129,8 @@ public class ModuleLoaderTest {
 
   @Test
   public void abstractNonStaticTestError() {
-    Namespace moduleA = RootModule.ROOT.getChild(new Utils.Name("A"));
-    Namespace moduleB = RootModule.ROOT.getChild(new Utils.Name("B"));
+    Namespace moduleA = RootModule.ROOT.getChild(new Name("A"));
+    Namespace moduleB = RootModule.ROOT.getChild(new Name("B"));
     sourceSupplier.add(moduleA, "\\function f : Nat");
     sourceSupplier.add(moduleB, "\\function g => A.f");
 

@@ -3,9 +3,9 @@ package com.jetbrains.jetpad.vclang.term.pattern;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchFailedResult;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchMaybeResult;
@@ -30,7 +30,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     return myConstructor;
   }
   @Override
-  public Utils.Name getConstructorName() {
+  public Name getConstructorName() {
     return myConstructor.getName();
   }
 

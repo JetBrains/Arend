@@ -6,8 +6,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -40,8 +40,8 @@ public class NameResolverTest {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
     Namespace namespace = new Namespace("test");
-    Definition plus = new FunctionDefinition(namespace.getChild(new Utils.Name("+", Abstract.Definition.Fixity.INFIX)), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
-    Definition mul = new FunctionDefinition(namespace.getChild(new Utils.Name("*", Abstract.Definition.Fixity.INFIX)), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition plus = new FunctionDefinition(namespace.getChild(new Name("+", Abstract.Definition.Fixity.INFIX)), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition(namespace.getChild(new Name("*", Abstract.Definition.Fixity.INFIX)), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), arguments, Nat(), Definition.Arrow.LEFT, null);
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
@@ -55,8 +55,8 @@ public class NameResolverTest {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
     Namespace namespace = new Namespace("test");
-    Definition plus = new FunctionDefinition(namespace.getChild(new Utils.Name("+", Abstract.Definition.Fixity.INFIX)), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
-    Definition mul = new FunctionDefinition(namespace.getChild(new Utils.Name("*", Abstract.Definition.Fixity.INFIX)), null, new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition plus = new FunctionDefinition(namespace.getChild(new Name("+", Abstract.Definition.Fixity.INFIX)), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition(namespace.getChild(new Name("*", Abstract.Definition.Fixity.INFIX)), null, new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
@@ -176,7 +176,7 @@ public class NameResolverTest {
 
     assertEquals(2, RootModule.ROOT.getMember("test").namespace.getMembers().size());
     assertEquals(0, localNamespace.getMembers().size());
-    assertEquals(0, staticNamespace.getChild(new Utils.Name("Point")).getMembers().size());
+    assertEquals(0, staticNamespace.getChild(new Name("Point")).getMembers().size());
     assertEquals(2, ((Abstract.ClassDefinition) staticNamespace.getMember("Point").abstractDefinition).getStatements().size());
   }
 

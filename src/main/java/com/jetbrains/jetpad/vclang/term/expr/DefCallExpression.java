@@ -1,11 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ReplaceDefCallVisitor;
@@ -16,12 +12,12 @@ import java.util.List;
 
 public class DefCallExpression extends Expression implements Abstract.DefCallExpression {
   private final Expression myExpression;
-  private Definition myDefinition;
+  private final ResolvedName myResolvedName;
   private List<Expression> myParameters;
 
-  public DefCallExpression(Expression expression, Definition definition, List<Expression> parameters) {
-    myDefinition = definition;
+  public DefCallExpression(Expression expression, ResolvedName resolvedName, List<Expression> parameters) {
     myExpression = expression;
+    myResolvedName = resolvedName;
     myParameters = parameters;
   }
 
@@ -39,22 +35,22 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   }
 
   @Override
-  public DefinitionPair getDefinitionPair() {
-    return new DefinitionPair(myDefinition.getNamespace(), null, myDefinition);
+  public ResolvedName getResolvedName() {
+    return myResolvedName;
   }
 
   public Definition getDefinition() {
-    return myDefinition;
+    return myResolvedName.toDefinition();
   }
 
   @Override
-  public Utils.Name getName() {
-    return myDefinition.getName();
-  }
-
-  @Override
-  public void replaceWithDefCall(DefinitionPair definition) {
+  public void setResolvedName(ResolvedName name) {
     throw new IllegalStateException();
+  }
+
+  @Override
+  public Name getName() {
+    return myResolvedName.name;
   }
 
   @Override
@@ -65,14 +61,14 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   @Override
   public Expression getType(List<Binding> context) {
     Expression resultType;
-    resultType = myDefinition.getType();
+    resultType = getDefinition().getType();
 
-    if (myDefinition instanceof Constructor && !((Constructor) myDefinition).getDataType().getParameters().isEmpty()) {
+    if (getDefinition() instanceof Constructor && !((Constructor) getDefinition()).getDataType().getParameters().isEmpty()) {
       List<Expression> parameters = new ArrayList<>(myParameters);
       Collections.reverse(parameters);
       resultType = resultType.subst(parameters, 0);
     }
-    return myExpression == null ? resultType : resultType.accept(new ReplaceDefCallVisitor(myDefinition.getNamespace().getParent(), myExpression));
+    return myExpression == null ? resultType : resultType.accept(new ReplaceDefCallVisitor(myResolvedName.namespace, myExpression));
   }
 
   @Override

@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 
 public class NotInStaticScopeError extends TypeCheckingError {
   private final String myName;
@@ -17,11 +17,11 @@ public class NotInStaticScopeError extends TypeCheckingError {
     myName = name;
   }
 
-  public NotInStaticScopeError(Namespace namespace, Abstract.SourceNode expression, Utils.Name name) {
+  public NotInStaticScopeError(Namespace namespace, Abstract.SourceNode expression, Name name) {
     this(namespace, expression, name.getPrefixName());
   }
 
-  public NotInStaticScopeError(Abstract.SourceNode expression, Utils.Name name) {
+  public NotInStaticScopeError(Abstract.SourceNode expression, Name name) {
     this(expression, name.getPrefixName());
   }
 

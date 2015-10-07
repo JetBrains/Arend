@@ -2,11 +2,11 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
@@ -51,7 +51,7 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
           context.add(new TypedBinding(name, ((TelescopeArgument) argument).getType()));
         }
       } else {
-        context.add(new TypedBinding((Utils.Name) null, ((TypeArgument) argument).getType()));
+        context.add(new TypedBinding((Name) null, ((TypeArgument) argument).getType()));
       }
       resultArgs.add((TypeArgument) argument);
     }

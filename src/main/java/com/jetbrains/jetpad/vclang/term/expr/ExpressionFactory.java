@@ -34,15 +34,19 @@ public class ExpressionFactory {
   }
 
   public static DefCallExpression DefCall(Definition definition) {
-    return new DefCallExpression(null, definition, null);
+    return DefCall(null, definition, null);
   }
 
   public static DefCallExpression DefCall(Expression expression, Definition definition) {
-    return new DefCallExpression(expression, definition, null);
+    return DefCall(expression, definition, null);
   }
 
   public static DefCallExpression DefCall(Expression expression, Definition definition, List<Expression> parameters) {
-    return new DefCallExpression(expression, definition, parameters);
+    return new DefCallExpression(expression, new ResolvedName(definition.getNamespace().getParent(), definition.getName()), parameters);
+  }
+
+  public static DefCallExpression DefCall(Expression expression, ResolvedName name, List<Expression> parameters) {
+    return new DefCallExpression(expression, name, parameters);
   }
 
   public static ClassExtExpression ClassExt(DefCallExpression baseClassExpression, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {

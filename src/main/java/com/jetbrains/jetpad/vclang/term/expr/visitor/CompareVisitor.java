@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -189,13 +188,13 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
     List<Expression> arguments = new ArrayList<>(4);
     Expression function = other.getFunction(arguments);
-    if (!(arguments.size() == 1 && function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() == Prelude.PATH_CON && arguments.get(0) instanceof LamExpression)) {
+    if (!(arguments.size() == 1 && function instanceof DefCallExpression && ((DefCallExpression) function).getResolvedName().toDefinition() == Prelude.PATH_CON && arguments.get(0) instanceof LamExpression)) {
       return null;
     }
 
     List<Expression> args = new ArrayList<>();
     Expression expr1 = ((LamExpression) arguments.get(0)).getBody().getFunction(args);
-    if (expr1 instanceof DefCallExpression && ((DefCallExpression) expr1).getDefinition() == Prelude.AT && args.size() == 5 && args.get(0) instanceof IndexExpression && ((IndexExpression) args.get(0)).getIndex() == 0) {
+    if (expr1 instanceof DefCallExpression && ((DefCallExpression) expr1).getResolvedName().toDefinition() == Prelude.AT && args.size() == 5 && args.get(0) instanceof IndexExpression && ((IndexExpression) args.get(0)).getIndex() == 0) {
       Expression newOther = args.get(1).liftIndex(0, -1);
       if (newOther != null) {
         List<Equation> equations = new ArrayList<>();
@@ -225,10 +224,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       return new MaybeResult(expr1);
     }
 
-    if (expr1 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr1).getDefinitionPair() != null && ((Abstract.DefCallExpression) expr1).getDefinitionPair().definition == Prelude.PATH_CON && args.size() == 1 && args.get(0).getExpression() instanceof Abstract.LamExpression) {
+    if (expr1 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr1).getResolvedName() != null && ((Abstract.DefCallExpression) expr1).getResolvedName().toDefinition() == Prelude.PATH_CON && args.size() == 1 && args.get(0).getExpression() instanceof Abstract.LamExpression) {
       List<Abstract.ArgumentExpression> args1 = new ArrayList<>();
       Abstract.Expression expr2 = Abstract.getFunction(((Abstract.LamExpression) args.get(0).getExpression()).getBody(), args1);
-      if (expr2 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr2).getDefinitionPair().definition == Prelude.AT && args1.size() == 5 && args1.get(4).getExpression() instanceof Abstract.IndexExpression && ((Abstract.IndexExpression) args1.get(4).getExpression()).getIndex() == 0) {
+      if (expr2 instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr2).getResolvedName().toDefinition() == Prelude.AT && args1.size() == 5 && args1.get(4).getExpression() instanceof Abstract.IndexExpression && ((Abstract.IndexExpression) args1.get(4).getExpression()).getIndex() == 0) {
         List<Equation> equations = new ArrayList<>();
         Result result = args1.get(3).getExpression().accept(new CompareVisitor(equations), other.liftIndex(0, 1));
         if (result.isOK() != CMP.NOT_EQUIV) {
@@ -282,21 +281,40 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     Result lamResult = checkLam(expr, other);
     if (lamResult != null) return lamResult;
 
-    if (expr.getDefinitionPair() == null && other instanceof Abstract.DefCallExpression) {
-      return new JustResult(expr.getName().name.equals(((Abstract.DefCallExpression) other).getName().name) ? CMP.EQUALS : CMP.NOT_EQUIV);
-    }
+    if (expr instanceof DefCallExpression) {
+      if (!(other instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
+      DefCallExpression otherDefCall = (DefCallExpression) other;
 
-    if (!(other instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
-    DefCallExpression otherDefCall = (DefCallExpression) other;
-    Definition definition1 = expr.getDefinitionPair().definition instanceof OverriddenDefinition ? ((OverriddenDefinition) expr.getDefinitionPair().definition).getOverriddenFunction() : expr.getDefinitionPair().definition;
-    Definition definition2 = otherDefCall.getDefinition() instanceof OverriddenDefinition ? ((OverriddenDefinition) otherDefCall.getDefinition()).getOverriddenFunction() : otherDefCall.getDefinition();
-    if (definition1 == null) {
-      if (!expr.getName().equals(definition2.getName())) return new JustResult(CMP.NOT_EQUIV);
+      if (!expr.getResolvedName().equals(otherDefCall.getResolvedName())) {
+        return new JustResult(CMP.NOT_EQUIV);
+      }
+
+      if (expr.getExpression() == null)
+        return new JustResult(otherDefCall.getExpression() == null ? CMP.EQUALS : CMP.NOT_EQUIV);
+      return new JustResult(expr.getExpression().equals(otherDefCall.getExpression()) ? CMP.EQUALS : CMP.NOT_EQUIV);
     } else {
-      if (definition1 != definition2) return new JustResult(CMP.NOT_EQUIV);
+      if (other instanceof VarExpression) {
+        return new JustResult(expr.getExpression() == null && expr.getName().equals(((VarExpression) other).getName())
+            ? CMP.EQUALS : CMP.NOT_EQUIV);
+      }
+
+      if (!(other instanceof DefCallExpression)) {
+        return new JustResult(CMP.NOT_EQUIV);
+      }
+
+      DefCallExpression otherDecCall = (DefCallExpression) other;
+
+      // No dot case
+      if (expr.getExpression() == null) {
+        return new JustResult(expr.getName().equals(otherDecCall.getName()) ? CMP.EQUALS : CMP.NOT_EQUIV);
+      }
+
+      // Dot case
+      if (!expr.getName().equals(otherDecCall.getName())) {
+        return new JustResult(CMP.NOT_EQUIV);
+      }
+      return expr.getExpression().accept(this, otherDecCall.getExpression());
     }
-    if (expr.getExpression() == null || otherDefCall.getExpression() == null) return new JustResult(CMP.EQUALS);
-    return expr.getExpression().accept(this, otherDefCall.getExpression());
   }
 
   @Override
@@ -584,7 +602,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (!(otherApp2.getFunction() instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
     DefCallExpression otherDefCall = (DefCallExpression) otherApp2.getFunction();
 
-    if (expr.getBinOp().definition != otherDefCall.getDefinition()) return new JustResult(CMP.NOT_EQUIV);
+    if (!expr.getResolvedBinOpName().equals(otherDefCall.getResolvedName())) return new JustResult(CMP.NOT_EQUIV);
     Result result = expr.getLeft().accept(this, otherApp2.getArgument().getExpression());
     if (result.isOK() == CMP.NOT_EQUIV) return result;
     Result result1 = expr.getRight().accept(this, otherApp1.getArgument().getExpression());

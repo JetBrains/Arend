@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 
 public class NameDefinedError extends TypeCheckingError {
   private final String myName;
@@ -20,11 +20,11 @@ public class NameDefinedError extends TypeCheckingError {
     myNamespace = where;
   }
 
-  public NameDefinedError(boolean alreadyDefined, Namespace namespace, Abstract.SourceNode expression, Utils.Name name, Namespace where) {
+  public NameDefinedError(boolean alreadyDefined, Namespace namespace, Abstract.SourceNode expression, Name name, Namespace where) {
     this(alreadyDefined, namespace, expression, name.getPrefixName(), where);
   }
 
-  public NameDefinedError(boolean alreadyDefined, Abstract.SourceNode expression, Utils.Name name, Namespace where) {
+  public NameDefinedError(boolean alreadyDefined, Abstract.SourceNode expression, Name name, Namespace where) {
     this(alreadyDefined, expression, name.getPrefixName(), where);
   }
 

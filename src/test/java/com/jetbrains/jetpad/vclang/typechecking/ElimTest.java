@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
@@ -25,6 +24,8 @@ import static org.junit.Assert.*;
 public class ElimTest {
   @Test
   public void elim() {
+    RootModule.initialize();
+    Namespace testNS = RootModule.ROOT.getChild(new Name("test"));
     List<TypeArgument> parameters = new ArrayList<>(2);
     parameters.add(TypeArg(Nat()));
     parameters.add(Tele(vars("x", "y"), Nat()));
@@ -33,9 +34,10 @@ public class ElimTest {
     arguments1.add(TypeArg(Nat()));
     arguments2.add(TypeArg(Pi(Nat(), Nat())));
     arguments2.add(Tele(vars("a", "b", "c"), Nat()));
-    DataDefinition dataType = new DataDefinition(new Namespace(new Utils.Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), parameters);
-    dataType.addConstructor(new Constructor(dataType.getNamespace().getChild(new Utils.Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments1, dataType));
-    dataType.addConstructor(new Constructor(dataType.getNamespace().getChild(new Utils.Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments2, dataType));
+    DataDefinition dataType = new DataDefinition(testNS.getChild(new Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), parameters);
+    testNS.addDefinition(dataType);
+    dataType.addConstructor(new Constructor(dataType.getNamespace().getChild(new Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments1, dataType));
+    dataType.addConstructor(new Constructor(dataType.getNamespace().getChild(new Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments2, dataType));
 
     List<Argument> arguments3 = new ArrayList<>(4);
     arguments3.add(Tele(vars("a1", "b1", "c1"), Nat()));
@@ -46,7 +48,8 @@ public class ElimTest {
     ElimExpression pTerm = Elim(Index(4), clauses1);
     clauses1.add(new Clause(match(dataType.getConstructor("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Nat(), pTerm));
     clauses1.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Pi(Nat(), Nat()), pTerm));
-    FunctionDefinition pFunction = new FunctionDefinition(new Namespace("P"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
+    FunctionDefinition pFunction = new FunctionDefinition(testNS.getChild(new Name("P")), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
+    testNS.addDefinition(pFunction);
 
     List<Argument> arguments = new ArrayList<>(3);
     arguments.add(Tele(vars("q", "w"), Nat()));
@@ -66,9 +69,8 @@ public class ElimTest {
     clauses4.add(new Clause(match(dataType.getConstructor("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Apps(Index(3), Index(2)), term4));
     clauses4.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Index(7), term4));
 
-    RootModule.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
-    FunctionDefinition function = new FunctionDefinition(RootModule.ROOT.getChild(new Utils.Name("test")).getChild(new Utils.Name("fun")), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
+    FunctionDefinition function = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("fun")), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(function.getNamespace().getParent(), errorReporter);
     visitor.setDefinitionPair(function.getNamespace().getParent().getMember(function.getName().name));
     FunctionDefinition typedFun = visitor.visitFunction(function, function.getDynamicNamespace());
