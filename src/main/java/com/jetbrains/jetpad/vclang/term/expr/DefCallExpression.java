@@ -12,12 +12,12 @@ import java.util.List;
 
 public class DefCallExpression extends Expression implements Abstract.DefCallExpression {
   private final Expression myExpression;
-  private final ResolvedName myResolvedName;
+  private final Definition myDefinition;
   private List<Expression> myParameters;
 
-  public DefCallExpression(Expression expression, ResolvedName resolvedName, List<Expression> parameters) {
+  public DefCallExpression(Expression expression, Definition definition, List<Expression> parameters) {
     myExpression = expression;
-    myResolvedName = resolvedName;
+    myDefinition = definition;
     myParameters = parameters;
   }
 
@@ -36,21 +36,21 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
 
   @Override
   public ResolvedName getResolvedName() {
-    return myResolvedName;
+    return new ResolvedName(myDefinition.getParentNamespace(), myDefinition.getName());
   }
 
   public Definition getDefinition() {
-    return myResolvedName.toDefinition();
-  }
-
-  @Override
-  public void setResolvedName(ResolvedName name) {
-    throw new IllegalStateException();
+    return myDefinition;
   }
 
   @Override
   public Name getName() {
-    return myResolvedName.name;
+    return myDefinition.getName();
+  }
+
+   @Override
+  public void setResolvedName(ResolvedName name) {
+    throw new IllegalStateException();
   }
 
   @Override
@@ -61,14 +61,14 @@ public class DefCallExpression extends Expression implements Abstract.DefCallExp
   @Override
   public Expression getType(List<Binding> context) {
     Expression resultType;
-    resultType = getDefinition().getType();
+    resultType = myDefinition.getType();
 
-    if (getDefinition() instanceof Constructor && !((Constructor) getDefinition()).getDataType().getParameters().isEmpty()) {
+    if (myDefinition instanceof Constructor && !((Constructor) myDefinition).getDataType().getParameters().isEmpty()) {
       List<Expression> parameters = new ArrayList<>(myParameters);
       Collections.reverse(parameters);
       resultType = resultType.subst(parameters, 0);
     }
-    return myExpression == null ? resultType : resultType.accept(new ReplaceDefCallVisitor(myResolvedName.namespace, myExpression));
+    return myExpression == null ? resultType : resultType.accept(new ReplaceDefCallVisitor(myDefinition.getParentNamespace(), myExpression));
   }
 
   @Override

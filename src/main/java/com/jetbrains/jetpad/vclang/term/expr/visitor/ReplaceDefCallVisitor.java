@@ -47,7 +47,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
       }
     }
 
-    return DefCall(expr1, expr.getResolvedName(), parameters);
+    return DefCall(expr1, expr.getDefinition(), parameters);
   }
 
   @Override

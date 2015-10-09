@@ -12,10 +12,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
@@ -45,11 +42,7 @@ public class ExpressionFactory {
   }
 
   public static DefCallExpression DefCall(Expression expression, Definition definition, List<Expression> parameters) {
-    return new DefCallExpression(expression, new ResolvedName(definition.getParentNamespace(), definition.getName()), parameters);
-  }
-
-  public static DefCallExpression DefCall(Expression expression, ResolvedName name, List<Expression> parameters) {
-    return new DefCallExpression(expression, name, parameters);
+    return new DefCallExpression(expression, definition, parameters);
   }
 
   public static ClassExtExpression ClassExt(DefCallExpression baseClassExpression, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
