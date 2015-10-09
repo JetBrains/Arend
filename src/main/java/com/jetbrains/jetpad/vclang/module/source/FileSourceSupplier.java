@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.io.File;
@@ -18,7 +18,7 @@ public class FileSourceSupplier implements SourceSupplier {
   }
 
   @Override
-  public FileSource getSource(Namespace module) {
+  public FileSource getSource(ResolvedName module) {
     return new FileSource(myModuleLoader, myErrorReporter, module, myDirectory);
   }
 }

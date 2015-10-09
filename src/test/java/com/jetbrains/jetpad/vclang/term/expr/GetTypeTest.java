@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import org.junit.Test;
@@ -16,23 +17,26 @@ public class GetTypeTest {
   @Test
   public void constructorTest() {
     ClassDefinition def = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => cons 0 nil");
-    assertEquals(Apps(DefCall(def.getNamespace().getDefinition("List")), Nat()), def.getNamespace().getDefinition("test").getType());
-    assertEquals(Apps(DefCall(def.getNamespace().getDefinition("List")), Nat()), ((FunctionDefinition) def.getNamespace().getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
+    assertEquals(Apps(DefCall(namespace.getDefinition("List")), Nat()), namespace.getDefinition("test").getType());
+    assertEquals(Apps(DefCall(namespace.getDefinition("List")), Nat()), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
   public void nilConstructorTest() {
     ClassDefinition def = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => (List Nat).nil");
-    assertEquals(Apps(DefCall(def.getNamespace().getDefinition("List")), Nat()), def.getNamespace().getDefinition("test").getType());
-    assertEquals(Apps(DefCall(def.getNamespace().getDefinition("List")), Nat()), ((FunctionDefinition) def.getNamespace().getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
+    assertEquals(Apps(DefCall(namespace.getDefinition("List")), Nat()), namespace.getDefinition("test").getType());
+    assertEquals(Apps(DefCall(namespace.getDefinition("List")), Nat()), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
   public void classExtTest() {
     ClassDefinition def = typeCheckClass("\\static \\class Test { \\function A : \\Type0 \\function a : A } \\static \\function test => Test { \\override A => Nat }");
-    assertEquals(Universe(1), def.getNamespace().getDefinition("Test").getType());
-    assertEquals(Universe(0, Universe.Type.SET), def.getNamespace().getDefinition("test").getType());
-    assertEquals(Universe(0, Universe.Type.SET), ((FunctionDefinition) def.getNamespace().getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
+    assertEquals(Universe(1), namespace.getDefinition("Test").getType());
+    assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("test").getType());
+    assertEquals(Universe(0, Universe.Type.SET), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
@@ -52,11 +56,12 @@ public class GetTypeTest {
   @Test
   public void fieldAccTest() {
     ClassDefinition def = typeCheckClass("\\static \\class C { \\function x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
-    Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), DefCall(Apps(Index(0), Zero()), ((ClassDefinition) def.getNamespace().getDefinition("C")).getLocalNamespace().getDefinition("x")));
+    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
+    Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), DefCall(Apps(Index(0), Zero()), ((ClassDefinition) namespace.getDefinition("C")).getLocalNamespace().getDefinition("x")));
     List<Binding> context = new ArrayList<>(1);
-    context.add(new TypedBinding("p", Pi(Nat(), DefCall(def.getNamespace().getDefinition("C")))));
-    assertEquals(Pi(args(Tele(vars("p"), context.get(0).getType())), Pi(type, type)), def.getNamespace().getDefinition("test").getType());
-    assertEquals(Pi(type, type), ((FunctionDefinition) def.getNamespace().getDefinition("test")).getTerm().getType(context));
+    context.add(new TypedBinding("p", Pi(Nat(), DefCall(namespace.getDefinition("C")))));
+    assertEquals(Pi(args(Tele(vars("p"), context.get(0).getType())), Pi(type, type)), namespace.getDefinition("test").getType());
+    assertEquals(Pi(type, type), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(context));
   }
 
   @Test

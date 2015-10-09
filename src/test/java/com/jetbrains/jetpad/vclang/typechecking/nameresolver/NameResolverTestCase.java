@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
@@ -18,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class NameResolverTestCase {
   public static Collection<? extends GeneralError> resolveNamesExpr(Concrete.Expression expression, NameResolver nameResolver) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    expression.accept(new ResolveNameVisitor(errorReporter, nameResolver, new ArrayList<String>(0), true), null);
+    expression.accept(new ResolveNameVisitor(errorReporter, nameResolver, new ArrayList<String>(0)), null);
     return errorReporter.getErrorList();
   }
 
@@ -65,18 +64,17 @@ public class NameResolverTestCase {
     return resolveNamesDef(text, 0);
   }
 
-  public static Namespace resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
+  public static void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    Namespace localNamespace = new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT, DummyNameResolver.getInstance()).visitClass(classDefinition, null);
+    new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT, DummyNameResolver.getInstance()).visitClass(classDefinition, null);
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
-    return localNamespace;
   }
 
-  public static Namespace resolveNamesClass(String name, String text, int errors) {
-    return resolveNamesClass(parseClass(name, text), errors);
+  public static void resolveNamesClass(String name, String text, int errors) {
+    resolveNamesClass(parseClass(name, text), errors);
   }
 
-  public static Namespace resolveNamesClass(String name, String text) {
-    return resolveNamesClass(name, text, 0);
+  public static void resolveNamesClass(String name, String text) {
+    resolveNamesClass(name, text, 0);
   }
 }

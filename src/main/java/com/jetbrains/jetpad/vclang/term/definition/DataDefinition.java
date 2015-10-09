@@ -16,13 +16,13 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   private List<Constructor> myConstructors;
   private List<TypeArgument> myParameters;
 
-  public DataDefinition(Namespace namespace, Precedence precedence) {
-    super(namespace, precedence);
+  public DataDefinition(Namespace parentNamespace, Name name, Precedence precedence) {
+    super(parentNamespace, name, precedence);
     myConstructors = new ArrayList<>();
   }
 
-  public DataDefinition(Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> parameters) {
-    super(namespace, precedence);
+  public DataDefinition(Namespace parentNamespace, Name name, Precedence precedence, Universe universe, List<TypeArgument> parameters) {
+    super(parentNamespace, name, precedence);
     setUniverse(universe);
     hasErrors(false);
     myParameters = parameters;
@@ -54,7 +54,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
 
   public void addConstructor(Constructor constructor) {
     myConstructors.add(constructor);
-    getNamespace().addDefinition(constructor);
+    constructor.getParentNamespace().addDefinition(constructor);
   }
 
   @Override

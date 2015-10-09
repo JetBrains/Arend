@@ -1,7 +1,12 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
-import com.jetbrains.jetpad.vclang.module.*;
+import com.jetbrains.jetpad.vclang.module.FileOperations;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.io.File;
@@ -12,7 +17,7 @@ public class FileSource extends ParseSource {
   private final File myFile;
   private final File myDirectory;
 
-  public FileSource(ModuleLoader moduleLoader, ErrorReporter errorReporter, Namespace module, File baseDirectory) {
+  public FileSource(ModuleLoader moduleLoader, ErrorReporter errorReporter, ResolvedName module, File baseDirectory) {
     super(moduleLoader, errorReporter, module);
     myFile = FileOperations.getFile(baseDirectory, module, FileOperations.EXTENSION);
     myDirectory = FileOperations.getFile(baseDirectory, module, "");
@@ -34,18 +39,21 @@ public class FileSource extends ParseSource {
 
   @Override
   public ModuleLoadingResult load() throws IOException {
-    boolean ok = false;
+    Namespace namespace = null;
+
     if (myDirectory != null) {
       File[] files = myDirectory.listFiles();
       if (files != null) {
-        ok = true;
+        ResolvedName resolvedName = getModule();
+        namespace = resolvedName.namespace.getChild(resolvedName.name);
+
         for (File file : files) {
           if (file.isDirectory()) {
-            getModule().getChild(new Name(file.getName()));
+            namespace.getChild(new Name(file.getName()));
           } else if (file.isFile()) {
             String name = FileOperations.getVcFileName(file);
             if (name != null) {
-              getModule().getChild(new Name(name));
+              namespace.getChild(new Name(name));
             }
           }
         }
@@ -56,7 +64,7 @@ public class FileSource extends ParseSource {
       setStream(new FileInputStream(myFile));
       return super.load();
     } else {
-      return ok ? new ModuleLoadingResult(getModule(), new DefinitionPair(getModule(), null, null), true, 0) : null;
+      return namespace != null ? new ModuleLoadingResult(new NamespaceMember(namespace, null, null), true, 0) : null;
     }
   }
 }

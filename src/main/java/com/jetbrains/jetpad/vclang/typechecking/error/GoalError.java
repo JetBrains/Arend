@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
@@ -12,8 +12,8 @@ public class GoalError extends TypeCheckingError {
   private final List<Binding> myContext;
   private final Expression myType;
 
-  public GoalError(Namespace namespace, List<Binding> context, Expression type, Abstract.PrettyPrintableSourceNode expression) {
-    super(namespace, "Goal", expression, getNames(context));
+  public GoalError(ResolvedName resolvedName, List<Binding> context, Expression type, Abstract.PrettyPrintableSourceNode expression) {
+    super(resolvedName, "Goal", expression, getNames(context));
     myContext = new ArrayList<>(context);
     myType = type;
   }

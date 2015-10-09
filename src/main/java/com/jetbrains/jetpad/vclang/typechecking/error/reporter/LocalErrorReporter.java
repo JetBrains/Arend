@@ -1,20 +1,20 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.reporter;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 public class LocalErrorReporter implements ErrorReporter {
-  private final Namespace myNamespace;
+  private final ResolvedName myResolvedName;
   private final ErrorReporter myErrorReporter;
 
-  public LocalErrorReporter(Namespace namespace, ErrorReporter errorReporter) {
-    myNamespace = namespace;
+  public LocalErrorReporter(ResolvedName resolvedName, ErrorReporter errorReporter) {
+    myResolvedName = resolvedName;
     myErrorReporter = errorReporter;
   }
 
   @Override
   public void report(GeneralError error) {
-    error.setNamespace(myNamespace);
+    error.setResolvedName(myResolvedName);
     myErrorReporter.report(error);
   }
 }

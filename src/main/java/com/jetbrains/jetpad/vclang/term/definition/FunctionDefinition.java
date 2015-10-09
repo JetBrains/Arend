@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -14,25 +13,26 @@ import java.util.Collection;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition, Function {
-  private final Namespace myStaticNamespace;
+  // TODO: Ged rid of static/dynamic namespaces
+  private final Namespace myDynamicNamespace;
   private Arrow myArrow;
   private List<Argument> myArguments;
   private Expression myResultType;
   private Expression myTerm;
   private boolean myTypeHasErrors;
 
-  public FunctionDefinition(Namespace staticNamespace, Namespace dynamicNamespace, Precedence precedence, Arrow arrow) {
-    super(dynamicNamespace == null ? staticNamespace : dynamicNamespace, precedence);
-    myStaticNamespace = staticNamespace;
+  public FunctionDefinition(Namespace parentNamespace, Name name, Namespace dynamicNamespace, Precedence precedence, Arrow arrow) {
+    super(parentNamespace, name, precedence);
+    myDynamicNamespace = dynamicNamespace;
     myArrow = arrow;
     myTypeHasErrors = true;
   }
 
-  public FunctionDefinition(Namespace staticNamespace, Namespace dynamicNamespace, Precedence precedence, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
-    super(dynamicNamespace == null ? staticNamespace : dynamicNamespace, precedence);
+  public FunctionDefinition(Namespace parentNamespace, Name name, Namespace dynamicNamespace, Precedence precedence, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
+    super(parentNamespace, name, precedence);
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);
-    myStaticNamespace = staticNamespace;
+    myDynamicNamespace = dynamicNamespace;
     myArguments = arguments;
     myResultType = resultType;
     myArrow = arrow;
@@ -41,11 +41,11 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   public Namespace getStaticNamespace() {
-    return myStaticNamespace;
+    return getParentNamespace().getChild(getName());
   }
 
   public Namespace getDynamicNamespace() {
-    return myStaticNamespace == getNamespace() ? null : getNamespace();
+    return myDynamicNamespace;
   }
 
   @Override
@@ -74,17 +74,17 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
 
   @Override
   public Collection<? extends Abstract.Statement> getStatements() {
-    Namespace dynamicNamespace = myStaticNamespace == getNamespace() ? null : getNamespace();
-    List<Abstract.Statement> statements = new ArrayList<>(myStaticNamespace.getMembers().size() + (dynamicNamespace == null ? 0 : dynamicNamespace.getMembers().size()));
-    if (dynamicNamespace != null) {
-      for (DefinitionPair pair : dynamicNamespace.getMembers()) {
+    Namespace staticNamespace = getStaticNamespace();
+    List<Abstract.Statement> statements = new ArrayList<>(staticNamespace.getMembers().size() + (myDynamicNamespace == null ? 0 : myDynamicNamespace.getMembers().size()));
+    if (myDynamicNamespace != null) {
+      for (NamespaceMember pair : myDynamicNamespace.getMembers()) {
         Abstract.Definition definition = pair.definition != null ? pair.definition : pair.abstractDefinition;
         if (definition != null) {
           statements.add(new DefineStatement(definition, true));
         }
       }
     }
-    for (DefinitionPair pair : myStaticNamespace.getMembers()) {
+    for (NamespaceMember pair : staticNamespace.getMembers()) {
       Abstract.Definition definition = pair.definition != null ? pair.definition : pair.abstractDefinition;
       if (definition != null) {
         statements.add(new DefineStatement(definition, true));

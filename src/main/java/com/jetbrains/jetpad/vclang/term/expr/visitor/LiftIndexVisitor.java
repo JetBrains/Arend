@@ -190,13 +190,14 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
   public Expression visitClassExt(ClassExtExpression expr) {
     Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
     for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-      List<Argument> arguments = new ArrayList<>(entry.getValue().getArguments().size());
-      Integer from = visitArguments(entry.getValue().getArguments(), arguments);
+      FunctionDefinition function = entry.getValue();
+      List<Argument> arguments = new ArrayList<>(function.getArguments().size());
+      Integer from = visitArguments(function.getArguments(), arguments);
       if (from == null) return null;
 
-      Expression resultType = entry.getValue().getResultType() == null ? null : entry.getValue().getResultType().liftIndex(from, myOn);
-      Expression term = entry.getValue().getTerm() == null ? null : entry.getValue().getTerm().liftIndex(from, myOn);
-      definitions.put(entry.getKey(), new OverriddenDefinition(entry.getValue().getStaticNamespace(), entry.getValue().getDynamicNamespace(), entry.getValue().getPrecedence(), arguments, resultType, entry.getValue().getArrow(), term, entry.getKey()));
+      Expression resultType = function.getResultType() == null ? null : function.getResultType().liftIndex(from, myOn);
+      Expression term = function.getTerm() == null ? null : function.getTerm().liftIndex(from, myOn);
+      definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getStaticNamespace(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, entry.getKey()));
     }
     DefCallExpression expr1 = visitDefCall(expr.getBaseClassExpression());
     return expr1 == null ? null : ClassExt(expr1, definitions, expr.getUniverse());

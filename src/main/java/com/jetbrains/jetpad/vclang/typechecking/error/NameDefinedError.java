@@ -1,38 +1,38 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 public class NameDefinedError extends TypeCheckingError {
   private final String myName;
-  private final Namespace myNamespace;
+  private final ResolvedName myResolvedName;
 
-  public NameDefinedError(boolean alreadyDefined, Namespace namespace, Abstract.SourceNode expression, String name, Namespace where) {
-    super(namespace, alreadyDefined ? "is already defined" : "is not defined", expression, null);
+  public NameDefinedError(boolean alreadyDefined, ResolvedName resolvedName, Abstract.SourceNode expression, String name, ResolvedName where) {
+    super(resolvedName, alreadyDefined ? "is already defined" : "is not defined", expression, null);
     myName = name;
-    myNamespace = where;
+    myResolvedName = where;
   }
 
-  public NameDefinedError(boolean alreadyDefined, Abstract.SourceNode expression, String name, Namespace where) {
+  public NameDefinedError(boolean alreadyDefined, Abstract.SourceNode expression, String name, ResolvedName where) {
     super(alreadyDefined ? "is already defined" : "is not defined", expression, null);
     myName = name;
-    myNamespace = where;
+    myResolvedName = where;
   }
 
-  public NameDefinedError(boolean alreadyDefined, Namespace namespace, Abstract.SourceNode expression, Name name, Namespace where) {
-    this(alreadyDefined, namespace, expression, name.getPrefixName(), where);
+  public NameDefinedError(boolean alreadyDefined, ResolvedName resolvedName, Abstract.SourceNode expression, Name name, ResolvedName where) {
+    this(alreadyDefined, resolvedName, expression, name.getPrefixName(), where);
   }
 
-  public NameDefinedError(boolean alreadyDefined, Abstract.SourceNode expression, Name name, Namespace where) {
+  public NameDefinedError(boolean alreadyDefined, Abstract.SourceNode expression, Name name, ResolvedName where) {
     this(alreadyDefined, expression, name.getPrefixName(), where);
   }
 
   @Override
   public String toString() {
     String msg = printHeader() + "Name '" + myName + "' " + getMessage();
-    if (myNamespace != null) {
-      msg += " in " + myNamespace;
+    if (myResolvedName != null) {
+      msg += " in " + myResolvedName;
     }
     return msg;
   }

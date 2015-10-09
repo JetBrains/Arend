@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -30,15 +31,15 @@ public class DefinitionTest {
   }
 
   private Definition typeCheckDefinition(Definition definition) {
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(definition.getNamespace().getParent(), errorReporter);
-    visitor.setDefinitionPair(definition.getNamespace().getParent().getMember(definition.getName().name));
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(definition.getParentNamespace(), errorReporter);
+    visitor.setNamespaceMember(definition.getParentNamespace().getMember(definition.getName().name));
     return definition.accept(visitor, null);
   }
 
   @Test
   public void function() {
     // f : N => 0;
-    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("f")), null, Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
@@ -48,7 +49,7 @@ public class DefinitionTest {
   @Test
   public void functionUntyped() {
     // f => 0;
-    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("f")), null, Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
@@ -63,7 +64,7 @@ public class DefinitionTest {
     arguments.add(Tele(vars("x"), Nat()));
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
 
-    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("f")), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, null, Definition.Arrow.RIGHT, Index(0));
+    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, null, Definition.Arrow.RIGHT, Index(0));
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
@@ -80,17 +81,18 @@ public class DefinitionTest {
     parameters.add(Tele(vars("a"), Index(2)));
     parameters.add(Tele(vars("b"), Index(2)));
 
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, null, parameters);
+    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, parameters);
+    Namespace defNamespace = def.getParentNamespace().getChild(def.getName());
 
     List<TypeArgument> arguments1 = new ArrayList<>(6);
     arguments1.add(Tele(vars("x"), Index(4)));
     arguments1.add(TypeArg(Apps(Index(3), Index(0), Index(1))));
-    def.addConstructor(new Constructor(def.getNamespace().getChild(new Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
+    def.addConstructor(new Constructor(defNamespace, new Name("con1"), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(6);
     arguments2.add(Tele(false, vars("y"), Index(3)));
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
-    def.addConstructor(new Constructor(def.getNamespace().getChild(new Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
+    def.addConstructor(new Constructor(defNamespace, new Name("con2"), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
 
     DataDefinition typedDef = (DataDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
@@ -108,18 +110,19 @@ public class DefinitionTest {
     // \data D (A : \7-Type2) = con1 (X : \1-Type5) X | con2 (Y : \2-Type3) A Y
     List<TypeArgument> parameters = new ArrayList<>(1);
     parameters.add(Tele(vars("A"), Universe(2, 7)));
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, null, parameters);
+    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, parameters);
+    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
 
     List<TypeArgument> arguments1 = new ArrayList<>(3);
     arguments1.add(Tele(vars("X"), Universe(5, 1)));
     arguments1.add(TypeArg(Index(0)));
-    def.addConstructor(new Constructor(def.getNamespace().getChild(new Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
+    def.addConstructor(new Constructor(namespace, new Name("con1"), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(4);
     arguments2.add(Tele(vars("Y"), Universe(3, 2)));
     arguments2.add(TypeArg(Index(1)));
     arguments2.add(TypeArg(Index(1)));
-    def.addConstructor(new Constructor(def.getNamespace().getChild(new Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
+    def.addConstructor(new Constructor(namespace, new Name("con2"), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
 
     DataDefinition typedDef = (DataDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
@@ -135,9 +138,9 @@ public class DefinitionTest {
   @Test
   public void constructor() {
     // \data D (A : \Type0) = con (B : \Type1) A B |- con Nat zero zero : D Nat
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
+    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
     RootModule.ROOT.getChild(new Name("test")).addDefinition(def);
-    Constructor con = new Constructor(def.getNamespace().getChild(new Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    Constructor con = new Constructor(def.getParentNamespace().findChild(def.getName().name), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
     Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
@@ -150,9 +153,9 @@ public class DefinitionTest {
   @Test
   public void constructorInfer() {
     // \data D (A : \Type0) = con (B : \Type1) A B, f : D (Nat -> Nat) -> Nat |- f (con Nat (\lam x => x) zero) : Nat
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
+    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
     RootModule.ROOT.getChild(new Name("test")).addDefinition(def);
-    Constructor con = new Constructor(def.getNamespace().getChild(new Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    Constructor con = new Constructor(def.getParentNamespace().findChild(def.getName().name), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
     Expression expr = Apps(Index(0), Apps(DefCall(con), Nat(), Lam("x", Index(0)), Zero()));
@@ -168,9 +171,9 @@ public class DefinitionTest {
   @Test
   public void constructorConst() {
     // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
+    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
     RootModule.ROOT.getChild(new Name("test")).addDefinition(def);
-    Constructor con = new Constructor(def.getNamespace().getChild(new Name("con")), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(TypeArg(Index(0))), def);
+    Constructor con = new Constructor(def.getParentNamespace().findChild(def.getName().name), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(TypeArg(Index(0))), def);
     def.addConstructor(con);
 
     Expression expr = Apps(Index(0), DefCall(con));

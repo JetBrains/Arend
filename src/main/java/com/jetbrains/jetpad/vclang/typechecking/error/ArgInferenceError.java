@@ -1,17 +1,17 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.util.List;
 
 public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
 
-  public ArgInferenceError(Namespace namespace, String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, PrettyPrintable where) {
-    super(namespace, message, expression, names);
+  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, PrettyPrintable where) {
+    super(resolvedName, message, expression, names);
     myWhere = where;
   }
 

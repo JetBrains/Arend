@@ -34,10 +34,10 @@ public class ElimTest {
     arguments1.add(TypeArg(Nat()));
     arguments2.add(TypeArg(Pi(Nat(), Nat())));
     arguments2.add(Tele(vars("a", "b", "c"), Nat()));
-    DataDefinition dataType = new DataDefinition(testNS.getChild(new Name("D")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), parameters);
-    testNS.addDefinition(dataType);
-    dataType.addConstructor(new Constructor(dataType.getNamespace().getChild(new Name("con1")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments1, dataType));
-    dataType.addConstructor(new Constructor(dataType.getNamespace().getChild(new Name("con2")), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments2, dataType));
+    DataDefinition dataType = new DataDefinition(testNS, new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), parameters);
+    NamespaceMember member = testNS.addDefinition(dataType);
+    dataType.addConstructor(new Constructor(member.namespace, new Name("con1"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments1, dataType));
+    dataType.addConstructor(new Constructor(member.namespace, new Name("con2"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(Universe.NO_LEVEL), arguments2, dataType));
 
     List<Argument> arguments3 = new ArrayList<>(4);
     arguments3.add(Tele(vars("a1", "b1", "c1"), Nat()));
@@ -48,7 +48,7 @@ public class ElimTest {
     ElimExpression pTerm = Elim(Index(4), clauses1);
     clauses1.add(new Clause(match(dataType.getConstructor("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Nat(), pTerm));
     clauses1.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Pi(Nat(), Nat()), pTerm));
-    FunctionDefinition pFunction = new FunctionDefinition(testNS.getChild(new Name("P")), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
+    FunctionDefinition pFunction = new FunctionDefinition(testNS, new Name("P"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
     testNS.addDefinition(pFunction);
 
     List<Argument> arguments = new ArrayList<>(3);
@@ -70,10 +70,11 @@ public class ElimTest {
     clauses4.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Index(7), term4));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    FunctionDefinition function = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")).getChild(new Name("fun")), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(function.getNamespace().getParent(), errorReporter);
-    visitor.setDefinitionPair(function.getNamespace().getParent().getMember(function.getName().name));
-    FunctionDefinition typedFun = visitor.visitFunction(function, function.getDynamicNamespace());
+    FunctionDefinition function = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("fun"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
+    Namespace functionNamespace = function.getStaticNamespace();
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(functionNamespace.getParent(), errorReporter);
+    visitor.setNamespaceMember(functionNamespace.getParent().getMember(function.getName().name));
+    FunctionDefinition typedFun = visitor.visitFunction(function, null);
     assertNotNull(typedFun);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedFun.hasErrors());
@@ -83,17 +84,17 @@ public class ElimTest {
   public void elim2() {
     typeCheckClass(
         "\\static \\data D Nat (x y : Nat) | con1 Nat | con2 (Nat -> Nat) (a b c : Nat)\n" +
-            "\\static \\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
-            "| con2 _ _ _ _ => Nat -> Nat\n" +
-            "| con1 _ => Nat\n" +
-            "\\static \\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
-            "| con1 s <= \\elim e\n" +
-            "| con2 x y z t => x\n" +
-            "| con1 _ => s\n" +
-            ";\n" +
-            "| con2 x y z t <= \\elim e\n" +
-            "| con1 s => x q\n" +
-            "| con2 _ y z t => x");
+        "\\static \\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
+        "  | con2 _ _ _ _ => Nat -> Nat\n" +
+        "  | con1 _ => Nat\n" +
+        "\\static \\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
+        "  | con1 s <= \\elim e\n" +
+        "    | con2 x y z t => x\n" +
+        "    | con1 _ => s\n" +
+        "  ;\n" +
+        "  | con2 x y z t <= \\elim e\n" +
+        "    | con1 s => x q\n" +
+        "    | con2 _ y z t => x");
   }
 
   @Test
@@ -101,13 +102,13 @@ public class ElimTest {
     typeCheckClass(
         "\\static \\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
         "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
-          "| con1 s <= \\elim e\n" +
-            "| con2 _ {y} {z} {t} => q t\n" +
-            "| con1 {z} _ => z\n" +
-            ";\n" +
-          "| con2 y <= \\elim e\n" +
-            "| con1 s => y s\n" +
-            "| con2 _ {a} {b} => y (q b)");
+        "  | con1 s <= \\elim e\n" +
+        "    | con2 _ {y} {z} {t} => q t\n" +
+        "    | con1 {z} _ => z\n" +
+        "    ;\n" +
+        "  | con2 y <= \\elim e\n" +
+        "    | con1 s => y s\n" +
+        "    | con2 _ {a} {b} => y (q b)");
   }
 
   @Test
@@ -165,8 +166,8 @@ public class ElimTest {
   public void elimUnknownIndex6() {
     typeCheckClass(
         "\\static \\data E | A | B | C\n" +
-            "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
-            "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | _ => 2", 2);
+        "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | _ => 2", 2);
   }
 
   @Test
@@ -193,16 +194,17 @@ public class ElimTest {
   public void elim7() {
     typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
-            "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc (suc _)) zero => 0", 1);
+        "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc (suc _)) zero => 0", 1);
   }
 
   @Test
   public void elim8() {
     ClassDefinition defs = typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
-            "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d _ _ => 1");
-    FunctionDefinition test = (FunctionDefinition) defs.getNamespace().getMember("test").definition;
-    Constructor d = (Constructor) defs.getNamespace().getMember("d").definition;
+        "\\static \\function test (x : D) : Nat <= \\elim x | d zero zero => 0 | d _ _ => 1");
+    Namespace namespace = defs.getParentNamespace().findChild(defs.getName().name);
+    FunctionDefinition test = (FunctionDefinition) namespace.getDefinition("test");
+    Constructor d = (Constructor) namespace.getDefinition("d");
     Expression call1 = Apps(DefCall(d), Zero(), Index(0));
     Expression call2 = Apps(DefCall(d), Suc(Zero()), Index(0));
     assertEquals(Apps(DefCall(test), call1), Apps(DefCall(test), call1).normalize(NormalizeVisitor.Mode.NF));
@@ -213,21 +215,21 @@ public class ElimTest {
   public void elim9() {
     typeCheckClass(
         "\\static \\data D Nat | D (suc n) => d1 | D _ => d | D zero => d0\n" +
-            "\\static \\function test (n : Nat) (a : D (suc n)) : Nat => \\elim a | d => 0", 1);
+        "\\static \\function test (n : Nat) (a : D (suc n)) : Nat <= \\elim a | d => 0", 1);
   }
 
   @Test
   public void elimEmptyBranch() {
     typeCheckClass(
         "\\static \\data D Nat | D (suc n) => dsuc\n" +
-            "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | zero, _! | suc n, dsuc => 0");
+        "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | zero, _! | suc n, dsuc => 0");
   }
 
   @Test
   public void elimEmptyBranchError() {
     typeCheckClass(
         "\\static \\data D Nat | D (suc n) => dsuc\n" +
-            "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | suc n, _! | zero, _! => 0", 1);
+        "\\static \\function test (n : Nat) (d : D n) : Nat <= \\elim n, d | suc n, _! | zero, _! => 0", 1);
   }
 
   @Test
@@ -259,32 +261,33 @@ public class ElimTest {
   public void testAuto() {
     typeCheckClass(
         "\\static \\data Empty\n" +
-            "\\static \\function test (n : Nat) (e : Empty) : Empty <= \\elim n, e");
+        "\\static \\function test (n : Nat) (e : Empty) : Empty <= \\elim n, e");
   }
 
   @Test
   public void testAuto1() {
     typeCheckClass(
         "\\static \\data Geq Nat Nat | Geq _ zero => Geq-zero | Geq (suc n) (suc m) => Geq-suc (Geq n m)\n" +
-            "\\static \\function test (n m : Nat) (p : Geq n m) : Nat <= \\elim n, m, p\n" +
-            "| _, zero, Geq-zero => 0\n" +
-            "| suc n, suc m, Geq-suc p => 1");
+        "\\static \\function test (n m : Nat) (p : Geq n m) : Nat <= \\elim n, m, p\n" +
+        "  | _, zero, Geq-zero => 0\n" +
+        "  | suc n, suc m, Geq-suc p => 1");
   }
 
   @Test
   public void testAutoNonData() {
     typeCheckClass(
         "\\static \\data D Nat | D zero => dcons\n" +
-            "\\static \\data E (n : Nat) (Nat -> Nat) (D n) | econs\n" +
-            "\\static \\function test (n : Nat) (d : D n) (e : E n (\\lam x => x) d) : Nat <= \\elim n, d, e\n" +
-            "| zero, dcons, econs => 1");
+        "\\static \\data E (n : Nat) (Nat -> Nat) (D n) | econs\n" +
+        "\\static \\function test (n : Nat) (d : D n) (e : E n (\\lam x => x) d) : Nat <= \\elim n, d, e\n" +
+        "  | zero, dcons, econs => 1");
   }
 
   @Test
   public void testSmthing() {
-    typeCheckClass("\\static \\data Geq (x y : Nat)\n" +
-        "| Geq m zero => EqBase \n" +
-        "| Geq (suc n) (suc m) => EqSuc (p : Geq n m)\n" +
+    typeCheckClass(
+        "\\static \\data Geq (x y : Nat)\n" +
+        "  | Geq m zero => EqBase \n" +
+        "  | Geq (suc n) (suc m) => EqSuc (p : Geq n m)\n" +
         "\n" +
         "\\static \\function f (x y : Nat) (p : Geq x y) : Nat <=\n" +
         "  \\case x, y, p\n" +

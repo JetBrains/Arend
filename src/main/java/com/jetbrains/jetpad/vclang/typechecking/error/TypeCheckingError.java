@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,8 +12,8 @@ public class TypeCheckingError extends GeneralError {
   private final Abstract.SourceNode myExpression;
   private final List<String> myNames;
 
-  public TypeCheckingError(Namespace namespace, String message, Abstract.SourceNode expression, List<String> names) {
-    super(namespace, message);
+  public TypeCheckingError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, List<String> names) {
+    super(resolvedName, message);
     myExpression = expression;
     myNames = names;
   }

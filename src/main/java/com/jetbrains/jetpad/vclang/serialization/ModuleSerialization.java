@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -17,18 +16,18 @@ public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
   public static final int VERSION = 0;
 
-  public static void writeFile(Namespace namespace, ClassDefinition classDefinition, File outputFile) throws IOException {
+  public static void writeFile(ResolvedName resolvedName, ClassDefinition classDefinition, File outputFile) throws IOException {
     Files.createDirectories(outputFile.getParentFile().toPath());
-    writeStream(namespace, classDefinition, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
+    writeStream(resolvedName, classDefinition, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
   }
 
-  public static void writeStream(Namespace namespace, ClassDefinition classDefinition, DataOutputStream stream) throws IOException {
+  public static void writeStream(ResolvedName resolvedName, ClassDefinition classDefinition, DataOutputStream stream) throws IOException {
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
     DefinitionsIndices definitionsIndices = new DefinitionsIndices();
     SerializeVisitor visitor = new SerializeVisitor(definitionsIndices, byteArrayStream, dataStream);
-    definitionsIndices.getDefinitionIndex(namespace, false);
-    int errors = serializeNamespace(visitor, namespace);
+    definitionsIndices.getDefinitionIndex(resolvedName.toDefinition() /* TODO */, false);
+    int errors = serializeNamespace(visitor, resolvedName.toNamespace());
     if (classDefinition != null) {
       visitor.getDataStream().writeBoolean(true);
       errors += serializeClassDefinition(visitor, classDefinition);
@@ -47,17 +46,19 @@ public class ModuleSerialization {
   public static int serializeNamespace(SerializeVisitor visitor, Namespace namespace) throws IOException {
     int errors = 0;
     int size = 0;
-    for (DefinitionPair member : namespace.getMembers()) {
-      if (member.namespace.getParent() == namespace) {
+    for (NamespaceMember member : namespace.getMembers()) {
+      if (member.definition != null && member.definition.getParentNamespace() == namespace) {
         ++size;
       }
     }
     visitor.getDataStream().writeInt(size);
 
-    for (DefinitionPair member : namespace.getMembers()) {
-      if (member.namespace.getParent() == namespace) {
-        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(member.namespace, false));
-        errors += serializeNamespace(visitor, member.namespace);
+    for (NamespaceMember member : namespace.getMembers()) {
+      if (member.definition != null && member.definition.getParentNamespace() == namespace) {
+        // TODO
+        /*
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(member.definition.getNamespace(), false));
+        errors += serializeNamespace(visitor, member.definition.getNamespace());
         if (member.definition != null && !(member.definition instanceof Constructor) && member.definition.getNamespace().getParent() == namespace) {
           visitor.getDataStream().writeBoolean(true);
           visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(member.definition, true));
@@ -65,6 +66,7 @@ public class ModuleSerialization {
         } else {
           visitor.getDataStream().writeBoolean(false);
         }
+        */
       }
     }
     return errors;
@@ -113,19 +115,21 @@ public class ModuleSerialization {
   public static int OVERRIDDEN_CODE = 4;
   public static int NAMESPACE_CODE = 5;
 
-  public static int getDefinitionCode(NamespaceMember member) {
-    if (member instanceof OverriddenDefinition) return OVERRIDDEN_CODE;
-    if (member instanceof FunctionDefinition) return FUNCTION_CODE;
-    if (member instanceof DataDefinition) return DATA_CODE;
-    if (member instanceof ClassDefinition) return CLASS_CODE;
-    if (member instanceof Constructor) return CONSTRUCTOR_CODE;
-    if (member instanceof Namespace) return NAMESPACE_CODE;
+  public static int getDefinitionCode(Definition definition) {
+    if (definition instanceof OverriddenDefinition) return OVERRIDDEN_CODE;
+    if (definition instanceof FunctionDefinition) return FUNCTION_CODE;
+    if (definition instanceof DataDefinition) return DATA_CODE;
+    if (definition instanceof ClassDefinition) return CLASS_CODE;
+    if (definition instanceof Constructor) return CONSTRUCTOR_CODE;
+    // TODO
+    // if (definition instanceof Namespace) return NAMESPACE_CODE;
     throw new IllegalStateException();
   }
 
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
-    visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(definition.getLocalNamespace(), false));
+    // TODO
+    // visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(definition.getLocalNamespace(), false));
     return serializeNamespace(visitor, definition.getLocalNamespace());
   }
 

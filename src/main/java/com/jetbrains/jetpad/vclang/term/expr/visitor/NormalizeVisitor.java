@@ -408,9 +408,10 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
     for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
       List<Argument> arguments = null;
-      if (entry.getValue().getArguments() != null) {
-        arguments = new ArrayList<>(entry.getValue().getArguments().size());
-        for (Argument argument : entry.getValue().getArguments()) {
+      OverriddenDefinition function = entry.getValue();
+      if (function.getArguments() != null) {
+        arguments = new ArrayList<>(function.getArguments().size());
+        for (Argument argument : function.getArguments()) {
           if (argument instanceof TypeArgument) {
             Expression type = ((TypeArgument) argument).getType().accept(this);
             if (argument instanceof TelescopeArgument) {
@@ -424,9 +425,9 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
         }
       }
 
-      Expression resultType = entry.getValue().getResultType() == null ? null : entry.getValue().getResultType().accept(this);
-      Expression term = entry.getValue().getTerm() == null ? null : entry.getValue().getTerm().accept(this);
-      OverriddenDefinition definition = new OverriddenDefinition(entry.getValue().getStaticNamespace(), entry.getValue().getDynamicNamespace(), entry.getValue().getPrecedence(), arguments, resultType, entry.getValue().getArrow(), term, entry.getValue().getOverriddenFunction());
+      Expression resultType = function.getResultType() == null ? null : function.getResultType().accept(this);
+      Expression term = function.getTerm() == null ? null : function.getTerm().accept(this);
+      OverriddenDefinition definition = new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getStaticNamespace(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, function.getOverriddenFunction());
       definitions.put(entry.getKey(), definition);
     }
     if (expr.getBaseClassExpression().getExpression() == null) {

@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+
+import java.util.Arrays;
 
 public class ResolvedName {
   public Name name;
@@ -22,17 +23,25 @@ public class ResolvedName {
     this(namespace, name.name, name.fixity);
   }
 
+  public NamespaceMember toNamespaceMember() {
+    return namespace.getMember(name.name);
+  }
+
   public Definition toDefinition() {
     return namespace.getDefinition(name.name);
   }
 
   public Abstract.Definition.Precedence toPrecedence() {
-    DefinitionPair dp = namespace.getMember(name.name);
-    return dp.definition != null ? dp.definition.getPrecedence() : dp.abstractDefinition != null ? dp.abstractDefinition.getPrecedence() : null;
+    return namespace.getMember(name.name).getPrecedence();
   }
 
   public Namespace toNamespace() {
-    return namespace.getChild(name);
+    return namespace.findChild(name.name);
+  }
+
+  @Override
+  public String toString() {
+    return namespace + "." + name.getPrefixName();
   }
 
   @Override
@@ -40,5 +49,10 @@ public class ResolvedName {
     return other == this || other instanceof ResolvedName
         && name.equals(((ResolvedName) other).name)
         && namespace == ((ResolvedName) other).namespace;
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(new Object[]{namespace, name == null ? null : name.name});
   }
 }

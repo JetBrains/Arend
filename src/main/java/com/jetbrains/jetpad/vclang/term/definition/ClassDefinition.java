@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -15,8 +14,8 @@ import java.util.List;
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
   private Namespace myLocalNamespace;
 
-  public ClassDefinition(Namespace namespace) {
-    super(namespace, DEFAULT_PRECEDENCE);
+  public ClassDefinition(Namespace parentNamespace, Name name) {
+    super(parentNamespace, name, DEFAULT_PRECEDENCE);
     super.hasErrors(false);
   }
 
@@ -39,17 +38,22 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
 
   @Override
   public Collection<? extends Abstract.Statement> getStatements() {
-    List<Abstract.Statement> statements = new ArrayList<>(myLocalNamespace.getMembers().size() + getNamespace().getMembers().size());
-    for (DefinitionPair pair : myLocalNamespace.getMembers()) {
+    Namespace namespace = getParentNamespace().findChild(getName().name);
+    int size = namespace == null ? 0 : namespace.getMembers().size();
+
+    List<Abstract.Statement> statements = new ArrayList<>(myLocalNamespace.getMembers().size() + size);
+    for (NamespaceMember pair : myLocalNamespace.getMembers()) {
       Abstract.Definition definition = pair.definition != null ? pair.definition : pair.abstractDefinition;
       if (definition != null) {
         statements.add(new DefineStatement(definition, false));
       }
     }
-    for (DefinitionPair pair : getNamespace().getMembers()) {
-      Abstract.Definition definition = pair.definition != null ? pair.definition : pair.abstractDefinition;
-      if (definition != null) {
-        statements.add(new DefineStatement(definition, true));
+    if (namespace != null) {
+      for (NamespaceMember pair : namespace.getMembers()) {
+        Abstract.Definition definition = pair.definition != null ? pair.definition : pair.abstractDefinition;
+        if (definition != null) {
+          statements.add(new DefineStatement(definition, true));
+        }
       }
     }
     return statements;

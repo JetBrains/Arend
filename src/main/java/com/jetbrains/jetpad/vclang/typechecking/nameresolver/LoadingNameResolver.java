@@ -1,6 +1,11 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
-import com.jetbrains.jetpad.vclang.module.*;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
+import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 public class LoadingNameResolver implements NameResolver {
   private final ModuleLoader myModuleLoader;
@@ -12,37 +17,20 @@ public class LoadingNameResolver implements NameResolver {
   }
 
   @Override
-  public DefinitionPair locateName(String name, boolean isStatic) {
-    DefinitionPair member = myNameResolver.locateName(name, isStatic);
-    if (member != null) {
-      if (member.definition == null && member.abstractDefinition == null) {
-        ModuleLoadingResult result = myModuleLoader.load(member.namespace.getParent(), member.namespace.getName().name, true);
-        if (result != null) {
-          return result.definition;
-        }
-      }
-      return member;
-    }
-
-    ModuleLoadingResult result = myModuleLoader.load(RootModule.ROOT, name, true);
-    return result == null ? null : result.definition;
+  public NamespaceMember locateName(String name) {
+    NamespaceMember member = myNameResolver.locateName(name);
+    ModuleLoadingResult result = myModuleLoader.load(member != null ? member.getResolvedName() : new ResolvedName(RootModule.ROOT, name), true);
+    return result != null && result.namespaceMember != null ? result.namespaceMember : member;
   }
 
   @Override
-  public DefinitionPair getMember(Namespace parent, String name) {
-    DefinitionPair member = parent.getMember(name);
+  public NamespaceMember getMember(Namespace parent, String name) {
+    NamespaceMember member = parent.getMember(name);
     if (member == null) {
       return null;
     }
 
-    if (member.definition == null && member.abstractDefinition == null) {
-      ModuleLoadingResult result = myModuleLoader.load(parent, name, true);
-      if (result != null && result.definition != null) {
-        member.abstractDefinition = result.definition.abstractDefinition;
-        member.definition = result.definition.definition;
-      }
-    }
-
-    return member;
+    ModuleLoadingResult result = myModuleLoader.load(member.getResolvedName(), true);
+    return result != null && result.namespaceMember != null ? result.namespaceMember : member;
   }
 }

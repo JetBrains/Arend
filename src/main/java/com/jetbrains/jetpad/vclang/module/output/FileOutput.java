@@ -1,20 +1,20 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.File;
 import java.io.IOException;
 
 public class FileOutput implements Output {
   private final File myFile;
-  private final Namespace myModule;
+  private final ResolvedName myModule;
   private final ModuleDeserialization myModuleDeserialization;
 
-  public FileOutput(ModuleDeserialization moduleDeserialization, Namespace module, File file) {
+  public FileOutput(ModuleDeserialization moduleDeserialization, ResolvedName module, File file) {
     myFile = file;
     myModule = module;
     myModuleDeserialization = moduleDeserialization;
@@ -41,7 +41,7 @@ public class FileOutput implements Output {
   }
 
   @Override
-  public void write(Namespace namespace, ClassDefinition classDefinition) throws IOException {
-    ModuleSerialization.writeFile(namespace, classDefinition, myFile);
+  public void write(ClassDefinition classDefinition) throws IOException {
+    ModuleSerialization.writeFile(myModule, classDefinition, myFile);
   }
 }

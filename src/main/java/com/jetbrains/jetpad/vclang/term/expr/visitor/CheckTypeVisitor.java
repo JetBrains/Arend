@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -25,8 +24,6 @@ import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
-
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
 
@@ -570,7 +567,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
       boolean notInScope = false;
 
-      Namespace where = null;
+      ResolvedName where = null;
       if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
         parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
         Definition child = parent.getField(name.name);
@@ -602,8 +599,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         Expression function = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
         Collections.reverse(arguments);
         if (function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() instanceof DataDefinition) {
-          where = ((DefCallExpression) function).getDefinition().getNamespace();
-          Constructor constructor = ((DataDefinition) ((DefCallExpression) function).getDefinition()).getConstructor(name.name);
+          DataDefinition definition = (DataDefinition) ((DefCallExpression) function).getDefinition();
+          where = new ResolvedName(definition.getParentNamespace(), definition.getName());
+          Constructor constructor = definition.getConstructor(name.name);
           if (constructor == null) {
             notInScope = true;
           } else {

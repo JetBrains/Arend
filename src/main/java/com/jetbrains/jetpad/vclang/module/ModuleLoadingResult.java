@@ -1,15 +1,15 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
+
 public class ModuleLoadingResult {
-  public Namespace namespace;
-  public DefinitionPair definition;
+  public NamespaceMember namespaceMember;
   public boolean compiled;
   public int errorsNumber;
 
-  public ModuleLoadingResult(Namespace namespace, DefinitionPair definition, boolean compiled, int errorsNumber) {
-    this.definition = definition;
+  public ModuleLoadingResult(NamespaceMember namespaceMember, boolean compiled, int errorsNumber) {
+    this.namespaceMember = namespaceMember;
     this.compiled = compiled;
-    this.namespace = namespace;
     this.errorsNumber = errorsNumber;
   }
 }

@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 public class DummyOutputSupplier implements OutputSupplier {
   private final DummyOutput myOutput = new DummyOutput();
@@ -14,12 +14,12 @@ public class DummyOutputSupplier implements OutputSupplier {
   }
 
   @Override
-  public DummyOutput getOutput(Namespace module) {
+  public DummyOutput getOutput(ResolvedName module) {
     return myOutput;
   }
 
   @Override
-  public DummyOutput locateOutput(Namespace module) {
+  public DummyOutput locateOutput(ResolvedName module) {
     return myOutput;
   }
 }

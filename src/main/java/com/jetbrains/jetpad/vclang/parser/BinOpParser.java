@@ -47,7 +47,7 @@ public class BinOpParser {
 
     if (!(topElem.prec.priority > elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Definition.Associativity.LEFT_ASSOC && elem.prec.associativity == Definition.Associativity.LEFT_ASSOC))) {
       String msg = "Precedence parsing error: cannot mix (" + topElem.name.name + ") [" + topElem.prec + "] and (" + elem.name.name + ") [" + elem.prec + "] in the same infix expression";
-      myErrorReporter.report(new TypeCheckingError(null, msg, elem.var, null));
+      myErrorReporter.report(new TypeCheckingError(msg, elem.var, null));
     }
     stack.remove(stack.size() - 1);
     pushOnStack(stack, myBinOpExpression.makeBinOp(topElem.argument, topElem.name, topElem.var, elem.argument), elem.name, elem.prec, elem.var);

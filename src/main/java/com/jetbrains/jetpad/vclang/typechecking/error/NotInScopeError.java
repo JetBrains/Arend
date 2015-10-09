@@ -1,14 +1,14 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 public class NotInScopeError extends TypeCheckingError {
   private final String myName;
 
-  public NotInScopeError(Namespace namespace, Abstract.SourceNode expression, String name) {
-    super(namespace, "Not in scope", expression, null);
+  public NotInScopeError(ResolvedName resolvedName, Abstract.SourceNode expression, String name) {
+    super(resolvedName, "Not in scope", expression, null);
     myName = name;
   }
 
@@ -17,8 +17,8 @@ public class NotInScopeError extends TypeCheckingError {
     myName = name;
   }
 
-  public NotInScopeError(Namespace namespace, Abstract.SourceNode expression, Name name) {
-    this(namespace, expression, name.getPrefixName());
+  public NotInScopeError(ResolvedName resolvedName, Abstract.SourceNode expression, Name name) {
+    this(resolvedName, expression, name.getPrefixName());
   }
 
   public NotInScopeError(Abstract.SourceNode expression, Name name) {

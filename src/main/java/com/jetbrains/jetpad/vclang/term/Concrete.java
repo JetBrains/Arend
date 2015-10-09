@@ -298,7 +298,7 @@ public final class Concrete {
       super(position);
       myExpression = null;
       myName = definition.getName();
-      myResolvedName = new ResolvedName(definition.getNamespace().getParent(), definition.getName());
+      myResolvedName = new ResolvedName(definition.getParentNamespace(), definition.getName());
     }
 
     @Override
@@ -426,7 +426,7 @@ public final class Concrete {
     }
   }
 
-  public static class LetClause extends Binding implements  Abstract.LetClause {
+  public static class LetClause extends Binding implements Abstract.LetClause {
     private final List<Argument> myArguments;
     private final Expression myResultType;
     private final Abstract.Definition.Arrow myArrow;

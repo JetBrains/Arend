@@ -1,9 +1,11 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 public interface ModuleLoader {
-  ModuleLoadingResult load(Namespace parent, String name, boolean tryLoad);
+  ModuleLoadingResult load(ResolvedName module, boolean tryLoad);
   void loadingError(GeneralError error);
-  void loadingSucceeded(Namespace namespace, DefinitionPair definition, boolean compiled);
+  void loadingSucceeded(ResolvedName module, NamespaceMember definition, boolean compiled);
 }

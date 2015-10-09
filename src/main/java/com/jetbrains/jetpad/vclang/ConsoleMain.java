@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.apache.commons.cli.*;
@@ -70,11 +72,11 @@ public class ConsoleMain {
       }
 
       @Override
-      public void loadingSucceeded(Namespace namespace, DefinitionPair definitionPair, boolean compiled) {
+      public void loadingSucceeded(ResolvedName resolvedName, NamespaceMember definitionPair, boolean compiled) {
         if (compiled) {
-          System.out.println("[OK] " + namespace.getFullName());
+          System.out.println("[OK] " + resolvedName);
         } else {
-          System.out.println("[Loaded] " + namespace.getFullName());
+          System.out.println("[Loaded] " + resolvedName);
         }
       }
     };
@@ -142,11 +144,11 @@ public class ConsoleMain {
 
     Namespace namespace = RootModule.ROOT;
     for (String moduleName : moduleNames) {
-      ModuleLoadingResult result = moduleLoader.load(namespace, moduleName, false);
-      if (result == null) {
+      ModuleLoadingResult result = moduleLoader.load(new ResolvedName(namespace, moduleName), false);
+      if (result == null || result.namespaceMember == null) {
         break;
       }
-      namespace = result.namespace;
+      namespace = result.namespaceMember.namespace;
     }
 
     for (GeneralError error : errorReporter.getErrorList()) {

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.util.List;
 
@@ -9,8 +9,8 @@ public class TypeMismatchError extends TypeCheckingError {
   private final Object myExpected;
   private final Abstract.Expression myActual;
 
-  public TypeMismatchError(Namespace namespace, Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
-    super(namespace, null, expression, names);
+  public TypeMismatchError(ResolvedName resolvedName, Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
+    super(resolvedName, null, expression, names);
     myExpected = expected;
     myActual = actual;
   }

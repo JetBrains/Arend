@@ -1,21 +1,21 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 
 public class DeepNamespaceNameResolver extends NamespaceNameResolver {
-  public DeepNamespaceNameResolver(Namespace staticNamespace, Namespace dynamicNamespace) {
-    super(staticNamespace, dynamicNamespace);
+  public DeepNamespaceNameResolver(Namespace namespace) {
+    super(namespace);
   }
 
   @Override
-  public DefinitionPair locateName(String name, boolean isStatic) {
-    DefinitionPair result = !isStatic && getDynamicNamespace() != null ? getDynamicNamespace().locateName(name) : null;
-    return result != null ? result : getStaticNamespace().locateName(name);
+  public NamespaceMember locateName(String name) {
+    NamespaceMember result = super.locateName(name);
+    return result != null ? result : getNamespace().locateName(name);
   }
 
   @Override
-  public DefinitionPair getMember(Namespace parent, String name) {
-    return parent.getMember(name);
+  public NamespaceMember getMember(Namespace parent, String name) {
+    return DummyNameResolver.getInstance().getMember(parent, name);
   }
 }

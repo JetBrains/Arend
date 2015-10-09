@@ -20,13 +20,13 @@ public class Constructor extends Definition implements Abstract.Constructor {
   private List<TypeArgument> myArguments;
   private List<Pattern> myPatterns;
 
-  public Constructor(Namespace namespace, Precedence precedence, DataDefinition dataType) {
-    super(namespace, precedence);
+  public Constructor(Namespace parentNamespace, Name name, Precedence precedence, DataDefinition dataType) {
+    super(parentNamespace, name, precedence);
     myDataType = dataType;
   }
 
-  public Constructor(Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
-    super(namespace, precedence);
+  public Constructor(Namespace parentNamespace, Name name, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
+    super(parentNamespace, name, precedence);
     setUniverse(universe);
     hasErrors(false);
     myDataType = dataType;
@@ -34,8 +34,8 @@ public class Constructor extends Definition implements Abstract.Constructor {
     myPatterns = patterns;
   }
 
-  public Constructor(Namespace namespace, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
-    this(namespace, precedence, universe, arguments, dataType, null);
+  public Constructor(Namespace parentNamespace, Name name, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
+    this(parentNamespace, name, precedence, universe, arguments, dataType, null);
   }
 
   @Override

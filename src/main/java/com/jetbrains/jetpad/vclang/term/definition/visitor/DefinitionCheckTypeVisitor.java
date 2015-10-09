@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -32,41 +31,41 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.s
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
 
-public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Namespace, Definition> {
-  private DefinitionPair myDefinitionPair;
+public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Void, Definition> {
+  private NamespaceMember myNamespaceMember;
   private final List<Binding> myContext;
   private Namespace myNamespace;
   private final ErrorReporter myErrorReporter;
 
   public DefinitionCheckTypeVisitor(Namespace namespace, ErrorReporter errorReporter) {
-    myDefinitionPair = null;
+    myNamespaceMember = null;
     myContext = new ArrayList<>();
     myNamespace = namespace;
     myErrorReporter = errorReporter;
   }
 
-  private DefinitionCheckTypeVisitor(DefinitionPair definitionPair, List<Binding> context, Namespace namespace, ErrorReporter errorReporter) {
-    myDefinitionPair = definitionPair;
+  private DefinitionCheckTypeVisitor(NamespaceMember namespaceMember, List<Binding> context, Namespace namespace, ErrorReporter errorReporter) {
+    myNamespaceMember = namespaceMember;
     myContext = context;
     myNamespace = namespace;
     myErrorReporter = errorReporter;
   }
 
-  public void setDefinitionPair(DefinitionPair definitionPair) {
-    myDefinitionPair = definitionPair;
+  public void setNamespaceMember(NamespaceMember namespaceMember) {
+    myNamespaceMember = namespaceMember;
   }
 
-  public static void typeCheck(DefinitionPair definitionPair, List<Binding> context, Namespace namespace, ErrorReporter errorReporter) {
-    if (definitionPair != null && !definitionPair.isTypeChecked()) {
-      DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(definitionPair, context, namespace, errorReporter);
-      definitionPair.definition = definitionPair.abstractDefinition.accept(visitor, definitionPair.getLocalNamespace());
+  public static void typeCheck(NamespaceMember namespaceMember, List<Binding> context, Namespace namespace, ErrorReporter errorReporter) {
+    if (namespaceMember != null && namespaceMember.definition != null) {
+      DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(namespaceMember, context, namespace, errorReporter);
+      namespaceMember.definition = namespaceMember.abstractDefinition.accept(visitor, null);
     }
   }
 
   @Override
-  public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Namespace localNamespace) {
-    FunctionDefinition typedDef = new FunctionDefinition(myNamespace.getChild(def.getName()), localNamespace, def.getPrecedence(), def.getArrow());
-    typeCheckStatements(def.getStatements(), typedDef.getNamespace(), localNamespace);
+  public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
+    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, def.getName(), null, def.getPrecedence(), def.getArrow());
+    typeCheckStatements(def.getStatements(), myNamespace.getChild(def.getName()));
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -178,7 +177,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
         */
         } else {
           // if (splitArgs == null) {
-          myErrorReporter.report(new ArgInferenceError(typedDef.getNamespace().getParent(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+          myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
           return typedDef;
         /*
         } else {
@@ -234,7 +233,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
       typedDef.setResultType(expectedType);
       typedDef.typeHasErrors(typedDef.getResultType() == null);
 
-      myDefinitionPair.definition = typedDef;
+      myNamespaceMember.definition = typedDef;
       if (def.getTerm() != null) {
         visitor.setArgsStartCtxIndex(0);
         CheckTypeVisitor.OKResult termResult = visitor.checkType(def.getTerm(), expectedType);
@@ -294,7 +293,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
   }
 
   @Override
-  public DataDefinition visitData(Abstract.DataDefinition def, Namespace ignore) {
+  public DataDefinition visitData(Abstract.DataDefinition def, Void params) {
     List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
     DataDefinition dataDefinition;
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
@@ -315,20 +314,19 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
         }
       }
 
-      dataDefinition = new DataDefinition(myNamespace.getChild(def.getName()), def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters);
-      myDefinitionPair.definition = dataDefinition;
+      dataDefinition = new DataDefinition(myNamespace, def.getName(), def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters);
+      myNamespaceMember.definition = dataDefinition;
 
-      myNamespace = dataDefinition.getNamespace();
+      myNamespace = myNamespace.getChild(def.getName());
       for (Abstract.Constructor constructor : def.getConstructors()) {
         Constructor typedConstructor = visitConstructor(constructor, dataDefinition);
         if (typedConstructor == null) {
           continue;
         }
 
-        DefinitionPair member = myNamespace.getMember(constructor.getName().name);
+        NamespaceMember member = myNamespace.getMember(constructor.getName().name);
         if (member == null) {
-          member = new DefinitionPair(myNamespace.getChild(constructor.getName()), constructor, null);
-          myNamespace.addMember(member);
+          continue;
         }
         member.definition = typedConstructor;
 
@@ -356,7 +354,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
   }
 
   @Override
-  public Definition visitConstructor(Abstract.Constructor def, Namespace params) {
+  public Definition visitConstructor(Abstract.Constructor def, Void params) {
     throw new IllegalStateException();
   }
 
@@ -402,7 +400,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
           String error = "Universe " + argUniverse + " of " + index + suffix(index) + " argument is not compatible with universe " + universe + " of previous arguments";
-          myErrorReporter.report(new TypeCheckingError(dataDefinition.getNamespace().getParent(), error, def, new ArrayList<String>()));
+          myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), error, def, new ArrayList<String>()));
           ok = false;
         } else {
           universe = maxUniverse;
@@ -432,7 +430,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
             if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition))) {
               String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + def.getName();
-              myErrorReporter.report(new TypeCheckingError(dataDefinition.getNamespace().getParent(), msg, def.getArguments().get(j).getType(), getNames(myContext)));
+              myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, def.getArguments().get(j).getType(), getNames(myContext)));
               return null;
             }
           }
@@ -444,33 +442,32 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Nam
         for (Expression expr : exprs) {
           if (expr.accept(new FindDefCallVisitor(dataDefinition))) {
             String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + def.getName();
-            myErrorReporter.report(new TypeCheckingError(dataDefinition.getNamespace().getParent(), msg, def.getArguments().get(j).getType(), getNames(myContext)));
+            myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, def.getArguments().get(j).getType(), getNames(myContext)));
             return null;
           }
         }
       }
 
-      Constructor constructor = new Constructor(dataDefinition.getNamespace().getChild(def.getName()), def.getPrecedence(), universe, arguments, dataDefinition, patterns);
+      Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), def.getName(), def.getPrecedence(), universe, arguments, dataDefinition, patterns);
       dataDefinition.addConstructor(constructor);
-      dataDefinition.getNamespace().getParent().addDefinition(constructor);
+      dataDefinition.getParentNamespace().addDefinition(constructor);
       return constructor;
     }
   }
 
-  private void typeCheckStatements(Collection<? extends Abstract.Statement> statements, Namespace staticNamespace, Namespace dynamicNamespace) {
+  private void typeCheckStatements(Collection<? extends Abstract.Statement> statements, Namespace namespace) {
     for (Abstract.Statement statement : statements) {
       if (statement instanceof Abstract.DefineStatement) {
-        Namespace parentNamespace = ((Abstract.DefineStatement) statement).isStatic() ? staticNamespace : dynamicNamespace;
-        typeCheck(parentNamespace.getMember(((Abstract.DefineStatement) statement).getDefinition().getName().name), myContext, parentNamespace, myErrorReporter);
+        typeCheck(namespace.getMember(((Abstract.DefineStatement) statement).getDefinition().getName().name), myContext, namespace, myErrorReporter);
       }
     }
   }
 
   @Override
-  public ClassDefinition visitClass(Abstract.ClassDefinition def, Namespace localNamespace) {
-    ClassDefinition typedDef = new ClassDefinition(myNamespace.getChild(def.getName()));
-    typedDef.setLocalNamespace(localNamespace);
-    typeCheckStatements(def.getStatements(), typedDef.getNamespace(), localNamespace);
+  public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
+    ClassDefinition typedDef = new ClassDefinition(myNamespace, def.getName());
+    typeCheckStatements(def.getStatements(), myNamespace.getChild(def.getName()));
+    // TODO
     return typedDef;
   }
 }

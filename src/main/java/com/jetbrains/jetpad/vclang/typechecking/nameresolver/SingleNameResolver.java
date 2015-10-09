@@ -1,24 +1,24 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
-import com.jetbrains.jetpad.vclang.module.DefinitionPair;
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 
 public class SingleNameResolver implements NameResolver {
   private final String myName;
-  private final DefinitionPair myDefinitionPair;
+  private final NamespaceMember myNamespaceMember;
 
-  public SingleNameResolver(String name, DefinitionPair definitionPair) {
+  public SingleNameResolver(String name, NamespaceMember namespaceMember) {
     myName = name;
-    myDefinitionPair = definitionPair;
+    myNamespaceMember = namespaceMember;
   }
 
   @Override
-  public DefinitionPair locateName(String name, boolean isStatic) {
-    return myName.equals(name) ? myDefinitionPair : null;
+  public NamespaceMember locateName(String name) {
+    return myName.equals(name) ? myNamespaceMember : null;
   }
 
   @Override
-  public DefinitionPair getMember(Namespace parent, String name) {
+  public NamespaceMember getMember(Namespace parent, String name) {
     return null;
   }
 }

@@ -186,9 +186,10 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
   public Expression visitClassExt(ClassExtExpression expr) {
     Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
     for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-      List<Argument> arguments = new ArrayList<>(entry.getValue().getArguments().size());
-      Expression[] result = visitLamArguments(entry.getValue().getArguments(), arguments, entry.getValue().getResultType(), entry.getValue().getTerm());
-      definitions.put(entry.getKey(), new OverriddenDefinition(entry.getValue().getStaticNamespace(), entry.getValue().getDynamicNamespace(), entry.getValue().getPrecedence(), arguments, result[0], entry.getValue().getArrow(), result[1], entry.getKey()));
+      FunctionDefinition function = entry.getValue();
+      List<Argument> arguments = new ArrayList<>(function.getArguments().size());
+      Expression[] result = visitLamArguments(function.getArguments(), arguments, function.getResultType(), function.getTerm());
+      definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getStaticNamespace(), function.getPrecedence(), arguments, result[0], function.getArrow(), result[1], entry.getKey()));
     }
     return ClassExt(visitDefCall(expr.getBaseClassExpression()), definitions, expr.getUniverse());
   }

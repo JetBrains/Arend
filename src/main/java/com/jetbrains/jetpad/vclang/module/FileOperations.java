@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+
 import java.io.File;
 
 public class FileOperations {
@@ -9,8 +11,8 @@ public class FileOperations {
     return namespace == null || namespace.getParent() == null ? dir : new File(getFile(dir, namespace.getParent()), namespace.getName().name);
   }
 
-  public static File getFile(File dir, Namespace namespace, String ext) {
-    return new File(getFile(dir, namespace.getParent()), namespace.getName().name + ext);
+  public static File getFile(File dir, ResolvedName resolvedName, String ext) {
+    return new File(getFile(dir, resolvedName.namespace), resolvedName.name.name + ext);
   }
 
   public static String getVcFileName(File file) {

@@ -6,22 +6,22 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrint
 
 import java.util.ArrayList;
 
-public abstract class Definition extends Binding implements Abstract.Definition, NamespaceMember {
+public abstract class Definition extends Binding implements Abstract.Definition {
   private Precedence myPrecedence;
   private Universe myUniverse;
   private boolean myHasErrors;
-  final private Namespace myNamespace;
+  final private Namespace myParentNamespace;
 
-  public Definition(Namespace namespace, Precedence precedence) {
-    super(namespace.getName());
-    myNamespace = namespace;
+  public Definition(Namespace parentNamespace, Name name, Precedence precedence) {
+    super(name);
+    myParentNamespace = parentNamespace;
     myPrecedence = precedence;
     myUniverse = new Universe.Type(0, Universe.Type.PROP);
     myHasErrors = true;
   }
 
-  public Namespace getNamespace() {
-    return myNamespace;
+  public Namespace getParentNamespace() {
+    return myParentNamespace;
   }
 
   @Override

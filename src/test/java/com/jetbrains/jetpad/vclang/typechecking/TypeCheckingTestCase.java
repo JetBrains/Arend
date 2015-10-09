@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
@@ -46,7 +45,7 @@ public class TypeCheckingTestCase {
   public static Definition typeCheckDef(Concrete.Definition definition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(RootModule.ROOT.getChild(new Name("test")), errorReporter);
-    visitor.setDefinitionPair(RootModule.ROOT.getChild(new Name("test")).getMember(definition.getName().name));
+    visitor.setNamespaceMember(RootModule.ROOT.getChild(new Name("test")).getMember(definition.getName().name));
     Definition result = definition.accept(visitor, null);
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
     return result;
@@ -60,17 +59,17 @@ public class TypeCheckingTestCase {
     return typeCheckDef(text, 0);
   }
 
-  public static ClassDefinition typeCheckClass(Concrete.ClassDefinition classDefinition, Namespace localNamespace, int errors) {
+  public static ClassDefinition typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    ClassDefinition result = new DefinitionCheckTypeVisitor(RootModule.ROOT, errorReporter).visitClass(classDefinition, localNamespace);
+    ClassDefinition result = new DefinitionCheckTypeVisitor(RootModule.ROOT, errorReporter).visitClass(classDefinition, null);
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
     return result;
   }
 
   public static ClassDefinition typeCheckClass(String text, int errors) {
     Concrete.ClassDefinition classDefinition = parseClass("test", text);
-    Namespace localNamespace = resolveNamesClass(classDefinition, 0);
-    return typeCheckClass(classDefinition, localNamespace, errors);
+    resolveNamesClass(classDefinition, 0);
+    return typeCheckClass(classDefinition, errors);
   }
 
   public static ClassDefinition typeCheckClass(String text) {

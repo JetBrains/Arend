@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.util.List;
 
@@ -11,8 +11,8 @@ public class InferredArgumentsMismatch extends TypeCheckingError {
   private final int myArgument;
   private final List<Abstract.Expression> myOptions;
 
-  public InferredArgumentsMismatch(Namespace namespace, int argument, List<Abstract.Expression> options, Abstract.Expression expression, List<String> names) {
-    super(namespace, null, expression, names);
+  public InferredArgumentsMismatch(ResolvedName resolvedName, int argument, List<Abstract.Expression> options, Abstract.Expression expression, List<String> names) {
+    super(resolvedName, null, expression, names);
     myArgument = argument;
     myOptions = options;
   }

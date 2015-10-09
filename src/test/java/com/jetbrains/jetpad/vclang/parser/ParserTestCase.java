@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.parser;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -25,7 +25,7 @@ public class ParserTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(RootModule.ROOT.getChild(new Name("test")), new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(new ResolvedName(RootModule.ROOT, "test"), new Concrete.Position(line, pos), msg));
       }
     });
     return parser;

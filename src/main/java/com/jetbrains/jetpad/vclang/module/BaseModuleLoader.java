@@ -9,7 +9,9 @@ import com.jetbrains.jetpad.vclang.module.source.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 import java.io.EOFException;
@@ -18,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class BaseModuleLoader implements ModuleLoader {
-  private final List<Namespace> myLoadingModules = new ArrayList<>();
+  private final List<ResolvedName> myLoadingModules = new ArrayList<>();
   private SourceSupplier mySourceSupplier;
   private OutputSupplier myOutputSupplier;
   private final boolean myRecompile;
@@ -38,12 +40,11 @@ public abstract class BaseModuleLoader implements ModuleLoader {
   }
 
   @Override
-  public ModuleLoadingResult load(Namespace parent, String name, boolean tryLoad) {
-    DefinitionPair member = parent.getMember(name);
+  public ModuleLoadingResult load(ResolvedName module, boolean tryLoad) {
+    NamespaceMember member = module.namespace.getMember(module.name.name);
     if (member != null && (member.abstractDefinition != null || member.definition != null)) {
       return null;
     }
-    Namespace module = member == null ? parent.getChild(new Name(name)) : member.namespace;
 
     int index = myLoadingModules.indexOf(module);
     if (index != -1) {
@@ -72,25 +73,25 @@ public abstract class BaseModuleLoader implements ModuleLoader {
       ModuleLoadingResult result;
       if (compile) {
         result = source.load();
-        if (result != null && result.errorsNumber == 0 && result.definition != null && result.definition.definition instanceof ClassDefinition && output.canWrite()) {
-          output.write(module, (ClassDefinition) result.definition.definition);
+        if (result != null && result.errorsNumber == 0 && result.namespaceMember != null && result.namespaceMember.definition instanceof ClassDefinition && output.canWrite()) {
+          output.write((ClassDefinition) result.namespaceMember.definition);
         }
       } else {
         result = output.read();
       }
 
       if (result == null || result.errorsNumber != 0) {
-        GeneralError error = new GeneralError(module, result == null ? "cannot load module" : "module contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
+        GeneralError error = new GeneralError(module.namespace.getResolvedName(), result == null ? "cannot load module '" + module.name + "'" : "module '"+ module.name + "' contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
         error.setLevel(GeneralError.Level.INFO);
         loadingError(error);
       } else {
-        if (result.definition != null && (result.definition.abstractDefinition != null || result.definition.definition != null)) {
-          loadingSucceeded(module, result.definition, result.compiled);
+        if (result.namespaceMember != null && (result.namespaceMember.abstractDefinition != null || result.namespaceMember.definition != null)) {
+          loadingSucceeded(module, result.namespaceMember, result.compiled);
         }
       }
 
-      if (result != null && result.definition != null) {
-        parent.addMember(result.definition);
+      if (result != null && result.namespaceMember != null) {
+        module.namespace.addMember(result.namespaceMember);
       }
       return result;
     } catch (EOFException e) {

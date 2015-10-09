@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 public class DummySourceSupplier implements SourceSupplier {
   private final DummySource mySource = new DummySource();
@@ -14,7 +14,7 @@ public class DummySourceSupplier implements SourceSupplier {
   }
 
   @Override
-  public DummySource getSource(Namespace module) {
+  public DummySource getSource(ResolvedName module) {
     return mySource;
   }
 }

@@ -34,27 +34,27 @@ public class NormalizationTest {
     testNS = new Namespace("test");
     List<Clause> plusClauses = new ArrayList<>(2);
     ElimExpression plusTerm = Elim(Index(1), plusClauses);
-    plus = new FunctionDefinition(testNS.getChild(new Name("+", Abstract.Definition.Fixity.INFIX)), null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, plusTerm);
+    plus = new FunctionDefinition(testNS, new Name("+", Abstract.Definition.Fixity.INFIX), null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, plusTerm);
     testNS.addDefinition(plus);
     plusClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(0), plusTerm));
     plusClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Suc(BinOp(Index(0), plus, Index(1))), plusTerm));
 
     List<Clause> mulClauses = new ArrayList<>(2);
     ElimExpression mulTerm = Elim(Index(1), mulClauses);
-    mul = new FunctionDefinition(testNS.getChild(new Name("*", Abstract.Definition.Fixity.INFIX)), null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, mulTerm);
+    mul = new FunctionDefinition(testNS, new Name("*", Abstract.Definition.Fixity.INFIX), null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, mulTerm);
     testNS.addDefinition(mul);
     mulClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Zero(), mulTerm));
     mulClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0))), mulTerm));
 
     List<Clause> facClauses = new ArrayList<>(2);
     ElimExpression facTerm = Elim(Index(0), facClauses);
-    fac = new FunctionDefinition(testNS.getChild(new Name("fac")), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, facTerm);
+    fac = new FunctionDefinition(testNS, new Name("fac"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, facTerm);
     testNS.addDefinition(fac);
     facClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Suc(Zero()), facTerm)); facClauses.add(new Clause(match(Prelude.SUC, match("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Suc(Index(0)), mul, Apps(DefCall(fac), Index(0))), facTerm));
 
     List<Clause> nelimClauses = new ArrayList<>(2);
     ElimExpression nelimTerm = Elim(Index(0), nelimClauses);
-    nelim = new FunctionDefinition(testNS.getChild(new Name("nelim")), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
+    nelim = new FunctionDefinition(testNS, new Name("nelim"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
     testNS.addDefinition(nelim);
     nelimClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(1), nelimTerm));
     nelimClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(DefCall(nelim), Index(2), Index(1), Index(0))), nelimTerm));
@@ -219,9 +219,10 @@ public class NormalizationTest {
 
   @Test
   public void normalizeElimAnyConstructor() {
-    ClassDefinition def = typeCheckClass("\\static \\data D | d Nat"
-        + "\\static \\function test (x : D) : Nat => \\elim x | _! => 0");
-    FunctionDefinition test = (FunctionDefinition) def.getNamespace().getMember("test").definition;
+    ClassDefinition def = typeCheckClass(
+        "\\static \\data D | d Nat\n" +
+        "\\static \\function test (x : D) : Nat => \\elim x | _! => 0");
+    FunctionDefinition test = (FunctionDefinition) def.getParentNamespace().getChild(def.getName()).getMember("test").definition;
     assertEquals(Apps(DefCall(test), Index(0)).normalize(NormalizeVisitor.Mode.NF), Apps(DefCall(test), Index(0)));
   }
 }

@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
 import com.jetbrains.jetpad.vclang.module.FileOperations;
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.File;
 import java.util.List;
@@ -19,19 +19,19 @@ public class FileOutputSupplier implements OutputSupplier {
   }
 
   @Override
-  public FileOutput getOutput(Namespace module) {
-    return new FileOutput(myModuleDeserialization, module, myDirectory == null ? null : FileOperations.getFile(myDirectory, module, ".vcc"));
+  public FileOutput getOutput(ResolvedName resolvedName) {
+    return new FileOutput(myModuleDeserialization, resolvedName, myDirectory == null ? null : FileOperations.getFile(myDirectory, resolvedName, ".vcc"));
   }
 
   @Override
-  public FileOutput locateOutput(Namespace module) {
+  public FileOutput locateOutput(ResolvedName resolvedName) {
     for (File dir : myLibDirs) {
-      File file = FileOperations.getFile(dir, module, ".vcc");
+      File file = FileOperations.getFile(dir, resolvedName, ".vcc");
       if (file.exists()) {
-        return new FileOutput(myModuleDeserialization, module, file);
+        return new FileOutput(myModuleDeserialization, resolvedName, file);
       }
     }
 
-    return new FileOutput(myModuleDeserialization, module, null);
+    return new FileOutput(myModuleDeserialization, resolvedName, null);
   }
 }
