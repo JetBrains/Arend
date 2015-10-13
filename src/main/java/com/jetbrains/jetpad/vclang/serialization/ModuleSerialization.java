@@ -130,7 +130,7 @@ public class ModuleSerialization {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
     // TODO
     // visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(definition.getLocalNamespace(), false));
-    return serializeNamespace(visitor, definition.getLocalNamespace());
+    return 0; // serializeNamespace(visitor, definition.getLocalNamespace());
   }
 
   private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {

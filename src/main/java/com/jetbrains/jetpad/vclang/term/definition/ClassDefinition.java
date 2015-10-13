@@ -5,14 +5,13 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.statement.DefineStatement;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
-  private Namespace myLocalNamespace;
+  private Map<String, ClassField> myFields = null;
 
   public ClassDefinition(Namespace parentNamespace, Name name) {
     super(parentNamespace, name, DEFAULT_PRECEDENCE);
@@ -24,29 +23,35 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return new UniverseExpression(getUniverse());
   }
 
-  public Definition getField(String name) {
-    return myLocalNamespace.getDefinition(name);
+  public ClassField getField(String name) {
+    return myFields == null ? null : myFields.get(name);
   }
 
-  public Namespace getLocalNamespace() {
-    return myLocalNamespace;
+  public Collection<? extends ClassField> getFields() {
+    return myFields == null ? Collections.<ClassField>emptyList() : myFields.values();
   }
 
-  public void setLocalNamespace(Namespace localNamespace) {
-    myLocalNamespace = localNamespace;
+  public void addField(ClassField field) {
+    myFields.put(field.getName().name, field);
+  }
+
+  public void removeField(String name) {
+    myFields.remove(name);
+  }
+
+  public void removeField(ClassField field) {
+    myFields.remove(field.getName().name);
   }
 
   @Override
   public Collection<? extends Abstract.Statement> getStatements() {
     Namespace namespace = getParentNamespace().findChild(getName().name);
     int size = namespace == null ? 0 : namespace.getMembers().size();
+    Collection<? extends ClassField> fields = getFields();
 
-    List<Abstract.Statement> statements = new ArrayList<>(myLocalNamespace.getMembers().size() + size);
-    for (NamespaceMember pair : myLocalNamespace.getMembers()) {
-      Abstract.Definition definition = pair.definition != null ? pair.definition : pair.abstractDefinition;
-      if (definition != null) {
-        statements.add(new DefineStatement(definition, false));
-      }
+    List<Abstract.Statement> statements = new ArrayList<>(fields.size() + size);
+    for (ClassField field : fields) {
+      statements.add(new DefineStatement(new FunctionDefinition(namespace, field.getName(), null, field.getPrecedence(), Collections.<Argument>emptyList(), field.getType(), null, null), false));
     }
     if (namespace != null) {
       for (NamespaceMember pair : namespace.getMembers()) {

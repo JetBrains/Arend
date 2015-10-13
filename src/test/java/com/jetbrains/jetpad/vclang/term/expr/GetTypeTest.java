@@ -57,7 +57,7 @@ public class GetTypeTest {
   public void fieldAccTest() {
     ClassDefinition def = typeCheckClass("\\static \\class C { \\function x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
-    Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), DefCall(Apps(Index(0), Zero()), ((ClassDefinition) namespace.getDefinition("C")).getLocalNamespace().getDefinition("x")));
+    Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), DefCall(Apps(Index(0), Zero()), ((ClassDefinition) namespace.getDefinition("C")).getField("x")));
     List<Binding> context = new ArrayList<>(1);
     context.add(new TypedBinding("p", Pi(Nat(), DefCall(namespace.getDefinition("C")))));
     assertEquals(Pi(args(Tele(vars("p"), context.get(0).getType())), Pi(type, type)), namespace.getDefinition("test").getType());
@@ -81,8 +81,9 @@ public class GetTypeTest {
   public void patternConstructor1() {
     ClassDefinition def = typeCheckClass(
         "\\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
-    assertEquals(Apps(DefCall(def.getField("C")), Zero()), ((DataDefinition) def.getField("C")).getConstructor("c1").getType());
-    assertEquals(Pi("n", Nat(), Apps(DefCall(def.getField("C")), Suc(Index(1)))), ((DataDefinition) def.getField("C")).getConstructor("c2").getType());
+    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
+    assertEquals(Apps(DefCall(def.getField("C")), Zero()), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c1").getType());
+    assertEquals(Pi("n", Nat(), Apps(DefCall(def.getField("C")), Suc(Index(1)))), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
   }
 
   @Test
@@ -90,8 +91,9 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass(
         "\\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
         "\\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
-    DataDefinition vec = (DataDefinition) def.getField("Vec");
-    DataDefinition d = (DataDefinition) def.getField("D");
+    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
+    DataDefinition vec = (DataDefinition) namespace.getMember("Vec").definition;
+    DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
     assertEquals(Apps(DefCall(d), Zero(), Index(0)), d.getConstructor("dzero").getType());
     assertEquals(Apps(DefCall(d), Suc(Index(1)), Index(0)), d.getConstructor("done").getType());
     assertEquals(Pi("x", Index(1), Pi("xs", Apps(DefCall(vec), Index(2), Index(1)), Apps(DefCall(vec), Index(3), Suc(Index(2))))), vec.getConstructor("Cons").getType());
@@ -102,8 +104,9 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass(
         "\\data D | d \\Type0\n" +
         "\\data C D | C (d A) => c A");
-    DataDefinition d = (DataDefinition) def.getField("D");
-    DataDefinition c = (DataDefinition) def.getField("C");
+    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
+    DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
+    DataDefinition c = (DataDefinition) namespace.getMember("C").definition;
     assertEquals(Pi("x", Index(0), Apps(DefCall(c), Apps(DefCall(d.getConstructor("d")), Index(1)))), c.getConstructor("c").getType());
   }
 
@@ -112,7 +115,8 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass(
         "\\data Box (n : Nat) | box\n" +
         "\\data D (n : Nat) (Box n) | D (zero) _ => d");
-    DataDefinition d = (DataDefinition) def.getField("D");
+    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
+    DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
     assertEquals(Apps(DefCall(d), Zero(), Index(0)), d.getConstructor("d").getType());
   }
 }

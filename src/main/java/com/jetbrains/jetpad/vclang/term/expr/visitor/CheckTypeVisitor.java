@@ -570,27 +570,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       ResolvedName where = null;
       if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
         parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
-        Definition child = parent.getField(name.name);
-        if (child != null) {
-          if (child.hasErrors()) {
-            TypeCheckingError error = new HasErrors(child.getName(), expr);
-            expr.setWellTyped(myLocalContext, Error(DefCall(child), error));
-            myErrorReporter.report(error);
-            return null;
-          } else {
-            Definition resultDef = child;
-            if (type instanceof ClassExtExpression && child instanceof FunctionDefinition) {
-              OverriddenDefinition overridden = ((ClassExtExpression) type).getDefinitionsMap().get(child);
-              if (overridden != null) {
-                resultDef = overridden;
-              }
+        ClassField field = parent.getField(name.name);
+        if (field != null) {
+          Definition resultDef = field;
+          if (type instanceof ClassExtExpression) {
+            OverriddenDefinition overridden = ((ClassExtExpression) type).getDefinitionsMap().get(field);
+            if (overridden != null) {
+              resultDef = overridden;
             }
-            Expression resultType = resultDef.getType();
-            if (resultType == null) {
-              resultType = child.getType();
-            }
-            result = new OKResult(DefCall(okExprResult.expression, resultDef), resultType, okExprResult.equations);
           }
+          Expression resultType = resultDef.getType();
+          if (resultType == null) {
+            resultType = field.getType();
+          }
+          result = new OKResult(DefCall(okExprResult.expression, resultDef), resultType, okExprResult.equations);
         }
         notInScope = true;
       } else
@@ -683,7 +676,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
       }
       if (((DefCallExpression) result.expression).getExpression() != null && parent != null) {
-        result.type = result.type.accept(new ReplaceDefCallVisitor(parent.getLocalNamespace(), ((DefCallExpression) result.expression).getExpression()));
+        result.type = result.type.accept(new ReplaceDefCallVisitor(parent.getParentNamespace().getChild(parent.getName()), ((DefCallExpression) result.expression).getExpression()));
       }
     }
     return result;
