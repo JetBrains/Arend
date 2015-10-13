@@ -100,8 +100,8 @@ public class GetTypeTest {
   @Test
   public void patternConstructor3() {
     ClassDefinition def = typeCheckClass(
-        "\\data D | d \\Type0" +
-            "\\data C D | C (d A) => c A");
+        "\\data D | d \\Type0\n" +
+        "\\data C D | C (d A) => c A");
     DataDefinition d = (DataDefinition) def.getField("D");
     DataDefinition c = (DataDefinition) def.getField("C");
     assertEquals(Pi("x", Index(0), Apps(DefCall(c), Apps(DefCall(d.getConstructor("d")), Index(1)))), c.getConstructor("c").getType());
@@ -110,8 +110,8 @@ public class GetTypeTest {
   @Test
   public void patternConstructorDep() {
     ClassDefinition def = typeCheckClass(
-        "\\data Box (n : Nat) | box" +
-            "\\data D (n : Nat) (Box n) | D (zero) _ => d");
+        "\\data Box (n : Nat) | box\n" +
+        "\\data D (n : Nat) (Box n) | D (zero) _ => d");
     DataDefinition d = (DataDefinition) def.getField("D");
     assertEquals(Apps(DefCall(d), Zero(), Index(0)), d.getConstructor("d").getType());
   }

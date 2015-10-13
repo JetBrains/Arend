@@ -15,6 +15,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DefCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.resolveNamesClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -137,12 +138,12 @@ public class RecordsTest {
 
   @Test
   public void splitClassTestError() {
-    typeCheckClass(
+    resolveNamesClass("test",
         "\\static \\class A {\n" +
-          "\\static \\function x => 0\n" +
+        "  \\static \\function x => 0\n" +
         "}\n" +
         "\\static \\class A {\n" +
-          "\\static \\function y => 0\n" +
+        "  \\static \\function y => 0\n" +
         "}", 1);
   }
 

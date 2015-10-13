@@ -99,12 +99,10 @@ public class ModuleLoaderTest {
     ModuleLoadingResult result = moduleLoader.load(module, false);
     assertNotNull(result);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
-    assertEquals(1, RootModule.ROOT.getChild(new Name("A")).getMembers().size());
-    assertEquals(1, ((ClassDefinition) result.namespaceMember.definition).getLocalNamespace().getMembers().size());
+    assertEquals(2, RootModule.ROOT.getChild(new Name("A")).getMembers().size());
     Definition definitionC = result.namespaceMember.namespace.getDefinition("C");
     assertTrue(definitionC instanceof ClassDefinition);
-    assertEquals(0, definitionC.getParentNamespace().findChild(definitionC.getName().name).getMembers().size());
-    assertEquals(2, ((ClassDefinition) definitionC).getLocalNamespace().getMembers().size());
+    assertEquals(2, definitionC.getParentNamespace().findChild(definitionC.getName().name).getMembers().size());
   }
 
   @Test

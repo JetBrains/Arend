@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementResolveNameVisitor;
@@ -69,7 +70,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       }
 
       if (def.getTerm() != null) {
-        myNameResolver.pushNameResolver(new SingleNameResolver(def.getName().name, myNamespace.addAbstractDefinition(def)));
+        myNameResolver.pushNameResolver(new SingleNameResolver(def.getName().name, new NamespaceMember(myNamespace.getChild(def.getName()), def, null)));
         def.getTerm().accept(visitor, null);
         myNameResolver.popNameResolver();
       }
@@ -88,7 +89,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
         }
       }
 
-      myNameResolver.pushNameResolver(new SingleNameResolver(def.getName().name, myNamespace.addAbstractDefinition(def)));
+      myNameResolver.pushNameResolver(new SingleNameResolver(def.getName().name, new NamespaceMember(myNamespace.getChild(def.getName()), def, null)));
       for (Abstract.Constructor constructor : def.getConstructors()) {
         if (constructor.getPatterns() == null) {
           visitConstructor(constructor, null);

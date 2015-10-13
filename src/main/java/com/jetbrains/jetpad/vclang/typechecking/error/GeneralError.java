@@ -14,7 +14,7 @@ public class GeneralError {
 
   public GeneralError(ResolvedName resolvedName, String message) {
     myResolvedName = resolvedName;
-    myMessage = resolvedName.name + ": " + message;
+    myMessage = message;
     myLevel = Level.ERROR;
   }
 

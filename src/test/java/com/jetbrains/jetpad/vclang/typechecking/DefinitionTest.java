@@ -32,7 +32,7 @@ public class DefinitionTest {
 
   private Definition typeCheckDefinition(Definition definition) {
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(definition.getParentNamespace(), errorReporter);
-    visitor.setNamespaceMember(definition.getParentNamespace().getMember(definition.getName().name));
+    visitor.setNamespaceMember(definition.getParentNamespace().addMember(definition.getName()));
     return definition.accept(visitor, null);
   }
 
@@ -111,7 +111,7 @@ public class DefinitionTest {
     List<TypeArgument> parameters = new ArrayList<>(1);
     parameters.add(Tele(vars("A"), Universe(2, 7)));
     DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, parameters);
-    Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
+    Namespace namespace = def.getParentNamespace().getChild(def.getName());
 
     List<TypeArgument> arguments1 = new ArrayList<>(3);
     arguments1.add(Tele(vars("X"), Universe(5, 1)));
@@ -140,7 +140,7 @@ public class DefinitionTest {
     // \data D (A : \Type0) = con (B : \Type1) A B |- con Nat zero zero : D Nat
     DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
     RootModule.ROOT.getChild(new Name("test")).addDefinition(def);
-    Constructor con = new Constructor(def.getParentNamespace().findChild(def.getName().name), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
     Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
@@ -155,7 +155,7 @@ public class DefinitionTest {
     // \data D (A : \Type0) = con (B : \Type1) A B, f : D (Nat -> Nat) -> Nat |- f (con Nat (\lam x => x) zero) : Nat
     DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
     RootModule.ROOT.getChild(new Name("test")).addDefinition(def);
-    Constructor con = new Constructor(def.getParentNamespace().findChild(def.getName().name), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
     Expression expr = Apps(Index(0), Apps(DefCall(con), Nat(), Lam("x", Index(0)), Zero()));
@@ -173,7 +173,7 @@ public class DefinitionTest {
     // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
     DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("A"), Universe(0))));
     RootModule.ROOT.getChild(new Name("test")).addDefinition(def);
-    Constructor con = new Constructor(def.getParentNamespace().findChild(def.getName().name), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(TypeArg(Index(0))), def);
+    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(TypeArg(Index(0))), def);
     def.addConstructor(con);
 
     Expression expr = Apps(Index(0), DefCall(con));

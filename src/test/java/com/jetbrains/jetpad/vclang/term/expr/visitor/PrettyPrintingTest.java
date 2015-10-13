@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
@@ -53,7 +54,7 @@ public class PrettyPrintingTest {
     List<Argument> arguments = new ArrayList<>(2);
     arguments.add(Tele(vars("X"), Universe(0)));
     arguments.add(Tele(vars("x"), Index(0)));
-    FunctionDefinition def = new FunctionDefinition(null, new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, Index(1), Definition.Arrow.RIGHT, Lam("X", Lam("x", Index(0))));
+    FunctionDefinition def = new FunctionDefinition(new Namespace("test"), new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, Index(1), Definition.Arrow.RIGHT, Lam("X", Lam("x", Index(0))));
     def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), null);
   }
 

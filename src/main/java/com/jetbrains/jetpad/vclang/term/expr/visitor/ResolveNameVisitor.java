@@ -40,13 +40,12 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
 
   @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Void params) {
-    if (expr.getExpression() != null) {
-      expr.getExpression().accept(this, null);
+    Abstract.Expression expression = expr.getExpression();
+    if (expression != null) {
+      expression.accept(this, null);
     }
 
     if (expr.getResolvedName() == null) {
-      Abstract.Expression expression = expr.getExpression();
-      
       if (expression != null) {
         if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null) {
           ResolvedName parentName = ((Abstract.DefCallExpression) expression).getResolvedName();

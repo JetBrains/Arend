@@ -10,7 +10,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   private Precedence myPrecedence;
   private Universe myUniverse;
   private boolean myHasErrors;
-  final private Namespace myParentNamespace;
+  private final Namespace myParentNamespace;
 
   public Definition(Namespace parentNamespace, Name name, Precedence precedence) {
     super(name);

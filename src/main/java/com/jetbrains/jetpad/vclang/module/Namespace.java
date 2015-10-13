@@ -169,6 +169,21 @@ public class Namespace {
     return null;
   }
 
+  public NamespaceMember addMember(Name name) {
+    if (myMembers == null) {
+      myMembers = new HashMap<>();
+    } else {
+      NamespaceMember oldMember = myMembers.get(name.name);
+      if (oldMember != null) {
+        return oldMember;
+      }
+    }
+
+    NamespaceMember member = new NamespaceMember(new Namespace(name, this), null, null);
+    myMembers.put(name.name, member);
+    return member;
+  }
+
   public NamespaceMember removeMember(NamespaceMember member) {
     return myMembers.remove(member.namespace.getName().name);
   }

@@ -285,8 +285,8 @@ public class NameResolverTest {
   }
 
   @Test
-  public void defineExistingTest() {
-    resolveNamesClass("test", "\\static \\class A { } \\function A => 0");
+  public void defineExistingTestError() {
+    resolveNamesClass("test", "\\static \\class A { } \\function A => 0", 1);
   }
 
   @Test
