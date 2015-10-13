@@ -107,10 +107,10 @@ public class ModuleDeserialization {
 
   public static Definition newDefinition(int code, Name name, Namespace parent) throws IncorrectFormat {
     if (code == ModuleSerialization.OVERRIDDEN_CODE) {
-      return new OverriddenDefinition(parent, name, null /* TODO */, Abstract.Definition.DEFAULT_PRECEDENCE, null);
+      return new OverriddenDefinition(parent, name, Abstract.Definition.DEFAULT_PRECEDENCE, null);
     }
     if (code == ModuleSerialization.FUNCTION_CODE) {
-      return new FunctionDefinition(parent, name, null /* TODO */, Abstract.Definition.DEFAULT_PRECEDENCE, null);
+      return new FunctionDefinition(parent, name, Abstract.Definition.DEFAULT_PRECEDENCE, null);
     }
     if (code == ModuleSerialization.DATA_CODE) {
       return new DataDefinition(parent, name, Abstract.Definition.DEFAULT_PRECEDENCE);

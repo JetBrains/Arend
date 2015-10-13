@@ -64,7 +64,7 @@ public class Prelude {
     List<Clause> coerceClauses = new ArrayList<>(1);
     ElimExpression coerceTerm = Elim(Index(0), coerceClauses);
     coerceClauses.add(new Clause(match(LEFT), Abstract.Definition.Arrow.RIGHT, Index(0), coerceTerm));
-    COERCE = new FunctionDefinition(PRELUDE, new Name("coe"), null, Abstract.Definition.DEFAULT_PRECEDENCE, coerceArguments, Apps(Index(2), Index(0)), Abstract.Definition.Arrow.LEFT, coerceTerm);
+    COERCE = new FunctionDefinition(PRELUDE, new Name("coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceArguments, Apps(Index(2), Index(0)), Abstract.Definition.Arrow.LEFT, coerceTerm);
 
     PRELUDE.addDefinition(COERCE);
 
@@ -85,7 +85,7 @@ public class Prelude {
     pathInfixArguments.add(Tele(false, vars("A"), Universe(0)));
     pathInfixArguments.add(Tele(vars("a", "a'"), Index(0)));
     Expression pathInfixTerm = Apps(DefCall(PATH), Lam(lamArgs(Tele(vars("_"), DefCall(INTERVAL))), Index(3)), Index(1), Index(0));
-    PATH_INFIX = new FunctionDefinition(PRELUDE, new Name("=", Abstract.Definition.Fixity.INFIX), null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixArguments, Universe(0), Abstract.Definition.Arrow.RIGHT, pathInfixTerm);
+    PATH_INFIX = new FunctionDefinition(PRELUDE, new Name("=", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixArguments, Universe(0), Abstract.Definition.Arrow.RIGHT, pathInfixTerm);
 
     PRELUDE.addDefinition(PATH_INFIX);
 
@@ -104,7 +104,7 @@ public class Prelude {
     atClauses.add(new Clause(match(LEFT), Abstract.Definition.Arrow.RIGHT, Index(2), atTerm));
     atClauses.add(new Clause(match(RIGHT), Abstract.Definition.Arrow.RIGHT, Index(1), atTerm));
     atClauses.add(new Clause(match(null), Abstract.Definition.Arrow.LEFT, atOtherwiseElim, atTerm));
-    AT = new FunctionDefinition(PRELUDE, new Name("@", Abstract.Definition.Fixity.INFIX), null, new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);
+    AT = new FunctionDefinition(PRELUDE, new Name("@", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);
 
     PRELUDE.addDefinition(AT);
   }

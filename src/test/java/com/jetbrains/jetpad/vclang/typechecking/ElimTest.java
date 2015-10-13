@@ -48,7 +48,7 @@ public class ElimTest {
     ElimExpression pTerm = Elim(Index(4), clauses1);
     clauses1.add(new Clause(match(dataType.getConstructor("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Nat(), pTerm));
     clauses1.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Pi(Nat(), Nat()), pTerm));
-    FunctionDefinition pFunction = new FunctionDefinition(testNS, new Name("P"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
+    FunctionDefinition pFunction = new FunctionDefinition(testNS, new Name("P"), Abstract.Definition.DEFAULT_PRECEDENCE, arguments3, Universe(), Abstract.Definition.Arrow.LEFT, pTerm);
     testNS.addDefinition(pFunction);
 
     List<Argument> arguments = new ArrayList<>(3);
@@ -70,7 +70,7 @@ public class ElimTest {
     clauses4.add(new Clause(match(dataType.getConstructor("con2"), match("x"), match("y"), match("z"), match("t")), Abstract.Definition.Arrow.RIGHT, Index(7), term4));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    FunctionDefinition function = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("fun"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
+    FunctionDefinition function = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("fun"), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, resultType, Abstract.Definition.Arrow.LEFT, term2);
     Namespace functionNamespace = function.getStaticNamespace();
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(functionNamespace.getParent(), errorReporter);
     visitor.setNamespaceMember(functionNamespace.getParent().getMember(function.getName().name));

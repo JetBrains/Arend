@@ -82,8 +82,8 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass(
         "\\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
-    assertEquals(Apps(DefCall(def.getField("C")), Zero()), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c1").getType());
-    assertEquals(Pi("n", Nat(), Apps(DefCall(def.getField("C")), Suc(Index(1)))), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
+    assertEquals(Apps(DefCall(namespace.getMember("C").definition), Zero()), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c1").getType());
+    assertEquals(Pi("n", Nat(), Apps(DefCall(namespace.getMember("C").definition), Suc(Index(1)))), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
   }
 
   @Test

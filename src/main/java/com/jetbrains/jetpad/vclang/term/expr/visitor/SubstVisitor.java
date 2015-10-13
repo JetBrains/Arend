@@ -189,7 +189,7 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
       FunctionDefinition function = entry.getValue();
       List<Argument> arguments = new ArrayList<>(function.getArguments().size());
       Expression[] result = visitLamArguments(function.getArguments(), arguments, function.getResultType(), function.getTerm());
-      definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getStaticNamespace(), function.getPrecedence(), arguments, result[0], function.getArrow(), result[1], entry.getKey()));
+      definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, result[0], function.getArrow(), result[1], entry.getKey()));
     }
     return ClassExt(visitDefCall(expr.getBaseClassExpression()), definitions, expr.getUniverse());
   }

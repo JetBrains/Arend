@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.Arrays;
@@ -41,7 +42,7 @@ public class ResolvedName {
 
   @Override
   public String toString() {
-    return namespace + "." + name.getPrefixName();
+    return (namespace == null || namespace == RootModule.ROOT ? "" : namespace + ".") + name.getPrefixName();
   }
 
   @Override

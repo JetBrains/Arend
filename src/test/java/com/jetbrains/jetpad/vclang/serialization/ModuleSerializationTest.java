@@ -40,7 +40,7 @@ public class ModuleSerializationTest {
     ClassDefinition def = new ClassDefinition(RootModule.ROOT, new Name("test"));
     Expression term = Lam(lamArgs(Tele(false, vars("x", "y"), Nat()), Tele(vars("z"), Pi(Nat(), Nat()))), Pi(args(Tele(vars("A"), Universe()), TypeArg(false, Index(0))), Index(1)));
     Namespace namespace = def.getParentNamespace().getChild(def.getName());
-    FunctionDefinition functionDefinition = new FunctionDefinition(namespace, new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, term);
+    FunctionDefinition functionDefinition = new FunctionDefinition(namespace, new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, term);
     namespace.addDefinition(functionDefinition);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
@@ -68,7 +68,7 @@ public class ModuleSerializationTest {
     clauses2.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(0), term2));
     clauses2.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.LEFT, Suc(Index(0)), term2));
     Namespace namespace = def.getParentNamespace().getChild(def.getName());
-    FunctionDefinition functionDefinition = new FunctionDefinition(namespace, new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, term1);
+    FunctionDefinition functionDefinition = new FunctionDefinition(namespace, new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, term1);
     namespace.addDefinition(functionDefinition);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
@@ -91,7 +91,7 @@ public class ModuleSerializationTest {
     ClassDefinition aClass = new ClassDefinition(namespace, new Name("A"));
     namespace.addDefinition(aClass);
     Namespace aNamespace = aClass.getParentNamespace().getChild(aClass.getName());
-    FunctionDefinition functionDefinition = new FunctionDefinition(aNamespace, new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), null, null);
+    FunctionDefinition functionDefinition = new FunctionDefinition(aNamespace, new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), null, null);
     aNamespace.addDefinition(functionDefinition);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
@@ -105,7 +105,7 @@ public class ModuleSerializationTest {
     ClassDefinition bClass = new ClassDefinition(newNamespace, new Name("A"));
     newNamespace.addDefinition(bClass);
     Namespace bNamespace = bClass.getParentNamespace().getChild(bClass.getName());
-    bNamespace.addDefinition(new FunctionDefinition(aClass.getParentNamespace().findChild(aClass.getName().name), new Name("g"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), null, null));
+    bNamespace.addDefinition(new FunctionDefinition(aClass.getParentNamespace().findChild(aClass.getName().name), new Name("g"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), null, null));
     moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), new ResolvedName(newDef.getParentNamespace(), newDef.getName()));
   }
 
@@ -141,9 +141,9 @@ public class ModuleSerializationTest {
   public void serializeFunctionTest() throws IOException {
     ClassDefinition def = new ClassDefinition(RootModule.ROOT, new Name("test"));
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
-    FunctionDefinition funcDef = new FunctionDefinition(namespace, new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, null);
+    FunctionDefinition funcDef = new FunctionDefinition(namespace, new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, null);
     Namespace funcNamespace = namespace.getChild(funcDef.getName());
-    FunctionDefinition innerFunc = new FunctionDefinition(funcNamespace, new Name("g"), null, Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition innerFunc = new FunctionDefinition(funcNamespace, new Name("g"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero());
     funcNamespace.addDefinition(innerFunc);
     funcDef.setTerm(DefCall(innerFunc));
     namespace.addDefinition(funcDef);

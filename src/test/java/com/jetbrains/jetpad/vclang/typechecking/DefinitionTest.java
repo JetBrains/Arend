@@ -39,7 +39,7 @@ public class DefinitionTest {
   @Test
   public void function() {
     // f : N => 0;
-    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
@@ -49,7 +49,7 @@ public class DefinitionTest {
   @Test
   public void functionUntyped() {
     // f => 0;
-    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
+    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
@@ -64,7 +64,7 @@ public class DefinitionTest {
     arguments.add(Tele(vars("x"), Nat()));
     arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
 
-    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), null, Abstract.Definition.DEFAULT_PRECEDENCE, arguments, null, Definition.Arrow.RIGHT, Index(0));
+    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, null, Definition.Arrow.RIGHT, Index(0));
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());

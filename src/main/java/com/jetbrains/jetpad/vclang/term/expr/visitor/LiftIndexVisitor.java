@@ -197,7 +197,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
       Expression resultType = function.getResultType() == null ? null : function.getResultType().liftIndex(from, myOn);
       Expression term = function.getTerm() == null ? null : function.getTerm().liftIndex(from, myOn);
-      definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getStaticNamespace(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, entry.getKey()));
+      definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, entry.getKey()));
     }
     DefCallExpression expr1 = visitDefCall(expr.getBaseClassExpression());
     return expr1 == null ? null : ClassExt(expr1, definitions, expr.getUniverse());

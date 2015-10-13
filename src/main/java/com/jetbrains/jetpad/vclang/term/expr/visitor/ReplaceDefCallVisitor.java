@@ -176,7 +176,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
       Expression resultType = function.getResultType() == null ? null : function.getResultType().accept(this);
       Expression term = function.getTerm() == null ? null : function.getTerm().accept(this);
-      OverriddenDefinition definition = new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getStaticNamespace(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, function.getOverriddenFunction());
+      OverriddenDefinition definition = new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, function.getOverriddenFunction());
       definitions.put(entry.getKey(), definition);
     }
     return ClassExt(visitDefCall(expr.getBaseClassExpression()), definitions, expr.getUniverse());

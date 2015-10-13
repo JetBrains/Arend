@@ -40,8 +40,8 @@ public class NameResolverTest {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
     Namespace namespace = new Namespace("test");
-    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
-    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), arguments, Nat(), Definition.Arrow.LEFT, null);
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
@@ -55,8 +55,8 @@ public class NameResolverTest {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
     Namespace namespace = new Namespace("test");
-    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
-    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), null, new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
+    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), arguments, Nat(), Definition.Arrow.LEFT, null);
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 

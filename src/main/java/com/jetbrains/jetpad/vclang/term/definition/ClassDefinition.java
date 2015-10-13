@@ -32,15 +32,22 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   }
 
   public void addField(ClassField field) {
+    if (myFields == null) {
+      myFields = new HashMap<>();
+    }
     myFields.put(field.getName().name, field);
   }
 
   public void removeField(String name) {
-    myFields.remove(name);
+    if (myFields != null) {
+      myFields.remove(name);
+    }
   }
 
   public void removeField(ClassField field) {
-    myFields.remove(field.getName().name);
+    if (myFields != null) {
+      myFields.remove(field.getName().name);
+    }
   }
 
   @Override
@@ -51,7 +58,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
 
     List<Abstract.Statement> statements = new ArrayList<>(fields.size() + size);
     for (ClassField field : fields) {
-      statements.add(new DefineStatement(new FunctionDefinition(namespace, field.getName(), null, field.getPrecedence(), Collections.<Argument>emptyList(), field.getType(), null, null), false));
+      statements.add(new DefineStatement(new FunctionDefinition(namespace, field.getName(), field.getPrecedence(), Collections.<Argument>emptyList(), field.getType(), null, null), false));
     }
     if (namespace != null) {
       for (NamespaceMember pair : namespace.getMembers()) {

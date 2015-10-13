@@ -64,8 +64,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
-    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, def.getName(), null, def.getPrecedence(), def.getArrow());
-    typeCheckStatements(def.getStatements(), myNamespace.getChild(def.getName()));
+    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, def.getName(), def.getPrecedence(), def.getArrow());
+    typeCheckStatements(null, def.getStatements(), myNamespace.getChild(def.getName()));
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -455,10 +455,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
   }
 
-  private void typeCheckStatements(Collection<? extends Abstract.Statement> statements, Namespace namespace) {
+  private void typeCheckStatements(ClassDefinition classDefinition, Collection<? extends Abstract.Statement> statements, Namespace namespace) {
     for (Abstract.Statement statement : statements) {
       if (statement instanceof Abstract.DefineStatement) {
-        typeCheck(namespace.getMember(((Abstract.DefineStatement) statement).getDefinition().getName().name), myContext, namespace, myErrorReporter);
+        Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
+        NamespaceMember member = namespace.getMember(definition.getName().name);
+        if (member != null) {
+          typeCheck(member, myContext, namespace, myErrorReporter);
+          if (classDefinition != null && member.definition instanceof ClassField) {
+            classDefinition.addField((ClassField) member.definition);
+          }
+        }
       }
     }
   }
@@ -466,8 +473,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
     ClassDefinition typedDef = new ClassDefinition(myNamespace, def.getName());
-    typeCheckStatements(def.getStatements(), myNamespace.getChild(def.getName()));
-    // TODO
+    typeCheckStatements(typedDef, def.getStatements(), myNamespace.getChild(def.getName()));
     return typedDef;
   }
 }
