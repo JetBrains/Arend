@@ -21,4 +21,8 @@ public class NamespaceMember {
   public ResolvedName getResolvedName() {
     return new ResolvedName(namespace.getParent(), namespace.getName());
   }
+
+  public boolean isTypeChecked() {
+    return abstractDefinition == null || definition != null;
+  }
 }

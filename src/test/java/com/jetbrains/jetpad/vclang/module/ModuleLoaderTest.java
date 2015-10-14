@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -40,7 +41,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function g => A.f");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleA, false);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleA, false).namespaceMember.getResolvedName(), errorReporter);
     assertFalse(errorReporter.getErrorList().isEmpty());
   }
 
@@ -52,7 +53,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleA, false);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleA, false).namespaceMember.getResolvedName(), errorReporter);
     assertFalse(errorReporter.getErrorList().isEmpty());
   }
 
@@ -64,7 +65,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleA, false);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleA, false).namespaceMember.getResolvedName(), errorReporter);
     assertFalse(errorReporter.getErrorList().isEmpty());
   }
 
@@ -76,7 +77,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleB, false);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleB, false).namespaceMember.getResolvedName(), errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
 
@@ -86,7 +87,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(module, "\\static \\function f : Nat");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(module, false);
+    TypecheckingOrdering.typecheck(moduleLoader.load(module, false).namespaceMember.getResolvedName(), errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
 
@@ -97,6 +98,7 @@ public class ModuleLoaderTest {
     moduleLoader.setSourceSupplier(sourceSupplier);
 
     ModuleLoadingResult result = moduleLoader.load(module, false);
+    TypecheckingOrdering.typecheck(result.namespaceMember.getResolvedName(), errorReporter);
     assertNotNull(result);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     assertEquals(2, RootModule.ROOT.getChild(new Name("A")).getMembers().size());
@@ -113,7 +115,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function f (p : A.B) => p.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleB, false);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleB, false).namespaceMember.getResolvedName(), errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
   }
 
@@ -126,7 +128,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\static \\function f (p : A.B) => p.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleB, false);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleB, false).namespaceMember.getResolvedName(), errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
 
@@ -138,7 +140,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleB, "\\function g => A.f");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(moduleB, false);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleB, false).namespaceMember.getResolvedName(), errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
 }

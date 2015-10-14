@@ -25,7 +25,7 @@ public class ResolvedName {
   }
 
   public NamespaceMember toNamespaceMember() {
-    return namespace.getMember(name.name);
+    return namespace == null ? new NamespaceMember(RootModule.ROOT, null, null) : namespace.getMember(name.name);
   }
 
   public Definition toDefinition() {

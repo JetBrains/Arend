@@ -33,4 +33,9 @@ public class Name {
   public boolean equals(Object other) {
     return other == this || other instanceof Name && ((Name) other).name.equals(name);
   }
+
+  @Override
+  public int hashCode() {
+    return name.hashCode() + fixity.hashCode();
+  }
 }

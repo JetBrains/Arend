@@ -7,10 +7,8 @@ import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
@@ -84,7 +82,6 @@ public abstract class ParseSource implements Source {
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.name.name, statements);
     new DefinitionResolveNameVisitor(errorReporter, myModule.namespace, nameResolver).visitClass(classDefinition, null);
-    ClassDefinition result = new DefinitionCheckTypeVisitor(myModule.namespace, errorReporter).visitClass(classDefinition, null);
-    return new ModuleLoadingResult(new NamespaceMember(myModule.namespace.getChild(myModule.name), classDefinition, result), true, countingErrorReporter.getErrorsNumber());
+    return new ModuleLoadingResult(new NamespaceMember(myModule.namespace.getChild(myModule.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
   }
 }
