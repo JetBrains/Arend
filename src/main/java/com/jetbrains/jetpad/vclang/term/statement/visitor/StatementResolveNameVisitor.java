@@ -13,10 +13,9 @@ import com.jetbrains.jetpad.vclang.typechecking.nameresolver.MultiNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NamespaceNameResolver;
 
-import java.io.Closeable;
 import java.util.List;
 
-public class StatementResolveNameVisitor implements AbstractStatementVisitor<StatementResolveNameVisitor.Flag, Object>, Closeable {
+public class StatementResolveNameVisitor implements AbstractStatementVisitor<StatementResolveNameVisitor.Flag, Object>, AutoCloseable {
   private final ErrorReporter myErrorReporter;
   private final Namespace myNamespace;
   private final MultiNameResolver myPrivateNameResolver;

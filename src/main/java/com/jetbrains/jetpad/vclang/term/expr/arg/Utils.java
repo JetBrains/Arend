@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -87,7 +86,7 @@ public class Utils {
     }
   }
 
-  public static class ContextSaver implements Closeable {
+  public static class ContextSaver implements AutoCloseable {
     private final List myContext;
     private final int myOldContextSize;
 
@@ -103,7 +102,7 @@ public class Utils {
     }
   }
 
-  public static class CompleteContextSaver<T> implements Closeable {
+  public static class CompleteContextSaver<T> implements AutoCloseable {
     private final List<T> myContext;
     private final List<T> myOldContext;
 
