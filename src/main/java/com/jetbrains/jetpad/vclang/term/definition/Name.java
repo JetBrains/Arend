@@ -13,7 +13,7 @@ public class Name {
 
   public Name(String name) {
     this.name = name;
-    this.fixity = name.isEmpty() || Character.isJavaIdentifierStart(name.charAt(0)) ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
+    this.fixity = name.isEmpty() || name.charAt(0) == '_' || Character.isLetter(name.charAt(0)) ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
   }
 
   public String getPrefixName() {
