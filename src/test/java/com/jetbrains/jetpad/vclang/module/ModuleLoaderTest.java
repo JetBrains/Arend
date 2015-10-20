@@ -46,6 +46,13 @@ public class ModuleLoaderTest {
   }
 
   @Test
+  public void testing() {
+    ResolvedName moduleA = new ResolvedName(RootModule.ROOT, "A");
+    ResolvedName moduleB = new ResolvedName(RootModule.ROOT.getChild(new Name("A")), "B");
+    sourceSupplier.add(moduleA, "\\static \\function f => A.B");
+  }
+
+  @Test
   public void recursiveTestError2() {
     ResolvedName moduleA = new ResolvedName(RootModule.ROOT, "A");
     ResolvedName moduleB = new ResolvedName(RootModule.ROOT, "B");

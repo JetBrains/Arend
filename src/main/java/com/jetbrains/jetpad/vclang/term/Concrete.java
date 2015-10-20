@@ -755,11 +755,22 @@ public final class Concrete {
   }
 
   public static abstract class Definition extends Binding implements Abstract.Definition {
+    private Definition myParent;
     private final Precedence myPrecedence;
 
     public Definition(Position position, Name name, Precedence precedence) {
       super(position, name);
+      myParent = null;
       myPrecedence = precedence;
+    }
+
+    @Override
+    public Definition getParent() {
+      return myParent;
+    }
+
+    public void setParent(Definition parent) {
+      myParent = parent;
     }
 
     @Override
@@ -786,6 +797,7 @@ public final class Concrete {
 
     public FunctionDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, Name originalName, List<Statement> statements) {
       super(position, name, precedence);
+
       myArguments = arguments;
       myResultType = resultType;
       myArrow = arrow;
@@ -982,6 +994,7 @@ public final class Concrete {
 
     public Constructor(Position position, Name name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
       super(position, name, precedence);
+      setParent(dataType);
       myArguments = arguments;
       myDataType = dataType;
       myPatterns = patterns;
@@ -1019,12 +1032,14 @@ public final class Concrete {
     private final Kind myKind;
     private final List<Identifier> myPath;
     private final List<Identifier> myNames;
+    private List<ResolvedName> myResolvedPath;
 
     public NamespaceCommandStatement(Position position, Kind kind, List<Identifier> path, List<Identifier> names) {
       super(position);
       myKind = kind;
       myPath = path;
       myNames = names;
+      myResolvedPath = null;
     }
 
     @Override
@@ -1040,6 +1055,16 @@ public final class Concrete {
     @Override
     public List<Identifier> getNames() {
       return myNames;
+    }
+
+    @Override
+    public List<ResolvedName> getExported() {
+      return myResolvedPath;
+    }
+
+    @Override
+    public void setExported(List<ResolvedName> exports) {
+      myResolvedPath = exports;
     }
 
     @Override

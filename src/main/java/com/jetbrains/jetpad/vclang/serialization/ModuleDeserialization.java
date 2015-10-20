@@ -35,7 +35,7 @@ public class ModuleDeserialization {
   }
 
   public ModuleLoadingResult readStream(DataInputStream stream, ResolvedName resolvedName) throws IOException {
-    ClassDefinition classDefinition = new ClassDefinition(resolvedName.namespace, resolvedName.name);
+    ClassDefinition classDefinition = new ClassDefinition(resolvedName.parent, resolvedName.name);
 
     myResolvedName = resolvedName;
     byte[] signature = new byte[4];

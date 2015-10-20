@@ -44,7 +44,7 @@ public class ModuleSerializationTest {
     namespace.addDefinition(functionDefinition);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), def, dataStream);
+    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
     ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), new ResolvedName(RootModule.ROOT, "test"));
@@ -72,7 +72,7 @@ public class ModuleSerializationTest {
     namespace.addDefinition(functionDefinition);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), def, dataStream);
+    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
     ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), new ResolvedName(RootModule.ROOT, "test"));
@@ -95,7 +95,7 @@ public class ModuleSerializationTest {
     aNamespace.addDefinition(functionDefinition);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), def, dataStream);
+    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
     RootModule.initialize();
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
@@ -122,7 +122,7 @@ public class ModuleSerializationTest {
     namespace.addDefinition(dataDefinition.getConstructors().get(1));
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), def, dataStream);
+    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
     RootModule.initialize();
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
@@ -149,7 +149,7 @@ public class ModuleSerializationTest {
     namespace.addDefinition(funcDef);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), def, dataStream);
+    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
     ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), new ResolvedName(RootModule.ROOT, new Name("test")));
@@ -170,7 +170,7 @@ public class ModuleSerializationTest {
     ClassDefinition def = (ClassDefinition) typeCheckDef("\\class A { \\class B { \\class C { } } }");
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), def, dataStream);
+    ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
     ClassDefinition newDef = (ClassDefinition) typeCheckDef("\\class B {}");
     RootModule.ROOT.addDefinition(newDef);

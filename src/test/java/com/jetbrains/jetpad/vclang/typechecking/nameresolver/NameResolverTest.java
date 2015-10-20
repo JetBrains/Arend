@@ -194,7 +194,7 @@ public class NameResolverTest {
     assertEquals(2, localNamespace.getMembers().size());
     assertNotNull(localNamespace.getMember("f"));
     assertTrue(localNamespace.getMember("B").abstractDefinition instanceof Abstract.ClassDefinition);
-    assertEquals(1, localNamespace.getMember("B").namespace.getMembers().size());
+    assertEquals(1, localNamespace.getMember("B").parent.getMembers().size());
     assertEquals(2, ((Abstract.ClassDefinition) localNamespace.getMember("B").abstractDefinition).getStatements().size());
     */
   }
@@ -262,7 +262,7 @@ public class NameResolverTest {
     assertNotNull(localNamespace.getMember("A"));
     Abstract.ClassDefinition classA = (Abstract.ClassDefinition) localNamespace.getMember("A").abstractDefinition;
     assertEquals(classA.getStatements().toString(), 4, classA.getStatements().size());
-    assertTrue(localNamespace.getMember("A").namespace.getMembers().toString(), localNamespace.getMember("A").namespace.getMembers().isEmpty());
+    assertTrue(localNamespace.getMember("A").parent.getMembers().toString(), localNamespace.getMember("A").parent.getMembers().isEmpty());
     Abstract.ClassDefinition classB = (Abstract.ClassDefinition) getField(classA, "B");
     assertNotNull(classB);
     assertEquals(classB.getStatements().toString(), 3, classB.getStatements().size());

@@ -32,7 +32,9 @@ public class DefinitionTest {
 
   private Definition typeCheckDefinition(Definition definition) {
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(definition.getParentNamespace(), errorReporter);
-    visitor.setNamespaceMember(definition.getParentNamespace().addMember(definition.getName()));
+    // TODO: check for null?
+    definition.getParentNamespace().addMember(definition.getName());
+    visitor.setNamespaceMember(definition.getParentNamespace().getMember(definition.getName().name));
     return definition.accept(visitor, null);
   }
 

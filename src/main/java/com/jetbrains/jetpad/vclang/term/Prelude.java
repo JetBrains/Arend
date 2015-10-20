@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
@@ -14,6 +15,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Prelude {
+  public static ClassDefinition PRELUDE_CLASS;
   public static Namespace PRELUDE;
 
   public static DataDefinition NAT;
@@ -31,7 +33,9 @@ public class Prelude {
   public static FunctionDefinition AT;
 
   static {
-    PRELUDE = new Namespace("Prelude");
+    PRELUDE_CLASS = new ClassDefinition(RootModule.ROOT, new Name("Prelude"));
+    RootModule.ROOT.addDefinition(PRELUDE_CLASS);
+    PRELUDE = RootModule.ROOT.getChild(new Name("Prelude"));
 
     NAT = new DataDefinition(PRELUDE, new Name("Nat"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>());
     Namespace natNamespace = PRELUDE.getChild(NAT.getName());
@@ -40,6 +44,7 @@ public class Prelude {
     NAT.addConstructor(ZERO);
     NAT.addConstructor(SUC);
 
+    NAT.setParent(PRELUDE_CLASS);
     PRELUDE.addDefinition(NAT);
     PRELUDE.addDefinition(ZERO);
     PRELUDE.addDefinition(SUC);
@@ -53,6 +58,7 @@ public class Prelude {
     INTERVAL.addConstructor(RIGHT);
     INTERVAL.addConstructor(abstractConstructor);
 
+    INTERVAL.setParent(PRELUDE_CLASS);
     PRELUDE.addDefinition(INTERVAL);
     PRELUDE.addDefinition(LEFT);
     PRELUDE.addDefinition(RIGHT);
@@ -66,6 +72,7 @@ public class Prelude {
     coerceClauses.add(new Clause(match(LEFT), Abstract.Definition.Arrow.RIGHT, Index(0), coerceTerm));
     COERCE = new FunctionDefinition(PRELUDE, new Name("coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceArguments, Apps(Index(2), Index(0)), Abstract.Definition.Arrow.LEFT, coerceTerm);
 
+    COERCE.setParent(PRELUDE_CLASS);
     PRELUDE.addDefinition(COERCE);
 
     List<TypeArgument> PathParameters = new ArrayList<>(3);
@@ -78,6 +85,7 @@ public class Prelude {
     PATH_CON = new Constructor(PRELUDE.getChild(PATH.getName()), new Name("path"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), pathArguments, PATH);
     PATH.addConstructor(PATH_CON);
 
+    PATH.setParent(PRELUDE_CLASS);
     PRELUDE.addDefinition(PATH);
     PRELUDE.addDefinition(PATH_CON);
 
@@ -87,6 +95,7 @@ public class Prelude {
     Expression pathInfixTerm = Apps(DefCall(PATH), Lam(lamArgs(Tele(vars("_"), DefCall(INTERVAL))), Index(3)), Index(1), Index(0));
     PATH_INFIX = new FunctionDefinition(PRELUDE, new Name("=", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixArguments, Universe(0), Abstract.Definition.Arrow.RIGHT, pathInfixTerm);
 
+    PATH_INFIX.setParent(PRELUDE_CLASS);
     PRELUDE.addDefinition(PATH_INFIX);
 
     List<Argument> atArguments = new ArrayList<>(5);
@@ -106,6 +115,7 @@ public class Prelude {
     atClauses.add(new Clause(match(null), Abstract.Definition.Arrow.LEFT, atOtherwiseElim, atTerm));
     AT = new FunctionDefinition(PRELUDE, new Name("@", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);
 
+    AT.setParent(PRELUDE_CLASS);
     PRELUDE.addDefinition(AT);
   }
 }

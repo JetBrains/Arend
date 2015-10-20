@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
 import java.io.IOException;
+import java.util.List;
 
 public class DummyOutput implements Output {
   @Override
@@ -22,12 +22,17 @@ public class DummyOutput implements Output {
   }
 
   @Override
+  public List<List<String>> getDependencies() {
+    return null;
+  }
+
+  @Override
   public ModuleLoadingResult read() throws IOException {
     return null;
   }
 
   @Override
-  public void write(ClassDefinition classDefinition) throws IOException {
+  public void write() throws IOException {
 
   }
 }

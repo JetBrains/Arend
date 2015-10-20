@@ -12,7 +12,7 @@ public class FileOperations {
   }
 
   public static File getFile(File dir, ResolvedName resolvedName, String ext) {
-    return new File(getFile(dir, resolvedName.namespace), resolvedName.name.name + ext);
+    return new File(getFile(dir, resolvedName.parent), resolvedName.name.name + ext);
   }
 
   public static String getVcFileName(File file) {

@@ -11,6 +11,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   private Universe myUniverse;
   private boolean myHasErrors;
   private final Namespace myParentNamespace;
+  private Definition myParent;
 
   public Definition(Namespace parentNamespace, Name name, Precedence precedence) {
     super(name);
@@ -18,10 +19,24 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     myPrecedence = precedence;
     myUniverse = new Universe.Type(0, Universe.Type.PROP);
     myHasErrors = true;
+    myParent = null;
   }
 
   public Namespace getParentNamespace() {
     return myParentNamespace;
+  }
+
+  @Override
+  public Definition getParent() {
+    return myParent;
+  }
+
+  public void setParent(Definition parent) {
+    myParent = parent;
+  }
+
+  public ResolvedName getResolvedName() {
+    return new ResolvedName(myParentNamespace, getName().name);
   }
 
   @Override

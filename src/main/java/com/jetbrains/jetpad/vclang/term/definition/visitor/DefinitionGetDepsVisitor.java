@@ -59,16 +59,19 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
       result.addAll(param.getType().accept(new GetDepsVisitor(), null));
     }
     for (Abstract.Constructor constructor : def.getConstructors()) {
-      for (Abstract.TypeArgument arg : constructor.getArguments()) {
-        result.addAll(arg.getType().accept(new GetDepsVisitor(), null));
-      }
+      result.add(new ResolvedName(myNamespace, constructor.getName()));
     }
     return result;
   }
 
   @Override
   public Set<ResolvedName> visitConstructor(Abstract.Constructor def, Void isSiblings) {
-    throw new IllegalStateException();
+    Set<ResolvedName> result = new HashSet<>();
+    for (Abstract.TypeArgument arg : def.getArguments()) {
+      result.addAll(arg.getType().accept(new GetDepsVisitor(), null));
+    }
+    result.remove(new ResolvedName(myNamespace.getParent().getParent(), def.getDataType().getName().name));
+    return result;
   }
 
   public Set<ResolvedName> visitStatements(Collection<? extends Abstract.Statement> statements) {
@@ -80,6 +83,11 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
         result.addAll(defineStatement.getDefinition().accept(new DefinitionGetDepsVisitor(
             myNamespace.getChild(defineStatement.getDefinition().getName())
         ), null));
+      } else if (statement instanceof Abstract.NamespaceCommandStatement) {
+        Abstract.NamespaceCommandStatement nsStatement = (Abstract.NamespaceCommandStatement) statement;
+        if (nsStatement.getKind() == Abstract.NamespaceCommandStatement.Kind.EXPORT) {
+          result.addAll(nsStatement.getExported());
+        }
       }
     }
     return result;

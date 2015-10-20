@@ -65,7 +65,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
     FunctionDefinition typedDef = new FunctionDefinition(myNamespace, def.getName(), def.getPrecedence(), def.getArrow());
-    typeCheckStatements(null, def.getStatements(), myNamespace.getChild(def.getName()));
+    typeCheckStatements(typedDef, def.getStatements(), myNamespace.getChild(def.getName()));
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -455,15 +455,19 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
   }
 
-  private void typeCheckStatements(ClassDefinition classDefinition, Collection<? extends Abstract.Statement> statements, Namespace namespace) {
+  private void typeCheckStatements(Definition parent, Collection<? extends Abstract.Statement> statements, Namespace namespace) {
     for (Abstract.Statement statement : statements) {
       if (statement instanceof Abstract.DefineStatement) {
         Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
         NamespaceMember member = namespace.getMember(definition.getName().name);
         if (member != null) {
           typeCheck(member, myContext, namespace, myErrorReporter);
-          if (classDefinition != null && member.definition instanceof ClassField) {
-            classDefinition.addField((ClassField) member.definition);
+          if (member.definition != null) {
+            //TODO: do automatically in addDefinition or smth
+            member.definition.setParent(parent);
+          }
+          if (parent instanceof ClassDefinition && member.definition instanceof ClassField) {
+            ((ClassDefinition) parent).addField((ClassField) member.definition);
           }
         }
       }

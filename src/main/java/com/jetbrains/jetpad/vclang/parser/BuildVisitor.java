@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import org.antlr.v4.runtime.Token;
 
@@ -98,6 +97,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
     return statements;
+  }
+
+  private void setStatementsParent(List<Concrete.Statement> statements, Concrete.Definition parent) {
+    for (Concrete.Statement st : statements) {
+      if (st instanceof Concrete.DefineStatement) {
+        ((Concrete.DefineStatement) st).getDefinition().setParent(parent);
+      }
+    }
   }
 
   @Override
@@ -312,7 +319,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression resultType = functionContext.typeCtx == null ? null : visitExpr(functionContext.typeCtx);
     Concrete.Expression term = functionContext.termCtx == null ? null : visitExpr(functionContext.termCtx);
     List<Concrete.Statement> statements = ctx.where() == null ? Collections.<Concrete.Statement>emptyList() : visitStatementList(ctx.where().statement());
-    return new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, arguments, resultType, functionContext.arrow, term, false, null, statements);
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, arguments, resultType, functionContext.arrow, term, false, null, statements);
+    setStatementsParent(statements, def);
+    return def;
   }
 
   private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx, boolean overridden) {
@@ -395,7 +404,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.classFields() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.classFields().statement());
-    return new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements);
+    Concrete.ClassDefinition def = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements);
+    setStatementsParent(statements, def);
+    return def;
   }
 
   @Override

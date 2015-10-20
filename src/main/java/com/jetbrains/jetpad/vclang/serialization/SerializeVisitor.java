@@ -1,8 +1,11 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
@@ -13,15 +16,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 
 public class SerializeVisitor implements ExpressionVisitor<Void> {
   private int myErrors = 0;
-  private final DefinitionsIndices myDefinitionsIndices;
+  private final DefNamesIndicies myDefNamesIndicies;
+  private final Set<ResolvedName> myModuleDependencies;
   private final ByteArrayOutputStream myStream;
   private final DataOutputStream myDataStream;
 
-  public SerializeVisitor(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream) {
-    myDefinitionsIndices = definitionsIndices;
+  public SerializeVisitor(DefNamesIndicies definitionsIndices, Set<ResolvedName> moduleDependencies, ByteArrayOutputStream stream, DataOutputStream dataStream) {
+    myDefNamesIndicies = definitionsIndices;
+    myModuleDependencies = moduleDependencies;
     myStream = stream;
     myDataStream = dataStream;
   }
@@ -34,8 +40,12 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     return myDataStream;
   }
 
-  public DefinitionsIndices getDefinitionsIndices() {
-    return myDefinitionsIndices;
+  public DefNamesIndicies getDefinitionsIndices() {
+    return myDefNamesIndicies;
+  }
+
+  public Set<ResolvedName> getMyModuleDependencies() {
+    return myModuleDependencies;
   }
 
   @Override
@@ -55,7 +65,11 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   @Override
   public Void visitDefCall(DefCallExpression expr) {
     myStream.write(2);
-    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition(), false);
+    int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
+    ResolvedName module = ModuleSerialization.getModule(expr.getDefinition().getResolvedName());
+    if (!module.equals(Prelude.PRELUDE.getResolvedName())) {
+      myModuleDependencies.add(module);
+    }
     try {
       myDataStream.writeBoolean(expr.getExpression() != null);
       if (expr.getExpression() != null) {
@@ -201,7 +215,8 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
         if (((NamePattern) pattern).getName() != null)
           myDataStream.writeUTF(((NamePattern) pattern).getName());
       } else if (pattern instanceof ConstructorPattern) {
-        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(((ConstructorPattern) pattern).getConstructor(), false));
+        Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
+        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(new ResolvedName(constructor.getParentNamespace(), constructor.getName()), false));
         myDataStream.writeInt(((ConstructorPattern) pattern).getPatterns().size());
         for (Pattern nestedPattern : ((ConstructorPattern) pattern).getPatterns()) {
           visitPattern(nestedPattern);
@@ -243,7 +258,7 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
       expr.getBaseClassExpression().accept(this);
       myDataStream.writeInt(expr.getDefinitionsMap().size());
       for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey(), true));
+        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(entry.getKey().getResolvedName(), false));
         myErrors += ModuleSerialization.serializeDefinition(this, entry.getValue());
       }
       ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());

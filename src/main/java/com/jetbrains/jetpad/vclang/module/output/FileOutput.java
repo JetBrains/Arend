@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.module.output;
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class FileOutput implements Output {
   private final File myFile;
@@ -36,12 +36,17 @@ public class FileOutput implements Output {
   }
 
   @Override
+  public List<List<String>> getDependencies() {
+    return null;
+  }
+
+  @Override
   public ModuleLoadingResult read() throws IOException {
     return myModuleDeserialization.readFile(myFile, myModule);
   }
 
   @Override
-  public void write(ClassDefinition classDefinition) throws IOException {
-    ModuleSerialization.writeFile(myModule, classDefinition, myFile);
+  public void write() throws IOException {
+    ModuleSerialization.writeFile(myModule, myFile);
   }
 }

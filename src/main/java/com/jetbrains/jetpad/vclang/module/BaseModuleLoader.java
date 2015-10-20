@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.module.source.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
@@ -40,8 +39,43 @@ public abstract class BaseModuleLoader implements ModuleLoader {
   }
 
   @Override
+  public void save(ResolvedName module) {
+    Output output = myOutputSupplier.getOutput(module);
+    if (output.canWrite()) {
+      try {
+        output.write();
+      } catch (IOException e) {
+        savingError(new GeneralError(module, GeneralError.ioError(e)));
+      }
+    }
+  }
+
+  private boolean areDependenciesValid(Output output, boolean tryLoad) {
+    if (!output.canRead())
+      return false;
+    for (List<String> dependency : output.getDependencies()) {
+      ResolvedName name = new ResolvedName(null, "\\root");
+      for (String aPath : dependency) {
+        name = new ResolvedName(name.toNamespace(), aPath);
+        Source source = mySourceSupplier.getSource(name);
+        if (source != null && source.lastModified() > output.lastModified()) {
+          return false;
+        }
+        load(name, tryLoad, true);
+        if (name.toDefinition() == null)
+          return false;
+      }
+    }
+    return true;
+  }
+
+  @Override
   public ModuleLoadingResult load(ResolvedName module, boolean tryLoad) {
-    NamespaceMember member = module.namespace.getMember(module.name.name);
+    return load(module, tryLoad, false);
+  }
+
+  public ModuleLoadingResult load(ResolvedName module, boolean tryLoad, boolean forceNoCompile) {
+    NamespaceMember member = module.parent.getMember(module.name.name);
     if (member != null && (member.abstractDefinition != null || member.definition != null)) {
       return null;
     }
@@ -56,11 +90,11 @@ public abstract class BaseModuleLoader implements ModuleLoader {
     Output output = myOutputSupplier.getOutput(module);
     boolean compile;
     if (source.isAvailable()) {
-      compile = myRecompile || !output.canRead() || source.lastModified() > output.lastModified();
+      compile = myRecompile || source.lastModified() > output.lastModified() || areDependenciesValid(output, tryLoad);
     } else {
       output = myOutputSupplier.locateOutput(module);
-      if (!output.canRead()) {
-        if (!tryLoad) {
+      if (!output.canRead() || !areDependenciesValid(output, tryLoad)) {
+        if (!tryLoad && !forceNoCompile) {
           loadingError(new ModuleNotFoundError(module));
         }
         return null;
@@ -68,20 +102,20 @@ public abstract class BaseModuleLoader implements ModuleLoader {
       compile = false;
     }
 
+    if (forceNoCompile && compile)
+      return null;
+
     myLoadingModules.add(module);
     try {
       ModuleLoadingResult result;
       if (compile) {
         result = source.load();
-        if (result != null && result.errorsNumber == 0 && result.namespaceMember != null && result.namespaceMember.definition instanceof ClassDefinition && output.canWrite()) {
-          output.write((ClassDefinition) result.namespaceMember.definition);
-        }
       } else {
         result = output.read();
       }
 
       if (result == null || result.errorsNumber != 0) {
-        GeneralError error = new GeneralError(module.namespace.getResolvedName(), result == null ? "cannot load module '" + module.name + "'" : "module '"+ module.name + "' contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
+        GeneralError error = new GeneralError(module.parent.getResolvedName(), result == null ? "cannot load module '" + module.name + "'" : "module '"+ module.name + "' contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
         error.setLevel(GeneralError.Level.INFO);
         loadingError(error);
       } else {
@@ -91,7 +125,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
       }
 
       if (result != null && result.namespaceMember != null) {
-        module.namespace.addMember(result.namespaceMember);
+        module.parent.addMember(result.namespaceMember);
       }
       return result;
     } catch (EOFException e) {

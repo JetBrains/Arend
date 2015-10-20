@@ -25,7 +25,7 @@ public class GetDepsVisitor implements AbstractExpressionVisitor<Void, Set<Resol
     if (expr.getResolvedName() != null) {
       if (expr.getResolvedName().toNamespaceMember().abstractDefinition != null && expr.getResolvedName().toNamespaceMember().abstractDefinition instanceof Abstract.Constructor) {
         Abstract.DataDefinition dataType = ((Abstract.Constructor)expr.getResolvedName().toNamespaceMember().abstractDefinition).getDataType();
-        myDependencies.add(new ResolvedName(expr.getResolvedName().namespace, dataType.getName()));
+        myDependencies.add(new ResolvedName(expr.getResolvedName().parent, dataType.getName()));
       } else {
         myDependencies.add(expr.getResolvedName());
       }
@@ -93,7 +93,7 @@ public class GetDepsVisitor implements AbstractExpressionVisitor<Void, Set<Resol
   public Set<ResolvedName> visitBinOp(Abstract.BinOpExpression expr, Void params) {
     if (expr.getResolvedBinOpName().toNamespaceMember().abstractDefinition instanceof Abstract.Constructor) {
       Abstract.DataDefinition dataType = ((Abstract.Constructor) expr.getResolvedBinOpName().toNamespaceMember().abstractDefinition).getDataType();
-      myDependencies.add(new ResolvedName(expr.getResolvedBinOpName().namespace, dataType.getName()));
+      myDependencies.add(new ResolvedName(expr.getResolvedBinOpName().parent, dataType.getName()));
     } else {
       myDependencies.add(expr.getResolvedBinOpName());
     }

@@ -37,7 +37,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
     if (expr.getExpression() != null) {
       expr1 = expr.getExpression().accept(this);
     } else {
-      expr1 = expr.getResolvedName().namespace == myNamespace && expr.getDefinition() instanceof ClassField ? myExpression : null;
+      expr1 = expr.getResolvedName().parent == myNamespace && expr.getDefinition() instanceof ClassField ? myExpression : null;
     }
 
     List<Expression> parameters = expr.getParameters() == null ? null : new ArrayList<Expression>(expr.getParameters().size());

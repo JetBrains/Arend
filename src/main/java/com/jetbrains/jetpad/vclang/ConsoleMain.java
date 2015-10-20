@@ -69,6 +69,11 @@ public class ConsoleMain {
     RootModule.initialize();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
       @Override
+      public void savingError(GeneralError error) {
+        System.err.println(error);
+      }
+
+      @Override
       public void loadingError(GeneralError error) {
         System.err.println(error);
       }
@@ -120,6 +125,11 @@ public class ConsoleMain {
 
     for (GeneralError error : errorReporter.getErrorList()) {
       System.err.println(error);
+    }
+
+    for (ResolvedName rn : loadedModules) {
+      if (rn.toDefinition() != null)
+        moduleLoader.save(rn);
     }
   }
 

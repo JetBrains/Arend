@@ -199,6 +199,8 @@ public final class Abstract {
     enum Fixity { PREFIX, INFIX }
     enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
+    Definition getParent();
+
     class Precedence {
       public Associativity associativity;
       public byte priority;
@@ -223,6 +225,11 @@ public final class Abstract {
       @Override
       public boolean equals(Object obj) {
         return this == obj || obj instanceof Precedence && associativity == ((Precedence) obj).associativity && priority == ((Precedence) obj).priority;
+      }
+
+      @Override
+      public int hashCode() {
+        return associativity.ordinal() * Byte.SIZE + priority;
       }
     }
 
@@ -286,5 +293,7 @@ public final class Abstract {
     Kind getKind();
     List<? extends Identifier> getPath();
     List<? extends Identifier> getNames();
+    List<ResolvedName> getExported();
+    void setExported(List<ResolvedName> path);
   }
 }

@@ -8,52 +8,56 @@ import java.util.Arrays;
 
 public class ResolvedName {
   public Name name;
-  public Namespace namespace;
+  public Namespace parent;
 
-  public ResolvedName(Namespace namespace, String name, Abstract.Definition.Fixity fixity) {
+  public ResolvedName(Namespace parent, String name, Abstract.Definition.Fixity fixity) {
     this.name = new Name(name, fixity);
-    this.namespace = namespace;
+    this.parent = parent;
   }
 
-  public ResolvedName(Namespace namespace, String name) {
+  public ResolvedName(Namespace parent, String name) {
     this.name = new Name(name);
-    this.namespace = namespace;
+    this.parent = parent;
   }
 
-  public ResolvedName(Namespace namespace, Name name) {
-    this(namespace, name.name, name.fixity);
+  public ResolvedName(Namespace parent, Name name) {
+    this(parent, name.name, name.fixity);
   }
 
   public NamespaceMember toNamespaceMember() {
-    return namespace == null ? new NamespaceMember(RootModule.ROOT, null, null) : namespace.getMember(name.name);
+    return parent == null ? new NamespaceMember(RootModule.ROOT, null, null) : parent.getMember(name.name);
   }
 
   public Definition toDefinition() {
-    return namespace.getDefinition(name.name);
+    return parent.getDefinition(name.name);
+  }
+
+  public Abstract.Definition toAbstractDefinition() {
+    return parent.getAbstractDefinition(name.name);
   }
 
   public Abstract.Definition.Precedence toPrecedence() {
-    return namespace.getMember(name.name).getPrecedence();
+    return parent.getMember(name.name).getPrecedence();
   }
 
   public Namespace toNamespace() {
-    return namespace.findChild(name.name);
+    return parent.findChild(name.name);
   }
 
   @Override
   public String toString() {
-    return (namespace == null || namespace == RootModule.ROOT ? "" : namespace + ".") + name.getPrefixName();
+    return (parent == null || parent == RootModule.ROOT ? "" : parent + ".") + name.getPrefixName();
   }
 
   @Override
   public boolean equals(Object other) {
     return other == this || other instanceof ResolvedName
         && name.equals(((ResolvedName) other).name)
-        && namespace == ((ResolvedName) other).namespace;
+        && parent == ((ResolvedName) other).parent;
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(new Object[]{namespace, name == null ? null : name.name});
+    return Arrays.hashCode(new Object[]{parent, name == null ? null : name.name});
   }
 }

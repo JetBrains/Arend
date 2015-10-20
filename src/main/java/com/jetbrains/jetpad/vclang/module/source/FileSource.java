@@ -45,7 +45,7 @@ public class FileSource extends ParseSource {
       File[] files = myDirectory.listFiles();
       if (files != null) {
         ResolvedName resolvedName = getModule();
-        namespace = resolvedName.namespace.getChild(resolvedName.name);
+        namespace = resolvedName.parent.getChild(resolvedName.name);
 
         for (File file : files) {
           if (file.isDirectory()) {

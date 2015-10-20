@@ -232,7 +232,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitBinOp(Abstract.BinOpExpression expr, Byte prec) {
     if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append('(');
     expr.getLeft().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
-    myBuilder.append(' ').append(expr.getResolvedBinOpName().namespace.getName().getInfixName()).append(' ');
+    myBuilder.append(' ').append(expr.getResolvedBinOpName().parent.getName().getInfixName()).append(' ');
     expr.getRight().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
     if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append(')');
     return null;
