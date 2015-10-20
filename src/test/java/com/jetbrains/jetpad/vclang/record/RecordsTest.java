@@ -12,8 +12,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DefCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.resolveNamesClass;
 import static org.junit.Assert.assertEquals;
@@ -157,11 +156,11 @@ public class RecordsTest {
   public void splitClassTestError() {
     resolveNamesClass("test",
         "\\static \\class A {\n" +
-        "  \\static \\function x => 0\n" +
-        "}\n" +
-        "\\static \\class A {\n" +
-        "  \\static \\function y => 0\n" +
-        "}", 1);
+            "  \\static \\function x => 0\n" +
+            "}\n" +
+            "\\static \\class A {\n" +
+            "  \\static \\function y => 0\n" +
+            "}", 1);
   }
 
   @Test
@@ -227,7 +226,7 @@ public class RecordsTest {
     List<Expression> arguments = new ArrayList<>(3);
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
     assertEquals(3, arguments.size());
-    assertEquals(DefCall(Prelude.PATH), function);
+    assertEquals(DataCall(Prelude.PATH), function);
 
     assertTrue(arguments.get(0) instanceof AppExpression);
     assertTrue(((AppExpression) arguments.get(0)).getFunction() instanceof DefCallExpression);
@@ -263,17 +262,17 @@ public class RecordsTest {
     List<Expression> parameterArguments = new ArrayList<>(1);
     Expression parameterFunction = ((AppExpression) ((LamExpression) arguments.get(2)).getBody()).getArgument().getExpression().getFunction(parameterArguments);
     assertEquals(1, parameterArguments.size());
-    assertEquals(DefCall(Prelude.PATH_CON), parameterFunction);
+    assertEquals(ConCall(Prelude.PATH_CON), parameterFunction);
     assertTrue(parameterArguments.get(0) instanceof LamExpression);
     assertTrue(((LamExpression) parameterArguments.get(0)).getBody() instanceof DefCallExpression);
     assertEquals(Index(2), ((DefCallExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getExpression());
     assertEquals(((ClassDefinition) namespace.getMember("A").definition).getField("x"), ((DefCallExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getDefinition());
 
-    List<Expression> parameters = ((DefCallExpression) parameterFunction).getParameters();
+    List<Expression> parameters = ((ConCallExpression) parameterFunction).getParameters();
     assertEquals(3, parameters.size());
 
     assertTrue(parameters.get(0) instanceof LamExpression);
-    assertEquals(DefCall(Prelude.NAT), ((LamExpression) parameters.get(0)).getBody());
+    assertEquals(Nat(), ((LamExpression) parameters.get(0)).getBody());
 
     parameters.set(1, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
     assertTrue(parameters.get(1) instanceof DefCallExpression);

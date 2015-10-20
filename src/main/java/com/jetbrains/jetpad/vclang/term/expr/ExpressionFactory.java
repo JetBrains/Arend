@@ -34,19 +34,54 @@ public class ExpressionFactory {
   }
 
   public static DefCallExpression DefCall(Definition definition) {
-    return DefCall(null, definition, null);
+    if (definition instanceof FunctionDefinition) {
+      return new FunCallExpression((FunctionDefinition) definition);
+    }
+    if (definition instanceof DataDefinition) {
+      return new DataCallExpression((DataDefinition) definition);
+    }
+    if (definition instanceof ClassField) {
+      return new FieldCallExpression((ClassField) definition);
+    }
+    if (definition instanceof ClassDefinition) {
+      return new ClassCallExpression((ClassDefinition) definition);
+    }
+    if (definition instanceof Constructor) {
+      return ConCall((Constructor) definition);
+    }
+    throw new IllegalStateException();
   }
 
-  public static DefCallExpression DefCall(Expression expression, Definition definition) {
-    return DefCall(expression, definition, null);
+  public static FunCallExpression FunCall(FunctionDefinition definition) {
+    return new FunCallExpression(definition);
   }
 
-  public static DefCallExpression DefCall(Expression expression, Definition definition, List<Expression> parameters) {
-    return new DefCallExpression(expression, definition, parameters);
+  public static DataCallExpression DataCall(DataDefinition definition) {
+    return new DataCallExpression(definition);
   }
 
-  public static ClassExtExpression ClassExt(DefCallExpression baseClassExpression, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
+  public static FieldCallExpression FieldCall(ClassField definition) {
+    return new FieldCallExpression(definition);
+  }
+
+  public static ClassCallExpression ClassCall(ClassDefinition definition) {
+    return new ClassCallExpression(definition);
+  }
+
+  public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {
+    return new ConCallExpression(definition, parameters);
+  }
+
+  public static ConCallExpression ConCall(Constructor definition) {
+    return new ConCallExpression(definition, Collections.<Expression>emptyList());
+  }
+
+  public static ClassExtExpression ClassExt(ClassCallExpression baseClassExpression, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
     return new ClassExtExpression(baseClassExpression, definitions, universe);
+  }
+
+  public static Expression BinOp(Expression left, Definition binOp, Expression right) {
+    return Apps(DefCall(binOp), left, right);
   }
 
   public static NewExpression New(Expression expression) {
@@ -176,15 +211,15 @@ public class ExpressionFactory {
   }
 
   public static DefCallExpression Nat() {
-    return DefCall(Prelude.NAT);
+    return DataCall(Prelude.NAT);
   }
 
   public static DefCallExpression Zero() {
-    return DefCall(Prelude.ZERO);
+    return ConCall(Prelude.ZERO);
   }
 
   public static DefCallExpression Suc() {
-    return DefCall(Prelude.SUC);
+    return ConCall(Prelude.SUC);
   }
 
   public static Expression Suc(Expression expr) {
@@ -205,10 +240,6 @@ public class ExpressionFactory {
 
   public static ErrorExpression Error(Expression expr, TypeCheckingError error) {
     return new ErrorExpression(expr, error);
-  }
-
-  public static Expression BinOp(Expression left, Definition binOp, Expression right) {
-    return Apps(DefCall(binOp), left, right);
   }
 
   public static ElimExpression Elim(IndexExpression expression, List<Clause> clauses) {

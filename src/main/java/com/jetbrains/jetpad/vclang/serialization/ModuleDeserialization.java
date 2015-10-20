@@ -321,15 +321,19 @@ public class ModuleDeserialization {
         return Apps(function, new ArgumentExpression(argument, explicit, hidden));
       }
       case 2: {
-        boolean isFieldAcc = stream.readBoolean();
-        Expression expression = isFieldAcc ? readExpression(stream, definitionMap) : null;
         Definition definition = definitionMap.get(stream.readInt());
         int size = stream.readInt();
-        List<Expression> parameters = size == 0 ? null : new ArrayList<Expression>(size);
+        if (size == 0) {
+          return DefCall(definition);
+        }
+        if (!(definition instanceof Constructor)) {
+          throw new IncorrectFormat();
+        }
+        List<Expression> parameters = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
           parameters.add(readExpression(stream, definitionMap));
         }
-        return DefCall(expression, definition, parameters);
+        return ConCall((Constructor) definition, parameters);
       }
       case 3: {
         return Index(stream.readInt());
@@ -383,7 +387,7 @@ public class ModuleDeserialization {
       }
       case 15: {
         Expression baseClassExpression = readExpression(stream, definitionMap);
-        if (!(baseClassExpression instanceof DefCallExpression)) {
+        if (!(baseClassExpression instanceof ClassCallExpression)) {
           throw new IncorrectFormat();
         }
         Map<FunctionDefinition, OverriddenDefinition> map = new HashMap<>();
@@ -397,7 +401,7 @@ public class ModuleDeserialization {
           deserializeDefinition(stream, definitionMap, overriding);
           map.put((FunctionDefinition) overridden, overriding);
         }
-        return ClassExt((DefCallExpression) baseClassExpression, map, readUniverse(stream));
+        return ClassExt((ClassCallExpression) baseClassExpression, map, readUniverse(stream));
       }
       case 16: {
         return New(readExpression(stream, definitionMap));

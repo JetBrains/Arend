@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.List;
 
-public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
+public class FindDefCallVisitor extends BaseExpressionVisitor<Boolean> {
   private final Definition myDef;
 
   public FindDefCallVisitor(Definition def) {
@@ -22,11 +22,13 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr) {
-    if (expr.getDefinition() == myDef || expr.getExpression() != null && expr.getExpression().accept(this)) {
+    return expr.getDefinition() == myDef;
+  }
+
+  @Override
+  public Boolean visitConCall(ConCallExpression expr) {
+    if (expr.getDefinition() == myDef) {
       return true;
-    }
-    if (expr.getParameters() == null) {
-      return false;
     }
     for (Expression parameter : expr.getParameters()) {
       if (parameter.accept(this)) {

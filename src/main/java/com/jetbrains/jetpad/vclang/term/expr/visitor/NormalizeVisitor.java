@@ -16,7 +16,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMultipleMatch;
 
-public class NormalizeVisitor implements ExpressionVisitor<Expression> {
+public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
   public enum Mode { WHNF, NF, TOP }
 
   private final Mode myMode;
@@ -157,10 +157,11 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     if (defCallExpr.getDefinition() instanceof DataDefinition) {
       arguments = ((DataDefinition) defCallExpr.getDefinition()).getParameters();
     } else
-    if (defCallExpr.getDefinition() instanceof Constructor) {
+    if (defCallExpr instanceof ConCallExpression) {
       List<TypeArgument> arguments1 = ((Constructor) defCallExpr.getDefinition()).getArguments();
-      if (defCallExpr.getParameters() != null && !defCallExpr.getParameters().isEmpty()) {
-        List<Expression> substExprs = new ArrayList<>(defCallExpr.getParameters());
+      List<Expression> parameters = ((ConCallExpression) defCallExpr).getParameters();
+      if (!parameters.isEmpty()) {
+        List<Expression> substExprs = new ArrayList<>(parameters);
         Collections.reverse(substExprs);
         arguments = new ArrayList<>(arguments1.size());
         for (int j = 0; j < arguments1.size(); ++j) {
@@ -292,7 +293,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return visitDefCall(expr.getExpression() == null ? expr : DefCall(expr.getExpression().normalize(Mode.WHNF, myContext), expr.getDefinition(), expr.getParameters()), new ArrayList<ArgumentExpression>(0));
+    return visitDefCall(expr, Collections.<ArgumentExpression>emptyList());
   }
 
   @Override
@@ -433,7 +434,7 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     if (expr.getBaseClassExpression().getExpression() == null) {
       return ClassExt(expr.getBaseClassExpression(), definitions, expr.getUniverse());
     }
-    return ClassExt(DefCall(expr.getBaseClassExpression().getExpression().accept(this), expr.getBaseClassExpression().getDefinition()), definitions, expr.getUniverse());
+    return ClassExt(ClassCall(expr.getBaseClass()), definitions, expr.getUniverse());
   }
 
   @Override

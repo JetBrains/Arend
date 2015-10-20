@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
@@ -45,19 +44,19 @@ public class ParserTest {
   @Test
   public void parserLamTele() {
     Concrete.Expression expr = parseExpr("\\lam p {x t : Nat} {y} (a : Nat -> Nat) => (\\lam (z w : Nat) => y z) y");
-    assertTrue(compare(Lam(lamArgs(Name("p"), Tele(false, vars("x", "t"), DefCall(Prelude.NAT)), Name(false, "y"), Tele(vars("a"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Apps(Lam(lamArgs(Tele(vars("z", "w"), DefCall(Prelude.NAT))), Apps(Var("y"), Var("z"))), Var("y"))), expr));
+    assertTrue(compare(Lam(lamArgs(Name("p"), Tele(false, vars("x", "t"), Nat()), Name(false, "y"), Tele(vars("a"), Pi(Nat(), Nat()))), Apps(Lam(lamArgs(Tele(vars("z", "w"), Nat())), Apps(Var("y"), Var("z"))), Var("y"))), expr));
   }
 
   @Test
   public void parserPi() {
     Concrete.Expression expr = parseExpr("\\Pi (x y z : Nat) (w t : Nat -> Nat) -> \\Pi (a b : \\Pi (c : Nat) -> Nat c) -> Nat b y w");
-    assertTrue(compare(Pi(args(Tele(vars("x", "y", "z"), DefCall(Prelude.NAT)), Tele(vars("w", "t"), Pi(DefCall(Prelude.NAT), DefCall(Prelude.NAT)))), Pi(args(Tele(vars("a", "b"), Pi("c", DefCall(Prelude.NAT), Apps(DefCall(Prelude.NAT), Var("c"))))), Apps(DefCall(Prelude.NAT), Var("b"), Var("y"), Var("w")))), expr));
+    assertTrue(compare(Pi(args(Tele(vars("x", "y", "z"), Nat()), Tele(vars("w", "t"), Pi(Nat(), Nat()))), Pi(args(Tele(vars("a", "b"), Pi("c", Nat(), Apps(Nat(), Var("c"))))), Apps(Nat(), Var("b"), Var("y"), Var("w")))), expr));
   }
 
   @Test
   public void parserPi2() {
     Concrete.Expression expr = parseExpr("\\Pi (x y : Nat) (z : Nat x -> Nat y) -> Nat z y x");
-    assertTrue(compare(Pi(args(Tele(vars("x", "y"), DefCall(Prelude.NAT)), Tele(vars("z"), Pi(Apps(DefCall(Prelude.NAT), Var("x")), Apps(DefCall(Prelude.NAT), Var("y"))))), Apps(DefCall(Prelude.NAT), Var("z"), Var("y"), Var("x"))), expr));
+    assertTrue(compare(Pi(args(Tele(vars("x", "y"), Nat()), Tele(vars("z"), Pi(Apps(Nat(), Var("x")), Apps(Nat(), Var("y"))))), Apps(Nat(), Var("z"), Var("y"), Var("x"))), expr));
   }
 
   @Test
@@ -78,10 +77,10 @@ public class ParserTest {
     assertFalse(def.getArguments().get(1).getExplicit());
     assertTrue(def.getArguments().get(2).getExplicit());
     assertFalse(def.getArguments().get(3).getExplicit());
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(3)).getType()));
+    assertTrue(compare(Nat(), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
+    assertTrue(compare(Nat(), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
+    assertTrue(compare(Nat(), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
+    assertTrue(compare(Nat(), ((Concrete.TypeArgument) def.getArguments().get(3)).getType()));
     assertTrue(compare(Apps(Var("A"), Var("x"), Var("y"), Var("z"), Var("w"), Var("t"), Var("r")), def.getResultType()));
   }
 
@@ -93,11 +92,11 @@ public class ParserTest {
     assertTrue(def.getArguments().get(1).getExplicit());
     assertFalse(def.getArguments().get(2).getExplicit());
     assertTrue(def.getArguments().get(3).getExplicit());
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
+    assertTrue(compare(Nat(), ((Concrete.TypeArgument) def.getArguments().get(0)).getType()));
+    assertTrue(compare(Nat(), ((Concrete.TypeArgument) def.getArguments().get(1)).getType()));
+    assertTrue(compare(Nat(), ((Concrete.TypeArgument) def.getArguments().get(2)).getType()));
     assertTrue(compare(Apps(Var("A"), Var("x"), Var("y"), Var("z")), ((Concrete.TypeArgument) def.getArguments().get(4)).getType()));
-    assertTrue(compare(DefCall(Prelude.NAT), def.getResultType()));
+    assertTrue(compare(Nat(), def.getResultType()));
   }
 
   @Test

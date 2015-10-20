@@ -16,7 +16,7 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 
-public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
+public class LiftIndexVisitor extends BaseExpressionVisitor<Expression> {
   private final int myFrom;
   private final int myOn;
 
@@ -36,21 +36,19 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public DefCallExpression visitDefCall(DefCallExpression expr) {
-    if (expr.getExpression() == null && expr.getParameters() == null) return expr;
-    Expression expr1 = null;
-    if (expr.getExpression() != null) {
-      expr1 = expr.getExpression().accept(this);
-      if (expr1 == null) return null;
+    return expr;
+  }
+
+  @Override
+  public ConCallExpression visitConCall(ConCallExpression expr) {
+    if (expr.getParameters().isEmpty()) return expr;
+    List<Expression> parameters = new ArrayList<>(expr.getParameters().size());
+    for (Expression parameter : expr.getParameters()) {
+      Expression expr2 = parameter.accept(this);
+      if (expr2 == null) return null;
+      parameters.add(expr2);
     }
-    List<Expression> parameters = expr.getParameters() == null ? null : new ArrayList<Expression>(expr.getParameters().size());
-    if (expr.getParameters() != null) {
-      for (Expression parameter : expr.getParameters()) {
-        Expression expr2 = parameter.accept(this);
-        if (expr2 == null) return null;
-        parameters.add(expr2);
-      }
-    }
-    return DefCall(expr1, expr.getDefinition(), parameters);
+    return ConCall(expr.getDefinition(), parameters);
   }
 
   @Override
@@ -199,7 +197,7 @@ public class LiftIndexVisitor implements ExpressionVisitor<Expression> {
       Expression term = function.getTerm() == null ? null : function.getTerm().liftIndex(from, myOn);
       definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, entry.getKey()));
     }
-    DefCallExpression expr1 = visitDefCall(expr.getBaseClassExpression());
+    ClassCallExpression expr1 = expr.getBaseClassExpression();
     return expr1 == null ? null : ClassExt(expr1, definitions, expr.getUniverse());
   }
 

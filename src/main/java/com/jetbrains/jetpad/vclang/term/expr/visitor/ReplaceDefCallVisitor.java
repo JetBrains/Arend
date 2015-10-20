@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -17,7 +16,7 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
-public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
+public class ReplaceDefCallVisitor extends BaseExpressionVisitor<Expression> {
   private final Namespace myNamespace;
   private Expression myExpression;
 
@@ -33,21 +32,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public DefCallExpression visitDefCall(DefCallExpression expr) {
-    Expression expr1;
-    if (expr.getExpression() != null) {
-      expr1 = expr.getExpression().accept(this);
-    } else {
-      expr1 = expr.getResolvedName().namespace == myNamespace && expr.getDefinition() instanceof ClassField ? myExpression : null;
-    }
-
-    List<Expression> parameters = expr.getParameters() == null ? null : new ArrayList<Expression>(expr.getParameters().size());
-    if (expr.getParameters() != null) {
-      for (Expression parameter : expr.getParameters()) {
-        parameters.add(parameter.accept(this));
-      }
-    }
-
-    return DefCall(expr1, expr.getDefinition(), parameters);
+    return expr;
   }
 
   @Override
@@ -179,7 +164,7 @@ public class ReplaceDefCallVisitor implements ExpressionVisitor<Expression> {
       OverriddenDefinition definition = new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, function.getOverriddenFunction());
       definitions.put(entry.getKey(), definition);
     }
-    return ClassExt(visitDefCall(expr.getBaseClassExpression()), definitions, expr.getUniverse());
+    return ClassExt(expr.getBaseClassExpression(), definitions, expr.getUniverse());
   }
 
   @Override

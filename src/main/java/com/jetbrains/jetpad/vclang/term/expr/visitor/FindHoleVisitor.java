@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.List;
 
-public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
+public class FindHoleVisitor extends BaseExpressionVisitor<InferHoleExpression> {
   @Override
   public InferHoleExpression visitApp(AppExpression expr) {
     InferHoleExpression result = expr.getFunction().accept(this);
@@ -16,11 +16,13 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
 
   @Override
   public InferHoleExpression visitDefCall(DefCallExpression expr) {
-    InferHoleExpression result = expr.getExpression() == null ? null : expr.getExpression().accept(this);
-    if (result != null) return result;
-    if (expr.getParameters() == null) return null;
+    return null;
+  }
+
+  @Override
+  public InferHoleExpression visitConCall(ConCallExpression expr) {
     for (Expression parameter : expr.getParameters()) {
-      result = parameter.accept(this);
+      InferHoleExpression result = parameter.accept(this);
       if (result != null) return result;
     }
     return null;

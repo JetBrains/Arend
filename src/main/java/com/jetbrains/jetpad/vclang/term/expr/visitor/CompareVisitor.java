@@ -313,7 +313,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       if (!expr.getName().equals(otherDecCall.getName())) {
         return new JustResult(CMP.NOT_EQUIV);
       }
-      return expr.getExpression().accept(this, otherDecCall.getExpression());
+      return new JustResult(expr.getExpression() == null ? CMP.EQUIV : CMP.NOT_EQUIV);
     }
   }
 

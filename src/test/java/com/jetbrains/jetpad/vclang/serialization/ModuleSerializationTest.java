@@ -145,7 +145,7 @@ public class ModuleSerializationTest {
     Namespace funcNamespace = namespace.getChild(funcDef.getName());
     FunctionDefinition innerFunc = new FunctionDefinition(funcNamespace, new Name("g"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero());
     funcNamespace.addDefinition(innerFunc);
-    funcDef.setTerm(DefCall(innerFunc));
+    funcDef.setTerm(FunCall(innerFunc));
     namespace.addDefinition(funcDef);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);

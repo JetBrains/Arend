@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -14,7 +14,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
-public class SerializeVisitor implements ExpressionVisitor<Void> {
+public class SerializeVisitor extends BaseExpressionVisitor<Void> {
   private int myErrors = 0;
   private final DefinitionsIndices myDefinitionsIndices;
   private final ByteArrayOutputStream myStream;
@@ -57,19 +57,26 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     myStream.write(2);
     int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition(), false);
     try {
-      myDataStream.writeBoolean(expr.getExpression() != null);
-      if (expr.getExpression() != null) {
-        expr.getExpression().accept(this);
-      }
       myDataStream.writeInt(index);
-      myDataStream.writeInt(expr.getParameters() == null ? 0 : expr.getParameters().size());
-      if (expr.getParameters() != null) {
-        for (Expression parameter : expr.getParameters()) {
-          parameter.accept(this);
-        }
-      }
+      myDataStream.writeInt(0);
     } catch (IOException e) {
       throw new IllegalStateException();
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitConCall(ConCallExpression expr) {
+    myStream.write(2);
+    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition(), false);
+    try {
+      myDataStream.writeInt(index);
+      myDataStream.writeInt(expr.getParameters().size());
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+    for (Expression parameter : expr.getParameters()) {
+      parameter.accept(this);
     }
     return null;
   }

@@ -11,23 +11,23 @@ import java.util.List;
 import java.util.Map;
 
 public class ClassExtExpression extends Expression implements Abstract.ClassExtExpression {
-  private final DefCallExpression myBaseClassExpression;
+  private final ClassCallExpression myBaseClassExpression;
   private final Map<FunctionDefinition, OverriddenDefinition> myDefinitions;
   private final Universe myUniverse;
 
-  public ClassExtExpression(DefCallExpression baseClassExpression, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
+  public ClassExtExpression(ClassCallExpression baseClassExpression, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
     myBaseClassExpression = baseClassExpression;
     myDefinitions = definitions;
     myUniverse = universe;
   }
 
   @Override
-  public DefCallExpression getBaseClassExpression() {
+  public ClassCallExpression getBaseClassExpression() {
     return myBaseClassExpression;
   }
 
   public ClassDefinition getBaseClass() {
-    return (ClassDefinition) myBaseClassExpression.getDefinition();
+    return myBaseClassExpression.getDefinition();
   }
 
   @Override
