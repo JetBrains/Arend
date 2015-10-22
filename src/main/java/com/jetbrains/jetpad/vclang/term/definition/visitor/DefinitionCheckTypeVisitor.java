@@ -55,7 +55,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   }
 
   public static void typeCheck(NamespaceMember namespaceMember, List<Binding> context, Namespace namespace, ErrorReporter errorReporter) {
-    if (namespaceMember != null && namespaceMember.abstractDefinition != null && namespaceMember.definition == null) {
+    if (namespaceMember != null && !namespaceMember.isTypeChecked()) {
       DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(namespaceMember, context, namespace, errorReporter);
       namespaceMember.definition = namespaceMember.abstractDefinition.accept(visitor, null);
     }
