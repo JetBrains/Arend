@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -9,9 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
@@ -49,6 +45,15 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Expression> {
       parameters.add(expr2);
     }
     return ConCall(expr.getDefinition(), parameters);
+  }
+
+  @Override
+  public ClassCallExpression visitClassCall(ClassCallExpression expr) {
+    List<ClassCallExpression.OverrideElem> elems = new ArrayList<>(expr.getOverrideElems().size());
+    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+      elems.add(new ClassCallExpression.OverrideElem(elem.field, elem.type == null ? null : elem.type.accept(this), elem.term == null ? null : elem.term.accept(this)));
+    }
+    return ClassCall(expr.getDefinition(), elems, expr.getUniverse());
   }
 
   @Override
@@ -182,23 +187,6 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Expression> {
   public Expression visitProj(ProjExpression expr) {
     Expression expr1 = expr.getExpression().accept(this);
     return expr1 == null ? null : Proj(expr1, expr.getField());
-  }
-
-  @Override
-  public Expression visitClassExt(ClassExtExpression expr) {
-    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
-    for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-      FunctionDefinition function = entry.getValue();
-      List<Argument> arguments = new ArrayList<>(function.getArguments().size());
-      Integer from = visitArguments(function.getArguments(), arguments);
-      if (from == null) return null;
-
-      Expression resultType = function.getResultType() == null ? null : function.getResultType().liftIndex(from, myOn);
-      Expression term = function.getTerm() == null ? null : function.getTerm().liftIndex(from, myOn);
-      definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, entry.getKey()));
-    }
-    ClassCallExpression expr1 = expr.getBaseClassExpression();
-    return expr1 == null ? null : ClassExt(expr1, definitions, expr.getUniverse());
   }
 
   @Override

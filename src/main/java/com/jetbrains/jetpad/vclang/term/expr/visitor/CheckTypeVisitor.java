@@ -568,17 +568,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       boolean notInScope = false;
 
       ResolvedName where = null;
-      if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
-        parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
+      if (type instanceof ClassCallExpression) {
+        parent = ((ClassCallExpression) type).getDefinition();
         ClassField field = parent.getField(name.name);
         if (field != null) {
           Definition resultDef = field;
-          if (type instanceof ClassExtExpression) {
-            OverriddenDefinition overridden = ((ClassExtExpression) type).getDefinitionsMap().get(field);
-            if (overridden != null) {
-              resultDef = overridden;
-            }
+          /* TODO
+          OverriddenDefinition overridden = ((xClassExtExpression) type).getDefinitionsMap().get(field);
+          if (overridden != null) {
+            resultDef = overridden;
           }
+          */
           Expression resultType = resultDef.getType();
           if (resultType == null) {
             resultType = field.getType();
@@ -1648,12 +1648,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (!(exprResult instanceof OKResult)) return exprResult;
     OKResult okExprResult = (OKResult) exprResult;
     Expression normExpr = okExprResult.expression.accept(new NormalizeVisitor(NormalizeVisitor.Mode.WHNF, myLocalContext));
-    if (!(normExpr instanceof DefCallExpression && ((DefCallExpression) normExpr).getDefinition() instanceof ClassDefinition || normExpr instanceof ClassExtExpression)) {
+    if (!(normExpr instanceof ClassCallExpression)) {
       TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getExpression(), getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
+    // TODO: Check that the class extension implements all fields.
     return checkResultImplicit(expectedType, new OKResult(New(okExprResult.expression), normExpr, okExprResult.equations), expr);
   }
 

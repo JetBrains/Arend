@@ -1,17 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
@@ -135,36 +131,6 @@ public class ReplaceDefCallVisitor extends BaseExpressionVisitor<Expression> {
   @Override
   public Expression visitProj(ProjExpression expr) {
     return Proj(expr.getExpression().accept(this), expr.getField());
-  }
-
-  @Override
-  public Expression visitClassExt(ClassExtExpression expr) {
-    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
-    for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-      List<Argument> arguments = null;
-      OverriddenDefinition function = entry.getValue();
-      if (function.getArguments() != null) {
-        arguments = new ArrayList<>(function.getArguments().size());
-        for (Argument argument : function.getArguments()) {
-          if (argument instanceof TypeArgument) {
-            Expression type = ((TypeArgument) argument).getType().accept(this);
-            if (argument instanceof TelescopeArgument) {
-              arguments.add(Tele(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), type));
-            } else {
-              arguments.add(TypeArg(argument.getExplicit(), type));
-            }
-          } else {
-            arguments.add(argument);
-          }
-        }
-      }
-
-      Expression resultType = function.getResultType() == null ? null : function.getResultType().accept(this);
-      Expression term = function.getTerm() == null ? null : function.getTerm().accept(this);
-      OverriddenDefinition definition = new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, function.getOverriddenFunction());
-      definitions.put(entry.getKey(), definition);
-    }
-    return ClassExt(expr.getBaseClassExpression(), definitions, expr.getUniverse());
   }
 
   @Override

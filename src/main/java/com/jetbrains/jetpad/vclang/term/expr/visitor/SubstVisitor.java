@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -9,9 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -44,6 +40,15 @@ public class SubstVisitor extends BaseExpressionVisitor<Expression> {
       parameters.add(expr2);
     }
     return ConCall(expr.getDefinition(), parameters);
+  }
+
+  @Override
+  public ClassCallExpression visitClassCall(ClassCallExpression expr) {
+    List<ClassCallExpression.OverrideElem> elems = new ArrayList<>(expr.getOverrideElems().size());
+    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+      elems.add(new ClassCallExpression.OverrideElem(elem.field, elem.type == null ? null : elem.type.accept(this), elem.term == null ? null : elem.term.accept(this)));
+    }
+    return ClassCall(expr.getDefinition(), elems, expr.getUniverse());
   }
 
   @Override
@@ -178,18 +183,6 @@ public class SubstVisitor extends BaseExpressionVisitor<Expression> {
   @Override
   public Expression visitProj(ProjExpression expr) {
     return Proj(expr.getExpression().accept(this), expr.getField());
-  }
-
-  @Override
-  public Expression visitClassExt(ClassExtExpression expr) {
-    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
-    for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-      FunctionDefinition function = entry.getValue();
-      List<Argument> arguments = new ArrayList<>(function.getArguments().size());
-      Expression[] result = visitLamArguments(function.getArguments(), arguments, function.getResultType(), function.getTerm());
-      definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, result[0], function.getArrow(), result[1], entry.getKey()));
-    }
-    return ClassExt(expr.getBaseClassExpression(), definitions, expr.getUniverse());
   }
 
   @Override

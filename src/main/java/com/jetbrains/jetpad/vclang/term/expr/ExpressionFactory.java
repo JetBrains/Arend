@@ -12,7 +12,10 @@ import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
@@ -44,7 +47,7 @@ public class ExpressionFactory {
       return new FieldCallExpression((ClassField) definition);
     }
     if (definition instanceof ClassDefinition) {
-      return new ClassCallExpression((ClassDefinition) definition);
+      return ClassCall((ClassDefinition) definition);
     }
     if (definition instanceof Constructor) {
       return ConCall((Constructor) definition);
@@ -65,7 +68,11 @@ public class ExpressionFactory {
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {
-    return new ClassCallExpression(definition);
+    return new ClassCallExpression(definition, Collections.<ClassCallExpression.OverrideElem>emptyList(), definition.getUniverse());
+  }
+
+  public static ClassCallExpression ClassCall(ClassDefinition definition, List<ClassCallExpression.OverrideElem> elems, Universe universe) {
+    return new ClassCallExpression(definition, elems, universe);
   }
 
   public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {
@@ -74,10 +81,6 @@ public class ExpressionFactory {
 
   public static ConCallExpression ConCall(Constructor definition) {
     return new ConCallExpression(definition, Collections.<Expression>emptyList());
-  }
-
-  public static ClassExtExpression ClassExt(ClassCallExpression baseClassExpression, Map<FunctionDefinition, OverriddenDefinition> definitions, Universe universe) {
-    return new ClassExtExpression(baseClassExpression, definitions, universe);
   }
 
   public static Expression BinOp(Expression left, Definition binOp, Expression right) {

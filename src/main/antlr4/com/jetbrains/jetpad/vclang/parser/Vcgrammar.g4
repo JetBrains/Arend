@@ -9,7 +9,7 @@ statement : staticMod definition                              # statDef
 definition  : '\\function' precedence name tele* typeTermOpt where?         # defFunction
             // | '\\override' name ('\\as' name)? tele* typeTermOpt where?     # defOverride
             | '\\data' precedence name tele* (':' literal)? constructorDef* # defData
-            | '\\class' ID tele* classFields                                # defClass
+            | '\\class' ID classFields                                      # defClass
             ;
 
 staticMod : '\\static'                  # staticStatic

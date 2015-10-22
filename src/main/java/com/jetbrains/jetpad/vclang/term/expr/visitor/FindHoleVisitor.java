@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -24,6 +23,21 @@ public class FindHoleVisitor extends BaseExpressionVisitor<InferHoleExpression> 
     for (Expression parameter : expr.getParameters()) {
       InferHoleExpression result = parameter.accept(this);
       if (result != null) return result;
+    }
+    return null;
+  }
+
+  @Override
+  public InferHoleExpression visitClassCall(ClassCallExpression expr) {
+    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+      if (elem.type != null) {
+        InferHoleExpression result = elem.type.accept(this);
+        if (result != null) return result;
+      }
+      if (elem.term != null) {
+        InferHoleExpression result = elem.term.accept(this);
+        if (result != null) return result;
+      }
     }
     return null;
   }
@@ -98,25 +112,6 @@ public class FindHoleVisitor extends BaseExpressionVisitor<InferHoleExpression> 
   @Override
   public InferHoleExpression visitProj(ProjExpression expr) {
     return expr.getExpression().accept(this);
-  }
-
-  @Override
-  public InferHoleExpression visitClassExt(ClassExtExpression expr) {
-    for (OverriddenDefinition definition : expr.getDefinitionsMap().values()) {
-      if (definition.getArguments() != null) {
-        InferHoleExpression result = visitArguments(definition.getArguments());
-        if (result != null) return result;
-      }
-      if (definition.getResultType() != null) {
-        InferHoleExpression result = definition.getResultType().accept(this);
-        if (result != null) return result;
-      }
-      if (definition.getTerm() != null) {
-        InferHoleExpression result = definition.getTerm().accept(this);
-        if (result != null) return result;
-      }
-    }
-    return null;
   }
 
   @Override

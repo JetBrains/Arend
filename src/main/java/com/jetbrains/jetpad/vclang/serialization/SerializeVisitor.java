@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
@@ -12,7 +10,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Map;
 
 public class SerializeVisitor extends BaseExpressionVisitor<Void> {
   private int myErrors = 0;
@@ -77,6 +74,31 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
     }
     for (Expression parameter : expr.getParameters()) {
       parameter.accept(this);
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitClassCall(ClassCallExpression expr) {
+    myStream.write(15);
+    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition(), false);
+    try {
+      myDataStream.writeInt(index);
+      myDataStream.writeInt(expr.getOverrideElems().size());
+      for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(elem.field, true));
+        myDataStream.writeBoolean(elem.type != null);
+        if (elem.type != null) {
+          elem.type.accept(this);
+        }
+        myDataStream.writeBoolean(elem.term != null);
+        if (elem.term != null) {
+          elem.term.accept(this);
+        }
+      }
+      ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());
+    } catch (IOException e) {
+      throw new IllegalStateException();
     }
     return null;
   }
@@ -237,23 +259,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
     expr.getExpression().accept(this);
     try {
       myDataStream.writeInt(expr.getField());
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitClassExt(ClassExtExpression expr) {
-    myStream.write(15);
-    try {
-      expr.getBaseClassExpression().accept(this);
-      myDataStream.writeInt(expr.getDefinitionsMap().size());
-      for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(entry.getKey(), true));
-        myErrors += ModuleSerialization.serializeDefinition(this, entry.getValue());
-      }
-      ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());
     } catch (IOException e) {
       throw new IllegalStateException();
     }

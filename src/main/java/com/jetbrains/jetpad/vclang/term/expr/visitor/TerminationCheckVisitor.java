@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -94,6 +93,19 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   public Boolean visitConCall(ConCallExpression expr) {
     for (Expression parameter : expr.getParameters()) {
       if (!parameter.accept(this)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @Override
+  public Boolean visitClassCall(ClassCallExpression expr) {
+    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+      if (elem.type != null && !elem.type.accept(this)) {
+        return false;
+      }
+      if (elem.term != null && !elem.term.accept(this)) {
         return false;
       }
     }
@@ -234,16 +246,6 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   @Override
   public Boolean visitProj(ProjExpression expr) {
     return expr.getExpression().accept(this);
-  }
-
-  @Override
-  public Boolean visitClassExt(ClassExtExpression expr) {
-    for (OverriddenDefinition definition : expr.getDefinitionsMap().values()) {
-      if (!definition.hasErrors() && !definition.typeHasErrors() && !visitLamArguments(definition.getArguments(), definition.getResultType(), definition.getTerm())) {
-        return false;
-      }
-    }
-    return true;
   }
 
   @Override

@@ -386,22 +386,22 @@ public class ModuleDeserialization {
         return Proj(expr, stream.readInt());
       }
       case 15: {
-        Expression baseClassExpression = readExpression(stream, definitionMap);
-        if (!(baseClassExpression instanceof ClassCallExpression)) {
+        Definition definition = definitionMap.get(stream.readInt());
+        if (!(definition instanceof ClassDefinition)) {
           throw new IncorrectFormat();
         }
-        Map<FunctionDefinition, OverriddenDefinition> map = new HashMap<>();
         int size = stream.readInt();
+        List<ClassCallExpression.OverrideElem> elems = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
-          Definition overridden = definitionMap.get(stream.readInt());
-          if (!(overridden instanceof FunctionDefinition)) {
+          Definition field = definitionMap.get(stream.readInt());
+          if (!(field instanceof ClassField)) {
             throw new IncorrectFormat();
           }
-          OverriddenDefinition overriding = (OverriddenDefinition) newDefinition(ModuleSerialization.OVERRIDDEN_CODE, overridden.getName(), overridden.getParentNamespace());
-          deserializeDefinition(stream, definitionMap, overriding);
-          map.put((FunctionDefinition) overridden, overriding);
+          Expression type = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+          Expression term = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+          elems.add(new ClassCallExpression.OverrideElem((ClassField) field, type, term));
         }
-        return ClassExt((ClassCallExpression) baseClassExpression, map, readUniverse(stream));
+        return ClassCall((ClassDefinition) definition, elems, readUniverse(stream));
       }
       case 16: {
         return New(readExpression(stream, definitionMap));
