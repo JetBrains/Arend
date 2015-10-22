@@ -49,7 +49,7 @@ public class GeneralError {
   }
 
   public String printHeader() {
-    return "[" + myLevel + "] " + (myResolvedName == null ? "" : myResolvedName + ": ");
+    return "[" + myLevel + "] " + (myResolvedName == null || myResolvedName.namespace == null ? "" : myResolvedName + ": ");
   }
 
   public static String ioError(IOException e) {

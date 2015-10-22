@@ -775,19 +775,39 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionDefinition extends Definition implements Abstract.FunctionDefinition {
-    private final Abstract.Definition.Arrow myArrow;
+  public static class AbstractDefinition extends Definition implements Abstract.AbstractDefinition {
     private final List<Argument> myArguments;
     private final Expression myResultType;
+
+    public AbstractDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType) {
+      super(position, name, precedence);
+      myArguments = arguments;
+      myResultType = resultType;
+    }
+
+    public List<? extends Argument> getArguments() {
+      return myArguments;
+    }
+
+    public Expression getResultType() {
+      return myResultType;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitAbstract(this, params);
+    }
+  }
+
+  public static class FunctionDefinition extends AbstractDefinition implements Abstract.FunctionDefinition {
+    private final Abstract.Definition.Arrow myArrow;
     private final boolean myOverridden;
     private final Name myOriginalName;
     private final Expression myTerm;
     private final List<Statement> myStatements;
 
     public FunctionDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, Name originalName, List<Statement> statements) {
-      super(position, name, precedence);
-      myArguments = arguments;
-      myResultType = resultType;
+      super(position, name, precedence, arguments, resultType);
       myArrow = arrow;
       myTerm = term;
       myOverridden = overridden;
@@ -796,13 +816,13 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.Definition.Arrow getArrow() {
-      return myArrow;
+    public boolean isAbstract() {
+      return false;
     }
 
     @Override
-    public boolean isAbstract() {
-      return myArrow == null;
+    public Definition.Arrow getArrow() {
+      return myArrow;
     }
 
     @Override
@@ -823,16 +843,6 @@ public final class Concrete {
     @Override
     public Expression getTerm() {
       return myTerm;
-    }
-
-    @Override
-    public List<Argument> getArguments() {
-      return myArguments;
-    }
-
-    @Override
-    public Expression getResultType() {
-      return myResultType;
     }
 
     @Override

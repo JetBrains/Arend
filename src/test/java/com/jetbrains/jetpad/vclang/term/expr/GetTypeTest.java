@@ -55,7 +55,7 @@ public class GetTypeTest {
 
   @Test
   public void fieldAccTest() {
-    ClassDefinition def = typeCheckClass("\\static \\class C { \\function x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
+    ClassDefinition def = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(DefCall(((ClassDefinition) namespace.getDefinition("C")).getField("x")), Apps(Index(0), Zero())));
     List<Binding> context = new ArrayList<>(1);

@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -64,18 +63,20 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
-    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, def.getName(), def.getPrecedence(), def.getArrow());
-    typeCheckStatements(null, def.getStatements(), myNamespace.getChild(def.getName()));
+    Name name = def.getName();
+    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence(), def.getArrow());
+    typeCheckStatements(null, def.getStatements(), myNamespace.getChild(name));
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
-      // myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Cannot find function " + def.getName() + " in the parent class", def, getNames(myContext)));
-      myErrorReporter.report(new TypeCheckingError("Overridden function " + def.getName() + " cannot be defined in a base class", def, getNames(myContext)));
+      // myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Cannot find function " + name + " in the parent class", def, getNames(myContext)));
+      myErrorReporter.report(new TypeCheckingError("Overridden function " + name + " cannot be defined in a base class", def, getNames(myContext)));
       return null;
     }
     */
 
-    List<Argument> arguments = new ArrayList<>(def.getArguments().size());
+    List<? extends Abstract.Argument> arguments = def.getArguments();
+    List<Argument> typedArguments = new ArrayList<>(arguments.size());
     CheckTypeVisitor visitor = new CheckTypeVisitor(myContext, myErrorReporter);
 
     /*
@@ -88,7 +89,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     int index = 0;
     if (splitArgs != null) {
-      for (Abstract.Argument argument : def.getArguments()) {
+      for (Abstract.Argument argument : arguments) {
         if (index >= splitArgs.size()) {
           index = -1;
           break;
@@ -127,7 +128,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     // int numberOfArgs = index;
     int index = 0;
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.Argument argument : def.getArguments()) {
+      for (Abstract.Argument argument : arguments) {
         if (argument instanceof Abstract.TypeArgument) {
           CheckTypeVisitor.OKResult result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
           if (result == null) return typedDef;
@@ -135,7 +136,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           // boolean ok = true;
           if (argument instanceof Abstract.TelescopeArgument) {
             List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-            arguments.add(Tele(argument.getExplicit(), names, result.expression));
+            typedArguments.add(Tele(argument.getExplicit(), names, result.expression));
             for (int i = 0; i < names.size(); ++i) {
             /*
             if (splitArgs != null) {
@@ -163,7 +164,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           */
 
             // if (ok) {
-            arguments.add(TypeArg(argument.getExplicit(), result.expression));
+            typedArguments.add(TypeArg(argument.getExplicit(), result.expression));
             myContext.add(new TypedBinding((Name) null, result.expression));
             ++index;
             // }
@@ -171,19 +172,19 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         /*
         if (!ok) {
-          myErrorReporter.report(new ArgInferenceError(typedDef.getNamespace().getParent(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+          myErrorReporter.report(new ArgInferenceError(typedDef.getNamespace().getParent(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(name)));
           return null;
         }
         */
         } else {
           // if (splitArgs == null) {
-          myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(def.getName())));
+          myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(name)));
           return typedDef;
         /*
         } else {
           List<String> names = new ArrayList<>(1);
           names.add(((Abstract.NameArgument) argument).getName());
-          arguments.add(Tele(argument.getExplicit(), names, splitArgs.get(index).getType()));
+          typedArguments.add(Tele(argument.getExplicit(), names, splitArgs.get(index).getType()));
           myContext.add(new TypedBinding(names.get(0), splitArgs.get(index).getType()));
         }
         */
@@ -206,8 +207,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     */
 
       Expression expectedType = null;
-      if (def.getResultType() != null) {
-        CheckTypeVisitor.OKResult typeResult = visitor.checkType(def.getResultType(), Universe());
+      Abstract.Expression resultType = def.getResultType();
+      if (resultType != null) {
+        CheckTypeVisitor.OKResult typeResult = visitor.checkType(resultType, Universe());
         if (typeResult != null) {
           expectedType = typeResult.expression;
         /*
@@ -215,7 +217,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           List<CompareVisitor.Equation> equations = new ArrayList<>(0);
           CompareVisitor.Result cmpResult = compare(expectedType, overriddenResultType, equations);
           if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
-            myErrorReporter.report(new TypeCheckingError("Result type of the function does not match the result type in the overridden function", def.getResultType(), null));
+            myErrorReporter.report(new TypeCheckingError("Result type of the function does not match the result type in the overridden function", resultType, null));
             return null;
           }
         }
@@ -229,14 +231,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     */
 
-      typedDef.setArguments(arguments);
+      typedDef.setArguments(typedArguments);
       typedDef.setResultType(expectedType);
       typedDef.typeHasErrors(typedDef.getResultType() == null);
 
       myNamespaceMember.definition = typedDef;
-      if (def.getTerm() != null) {
+      Abstract.Expression term = def.getTerm();
+      if (term != null) {
         visitor.setArgsStartCtxIndex(0);
-        CheckTypeVisitor.OKResult termResult = visitor.checkType(def.getTerm(), expectedType);
+        CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
 
         if (termResult != null) {
           typedDef.setTerm(termResult.expression);
@@ -245,7 +248,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           }
 
           if (!termResult.expression.accept(new TerminationCheckVisitor(/* overriddenFunction == null ? */ typedDef /* : overriddenFunction */))) {
-            myErrorReporter.report(new TypeCheckingError("Termination check failed", def.getTerm(), getNames(myContext)));
+            myErrorReporter.report(new TypeCheckingError("Termination check failed", term, getNames(myContext)));
             termResult = null;
           }
         }
@@ -272,16 +275,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           throw new IllegalStateException();
         }
       }
-
-      for (Argument argument : typedDef.getArguments()) {
-        if (argument instanceof TelescopeArgument) {
-          for (String ignore : ((TelescopeArgument) argument).getNames()) {
-            myContext.remove(myContext.size() - 1);
-          }
-        } else {
-          myContext.remove(myContext.size() - 1);
-        }
-      }
     }
     /*
     if (typedDef instanceof OverriddenDefinition) {
@@ -293,31 +286,110 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   }
 
   @Override
-  public DataDefinition visitData(Abstract.DataDefinition def, Void params) {
-    List<TypeArgument> parameters = new ArrayList<>(def.getParameters().size());
-    DataDefinition dataDefinition;
+  public ClassField visitAbstract(Abstract.AbstractDefinition def, Void params) {
+    Name name = def.getName();
+    List<? extends Abstract.Argument> arguments = def.getArguments();
+    List<TypeArgument> typedArguments = new ArrayList<>(arguments.size());
+    Expression typedResultType;
+    CheckTypeVisitor visitor = new CheckTypeVisitor(myContext, myErrorReporter);
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
+
+    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+      int index = 0;
+      for (Abstract.Argument argument : arguments) {
+        if (argument instanceof Abstract.TypeArgument) {
+          CheckTypeVisitor.OKResult result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
+          if (result == null) {
+            return null;
+          }
+
+          if (argument instanceof Abstract.TelescopeArgument) {
+            List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
+            typedArguments.add(Tele(argument.getExplicit(), names, result.expression));
+            for (int i = 0; i < names.size(); ++i) {
+              myContext.add(new TypedBinding(names.get(i), result.expression.liftIndex(0, i)));
+              ++index;
+            }
+          } else {
+            typedArguments.add(TypeArg(argument.getExplicit(), result.expression));
+            myContext.add(new TypedBinding((Name) null, result.expression));
+            ++index;
+          }
+
+          Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
+          Universe maxUniverse = universe.max(argUniverse);
+          if (maxUniverse == null) {
+            String error = "Universe " + argUniverse + " of " + index + suffix(index) + " argument is not compatible with universe " + universe + " of previous arguments";
+            myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), error, def, new ArrayList<String>()));
+            return null;
+          } else {
+            universe = maxUniverse;
+          }
+        } else {
+          myErrorReporter.report(new ArgInferenceError(myNamespace.getResolvedName(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(name)));
+          return null;
+        }
+      }
+
+      Abstract.Expression resultType = def.getResultType();
+      if (resultType == null) {
+        return null;
+      }
+      CheckTypeVisitor.OKResult typeResult = visitor.checkType(resultType, Universe());
+      if (typeResult == null) {
+        return null;
+      }
+      typedResultType = typeResult.expression;
+
+      Universe resultTypeUniverse = ((UniverseExpression) typeResult.type).getUniverse();
+      Universe maxUniverse = universe.max(resultTypeUniverse);
+      if (maxUniverse == null) {
+        String error = "Universe " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
+        myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), error, def, new ArrayList<String>()));
+        return null;
+      } else {
+        universe = maxUniverse;
+      }
+    }
+
+    ClassField typedDef = new ClassField(myNamespace, name, def.getPrecedence(), Pi(typedArguments, typedResultType));
+    Expression type = typedDef.getType().getType(myContext).normalize(NormalizeVisitor.Mode.WHNF);
+    if (type instanceof UniverseExpression) {
+      typedDef.setUniverse(universe);
+    }
+    myNamespaceMember.definition = typedDef;
+    return typedDef;
+  }
+
+  @Override
+  public DataDefinition visitData(Abstract.DataDefinition def, Void params) {
+    List<? extends Abstract.TypeArgument> parameters = def.getParameters();
+    List<TypeArgument> typedParameters = new ArrayList<>(parameters.size());
+    DataDefinition dataDefinition;
+    Universe universe = def.getUniverse();
+    Universe typedUniverse = new Universe.Type(0, Universe.Type.PROP);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       CheckTypeVisitor visitor = new CheckTypeVisitor(myContext, myErrorReporter);
-      for (Abstract.TypeArgument parameter : def.getParameters()) {
+      for (Abstract.TypeArgument parameter : parameters) {
         CheckTypeVisitor.OKResult result = visitor.checkType(parameter.getType(), Universe());
         if (result == null) return null;
         if (parameter instanceof Abstract.TelescopeArgument) {
-          parameters.add(Tele(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
+          typedParameters.add(Tele(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
           List<String> names = ((Abstract.TelescopeArgument) parameter).getNames();
           for (int i = 0; i < names.size(); ++i) {
             myContext.add(new TypedBinding(names.get(i), result.expression.liftIndex(0, i)));
           }
         } else {
-          parameters.add(TypeArg(parameter.getExplicit(), result.expression));
+          typedParameters.add(TypeArg(parameter.getExplicit(), result.expression));
           myContext.add(new TypedBinding((Name) null, result.expression));
         }
       }
 
-      dataDefinition = new DataDefinition(myNamespace, def.getName(), def.getPrecedence(), def.getUniverse() != null ? def.getUniverse() : new Universe.Type(0, Universe.Type.PROP), parameters);
+      Name name = def.getName();
+      dataDefinition = new DataDefinition(myNamespace, name, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), typedParameters);
       myNamespaceMember.definition = dataDefinition;
 
-      myNamespace = myNamespace.getChild(def.getName());
+      myNamespace = myNamespace.getChild(name);
       for (Abstract.Constructor constructor : def.getConstructors()) {
         Constructor typedConstructor = visitConstructor(constructor, dataDefinition);
         if (typedConstructor == null) {
@@ -330,23 +402,23 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         }
         member.definition = typedConstructor;
 
-        Universe maxUniverse = universe.max(member.definition.getUniverse());
+        Universe maxUniverse = typedUniverse.max(member.definition.getUniverse());
         if (maxUniverse == null) {
-          String msg = "Universe " + member.definition.getUniverse() + " of constructor " + constructor.getName() + " is not compatible with universe " + universe + " of previous constructors";
+          String msg = "Universe " + member.definition.getUniverse() + " of constructor " + constructor.getName() + " is not compatible with universe " + typedUniverse + " of previous constructors";
           myErrorReporter.report(new TypeCheckingError(msg, null, null));
         } else {
-          universe = maxUniverse;
+          typedUniverse = maxUniverse;
         }
       }
       myNamespace = myNamespace.getParent();
     }
 
-    if (def.getUniverse() != null) {
-      if (universe.lessOrEquals(def.getUniverse())) {
-        dataDefinition.setUniverse(def.getUniverse());
-      } else {
-        myErrorReporter.report(new TypeMismatchError(new UniverseExpression(def.getUniverse()), new UniverseExpression(universe), null, new ArrayList<String>()));
+    if (universe != null) {
+      if (typedUniverse.lessOrEquals(universe)) {
         dataDefinition.setUniverse(universe);
+      } else {
+        myErrorReporter.report(new TypeMismatchError(new UniverseExpression(universe), new UniverseExpression(typedUniverse), null, new ArrayList<String>()));
+        dataDefinition.setUniverse(typedUniverse);
       }
     }
 
@@ -360,22 +432,24 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   public Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition) {
     try (Utils.CompleteContextSaver ignored = new Utils.CompleteContextSaver<>(myContext)) {
-      List<TypeArgument> arguments = new ArrayList<>(def.getArguments().size());
+      List<? extends Abstract.TypeArgument> arguments = def.getArguments();
+      List<TypeArgument> typeArguments = new ArrayList<>(arguments.size());
       Universe universe = new Universe.Type(0, Universe.Type.PROP);
       int index = 1;
       boolean ok = true;
 
       CheckTypeVisitor visitor = new CheckTypeVisitor(myContext, myErrorReporter);
-      List<Pattern> patterns = null;
-      if (def.getPatterns() != null) {
-        patterns = new ArrayList<>();
+      List<? extends Abstract.Pattern> patterns = def.getPatterns();
+      List<Pattern> typedPatterns = null;
+      if (patterns != null) {
+        typedPatterns = new ArrayList<>();
 
-        ProcessImplicitResult processImplicitResult = processImplicit(def.getPatterns(), dataDefinition.getParameters());
+        ProcessImplicitResult processImplicitResult = processImplicit(patterns, dataDefinition.getParameters());
         if (processImplicitResult.patterns == null) {
           if (processImplicitResult.numExcessive != 0) {
             myErrorReporter.report(new TypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", def, getNames(myContext)));
-          } else if (processImplicitResult.wrongImplicitPosition < patterns.size()) {
-            myErrorReporter.report(new TypeCheckingError("Unexpected implicit argument", def.getPatterns().get(processImplicitResult.wrongImplicitPosition), getNames(myContext)));
+          } else if (processImplicitResult.wrongImplicitPosition < typedPatterns.size()) {
+            myErrorReporter.report(new TypeCheckingError("Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition), getNames(myContext)));
           } else {
             myErrorReporter.report(new TypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, def, getNames(myContext)));
           }
@@ -386,11 +460,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           CheckTypeVisitor.ExpandPatternResult result = visitor.expandPatternOn(processedPatterns.get(i), processedPatterns.size() - 1 - i);
           if (result == null || result instanceof CheckTypeVisitor.ExpandPatternErrorResult)
             return null;
-          patterns.add(((CheckTypeVisitor.ExpandPatternOKResult)result).pattern);
+          typedPatterns.add(((CheckTypeVisitor.ExpandPatternOKResult)result).pattern);
         }
       }
 
-      for (Abstract.TypeArgument argument : def.getArguments()) {
+      for (Abstract.TypeArgument argument : arguments) {
         CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
         if (result == null) {
           return null;
@@ -407,14 +481,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         }
 
         if (argument instanceof Abstract.TelescopeArgument) {
-          arguments.add(Tele(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
+          typeArguments.add(Tele(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
           for (int i = 0; i < names.size(); ++i) {
             myContext.add(new TypedBinding(names.get(i), result.expression.liftIndex(0, i)));
           }
           index += ((Abstract.TelescopeArgument) argument).getNames().size();
         } else {
-          arguments.add(TypeArg(argument.getExplicit(), result.expression));
+          typeArguments.add(TypeArg(argument.getExplicit(), result.expression));
           myContext.add(new TypedBinding((Name) null, result.expression));
           ++index;
         }
@@ -424,13 +498,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         return null;
       }
 
-      for (int j = 0; j < arguments.size(); ++j) {
-        Expression type = arguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
+      Name name = def.getName();
+
+      for (int j = 0; j < typeArguments.size(); ++j) {
+        Expression type = typeArguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
             if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition))) {
-              String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + def.getName();
-              myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, def.getArguments().get(j).getType(), getNames(myContext)));
+              String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
+              myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(myContext)));
               return null;
             }
           }
@@ -441,14 +517,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         type.getFunction(exprs);
         for (Expression expr : exprs) {
           if (expr.accept(new FindDefCallVisitor(dataDefinition))) {
-            String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + def.getName();
-            myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, def.getArguments().get(j).getType(), getNames(myContext)));
+            String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
+            myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(myContext)));
             return null;
           }
         }
       }
 
-      Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), def.getName(), def.getPrecedence(), universe, arguments, dataDefinition, patterns);
+      Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name, def.getPrecedence(), universe, typeArguments, dataDefinition, typedPatterns);
       dataDefinition.addConstructor(constructor);
       dataDefinition.getParentNamespace().addDefinition(constructor);
       return constructor;
@@ -472,8 +548,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
-    ClassDefinition typedDef = new ClassDefinition(myNamespace, def.getName());
-    typeCheckStatements(typedDef, def.getStatements(), myNamespace.getChild(def.getName()));
+    Name name = def.getName();
+    ClassDefinition typedDef = new ClassDefinition(myNamespace, name);
+    typeCheckStatements(typedDef, def.getStatements(), myNamespace.getChild(name));
     return typedDef;
   }
 }

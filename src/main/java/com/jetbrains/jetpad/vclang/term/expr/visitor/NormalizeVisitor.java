@@ -2,7 +2,10 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.Function;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
@@ -151,13 +154,13 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
 
     if (myMode == Mode.TOP) return null;
 
-    if (defCallExpr.getDefinition() instanceof ClassDefinition) {
+    if (defCallExpr instanceof ClassCallExpression || defCallExpr instanceof FieldCallExpression) {
       return applyDefCall(defCallExpr, args);
     }
 
     List<TypeArgument> arguments;
-    if (defCallExpr.getDefinition() instanceof DataDefinition) {
-      arguments = ((DataDefinition) defCallExpr.getDefinition()).getParameters();
+    if (defCallExpr instanceof DataCallExpression) {
+      arguments = ((DataCallExpression) defCallExpr).getDefinition().getParameters();
     } else
     if (defCallExpr instanceof ConCallExpression) {
       List<TypeArgument> arguments1 = ((Constructor) defCallExpr.getDefinition()).getArguments();

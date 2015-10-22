@@ -239,6 +239,11 @@ public final class Abstract {
     Expression getResultType();
   }
 
+  public interface AbstractDefinition extends Definition {
+    List<? extends Argument> getArguments();
+    Expression getResultType();
+  }
+
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
     boolean isOverridden();

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
@@ -12,6 +13,7 @@ import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.SingleNameResolver;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
@@ -36,18 +38,43 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Boolean isStatic) {
-    if (def.getStatements().isEmpty()) {
+    Collection<? extends Abstract.Statement> statements = def.getStatements();
+    if (statements.isEmpty()) {
       visitFunction(def);
       return null;
     } else {
       try (StatementResolveNameVisitor statementVisitor = new StatementResolveNameVisitor(myErrorReporter, myNamespace.getChild(def.getName()), myNameResolver, myContext)) {
-        for (Abstract.Statement statement : def.getStatements()) {
+        for (Abstract.Statement statement : statements) {
           statement.accept(statementVisitor, isStatic ? StatementResolveNameVisitor.Flag.MUST_BE_STATIC : null);
         }
         visitFunction(def);
       }
       return null;
     }
+  }
+
+  @Override
+  public Void visitAbstract(Abstract.AbstractDefinition def, Boolean isStatic) {
+    ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext);
+    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+      for (Abstract.Argument argument : def.getArguments()) {
+        if (argument instanceof Abstract.TypeArgument) {
+          ((Abstract.TypeArgument) argument).getType().accept(visitor, null);
+        }
+        if (argument instanceof Abstract.TelescopeArgument) {
+          myContext.addAll(((Abstract.TelescopeArgument) argument).getNames());
+        } else
+        if (argument instanceof Abstract.NameArgument) {
+          myContext.add(((Abstract.NameArgument) argument).getName());
+        }
+      }
+
+      Abstract.Expression resultType = def.getResultType();
+      if (resultType != null) {
+        resultType.accept(visitor, null);
+      }
+    }
+    return null;
   }
 
   private void visitFunction(Abstract.FunctionDefinition def) {
@@ -65,13 +92,16 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
         }
       }
 
-      if (def.getResultType() != null) {
-        def.getResultType().accept(visitor, null);
+      Abstract.Expression resultType = def.getResultType();
+      if (resultType != null) {
+        resultType.accept(visitor, null);
       }
 
-      if (def.getTerm() != null) {
-        myNameResolver.pushNameResolver(new SingleNameResolver(def.getName().name, new NamespaceMember(myNamespace.getChild(def.getName()), def, null)));
-        def.getTerm().accept(visitor, null);
+      Abstract.Expression term = def.getTerm();
+      if (term != null) {
+        Name name = def.getName();
+        myNameResolver.pushNameResolver(new SingleNameResolver(name.name, new NamespaceMember(myNamespace.getChild(name), def, null)));
+        term.accept(visitor, null);
         myNameResolver.popNameResolver();
       }
     }
@@ -89,7 +119,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
         }
       }
 
-      myNameResolver.pushNameResolver(new SingleNameResolver(def.getName().name, new NamespaceMember(myNamespace.getChild(def.getName()), def, null)));
+      Name name = def.getName();
+      myNameResolver.pushNameResolver(new SingleNameResolver(name.name, new NamespaceMember(myNamespace.getChild(name), def, null)));
+
       for (Abstract.Constructor constructor : def.getConstructors()) {
         if (constructor.getPatterns() == null) {
           visitConstructor(constructor, null);
@@ -109,8 +141,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   public Void visitConstructor(Abstract.Constructor def, Boolean isStatic) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext);
-      if (def.getPatterns() != null) {
-        for (int i = 0; i < def.getPatterns().size(); ++i) {
+      List<? extends Abstract.Pattern> patterns = def.getPatterns();
+      if (patterns != null) {
+        for (int i = 0; i < patterns.size(); ++i) {
           visitor.visitPattern(def, i);
         }
       }

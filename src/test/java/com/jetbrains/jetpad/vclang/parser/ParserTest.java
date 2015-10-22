@@ -71,7 +71,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} (A : Nat -> Nat -> Nat -> Nat -> Nat -> Nat -> \\Type0) : A x y z w t r");
+    Concrete.AbstractDefinition def = (Concrete.AbstractDefinition) parseDef("\\abstract f (x y : Nat) {z w : Nat} (t : Nat) {r : Nat} (A : Nat -> Nat -> Nat -> Nat -> Nat -> Nat -> \\Type0) : A x y z w t r");
     assertEquals(5, def.getArguments().size());
     assertTrue(def.getArguments().get(0).getExplicit());
     assertFalse(def.getArguments().get(1).getExplicit());
@@ -86,7 +86,7 @@ public class ParserTest {
 
   @Test
   public void parserImplicit2() {
-    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) parseDef("\\function f {x : Nat} (_ : Nat) {y z : Nat} (A : Nat -> Nat -> Nat -> \\Type0) (_ : A x y z) : Nat");
+    Concrete.AbstractDefinition def = (Concrete.AbstractDefinition) parseDef("\\abstract f {x : Nat} (_ : Nat) {y z : Nat} (A : Nat -> Nat -> Nat -> \\Type0) (_ : A x y z) : Nat");
     assertEquals(5, def.getArguments().size());
     assertFalse(def.getArguments().get(0).getExplicit());
     assertTrue(def.getArguments().get(1).getExplicit());

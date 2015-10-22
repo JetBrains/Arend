@@ -6,10 +6,11 @@ statement : staticMod definition                              # statDef
           | nsCmd name fieldAcc* ('(' name (',' name)* ')')?  # statCmd
           ;
 
-definition  : '\\function' precedence name tele* typeTermOpt where?         # defFunction
-            // | '\\override' name ('\\as' name)? tele* typeTermOpt where?     # defOverride
-            | '\\data' precedence name tele* (':' literal)? constructorDef* # defData
-            | '\\class' ID classFields                                      # defClass
+definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  # defFunction
+            | '\\abstract' precedence name tele* ':' expr                       # defAbstract
+            // | '\\override' name ('\\as' name)? tele* typeTermOpt where?         # defOverride
+            | '\\data' precedence name tele* (':' literal)? constructorDef*     # defData
+            | '\\class' ID classFields                                          # defClass
             ;
 
 staticMod : '\\static'                  # staticStatic

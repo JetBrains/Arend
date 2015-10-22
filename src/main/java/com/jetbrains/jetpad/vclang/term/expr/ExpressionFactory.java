@@ -177,8 +177,8 @@ public class ExpressionFactory {
     return new TelescopeArgument(true, names, type);
   }
 
-  public static PiExpression Pi(List<TypeArgument> arguments, Expression codomain) {
-    return new PiExpression(arguments, codomain);
+  public static Expression Pi(List<TypeArgument> arguments, Expression codomain) {
+    return arguments.isEmpty() ? codomain : new PiExpression(arguments, codomain);
   }
 
   public static PiExpression Pi(boolean explicit, String var, Expression domain, Expression codomain) {
