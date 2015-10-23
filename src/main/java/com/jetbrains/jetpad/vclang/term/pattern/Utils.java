@@ -31,6 +31,13 @@ public class Utils {
     }
   }
 
+  public static int getNumArguments(List<? extends Abstract.Pattern> patterns) {
+    int result = 0;
+    for (Abstract.Pattern pattern : patterns)
+      result += getNumArguments(pattern);
+    return result;
+  }
+
   public static void collectPatternNames(Abstract.Pattern pattern, List<String> names) {
     if (pattern instanceof Abstract.NamePattern) {
       names.add(((Abstract.NamePattern) pattern).getName());

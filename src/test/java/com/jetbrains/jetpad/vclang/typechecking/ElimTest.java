@@ -219,6 +219,17 @@ public class ElimTest {
   }
 
   @Test
+  public void elim10() {
+    typeCheckClass("\\static \\data Bool | true | false\n" +
+                   "\\static \\function tp : \\Pi (x : Bool) -> \\Type0 => \\lam x => \\case x\n" +
+                   "| true => Bool\n" +
+                   "| false => Nat\n" +
+                   "\\static \\function f (x : Bool) : tp x <= \\elim x\n" +
+                   "| true => x\n" +
+                   "| false => zero\n");
+  }
+
+  @Test
   public void elimEmptyBranch() {
     typeCheckClass(
         "\\static \\data D Nat | D (suc n) => dsuc\n" +

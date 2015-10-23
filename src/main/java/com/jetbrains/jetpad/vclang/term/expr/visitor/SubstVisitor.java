@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -177,7 +178,19 @@ public class SubstVisitor extends BaseExpressionVisitor<Expression> {
 
   @Override
   public Expression visitElim(ElimExpression expr) {
-    throw new IllegalStateException();
+    List<IndexExpression> expressions = new ArrayList<>();
+    for (IndexExpression index : expr.getExpressions()) {
+      assert index.getIndex() < myFrom;
+      expressions.add((IndexExpression) index.accept(this));
+    }
+    List<Clause> clauses = new ArrayList<>();
+    ElimExpression result = new ElimExpression(expressions, clauses);
+    for (Clause clause : expr.getClauses()) {
+      clauses.add(new Clause(clause.getPatterns(), clause.getArrow(), clause.getExpression().subst(mySubstExprs,
+          myFrom + Utils.getNumArguments(clause.getPatterns()) - clause.getPatterns().size()), result));
+    }
+
+    return result;
   }
 
   @Override
