@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
@@ -114,7 +113,7 @@ public class TypecheckingOrdering {
         }
       }
       for (ResolvedName rn : ((OKResult) result).order) {
-        DefinitionCheckTypeVisitor.typeCheck(rn.toNamespaceMember(), new ArrayList<Binding>(), rn.namespace, errorReporter);
+        DefinitionCheckTypeVisitor.typeCheck(rn.toNamespaceMember(), rn.namespace, errorReporter);
       }
     } else if (result instanceof CycleResult) {
       StringBuilder errorMessage = new StringBuilder();
