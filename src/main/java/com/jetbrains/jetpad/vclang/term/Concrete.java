@@ -731,6 +731,7 @@ public final class Concrete {
   public static class DefineStatement extends Statement implements Abstract.DefineStatement {
     private final boolean myStatic;
     private final Definition myDefinition;
+    private Definition myParent;
 
     public DefineStatement(Position position, boolean isStatic, Definition definition) {
       super(position);
@@ -749,6 +750,15 @@ public final class Concrete {
     }
 
     @Override
+    public Definition getParentDefinition() {
+      return myParent;
+    }
+
+    public void setParentDefinition(Definition parent) {
+      myParent = parent;
+    }
+
+    @Override
     public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitDefine(this, params);
     }
@@ -756,6 +766,7 @@ public final class Concrete {
 
   public static abstract class Definition extends Binding implements Abstract.Definition {
     private final Precedence myPrecedence;
+    private DefineStatement myParent;
 
     public Definition(Position position, Name name, Precedence precedence) {
       super(position, name);
@@ -765,6 +776,15 @@ public final class Concrete {
     @Override
     public Precedence getPrecedence() {
       return myPrecedence;
+    }
+
+    @Override
+    public DefineStatement getParentStatement() {
+      return myParent;
+    }
+
+    public void setParentStatement(DefineStatement parent) {
+      myParent = parent;
     }
 
     @Override
