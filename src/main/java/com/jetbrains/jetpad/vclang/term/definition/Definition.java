@@ -54,6 +54,11 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   }
 
   @Override
+  public Abstract.DefineStatement getParentStatement() {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
     accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);

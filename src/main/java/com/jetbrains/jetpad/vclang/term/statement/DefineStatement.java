@@ -23,6 +23,11 @@ public class DefineStatement implements Abstract.DefineStatement {
   }
 
   @Override
+  public Abstract.Definition getParentDefinition() {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitDefine(this, params);
   }

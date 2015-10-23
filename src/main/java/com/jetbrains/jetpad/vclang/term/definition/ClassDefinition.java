@@ -36,6 +36,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
       myFields = new HashMap<>();
     }
     myFields.put(field.getName().name, field);
+    field.setThisClass(this);
   }
 
   public void removeField(String name) {

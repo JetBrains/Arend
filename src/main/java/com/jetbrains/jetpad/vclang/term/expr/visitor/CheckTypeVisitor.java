@@ -637,7 +637,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return null;
       }
     } else {
-      if (expr.getResolvedName() == null) {
+      ResolvedName resolvedName = expr.getResolvedName();
+      if (resolvedName == null) {
         OKResult result1 = getLocalVar(name, expr);
         if (result1 == null) {
           return null;
@@ -646,7 +647,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return checkResultImplicit(expectedType, result1, expr);
       }
 
-      Definition definition = expr.getResolvedName().toDefinition();
+      Definition definition = resolvedName.toDefinition();
       if (definition == null) {
         throw new IllegalStateException();
       }
@@ -658,12 +659,27 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return null;
       }
 
-      result = new OKResult(DefCall(definition), definition.getType(), null);
+      Expression term = DefCall(definition);
+      Expression type;
+      if (definition instanceof ClassField) {
+        if (myLocalContext.size() > 0) {
+          assert myLocalContext.get(0).getName().name.equals("\\this");
+          Expression thisExpr = Index(0);
+          term = Apps(term, thisExpr);
+          type = ((ClassField) definition).getBaseType().subst(thisExpr, 0);
+        } else {
+          // TODO
+          throw new IllegalStateException();
+        }
+      } else {
+        type = definition.getType();
+      }
+      result = new OKResult(term, type, null);
     }
 
     if (result.expression instanceof DefCallExpression) {
-      if (((DefCallExpression) result.expression).getDefinition() instanceof Constructor) {
-        Constructor constructor = ((Constructor) ((DefCallExpression) result.expression).getDefinition());
+      if (result.expression instanceof ConCallExpression) {
+        Constructor constructor = ((ConCallExpression) result.expression).getDefinition();
         List<TypeArgument> parameters;
         if (constructor.getPatterns() != null) {
           parameters = expandConstructorParameters(constructor);
