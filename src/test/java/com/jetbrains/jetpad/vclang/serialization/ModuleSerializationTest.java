@@ -46,7 +46,7 @@ public class ModuleSerializationTest {
     DataOutputStream dataStream = new DataOutputStream(stream);
     ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
-    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), new ResolvedName(RootModule.ROOT, "test"));
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
@@ -74,7 +74,7 @@ public class ModuleSerializationTest {
     DataOutputStream dataStream = new DataOutputStream(stream);
     ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
-    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), new ResolvedName(RootModule.ROOT, "test"));
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
@@ -98,7 +98,7 @@ public class ModuleSerializationTest {
     ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
     RootModule.initialize();
-    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     ClassDefinition newDef = new ClassDefinition(RootModule.ROOT, new Name("test"));
     Namespace newNamespace = newDef.getParentNamespace().findChild(newDef.getName().name);
     RootModule.ROOT.addDefinition(newDef);
@@ -125,7 +125,7 @@ public class ModuleSerializationTest {
     ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
     RootModule.initialize();
-    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), new ResolvedName(RootModule.ROOT, "test"));
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
@@ -145,13 +145,13 @@ public class ModuleSerializationTest {
     Namespace funcNamespace = namespace.getChild(funcDef.getName());
     FunctionDefinition innerFunc = new FunctionDefinition(funcNamespace, new Name("g"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero());
     funcNamespace.addDefinition(innerFunc);
-    funcDef.setTerm(DefCall(innerFunc));
+    funcDef.setTerm(FunCall(innerFunc));
     namespace.addDefinition(funcDef);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
     ModuleSerialization.writeStream(new ResolvedName(def.getParentNamespace(), def.getName()), dataStream);
 
-    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), new ResolvedName(RootModule.ROOT, new Name("test")));
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
@@ -174,7 +174,7 @@ public class ModuleSerializationTest {
 
     ClassDefinition newDef = (ClassDefinition) typeCheckDef("\\class B {}");
     RootModule.ROOT.addDefinition(newDef);
-    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     ModuleLoadingResult result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), new ResolvedName(newDef.getParentNamespace(), newDef.getName()));
     assertNotNull(result);
     assertNotNull(result.namespaceMember);

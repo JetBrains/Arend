@@ -89,7 +89,7 @@ public class ConsoleMain {
     };
 
     final ListErrorReporter errorReporter = new ListErrorReporter();
-    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     moduleLoader.setSourceSupplier(new FileSourceSupplier(moduleLoader, errorReporter, sourceDir));
     moduleLoader.setOutputSupplier(new FileOutputSupplier(moduleDeserialization, outputDir, libDirs));
 

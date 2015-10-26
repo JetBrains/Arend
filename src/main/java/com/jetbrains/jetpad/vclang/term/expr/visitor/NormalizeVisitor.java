@@ -2,7 +2,10 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.Function;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
@@ -10,13 +13,15 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMultipleMatch;
 
-public class NormalizeVisitor implements ExpressionVisitor<Expression> {
+public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
   public enum Mode { WHNF, NF, TOP }
 
   private final Mode myMode;
@@ -149,18 +154,19 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
     if (myMode == Mode.TOP) return null;
 
-    if (defCallExpr.getDefinition() instanceof ClassDefinition) {
+    if (defCallExpr instanceof ClassCallExpression || defCallExpr instanceof FieldCallExpression) {
       return applyDefCall(defCallExpr, args);
     }
 
     List<TypeArgument> arguments;
-    if (defCallExpr.getDefinition() instanceof DataDefinition) {
-      arguments = ((DataDefinition) defCallExpr.getDefinition()).getParameters();
+    if (defCallExpr instanceof DataCallExpression) {
+      arguments = ((DataCallExpression) defCallExpr).getDefinition().getParameters();
     } else
-    if (defCallExpr.getDefinition() instanceof Constructor) {
+    if (defCallExpr instanceof ConCallExpression) {
       List<TypeArgument> arguments1 = ((Constructor) defCallExpr.getDefinition()).getArguments();
-      if (defCallExpr.getParameters() != null && !defCallExpr.getParameters().isEmpty()) {
-        List<Expression> substExprs = new ArrayList<>(defCallExpr.getParameters());
+      List<Expression> parameters = ((ConCallExpression) defCallExpr).getParameters();
+      if (!parameters.isEmpty()) {
+        List<Expression> substExprs = new ArrayList<>(parameters);
         Collections.reverse(substExprs);
         arguments = new ArrayList<>(arguments1.size());
         for (int j = 0; j < arguments1.size(); ++j) {
@@ -292,7 +298,20 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr) {
-    return visitDefCall(expr.getExpression() == null ? expr : DefCall(expr.getExpression().normalize(Mode.WHNF, myContext), expr.getDefinition(), expr.getParameters()), new ArrayList<ArgumentExpression>(0));
+    return visitDefCall(expr, Collections.<ArgumentExpression>emptyList());
+  }
+
+  @Override
+  public Expression visitClassCall(ClassCallExpression expr) {
+    if (myMode == Mode.TOP) return null;
+    if (myMode == Mode.WHNF) return expr;
+
+    List<ClassCallExpression.OverrideElem> elems = new ArrayList<>(expr.getOverrideElems().size());
+    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+      elems.add(new ClassCallExpression.OverrideElem(elem.field, elem.type == null ? null : elem.type.accept(this), elem.term == null ? null : elem.term.accept(this)));
+    }
+
+    return ClassCall(expr.getDefinition(), elems, expr.getUniverse());
   }
 
   @Override
@@ -398,42 +417,6 @@ public class NormalizeVisitor implements ExpressionVisitor<Expression> {
     } else {
       return myMode == Mode.TOP ? null : myMode == Mode.NF ? Proj(expr.getExpression().accept(this), expr.getField()) : expr;
     }
-  }
-
-  @Override
-  public Expression visitClassExt(ClassExtExpression expr) {
-    if (myMode == Mode.TOP) return null;
-    if (myMode == Mode.WHNF) return expr;
-
-    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
-    for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-      List<Argument> arguments = null;
-      OverriddenDefinition function = entry.getValue();
-      if (function.getArguments() != null) {
-        arguments = new ArrayList<>(function.getArguments().size());
-        for (Argument argument : function.getArguments()) {
-          if (argument instanceof TypeArgument) {
-            Expression type = ((TypeArgument) argument).getType().accept(this);
-            if (argument instanceof TelescopeArgument) {
-              arguments.add(Tele(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), type));
-            } else {
-              arguments.add(TypeArg(argument.getExplicit(), type));
-            }
-          } else {
-            arguments.add(argument);
-          }
-        }
-      }
-
-      Expression resultType = function.getResultType() == null ? null : function.getResultType().accept(this);
-      Expression term = function.getTerm() == null ? null : function.getTerm().accept(this);
-      OverriddenDefinition definition = new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, resultType, function.getArrow(), term, function.getOverriddenFunction());
-      definitions.put(entry.getKey(), definition);
-    }
-    if (expr.getBaseClassExpression().getExpression() == null) {
-      return ClassExt(expr.getBaseClassExpression(), definitions, expr.getUniverse());
-    }
-    return ClassExt(DefCall(expr.getBaseClassExpression().getExpression().accept(this), expr.getBaseClassExpression().getDefinition()), definitions, expr.getUniverse());
   }
 
   @Override

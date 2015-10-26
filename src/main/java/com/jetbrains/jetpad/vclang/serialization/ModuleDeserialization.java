@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.serialization;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -23,12 +24,9 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
-  private final ModuleLoader myModuleLoader;
   private ResolvedName myResolvedName;
 
-  public ModuleDeserialization(ModuleLoader moduleLoader) {
-    myModuleLoader = moduleLoader;
-  }
+  public ModuleDeserialization() {}
 
   public ModuleLoadingResult readFile(File file, ResolvedName resolvedName) throws IOException {
     return readStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), resolvedName);
@@ -50,53 +48,7 @@ public class ModuleDeserialization {
     int errorsNumber = stream.readInt();
 
     Map<Integer, Definition> definitionMap = new HashMap<>();
-    // TODO
-    /*
-    definitionMap.put(0, RootModule.ROOT);
-    int size = stream.readInt();
-    for (int i = 0; i < size; ++i) {
-      int index = stream.readInt();
-      int parentIndex = stream.readInt();
-      NamespaceMember child;
-      if (parentIndex == 0) {
-        child = index == 1 ? RootModule.ROOT : new Namespace("<local>");
-      } else {
-        Abstract.Definition.Fixity fixity = stream.readBoolean() ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
-        String name = stream.readUTF();
-        Name name1 = new Name(name, fixity);
-        int code = stream.read();
-        boolean isNew = false;
-        if (code != ModuleSerialization.NAMESPACE_CODE) {
-          isNew = stream.readBoolean();
-        }
-
-        NamespaceMember parent = definitionMap.get(parentIndex);
-        if (!(parent instanceof Namespace)) {
-          throw new IncorrectFormat();
-        }
-
-        Namespace parentNamespace = (Namespace) parent;
-        if (code == ModuleSerialization.NAMESPACE_CODE) {
-          ModuleLoadingResult result = myModuleLoader.load(new ResolvedName((Namespace) parent, name), true);
-          child = result == null || result.definition == null ? parentNamespace.getChild(name1) : result.namespace;
-        } else {
-          if (isNew) {
-            child = newDefinition(code, name1, parentNamespace);
-            if (parentNamespace.addDefinition((Definition) child) != null) {
-              throw new NameIsAlreadyDefined(name1);
-            }
-          } else {
-            child = parentNamespace.getDefinition(name);
-            if (child == null) {
-              throw new NameDoesNotDefined(name1);
-            }
-          }
-        }
-      }
-
-      definitionMap.put(index, child);
-    }
-    */
+    
 
     deserializeNamespace(stream, definitionMap);
     if (stream.readBoolean()) {
@@ -321,15 +273,19 @@ public class ModuleDeserialization {
         return Apps(function, new ArgumentExpression(argument, explicit, hidden));
       }
       case 2: {
-        boolean isFieldAcc = stream.readBoolean();
-        Expression expression = isFieldAcc ? readExpression(stream, definitionMap) : null;
         Definition definition = definitionMap.get(stream.readInt());
         int size = stream.readInt();
-        List<Expression> parameters = size == 0 ? null : new ArrayList<Expression>(size);
+        if (size == 0) {
+          return DefCall(definition);
+        }
+        if (!(definition instanceof Constructor)) {
+          throw new IncorrectFormat();
+        }
+        List<Expression> parameters = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
           parameters.add(readExpression(stream, definitionMap));
         }
-        return DefCall(expression, definition, parameters);
+        return ConCall((Constructor) definition, parameters);
       }
       case 3: {
         return Index(stream.readInt());
@@ -382,22 +338,22 @@ public class ModuleDeserialization {
         return Proj(expr, stream.readInt());
       }
       case 15: {
-        Expression baseClassExpression = readExpression(stream, definitionMap);
-        if (!(baseClassExpression instanceof DefCallExpression)) {
+        Definition definition = definitionMap.get(stream.readInt());
+        if (!(definition instanceof ClassDefinition)) {
           throw new IncorrectFormat();
         }
-        Map<FunctionDefinition, OverriddenDefinition> map = new HashMap<>();
         int size = stream.readInt();
+        List<ClassCallExpression.OverrideElem> elems = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
-          Definition overridden = definitionMap.get(stream.readInt());
-          if (!(overridden instanceof FunctionDefinition)) {
+          Definition field = definitionMap.get(stream.readInt());
+          if (!(field instanceof ClassField)) {
             throw new IncorrectFormat();
           }
-          OverriddenDefinition overriding = (OverriddenDefinition) newDefinition(ModuleSerialization.OVERRIDDEN_CODE, overridden.getName(), overridden.getParentNamespace());
-          deserializeDefinition(stream, definitionMap, overriding);
-          map.put((FunctionDefinition) overridden, overriding);
+          Expression type = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+          Expression term = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+          elems.add(new ClassCallExpression.OverrideElem((ClassField) field, type, term));
         }
-        return ClassExt((DefCallExpression) baseClassExpression, map, readUniverse(stream));
+        return ClassCall((ClassDefinition) definition, elems, readUniverse(stream));
       }
       case 16: {
         return New(readExpression(stream, definitionMap));

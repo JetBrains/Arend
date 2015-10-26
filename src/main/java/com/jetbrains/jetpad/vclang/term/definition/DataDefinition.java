@@ -53,7 +53,6 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   }
 
   public void addConstructor(Constructor constructor) {
-    constructor.setParent(this);
     myConstructors.add(constructor);
     constructor.getParentNamespace().addDefinition(constructor);
   }

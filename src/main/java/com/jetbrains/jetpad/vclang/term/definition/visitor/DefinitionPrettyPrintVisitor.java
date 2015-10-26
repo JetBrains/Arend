@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
@@ -25,19 +26,21 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Void ignored) {
     myBuilder.append("\\function");
-    if (def.getPrecedence() != null && !def.getPrecedence().equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
+    Abstract.Definition.Precedence precedence = def.getPrecedence();
+    if (precedence != null && !precedence.equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
       myBuilder.append(" \\infix");
-      if (def.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC) myBuilder.append('l');
-      if (def.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC) myBuilder.append('r');
+      if (precedence.associativity == Abstract.Definition.Associativity.LEFT_ASSOC) myBuilder.append('l');
+      if (precedence.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC) myBuilder.append('r');
       myBuilder.append(' ');
-      myBuilder.append(def.getPrecedence().priority);
+      myBuilder.append(precedence.priority);
     }
     myBuilder.append('\n');
     PrettyPrintVisitor.printIndent(myBuilder, myIndent);
 
     myBuilder.append(def.getName());
-    if (def.getArguments() != null) {
-      for (Abstract.Argument argument : def.getArguments()) {
+    List<? extends Abstract.Argument> arguments = def.getArguments();
+    if (arguments != null) {
+      for (Abstract.Argument argument : arguments) {
         myBuilder.append(' ');
         argument.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
       }
@@ -45,30 +48,33 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
       myBuilder.append("{!error}");
     }
 
-    if (def.getResultType() != null) {
+    Abstract.Expression resultType = def.getResultType();
+    if (resultType != null) {
       myBuilder.append(" : ");
-      def.getResultType().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
+      resultType.accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
     }
     if (!def.isAbstract()) {
       myBuilder.append(def.getArrow() == Abstract.Definition.Arrow.RIGHT ? " => " : " <= ");
-      if (def.getTerm() != null) {
-        def.getTerm().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
+      Abstract.Expression term = def.getTerm();
+      if (term != null) {
+        term.accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
       } else {
         myBuilder.append("{!error}");
       }
     }
 
-    if (def.getArguments() != null) {
-      removeFromList(myNames, def.getArguments());
+    if (arguments != null) {
+      removeFromList(myNames, arguments);
     }
 
-    if (!def.getStatements().isEmpty()) {
+    Collection<? extends Abstract.Statement> statements = def.getStatements();
+    if (!statements.isEmpty()) {
       myBuilder.append("\n");
       PrettyPrintVisitor.printIndent(myBuilder, myIndent);
       myBuilder.append("\\where ");
       myIndent += "\\where ".length();
       boolean isFirst = true;
-      for (Abstract.Statement statement : def.getStatements()) {
+      for (Abstract.Statement statement : statements) {
         if (!isFirst)
           PrettyPrintVisitor.printIndent(myBuilder, myIndent);
         statement.accept(new StatementPrettyPrintVisitor(myBuilder, myNames, myIndent), null);
@@ -81,12 +87,49 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
   }
 
   @Override
+  public Void visitAbstract(Abstract.AbstractDefinition def, Void params) {
+    myBuilder.append("\\abstract ");
+    Abstract.Definition.Precedence precedence = def.getPrecedence();
+    if (precedence != null && !precedence.equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
+      myBuilder.append("\\infix");
+      if (precedence.associativity == Abstract.Definition.Associativity.LEFT_ASSOC) myBuilder.append('l');
+      if (precedence.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC) myBuilder.append('r');
+      myBuilder.append(' ');
+      myBuilder.append(precedence.priority);
+      myBuilder.append(' ');
+    }
+
+    myBuilder.append(def.getName());
+    List<? extends Abstract.Argument> arguments = def.getArguments();
+    if (arguments != null) {
+      for (Abstract.Argument argument : arguments) {
+        myBuilder.append(' ');
+        argument.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
+      }
+    } else {
+      myBuilder.append("{!error}");
+    }
+
+    Abstract.Expression resultType = def.getResultType();
+    if (resultType != null) {
+      myBuilder.append(" : ");
+      resultType.accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
+    }
+
+    if (arguments != null) {
+      removeFromList(myNames, arguments);
+    }
+    return null;
+  }
+
+  @Override
   public Void visitData(Abstract.DataDefinition def, Void ignored) {
     myBuilder.append("\\data ");
     myBuilder.append(def.getName());
 
-    if (def.getParameters() != null) {
-      for (Abstract.TypeArgument parameter : def.getParameters()) {
+    List<? extends Abstract.TypeArgument> parameters = def.getParameters();
+    if (parameters != null) {
+      for (Abstract.TypeArgument parameter : parameters) {
         myBuilder.append(' ');
         parameter.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
       }
@@ -94,10 +137,12 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
       myBuilder.append("{!error}");
     }
 
-    if (def.getUniverse() != null) {
-      myBuilder.append(" : ").append(def.getUniverse());
+    Universe universe = def.getUniverse();
+    if (universe != null) {
+      myBuilder.append(" : ").append(universe);
     }
     ++myIndent;
+
     for (Abstract.Constructor constructor : def.getConstructors()) {
       myBuilder.append('\n');
       PrettyPrintVisitor.printIndent(myBuilder, myIndent);
@@ -105,8 +150,8 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
       constructor.accept(this, null);
     }
     --myIndent;
-    if (def.getParameters() != null) {
-      removeFromList(myNames, def.getParameters());
+    if (parameters != null) {
+      removeFromList(myNames, parameters);
     }
     return null;
   }
@@ -115,31 +160,33 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
   public Void visitConstructor(Abstract.Constructor def, Void ignored) {
     List<String> tail = new ArrayList<>();
     int origSize = myNames.size();
-    if (def.getPatterns() == null) {
+    List<? extends Abstract.Pattern> patterns = def.getPatterns();
+    if (patterns == null) {
       myBuilder.append("_ ");
     } else {
       if (!myNames.isEmpty()) { //Inside data def, so remove previous
-         tail.addAll(myNames.subList(myNames.size() - def.getPatterns().size(), myNames.size()));
-         myNames.subList(myNames.size() -  def.getPatterns().size(), myNames.size()).clear();
+         tail.addAll(myNames.subList(myNames.size() - patterns.size(), myNames.size()));
+         myNames.subList(myNames.size() -  patterns.size(), myNames.size()).clear();
          origSize = myNames.size();
       }
 
-      myBuilder.append(def.getDataType().getName().name).append(' ');
-      for (Abstract.Pattern pattern : def.getPatterns()) {
+      myBuilder.append(def.getDataType().getName()).append(' ');
+      for (Abstract.Pattern pattern : patterns) {
         pattern.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
         myBuilder.append(' ');
       }
     }
     myBuilder.append("=> ");
     myBuilder.append(def.getName());
-    if (def.getArguments() == null) {
+    List<? extends Abstract.TypeArgument> arguments = def.getArguments();
+    if (arguments == null) {
       myBuilder.append("{!error}");
     } else {
-      for (Abstract.TypeArgument argument : def.getArguments()) {
+      for (Abstract.TypeArgument argument : arguments) {
         myBuilder.append(' ');
         argument.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
       }
-      removeFromList(myNames, def.getArguments());
+      removeFromList(myNames, arguments);
     }
     trimToSize(myNames, origSize);
     myNames.addAll(tail);

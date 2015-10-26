@@ -164,12 +164,12 @@ public class NameResolverTest {
 
   @Test
   public void whereAbstractError() {
-    resolveNamesClass("test", "\\static \\function f => 0 \\where \\function x : Nat", 1);
+    resolveNamesClass("test", "\\static \\function f => 0 \\where \\abstract x : Nat", 1);
   }
 
   @Test
   public void numberOfFieldsTest() {
-    resolveNamesClass("test", "\\static \\class Point { \\function x : Nat \\function y : Nat } \\static \\function C => Point { \\override x => 0 }");
+    resolveNamesClass("test", "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat } \\static \\function C => Point { \\override x => 0 }");
     assertNotNull(RootModule.ROOT.getMember("test"));
     Namespace staticNamespace = RootModule.ROOT.getMember("test").namespace;
 
@@ -180,7 +180,7 @@ public class NameResolverTest {
 
   @Test
   public void numberOfFieldsTest2() {
-    resolveNamesClass("test", "\\function f : Nat \\static \\function g => 0 \\class B { \\function h => 0 \\static \\function k => 0 } \\static \\class C { \\function h => 0 \\static \\function k => 0 }");
+    resolveNamesClass("test", "\\abstract f : Nat \\static \\function g => 0 \\class B { \\function h => 0 \\static \\function k => 0 } \\static \\class C { \\function h => 0 \\static \\function k => 0 }");
     assertNotNull(RootModule.ROOT.getMember("test"));
     Namespace staticNamespace = RootModule.ROOT.getMember("test").namespace;
 
@@ -216,7 +216,7 @@ public class NameResolverTest {
 
   @Test
   public void staticFieldAccCallTest() {
-    resolveNamesClass("test", "\\static \\class A { \\function x : Nat \\class B { \\static \\function y => x } } \\static \\function f (a : A) => a.B.y");
+    resolveNamesClass("test", "\\static \\class A { \\abstract x : Nat \\class B { \\static \\function y => x } } \\static \\function f (a : A) => a.B.y");
   }
 
   @Test
@@ -239,11 +239,11 @@ public class NameResolverTest {
   @Test
   public void exportTest2() {
     resolveNamesClass("test",
-        "\\function (+) (x y : Nat) : Nat\n" +
+        "\\abstract (+) (x y : Nat) : Nat\n" +
         "\\class A {\n" +
-          "\\function x : Nat\n" +
+          "\\abstract x : Nat\n" +
           "\\class B {\n" +
-            "\\function y : Nat\n" +
+            "\\abstract y : Nat\n" +
             "\\class C {\n" +
               "\\static \\function z => x + y\n" +
               "\\static \\function w => x\n" +
@@ -326,12 +326,12 @@ public class NameResolverTest {
 
   @Test
   public void openAbstractTestError() {
-    resolveNamesClass("test", "\\static \\class A { \\function x : Nat } \\open A \\function y => x", 1);
+    resolveNamesClass("test", "\\static \\class A { \\abstract x : Nat } \\open A \\function y => x", 1);
   }
 
   @Test
   public void openAbstractTestError2() {
-    resolveNamesClass("test", "\\static \\class A { \\function x : Nat \\function y => x } \\open A \\function z => y", 1);
+    resolveNamesClass("test", "\\static \\class A { \\abstract x : Nat \\function y => x } \\open A \\function z => y", 1);
   }
 
   @Test

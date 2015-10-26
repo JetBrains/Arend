@@ -29,7 +29,7 @@ class PatternExpansion {
     if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern)  {
       return new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit());
     } else if (pattern instanceof ConstructorPattern) {
-      Expression resultExpression = DefCall(((ConstructorPattern) pattern).getConstructor());
+      Expression resultExpression = ConCall(((ConstructorPattern) pattern).getConstructor());
       for (Pattern nestedPattern : ((ConstructorPattern) pattern).getPatterns())
         resultExpression = Apps(resultExpression.liftIndex(0, getNumArguments(nestedPattern)), expandPattern(nestedPattern));
 
@@ -51,7 +51,7 @@ class PatternExpansion {
       Collections.reverse(parameters);
       List<Result> nestedResults = expandPatterns(constructorPattern.getPatterns(), getConstructorArguments(constructorPattern, parameters));
 
-      Expression resultExpression = DefCall(null, constructorPattern.getConstructor(), getMatchedParameters(constructorPattern, parameters));
+      Expression resultExpression = ConCall(constructorPattern.getConstructor(), getMatchedParameters(constructorPattern, parameters));
       List<TypeArgument> resultArgs = new ArrayList<>();
       for (Result res : nestedResults) {
         resultExpression = Apps(resultExpression.liftIndex(0, res.args.size()), res.expression);

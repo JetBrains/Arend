@@ -41,9 +41,9 @@ public class ElimTest {
 
     List<Argument> arguments3 = new ArrayList<>(4);
     arguments3.add(Tele(vars("a1", "b1", "c1"), Nat()));
-    arguments3.add(Tele(vars("d1"), Apps(DefCall(dataType), Index(2), Index(1), Index(0))));
+    arguments3.add(Tele(vars("d1"), Apps(DataCall(dataType), Index(2), Index(1), Index(0))));
     arguments3.add(Tele(vars("a2", "b2", "c2"), Nat()));
-    arguments3.add(Tele(vars("d2"), Apps(DefCall(dataType), Index(2), Index(1), Index(0))));
+    arguments3.add(Tele(vars("d2"), Apps(DataCall(dataType), Index(2), Index(1), Index(0))));
     List<Clause> clauses1 = new ArrayList<>(2);
     ElimExpression pTerm = Elim(Index(4), clauses1);
     clauses1.add(new Clause(match(dataType.getConstructor("con1"), match("s")), Abstract.Definition.Arrow.RIGHT, Nat(), pTerm));
@@ -53,9 +53,9 @@ public class ElimTest {
 
     List<Argument> arguments = new ArrayList<>(3);
     arguments.add(Tele(vars("q", "w"), Nat()));
-    arguments.add(Tele(vars("e"), Apps(DefCall(dataType), Index(0), Zero(), Index(1))));
-    arguments.add(Tele(vars("r"), Apps(DefCall(dataType), Index(2), Index(1), Suc(Zero()))));
-    Expression resultType = Apps(DefCall(pFunction), Index(2), Zero(), Index(3), Index(1), Index(3), Index(2), Suc(Zero()), Index(0));
+    arguments.add(Tele(vars("e"), Apps(DataCall(dataType), Index(0), Zero(), Index(1))));
+    arguments.add(Tele(vars("r"), Apps(DataCall(dataType), Index(2), Index(1), Suc(Zero()))));
+    Expression resultType = Apps(FunCall(pFunction), Index(2), Zero(), Index(3), Index(1), Index(3), Index(2), Suc(Zero()), Index(0));
     List<Clause> clauses2 = new ArrayList<>();
     List<Clause> clauses3 = new ArrayList<>();
     List<Clause> clauses4 = new ArrayList<>();
@@ -205,10 +205,10 @@ public class ElimTest {
     Namespace namespace = defs.getParentNamespace().findChild(defs.getName().name);
     FunctionDefinition test = (FunctionDefinition) namespace.getDefinition("test");
     Constructor d = (Constructor) namespace.getDefinition("d");
-    Expression call1 = Apps(DefCall(d), Zero(), Index(0));
-    Expression call2 = Apps(DefCall(d), Suc(Zero()), Index(0));
-    assertEquals(Apps(DefCall(test), call1), Apps(DefCall(test), call1).normalize(NormalizeVisitor.Mode.NF));
-    assertEquals(Suc(Zero()), Apps(DefCall(test), call2).normalize(NormalizeVisitor.Mode.NF));
+    Expression call1 = Apps(ConCall(d), Zero(), Index(0));
+    Expression call2 = Apps(ConCall(d), Suc(Zero()), Index(0));
+    assertEquals(Apps(FunCall(test), call1), Apps(FunCall(test), call1).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), Apps(FunCall(test), call2).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -216,6 +216,17 @@ public class ElimTest {
     typeCheckClass(
         "\\static \\data D Nat | D (suc n) => d1 | D _ => d | D zero => d0\n" +
         "\\static \\function test (n : Nat) (a : D (suc n)) : Nat <= \\elim a | d => 0", 1);
+  }
+
+  @Test
+  public void elim10() {
+    typeCheckClass("\\static \\data Bool | true | false\n" +
+                   "\\static \\function tp : \\Pi (x : Bool) -> \\Type0 => \\lam x => \\case x\n" +
+                   "| true => Bool\n" +
+                   "| false => Nat\n" +
+                   "\\static \\function f (x : Bool) : tp x <= \\elim x\n" +
+                   "| true => x\n" +
+                   "| false => zero\n");
   }
 
   @Test

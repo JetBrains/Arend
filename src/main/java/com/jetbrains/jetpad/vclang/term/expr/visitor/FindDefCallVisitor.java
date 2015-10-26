@@ -1,14 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.List;
 
-public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
+public class FindDefCallVisitor extends BaseExpressionVisitor<Boolean> {
   private final Definition myDef;
 
   public FindDefCallVisitor(Definition def) {
@@ -22,14 +21,29 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr) {
-    if (expr.getDefinition() == myDef || expr.getExpression() != null && expr.getExpression().accept(this)) {
+    return expr.getDefinition() == myDef;
+  }
+
+  @Override
+  public Boolean visitConCall(ConCallExpression expr) {
+    if (expr.getDefinition() == myDef) {
       return true;
-    }
-    if (expr.getParameters() == null) {
-      return false;
     }
     for (Expression parameter : expr.getParameters()) {
       if (parameter.accept(this)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public Boolean visitClassCall(ClassCallExpression expr) {
+    if (expr.getDefinition() == myDef) {
+      return true;
+    }
+    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+      if (elem.field == myDef || elem.type != null && elem.type.accept(this) || elem.term != null && elem.term.accept(this)) {
         return true;
       }
     }
@@ -97,17 +111,6 @@ public class FindDefCallVisitor implements ExpressionVisitor<Boolean> {
   @Override
   public Boolean visitProj(ProjExpression expr) {
     return expr.getExpression().accept(this);
-  }
-
-  @Override
-  public Boolean visitClassExt(ClassExtExpression expr) {
-    if (expr.getBaseClassExpression().accept(this)) return true;
-    for (OverriddenDefinition definition : expr.getDefinitionsMap().values()) {
-      if (definition.getArguments() != null && visitArguments(definition.getArguments())) return true;
-      if (definition.getResultType() != null && definition.getResultType().accept(this)) return true;
-      if (definition.getTerm() != null && definition.getTerm().accept(this)) return true;
-    }
-    return false;
   }
 
   private boolean visitArguments(List<? extends Argument> arguments) {

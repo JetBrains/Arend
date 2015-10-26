@@ -12,8 +12,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DefCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.resolveNamesClass;
 import static org.junit.Assert.assertEquals;
@@ -24,8 +23,8 @@ public class RecordsTest {
   public void recordTest() {
     typeCheckClass(
         "\\static \\class B {\n" +
-        "  \\function f : Nat -> \\Type0\n" +
-        "  \\function g : f 0\n" +
+        "  \\abstract f : Nat -> \\Type0\n" +
+        "  \\abstract g : f 0\n" +
         "}\n" +
         "\\static \\function f (p : B) : p.f 0 => p.g ");
   }
@@ -33,35 +32,35 @@ public class RecordsTest {
   @Test
   public void unknownExtTestError() {
     typeCheckClass(
-        "\\static \\class Point { \\function x : Nat \\function y : Nat }\n" +
+        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { \\override x => 0 \\override z => 0 \\override y => 0 }", 1);
   }
 
   @Test
   public void typeMismatchMoreTestError() {
     typeCheckClass(
-        "\\static \\class Point { \\function x : Nat \\function y : Nat }\n" +
+        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { \\override x (a : Nat) => a }", 1);
   }
 
   @Test
   public void typeMismatchLessTest() {
     typeCheckClass(
-        "\\static \\class C { \\function f (x y z : Nat) : Nat }\n" +
+        "\\static \\class C { \\abstract f (x y z : Nat) : Nat }\n" +
         "\\static \\function D => C { \\override f a => \\lam z w => z }");
   }
 
   @Test
   public void argTypeMismatchTestError() {
     typeCheckClass(
-        "\\static \\class C { \\function f (a : Nat) : Nat }\n" +
+        "\\static \\class C { \\abstract f (a : Nat) : Nat }\n" +
         "\\static \\function D => C { \\override f (a : Nat -> Nat) => 0 }", 1);
   }
 
   @Test
   public void resultTypeMismatchTestError() {
     typeCheckClass(
-        "\\static \\class Point { \\function x : Nat \\function y : Nat }\n" +
+        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { \\override x => \\lam (t : Nat) => t }", 1);
   }
 
@@ -69,8 +68,8 @@ public class RecordsTest {
   public void parentCallTest() {
     typeCheckClass(
         "\\static \\class A {\n" +
-        "  \\function c : Nat -> Nat -> Nat\n" +
-        "  \\function f : Nat -> Nat\n" +
+        "  \\abstract c : Nat -> Nat -> Nat\n" +
+        "  \\abstract f : Nat -> Nat\n" +
         "}\n" +
         "\\static \\function B => A {\n" +
         "  \\override f n <= c n n\n" +
@@ -80,7 +79,7 @@ public class RecordsTest {
   @Test
   public void recursiveTestError() {
     typeCheckClass(
-        "\\static \\class A { \\function f : Nat -> Nat }\n" +
+        "\\static \\class A { \\abstract f : Nat -> Nat }\n" +
         "\\static \\function B => A { \\override f n <= \\elim n | zero => zero | suc n' => f (suc n') }", 1);
   }
 
@@ -88,7 +87,7 @@ public class RecordsTest {
   public void duplicateNameTestError() {
     typeCheckClass(
         "\\static \\class A {\n" +
-        "  \\function f : Nat -> Nat\n" +
+        "  \\abstract f : Nat -> Nat\n" +
         "}\n" +
         "\\static \\function B => A {\n" +
         "  \\function f (n : Nat) <= n\n" +
@@ -99,8 +98,8 @@ public class RecordsTest {
   public void overriddenFieldAccTest() {
     typeCheckClass(
         "\\static \\class Point {\n" +
-        "  \\function x : Nat\n" +
-        "  \\function y : Nat\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\abstract y : Nat\n" +
         "}\n" +
         "\\static \\function diagonal => \\lam (d : Nat) => Point {\n" +
         "  \\override x => d\n" +
@@ -113,8 +112,8 @@ public class RecordsTest {
   public void newAbstractTestError() {
     typeCheckClass(
         "\\static \\class Point {\n" +
-        "  \\function x : Nat\n" +
-        "  \\function y : Nat\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\abstract y : Nat\n" +
         "}\n" +
         "\\static \\function diagonal => Point {\n" +
         "  \\override y => x\n" +
@@ -126,8 +125,8 @@ public class RecordsTest {
   public void newTest() {
     typeCheckClass(
         "\\static \\class Point {\n" +
-        "  \\function x : Nat\n" +
-        "  \\function y : Nat\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\abstract y : Nat\n" +
         "}\n" +
         "\\static \\function diagonal => \\lam (d : Nat) => Point {\n" +
         "  \\override x => d\n" +
@@ -144,8 +143,8 @@ public class RecordsTest {
   public void mutualRecursionTestError() {
     typeCheckClass(
         "\\static \\class Point {\n" +
-        "  \\function x : Nat\n" +
-        "  \\function y : Nat\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\abstract y : Nat\n" +
         "}\n" +
         "\\static \\function test => Point {\n" +
         "  \\override x => y\n" +
@@ -157,17 +156,17 @@ public class RecordsTest {
   public void splitClassTestError() {
     resolveNamesClass("test",
         "\\static \\class A {\n" +
-        "  \\static \\function x => 0\n" +
-        "}\n" +
-        "\\static \\class A {\n" +
-        "  \\static \\function y => 0\n" +
-        "}", 1);
+            "  \\static \\function x => 0\n" +
+            "}\n" +
+            "\\static \\class A {\n" +
+            "  \\static \\function y => 0\n" +
+            "}", 1);
   }
 
   @Test
   public void recordUniverseTest() {
     ClassDefinition result = typeCheckClass(
-        "\\static \\class Point { \\function x : Nat \\function y : Nat }\n" +
+        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { \\override x => 0 }");
     Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
     assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
@@ -177,7 +176,7 @@ public class RecordsTest {
   @Test
   public void recordConstructorsTest() {
     ClassDefinition classDef = typeCheckClass(
-        "\\static \\class A { \\function x : Nat \\data Foo | foo (x = 0) \\function y : foo = foo }\n" +
+        "\\static \\class A { \\abstract x : Nat \\data Foo | foo (x = 0) \\abstract y : foo = foo }\n" +
         "\\static \\function test (p : A) => p.y");
     Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName().name);
     Expression resultType = ((FunctionDefinition) namespace.getDefinition("test")).getResultType();
@@ -217,9 +216,9 @@ public class RecordsTest {
   public void recordConstructorsParametersTest() {
     ClassDefinition classDef = typeCheckClass(
       "\\static \\class A {\n" +
-      "  \\function x : Nat\n" +
+      "  \\abstract x : Nat\n" +
       "  \\data Foo (p : x = x) | foo (p = p)\n" +
-      "  \\function y : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))\n" +
+      "  \\abstract y : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))\n" +
       "}\n" +
       "\\static \\function test (q : A) => q.y");
     Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName().name);
@@ -227,7 +226,7 @@ public class RecordsTest {
     List<Expression> arguments = new ArrayList<>(3);
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
     assertEquals(3, arguments.size());
-    assertEquals(DefCall(Prelude.PATH), function);
+    assertEquals(DataCall(Prelude.PATH), function);
 
     assertTrue(arguments.get(0) instanceof AppExpression);
     assertTrue(((AppExpression) arguments.get(0)).getFunction() instanceof DefCallExpression);
@@ -263,17 +262,17 @@ public class RecordsTest {
     List<Expression> parameterArguments = new ArrayList<>(1);
     Expression parameterFunction = ((AppExpression) ((LamExpression) arguments.get(2)).getBody()).getArgument().getExpression().getFunction(parameterArguments);
     assertEquals(1, parameterArguments.size());
-    assertEquals(DefCall(Prelude.PATH_CON), parameterFunction);
+    assertEquals(ConCall(Prelude.PATH_CON), parameterFunction);
     assertTrue(parameterArguments.get(0) instanceof LamExpression);
     assertTrue(((LamExpression) parameterArguments.get(0)).getBody() instanceof DefCallExpression);
     assertEquals(Index(2), ((DefCallExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getExpression());
     assertEquals(((ClassDefinition) namespace.getMember("A").definition).getField("x"), ((DefCallExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getDefinition());
 
-    List<Expression> parameters = ((DefCallExpression) parameterFunction).getParameters();
+    List<Expression> parameters = ((ConCallExpression) parameterFunction).getParameters();
     assertEquals(3, parameters.size());
 
     assertTrue(parameters.get(0) instanceof LamExpression);
-    assertEquals(DefCall(Prelude.NAT), ((LamExpression) parameters.get(0)).getBody());
+    assertEquals(Nat(), ((LamExpression) parameters.get(0)).getBody());
 
     parameters.set(1, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
     assertTrue(parameters.get(1) instanceof DefCallExpression);

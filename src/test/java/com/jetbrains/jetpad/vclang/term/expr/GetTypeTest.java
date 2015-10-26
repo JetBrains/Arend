@@ -55,9 +55,9 @@ public class GetTypeTest {
 
   @Test
   public void fieldAccTest() {
-    ClassDefinition def = typeCheckClass("\\static \\class C { \\function x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
+    ClassDefinition def = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
-    Expression type = Apps(Apps(DefCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), DefCall(Apps(Index(0), Zero()), ((ClassDefinition) namespace.getDefinition("C")).getField("x")));
+    Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(DefCall(((ClassDefinition) namespace.getDefinition("C")).getField("x")), Apps(Index(0), Zero())));
     List<Binding> context = new ArrayList<>(1);
     context.add(new TypedBinding("p", Pi(Nat(), DefCall(namespace.getDefinition("C")))));
     assertEquals(Pi(args(Tele(vars("p"), context.get(0).getType())), Pi(type, type)), namespace.getDefinition("test").getType());
@@ -67,7 +67,7 @@ public class GetTypeTest {
   @Test
   public void tupleTest() {
     Definition def = typeCheckDef("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
-    assertEquals(Sigma(args(Tele(vars("x", "y"), Nat()), TypeArg(Apps(DefCall(Prelude.PATH_INFIX), Nat(), Index(1), Index(0))))), ((FunctionDefinition) def).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Sigma(args(Tele(vars("x", "y"), Nat()), TypeArg(Apps(FunCall(Prelude.PATH_INFIX), Nat(), Index(1), Index(0))))), ((FunctionDefinition) def).getTerm().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
@@ -94,9 +94,9 @@ public class GetTypeTest {
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     DataDefinition vec = (DataDefinition) namespace.getMember("Vec").definition;
     DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
-    assertEquals(Apps(DefCall(d), Zero(), Index(0)), d.getConstructor("dzero").getType());
-    assertEquals(Apps(DefCall(d), Suc(Index(1)), Index(0)), d.getConstructor("done").getType());
-    assertEquals(Pi("x", Index(1), Pi("xs", Apps(DefCall(vec), Index(2), Index(1)), Apps(DefCall(vec), Index(3), Suc(Index(2))))), vec.getConstructor("Cons").getType());
+    assertEquals(Apps(DataCall(d), Zero(), Index(0)), d.getConstructor("dzero").getType());
+    assertEquals(Apps(DataCall(d), Suc(Index(1)), Index(0)), d.getConstructor("done").getType());
+    assertEquals(Pi("x", Index(1), Pi("xs", Apps(DataCall(vec), Index(2), Index(1)), Apps(DataCall(vec), Index(3), Suc(Index(2))))), vec.getConstructor("Cons").getType());
   }
 
   @Test
@@ -107,7 +107,7 @@ public class GetTypeTest {
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
     DataDefinition c = (DataDefinition) namespace.getMember("C").definition;
-    assertEquals(Pi("x", Index(0), Apps(DefCall(c), Apps(DefCall(d.getConstructor("d")), Index(1)))), c.getConstructor("c").getType());
+    assertEquals(Pi("x", Index(0), Apps(DataCall(c), Apps(ConCall(d.getConstructor("d")), Index(1)))), c.getConstructor("c").getType());
   }
 
   @Test
@@ -117,6 +117,6 @@ public class GetTypeTest {
         "\\data D (n : Nat) (Box n) | D (zero) _ => d");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
-    assertEquals(Apps(DefCall(d), Zero(), Index(0)), d.getConstructor("d").getType());
+    assertEquals(Apps(DataCall(d), Zero(), Index(0)), d.getConstructor("d").getType());
   }
 }

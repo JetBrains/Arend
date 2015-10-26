@@ -346,7 +346,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           if (argsExpectedType.get(2) instanceof InferHoleExpression) {
             holeExpression = (InferHoleExpression) argsExpectedType.get(2);
           } else {
-            argExpectedType = Pi("i", DefCall(Prelude.INTERVAL), Apps(argsExpectedType.get(2).liftIndex(0, 1), Index(0)));
+            argExpectedType = Pi("i", DataCall(Prelude.INTERVAL), Apps(argsExpectedType.get(2).liftIndex(0, 1), Index(0)));
           }
         }
       }
@@ -354,7 +354,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       InferHoleExpression inferHoleExpr = null;
       if (argExpectedType == null) {
         inferHoleExpr = new InferHoleExpression(new ArgInferenceError(type(), args.get(0).getExpression(), getNames(myLocalContext), args.get(0).getExpression()));
-        argExpectedType = Pi("i", DefCall(Prelude.INTERVAL), inferHoleExpr);
+        argExpectedType = Pi("i", DataCall(Prelude.INTERVAL), inferHoleExpr);
       }
 
       Result argResult = typeCheck(args.get(0).getExpression(), argExpectedType);
@@ -380,23 +380,23 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       Expression type = arguments.size() > 0 ? Pi(arguments, piType.getCodomain()) : piType.getCodomain();
-      Expression parameter1 = Lam(lamArgs(Tele(vars("i"), DefCall(Prelude.INTERVAL))), type);
-      Expression parameter2 = Apps(argResult.expression, DefCall(Prelude.LEFT));
-      Expression parameter3 = Apps(argResult.expression, DefCall(Prelude.RIGHT));
-      Expression resultType = Apps(DefCall(Prelude.PATH), parameter1, parameter2, parameter3);
+      Expression parameter1 = Lam(lamArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type);
+      Expression parameter2 = Apps(argResult.expression, ConCall(Prelude.LEFT));
+      Expression parameter3 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
+      Expression resultType = Apps(DataCall(Prelude.PATH), parameter1, parameter2, parameter3);
       List<CompareVisitor.Equation> resultEquations = argResult.equations;
       if (holeExpression != null) {
         if (resultEquations == null) {
           resultEquations = new ArrayList<>(1);
         }
-        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(lamArgs(Tele(vars("i"), DefCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myLocalContext))));
+        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(lamArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myLocalContext))));
       }
 
       List<Expression> parameters = new ArrayList<>(3);
       parameters.add(parameter1);
       parameters.add(parameter2);
       parameters.add(parameter3);
-      Expression resultExpr = Apps(DefCall(null, Prelude.PATH_CON, parameters), new ArgumentExpression(argResult.expression, true, false));
+      Expression resultExpr = Apps(ConCall(Prelude.PATH_CON, parameters), new ArgumentExpression(argResult.expression, true, false));
       return checkResult(expectedType, new OKResult(resultExpr, resultType, resultEquations), expression);
     }
 
@@ -502,7 +502,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     List<Expression> parameters = null;
     if (parametersNumber > 0) {
       parameters = new ArrayList<>(parametersNumber);
-      ((DefCallExpression) resultExpr).setParameters(parameters);
+      ((ConCallExpression) resultExpr).setParameters(parameters);
     }
     for (i = 0; i < parametersNumber; ++i) {
       assert parameters != null;
@@ -568,22 +568,22 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       boolean notInScope = false;
 
       ResolvedName where = null;
-      if (type instanceof ClassExtExpression || type instanceof DefCallExpression && ((DefCallExpression) type).getDefinition() instanceof ClassDefinition) {
-        parent = type instanceof ClassExtExpression ? ((ClassExtExpression) type).getBaseClass() : (ClassDefinition) ((DefCallExpression) type).getDefinition();
+      if (type instanceof ClassCallExpression) {
+        parent = ((ClassCallExpression) type).getDefinition();
         ClassField field = parent.getField(name.name);
         if (field != null) {
           Definition resultDef = field;
-          if (type instanceof ClassExtExpression) {
-            OverriddenDefinition overridden = ((ClassExtExpression) type).getDefinitionsMap().get(field);
-            if (overridden != null) {
-              resultDef = overridden;
-            }
+          /* TODO
+          OverriddenDefinition overridden = ((xClassExtExpression) type).getDefinitionsMap().get(field);
+          if (overridden != null) {
+            resultDef = overridden;
           }
+          */
           Expression resultType = resultDef.getType();
           if (resultType == null) {
             resultType = field.getType();
           }
-          result = new OKResult(DefCall(okExprResult.expression, resultDef), resultType, okExprResult.equations);
+          result = new OKResult(DefCall(/* TODO okExprResult.expression, */ resultDef), resultType, okExprResult.equations);
         }
         notInScope = true;
       } else
@@ -620,7 +620,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             Collections.reverse(arguments);
             Expression resultType = constructor.getType().subst(arguments, 0);
             Collections.reverse(arguments);
-            return checkResultImplicit(expectedType, new OKResult(DefCall(null, constructor, arguments), resultType, okExprResult.equations), expr);
+            return checkResultImplicit(expectedType, new OKResult(ConCall(constructor, arguments), resultType, okExprResult.equations), expr);
           }
         }
       }
@@ -675,9 +675,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           result.type = Pi(parameters, result.type);
         }
       }
+      /* TODO
       if (((DefCallExpression) result.expression).getExpression() != null && parent != null) {
         result.type = result.type.accept(new ReplaceDefCallVisitor(parent.getParentNamespace().getChild(parent.getName()), ((DefCallExpression) result.expression).getExpression()));
       }
+      */
     }
     return result;
   }
@@ -685,15 +687,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Result result = typeCheckDefCall(expr, expectedType);
-    if (result instanceof OKResult && result.expression instanceof DefCallExpression) {
-      DefCallExpression defCall = (DefCallExpression) result.expression;
-      if (defCall.getDefinition() instanceof Constructor) {
-        if (defCall.getParameters() != null) {
-          return result;
-        }
-        if (!((Constructor) defCall.getDefinition()).getDataType().getParameters().isEmpty()) {
-          return typeCheckApps(expr, 0, (OKResult) result, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr);
-        }
+    if (result instanceof OKResult && result.expression instanceof ConCallExpression) {
+      ConCallExpression defCall = (ConCallExpression) result.expression;
+      if (!defCall.getParameters().isEmpty()) {
+        return result;
+      }
+      if (!defCall.getDefinition().getDataType().getParameters().isEmpty()) {
+        return typeCheckApps(expr, 0, (OKResult) result, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr);
       }
     }
     return result instanceof OKResult ? checkResultImplicit(expectedType, (OKResult) result, expr) : result;
@@ -1236,7 +1236,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       } else {
         matchedParameters = new ArrayList<>(parameters);
       }
-      Expression substExpression = DefCall(null, constructor, matchedParameters);
+      Expression substExpression = ConCall(constructor, matchedParameters);
       Collections.reverse(matchedParameters);
       List<TypeArgument> constructorArguments = new ArrayList<>();
       splitArguments(constructor.getType().subst(matchedParameters, 0), constructorArguments);
@@ -1648,12 +1648,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (!(exprResult instanceof OKResult)) return exprResult;
     OKResult okExprResult = (OKResult) exprResult;
     Expression normExpr = okExprResult.expression.accept(new NormalizeVisitor(NormalizeVisitor.Mode.WHNF, myLocalContext));
-    if (!(normExpr instanceof DefCallExpression && ((DefCallExpression) normExpr).getDefinition() instanceof ClassDefinition || normExpr instanceof ClassExtExpression)) {
+    if (!(normExpr instanceof ClassCallExpression)) {
       TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getExpression(), getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
+    // TODO: Check that the class extension implements all fields.
     return checkResultImplicit(expectedType, new OKResult(New(okExprResult.expression), normExpr, okExprResult.equations), expr);
   }
 

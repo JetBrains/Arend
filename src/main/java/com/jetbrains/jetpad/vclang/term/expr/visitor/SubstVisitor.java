@@ -1,21 +1,18 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-public class SubstVisitor implements ExpressionVisitor<Expression> {
+public class SubstVisitor extends BaseExpressionVisitor<Expression> {
   private final List<Expression> mySubstExprs;
   private final int myFrom;
 
@@ -31,21 +28,28 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public DefCallExpression visitDefCall(DefCallExpression expr) {
-    if (expr.getExpression() == null && expr.getParameters() == null) return expr;
-    Expression expr1 = null;
-    if (expr.getExpression() != null) {
-      expr1 = expr.getExpression().accept(this);
-      if (expr1 == null) return null;
+    return expr;
+  }
+
+  @Override
+  public ConCallExpression visitConCall(ConCallExpression expr) {
+    if (expr.getParameters().isEmpty()) return expr;
+    List<Expression> parameters = new ArrayList<>(expr.getParameters().size());
+    for (Expression parameter : expr.getParameters()) {
+      Expression expr2 = parameter.accept(this);
+      if (expr2 == null) return null;
+      parameters.add(expr2);
     }
-    List<Expression> parameters = expr.getParameters() == null ? null : new ArrayList<Expression>(expr.getParameters().size());
-    if (expr.getParameters() != null) {
-      for (Expression parameter : expr.getParameters()) {
-        Expression expr2 = parameter.accept(this);
-        if (expr2 == null) return null;
-        parameters.add(expr2);
-      }
+    return ConCall(expr.getDefinition(), parameters);
+  }
+
+  @Override
+  public ClassCallExpression visitClassCall(ClassCallExpression expr) {
+    List<ClassCallExpression.OverrideElem> elems = new ArrayList<>(expr.getOverrideElems().size());
+    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+      elems.add(new ClassCallExpression.OverrideElem(elem.field, elem.type == null ? null : elem.type.accept(this), elem.term == null ? null : elem.term.accept(this)));
     }
-    return DefCall(expr1, expr.getDefinition(), parameters);
+    return ClassCall(expr.getDefinition(), elems, expr.getUniverse());
   }
 
   @Override
@@ -174,24 +178,24 @@ public class SubstVisitor implements ExpressionVisitor<Expression> {
 
   @Override
   public Expression visitElim(ElimExpression expr) {
-    throw new IllegalStateException();
+    List<IndexExpression> expressions = new ArrayList<>();
+    for (IndexExpression index : expr.getExpressions()) {
+      assert index.getIndex() < myFrom;
+      expressions.add((IndexExpression) index.accept(this));
+    }
+    List<Clause> clauses = new ArrayList<>();
+    ElimExpression result = new ElimExpression(expressions, clauses);
+    for (Clause clause : expr.getClauses()) {
+      clauses.add(new Clause(clause.getPatterns(), clause.getArrow(), clause.getExpression().subst(mySubstExprs,
+          myFrom + Utils.getNumArguments(clause.getPatterns()) - clause.getPatterns().size()), result));
+    }
+
+    return result;
   }
 
   @Override
   public Expression visitProj(ProjExpression expr) {
     return Proj(expr.getExpression().accept(this), expr.getField());
-  }
-
-  @Override
-  public Expression visitClassExt(ClassExtExpression expr) {
-    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
-    for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-      FunctionDefinition function = entry.getValue();
-      List<Argument> arguments = new ArrayList<>(function.getArguments().size());
-      Expression[] result = visitLamArguments(function.getArguments(), arguments, function.getResultType(), function.getTerm());
-      definitions.put(entry.getKey(), new OverriddenDefinition(function.getParentNamespace(), function.getName(), function.getPrecedence(), arguments, result[0], function.getArrow(), result[1], entry.getKey()));
-    }
-    return ClassExt(visitDefCall(expr.getBaseClassExpression()), definitions, expr.getUniverse());
   }
 
   @Override

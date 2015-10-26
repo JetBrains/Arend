@@ -729,6 +729,8 @@ public final class Concrete {
   }
 
   public static class DefineStatement extends Statement implements Abstract.DefineStatement {
+    private Definition myParent;
+
     private final boolean myStatic;
     private final Definition myDefinition;
 
@@ -736,6 +738,15 @@ public final class Concrete {
       super(position);
       myStatic = isStatic;
       myDefinition = definition;
+    }
+
+    public void setParent(Definition parent) {
+      myParent = parent;
+    }
+
+    @Override
+    public Definition getParent() {
+      return myParent;
     }
 
     @Override
@@ -755,22 +766,21 @@ public final class Concrete {
   }
 
   public static abstract class Definition extends Binding implements Abstract.Definition {
-    private Definition myParent;
     private final Precedence myPrecedence;
+    private DefineStatement myParent;
 
     public Definition(Position position, Name name, Precedence precedence) {
       super(position, name);
-      myParent = null;
       myPrecedence = precedence;
     }
 
-    @Override
-    public Definition getParent() {
-      return myParent;
+    public void setParent(Concrete.DefineStatement parent) {
+      myParent = parent;
     }
 
-    public void setParent(Definition parent) {
-      myParent = parent;
+    @Override
+    public DefineStatement getParent() {
+      return myParent;
     }
 
     @Override
@@ -786,20 +796,39 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionDefinition extends Definition implements Abstract.FunctionDefinition {
-    private final Abstract.Definition.Arrow myArrow;
+  public static class AbstractDefinition extends Definition implements Abstract.AbstractDefinition {
     private final List<Argument> myArguments;
     private final Expression myResultType;
+
+    public AbstractDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType) {
+      super(position, name, precedence);
+      myArguments = arguments;
+      myResultType = resultType;
+    }
+
+    public List<? extends Argument> getArguments() {
+      return myArguments;
+    }
+
+    public Expression getResultType() {
+      return myResultType;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitAbstract(this, params);
+    }
+  }
+
+  public static class FunctionDefinition extends AbstractDefinition implements Abstract.FunctionDefinition {
+    private final Abstract.Definition.Arrow myArrow;
     private final boolean myOverridden;
     private final Name myOriginalName;
     private final Expression myTerm;
     private final List<Statement> myStatements;
 
     public FunctionDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, Name originalName, List<Statement> statements) {
-      super(position, name, precedence);
-
-      myArguments = arguments;
-      myResultType = resultType;
+      super(position, name, precedence, arguments, resultType);
       myArrow = arrow;
       myTerm = term;
       myOverridden = overridden;
@@ -808,13 +837,13 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.Definition.Arrow getArrow() {
-      return myArrow;
+    public boolean isAbstract() {
+      return false;
     }
 
     @Override
-    public boolean isAbstract() {
-      return myArrow == null;
+    public Definition.Arrow getArrow() {
+      return myArrow;
     }
 
     @Override
@@ -835,16 +864,6 @@ public final class Concrete {
     @Override
     public Expression getTerm() {
       return myTerm;
-    }
-
-    @Override
-    public List<Argument> getArguments() {
-      return myArguments;
-    }
-
-    @Override
-    public Expression getResultType() {
-      return myResultType;
     }
 
     @Override
@@ -994,7 +1013,6 @@ public final class Concrete {
 
     public Constructor(Position position, Name name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
       super(position, name, precedence);
-      setParent(dataType);
       myArguments = arguments;
       myDataType = dataType;
       myPatterns = patterns;
@@ -1032,14 +1050,12 @@ public final class Concrete {
     private final Kind myKind;
     private final List<Identifier> myPath;
     private final List<Identifier> myNames;
-    private List<ResolvedName> myResolvedPath;
 
     public NamespaceCommandStatement(Position position, Kind kind, List<Identifier> path, List<Identifier> names) {
       super(position);
       myKind = kind;
       myPath = path;
       myNames = names;
-      myResolvedPath = null;
     }
 
     @Override
@@ -1055,16 +1071,6 @@ public final class Concrete {
     @Override
     public List<Identifier> getNames() {
       return myNames;
-    }
-
-    @Override
-    public List<ResolvedName> getExported() {
-      return myResolvedPath;
-    }
-
-    @Override
-    public void setExported(List<ResolvedName> exports) {
-      myResolvedPath = exports;
     }
 
     @Override

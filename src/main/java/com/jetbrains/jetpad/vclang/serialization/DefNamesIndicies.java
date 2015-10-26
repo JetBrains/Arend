@@ -53,11 +53,18 @@ public class DefNamesIndicies {
       stream.writeBoolean(entry.isNew);
       if (entry.isNew) {
         Definition definition = entry.defName.toDefinition();
-
         stream.writeBoolean(definition.getName().fixity == Abstract.Definition.Fixity.PREFIX);
         stream.writeUTF(definition.getName().name);
         stream.write(ModuleSerialization.getDefinitionCode(definition));
       }
+    }
+  }
+
+  public void serializeHeader(DataOutputStream stream) throws IOException {
+    stream.writeInt(myDefinitionsList.size());
+    for (Entry entry : myDefinitionsList) {
+      stream.writeBoolean(entry.isNew);
+      ModuleSerialization.serializeResolvedName(entry.defName, stream);
     }
   }
 }

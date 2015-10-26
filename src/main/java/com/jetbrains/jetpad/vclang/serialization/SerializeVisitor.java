@@ -1,13 +1,10 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -15,19 +12,15 @@ import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
 
-public class SerializeVisitor implements ExpressionVisitor<Void> {
+public class SerializeVisitor extends BaseExpressionVisitor<Void> {
   private int myErrors = 0;
   private final DefNamesIndicies myDefNamesIndicies;
-  private final Set<ResolvedName> myModuleDependencies;
   private final ByteArrayOutputStream myStream;
   private final DataOutputStream myDataStream;
 
-  public SerializeVisitor(DefNamesIndicies definitionsIndices, Set<ResolvedName> moduleDependencies, ByteArrayOutputStream stream, DataOutputStream dataStream) {
+  public SerializeVisitor(DefNamesIndicies definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream) {
     myDefNamesIndicies = definitionsIndices;
-    myModuleDependencies = moduleDependencies;
     myStream = stream;
     myDataStream = dataStream;
   }
@@ -42,10 +35,6 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
 
   public DefNamesIndicies getDefinitionsIndices() {
     return myDefNamesIndicies;
-  }
-
-  public Set<ResolvedName> getMyModuleDependencies() {
-    return myModuleDependencies;
   }
 
   @Override
@@ -65,23 +54,50 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
   @Override
   public Void visitDefCall(DefCallExpression expr) {
     myStream.write(2);
-    int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
-    ResolvedName module = ModuleSerialization.getModule(expr.getDefinition().getResolvedName());
-    if (!module.equals(Prelude.PRELUDE.getResolvedName())) {
-      myModuleDependencies.add(module);
-    }
     try {
-      myDataStream.writeBoolean(expr.getExpression() != null);
-      if (expr.getExpression() != null) {
-        expr.getExpression().accept(this);
-      }
+      myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false));
+      myDataStream.writeInt(0);
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitConCall(ConCallExpression expr) {
+    myStream.write(2);
+    int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
+    try {
       myDataStream.writeInt(index);
-      myDataStream.writeInt(expr.getParameters() == null ? 0 : expr.getParameters().size());
-      if (expr.getParameters() != null) {
-        for (Expression parameter : expr.getParameters()) {
-          parameter.accept(this);
+      myDataStream.writeInt(expr.getParameters().size());
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+    for (Expression parameter : expr.getParameters()) {
+      parameter.accept(this);
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitClassCall(ClassCallExpression expr) {
+    myStream.write(15);
+    int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
+    try {
+      myDataStream.writeInt(index);
+      myDataStream.writeInt(expr.getOverrideElems().size());
+      for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(elem.field.getResolvedName(), true));
+        myDataStream.writeBoolean(elem.type != null);
+        if (elem.type != null) {
+          elem.type.accept(this);
+        }
+        myDataStream.writeBoolean(elem.term != null);
+        if (elem.term != null) {
+          elem.term.accept(this);
         }
       }
+      ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -245,23 +261,6 @@ public class SerializeVisitor implements ExpressionVisitor<Void> {
     expr.getExpression().accept(this);
     try {
       myDataStream.writeInt(expr.getField());
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitClassExt(ClassExtExpression expr) {
-    myStream.write(15);
-    try {
-      expr.getBaseClassExpression().accept(this);
-      myDataStream.writeInt(expr.getDefinitionsMap().size());
-      for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : expr.getDefinitionsMap().entrySet()) {
-        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(entry.getKey().getResolvedName(), false));
-        myErrors += ModuleSerialization.serializeDefinition(this, entry.getValue());
-      }
-      ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());
     } catch (IOException e) {
       throw new IllegalStateException();
     }

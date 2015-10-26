@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -16,7 +15,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternToExpression;
 
-public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
+public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   private final FunctionDefinition myDef;
   private final List<Expression> myPatterns;
 
@@ -68,12 +67,8 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
       if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
         return false;
       }
-      if (((DefCallExpression) fun).getParameters() != null) {
-        for (Expression parameter : ((DefCallExpression) fun).getParameters()) {
-          if (!parameter.accept(this)) {
-            return false;
-          }
-        }
+      if (fun instanceof ConCallExpression && !visitConCall((ConCallExpression) fun)) {
+        return false;
       }
     } else {
       if (!fun.accept(this)) {
@@ -91,14 +86,27 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr) {
-    if (!(expr.getDefinition() != myDef && (expr.getExpression() == null || expr.getExpression().accept(this)))) {
-      return false;
+    return expr.getDefinition() != myDef;
+  }
+
+  @Override
+  public Boolean visitConCall(ConCallExpression expr) {
+    for (Expression parameter : expr.getParameters()) {
+      if (!parameter.accept(this)) {
+        return false;
+      }
     }
-    if (expr.getParameters() != null) {
-      for (Expression parameter : expr.getParameters()) {
-        if (!parameter.accept(this)) {
-          return false;
-        }
+    return true;
+  }
+
+  @Override
+  public Boolean visitClassCall(ClassCallExpression expr) {
+    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+      if (elem.type != null && !elem.type.accept(this)) {
+        return false;
+      }
+      if (elem.term != null && !elem.term.accept(this)) {
+        return false;
       }
     }
     return true;
@@ -238,16 +246,6 @@ public class TerminationCheckVisitor implements ExpressionVisitor<Boolean> {
   @Override
   public Boolean visitProj(ProjExpression expr) {
     return expr.getExpression().accept(this);
-  }
-
-  @Override
-  public Boolean visitClassExt(ClassExtExpression expr) {
-    for (OverriddenDefinition definition : expr.getDefinitionsMap().values()) {
-      if (!definition.hasErrors() && !definition.typeHasErrors() && !visitLamArguments(definition.getArguments(), definition.getResultType(), definition.getTerm())) {
-        return false;
-      }
-    }
-    return true;
   }
 
   @Override

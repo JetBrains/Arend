@@ -103,8 +103,8 @@ public class DefinitionTest {
     assertEquals(Pi(parameters, Universe(0)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(arguments1, Apps(Apps(Apps(DefCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(0).getType());
-    assertEquals(Pi(arguments2, Apps(Apps(Apps(DefCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(1).getType());
+    assertEquals(Pi(arguments1, Apps(Apps(Apps(DataCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(0).getType());
+    assertEquals(Pi(arguments2, Apps(Apps(Apps(DataCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(1).getType());
   }
 
   @Test
@@ -133,8 +133,8 @@ public class DefinitionTest {
     assertEquals(Pi(parameters, Universe(6, 7)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(arguments1, Apps(DefCall(typedDef), Index(2))), typedDef.getConstructors().get(0).getType());
-    assertEquals(Pi(arguments2, Apps(DefCall(typedDef), Index(3))), typedDef.getConstructors().get(1).getType());
+    assertEquals(Pi(arguments1, Apps(DataCall(typedDef), Index(2))), typedDef.getConstructors().get(0).getType());
+    assertEquals(Pi(arguments2, Apps(DataCall(typedDef), Index(3))), typedDef.getConstructors().get(1).getType());
   }
 
   @Test
@@ -145,11 +145,11 @@ public class DefinitionTest {
     Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(DefCall(con), Nat(), Zero(), Zero());
+    Expression expr = Apps(ConCall(con), Nat(), Zero(), Zero());
     CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), null, errorReporter);
     assertEquals(0, errorReporter.getErrorList().size());
     assertNotNull(result);
-    assertEquals(Apps(DefCall(def), Nat()), result.type);
+    assertEquals(Apps(DataCall(def), Nat()), result.type);
   }
 
   @Test
@@ -160,9 +160,9 @@ public class DefinitionTest {
     Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(Index(0), Apps(DefCall(con), Nat(), Lam("x", Index(0)), Zero()));
+    Expression expr = Apps(Index(0), Apps(ConCall(con), Nat(), Lam("x", Index(0)), Zero()));
     List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding("f", Pi(Apps(DefCall(def), Pi(Nat(), Nat())), Nat())));
+    localContext.add(new TypedBinding("f", Pi(Apps(DataCall(def), Pi(Nat(), Nat())), Nat())));
 
     CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errorReporter);
     assertEquals(0, errorReporter.getErrorList().size());
@@ -178,9 +178,9 @@ public class DefinitionTest {
     Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(TypeArg(Index(0))), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(Index(0), DefCall(con));
+    Expression expr = Apps(Index(0), ConCall(con));
     List<Binding> localContext = new ArrayList<>(1);
-    localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DefCall(def), Nat())), Pi(Nat(), Nat()))));
+    localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DataCall(def), Nat())), Pi(Nat(), Nat()))));
 
     CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errorReporter);
     assertEquals(0, errorReporter.getErrorList().size());

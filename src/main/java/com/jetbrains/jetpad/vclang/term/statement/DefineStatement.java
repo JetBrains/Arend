@@ -13,6 +13,11 @@ public class DefineStatement implements Abstract.DefineStatement {
   }
 
   @Override
+  public Abstract.Definition getParent() {
+    return null;
+  }
+
+  @Override
   public boolean isStatic() {
     return myStatic;
   }

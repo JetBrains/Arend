@@ -190,6 +190,8 @@ public final class Abstract {
   }
 
   public interface DefineStatement extends Statement {
+    Definition getParent();
+
     boolean isStatic();
     Definition getDefinition();
   }
@@ -199,7 +201,7 @@ public final class Abstract {
     enum Fixity { PREFIX, INFIX }
     enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
-    Definition getParent();
+    DefineStatement getParent();
 
     class Precedence {
       public Associativity associativity;
@@ -242,6 +244,11 @@ public final class Abstract {
   public interface Function extends Binding {
     Definition.Arrow getArrow();
     Expression getTerm();
+    List<? extends Argument> getArguments();
+    Expression getResultType();
+  }
+
+  public interface AbstractDefinition extends Definition {
     List<? extends Argument> getArguments();
     Expression getResultType();
   }
@@ -293,7 +300,5 @@ public final class Abstract {
     Kind getKind();
     List<? extends Identifier> getPath();
     List<? extends Identifier> getNames();
-    List<ResolvedName> getExported();
-    void setExported(List<ResolvedName> path);
   }
 }

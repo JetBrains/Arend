@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -22,15 +21,6 @@ public class ModuleSerialization {
     writeStream(resolvedName, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
   }
 
-  public static ResolvedName getModule(ResolvedName name) {
-    Abstract.Definition definition = name.toDefinition() != null ? name.toDefinition() : name.toAbstractDefinition();
-    while (definition.getParent() != null) {
-      name = name.parent.getResolvedName();
-      definition = definition.getParent();
-    }
-    return name;
-  }
-
   public static void serializeResolvedName(ResolvedName rn, DataOutputStream stream) throws IOException {
     List<String> fPath = new ArrayList<>();
     for (; rn.parent != null; rn = rn.parent.getResolvedName()) {
@@ -43,54 +33,43 @@ public class ModuleSerialization {
     }
   }
 
-  public static void serializeDependencies(Set<ResolvedName> dependencies, DataOutputStream stream) throws IOException {
-    stream.writeInt(dependencies.size());
-    for (ResolvedName rn : dependencies) {
-      serializeResolvedName(rn, stream);
-    }
-  }
-
   public static void writeStream(ResolvedName resolvedName, DataOutputStream stream) throws IOException {
+    assert resolvedName.toAbstractDefinition() != null && resolvedName.toDefinition() != null;
+    assert true; /* This is really a name of a module */
+
     DefNamesIndicies defNamesIndicies = new DefNamesIndicies();
-    Set<ResolvedName> moduleDependencies = new HashSet<>();
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
-    SerializeVisitor visitor = new SerializeVisitor(defNamesIndicies, moduleDependencies, byteArrayStream, dataStream);
+    SerializeVisitor visitor = new SerializeVisitor(defNamesIndicies, byteArrayStream, dataStream);
 
     int errors = serializeDefinition(visitor, resolvedName.toDefinition());
 
     stream.write(SIGNATURE);
     stream.writeInt(VERSION);
     stream.writeInt(errors + visitor.getErrors());
-    serializeDependencies(moduleDependencies, stream);
+    defNamesIndicies.serializeHeader(stream);
     defNamesIndicies.serialize(stream);
     byteArrayStream.writeTo(stream);
     stream.close();
   }
 
-  public static int serializeNamespace(SerializeVisitor visitor, Definition parent, Namespace namespace) throws IOException {
+  public static int serializeNamespace(SerializeVisitor visitor, Namespace namespace) throws IOException {
     int errors = 0;
     int size = 0;
     for (NamespaceMember member : namespace.getMembers()) {
-      if (member.definition != null && (member.definition.getParent() == parent || member.definition.getParentNamespace() != namespace)) {
+      if (member.getResolvedName().parent != namespace || member.abstractDefinition.getParent() != null) {
         ++size;
       }
     }
     visitor.getDataStream().writeInt(size);
     for (NamespaceMember member : namespace.getMembers()) {
-      if (member.definition != null) {
-        if(member.definition.getParent() == parent) {
-          visitor.getDataStream().writeBoolean(true);
-          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(member.definition.getResolvedName(), true));
-          serializeDefinition(visitor, member.definition);
-        } else if (member.definition.getParentNamespace() != namespace) {
-          visitor.getDataStream().writeBoolean(false);
-          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(member.definition.getResolvedName(), true));
-          ResolvedName module = getModule(member.definition.getResolvedName());
-          if (!module.equals(Prelude.PRELUDE.getResolvedName())) {
-            visitor.getMyModuleDependencies().add(module);
-          }
-        }
+      if (member.abstractDefinition.getParent() != null) {
+        visitor.getDataStream().writeBoolean(true);
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(member.definition.getResolvedName(), true));
+        errors += serializeDefinition(visitor, member.definition);
+      } else if (member.getResolvedName().parent != namespace) {
+        visitor.getDataStream().writeBoolean(false);
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(member.definition.getResolvedName(), true));
       }
     }
     return errors;
@@ -154,14 +133,14 @@ public class ModuleSerialization {
 
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
-    serializeNamespace(visitor, definition, definition.getParentNamespace().getChild(definition.getName()));
+    serializeNamespace(visitor, definition.getParentNamespace().getChild(definition.getName()));
     return 0;
   }
 
   private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
 
-    serializeNamespace(visitor, definition, definition.getStaticNamespace());
+    serializeNamespace(visitor, definition.getStaticNamespace());
 
     /*
     if (definition instanceof OverriddenDefinition)

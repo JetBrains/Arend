@@ -68,7 +68,7 @@ public class Constructor extends Definition implements Abstract.Constructor {
 
   @Override
   public Expression getType() {
-    Expression resultType = DefCall(myDataType);
+    Expression resultType = DataCall(myDataType);
     int numberOfVars = numberOfVariables(myArguments);
     if (getDataType().getParameters() != null) {
       if (myPatterns == null) {

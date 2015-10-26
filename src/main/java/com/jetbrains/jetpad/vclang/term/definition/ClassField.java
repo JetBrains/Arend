@@ -11,6 +11,7 @@ public class ClassField extends Definition {
   public ClassField(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Expression type) {
     super(parentNamespace, name, precedence);
     myType = type;
+    hasErrors(false);
   }
 
   public Expression getType() {

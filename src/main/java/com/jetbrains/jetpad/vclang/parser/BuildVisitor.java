@@ -99,14 +99,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return statements;
   }
 
-  private void setStatementsParent(List<Concrete.Statement> statements, Concrete.Definition parent) {
-    for (Concrete.Statement st : statements) {
-      if (st instanceof Concrete.DefineStatement) {
-        ((Concrete.DefineStatement) st).getDefinition().setParent(parent);
-      }
-    }
-  }
-
   @Override
   public List<Concrete.Statement> visitStatements(StatementsContext ctx) {
     if (ctx == null) return null;
@@ -170,36 +162,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Abstract.NamespaceCommandStatement.Kind visitExportCmd(ExportCmdContext ctx) {
     return Abstract.NamespaceCommandStatement.Kind.EXPORT;
-  }
-
-  private static class FunctionContext {
-    ExprContext typeCtx;
-    Abstract.Definition.Arrow arrow;
-    ExprContext termCtx;
-  }
-
-  public FunctionContext visitTypeTermOpt(TypeTermOptContext ctx) {
-    return (FunctionContext) visit(ctx);
-  }
-
-  @Override
-  public FunctionContext visitWithType(WithTypeContext ctx) {
-    if (ctx == null) return null;
-    FunctionContext result = new FunctionContext();
-    result.typeCtx = ctx.expr(0);
-    result.arrow = visitArrow(ctx.arrow());
-    result.termCtx = ctx.expr().size() > 1 ? ctx.expr(1) : null;
-    return result;
-  }
-
-  @Override
-  public FunctionContext visitWithoutType(WithoutTypeContext ctx) {
-    if (ctx == null) return null;
-    FunctionContext result = new FunctionContext();
-    result.typeCtx = null;
-    result.arrow = visitArrow(ctx.arrow());
-    result.termCtx = ctx.expr();
-    return result;
   }
 
   public Abstract.Definition.Arrow visitArrow(ArrowContext arrowCtx) {
@@ -306,22 +268,45 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public Concrete.AbstractDefinition visitDefAbstract(DefAbstractContext ctx) {
+    if (ctx == null) return null;
+    Concrete.Identifier identifier = visitName(ctx.name());
+    Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
+    Concrete.Expression resultType = visitExpr(ctx.expr());
+    List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele(), false);
+    if (identifier == null || precedence == null || resultType == null || arguments == null) {
+      return null;
+    }
+
+    return new Concrete.AbstractDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, arguments, resultType);
+  }
+
+  @Override
   public Concrete.FunctionDefinition visitDefFunction(DefFunctionContext ctx) {
     if (ctx == null) return null;
     Concrete.Identifier identifier = visitName(ctx.name());
     Abstract.Definition.Precedence precedence = visitPrecedence(ctx.precedence());
-    FunctionContext functionContext = visitTypeTermOpt(ctx.typeTermOpt());
+    Concrete.Expression resultType = ctx.expr().size() == 2 ? visitExpr(ctx.expr(0)) : null;
+    Abstract.Definition.Arrow arrow = visitArrow(ctx.arrow());
+    Concrete.Expression term = visitExpr(ctx.expr().size() == 2 ? ctx.expr(1) : ctx.expr(0));
     List<Concrete.Argument> arguments = visitFunctionArguments(ctx.tele(), false);
-    if (identifier == null || precedence == null || functionContext == null || arguments == null) {
+    if (identifier == null || precedence == null || ctx.expr().size() == 2 && resultType == null || arrow == null || term == null || arguments == null) {
       return null;
     }
 
-    Concrete.Expression resultType = functionContext.typeCtx == null ? null : visitExpr(functionContext.typeCtx);
-    Concrete.Expression term = functionContext.termCtx == null ? null : visitExpr(functionContext.termCtx);
     List<Concrete.Statement> statements = ctx.where() == null ? Collections.<Concrete.Statement>emptyList() : visitStatementList(ctx.where().statement());
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, arguments, resultType, functionContext.arrow, term, false, null, statements);
-    setStatementsParent(statements, def);
-    return def;
+    Concrete.FunctionDefinition result =  new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, arguments, resultType, arrow, term, false, null, statements);
+    setStatementsParent(result, statements);
+    return result;
+  }
+
+  private void setStatementsParent(Concrete.Definition parent, List<Concrete.Statement> statements) {
+    for (Concrete.Statement statement : statements) {
+      if (statement instanceof Concrete.DefineStatement) {
+        ((Concrete.DefineStatement) statement).setParent(parent);
+        ((Concrete.DefineStatement) statement).getDefinition().setParent((Concrete.DefineStatement) statement);
+      }
+    }
   }
 
   private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx, boolean overridden) {
@@ -404,9 +389,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.classFields() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.classFields().statement());
-    Concrete.ClassDefinition def = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements);
-    setStatementsParent(statements, def);
-    return def;
+    Concrete.ClassDefinition result = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements);
+    setStatementsParent(result, statements);
+    return result;
   }
 
   @Override

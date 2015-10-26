@@ -1,13 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.List;
 
-public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
+public class FindHoleVisitor extends BaseExpressionVisitor<InferHoleExpression> {
   @Override
   public InferHoleExpression visitApp(AppExpression expr) {
     InferHoleExpression result = expr.getFunction().accept(this);
@@ -16,12 +15,29 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
 
   @Override
   public InferHoleExpression visitDefCall(DefCallExpression expr) {
-    InferHoleExpression result = expr.getExpression() == null ? null : expr.getExpression().accept(this);
-    if (result != null) return result;
-    if (expr.getParameters() == null) return null;
+    return null;
+  }
+
+  @Override
+  public InferHoleExpression visitConCall(ConCallExpression expr) {
     for (Expression parameter : expr.getParameters()) {
-      result = parameter.accept(this);
+      InferHoleExpression result = parameter.accept(this);
       if (result != null) return result;
+    }
+    return null;
+  }
+
+  @Override
+  public InferHoleExpression visitClassCall(ClassCallExpression expr) {
+    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
+      if (elem.type != null) {
+        InferHoleExpression result = elem.type.accept(this);
+        if (result != null) return result;
+      }
+      if (elem.term != null) {
+        InferHoleExpression result = elem.term.accept(this);
+        if (result != null) return result;
+      }
     }
     return null;
   }
@@ -96,25 +112,6 @@ public class FindHoleVisitor implements ExpressionVisitor<InferHoleExpression> {
   @Override
   public InferHoleExpression visitProj(ProjExpression expr) {
     return expr.getExpression().accept(this);
-  }
-
-  @Override
-  public InferHoleExpression visitClassExt(ClassExtExpression expr) {
-    for (OverriddenDefinition definition : expr.getDefinitionsMap().values()) {
-      if (definition.getArguments() != null) {
-        InferHoleExpression result = visitArguments(definition.getArguments());
-        if (result != null) return result;
-      }
-      if (definition.getResultType() != null) {
-        InferHoleExpression result = definition.getResultType().accept(this);
-        if (result != null) return result;
-      }
-      if (definition.getTerm() != null) {
-        InferHoleExpression result = definition.getTerm().accept(this);
-        if (result != null) return result;
-      }
-    }
-    return null;
   }
 
   @Override

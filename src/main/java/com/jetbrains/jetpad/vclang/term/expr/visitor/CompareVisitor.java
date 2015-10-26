@@ -2,15 +2,12 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.OverriddenDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
@@ -313,9 +310,73 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       if (!expr.getName().equals(otherDecCall.getName())) {
         return new JustResult(CMP.NOT_EQUIV);
       }
-      return expr.getExpression().accept(this, otherDecCall.getExpression());
+      return new JustResult(expr.getExpression() == null ? CMP.EQUIV : CMP.NOT_EQUIV);
     }
   }
+
+  @Override
+  public Result visitClassExt(Abstract.ClassExtExpression expr, Expression other) {
+    return new JustResult(CMP.EQUIV);
+  }
+
+  /*
+  @Override
+  public Result visitClassCall(Abstract.ClassExtExpression expr, Expression other) {
+    if (expr == other) return new JustResult(CMP.EQUALS);
+    Result pathResult = checkPath(expr, other);
+    if (pathResult != null) return pathResult;
+    Result tupleResult = checkTuple(expr, other);
+    if (tupleResult != null) return tupleResult;
+    Result lamResult = checkLam(expr, other);
+    if (lamResult != null) return lamResult;
+    if (!(expr instanceof ClassCallExpression && other instanceof ClassCallExpression)) return new JustResult(CMP.NOT_EQUIV);
+
+    ClassCallExpression classExt = (ClassCallExpression) expr;
+    ClassCallExpression otherClassExt = (ClassCallExpression) other;
+    if (classExt.getDefinition() != otherClassExt.getDefinition()) return new JustResult(CMP.NOT_EQUIV);
+    if (classExt.getOverrideElems().size() != otherClassExt.getOverrideElems().size()) return new JustResult(CMP.NOT_EQUIV);
+    ClassCallExpression smaller;
+    ClassCallExpression bigger;
+    if (classExt.getOverrideElems().size() > otherClassExt.getOverrideElems().size()) {
+      smaller = otherClassExt;
+      bigger = classExt;
+    } else {
+      smaller = classExt;
+      bigger = otherClassExt;
+    }
+
+    CMP cmp = CMP.EQUALS;
+    MaybeResult maybeResult = null;
+    smaller_loop:
+    for (ClassCallExpression.OverrideElem elem : smaller.getOverrideElems()) {
+      for (ClassCallExpression.OverrideElem otherElem : bigger.getOverrideElems()) {
+        // TODO
+        if (elem.field == otherElem.field) {
+          Result result = otherElem.type.accept(this, elem.type);
+          if (result.isOK() == CMP.NOT_EQUIV) {
+            if (result instanceof MaybeResult) {
+              if (maybeResult == null) {
+                maybeResult = (MaybeResult) result;
+              }
+            } else {
+              return result;
+            }
+          }
+          cmp = and(cmp, result.isOK());
+
+          result = otherElem.term.accept(this, elem.term);
+          if (result.isOK() != CMP.EQUALS) {
+            return new JustResult(CMP.NOT_EQUIV);
+          }
+
+          continue smaller_loop;
+        }
+      }
+      return new JustResult(CMP.NOT_EQUIV);
+    }
+    return maybeResult == null ? new JustResult(cmp) : maybeResult;
+  }
+  */
 
   @Override
   public Result visitIndex(Abstract.IndexExpression expr, Expression other) {
@@ -629,54 +690,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     ProjExpression otherProj = (ProjExpression) other;
     if (expr.getField() != otherProj.getField()) return new JustResult(CMP.NOT_EQUIV);
     return expr.getExpression().accept(this, otherProj.getExpression());
-  }
-
-  @Override
-  public Result visitClassExt(Abstract.ClassExtExpression expr, Expression other) {
-    if (expr == other) return new JustResult(CMP.EQUALS);
-    Result pathResult = checkPath(expr, other);
-    if (pathResult != null) return pathResult;
-    Result tupleResult = checkTuple(expr, other);
-    if (tupleResult != null) return tupleResult;
-    Result lamResult = checkLam(expr, other);
-    if (lamResult != null) return lamResult;
-    if (!(expr instanceof ClassExtExpression && other instanceof ClassExtExpression)) return new JustResult(CMP.NOT_EQUIV);
-
-    ClassExtExpression classExt = (ClassExtExpression) expr;
-    ClassExtExpression otherClassExt = (ClassExtExpression) other;
-    if (classExt.getStatements().size() != otherClassExt.getStatements().size()) return new JustResult(CMP.NOT_EQUIV);
-    Result result = classExt.getBaseClassExpression().accept(this, otherClassExt.getBaseClassExpression());
-    if (result.isOK() == CMP.NOT_EQUIV) return result;
-
-    CMP cmp = result.isOK();
-    MaybeResult maybeResult = null;
-    for (Map.Entry<FunctionDefinition, OverriddenDefinition> entry : classExt.getDefinitionsMap().entrySet()) {
-      OverriddenDefinition otherDef = otherClassExt.getDefinitionsMap().get(entry.getKey());
-      if (otherDef == null || entry.getValue().getArrow() != otherDef.getArrow() || entry.getValue().getArguments() == null || otherDef.getArguments() == null || entry.getValue().getTerm() == null || otherDef.getTerm() == null) return new JustResult(CMP.NOT_EQUIV);
-      List<Abstract.Expression> args1 = new ArrayList<>();
-      lamArgsToTypes(entry.getValue().getArguments(), args1);
-      List<Abstract.Expression> args2 = new ArrayList<>();
-      lamArgsToTypes(otherDef.getArguments(), args1);
-
-      if (args1.size() == 0 && args2.size() == 0) {
-        result = entry.getValue().getTerm().accept(this, otherDef.getTerm());
-      } else {
-        result = checkLam(entry.getValue().getTerm(), otherDef.getTerm(), args1, args2);
-      }
-
-      if (result == null) return new JustResult(CMP.NOT_EQUIV);
-      if (result.isOK() == CMP.NOT_EQUIV) {
-        if (result instanceof MaybeResult) {
-          if (maybeResult == null) {
-            maybeResult = (MaybeResult) result;
-          }
-        } else {
-          return result;
-        }
-      }
-      cmp = and(cmp, result.isOK());
-    }
-    return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 
   @Override
