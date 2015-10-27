@@ -1280,7 +1280,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         for (int j = 0; j < i; j++) {
           argumentType = expandPatternSubstitute(resultPatterns.get(j), i - j - 1, substituteExpressions.get(j), argumentType);
         }
-        ExpandPatternResult result = expandPattern(patterns.get(i), new TypedBinding((String) null, argumentType));
+        ExpandPatternResult result = expandPattern(patterns.get(i), new TypedBinding((Name) null, argumentType));
         if (result instanceof ExpandPatternErrorResult)
           return result;
         ExpandPatternOKResult okResult  = (ExpandPatternOKResult) result;
