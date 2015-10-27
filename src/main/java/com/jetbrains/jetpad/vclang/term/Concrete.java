@@ -230,6 +230,11 @@ public final class Concrete {
     }
 
     @Override
+    public Expression makeError(Abstract.SourceNode node) {
+      return new Concrete.InferHoleExpression(((SourceNode) node).getPosition());
+    }
+
+    @Override
     public void replace(Abstract.Expression expression) {
       assert expression instanceof Expression;
       myLeft = (Expression) expression;

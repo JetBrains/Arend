@@ -141,6 +141,7 @@ public final class Abstract {
     Expression getLeft();
     List<BinOpSequenceElem> getSequence();
     BinOpExpression makeBinOp(Expression left, ResolvedName name, DefCallExpression var, Expression right);
+    Expression makeError(SourceNode node);
     void replace(Expression expression);
   }
 
