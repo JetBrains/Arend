@@ -13,11 +13,6 @@ public class DefineStatement implements Abstract.DefineStatement {
   }
 
   @Override
-  public Abstract.Definition getParent() {
-    return null;
-  }
-
-  @Override
   public boolean isStatic() {
     return myStatic;
   }
@@ -25,6 +20,11 @@ public class DefineStatement implements Abstract.DefineStatement {
   @Override
   public Abstract.Definition getDefinition() {
     return myDefinition;
+  }
+
+  @Override
+  public Abstract.Definition getParentDefinition() {
+    throw new IllegalStateException();
   }
 
   @Override

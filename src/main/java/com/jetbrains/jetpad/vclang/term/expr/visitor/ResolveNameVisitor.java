@@ -5,10 +5,12 @@ import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
@@ -63,10 +65,13 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
           }
         }
       } else {
-        if (expr.getName().fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(expr.getName().name)) {
-          NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, expr.getName().name, expr, myErrorReporter, false);
+        Name name = expr.getName();
+        if (name.fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(name.name)) {
+          NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name.name, false);
           if (member != null) {
             expr.setResolvedName(member.getResolvedName());
+          } else {
+            myErrorReporter.report(new NotInScopeError(expr, name));
           }
         }
       }
@@ -129,8 +134,10 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
 
   @Override
   public Void visitError(Abstract.ErrorExpression expr, Void params) {
-    if (expr.getExpr() != null)
-      expr.getExpr().accept(this, null);
+    Abstract.Expression expression = expr.getExpr();
+    if (expression != null) {
+      expression.accept(this, null);
+    }
     return null;
   }
 
@@ -169,22 +176,33 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
   @Override
   public Void visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Void params) {
     if (expr.getSequence().isEmpty()) {
-      expr.getLeft().accept(this, null);
-      expr.replace(expr.getLeft());
+      Abstract.Expression left = expr.getLeft();
+      left.accept(this, null);
+      expr.replace(left);
     } else {
       BinOpParser parser = new BinOpParser(myErrorReporter, expr);
-      List<BinOpParser.StackElem> stack = new ArrayList<>(expr.getSequence().size());
+      List<Abstract.BinOpSequenceElem> sequence = expr.getSequence();
+      List<BinOpParser.StackElem> stack = new ArrayList<>(sequence.size());
       Abstract.Expression expression = expr.getLeft();
       expression.accept(this, null);
-      for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
-        NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, elem.binOp.getName().name, elem.binOp, myErrorReporter, true);
+      NotInScopeError error = null;
+      for (Abstract.BinOpSequenceElem elem : sequence) {
+        Name name = elem.binOp.getName();
+        NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name.name, true);
         if (member != null) {
           parser.pushOnStack(stack, expression, member.getResolvedName(), member.getPrecedence(), elem.binOp);
           expression = elem.argument;
           expression.accept(this, null);
+        } else {
+          error = new NotInScopeError(elem.binOp, name);
+          myErrorReporter.report(error);
         }
       }
-      expr.replace(parser.rollUpStack(stack, expression));
+      if (error == null) {
+        expr.replace(parser.rollUpStack(stack, expression));
+      } else {
+        expr.replace(expr.makeError(error.getCause()));
+      }
     }
     return null;
   }

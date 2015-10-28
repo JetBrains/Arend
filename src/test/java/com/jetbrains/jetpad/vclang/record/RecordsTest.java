@@ -26,7 +26,19 @@ public class RecordsTest {
         "  \\abstract f : Nat -> \\Type0\n" +
         "  \\abstract g : f 0\n" +
         "}\n" +
-        "\\static \\function f (p : B) : p.f 0 => p.g ");
+        "\\static \\function f (b : B) : b.f 0 => b.g");
+  }
+
+  @Test
+  public void innerRecordTest() {
+    typeCheckClass(
+        "\\static \\class B {\n" +
+        "  \\abstract f : Nat -> \\Type0\n" +
+        "  \\class A {\n" +
+        "    \\abstract g : f 0\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function f (b : B) (a : b.A) : b.f 0 => a.g");
   }
 
   @Test

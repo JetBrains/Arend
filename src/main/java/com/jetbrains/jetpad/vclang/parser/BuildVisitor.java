@@ -116,7 +116,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (definition == null) {
       return null;
     }
-    return new Concrete.DefineStatement(definition.getPosition(), ctx.staticMod() instanceof StaticStaticContext, definition);
+    Concrete.DefineStatement statement = new Concrete.DefineStatement(definition.getPosition(), ctx.staticMod() instanceof StaticStaticContext, definition);
+    definition.setParentStatement(statement);
+    return statement;
   }
 
   @Override
@@ -295,18 +297,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     List<Concrete.Statement> statements = ctx.where() == null ? Collections.<Concrete.Statement>emptyList() : visitStatementList(ctx.where().statement());
-    Concrete.FunctionDefinition result =  new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, arguments, resultType, arrow, term, false, null, statements);
-    setStatementsParent(result, statements);
-    return result;
-  }
-
-  private void setStatementsParent(Concrete.Definition parent, List<Concrete.Statement> statements) {
-    for (Concrete.Statement statement : statements) {
-      if (statement instanceof Concrete.DefineStatement) {
-        ((Concrete.DefineStatement) statement).setParent(parent);
-        ((Concrete.DefineStatement) statement).getDefinition().setParent((Concrete.DefineStatement) statement);
-      }
-    }
+    return new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, arguments, resultType, arrow, term, false, null, statements);
   }
 
   private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx, boolean overridden) {
@@ -389,9 +380,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.classFields() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.classFields().statement());
-    Concrete.ClassDefinition result = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements);
-    setStatementsParent(result, statements);
-    return result;
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements);
+    for (Concrete.Statement statement : statements) {
+      if (statement instanceof Concrete.DefineStatement) {
+        ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
+      }
+    }
+    return classDefinition;
   }
 
   @Override

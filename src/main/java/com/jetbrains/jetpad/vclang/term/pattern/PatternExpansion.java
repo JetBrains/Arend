@@ -42,7 +42,7 @@ class PatternExpansion {
   static Result expandPattern(Pattern pattern, Expression type) {
     if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern) {
       return new Result(new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit()),
-          Collections.singletonList(TypeArg(pattern.getExplicit(), type)));
+          Collections.singletonList(pattern instanceof NamePattern ? Tele(pattern.getExplicit(), Collections.singletonList(((NamePattern) pattern).getName()), type) : TypeArg(pattern.getExplicit(), type)));
     } else if (pattern instanceof ConstructorPattern) {
       ConstructorPattern constructorPattern = (ConstructorPattern) pattern;
 

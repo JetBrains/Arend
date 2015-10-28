@@ -141,6 +141,7 @@ public final class Abstract {
     Expression getLeft();
     List<BinOpSequenceElem> getSequence();
     BinOpExpression makeBinOp(Expression left, ResolvedName name, DefCallExpression var, Expression right);
+    Expression makeError(SourceNode node);
     void replace(Expression expression);
   }
 
@@ -190,9 +191,8 @@ public final class Abstract {
   }
 
   public interface DefineStatement extends Statement {
-    Definition getParent();
-
     boolean isStatic();
+    Definition getParentDefinition();
     Definition getDefinition();
   }
 
@@ -200,8 +200,6 @@ public final class Abstract {
     enum Arrow { LEFT, RIGHT }
     enum Fixity { PREFIX, INFIX }
     enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
-
-    DefineStatement getParent();
 
     class Precedence {
       public Associativity associativity;
@@ -237,6 +235,7 @@ public final class Abstract {
 
     Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
+    DefineStatement getParentStatement();
     Precedence getPrecedence();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }

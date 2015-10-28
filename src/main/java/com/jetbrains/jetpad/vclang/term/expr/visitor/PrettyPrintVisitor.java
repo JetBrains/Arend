@@ -132,12 +132,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitIndex(Abstract.IndexExpression expr, Byte prec) {
     if (expr.getIndex() < myNames.size()) {
       String var = myNames.get(myNames.size() - 1 - expr.getIndex());
-      if (var != null) {
-        myBuilder.append(var);
-        return null;
-      }
+      myBuilder.append(var != null ? var : "_");
+    } else {
+      myBuilder.append('<').append(expr.getIndex()).append('>');
     }
-    myBuilder.append('<').append(expr.getIndex()).append('>');
     return null;
   }
 
@@ -232,7 +230,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitBinOp(Abstract.BinOpExpression expr, Byte prec) {
     if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append('(');
     expr.getLeft().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
-    myBuilder.append(' ').append(expr.getResolvedBinOpName().parent.getName().getInfixName()).append(' ');
+    myBuilder.append(' ').append(expr.getResolvedBinOpName().toNamespace().getName().getInfixName()).append(' ');
     expr.getRight().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
     if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append(')');
     return null;

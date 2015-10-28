@@ -110,31 +110,43 @@ public class Utils {
   }
 
   public static ProcessImplicitResult processImplicit(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.TypeArgument> arguments) {
-    ArrayList<Boolean> argIsExplicit = new ArrayList<>();
+    class Arg {
+      String name;
+      boolean isExplicit;
+
+      public Arg(String name, boolean isExplicit) {
+        this.name = name;
+        this.isExplicit = isExplicit;
+      }
+    }
+
+    ArrayList<Arg> args = new ArrayList<>();
     for (Abstract.TypeArgument arg : arguments) {
       if (arg instanceof Abstract.TelescopeArgument) {
-        argIsExplicit.addAll(Collections.nCopies(((Abstract.TelescopeArgument) arg).getNames().size(), arg.getExplicit()));
+        for (String name : ((Abstract.TelescopeArgument) arg).getNames()) {
+          args.add(new Arg(name, arg.getExplicit()));
+        }
       } else {
-        argIsExplicit.add(arg.getExplicit());
+        args.add(new Arg(null, arg.getExplicit()));
       }
     }
 
     int numExplicit = 0;
-    for (boolean b : argIsExplicit) {
-      if (b)
+    for (Arg arg : args) {
+      if (arg.isExplicit)
         numExplicit++;
     }
 
     List<Abstract.Pattern> result = new ArrayList<>();
-    int indexI = 0;
-    for (boolean isExplicit : argIsExplicit) {
-      Abstract.Pattern curPattern = indexI < patterns.size() ? patterns.get(indexI) : new NamePattern(null, false);
-      if (curPattern.getExplicit() && !isExplicit) {
-        curPattern = new NamePattern(null, false);
+    int indexI = 0, indexArg = 0;
+    for (Arg arg : args) {
+      Abstract.Pattern curPattern = indexI < patterns.size() ? patterns.get(indexI) : new NamePattern(arg.name, false);
+      if (curPattern.getExplicit() && !arg.isExplicit) {
+        curPattern = new NamePattern(arg.name, false);
       } else {
         indexI++;
       }
-      if (curPattern.getExplicit() != isExplicit) {
+      if (curPattern.getExplicit() != arg.isExplicit) {
         return new ProcessImplicitResult(indexI, numExplicit);
       }
       result.add(curPattern);

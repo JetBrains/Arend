@@ -225,7 +225,7 @@ public class ElimTest {
                    "| true => Bool\n" +
                    "| false => Nat\n" +
                    "\\static \\function f (x : Bool) : tp x <= \\elim x\n" +
-                   "| true => x\n" +
+                   "| true => true\n" +
                    "| false => zero\n");
   }
 
@@ -291,6 +291,18 @@ public class ElimTest {
         "\\static \\data E (n : Nat) (Nat -> Nat) (D n) | econs\n" +
         "\\static \\function test (n : Nat) (d : D n) (e : E n (\\lam x => x) d) : Nat <= \\elim n, d, e\n" +
         "  | zero, dcons, econs => 1");
+  }
+
+  @Test
+  public void elimFail() {
+      typeCheckClass("\\static \\function\n" +
+                     "test (x y : Nat) : y = 0 <= \\elim x, y\n" +
+                     "| _, zero => path (\\lam _ => zero)" +
+                     "| zero, suc y' => test x y'" +
+                     "| suc x', suc y' => test x y'" +
+
+                     "\\static \\function" +
+                     "zero-is-one : 1 = 0 => test 0 1", 2);
   }
 
   @Test

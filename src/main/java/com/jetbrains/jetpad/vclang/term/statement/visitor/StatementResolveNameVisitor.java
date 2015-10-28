@@ -2,10 +2,12 @@ package com.jetbrains.jetpad.vclang.term.statement.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NameDefinedError;
+import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
@@ -91,10 +93,14 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
     Abstract.Identifier identifier = path.get(0);
     NamespaceMember member = null;
     for (Abstract.Identifier aPath : path) {
-      NamespaceMember member1 = member == null ? NameResolver.Helper.locateName(myNameResolver, identifier.getName().name, aPath, myErrorReporter, false) : myNameResolver.getMember(member.namespace, aPath.getName().name);
+      Name name = identifier.getName();
+      Name aPathName = aPath.getName();
+      NamespaceMember member1 = member == null ? NameResolver.Helper.locateName(myNameResolver, name.name, false) : myNameResolver.getMember(member.namespace, aPathName.name);
       if (member1 == null) {
         if (member != null) {
-          myErrorReporter.report(new NameDefinedError(false, stat, aPath.getName(), member.namespace.getResolvedName()));
+          myErrorReporter.report(new NameDefinedError(false, stat, aPathName, member.namespace.getResolvedName()));
+        } else {
+          myErrorReporter.report(new NotInScopeError(aPath, name));
         }
         return null;
       }

@@ -21,11 +21,6 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     myHasErrors = true;
   }
 
-  @Override
-  public DefineStatement getParent() {
-    return null;
-  }
-
   public Namespace getParentNamespace() {
     return myParentNamespace;
   }
@@ -61,6 +56,11 @@ public abstract class Definition extends Binding implements Abstract.Definition 
 
  public boolean isAbstract() {
     return false;
+  }
+
+  @Override
+  public Abstract.DefineStatement getParentStatement() {
+    throw new IllegalStateException();
   }
 
   @Override

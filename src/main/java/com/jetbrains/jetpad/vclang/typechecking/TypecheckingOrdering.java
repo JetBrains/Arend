@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
@@ -9,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVi
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionGetDepsVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporter;
 
 import java.util.*;
 
@@ -115,7 +115,7 @@ public class TypecheckingOrdering {
         }
       }
       for (ResolvedName rn : ((OKResult) result).order) {
-        DefinitionCheckTypeVisitor.typeCheck(rn.toNamespaceMember(), new ArrayList<Binding>(), rn.parent, errorReporter);
+        DefinitionCheckTypeVisitor.typeCheck(rn.toNamespaceMember(), rn.parent, new LocalErrorReporter(rn, errorReporter));
       }
     } else if (result instanceof CycleResult) {
       StringBuilder errorMessage = new StringBuilder();

@@ -230,6 +230,11 @@ public final class Concrete {
     }
 
     @Override
+    public Expression makeError(Abstract.SourceNode node) {
+      return new Concrete.InferHoleExpression(((SourceNode) node).getPosition());
+    }
+
+    @Override
     public void replace(Abstract.Expression expression) {
       assert expression instanceof Expression;
       myLeft = (Expression) expression;
@@ -729,24 +734,14 @@ public final class Concrete {
   }
 
   public static class DefineStatement extends Statement implements Abstract.DefineStatement {
-    private Definition myParent;
-
     private final boolean myStatic;
     private final Definition myDefinition;
+    private Definition myParent;
 
     public DefineStatement(Position position, boolean isStatic, Definition definition) {
       super(position);
       myStatic = isStatic;
       myDefinition = definition;
-    }
-
-    public void setParent(Definition parent) {
-      myParent = parent;
-    }
-
-    @Override
-    public Definition getParent() {
-      return myParent;
     }
 
     @Override
@@ -757,6 +752,15 @@ public final class Concrete {
     @Override
     public Definition getDefinition() {
       return myDefinition;
+    }
+
+    @Override
+    public Definition getParentDefinition() {
+      return myParent;
+    }
+
+    public void setParentDefinition(Definition parent) {
+      myParent = parent;
     }
 
     @Override
@@ -779,13 +783,17 @@ public final class Concrete {
     }
 
     @Override
-    public DefineStatement getParent() {
-      return myParent;
+    public Precedence getPrecedence() {
+      return myPrecedence;
     }
 
     @Override
-    public Precedence getPrecedence() {
-      return myPrecedence;
+    public DefineStatement getParentStatement() {
+      return myParent;
+    }
+
+    public void setParentStatement(DefineStatement parent) {
+      myParent = parent;
     }
 
     @Override
