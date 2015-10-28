@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class ConsoleMain {
@@ -67,6 +66,7 @@ public class ConsoleMain {
     }
 
     RootModule.initialize();
+    final List<ResolvedName> loadedModules = new ArrayList<>();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
       @Override
       public void loadingError(GeneralError error) {
@@ -75,6 +75,7 @@ public class ConsoleMain {
 
       @Override
       public void loadingSucceeded(ResolvedName resolvedName, NamespaceMember definition, boolean compiled) {
+        loadedModules.add(resolvedName);
         if (compiled) {
           System.out.println("[OK] " + resolvedName);
         } else {
@@ -88,7 +89,6 @@ public class ConsoleMain {
     moduleLoader.setSourceSupplier(new FileSourceSupplier(moduleLoader, errorReporter, sourceDir));
     moduleLoader.setOutputSupplier(new FileOutputSupplier(moduleDeserialization, outputDir, libDirs));
 
-    final List<ResolvedName> loadedModules = new ArrayList<>();
     if (cmdLine.getArgList().isEmpty()) {
       if (sourceDirStr == null) return;
       try {
@@ -96,7 +96,7 @@ public class ConsoleMain {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
             if (path.getFileName().toString().endsWith(FileOperations.EXTENSION)) {
-              loadedModules.addAll(processFile(moduleLoader, errorReporter, path, sourceDir));
+              processFile(moduleLoader, errorReporter, path, sourceDir);
             }
             return FileVisitResult.CONTINUE;
           }
@@ -112,7 +112,7 @@ public class ConsoleMain {
       }
     } else {
       for (String fileName : cmdLine.getArgList()) {
-        loadedModules.addAll(processFile(moduleLoader, errorReporter, Paths.get(fileName), sourceDir));
+        processFile(moduleLoader, errorReporter, Paths.get(fileName), sourceDir);
       }
     }
 
@@ -143,22 +143,20 @@ public class ConsoleMain {
     return names;
   }
 
-  static private List<ResolvedName> processFile(ModuleLoader moduleLoader, ListErrorReporter errorReporter, Path fileName, File sourceDir) {
+  static private void processFile(ModuleLoader moduleLoader, ListErrorReporter errorReporter, Path fileName, File sourceDir) {
     Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName.getFileName();
     List<String> moduleNames = getModule(relativePath);
     if (moduleNames == null) {
       System.err.println(fileName + ": incorrect file name");
-      return Collections.emptyList();
+      return;
     }
 
-    List<ResolvedName> loadedModules = new ArrayList<>();
     Namespace namespace = RootModule.ROOT;
     for (String moduleName : moduleNames) {
       ModuleLoadingResult result = moduleLoader.load(new ResolvedName(namespace, moduleName), false);
       if (result == null || result.namespaceMember == null) {
         break;
       }
-      loadedModules.add(new ResolvedName(namespace, moduleName));
       namespace = result.namespaceMember.namespace;
     }
 
@@ -167,6 +165,5 @@ public class ConsoleMain {
     }
 
     errorReporter.getErrorList().clear();
-    return loadedModules;
   }
 }

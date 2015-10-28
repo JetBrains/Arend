@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVi
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionGetDepsVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporter;
 
 import java.util.*;
 
@@ -113,7 +114,7 @@ public class TypecheckingOrdering {
         }
       }
       for (ResolvedName rn : ((OKResult) result).order) {
-        DefinitionCheckTypeVisitor.typeCheck(rn.toNamespaceMember(), rn.namespace, errorReporter);
+        DefinitionCheckTypeVisitor.typeCheck(rn.toNamespaceMember(), rn.namespace, new LocalErrorReporter(rn, errorReporter));
       }
     } else if (result instanceof CycleResult) {
       StringBuilder errorMessage = new StringBuilder();
