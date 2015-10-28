@@ -641,6 +641,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (resolvedName == null) {
         OKResult result1 = getLocalVar(name, expr);
         if (result1 == null) {
+          myErrorReporter.report(new NotInScopeError(expr, name));
           return null;
         }
         result1.type = result1.type.liftIndex(0, ((IndexExpression) result1.expression).getIndex() + 1);
