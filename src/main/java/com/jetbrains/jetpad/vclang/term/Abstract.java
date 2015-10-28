@@ -293,6 +293,10 @@ public final class Abstract {
 
     Kind getKind();
     List<? extends Identifier> getPath();
+
+    void setResolvedPath(ResolvedName path);
+    ResolvedName getResolvedPath();
+
     List<? extends Identifier> getNames();
   }
 }

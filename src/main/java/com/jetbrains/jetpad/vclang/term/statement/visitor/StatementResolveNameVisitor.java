@@ -108,6 +108,8 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
     }
     if (member == null) return null;
 
+    stat.setResolvedPath(member.getResolvedName());
+
     List<? extends Abstract.Identifier> names = stat.getNames();
     if (names != null) {
       for (Abstract.Identifier name : names) {
