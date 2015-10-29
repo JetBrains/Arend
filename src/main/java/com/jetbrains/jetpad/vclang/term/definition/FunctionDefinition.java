@@ -14,6 +14,7 @@ import java.util.List;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition, Function {
   private Arrow myArrow;
+  // TODO: myArguments should have type List<TypeArguments>
   private List<Argument> myArguments;
   private Expression myResultType;
   private Expression myTerm;
@@ -113,9 +114,10 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
-  public Expression getType() {
-    if (typeHasErrors())
+  public Expression getBaseType() {
+    if (myTypeHasErrors) {
       return null;
+    }
     return Utils.getFunctionType(this);
   }
 

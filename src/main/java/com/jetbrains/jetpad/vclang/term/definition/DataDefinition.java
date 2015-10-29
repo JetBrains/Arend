@@ -58,7 +58,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   }
 
   @Override
-  public Expression getType() {
+  public Expression getBaseType() {
     Expression resultType = new UniverseExpression(getUniverse());
     return myParameters.isEmpty() ? resultType : Pi(myParameters, resultType);
   }

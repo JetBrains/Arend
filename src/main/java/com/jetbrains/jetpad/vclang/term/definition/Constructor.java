@@ -67,25 +67,23 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public Expression getType() {
+  public Expression getBaseType() {
     Expression resultType = DataCall(myDataType);
     int numberOfVars = numberOfVariables(myArguments);
-    if (getDataType().getParameters() != null) {
-      if (myPatterns == null) {
-        for (int i = numberOfVariables(getDataType().getParameters()) - 1, j = 0; i >= 0; ++j) {
-          if (getDataType().getParameters().get(j) instanceof TelescopeArgument) {
-            for (String ignored : ((TelescopeArgument) getDataType().getParameters().get(j)).getNames()) {
-              resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
-            }
-          } else {
-            resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), getDataType().getParameters().get(j).getExplicit(), !getDataType().getParameters().get(j).getExplicit()));
+    if (myPatterns == null) {
+      for (int i = numberOfVariables(myDataType.getParameters()) - 1, j = 0; i >= 0; ++j) {
+        if (myDataType.getParameters().get(j) instanceof TelescopeArgument) {
+          for (String ignored : ((TelescopeArgument) myDataType.getParameters().get(j)).getNames()) {
+            resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameters().get(j).getExplicit(), !myDataType.getParameters().get(j).getExplicit()));
           }
+        } else {
+          resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameters().get(j).getExplicit(), !myDataType.getParameters().get(j).getExplicit()));
         }
-      } else {
-        List<ArgumentExpression> args = constructorPatternsToExpressions(this);
-        for (ArgumentExpression arg : args) {
-          resultType = Apps(resultType, arg);
-        }
+      }
+    } else {
+      List<ArgumentExpression> args = constructorPatternsToExpressions(this);
+      for (ArgumentExpression arg : args) {
+        resultType = Apps(resultType, arg);
       }
     }
     return myArguments.isEmpty() ? resultType : Pi(myArguments, resultType);

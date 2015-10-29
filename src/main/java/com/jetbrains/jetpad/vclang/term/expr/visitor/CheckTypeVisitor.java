@@ -12,13 +12,13 @@ import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingBranch;
 import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingFailedBranch;
 import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingIncompleteBranch;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -31,6 +31,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private final List<Binding> myLocalContext;
   private final ErrorReporter myErrorReporter;
   private Integer myArgsStartCtxIndex;
+  private final TypeCheckingDefCall myTypeCheckingDefCall;
 
   private static class Arg {
     boolean isExplicit;
@@ -86,10 +87,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myLocalContext = localContext;
     myErrorReporter = errorReporter;
     myArgsStartCtxIndex = argsStartCtxIndex;
+    myTypeCheckingDefCall = new TypeCheckingDefCall(localContext, errorReporter);
   }
 
   public void setArgsStartCtxIndex(int index) {
     myArgsStartCtxIndex = index;
+  }
+
+  public void setThisClass(ClassDefinition thisClass) {
+    myTypeCheckingDefCall.setThisClass(thisClass);
   }
 
   private Result checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
@@ -554,151 +560,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private Result typeCheckDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    ClassDefinition parent = null;
-    OKResult result = null;
-
-    Abstract.Expression expression = expr.getExpression();
-    Name name = expr.getName();
-
-    if (expression != null) {
-      Result exprResult = typeCheck(expression, null);
-      if (!(exprResult instanceof OKResult)) return exprResult;
-      OKResult okExprResult = (OKResult) exprResult;
-      Expression type = okExprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
-      boolean notInScope = false;
-
-      ResolvedName where = null;
-      if (type instanceof ClassCallExpression) {
-        parent = ((ClassCallExpression) type).getDefinition();
-        ClassField field = parent.getField(name.name);
-        if (field != null) {
-          Definition resultDef = field;
-          /* TODO
-          OverriddenDefinition overridden = ((xClassExtExpression) type).getDefinitionsMap().get(field);
-          if (overridden != null) {
-            resultDef = overridden;
-          }
-          */
-          Expression resultType = resultDef.getType();
-          if (resultType == null) {
-            resultType = field.getType();
-          }
-          result = new OKResult(DefCall(/* TODO okExprResult.expression, */ resultDef), resultType, okExprResult.equations);
-        }
-        notInScope = true;
-      } else
-      if (type instanceof UniverseExpression) {
-        List<Expression> arguments = new ArrayList<>();
-        Expression function = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
-        Collections.reverse(arguments);
-        if (function instanceof DefCallExpression && ((DefCallExpression) function).getDefinition() instanceof DataDefinition) {
-          DataDefinition definition = (DataDefinition) ((DefCallExpression) function).getDefinition();
-          where = new ResolvedName(definition.getParentNamespace(), definition.getName());
-          Constructor constructor = definition.getConstructor(name.name);
-          if (constructor == null) {
-            notInScope = true;
-          } else {
-            if (constructor.getPatterns() != null) {
-              Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), arguments, myLocalContext);
-              TypeCheckingError error = null;
-              if (matchResult instanceof PatternMatchMaybeResult) {
-                error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
-                    "Expected " + ((PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((PatternMatchMaybeResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), expr, getNames(myLocalContext));
-              } else if (matchResult instanceof PatternMatchFailedResult) {
-                error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
-                    "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), expr, getNames(myLocalContext));
-              } else if (matchResult instanceof PatternMatchOKResult) {
-                arguments = ((PatternMatchOKResult) matchResult).expressions;
-              }
-
-              if (error != null) {
-                expr.setWellTyped(myLocalContext, Error(null, error));
-                myErrorReporter.report(error);
-                return null;
-              }
-            }
-            Collections.reverse(arguments);
-            Expression resultType = constructor.getType().subst(arguments, 0);
-            Collections.reverse(arguments);
-            return checkResultImplicit(expectedType, new OKResult(ConCall(constructor, arguments), resultType, okExprResult.equations), expr);
-          }
-        }
-      }
-
-      if (result == null) {
-        TypeCheckingError error;
-        if (notInScope) {
-          error = okExprResult.type instanceof UniverseExpression ? new NameDefinedError(false, expr, name, where) : new NotInScopeError(expr, name);
-        } else {
-          error = new TypeCheckingError("Expected an expression of a class type or a data type", expression, getNames(myLocalContext));
-        }
-        expr.setWellTyped(myLocalContext, Error(null, error));
-        myErrorReporter.report(error);
-        return null;
-      }
-    } else {
-      ResolvedName resolvedName = expr.getResolvedName();
-      if (resolvedName == null) {
-        OKResult result1 = getLocalVar(name, expr);
-        if (result1 == null) {
-          myErrorReporter.report(new NotInScopeError(expr, name));
-          return null;
-        }
-        result1.type = result1.type.liftIndex(0, ((IndexExpression) result1.expression).getIndex() + 1);
-        return checkResultImplicit(expectedType, result1, expr);
-      }
-
-      Definition definition = resolvedName.toDefinition();
-      if (definition == null) {
-        throw new IllegalStateException();
-      }
-
-      if (definition instanceof FunctionDefinition && ((FunctionDefinition) definition).typeHasErrors() || !(definition instanceof FunctionDefinition) && definition.hasErrors()) {
-        TypeCheckingError error = new HasErrors(name, expr);
-        expr.setWellTyped(myLocalContext, Error(DefCall(definition), error));
-        myErrorReporter.report(error);
-        return null;
-      }
-
-      Expression term = DefCall(definition);
-      Expression type;
-      if (definition instanceof ClassField) {
-        if (myLocalContext.size() > 0) {
-          assert myLocalContext.get(0).getName().name.equals("\\this");
-          Expression thisExpr = Index(0);
-          term = Apps(term, thisExpr);
-          type = ((ClassField) definition).getBaseType().subst(thisExpr, 0);
-        } else {
-          // TODO
-          throw new IllegalStateException();
-        }
-      } else {
-        type = definition.getType();
-      }
-      result = new OKResult(term, type, null);
-    }
-
-    if (result.expression instanceof DefCallExpression) {
-      if (result.expression instanceof ConCallExpression) {
-        Constructor constructor = ((ConCallExpression) result.expression).getDefinition();
-        List<TypeArgument> parameters;
-        if (constructor.getPatterns() != null) {
-          parameters = expandConstructorParameters(constructor);
-        } else {
-          parameters = constructor.getDataType().getParameters();
-        }
-
-        if (parameters != null && !parameters.isEmpty()) {
-          result.type = Pi(parameters, result.type);
-        }
-      }
-      /* TODO
-      if (((DefCallExpression) result.expression).getExpression() != null && parent != null) {
-        result.type = result.type.accept(new ReplaceDefCallVisitor(parent.getParentNamespace().getChild(parent.getName()), ((DefCallExpression) result.expression).getExpression()));
-      }
-      */
-    }
-    return result;
+    Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
+    return result instanceof OKResult ? checkResultImplicit(expectedType, (OKResult) result, expr) : result;
   }
 
   @Override
@@ -951,22 +814,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
     return checkResult(expectedType, new OKResult(new UniverseExpression(expr.getUniverse()), new UniverseExpression(expr.getUniverse().succ()), null), expr);
-  }
-
-  private OKResult getLocalVar(Name name, Abstract.Expression expr) {
-    ListIterator<Binding> it = myLocalContext.listIterator(myLocalContext.size());
-    int index = 0;
-    while (it.hasPrevious()) {
-      Binding def = it.previous();
-      if (name.name.equals(def.getName() == null ? null : def.getName().name)) {
-        return new OKResult(Index(index), def.getType(), null);
-      }
-      ++index;
-    }
-
-    NotInScopeError error = new NotInScopeError(expr, name);
-    expr.setWellTyped(myLocalContext, Error(null, error));
-    return null;
   }
 
   @Override
@@ -1318,7 +1165,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public OKResult lookupLocalVar(Abstract.Expression expression, Abstract.Expression expr) {
     OKResult exprOKResult;
     if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getResolvedName() == null) {
-      exprOKResult = getLocalVar(((Abstract.DefCallExpression) expression).getName(), expression);
+      exprOKResult = myTypeCheckingDefCall.getLocalVar(((Abstract.DefCallExpression) expression).getName(), expression);
     } else if (expression instanceof Abstract.IndexExpression) {
       exprOKResult = getIndex((Abstract.IndexExpression) expression);
     } else {

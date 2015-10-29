@@ -3,14 +3,19 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public abstract class Definition extends Binding implements Abstract.Definition {
   private Precedence myPrecedence;
   private Universe myUniverse;
   private boolean myHasErrors;
   private final Namespace myParentNamespace;
+  private ClassDefinition myThisClass;
 
   public Definition(Namespace parentNamespace, Name name, Precedence precedence) {
     super(name);
@@ -22,6 +27,21 @@ public abstract class Definition extends Binding implements Abstract.Definition 
 
   public Namespace getParentNamespace() {
     return myParentNamespace;
+  }
+
+  public abstract Expression getBaseType();
+
+  @Override
+  public Expression getType() {
+    return myThisClass != null ? Pi("\\this", ClassCall(myThisClass), getBaseType()) : getBaseType();
+  }
+
+  public ClassDefinition getThisClass() {
+    return myThisClass;
+  }
+
+  public void setThisClass(ClassDefinition thisClass) {
+    myThisClass = thisClass;
   }
 
   @Override

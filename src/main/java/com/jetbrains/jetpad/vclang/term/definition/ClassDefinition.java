@@ -19,7 +19,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   }
 
   @Override
-  public Expression getType() {
+  public Expression getBaseType() {
     return new UniverseExpression(getUniverse());
   }
 
@@ -49,6 +49,10 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     if (myFields != null) {
       myFields.remove(field.getName().name);
     }
+  }
+
+  public ClassField getParentField() {
+    return getField("\\parent");
   }
 
   @Override
