@@ -193,12 +193,16 @@ public class DefinitionTest {
 
   @Test
   public void patternDepParams() {
-    typeCheckClass("\\data D (n : Nat) (n = n) | D zero _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {zero} {p} d => c (p = p)");
+    typeCheckClass(
+        "\\static \\data D (n : Nat) (n = n) | D zero _ => d\n" +
+        "\\static \\data C {n : Nat} {p : n = n} (D n p) | C {zero} {p} d => c (p = p)");
   }
 
   @Test
   public void patternDepParamsError() {
-    typeCheckClass("\\data D (n : Nat) (n = n) | D zero _ => d \\data C {n : Nat} {p : n = n} (D n p) | C {_} {p} d => c (p = p)", 1);
+    typeCheckClass(
+        "\\static \\data D (n : Nat) (n = n) | D zero _ => d\n" +
+        "\\static \\data C {n : Nat} {p : n = n} (D n p) | C {_} {p} d => c (p = p)", 1);
   }
 
   @Test
@@ -218,15 +222,19 @@ public class DefinitionTest {
 
   @Test
   public void patternConstructorCall() {
-    typeCheckClass("\\data D {n : Nat} | D {zero} => d \\function test => d");
+    typeCheckClass(
+        "\\static \\data D {n : Nat} | D {zero} => d\n" +
+        "\\static \\function test => d");
   }
 
   @Test
   public void patternAbstract() {
-    typeCheckClass("\\data Wheel | wheel \\data VehicleType | bikeType | carType " +
-        "\\data Vehicle (t : VehicleType) " +
-        "| Vehicle (carType) => car Wheel Wheel Wheel Wheel" +
-        "| Vehicle (bikeType) => bike Wheel Wheel");
+    typeCheckClass(
+        "\\static \\data Wheel | wheel\n" +
+        "\\static \\data VehicleType | bikeType | carType\n" +
+        "\\static \\data Vehicle (t : VehicleType)\n" +
+        "  | Vehicle (carType) => car Wheel Wheel Wheel Wheel" +
+        "  | Vehicle (bikeType) => bike Wheel Wheel");
   }
 
   @Test
@@ -237,68 +245,70 @@ public class DefinitionTest {
   @Test
   public void patternLift() {
     typeCheckClass(
-        "\\data D (n : Nat) | D (zero) => d\n" +
-            "\\data C (m : Nat) (n : Nat) (D m) | C (zero) (zero) (d) => c");
+        "\\static \\data D (n : Nat) | D (zero) => d\n" +
+        "\\static \\data C (m : Nat) (n : Nat) (D m) | C (zero) (zero) (d) => c");
   }
 
   @Test
   public void patternLiftError() {
     typeCheckClass(
-        "\\data D (n : Nat) | D (zero) => d\n" +
-            "\\data C (m : Nat) (n : Nat) (D m) | C _ (zero) (d) => c", 1);
+        "\\static \\data D (n : Nat) | D (zero) => d\n" +
+        "\\static \\data C (m : Nat) (n : Nat) (D m) | C _ (zero) (d) => c", 1);
   }
 
   @Test
   public void patternMultipleSubst() {
     typeCheckClass(
-        "\\data D (n : Nat) (m : Nat) | d (n = n) (m = m)\n" +
-            "\\data C | c (n m : Nat) (D n m)\n" +
-            "\\data E C | E (c (zero) (suc (zero)) (d _ _)) => e\n" +
-            "\\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
+        "\\static \\data D (n : Nat) (m : Nat) | d (n = n) (m = m)\n" +
+        "\\static \\data C | c (n m : Nat) (D n m)\n" +
+        "\\static \\data E C | E (c (zero) (suc (zero)) (d _ _)) => e\n" +
+        "\\static \\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
   }
 
   @Test
   public void patternConstructorDefCall() {
     typeCheckClass(
-        "\\data D (n : Nat) (m : Nat) | D (suc n) (suc m) => d (n = n) (m = m)\n" +
-            "\\function test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
+        "\\static \\data D (n : Nat) (m : Nat) | D (suc n) (suc m) => d (n = n) (m = m)\n" +
+        "\\static \\function test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
   }
 
   @Test
   public void patternConstructorDefCallError() {
-    typeCheckClass("\\data D (n : Nat) | D (zero) => d \\function test (n : Nat) : D n => d", 1);
+    typeCheckClass(
+        "\\static \\data D (n : Nat) | D (zero) => d\n" +
+        "\\static \\function test (n : Nat) : D n => d", 1);
   }
 
   @Test
   public void patternSubstTest() {
     typeCheckClass(
-        "\\data E (n : Nat) | E (zero) => e\n" +
-            "\\data D (n : Nat) (E n) | D (zero) (e) => d\n" +
-            "\\function test => d");
+        "\\static \\data E (n : Nat) | E (zero) => e\n" +
+        "\\static \\data D (n : Nat) (E n) | D (zero) (e) => d\n" +
+        "\\static \\function test => d");
   }
 
   @Test
   public void patternExpandArgsTest() {
     typeCheckClass(
-        "\\data D (n : Nat) | d (n = n)\n" +
-            "\\data C (D 1) | C (d p) => c\n" +
-            "\\function test : C (d (path (\\lam _ => 1))) => c");
+        "\\static \\data D (n : Nat) | d (n = n)\n" +
+        "\\static \\data C (D 1) | C (d p) => c\n" +
+        "\\static \\function test : C (d (path (\\lam _ => 1))) => c");
   }
 
   @Test
   public void patternNormalizeTest() {
     typeCheckClass(
-        "\\data E (x : 0 = 0) | e\n" +
-            "\\data C (n : Nat) | C (suc n) => c (n = n)\n" +
-            "\\data D ((\\lam (x : \\Type0) => x) (C 1)) | D (c p) => x (E p)\n" +
-            "\\function test => x (E (path (\\lam _ => 0))).e");
+        "\\static \\data E (x : 0 = 0) | e\n" +
+        "\\static \\data C (n : Nat) | C (suc n) => c (n = n)\n" +
+        "\\static \\data D ((\\lam (x : \\Type0) => x) (C 1)) | D (c p) => x (E p)\n" +
+        "\\static \\function test => x (E (path (\\lam _ => 0))).e");
   }
 
   @Test
   public void patternTypeCheck() {
     typeCheckClass(
         "\\static \\function f (x : Nat -> Nat) => x 0\n" +
-            "\\static \\data Test (A : \\Set0)\n" +
-            "| Test (suc n) => foo (f n)", 1);
+        "\\static \\data Test (A : \\Set0)\n" +
+        "  | Test (suc n) => foo (f n)", 1);
   }
 }

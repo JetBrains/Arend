@@ -58,6 +58,50 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
   }
 
+  private ClassDefinition getNamespaceClass(Namespace namespace) {
+    Definition parent = namespace.getParent().getMember(namespace.getName().name).definition;
+    return parent instanceof ClassDefinition ? (ClassDefinition) parent : null;
+  }
+
+  private ClassDefinition getParentClass(Abstract.Definition definition, Namespace namespace, Abstract.DefineStatement dynamicStatement) {
+    if (definition instanceof Abstract.ClassDefinition) {
+      ClassDefinition classDefinition = getNamespaceClass(namespace);
+      if (classDefinition == null) {
+        myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), "Internal error: definition '" + definition.getName() + "' is not a class", definition, new ArrayList<String>()));
+      }
+      return classDefinition;
+    }
+
+    Abstract.DefineStatement statement = definition == null ? null : definition.getParentStatement();
+    Abstract.Definition parentDefinition = statement == null ? null : statement.getParentDefinition();
+    Namespace parentNamespace = namespace.getParent();
+    if (statement == null || parentDefinition == null || parentNamespace == null) {
+      myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), "Non-static definitions are allowed only inside a class definition", dynamicStatement, new ArrayList<String>()));
+      return null;
+    }
+
+    return getParentClass(parentDefinition, parentNamespace, dynamicStatement);
+  }
+
+  private ClassDefinition getThisClass(Abstract.Definition definition, Namespace namespace) {
+    Abstract.DefineStatement statement = definition.getParentStatement();
+    if (statement == null) {
+      return null;
+    }
+
+    if (!statement.isStatic()) {
+      return getParentClass(statement.getParentDefinition(), namespace, statement);
+    }
+
+    Abstract.Definition parentDefinition = statement.getParentDefinition();
+    Namespace parentNamespace = namespace.getParent();
+    if (parentDefinition == null || parentNamespace == null) {
+      return null;
+    }
+
+    return getThisClass(parentDefinition, parentNamespace);
+  }
+
   @Override
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
     Name name = def.getName();
@@ -76,6 +120,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<Argument> typedArguments = new ArrayList<>(arguments.size());
     List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
+    ClassDefinition thisClass = getThisClass(def, myNamespace);
+    if (thisClass != null) {
+      context.add(new TypedBinding("\\this", ClassCall(thisClass)));
+      visitor.setThisClass(thisClass);
+    }
 
     /*
     List<TypeArgument> splitArgs = null;
@@ -283,9 +332,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public ClassField visitAbstract(Abstract.AbstractDefinition def, Void params) {
-    Definition parent = myNamespace.getParent().getMember(myNamespace.getName().name).definition;
-    assert parent instanceof ClassDefinition;
-    ClassDefinition thisClass = (ClassDefinition) parent;
+    ClassDefinition thisClass = getNamespaceClass(myNamespace);
+    if (thisClass == null) {
+      myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), "Abstract definitions are allowed only inside a class definition", def, new ArrayList<String>()));
+      return null;
+    }
 
     Name name = def.getName();
     List<? extends Abstract.Argument> arguments = def.getArguments();
@@ -294,6 +345,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("\\this", ClassCall(thisClass)));
     CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
+    visitor.setThisClass(thisClass);
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
 
     int index = 0;
@@ -368,6 +420,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
+    ClassDefinition thisClass = getThisClass(def, myNamespace);
+    if (thisClass != null) {
+      context.add(new TypedBinding("\\this", ClassCall(thisClass)));
+      visitor.setThisClass(thisClass);
+    }
+
     for (Abstract.TypeArgument parameter : parameters) {
       CheckTypeVisitor.OKResult result = visitor.checkType(parameter.getType(), Universe());
       if (result == null) return null;

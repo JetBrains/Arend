@@ -137,7 +137,7 @@ public class TypeCheckingDefCall {
     NamespaceMember member = resolvedName.toNamespaceMember();
     if (member == null || member.definition == null) {
       assert false;
-      TypeCheckingError error = new TypeCheckingError("Definition '" + name + "' is not available yet", expr, getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + name + "' is not available yet", expr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;

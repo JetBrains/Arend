@@ -80,7 +80,7 @@ public class GetTypeTest {
   @Test
   public void patternConstructor1() {
     ClassDefinition def = typeCheckClass(
-        "\\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
+        "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     assertEquals(Apps(DefCall(namespace.getMember("C").definition), Zero()), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c1").getType());
     assertEquals(Pi("n", Nat(), Apps(DefCall(namespace.getMember("C").definition), Suc(Index(1)))), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
@@ -89,8 +89,8 @@ public class GetTypeTest {
   @Test
   public void patternConstructor2() {
     ClassDefinition def = typeCheckClass(
-        "\\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
-        "\\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
+        "\\static \\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
+        "\\static \\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     DataDefinition vec = (DataDefinition) namespace.getMember("Vec").definition;
     DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
@@ -102,8 +102,8 @@ public class GetTypeTest {
   @Test
   public void patternConstructor3() {
     ClassDefinition def = typeCheckClass(
-        "\\data D | d \\Type0\n" +
-        "\\data C D | C (d A) => c A");
+        "\\static \\data D | d \\Type0\n" +
+        "\\static \\data C D | C (d A) => c A");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
     DataDefinition c = (DataDefinition) namespace.getMember("C").definition;
@@ -113,8 +113,8 @@ public class GetTypeTest {
   @Test
   public void patternConstructorDep() {
     ClassDefinition def = typeCheckClass(
-        "\\data Box (n : Nat) | box\n" +
-        "\\data D (n : Nat) (Box n) | D (zero) _ => d");
+        "\\static \\data Box (n : Nat) | box\n" +
+        "\\static \\data D (n : Nat) (Box n) | D (zero) _ => d");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
     assertEquals(Apps(DataCall(d), Zero(), Index(0)), d.getConstructor("d").getType());
