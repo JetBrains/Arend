@@ -37,7 +37,7 @@ public class ResolvedName {
   }
 
   public Namespace toNamespace() {
-    return namespace.findChild(name.name);
+    return namespace == null ? RootModule.ROOT : namespace.findChild(name.name);
   }
 
   @Override

@@ -151,13 +151,13 @@ public class ConsoleMain {
       return;
     }
 
-    Namespace namespace = RootModule.ROOT;
+    ResolvedName name = RootModule.ROOT.getResolvedName();
     for (String moduleName : moduleNames) {
-      ModuleLoadingResult result = moduleLoader.load(new ResolvedName(namespace, moduleName), false);
-      if (result == null || result.namespaceMember == null) {
+      name = new ResolvedName(name.toNamespace(), moduleName);
+      moduleLoader.load(name, false);
+      if (name.toNamespaceMember() == null) {
         break;
       }
-      namespace = result.namespaceMember.namespace;
     }
 
     for (GeneralError error : errorReporter.getErrorList()) {
