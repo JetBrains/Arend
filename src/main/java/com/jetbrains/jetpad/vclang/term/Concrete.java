@@ -1052,12 +1052,14 @@ public final class Concrete {
 
   public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
     private final Kind myKind;
+    private ResolvedName myResolvedPath;
     private final List<Identifier> myPath;
     private final List<Identifier> myNames;
 
     public NamespaceCommandStatement(Position position, Kind kind, List<Identifier> path, List<Identifier> names) {
       super(position);
       myKind = kind;
+      myResolvedPath = null;
       myPath = path;
       myNames = names;
     }
@@ -1070,6 +1072,16 @@ public final class Concrete {
     @Override
     public List<Identifier> getPath() {
       return myPath;
+    }
+
+    @Override
+    public void setResolvedPath(ResolvedName path) {
+      myResolvedPath = path;
+    }
+
+    @Override
+    public ResolvedName getResolvedPath() {
+      return myResolvedPath;
     }
 
     @Override

@@ -318,4 +318,17 @@ public class ElimTest {
         "    | zero, suc _, x <= \\elim x ;\n" +
         "    | suc _, suc _, EqSuc q <= suc zero", 3);
   }
+
+  @Test
+  public void testElim11() {
+    typeCheckClass("\\static \\data \\infix 4\n" +
+                   "(=<) (n m : Nat)\n" +
+                   "  | (=<) zero m => le_z\n" +
+                   "  | (=<) (suc n) (suc m) => le_ss (n =< m)\n" +
+
+                   "\\static \\function\n" +
+                   "leq-trans {n m k : Nat} (nm : n =< m) (mk : m =< k) : n =< k <= \\elim n, nm, m\n" +
+                   "  | zero, le_z, _ => {?}\n" +
+                   "  | suc n', le_ss nm', suc m' => {?}", 1);
+  }
 }

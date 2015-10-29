@@ -1207,6 +1207,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return null;
       }
 
+      if (!elimExprs.isEmpty() && ((IndexExpression) exprOKResult.expression).getIndex() >= elimExprs.get(elimExprs.size() - 1).getIndex()) {
+        error = new TypeCheckingError("Variable elimination must be in the order of variable introduction", var, getNames(myLocalContext));
+        myErrorReporter.report(error);
+        var.setWellTyped(myLocalContext, Error(null, error));
+        return null;
+      }
+
       Expression ftype = exprOKResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(new ArrayList<Expression>());
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var, getNames(myLocalContext));
