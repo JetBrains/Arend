@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -73,7 +73,7 @@ public class ModuleLoaderTest {
   public void nonStaticTestError() {
     ResolvedName moduleA = new ResolvedName(RootModule.ROOT, "A");
     ResolvedName moduleB = new ResolvedName(RootModule.ROOT, "B");
-    sourceSupplier.add(moduleA, "\\function f : Nat \\function h => f");
+    sourceSupplier.add(moduleA, "\\abstract f : Nat \\function h => f");
     sourceSupplier.add(moduleB, "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
@@ -84,7 +84,7 @@ public class ModuleLoaderTest {
   @Test
   public void staticAbstractTestError() {
     ResolvedName module = new ResolvedName(RootModule.ROOT, "A");
-    sourceSupplier.add(module, "\\static \\function f : Nat");
+    sourceSupplier.add(module, "\\static \\abstract f : Nat");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     TypecheckingOrdering.typecheck(moduleLoader.load(module, false).namespaceMember.getResolvedName(), errorReporter);
@@ -94,7 +94,7 @@ public class ModuleLoaderTest {
   @Test
   public void moduleTest() {
     ResolvedName module = new ResolvedName(RootModule.ROOT, "A");
-    sourceSupplier.add(module, "\\function f : Nat \\static \\class C { \\function g : Nat \\function h => g }");
+    sourceSupplier.add(module, "\\abstract f : Nat \\static \\class C { \\abstract g : Nat \\function h => g }");
     moduleLoader.setSourceSupplier(sourceSupplier);
 
     ModuleLoadingResult result = moduleLoader.load(module, false);
@@ -111,7 +111,7 @@ public class ModuleLoaderTest {
   public void nonStaticTest() {
     ResolvedName moduleA = new ResolvedName(RootModule.ROOT, "A");
     ResolvedName moduleB = new ResolvedName(RootModule.ROOT, "B");
-    sourceSupplier.add(moduleA, "\\function f : Nat \\static \\class B { \\function g : Nat \\function h => g }");
+    sourceSupplier.add(moduleA, "\\abstract f : Nat \\static \\class B { \\abstract g : Nat \\function h => g }");
     sourceSupplier.add(moduleB, "\\static \\function f (p : A.B) => p.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
@@ -123,8 +123,8 @@ public class ModuleLoaderTest {
   public void nonStaticTestError2() {
     ResolvedName moduleA = new ResolvedName(RootModule.ROOT, "A");
     ResolvedName moduleB = new ResolvedName(RootModule.ROOT, "B");
-    sourceSupplier.add(moduleA, "\\function f : Nat \\static \\class B { \\function g : Nat \\function h => g }");
-    sourceSupplier.add(moduleA, "\\function f : Nat \\class B { \\function g : Nat \\static \\function (+) (f g : Nat) => f \\function h => f + g }");
+    sourceSupplier.add(moduleA, "\\abstract f : Nat \\static \\class B { \\abstract g : Nat \\function h => g }");
+    sourceSupplier.add(moduleA, "\\abstract f : Nat \\class B { \\abstract g : Nat \\static \\function (+) (f g : Nat) => f \\function h => f + g }");
     sourceSupplier.add(moduleB, "\\static \\function f (p : A.B) => p.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
@@ -136,7 +136,7 @@ public class ModuleLoaderTest {
   public void abstractNonStaticTestError() {
     ResolvedName moduleA = new ResolvedName(RootModule.ROOT, "A");
     ResolvedName moduleB = new ResolvedName(RootModule.ROOT, "B");
-    sourceSupplier.add(moduleA, "\\function f : Nat");
+    sourceSupplier.add(moduleA, "\\abstract f : Nat");
     sourceSupplier.add(moduleB, "\\function g => A.f");
 
     moduleLoader.setSourceSupplier(sourceSupplier);

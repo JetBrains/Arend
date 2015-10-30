@@ -47,7 +47,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
       myErrorReporter.report(new TypeCheckingError("Static definitions are not allowed in this context", stat, myContext));
       return null;
     } else
-    if (stat.isStatic() && stat.getDefinition() instanceof Abstract.FunctionDefinition && ((Abstract.FunctionDefinition) stat.getDefinition()).getArrow() == null) {
+    if (stat.isStatic() && stat.getDefinition() instanceof Abstract.AbstractDefinition) {
       myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat, myContext));
       return null;
     } else {

@@ -799,11 +799,11 @@ public final class Concrete {
     }
   }
 
-  public static class AbstractDefinition extends Definition implements Abstract.AbstractDefinition {
+  public static abstract class SignatureDefinition extends Definition {
     private final List<Argument> myArguments;
     private final Expression myResultType;
 
-    public AbstractDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType) {
+    public SignatureDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType) {
       super(position, name, precedence);
       myArguments = arguments;
       myResultType = resultType;
@@ -816,6 +816,12 @@ public final class Concrete {
     public Expression getResultType() {
       return myResultType;
     }
+  }
+
+  public static class AbstractDefinition extends SignatureDefinition implements Abstract.AbstractDefinition {
+    public AbstractDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType) {
+      super(position, name, precedence, arguments, resultType);
+    }
 
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
@@ -823,7 +829,7 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionDefinition extends AbstractDefinition implements Abstract.FunctionDefinition {
+  public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
     private final Abstract.Definition.Arrow myArrow;
     private final boolean myOverridden;
     private final Name myOriginalName;
