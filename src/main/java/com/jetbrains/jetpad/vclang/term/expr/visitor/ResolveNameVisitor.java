@@ -70,8 +70,6 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
           NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name.name, false);
           if (member != null) {
             expr.setResolvedName(member.getResolvedName());
-          } else {
-            myErrorReporter.report(new NotInScopeError(expr, name));
           }
         }
       }

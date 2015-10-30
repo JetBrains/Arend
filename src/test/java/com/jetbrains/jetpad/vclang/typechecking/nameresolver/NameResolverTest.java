@@ -26,16 +26,6 @@ public class NameResolverTest {
   }
 
   @Test
-  public void nameResolverLamOpenError() {
-    resolveNamesExpr("\\lam x => (\\Pi (y : Nat) -> (\\lam y => y)) y", 1);
-  }
-
-  @Test
-  public void nameResolverPiOpenError() {
-    resolveNamesExpr("\\Pi (a b : Nat a) -> Nat a b", 1);
-  }
-
-  @Test
   public void parserInfix() {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
@@ -83,23 +73,6 @@ public class NameResolverTest {
   }
 
   @Test
-  public void whereError() {
-    resolveNamesClass("test",
-        "\\static \\function f (x : Nat) => x \\where\n" +
-            "\\static \\function b => x", 1);
-  }
-
-  @Test
-  public void whereClosedError() {
-    resolveNamesClass("test",
-        "\\static \\function f => x \\where {\n" +
-            "\\static \\class A { \\static \\function x => 0 }\n" +
-            "\\open A\n" +
-            "\\close A\n" +
-        "}", 1);
-  }
-
-  @Test
   public void whereOpenFunction() {
     resolveNamesClass("test",
         "\\static \\function f => x \\where {\n" +
@@ -107,14 +80,6 @@ public class NameResolverTest {
               "\\static \\function x => 0\n" +
             "\\open b(x)\n" +
         "}");
-  }
-
-  @Test
-  public void whereNoOpenFunctionError() {
-    resolveNamesClass("test",
-        "\\static \\function f => x \\where\n" +
-            "\\static \\function b => 0 \\where\n" +
-              "\\static \\function x => 0", 1);
   }
 
   @Test
@@ -202,11 +167,6 @@ public class NameResolverTest {
   @Test
   public void openTest() {
     resolveNamesClass("test", "\\static \\class A { \\static \\function x => 0 } \\open A \\static \\function y => x");
-  }
-
-  @Test
-  public void closeTestError() {
-    resolveNamesClass("test", "\\static \\class A { \\static \\function x => 0 } \\open A \\static \\function y => x \\close A(x) \\function z => x", 1);
   }
 
   @Test
@@ -320,21 +280,6 @@ public class NameResolverTest {
   }
 
   @Test
-  public void export2TestError() {
-    resolveNamesClass("test", "\\static \\class A { \\static \\class B { \\static \\function x => 0 } \\export B } \\static \\function y => x", 1);
-  }
-
-  @Test
-  public void openAbstractTestError() {
-    resolveNamesClass("test", "\\static \\class A { \\abstract x : Nat } \\open A \\function y => x", 1);
-  }
-
-  @Test
-  public void openAbstractTestError2() {
-    resolveNamesClass("test", "\\static \\class A { \\abstract x : Nat \\function y => x } \\open A \\function z => y", 1);
-  }
-
-  @Test
   public void classExtensionWhereTestError() {
     resolveNamesClass("test",
         "\\static \\function f => 0 \\where {\n" +
@@ -360,10 +305,5 @@ public class NameResolverTest {
   @Test
   public void dataConstructor() {
     resolveNamesClass("test", "\\data D | d \\function f => D.d");
-  }
-
-  @Test
-  public void notInScopeTest() {
-    resolveNamesClass("test", "\\static \\class A { \\function x => 0 } \\static \\function y : Nat => x", 1);
   }
 }
