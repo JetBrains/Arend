@@ -34,10 +34,6 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     return myPrecedence;
   }
 
-  public void setPrecedence(Precedence precedence) {
-    myPrecedence = precedence;
-  }
-
   public Universe getUniverse() {
     return myUniverse;
   }

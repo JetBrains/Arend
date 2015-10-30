@@ -3,9 +3,13 @@ package com.jetbrains.jetpad.vclang.module.output;
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 
 import java.io.IOException;
-import java.util.List;
 
 public class DummyOutput implements Output {
+  @Override
+  public Header getHeader() throws IOException {
+    return null;
+  }
+
   @Override
   public boolean canRead() {
     return false;
@@ -22,8 +26,8 @@ public class DummyOutput implements Output {
   }
 
   @Override
-  public List<List<String>> getDependencies() {
-    return null;
+  public void readStubs() throws IOException {
+
   }
 
   @Override

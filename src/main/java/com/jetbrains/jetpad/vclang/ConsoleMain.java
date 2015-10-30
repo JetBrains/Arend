@@ -127,8 +127,8 @@ public class ConsoleMain {
       System.err.println(error);
     }
 
-    for (ResolvedName rn : loadedModules) {
-      if (rn.toDefinition() != null)
+   for (ResolvedName rn : loadedModules) {
+      if (rn.toDefinition() != null && rn.toAbstractDefinition() != null)
         moduleLoader.save(rn);
     }
   }

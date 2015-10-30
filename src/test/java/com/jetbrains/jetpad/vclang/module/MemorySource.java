@@ -7,11 +7,14 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import java.io.ByteArrayInputStream;
 
 public class MemorySource extends ParseSource {
+  private long myLastModified;
+
   public MemorySource(ModuleLoader moduleLoader, ErrorReporter errorReporter, ResolvedName module, String source) {
     super(moduleLoader, errorReporter, module);
     if (source != null) {
       setStream(new ByteArrayInputStream(source.getBytes()));
     }
+    myLastModified = System.nanoTime();
   }
 
   @Override
@@ -21,6 +24,15 @@ public class MemorySource extends ParseSource {
 
   @Override
   public long lastModified() {
-    return 0;
+    return myLastModified;
+  }
+
+  public void touch() {
+    myLastModified = System.nanoTime();
+  }
+
+  @Override
+  public boolean isContainer() {
+    return false;
   }
 }

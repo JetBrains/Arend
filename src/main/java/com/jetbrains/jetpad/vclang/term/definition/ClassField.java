@@ -10,22 +10,26 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class ClassField extends Definition {
   private ClassDefinition myThisClass;
-  private final Expression myType;
+  private Expression myBaseType;
 
   public ClassField(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass) {
     super(parentNamespace, name, precedence);
-    myType = type;
+    myBaseType = type;
     myThisClass = thisClass;
     hasErrors(false);
   }
 
   @Override
   public Expression getType() {
-    return Pi("\\this", ClassCall(myThisClass), myType);
+    return Pi("\\this", ClassCall(myThisClass), myBaseType);
   }
 
   public Expression getBaseType() {
-    return myType;
+    return myBaseType;
+  }
+
+  public void setBaseType(Expression baseType) {
+    myBaseType = baseType;
   }
 
   public ClassDefinition getThisClass() {

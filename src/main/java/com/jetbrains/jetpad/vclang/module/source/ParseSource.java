@@ -81,6 +81,11 @@ public abstract class ParseSource implements Source {
     NameResolver nameResolver = new LoadingNameResolver(myModuleLoader, new DeepNamespaceNameResolver(myModule.parent));
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.name.name, statements);
+    for (Concrete.Statement statement : statements) {
+      if (statement instanceof Concrete.DefineStatement) {
+        ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
+      }
+    }
     new DefinitionResolveNameVisitor(errorReporter, myModule.parent, nameResolver).visitClass(classDefinition, null);
     return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
   }

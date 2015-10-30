@@ -16,6 +16,11 @@ public class DummySource implements Source {
   }
 
   @Override
+  public boolean isContainer() {
+    return false;
+  }
+
+  @Override
   public ModuleLoadingResult load() throws IOException {
     return null;
   }

@@ -38,6 +38,11 @@ public class FileSource extends ParseSource {
   }
 
   @Override
+  public boolean isContainer() {
+    return myFile == null || !myFile.exists();
+  }
+
+  @Override
   public ModuleLoadingResult load() throws IOException {
     Namespace namespace = null;
 

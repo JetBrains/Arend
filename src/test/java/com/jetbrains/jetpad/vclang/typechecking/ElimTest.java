@@ -133,6 +133,12 @@ public class ElimTest {
   }
 
   @Test
+  public void elimTest() {
+    typeCheckClass(
+        "\\static \\function test (x : Nat) : Nat => \\case x | zero a => 0 | sucs n => 1", 2);
+  }
+
+  @Test
   public void elimUnknownIndex2() {
     typeCheckClass(
         "\\static \\data D (x : Nat) | D zero => d0 | D (suc _) => d1\n" +

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
@@ -25,12 +26,7 @@ public class LoadingNameResolver implements NameResolver {
 
   @Override
   public NamespaceMember getMember(Namespace parent, String name) {
-    NamespaceMember member = parent.getMember(name);
-    if (member == null) {
-      return null;
-    }
-
-    ModuleLoadingResult result = myModuleLoader.load(member.getResolvedName(), true);
-    return result != null && result.namespaceMember != null ? result.namespaceMember : member;
+    ModuleLoadingResult result = myModuleLoader.load(new ResolvedName(parent, new Name(name)), false);
+    return result != null && result.namespaceMember != null ? result.namespaceMember : parent.getMember(name);
   }
 }

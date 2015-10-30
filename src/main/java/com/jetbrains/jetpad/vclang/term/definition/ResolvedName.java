@@ -41,7 +41,7 @@ public class ResolvedName {
   }
 
   public Namespace toNamespace() {
-    return parent.findChild(name.name);
+    return parent == null ? RootModule.ROOT : parent.findChild(name.name);
   }
 
   @Override

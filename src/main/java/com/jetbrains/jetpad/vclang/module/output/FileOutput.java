@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 public class FileOutput implements Output {
   private final File myFile;
@@ -18,6 +17,11 @@ public class FileOutput implements Output {
     myFile = file;
     myModule = module;
     myModuleDeserialization = moduleDeserialization;
+  }
+
+  @Override
+  public Header getHeader() throws IOException {
+    return ModuleDeserialization.readHeaderFromFile(myFile);
   }
 
   @Override
@@ -36,8 +40,8 @@ public class FileOutput implements Output {
   }
 
   @Override
-  public List<List<String>> getDependencies() {
-    return null;
+  public void readStubs() throws IOException {
+    ModuleDeserialization.readStubsFromFile(myFile, myModule);
   }
 
   @Override

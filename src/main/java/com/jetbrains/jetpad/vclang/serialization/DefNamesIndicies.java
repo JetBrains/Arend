@@ -1,25 +1,21 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DefNamesIndicies {
   private static class Entry {
     ResolvedName defName;
-    int index;
     boolean isNew;
 
-    public Entry(ResolvedName defName, int index, boolean isNew) {
+    public Entry(ResolvedName defName, boolean isNew) {
       this.defName = defName;
-      this.index = index;
       this.isNew = isNew;
     }
   }
@@ -35,7 +31,7 @@ public class DefNamesIndicies {
 
     Integer index = myDefinitions.get(defName);
     if (index == null) {
-      myDefinitionsList.add(new Entry(defName, myCounter, isNew));
+      myDefinitionsList.add(new Entry(defName, isNew));
       myDefinitions.put(defName, myCounter++);
       return myCounter - 1;
     } else {
@@ -45,26 +41,50 @@ public class DefNamesIndicies {
     }
   }
 
-  public void serialize(DataOutputStream stream) throws IOException {
+  public void serialize(DataOutputStream stream, ResolvedName module) throws IOException {
     stream.writeInt(myDefinitionsList.size());
     for (Entry entry : myDefinitionsList) {
-      stream.writeInt(entry.index);
-      ModuleSerialization.serializeResolvedName(entry.defName, stream);
       stream.writeBoolean(entry.isNew);
       if (entry.isNew) {
-        Definition definition = entry.defName.toDefinition();
-        stream.writeBoolean(definition.getName().fixity == Abstract.Definition.Fixity.PREFIX);
-        stream.writeUTF(definition.getName().name);
-        stream.write(ModuleSerialization.getDefinitionCode(definition));
+        ModuleSerialization.serializeRelativeResolvedName(stream, entry.defName, module);
+        ModuleSerialization.writeDefinition(stream, entry.defName.toDefinition());
+      } else {
+        ModuleSerialization.serializeResolvedName(stream, entry.defName);
       }
     }
   }
 
-  public void serializeHeader(DataOutputStream stream) throws IOException {
-    stream.writeInt(myDefinitionsList.size());
+  public void serializeHeader(DataOutputStream stream, ResolvedName module) throws IOException {
+    Set<String> provided = new HashSet<>();
+    Set<ResolvedName> dependencies = new HashSet<>();
+
     for (Entry entry : myDefinitionsList) {
-      stream.writeBoolean(entry.isNew);
-      ModuleSerialization.serializeResolvedName(entry.defName, stream);
+      if (entry.isNew) {
+        for (ResolvedName name = entry.defName; !name.equals(module); name = name.parent.getResolvedName()) {
+          if (name.parent.getResolvedName().equals(module)) {
+            provided.add(name.name.name);
+          }
+        }
+      } else {
+        boolean prelude = false;
+        for (ResolvedName rn = entry.defName; rn.parent != null; rn = rn.parent.getResolvedName()) {
+          if (rn.equals(Prelude.PRELUDE.getResolvedName())) {
+            prelude = true;
+            break;
+          }
+        }
+        if (!prelude)
+          dependencies.add(entry.defName);
+      }
+    }
+
+    stream.writeInt(provided.size());
+    for (String str : provided) {
+      stream.writeUTF(str);
+    }
+    stream.writeInt(dependencies.size());
+    for (ResolvedName dependency : dependencies) {
+      ModuleSerialization.serializeResolvedName(stream, dependency);
     }
   }
 }
