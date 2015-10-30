@@ -318,7 +318,6 @@ public final class Concrete {
 
     @Override
     public void setResolvedName(ResolvedName name) {
-      myExpression = null;
       myResolvedName = name;
     }
 

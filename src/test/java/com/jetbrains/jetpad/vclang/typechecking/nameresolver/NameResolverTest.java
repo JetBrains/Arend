@@ -361,4 +361,9 @@ public class NameResolverTest {
   public void dataConstructor() {
     resolveNamesClass("test", "\\data D | d \\function f => D.d");
   }
+
+  @Test
+  public void notInScopeTest() {
+    resolveNamesClass("test", "\\static \\class A { \\function x => 0 } \\static \\function y : Nat => x", 1);
+  }
 }

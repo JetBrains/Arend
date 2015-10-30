@@ -47,7 +47,6 @@ public class TypeCheckingDefCall {
       return result.result;
     }
     if (result.member == null) {
-      assert !(result.baseResult instanceof CheckTypeVisitor.OKResult);
       return result.baseResult;
     }
 
@@ -100,8 +99,9 @@ public class TypeCheckingDefCall {
       ++index;
     }
 
-    NotInScopeError error = new NotInScopeError(expr, name);
+    TypeCheckingError error = new NotInScopeError(expr, name);
     expr.setWellTyped(myLocalContext, Error(null, error));
+    myErrorReporter.report(error);
     return null;
   }
 
@@ -125,22 +125,23 @@ public class TypeCheckingDefCall {
     if (resolvedName == null) {
       CheckTypeVisitor.OKResult result1 = getLocalVar(name, expr);
       if (result1 == null) {
-        TypeCheckingError error = new NotInScopeError(expr, name);
-        expr.setWellTyped(myLocalContext, Error(null, error));
-        myErrorReporter.report(error);
         return null;
       }
       result1.type = result1.type.liftIndex(0, ((IndexExpression) result1.expression).getIndex() + 1);
-      return new DefCallResult(null, null, null, result1);
+      return new DefCallResult(result1, null, null, null);
     }
 
     NamespaceMember member = resolvedName.toNamespaceMember();
-    if (member == null || member.definition == null) {
+    if (member == null) {
       assert false;
       TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + name + "' is not available yet", expr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
+    }
+
+    if (member.definition == null) {
+      return new DefCallResult(new CheckTypeVisitor.OKResult(null, null, null), null, member, null);
     }
 
     Definition definition = member.definition;
@@ -171,7 +172,7 @@ public class TypeCheckingDefCall {
         return null;
       }
     } else {
-      return new DefCallResult(null, null, member, null);
+      return new DefCallResult(new CheckTypeVisitor.OKResult(null, null, null), null, member, null);
     }
   }
 
@@ -181,51 +182,64 @@ public class TypeCheckingDefCall {
       return typeCheckName(expr);
     }
 
-    Expression errorExpr;
-    DefCallResult result = null;
+    DefCallResult result;
     if (left instanceof Abstract.DefCallExpression) {
       result = typeCheckNamespace(((Abstract.DefCallExpression) left));
       if (result == null || !(result.baseResult instanceof CheckTypeVisitor.OKResult)) {
         return result;
       }
-      errorExpr = result.baseResult.expression;
     } else {
       CheckTypeVisitor.Result result1 = left.accept(new CheckTypeVisitor(myLocalContext, myErrorReporter), null);
+      result = new DefCallResult(result1, null, null, null);
       if (!(result1 instanceof CheckTypeVisitor.OKResult)) {
-        return new DefCallResult(result1, null, null, null);
+        return result;
       }
-      CheckTypeVisitor.OKResult okResult = (CheckTypeVisitor.OKResult) result1;
-      errorExpr = okResult.expression;
+    }
+
+    if (result.member == null) {
+      CheckTypeVisitor.OKResult okResult = (CheckTypeVisitor.OKResult) result.baseResult;
       Expression type = okResult.type.normalize(NormalizeVisitor.Mode.WHNF);
 
       if (type instanceof ClassCallExpression) {
         ClassDefinition classDefinition = ((ClassCallExpression) type).getDefinition();
         NamespaceMember member = classDefinition.getParentNamespace().getMember(classDefinition.getName().name);
         assert member != null;
-        result = new DefCallResult(result1, classDefinition, member, null);
-      } else
-      if (type instanceof UniverseExpression) {
-        List<Expression> arguments = new ArrayList<>();
-        Expression function = okResult.expression.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
-        if (function instanceof DataCallExpression) {
-          CheckTypeVisitor.OKResult conResult = typeCheckConstructor(((DataCallExpression) function).getDefinition(), arguments, expr.getName(), expr);
-          if (conResult == null) {
-            return null;
+        result = new DefCallResult(okResult, classDefinition, member, null);
+      } else {
+        if (type instanceof UniverseExpression) {
+          List<Expression> arguments = new ArrayList<>();
+          Expression function = okResult.expression.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
+          if (function instanceof DataCallExpression) {
+            CheckTypeVisitor.OKResult conResult = typeCheckConstructor(((DataCallExpression) function).getDefinition(), arguments, expr.getName(), expr);
+            if (conResult == null) {
+              return null;
+            }
+            conResult.equations = okResult.equations;
+            return new DefCallResult(null, null, null, conResult);
           }
-          conResult.equations = okResult.equations;
-          return new DefCallResult(null, null, null, conResult);
         }
+
+        TypeCheckingError error = new TypeCheckingError("Expected an expression of a class type or a data type", expr, getNames(myLocalContext));
+        expr.setWellTyped(myLocalContext, Error(okResult.expression, error));
+        myErrorReporter.report(error);
+        return null;
       }
     }
 
-    if (result == null || result.member == null) {
-      TypeCheckingError error = new TypeCheckingError("Expected an expression of a class type or a data type", expr, getNames(myLocalContext));
-      expr.setWellTyped(myLocalContext, Error(errorExpr, error));
-      myErrorReporter.report(error);
-      return null;
+    ResolvedName resolvedName = expr.getResolvedName();
+    Name name;
+    if (resolvedName != null) {
+      if (resolvedName.namespace != result.member.namespace) {
+        TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, resolvedName.namespace.getResolvedName());
+        expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
+        myErrorReporter.report(error);
+        return null;
+      }
+      name = resolvedName.name;
+    } else {
+      name = expr.getName();
     }
 
-    Name name = expr.getName();
     NamespaceMember member = result.member.namespace.getMember(name.name);
     if (member == null || member.definition == null) {
       TypeCheckingError error = new NameDefinedError(false, expr, name, new ResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
