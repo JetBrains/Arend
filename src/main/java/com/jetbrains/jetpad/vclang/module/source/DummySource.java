@@ -21,7 +21,7 @@ public class DummySource implements Source {
   }
 
   @Override
-  public ModuleLoadingResult load() throws IOException {
+  public ModuleLoadingResult load(boolean childrenOnly) throws IOException {
     return null;
   }
 }

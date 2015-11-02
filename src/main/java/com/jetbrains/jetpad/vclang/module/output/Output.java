@@ -22,6 +22,8 @@ public interface Output {
   boolean canWrite();
   long lastModified();
 
+  boolean isContainer();
+
   void readStubs() throws IOException;
   ModuleLoadingResult read() throws IOException;
   void write() throws IOException;

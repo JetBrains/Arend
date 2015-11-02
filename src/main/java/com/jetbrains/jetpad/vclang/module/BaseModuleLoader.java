@@ -68,10 +68,14 @@ public abstract class BaseModuleLoader implements ModuleLoader {
   }
 
   private boolean deserializeStubs(ResolvedName name, List<ResolvedName> deserializedModules) {
-    if (name.toDefinition() != null || myDeserializingModules.get(name).source != null && myDeserializingModules.get(name).source.isContainer())
+    DeserializingModuleInfo info = myDeserializingModules.get(name);
+
+    if (name.toDefinition() != null || info.output.isContainer())
       return true;
     try {
-      myDeserializingModules.get(name).output.readStubs();
+      info.output.readStubs();
+      if (info.source.isAvailable())
+        info.source.load(true);
     } catch (IOException e) {
       for (ResolvedName rn : deserializedModules) {
         myDeserializingModules.remove(rn);
@@ -105,20 +109,27 @@ public abstract class BaseModuleLoader implements ModuleLoader {
     if (!output.canRead()) {
       output = myOutputSupplier.locateOutput(module);
     }
+    if (!output.canRead()) {
+      return null;
+    }
 
-    if (output == null || !output.canRead()) {
-      if (source.isContainer()) {
-        module.parent.getChild(module.name);
+    if (output.isContainer() && (source.isContainer() || !source.isAvailable())) {
+      try {
         myDeserializingModules.put(module, new DeserializingModuleInfo(
-            new Output.Header(Collections.<List<String>>emptyList(), Collections.<String>emptyList()), null, source));
+            new Output.Header(Collections.<List<String>>emptyList(), Collections.<String>emptyList()), output, source));
         myDeserializingModules.get(module).result = new ModuleLoadingResult(module.toNamespaceMember(), false, 0);
+        output.readStubs();
+        if (source.isAvailable())
+          source.load(true);
         return Collections.emptySet();
-      } else {
+      } catch (IOException e) {
+        loadingError(new GeneralError(module, GeneralError.ioError(e)));
+        module.parent.removeMember(module.toNamespaceMember());
         return null;
       }
     }
 
-    if (source.isAvailable() && source.lastModified() > output.lastModified())
+    if (source.isAvailable() && (source.isContainer() != output.isContainer() || source.lastModified() > output.lastModified()))
       return null;
 
     Output.Header header;
@@ -244,7 +255,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
       try {
         myLoadingModules.add(module);
 
-        ModuleLoadingResult result = source.load();
+        ModuleLoadingResult result = source.load(false);
         processLoaded(module, result);
 
         return result;

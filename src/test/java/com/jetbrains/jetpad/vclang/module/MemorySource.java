@@ -5,9 +5,12 @@ import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MemorySource extends ParseSource {
   private long myLastModified;
+  private final List<String> myChildren;
 
   public MemorySource(ModuleLoader moduleLoader, ErrorReporter errorReporter, ResolvedName module, String source) {
     super(moduleLoader, errorReporter, module);
@@ -15,6 +18,7 @@ public class MemorySource extends ParseSource {
       setStream(new ByteArrayInputStream(source.getBytes()));
     }
     myLastModified = System.nanoTime();
+    myChildren = new ArrayList<>();
   }
 
   @Override
@@ -34,5 +38,9 @@ public class MemorySource extends ParseSource {
   @Override
   public boolean isContainer() {
     return false;
+  }
+
+  void addChild(String name) {
+    myChildren.add(name);
   }
 }

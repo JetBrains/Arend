@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
@@ -43,33 +42,21 @@ public class FileSource extends ParseSource {
   }
 
   @Override
-  public ModuleLoadingResult load() throws IOException {
+  public ModuleLoadingResult load(boolean childrenOnly) throws IOException {
     Namespace namespace = null;
 
-    if (myDirectory != null) {
-      File[] files = myDirectory.listFiles();
-      if (files != null) {
-        ResolvedName resolvedName = getModule();
-        namespace = resolvedName.parent.getChild(resolvedName.name);
-
-        for (File file : files) {
-          if (file.isDirectory()) {
-            namespace.getChild(new Name(file.getName()));
-          } else if (file.isFile()) {
-            String name = FileOperations.getVcFileName(file);
-            if (name != null) {
-              namespace.getChild(new Name(name));
-            }
-          }
-        }
+    if (myDirectory != null && myDirectory.isDirectory()) {
+      namespace = getModule().parent.getChild(getModule().name);
+      for (String childName : FileOperations.getChildren(myDirectory, FileOperations.EXTENSION)) {
+        namespace.getChild(new Name(childName));
       }
     }
 
-    if (myFile != null && myFile.exists()) {
+    if (!childrenOnly && myFile != null && myFile.exists()) {
       setStream(new FileInputStream(myFile));
-      return super.load();
+      return super.load(false);
     } else {
-      return namespace != null ? new ModuleLoadingResult(new NamespaceMember(namespace, null, null), true, 0) : null;
+      return namespace != null ? new ModuleLoadingResult(getModule().toNamespaceMember(), true, 0) : null;
     }
   }
 }

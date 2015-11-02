@@ -26,6 +26,11 @@ public class DummyOutput implements Output {
   }
 
   @Override
+  public boolean isContainer() {
+    return false;
+  }
+
+  @Override
   public void readStubs() throws IOException {
 
   }

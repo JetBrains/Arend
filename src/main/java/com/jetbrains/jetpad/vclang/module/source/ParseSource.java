@@ -48,8 +48,7 @@ public abstract class ParseSource implements Source {
     myStream = stream;
   }
 
-  @Override
-  public ModuleLoadingResult load() throws IOException {
+  public ModuleLoadingResult load(boolean childrenOnly) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     final CompositeErrorReporter errorReporter = new CompositeErrorReporter();
     errorReporter.addErrorReporter(new LocalErrorReporter(myModule, myErrorReporter));
@@ -76,6 +75,10 @@ public abstract class ParseSource implements Source {
     VcgrammarParser.StatementsContext tree = parser.statements();
     if (tree == null || countingErrorReporter.getErrorsNumber() != 0) {
       return new ModuleLoadingResult(null, true, countingErrorReporter.getErrorsNumber());
+    }
+
+    if (childrenOnly) {
+      return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), null, null), false, 0);
     }
 
     NameResolver nameResolver = new LoadingNameResolver(myModuleLoader, new DeepNamespaceNameResolver(myModule.parent));

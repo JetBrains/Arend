@@ -10,6 +10,8 @@ public class MemoryOutputSupplier implements OutputSupplier {
 
   @Override
   public MemoryOutput getOutput(ResolvedName module) {
+    if (module.parent != null)
+      getOutput(module.parent.getResolvedName()).addChildren(module.name.name);
     if (!myOutputs.containsKey(module)) {
       myOutputs.put(module, new MemoryOutput(module));
     }
