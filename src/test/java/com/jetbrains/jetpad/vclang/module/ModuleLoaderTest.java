@@ -170,17 +170,34 @@ public class ModuleLoaderTest {
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
 
+  private NamespaceMember findMember(String... path) {
+    Namespace ns = RootModule.ROOT;
+    for (int i = 0; i < path.length - 1; i++) {
+      ns = ns.findChild(path[i]);
+    }
+    return ns.getMember(path[path.length - 1]);
+  }
+
+  private void assertLoaded(String... path) {
+    NamespaceMember member = findMember(path);
+    assertTrue(member.definition != null && member.abstractDefinition == null);
+  }
+
+  private void assertNotLoaded(String... path) {
+    NamespaceMember member = findMember(path);
+    assertFalse(member.definition != null && member.abstractDefinition == null);
+  }
+
   @Test
   public void testForTestCase() {
     setupSources();
     moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
     assertTrue(errorReporter.getErrorList().isEmpty());
-    assertTrue(RootModule.ROOT.findChild("B").getMember("C").abstractDefinition == null);
-    assertTrue(RootModule.ROOT.getMember("All").abstractDefinition == null);
-    assertTrue(RootModule.ROOT.getMember("A").abstractDefinition == null);
-    assertTrue(RootModule.ROOT.getMember("B").abstractDefinition == null);
-    assertTrue(RootModule.ROOT.findChild("B").findChild("C").getMember("D").abstractDefinition == null);
-    assertTrue(RootModule.ROOT.findChild("B").findChild("C").getMember("E").abstractDefinition == null);
+    assertLoaded("All");
+    assertLoaded("A");
+    assertLoaded("B");
+    assertLoaded("B", "C", "E");
+    assertLoaded("B", "C", "D");
    }
 
   @Test
@@ -190,12 +207,12 @@ public class ModuleLoaderTest {
     sourceSupplier.touch(moduleName("B"));
     moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
     assertTrue(errorReporter.getErrorList().isEmpty());
-    assertTrue(RootModule.ROOT.getMember("All").abstractDefinition != null);
-    assertTrue(RootModule.ROOT.getMember("A").abstractDefinition != null);
-    assertTrue(RootModule.ROOT.getMember("B").abstractDefinition != null);
-    assertTrue(RootModule.ROOT.findChild("B").findChild("C").getMember("D").abstractDefinition == null);
-    assertTrue(RootModule.ROOT.findChild("B").findChild("C").getMember("E").abstractDefinition != null);
-    assertTrue(RootModule.ROOT.findChild("B").findChild("C").getMember("F").abstractDefinition == null);
+    assertNotLoaded("All");
+    assertNotLoaded("A");
+    assertNotLoaded("B");
+    assertNotLoaded("B", "C", "E");
+    assertLoaded("B", "C", "D");
+    assertLoaded("B", "C", "F");
   }
 
   @Test
@@ -205,11 +222,11 @@ public class ModuleLoaderTest {
     sourceSupplier.touch(moduleName("B", "C", "D"));
     moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
     assertTrue(errorReporter.getErrorList().isEmpty());
-    assertTrue(RootModule.ROOT.getMember("All").abstractDefinition != null);
-    assertTrue(RootModule.ROOT.getMember("A").abstractDefinition == null);
-    assertTrue(RootModule.ROOT.getMember("B").abstractDefinition == null);
-    assertTrue(RootModule.ROOT.findChild("B").findChild("C").getMember("D").abstractDefinition != null);
-    assertTrue(RootModule.ROOT.findChild("B").findChild("C").getMember("E").abstractDefinition == null);
-    assertTrue(RootModule.ROOT.findChild("B").findChild("C").getMember("F").abstractDefinition == null);
+    assertNotLoaded("All");
+    assertLoaded("A");
+    assertLoaded("B");
+    assertNotLoaded("B", "C", "D");
+    assertLoaded("B", "C", "E");
+    assertLoaded("B", "C", "F");
   }
 }
