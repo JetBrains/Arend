@@ -8,66 +8,65 @@ import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.List;
 
 public class MemoryOutput implements Output {
   private final ResolvedName myModule;
-  private final List<String> myChildren;
-  private long myLastModified;
-  private byte[] data = null;
+  private final MemoryOutputSupplier.MemoryOutputEntry myEntry;
 
-  public MemoryOutput(ResolvedName module) {
+  public MemoryOutput(ResolvedName module, MemoryOutputSupplier.MemoryOutputEntry entry) {
     myModule = module;
-    myChildren = new ArrayList<>();
+    myEntry = entry;
   }
 
   @Override
   public Header getHeader() throws IOException {
-    return ModuleDeserialization.readHeaderFromStream(new DataInputStream(new ByteArrayInputStream(data)));
+    return ModuleDeserialization.readHeaderFromStream(new DataInputStream(new ByteArrayInputStream(myEntry.data)));
   }
 
   @Override
   public boolean canRead() {
-    return data == null;
+    return myEntry != null && (myEntry.data != null || myEntry.children != null);
   }
 
   @Override
   public boolean canWrite() {
-    return true;
+    return myEntry != null;
   }
 
   @Override
   public long lastModified() {
-    return myLastModified;
+    return myEntry.lastModified;
   }
 
   @Override
   public boolean isContainer() {
-    return data == null;
-  }
-
-  void addChildren(String children) {
-    myChildren.add(children);
+    return myEntry.data == null;
   }
 
   @Override
   public void readStubs() throws IOException {
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(data)), myModule);
-    for (String childName : myChildren) {
+    if (!isContainer())
+      ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(myEntry.data)), myModule);
+    else
+      myModule.parent.getChild(myModule.name);
+    for (String childName : myEntry.children) {
       myModule.toNamespace().getChild(new Name(childName));
     }
   }
 
   @Override
   public ModuleLoadingResult read() throws IOException {
-    return new ModuleDeserialization().readStream(new DataInputStream(new ByteArrayInputStream(data)), myModule);
+    return new ModuleDeserialization().readStream(new DataInputStream(new ByteArrayInputStream(myEntry.data)), myModule);
   }
 
   @Override
   public void write() throws IOException {
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    ModuleSerialization.writeStream(myModule, new DataOutputStream(new ByteArrayOutputStream()));
-    data = byteStream.toByteArray();
-    myLastModified = System.nanoTime();
+    ModuleSerialization.writeStream(myModule, new DataOutputStream(byteStream));
+    myEntry.data = byteStream.toByteArray();
+    if (myEntry.children == null) {
+      myEntry.children = new ArrayList<>();
+    }
+    myEntry.lastModified = System.nanoTime();
   }
 }

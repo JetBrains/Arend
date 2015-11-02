@@ -1,46 +1,47 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.module.source.ParseSource;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 
 public class MemorySource extends ParseSource {
-  private long myLastModified;
-  private final List<String> myChildren;
+  private final MemorySourceSupplier.MemorySourceEntry myEntry;
 
-  public MemorySource(ModuleLoader moduleLoader, ErrorReporter errorReporter, ResolvedName module, String source) {
+  public MemorySource(ModuleLoader moduleLoader, ErrorReporter errorReporter, ResolvedName module, MemorySourceSupplier.MemorySourceEntry entry) {
     super(moduleLoader, errorReporter, module);
-    if (source != null) {
-      setStream(new ByteArrayInputStream(source.getBytes()));
-    }
-    myLastModified = System.nanoTime();
-    myChildren = new ArrayList<>();
+    myEntry = entry;
+    setStream(entry.source == null ? null : new ByteArrayInputStream(entry.source.getBytes()));
   }
 
   @Override
   public boolean isAvailable() {
-    return getStream() != null;
+    return true;
   }
 
   @Override
   public long lastModified() {
-    return myLastModified;
-  }
-
-  public void touch() {
-    myLastModified = System.nanoTime();
+    return myEntry.lastModified;
   }
 
   @Override
   public boolean isContainer() {
-    return false;
+    return getStream() == null;
   }
 
-  void addChild(String name) {
-    myChildren.add(name);
+  @Override
+  public ModuleLoadingResult load(boolean childrenOnly) throws IOException {
+    Namespace namespace = getModule().parent.getChild(getModule().name);
+    for (String childName : myEntry.children) {
+      namespace.getChild(new Name(childName));
+    }
+    if (!childrenOnly && getStream() != null) {
+      return super.load(false);
+    } else {
+      return new ModuleLoadingResult(getModule().toNamespaceMember(), false, 0);
+    }
   }
 }

@@ -6,39 +6,52 @@ import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
+import static com.jetbrains.jetpad.vclang.term.definition.ResolvedName.toPath;
 
 public class MemorySourceSupplier implements SourceSupplier {
+  static class MemorySourceEntry {
+    final List<String> children;
+    final String source;
+    final long lastModified;
+
+    private MemorySourceEntry(String source, List<String> children) {
+      this.source = source;
+      this.children = children;
+      this.lastModified = System.nanoTime();
+    }
+  }
+
   private final ModuleLoader myModuleLoader;
   private final ErrorReporter myErrorReporter;
-  private final Map<ResolvedName, Source> myMap = new HashMap<>();
+  private final Map<List<String>, MemorySourceEntry> myMap = new HashMap<>();
 
   public MemorySourceSupplier(ModuleLoader moduleLoader, ErrorReporter errorReporter) {
     myModuleLoader = moduleLoader;
     myErrorReporter = errorReporter;
-    addContainer(RootModule.ROOT.getResolvedName());
+    add(moduleName(), null);
   }
 
-  public void add(ResolvedName module, String source) {
-    Source parentSoucre = getSource(module.parent.getResolvedName());
-    if (parentSoucre instanceof MemorySource) {
-      ((MemorySource) parentSoucre).addChild(module.name.name);
-    } else if (parentSoucre instanceof ContainerSource) {
-      ((ContainerSource) parentSoucre).addChild(module.name.name);
-    } else {
-      throw new IllegalStateException();
+  public void add(List<String> module, String source) {
+    MemorySourceEntry oldEntry = myMap.get(module);
+    myMap.put(module, new MemorySourceEntry(source, oldEntry == null ? new ArrayList<String>() : oldEntry.children));
+    if (!module.isEmpty()) {
+      myMap.get(module.subList(0, module.size() - 1)).children.add(module.get(module.size() - 1));
     }
+   }
 
-    myMap.put(module, new MemorySource(myModuleLoader, myErrorReporter, module, source));
+  public void touch(List<String> module) {
+    add(module, myMap.get(module).source);
   }
 
-  public void addContainer(ResolvedName module) {
-    myMap.put(module, new ContainerSource(module));
+  public static List<String> moduleName(String... module) {
+    return Arrays.asList(module);
   }
 
   @Override
   public Source getSource(ResolvedName module) {
-    return myMap.containsKey(module) ? myMap.get(module) : new DummySource();
+    MemorySourceEntry entry = myMap.get(toPath(module));
+    return entry != null ? new MemorySource(myModuleLoader, myErrorReporter, module, entry): new DummySource();
   }
 }

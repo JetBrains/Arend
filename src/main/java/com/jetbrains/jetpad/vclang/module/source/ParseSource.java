@@ -36,7 +36,7 @@ public abstract class ParseSource implements Source {
     myModule = module;
   }
 
-  ResolvedName getModule() {
+  protected ResolvedName getModule() {
     return myModule;
   }
 

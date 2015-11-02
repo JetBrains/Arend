@@ -68,12 +68,12 @@ public class ModuleSerialization {
     visitor.getDataStream().writeInt(size);
     for (NamespaceMember member : namespace.getMembers()) {
       if (member.definition != null) {
-        if (member.abstractDefinition.getParentStatement() != null && !(member.definition instanceof ClassField) && !(member.definition instanceof Constructor)) {
+        if (member.getResolvedName().parent != namespace) {
+          visitor.getDataStream().writeBoolean(false);
+          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(member.definition.getResolvedName(), false));
+        } else if (member.abstractDefinition.getParentStatement() != null && !(member.definition instanceof ClassField) && !(member.definition instanceof Constructor)) {
           visitor.getDataStream().writeBoolean(true);
           errors += serializeDefinition(visitor, member.definition);
-        } else if (member.getResolvedName().parent != namespace) {
-          visitor.getDataStream().writeBoolean(false);
-          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(member.definition.getResolvedName(), true));
         }
       }
     }

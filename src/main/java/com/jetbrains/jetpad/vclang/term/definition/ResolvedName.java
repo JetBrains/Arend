@@ -4,7 +4,10 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class ResolvedName {
   public Name name;
@@ -59,5 +62,14 @@ public class ResolvedName {
   @Override
   public int hashCode() {
     return Arrays.hashCode(new Object[]{parent, name == null ? null : name.name});
+  }
+
+  public static List<String> toPath(ResolvedName rn) {
+    List<String> path = new ArrayList<>();
+    for (; rn.parent != null; rn = rn.parent.getResolvedName()) {
+      path.add(rn.name.name);
+    }
+    Collections.reverse(path);
+    return path;
   }
 }
