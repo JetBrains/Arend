@@ -57,9 +57,9 @@ public class NameResolverTest {
   public void whereTest() {
     resolveNamesClass("test",
         "\\static \\function f (x : Nat) => B.b (a x) \\where {\n" +
-            "\\static \\function a (x : Nat) => x\n" +
-            "\\static \\data D | D1 | D2\n" +
-            "\\static \\class B { \\static \\data C | cr \\static \\function b (x : Nat) => D1 }\n" +
+        "  \\static \\function a (x : Nat) => x\n" +
+        "  \\static \\data D | D1 | D2\n" +
+        "  \\static \\class B { \\static \\data C | cr \\static \\function b (x : Nat) => D1 }\n" +
         "}");
   }
 
@@ -67,8 +67,8 @@ public class NameResolverTest {
   public void whereTestDefCmd() {
     resolveNamesClass("test",
         "\\static \\function f (x : Nat) => a \\where {\n" +
-            "\\static \\class A { \\static \\function a => 0 }\n" +
-            "\\open A\n" +
+        "  \\static \\class A { \\static \\function a => 0 }\n" +
+        "  \\open A\n" +
         "}");
   }
 
@@ -76,9 +76,9 @@ public class NameResolverTest {
   public void whereOpenFunction() {
     resolveNamesClass("test",
         "\\static \\function f => x \\where {\n" +
-            "\\static \\function b => 0 \\where\n" +
-              "\\static \\function x => 0\n" +
-            "\\open b(x)\n" +
+        "  \\static \\function b => 0 \\where\n" +
+        "    \\static \\function x => 0\n" +
+        "  \\open b(x)\n" +
         "}");
   }
 
@@ -86,9 +86,9 @@ public class NameResolverTest {
   public void whereNested() {
     resolveNamesClass("test",
         "\\static \\function f => x \\where {\n" +
-            "\\static \\data B | b\n" +
-            "\\static \\function x => a \\where\n" +
-              "\\static \\function a => b\n" +
+        "  \\static \\data B | b\n" +
+        "  \\static \\function x => a \\where\n" +
+        "    \\static \\function a => b\n" +
         "}");
   }
 
@@ -96,8 +96,8 @@ public class NameResolverTest {
   public void whereOuterScope() {
     resolveNamesClass("test",
         "\\static \\function f => 0 \\where {\n" +
-            "\\static \\function g => 0\n" +
-            "\\static \\function h => g\n" +
+        "  \\static \\function g => 0\n" +
+        "  \\static \\function h => g\n" +
         "}");
   }
 
@@ -105,14 +105,14 @@ public class NameResolverTest {
   public void whereInSignature() {
     resolveNamesClass("test",
         "\\static \\function f : D => d \\where\n" +
-            "\\static \\data D | d");
+        "  \\static \\data D | d");
   }
 
   @Test
   public void whereAccessOuter() {
     resolveNamesClass("test",
         "\\static \\function f => 0 \\where\n" +
-            "\\static \\function x => 0\n" +
+        "  \\static \\function x => 0\n" +
         "\\static \\function g => f.x");
   }
 
@@ -120,11 +120,11 @@ public class NameResolverTest {
   public void whereNonStaticOpen() {
     resolveNamesClass("test",
         "\\static \\function f => 0 \\where {\n" +
-            "\\static \\function x => 0\n" +
-            "\\static \\function y => x\n" +
+        "  \\static \\function x => 0\n" +
+        "  \\static \\function y => x\n" +
         "}\n" +
         "\\static \\function g => 0 \\where\n" +
-            "\\open f(y)");
+        "  \\open f(y)");
   }
 
   @Test
@@ -145,23 +145,23 @@ public class NameResolverTest {
 
   @Test
   public void numberOfFieldsTest2() {
-    resolveNamesClass("test", "\\abstract f : Nat \\static \\function g => 0 \\class B { \\function h => 0 \\static \\function k => 0 } \\static \\class C { \\function h => 0 \\static \\function k => 0 }");
+    resolveNamesClass("test",
+        "\\abstract f : Nat\n" +
+        "\\static \\function g => 0\n" +
+        "\\class B { \\function h => 0 \\static \\function k => 0 }\n" +
+        "\\static \\class C { \\function h => 0 \\static \\function k => 0 }");
     assertNotNull(RootModule.ROOT.getMember("test"));
-    Namespace staticNamespace = RootModule.ROOT.getMember("test").namespace;
+    Namespace namespace = RootModule.ROOT.getMember("test").namespace;
 
-    assertEquals(2, staticNamespace.getMembers().size());
-    assertNotNull(staticNamespace.getMember("g"));
-    assertTrue(staticNamespace.getMember("C").abstractDefinition instanceof Abstract.ClassDefinition);
-    assertEquals(1, staticNamespace.getMember("C").namespace.getMembers().size());
-    assertEquals(2, ((Abstract.ClassDefinition) staticNamespace.getMember("C").abstractDefinition).getStatements().size());
-    // TODO
-    /*
-    assertEquals(2, localNamespace.getMembers().size());
-    assertNotNull(localNamespace.getMember("f"));
-    assertTrue(localNamespace.getMember("B").abstractDefinition instanceof Abstract.ClassDefinition);
-    assertEquals(1, localNamespace.getMember("B").parent.getMembers().size());
-    assertEquals(2, ((Abstract.ClassDefinition) localNamespace.getMember("B").abstractDefinition).getStatements().size());
-    */
+    assertEquals(4, namespace.getMembers().size());
+    assertNotNull(namespace.getMember("f"));
+    assertNotNull(namespace.getMember("g"));
+    assertTrue(namespace.getMember("B").abstractDefinition instanceof Abstract.ClassDefinition);
+    assertEquals(2, namespace.getMember("B").namespace.getMembers().size());
+    assertEquals(2, ((Abstract.ClassDefinition) namespace.getMember("B").abstractDefinition).getStatements().size());
+    assertTrue(namespace.getMember("C").abstractDefinition instanceof Abstract.ClassDefinition);
+    assertEquals(2, namespace.getMember("C").namespace.getMembers().size());
+    assertEquals(2, ((Abstract.ClassDefinition) namespace.getMember("C").abstractDefinition).getStatements().size());
   }
 
   @Test
@@ -192,37 +192,30 @@ public class NameResolverTest {
   }
 
   @Test
-  public void nonStaticClassExportTestError() {
-    resolveNamesClass("test", "\\class A { } \\static \\class B { \\export A }", 1);
-  }
-
-  @Test
   public void exportTest2() {
     resolveNamesClass("test",
         "\\abstract (+) (x y : Nat) : Nat\n" +
         "\\class A {\n" +
-          "\\abstract x : Nat\n" +
-          "\\class B {\n" +
-            "\\abstract y : Nat\n" +
-            "\\class C {\n" +
-              "\\static \\function z => x + y\n" +
-              "\\static \\function w => x\n" +
-            "}\n" +
-            "\\export C\n" +
-          "}\n" +
-          "\\class D { \\export B }\n" +
-          "\\function f (b : B) : b.C.z = b.z => path (\\lam _ => b.w + b.y)\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\class B {\n" +
+        "    \\abstract y : Nat\n" +
+        "    \\class C {\n" +
+        "      \\static \\function z => x + y\n" +
+        "      \\static \\function w => x\n" +
+        "    }\n" +
+        "    \\export C\n" +
+        "  }\n" +
+        "  \\class D { \\export B }\n" +
+        "  \\function f (b : B) : b.C.z = b.z => path (\\lam _ => b.w + b.y)\n" +
         "}");
     assertNotNull(RootModule.ROOT.getMember("test"));
-    Namespace staticNamespace = RootModule.ROOT.getMember("test").namespace;
+    Namespace namespace = RootModule.ROOT.getMember("test").namespace;
 
-    // TODO
-    /*
-    assertTrue(staticNamespace.getMembers().toString(), staticNamespace.getMembers().isEmpty());
-    assertNotNull(localNamespace.getMember("A"));
-    Abstract.ClassDefinition classA = (Abstract.ClassDefinition) localNamespace.getMember("A").abstractDefinition;
+    assertEquals(namespace.getMembers().toString(), 2, namespace.getMembers().size());
+    assertNotNull(namespace.getMember("A"));
+    Abstract.ClassDefinition classA = (Abstract.ClassDefinition) namespace.getMember("A").abstractDefinition;
     assertEquals(classA.getStatements().toString(), 4, classA.getStatements().size());
-    assertTrue(localNamespace.getMember("A").parent.getMembers().toString(), localNamespace.getMember("A").parent.getMembers().isEmpty());
+    assertEquals(namespace.getMember("A").namespace.getMembers().toString(), 4, namespace.getMember("A").namespace.getMembers().size());
     Abstract.ClassDefinition classB = (Abstract.ClassDefinition) getField(classA, "B");
     assertNotNull(classB);
     assertEquals(classB.getStatements().toString(), 3, classB.getStatements().size());
@@ -232,7 +225,6 @@ public class NameResolverTest {
     Abstract.ClassDefinition classD = (Abstract.ClassDefinition) getField(classA, "D");
     assertNotNull(classD);
     assertEquals(classD.getStatements().toString(), 1, classD.getStatements().size());
-    */
   }
 
   private Abstract.Definition getField(Abstract.ClassDefinition classDefinition, String name) {
@@ -283,8 +275,8 @@ public class NameResolverTest {
   public void classExtensionWhereTestError() {
     resolveNamesClass("test",
         "\\static \\function f => 0 \\where {\n" +
-          "\\static \\class A {}\n" +
-          "\\static \\class A { \\function x => 0 }\n" +
+        "  \\static \\class A {}\n" +
+        "  \\static \\class A { \\function x => 0 }\n" +
         "}", 1);
   }
 
@@ -292,8 +284,8 @@ public class NameResolverTest {
   public void multipleDefsWhere() {
     resolveNamesClass("test",
         "\\static \\function f => 0 \\where {\n" +
-          "\\static \\function d => 0\n" +
-          "\\static \\function d => 1\n" +
+        "  \\static \\function d => 0\n" +
+        "  \\static \\function d => 1\n" +
         "}", 1);
   }
 

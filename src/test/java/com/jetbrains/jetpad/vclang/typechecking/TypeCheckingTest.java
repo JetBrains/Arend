@@ -63,6 +63,11 @@ public class TypeCheckingTest {
   }
 
   @Test
+  public void nonStaticClassExportTest() {
+    typeCheckClass("\\class A { \\static \\function x => 0 } \\static \\class B { \\export A } \\static \\function y => B.x");
+  }
+
+  @Test
   public void nameResolverPiOpenError() {
     typeCheckExpr("\\Pi (a b : Nat a) -> Nat a b", null, 2);
   }
@@ -86,25 +91,25 @@ public class TypeCheckingTest {
   public void whereError() {
     typeCheckClass(
         "\\static \\function f (x : Nat) => x \\where\n" +
-            "\\static \\function b => x", 1);
+        "  \\static \\function b => x", 1);
   }
 
   @Test
   public void whereNoOpenFunctionError() {
     typeCheckClass(
         "\\static \\function f => x \\where\n" +
-            "\\static \\function b => 0 \\where\n" +
-            "\\static \\function x => 0", 1);
+        "  \\static \\function b => 0 \\where\n" +
+        "    \\static \\function x => 0", 1);
   }
 
   @Test
   public void whereClosedError() {
     typeCheckClass(
         "\\static \\function f => x \\where {\n" +
-            "\\static \\class A { \\static \\function x => 0 }\n" +
-            "\\open A\n" +
-            "\\close A\n" +
-            "}", 1);
+        "  \\static \\class A { \\static \\function x => 0 }\n" +
+        "  \\open A\n" +
+        "  \\close A\n" +
+        "}", 1);
   }
 
   @Test
