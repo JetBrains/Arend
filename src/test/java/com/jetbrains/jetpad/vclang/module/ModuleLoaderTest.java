@@ -41,7 +41,7 @@ public class ModuleLoaderTest {
         moduleLoader.save(module);
       }
     }
-    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
 
     initializeModuleLoader();
     moduleLoader.setOutputSupplier(outputSupplier);

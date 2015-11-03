@@ -247,13 +247,13 @@ public class TypeCheckingDefCall {
     }
 
     NamespaceMember member = result.member.namespace.getMember(name.name);
-    if (member == null || member.definition == null) {
+    if (member == null) {
       TypeCheckingError error = new NameDefinedError(false, expr, name, new ResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
       expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
       myErrorReporter.report(error);
       return null;
     }
-    if (member.definition.getThisClass() != result.baseClassDefinition) {
+    if (member.definition != null && member.definition.getThisClass() != result.baseClassDefinition) {
       TypeCheckingError error = new TypeCheckingError("Definition '" + member.definition.getName() + "' cannot be called from here", expr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
       myErrorReporter.report(error);
