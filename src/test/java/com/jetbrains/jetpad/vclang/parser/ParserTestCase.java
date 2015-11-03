@@ -64,6 +64,11 @@ public class ParserTestCase {
     ListErrorReporter errorReporter = new ListErrorReporter();
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(parse(errorReporter, text).statements());
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, name, statements);
+    for (Concrete.Statement statement : statements) {
+      if (statement instanceof Concrete.DefineStatement) {
+        ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
+      }
+    }
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
     return classDefinition;
   }
