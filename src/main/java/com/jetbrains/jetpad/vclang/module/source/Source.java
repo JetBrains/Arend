@@ -7,5 +7,6 @@ import java.io.IOException;
 public interface Source {
   boolean isAvailable();
   long lastModified();
-  ModuleLoadingResult load() throws IOException;
+  boolean isContainer();
+  ModuleLoadingResult load(boolean childrenOnly) throws IOException;
 }

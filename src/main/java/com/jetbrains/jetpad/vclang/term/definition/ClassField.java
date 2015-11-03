@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVis
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 public class ClassField extends Definition {
-  private final Expression myType;
+  private Expression myType;
 
   public ClassField(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass) {
     super(parentNamespace, name, precedence);
@@ -18,6 +18,10 @@ public class ClassField extends Definition {
   @Override
   public Expression getBaseType() {
     return myType;
+  }
+  
+  public void setBaseType(Expression type) {
+    myType = type;
   }
 
   @Override

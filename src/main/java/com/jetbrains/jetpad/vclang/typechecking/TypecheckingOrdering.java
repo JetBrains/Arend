@@ -78,7 +78,8 @@ public class TypecheckingOrdering {
       }
 
       myVisiting.remove(name);
-      myResult.add(name);
+      if (!(member.abstractDefinition instanceof Abstract.Constructor))
+        myResult.add(name);
     }
 
     myVisited.add(name);
@@ -114,7 +115,7 @@ public class TypecheckingOrdering {
         }
       }
       for (ResolvedName rn : ((OKResult) result).order) {
-        DefinitionCheckTypeVisitor.typeCheck(rn.toNamespaceMember(), rn.namespace, new LocalErrorReporter(rn, errorReporter));
+        DefinitionCheckTypeVisitor.typeCheck(rn.toNamespaceMember(), rn.parent, new LocalErrorReporter(rn, errorReporter));
       }
     } else if (result instanceof CycleResult) {
       StringBuilder errorMessage = new StringBuilder();

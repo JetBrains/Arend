@@ -1,11 +1,15 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 
 import java.io.IOException;
 
 public class DummyOutput implements Output {
+  @Override
+  public Header getHeader() throws IOException {
+    return null;
+  }
+
   @Override
   public boolean canRead() {
     return false;
@@ -22,12 +26,22 @@ public class DummyOutput implements Output {
   }
 
   @Override
+  public boolean isContainer() {
+    return false;
+  }
+
+  @Override
+  public void readStubs() throws IOException {
+
+  }
+
+  @Override
   public ModuleLoadingResult read() throws IOException {
     return null;
   }
 
   @Override
-  public void write(ClassDefinition classDefinition) throws IOException {
+  public void write() throws IOException {
 
   }
 }

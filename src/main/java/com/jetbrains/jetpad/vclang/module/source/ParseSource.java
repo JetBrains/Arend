@@ -36,7 +36,7 @@ public abstract class ParseSource implements Source {
     myModule = module;
   }
 
-  ResolvedName getModule() {
+  protected ResolvedName getModule() {
     return myModule;
   }
 
@@ -48,8 +48,7 @@ public abstract class ParseSource implements Source {
     myStream = stream;
   }
 
-  @Override
-  public ModuleLoadingResult load() throws IOException {
+  public ModuleLoadingResult load(boolean childrenOnly) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     final CompositeErrorReporter errorReporter = new CompositeErrorReporter();
     errorReporter.addErrorReporter(new LocalErrorReporter(myModule, myErrorReporter));
@@ -78,10 +77,19 @@ public abstract class ParseSource implements Source {
       return new ModuleLoadingResult(null, true, countingErrorReporter.getErrorsNumber());
     }
 
-    NameResolver nameResolver = new LoadingNameResolver(myModuleLoader, new DeepNamespaceNameResolver(myModule.namespace));
+    if (childrenOnly) {
+      return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), null, null), false, 0);
+    }
+
+    NameResolver nameResolver = new LoadingNameResolver(myModuleLoader, new DeepNamespaceNameResolver(myModule.parent));
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.name.name, statements);
-    new DefinitionResolveNameVisitor(errorReporter, myModule.namespace, nameResolver).visitClass(classDefinition, null);
-    return new ModuleLoadingResult(new NamespaceMember(myModule.namespace.getChild(myModule.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
+    for (Concrete.Statement statement : statements) {
+      if (statement instanceof Concrete.DefineStatement) {
+        ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
+      }
+    }
+    new DefinitionResolveNameVisitor(errorReporter, myModule.parent, nameResolver).visitClass(classDefinition, null);
+    return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
   }
 }

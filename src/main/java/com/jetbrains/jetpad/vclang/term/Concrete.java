@@ -777,6 +777,10 @@ public final class Concrete {
       myPrecedence = precedence;
     }
 
+    public void setParent(Concrete.DefineStatement parent) {
+      myParent = parent;
+    }
+
     @Override
     public Precedence getPrecedence() {
       return myPrecedence;

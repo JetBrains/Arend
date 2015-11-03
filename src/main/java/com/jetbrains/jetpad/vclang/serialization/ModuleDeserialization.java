@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -23,21 +23,99 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
-  private final ModuleLoader myModuleLoader;
   private ResolvedName myResolvedName;
 
-  public ModuleDeserialization(ModuleLoader moduleLoader) {
-    myModuleLoader = moduleLoader;
+  public ModuleDeserialization() {
   }
 
-  public ModuleLoadingResult readFile(File file, ResolvedName resolvedName) throws IOException {
-    return readStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), resolvedName);
+  public ModuleLoadingResult readFile(File file, ResolvedName module) throws IOException {
+    return readStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), module);
   }
 
-  public ModuleLoadingResult readStream(DataInputStream stream, ResolvedName resolvedName) throws IOException {
-    ClassDefinition classDefinition = new ClassDefinition(resolvedName.namespace, resolvedName.name);
+  public static void readStubsFromFile(File file, ResolvedName module) throws IOException {
+    readStubsFromStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), module);
+  }
 
-    myResolvedName = resolvedName;
+  public static void readStubsFromStream(DataInputStream stream, ResolvedName module) throws IOException {
+    verifySignature(stream);
+    readHeader(stream);
+    stream.readInt();
+
+    module.parent.getChild(module.name);
+
+    readDefIndicies(stream, true, module);
+  }
+
+  public static Output.Header readHeaderFromFile(File file) throws IOException {
+    return readHeaderFromStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))));
+  }
+
+  public static Output.Header readHeaderFromStream(DataInputStream stream) throws IOException {
+    verifySignature(stream);
+    return readHeader(stream);
+  }
+
+  private static List<String> readFullPath(DataInputStream stream) throws IOException {
+    List<String> result = new ArrayList<>();
+    int size = stream.readInt();
+    for (int i = 0; i < size; i++) {
+      result.add(stream.readUTF());
+    }
+
+    return result;
+  }
+
+  private static Output.Header readHeader(DataInputStream stream) throws IOException {
+    Output.Header result = new Output.Header(new ArrayList<List<String>>(), new ArrayList<String>());
+    int size = stream.readInt();
+    for (int i = 0; i < size; i++) {
+      result.provided.add(stream.readUTF());
+    }
+    size = stream.readInt();
+    for (int i = 0; i < size; i++) {
+      result.dependencies.add(readFullPath(stream));
+    }
+
+    return result;
+  }
+
+  private static Name readName(DataInputStream stream) throws IOException {
+    String name = stream.readUTF();
+    Abstract.Definition.Fixity fixity = stream.read() == 1 ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
+    return new Name(name, fixity);
+   }
+
+  private static Definition readDefinition(DataInputStream stream, ResolvedName rn, boolean dryRun) throws IOException {
+    int codeIdx = stream.readInt();
+    if (codeIdx >= ModuleSerialization.DefinitionCodes.values().length)
+      throw new IncorrectFormat();
+    ModuleSerialization.DefinitionCodes code = ModuleSerialization.DefinitionCodes.values()[codeIdx];
+
+    Abstract.Definition.Precedence precedence = null;
+    if (code != ModuleSerialization.DefinitionCodes.CLASS_CODE) {
+      Abstract.Definition.Associativity associativity;
+      int assoc = stream.read();
+      if (assoc == 0) {
+        associativity = Abstract.Definition.Associativity.LEFT_ASSOC;
+      } else if (assoc == 1) {
+        associativity = Abstract.Definition.Associativity.RIGHT_ASSOC;
+      } else {
+        associativity = Abstract.Definition.Associativity.NON_ASSOC;
+      }
+      byte priority = stream.readByte();
+      precedence = new Abstract.Definition.Precedence(associativity, priority);
+    }
+    Name name = readName(stream);
+
+    if (dryRun)
+      return null;
+
+    Definition definition = code.toDefinition(name, rn.parent, precedence);
+    rn.parent.addDefinition(definition);
+    return definition;
+  }
+
+  private static void verifySignature(DataInputStream stream) throws IOException {
     byte[] signature = new byte[4];
     stream.readFully(signature);
     if (!Arrays.equals(signature, ModuleSerialization.SIGNATURE)) {
@@ -47,145 +125,98 @@ public class ModuleDeserialization {
     if (version != ModuleSerialization.VERSION) {
       throw new WrongVersion(version);
     }
-    int errorsNumber = stream.readInt();
+  }
 
-    Map<Integer, Definition> definitionMap = new HashMap<>();
-    // TODO
-    /*
-    definitionMap.put(0, RootModule.ROOT);
+  private static ResolvedName fullPathToRelativeResolvedName(List<String> path, ResolvedName module) {
+    ResolvedName result = module;
+    for (String aPath : path) {
+      result = result.toNamespace().getChild(new Name(aPath)).getResolvedName();
+    }
+    return result;
+  }
+
+  private static ResolvedName fullPathToResolvedName(List<String> path) throws IOException {
+    return fullPathToRelativeResolvedName(path, RootModule.ROOT.getResolvedName());
+  }
+
+  private static Map<Integer, Definition> readDefIndicies(DataInputStream stream, boolean createStubs, ResolvedName module) throws IOException {
+    Map<Integer, Definition> result = new HashMap<>();
+
     int size = stream.readInt();
-    for (int i = 0; i < size; ++i) {
-      int index = stream.readInt();
-      int parentIndex = stream.readInt();
-      NamespaceMember child;
-      if (parentIndex == 0) {
-        child = index == 1 ? RootModule.ROOT : new Namespace("<local>");
+    for (int i = 0; i < size; i++) {
+      ResolvedName rn;
+      if (stream.readBoolean()) {
+        rn = fullPathToRelativeResolvedName(readFullPath(stream), module);
+        readDefinition(stream, rn, !createStubs);
       } else {
-        Abstract.Definition.Fixity fixity = stream.readBoolean() ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
-        String name = stream.readUTF();
-        Name name1 = new Name(name, fixity);
-        int code = stream.read();
-        boolean isNew = false;
-        if (code != ModuleSerialization.NAMESPACE_CODE) {
-          isNew = stream.readBoolean();
-        }
-
-        NamespaceMember parent = definitionMap.get(parentIndex);
-        if (!(parent instanceof Namespace)) {
-          throw new IncorrectFormat();
-        }
-
-        Namespace parentNamespace = (Namespace) parent;
-        if (code == ModuleSerialization.NAMESPACE_CODE) {
-          ModuleLoadingResult result = myModuleLoader.load(new ResolvedName((Namespace) parent, name), true);
-          child = result == null || result.definition == null ? parentNamespace.getChild(name1) : result.namespace;
-        } else {
-          if (isNew) {
-            child = newDefinition(code, name1, parentNamespace);
-            if (parentNamespace.addDefinition((Definition) child) != null) {
-              throw new NameIsAlreadyDefined(name1);
-            }
-          } else {
-            child = parentNamespace.getDefinition(name);
-            if (child == null) {
-              throw new NameDoesNotDefined(name1);
-            }
-          }
-        }
+        rn = fullPathToResolvedName(readFullPath(stream));
       }
-
-      definitionMap.put(index, child);
+      if (!createStubs)
+        result.put(i, rn.toDefinition());
     }
-    */
 
-    deserializeNamespace(stream, definitionMap);
-    if (stream.readBoolean()) {
-      deserializeClassDefinition(stream, definitionMap, classDefinition);
-    }
-    return new ModuleLoadingResult(new NamespaceMember(classDefinition.getParentNamespace().getChild(classDefinition.getName()), null, classDefinition), false, errorsNumber);
+    return createStubs ? null : result;
   }
 
-  public static Definition newDefinition(int code, Name name, Namespace parent) throws IncorrectFormat {
-    if (code == ModuleSerialization.OVERRIDDEN_CODE) {
-      return new OverriddenDefinition(parent, name, Abstract.Definition.DEFAULT_PRECEDENCE, null);
-    }
-    if (code == ModuleSerialization.FUNCTION_CODE) {
-      return new FunctionDefinition(parent, name, Abstract.Definition.DEFAULT_PRECEDENCE, null);
-    }
-    if (code == ModuleSerialization.DATA_CODE) {
-      return new DataDefinition(parent, name, Abstract.Definition.DEFAULT_PRECEDENCE);
-    }
-    if (code == ModuleSerialization.CLASS_CODE) {
-      return new ClassDefinition(parent, name);
-    }
-    if (code == ModuleSerialization.CONSTRUCTOR_CODE) {
-      return new Constructor(parent, name, Abstract.Definition.DEFAULT_PRECEDENCE, null);
-    }
-    throw new IncorrectFormat();
+  public ModuleLoadingResult readStream(DataInputStream stream, ResolvedName module) throws IOException {
+    myResolvedName = module;
+
+    verifySignature(stream);
+    readHeader(stream);
+    int errorsNumber = stream.readInt();
+    Map<Integer, Definition> definitionMap = readDefIndicies(stream, false, module);
+    Definition moduleRoot = definitionMap.get(0);
+    deserializeDefinition(stream, definitionMap);
+    return new ModuleLoadingResult(new NamespaceMember(moduleRoot.getResolvedName().toNamespace(), null, moduleRoot), false, errorsNumber);
   }
 
-  private void deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition definition) throws IOException {
-    int code = stream.read();
+  private Definition deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    Definition definition = definitionMap.get(stream.readInt());
     definition.hasErrors(stream.readBoolean());
 
-    if (code == ModuleSerialization.FUNCTION_CODE || code == ModuleSerialization.OVERRIDDEN_CODE) {
-      if (!(definition instanceof FunctionDefinition)) {
-        throw new IncorrectFormat();
-      }
-
-      deserializeFunctionDefinition(stream, definitionMap, (FunctionDefinition) definition, code);
-    } else
-    if (code == ModuleSerialization.DATA_CODE) {
-      if (!(definition instanceof DataDefinition)) {
-        throw new IncorrectFormat();
-      }
-      readDefinition(stream, definition);
-
-      DataDefinition dataDefinition = (DataDefinition) definition;
-      if (!dataDefinition.hasErrors()) {
-        dataDefinition.setUniverse(readUniverse(stream));
-        dataDefinition.setParameters(readTypeArguments(stream, definitionMap));
-      }
-      int constructorsNumber = stream.readInt();
-      for (int i = 0; i < constructorsNumber; ++i) {
-        Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
-        if (constructor == null) {
-          throw new IncorrectFormat();
-        }
-        constructor.setDataType(dataDefinition);
-        constructor.hasErrors(stream.readBoolean());
-        readDefinition(stream, constructor);
-
-        if (!constructor.hasErrors()) {
-          constructor.setUniverse(readUniverse(stream));
-          constructor.setArguments(readTypeArguments(stream, definitionMap));
-        }
-
-        dataDefinition.addConstructor(constructor);
-        dataDefinition.getParentNamespace().addDefinition(constructor);
-      }
-    } else
-    if (code == ModuleSerialization.CLASS_CODE) {
-      if (!(definition instanceof ClassDefinition)) {
-        throw new IncorrectFormat();
-      }
-
+    if (definition instanceof FunctionDefinition) {
+      deserializeFunctionDefinition(stream, definitionMap, (FunctionDefinition) definition);
+    } else if (definition instanceof DataDefinition) {
+      deserializeDataDefinition(stream, definitionMap, (DataDefinition) definition);
+    } else if (definition instanceof ClassDefinition) {
       deserializeClassDefinition(stream, definitionMap, (ClassDefinition) definition);
     } else {
       throw new IncorrectFormat();
     }
+    return definition;
   }
 
-  private void deserializeFunctionDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, FunctionDefinition definition, int code) throws IOException {
-    readDefinition(stream, definition);
+  private void deserializeDataDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, DataDefinition definition) throws IOException {
+    if (!definition.hasErrors()) {
+      definition.setUniverse(readUniverse(stream));
+      definition.setParameters(readTypeArguments(stream, definitionMap));
+    }
 
-    if (code == ModuleSerialization.OVERRIDDEN_CODE) {
-      Definition overridden = definitionMap.get(stream.readInt());
-      if (!(overridden instanceof FunctionDefinition && definition instanceof OverriddenDefinition)) {
+    int constructorsNumber = stream.readInt();
+    for (int i = 0; i < constructorsNumber; ++i) {
+      Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
+      if (constructor == null) {
         throw new IncorrectFormat();
       }
-      ((OverriddenDefinition) definition).setOverriddenFunction((FunctionDefinition) overridden);
+      constructor.setDataType(definition);
+      constructor.hasErrors(stream.readBoolean());
+
+      if (!constructor.hasErrors()) {
+        constructor.setUniverse(readUniverse(stream));
+        constructor.setArguments(readTypeArguments(stream, definitionMap));
+      }
+
+      definition.addConstructor(constructor);
+      definition.getParentNamespace().addDefinition(constructor);
     }
+  }
+
+  private void deserializeFunctionDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, FunctionDefinition definition) throws IOException {
+    deserializeNamespace(stream, definitionMap, definition);
+
+    /*
+      Something about overriden
+     */
 
     definition.typeHasErrors(stream.readBoolean());
     if (!definition.typeHasErrors()) {
@@ -202,55 +233,36 @@ public class ModuleDeserialization {
     }
   }
 
-  private void deserializeNamespace(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  private void deserializeNamespace(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition parent) throws IOException {
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
-      definitionMap.get(stream.readInt());
-      deserializeNamespace(stream, definitionMap);
       if (stream.readBoolean()) {
-        Definition definition = definitionMap.get(stream.readInt());
-        deserializeDefinition(stream, definitionMap, definition);
+        deserializeDefinition(stream, definitionMap);
+      } else {
+        parent.getResolvedName().toNamespace().addMember(definitionMap.get(stream.readInt()).getResolvedName().toNamespaceMember());
       }
     }
   }
 
   private void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
+    deserializeNamespace(stream, definitionMap, definition);
     definition.setUniverse(readUniverse(stream));
-    /* TODO
-    Definition definition1 = definitionMap.get(stream.readInt());
-    if (!(namespaceMember instanceof Namespace)) {
-      throw new IncorrectFormat();
-    }
-    definition.setLocalNamespace((Namespace) namespaceMember);
-    */
-    deserializeNamespace(stream, definitionMap);
-  }
 
-  private void readDefinition(DataInputStream stream, Definition definition) throws IOException {
-    int assocCode = stream.read();
-    Abstract.Definition.Associativity assoc;
-    if (assocCode == 0) {
-      assoc = Abstract.Definition.Associativity.LEFT_ASSOC;
-    } else if (assocCode == 1) {
-      assoc = Abstract.Definition.Associativity.RIGHT_ASSOC;
-    } else if (assocCode == 2) {
-      assoc = Abstract.Definition.Associativity.NON_ASSOC;
-    } else {
-      throw new IncorrectFormat();
-    }
-    definition.setPrecedence(new Abstract.Definition.Precedence(assoc, stream.readByte()));
+    int numFields = stream.readInt();
+    for (int i = 0; i < numFields; i++) {
+      ClassField field = (ClassField) definitionMap.get(stream.readInt());
+      definition.addField(field);
+      field.hasErrors(stream.readBoolean());
 
-    int fixityCode = stream.read();
-    if (fixityCode == 0) {
-      definition.setFixity(Abstract.Definition.Fixity.INFIX);
-    } else if (fixityCode == 1) {
-      definition.setFixity(Abstract.Definition.Fixity.PREFIX);
-    } else {
-      throw new IncorrectFormat();
+      if (!field.hasErrors()) {
+        field.setUniverse(readUniverse(stream));
+        field.setBaseType(readExpression(stream, definitionMap));
+        field.setThisClass(definition);
+      }
     }
   }
 
-  public Universe readUniverse(DataInputStream stream) throws IOException {
+  public static Universe readUniverse(DataInputStream stream) throws IOException {
     int level = stream.readInt();
     int truncated = stream.readInt();
     return new Universe.Type(level, truncated);
@@ -261,19 +273,6 @@ public class ModuleDeserialization {
     List<Argument> result = new ArrayList<>(size);
     for (int i = 0; i < size; ++i) {
       result.add(readArgument(stream, definitionMap));
-    }
-    return result;
-  }
-
-  public List<NameArgument> readNameArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int size = stream.readInt();
-    List<NameArgument> result = new ArrayList<>(size);
-    for (int i = 0; i < size; ++i) {
-      Argument argument = readArgument(stream, definitionMap);
-      if (!(argument instanceof NameArgument)) {
-        throw new IncorrectFormat();
-      }
-      result.add((NameArgument) argument);
     }
     return result;
   }
@@ -350,7 +349,7 @@ public class ModuleDeserialization {
         return new UniverseExpression(readUniverse(stream));
       }
       case 9: {
-        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myResolvedName, "Deserialized error", null, null));
+        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myResolvedName, "Deserialization error", null, null));
       }
       case 10: {
         int size = stream.readInt();
@@ -489,34 +488,6 @@ public class ModuleDeserialization {
   public static class WrongVersion extends DeserializationException {
     WrongVersion(int version) {
       super("Version of the file format (" + version + ") differs from the version of the program + (" + ModuleSerialization.VERSION + ")");
-    }
-  }
-
-  public static class NameIsAlreadyDefined extends DeserializationException {
-    private final Name myName;
-
-    public NameIsAlreadyDefined(Name name) {
-      super("Name is already defined");
-      myName = name;
-    }
-
-    @Override
-    public String toString() {
-      return myName + ": " + super.toString();
-    }
-  }
-
-  public static class NameDoesNotDefined extends DeserializationException {
-    private final Name myName;
-
-    public NameDoesNotDefined(Name name) {
-      super("Name is not defined");
-      myName = name;
-    }
-
-    @Override
-    public String toString() {
-      return myName + ": " + super.toString();
     }
   }
 }

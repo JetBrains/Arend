@@ -605,7 +605,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
     // TODO: Check if def is non-static.
     Name name = def.getName();
-    ClassDefinition typedDef = new ClassDefinition(myNamespace, name);
+    ClassDefinition typedDef = (ClassDefinition) myNamespace.getDefinition(name.name);
     typeCheckStatements(typedDef, def.getStatements(), myNamespace.getChild(name));
     return typedDef;
   }

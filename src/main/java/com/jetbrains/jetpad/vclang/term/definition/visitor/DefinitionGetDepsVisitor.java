@@ -83,9 +83,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
     }
 
     for (Abstract.Constructor constructor : def.getConstructors()) {
-      for (Abstract.TypeArgument arg : constructor.getArguments()) {
-        result.addAll(arg.getType().accept(new GetDepsVisitor(), null));
-      }
+      result.add(new ResolvedName(myNamespace, constructor.getName()));
     }
 
     return result;
@@ -93,7 +91,12 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Void,
 
   @Override
   public Set<ResolvedName> visitConstructor(Abstract.Constructor def, Void isSiblings) {
-    throw new IllegalStateException();
+    Set<ResolvedName> result = new HashSet<>();
+    for (Abstract.TypeArgument arg : def.getArguments()) {
+      result.addAll(arg.getType().accept(new GetDepsVisitor(), null));
+    }
+    result.remove(new ResolvedName(myNamespace.getParent().getParent(), def.getDataType().getName().name));
+    return result;
   }
 
   public Set<ResolvedName> visitStatements(Collection<? extends Abstract.Statement> statements) {

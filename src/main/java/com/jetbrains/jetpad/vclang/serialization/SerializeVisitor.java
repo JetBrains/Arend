@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
@@ -13,12 +15,12 @@ import java.io.IOException;
 
 public class SerializeVisitor extends BaseExpressionVisitor<Void> {
   private int myErrors = 0;
-  private final DefinitionsIndices myDefinitionsIndices;
+  private final DefNamesIndicies myDefNamesIndicies;
   private final ByteArrayOutputStream myStream;
   private final DataOutputStream myDataStream;
 
-  public SerializeVisitor(DefinitionsIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream) {
-    myDefinitionsIndices = definitionsIndices;
+  public SerializeVisitor(DefNamesIndicies definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream) {
+    myDefNamesIndicies = definitionsIndices;
     myStream = stream;
     myDataStream = dataStream;
   }
@@ -31,8 +33,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
     return myDataStream;
   }
 
-  public DefinitionsIndices getDefinitionsIndices() {
-    return myDefinitionsIndices;
+  public DefNamesIndicies getDefinitionsIndices() {
+    return myDefNamesIndicies;
   }
 
   @Override
@@ -52,9 +54,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
   @Override
   public Void visitDefCall(DefCallExpression expr) {
     myStream.write(2);
-    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition(), false);
     try {
-      myDataStream.writeInt(index);
+      myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false));
       myDataStream.writeInt(0);
     } catch (IOException e) {
       throw new IllegalStateException();
@@ -65,7 +66,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
   @Override
   public Void visitConCall(ConCallExpression expr) {
     myStream.write(2);
-    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition(), false);
+    int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
     try {
       myDataStream.writeInt(index);
       myDataStream.writeInt(expr.getParameters().size());
@@ -81,12 +82,12 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
   @Override
   public Void visitClassCall(ClassCallExpression expr) {
     myStream.write(15);
-    int index = myDefinitionsIndices.getDefinitionIndex(expr.getDefinition(), false);
+    int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
     try {
       myDataStream.writeInt(index);
       myDataStream.writeInt(expr.getOverrideElems().size());
       for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
-        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(elem.field, true));
+        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(elem.field.getResolvedName(), true));
         myDataStream.writeBoolean(elem.type != null);
         if (elem.type != null) {
           elem.type.accept(this);
@@ -230,7 +231,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
         if (((NamePattern) pattern).getName() != null)
           myDataStream.writeUTF(((NamePattern) pattern).getName());
       } else if (pattern instanceof ConstructorPattern) {
-        myDataStream.writeInt(myDefinitionsIndices.getDefinitionIndex(((ConstructorPattern) pattern).getConstructor(), false));
+        Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
+        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(new ResolvedName(constructor.getParentNamespace(), constructor.getName()), false));
         myDataStream.writeInt(((ConstructorPattern) pattern).getPatterns().size());
         for (Pattern nestedPattern : ((ConstructorPattern) pattern).getPatterns()) {
           visitPattern(nestedPattern);

@@ -27,7 +27,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myFields == null ? null : myFields.get(name);
   }
 
-  public Collection<? extends ClassField> getFields() {
+  public Collection<ClassField> getFields() {
     return myFields == null ? Collections.<ClassField>emptyList() : myFields.values();
   }
 
