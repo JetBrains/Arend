@@ -28,7 +28,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("B", "C", "D"), "\\static \\function d => 0");
     sourceSupplier.add(moduleName("B", "C", "E"), "\\static \\function e => F.f");
     sourceSupplier.add(moduleName("B", "C", "F"), "\\static \\function f => 0");
-    sourceSupplier.add(moduleName("All"), "\\export A \\export B \\export B.C \\export B.C.E \\export B.C.D \\export B.C.F");
+    sourceSupplier.add(moduleName("All"), "\\export A \\export B.C \\export B.C.E \\export B.C.D \\export B.C.F");
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.setOutputSupplier(outputSupplier);
 
@@ -191,6 +191,7 @@ public class ModuleLoaderTest {
   @Test
   public void testForTestCase() {
     setupSources();
+
     moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
     assertTrue(errorReporter.getErrorList().isEmpty());
     assertLoaded("All");
@@ -227,6 +228,40 @@ public class ModuleLoaderTest {
     assertLoaded("B");
     assertNotLoaded("B", "C", "D");
     assertLoaded("B", "C", "E");
+    assertLoaded("B", "C", "F");
+  }
+
+
+  @Test
+  public void testChangeAddNewFile() {
+    setupSources();
+
+    sourceSupplier.add(moduleName("B", "C", "G"), "\\static \\function G => f");
+    moduleLoader.load(new ResolvedName(RootModule.ROOT, "B"), false);
+    moduleLoader.load(new ResolvedName(RootModule.ROOT.findChild("B"), "C"), false);
+    moduleLoader.load(new ResolvedName(RootModule.ROOT.findChild("B").findChild("C"), "G"), false);
+    moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
+    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertLoaded("All");
+    assertLoaded("A");
+    assertLoaded("B");
+    assertLoaded("B", "C", "D");
+    assertLoaded("B", "C", "E");
+    assertLoaded("B", "C", "F");
+    assertNotLoaded("B", "C", "G");
+  }
+
+  @Test
+  public void testRemoveFile() {
+    setupSources();
+
+    sourceSupplier.add(moduleName("B"), null);
+    moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
+    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertNotLoaded("All");
+    assertNotLoaded("A");
+    assertLoaded("B", "C", "D");
+    assertNotLoaded("B", "C", "E");
     assertLoaded("B", "C", "F");
   }
 }
