@@ -10,6 +10,8 @@ import com.jetbrains.jetpad.vclang.term.statement.DefineStatement;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
+
 public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
   private Map<String, ClassField> myFields = null;
 
@@ -53,6 +55,11 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
 
   public ClassField getParentField() {
     return getField("\\parent");
+  }
+
+  public void addParentField(ClassDefinition parentClass) {
+    setThisClass(parentClass);
+    addField(new ClassField(getParentNamespace().getChild(getName()), new Name("\\parent", Fixity.PREFIX), DEFAULT_PRECEDENCE, ClassCall(parentClass), this));
   }
 
   @Override

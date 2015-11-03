@@ -596,7 +596,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (member != null) {
           typeCheck(member, namespace, myErrorReporter);
           if (classDefinition != null && member.definition instanceof ClassField) {
-            classDefinition.addField((ClassField) member.definition);
+            ClassField field = (ClassField) member.definition;
+            Universe oldUniverse = classDefinition.getUniverse();
+            Universe newUniverse = field.getUniverse();
+            Universe maxUniverse = oldUniverse.max(newUniverse);
+            if (maxUniverse == null) {
+              String error = "Universe " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
+              myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), error, definition, new ArrayList<String>()));
+            } else {
+              classDefinition.setUniverse(maxUniverse);
+              classDefinition.addField(field);
+            }
           }
         }
       }
@@ -605,9 +615,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
-    // TODO: Check if def is non-static.
     Name name = def.getName();
-    ClassDefinition typedDef = (ClassDefinition) myNamespace.getDefinition(name.name);
+    ClassDefinition typedDef = new ClassDefinition(myNamespace, name);
+    ClassDefinition thisClass = getThisClass(def, myNamespace);
+    if (thisClass != null) {
+      typedDef.addParentField(thisClass);
+    }
     typeCheckStatements(typedDef, def.getStatements(), myNamespace.getChild(name));
     return typedDef;
   }
