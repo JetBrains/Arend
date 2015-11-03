@@ -49,6 +49,12 @@ public class TypeCheckingDefCall {
     if (result.member == null) {
       return result.baseResult;
     }
+    if (result.member.definition == null) {
+      TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not a definition", expr, getNames(myLocalContext));
+      expr.setWellTyped(myLocalContext, Error(null, error));
+      myErrorReporter.report(error);
+      return null;
+    }
 
     CheckTypeVisitor.OKResult okResult = result.baseResult == null ? new CheckTypeVisitor.OKResult(null, null, null) : (CheckTypeVisitor.OKResult) result.baseResult;
     Expression thisExpr = okResult.expression;

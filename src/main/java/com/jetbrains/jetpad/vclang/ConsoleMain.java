@@ -144,7 +144,7 @@ public class ConsoleMain {
   }
 
   static private void processFile(ModuleLoader moduleLoader, ListErrorReporter errorReporter, Path fileName, File sourceDir) {
-    Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName.getFileName();
+    Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName;
     List<String> moduleNames = getModule(relativePath);
     if (moduleNames == null) {
       System.err.println(fileName + ": incorrect file name");
