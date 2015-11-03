@@ -44,13 +44,13 @@ public abstract class Definition extends Binding implements Abstract.Definition 
     myThisClass = thisClass;
   }
 
+  public ResolvedName getResolvedName() {
+    return new ResolvedName(myParentNamespace, getName().name);
+  }
+
   @Override
   public Precedence getPrecedence() {
     return myPrecedence;
-  }
-
-  public void setPrecedence(Precedence precedence) {
-    myPrecedence = precedence;
   }
 
   public Universe getUniverse() {

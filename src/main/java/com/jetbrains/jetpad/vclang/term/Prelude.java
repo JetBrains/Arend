@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.Clause;
 import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
@@ -14,6 +15,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Prelude {
+  public static ClassDefinition PRELUDE_CLASS;
   public static Namespace PRELUDE;
 
   public static DataDefinition NAT;
@@ -31,7 +33,9 @@ public class Prelude {
   public static FunctionDefinition AT;
 
   static {
-    PRELUDE = new Namespace("Prelude");
+    PRELUDE_CLASS = new ClassDefinition(RootModule.ROOT, new Name("Prelude"));
+    RootModule.ROOT.addDefinition(PRELUDE_CLASS);
+    PRELUDE = RootModule.ROOT.getChild(new Name("Prelude"));
 
     NAT = new DataDefinition(PRELUDE, new Name("Nat"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), new ArrayList<TypeArgument>());
     Namespace natNamespace = PRELUDE.getChild(NAT.getName());

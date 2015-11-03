@@ -24,6 +24,6 @@ public class NamespaceMember {
 
   public boolean isTypeChecked() {
     return abstractDefinition == null ||
-        !(definition == null || definition instanceof ClassDefinition && definition.getUniverse() == null);
+        !(definition == null || definition instanceof ClassDefinition); // TODO
   }
 }

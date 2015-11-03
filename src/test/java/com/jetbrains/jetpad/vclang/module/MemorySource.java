@@ -1,26 +1,47 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.module.source.ParseSource;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 public class MemorySource extends ParseSource {
-  public MemorySource(ModuleLoader moduleLoader, ErrorReporter errorReporter, ResolvedName module, String source) {
+  private final MemorySourceSupplier.MemorySourceEntry myEntry;
+
+  public MemorySource(ModuleLoader moduleLoader, ErrorReporter errorReporter, ResolvedName module, MemorySourceSupplier.MemorySourceEntry entry) {
     super(moduleLoader, errorReporter, module);
-    if (source != null) {
-      setStream(new ByteArrayInputStream(source.getBytes()));
-    }
+    myEntry = entry;
+    setStream(entry.source == null ? null : new ByteArrayInputStream(entry.source.getBytes()));
   }
 
   @Override
   public boolean isAvailable() {
-    return getStream() != null;
+    return true;
   }
 
   @Override
   public long lastModified() {
-    return 0;
+    return myEntry.lastModified;
+  }
+
+  @Override
+  public boolean isContainer() {
+    return getStream() == null;
+  }
+
+  @Override
+  public ModuleLoadingResult load(boolean childrenOnly) throws IOException {
+    Namespace namespace = getModule().parent.getChild(getModule().name);
+    for (String childName : myEntry.children) {
+      namespace.getChild(new Name(childName));
+    }
+    if (!childrenOnly && getStream() != null) {
+      return super.load(false);
+    } else {
+      return new ModuleLoadingResult(getModule().toNamespaceMember(), false, 0);
+    }
   }
 }

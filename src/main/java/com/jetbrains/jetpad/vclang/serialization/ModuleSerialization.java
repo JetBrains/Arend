@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -10,35 +11,48 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.List;
+import java.util.*;
 
 public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
   public static final int VERSION = 0;
 
-  public static void writeFile(ResolvedName resolvedName, ClassDefinition classDefinition, File outputFile) throws IOException {
+  public static void writeFile(ResolvedName resolvedName, File outputFile) throws IOException {
     Files.createDirectories(outputFile.getParentFile().toPath());
-    writeStream(resolvedName, classDefinition, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
+    writeStream(resolvedName, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
   }
 
-  public static void writeStream(ResolvedName resolvedName, ClassDefinition classDefinition, DataOutputStream stream) throws IOException {
+  public static void serializeRelativeResolvedName(DataOutputStream stream, ResolvedName rn, ResolvedName module) throws IOException {
+   List<String> fPath = new ArrayList<>();
+    for (; !rn.equals(module); rn = rn.parent.getResolvedName()) {
+      fPath.add(rn.name.name);
+    }
+    Collections.reverse(fPath);
+    stream.writeInt(fPath.size());
+    for (String aPath : fPath) {
+      stream.writeUTF(aPath);
+    }
+  }
+  public static void serializeResolvedName(DataOutputStream stream, ResolvedName rn) throws IOException {
+    serializeRelativeResolvedName(stream, rn, RootModule.ROOT.getResolvedName());
+  }
+
+  public static void writeStream(ResolvedName module, DataOutputStream stream) throws IOException {
+    assert module.toAbstractDefinition() != null && module.toDefinition() != null;
+    assert module.toAbstractDefinition().getParentStatement() == null;
+
+    DefNamesIndicies defNamesIndicies = new DefNamesIndicies();
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
-    DefinitionsIndices definitionsIndices = new DefinitionsIndices();
-    SerializeVisitor visitor = new SerializeVisitor(definitionsIndices, byteArrayStream, dataStream);
-    definitionsIndices.getDefinitionIndex(resolvedName.toDefinition() /* TODO */, false);
-    int errors = serializeNamespace(visitor, resolvedName.toNamespace());
-    if (classDefinition != null) {
-      visitor.getDataStream().writeBoolean(true);
-      errors += serializeClassDefinition(visitor, classDefinition);
-    } else {
-      visitor.getDataStream().writeBoolean(false);
-    }
+    SerializeVisitor visitor = new SerializeVisitor(defNamesIndicies, byteArrayStream, dataStream);
+
+    int errors = serializeDefinition(visitor, module.toDefinition());
 
     stream.write(SIGNATURE);
     stream.writeInt(VERSION);
+    defNamesIndicies.serializeHeader(stream, module);
     stream.writeInt(errors + visitor.getErrors());
-    definitionsIndices.serialize(stream);
+    defNamesIndicies.serialize(stream, module);
     byteArrayStream.writeTo(stream);
     stream.close();
   }
@@ -47,98 +61,140 @@ public class ModuleSerialization {
     int errors = 0;
     int size = 0;
     for (NamespaceMember member : namespace.getMembers()) {
-      if (member.definition != null && member.definition.getParentNamespace() == namespace) {
+      if (member.definition != null && (member.getResolvedName().parent != namespace || member.abstractDefinition.getParentStatement() != null && !(member.definition instanceof Constructor) && !(member.definition instanceof ClassField)) ) {
         ++size;
       }
     }
     visitor.getDataStream().writeInt(size);
-
     for (NamespaceMember member : namespace.getMembers()) {
-      if (member.definition != null && member.definition.getParentNamespace() == namespace) {
-        // TODO
-        /*
-        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(member.definition.getNamespace(), false));
-        errors += serializeNamespace(visitor, member.definition.getNamespace());
-        if (member.definition != null && !(member.definition instanceof Constructor) && member.definition.getNamespace().getParent() == namespace) {
-          visitor.getDataStream().writeBoolean(true);
-          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(member.definition, true));
-          errors += serializeDefinition(visitor, member.definition);
-        } else {
+      if (member.definition != null) {
+        if (member.getResolvedName().parent != namespace) {
           visitor.getDataStream().writeBoolean(false);
+          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(member.definition.getResolvedName(), false));
+        } else if (member.abstractDefinition.getParentStatement() != null && !(member.definition instanceof ClassField) && !(member.definition instanceof Constructor)) {
+          visitor.getDataStream().writeBoolean(true);
+          errors += serializeDefinition(visitor, member.definition);
         }
-        */
       }
     }
     return errors;
   }
 
   public static int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
-    visitor.getDataStream().write(getDefinitionCode(definition));
+    visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(definition.getResolvedName(), true));
     visitor.getDataStream().writeBoolean(definition.hasErrors());
 
     if (definition instanceof FunctionDefinition) {
       return serializeFunctionDefinition(visitor, (FunctionDefinition) definition);
     } else
     if (definition instanceof DataDefinition) {
-      int errors = definition.hasErrors() ? 1 : 0;
-      DataDefinition dataDefinition = (DataDefinition) definition;
-      writeDefinition(visitor.getDataStream(), definition);
-      if (!definition.hasErrors()) {
-        writeUniverse(visitor.getDataStream(), definition.getUniverse());
-        writeArguments(visitor, dataDefinition.getParameters());
-      }
-      visitor.getDataStream().writeInt(dataDefinition.getConstructors().size());
-      for (Constructor constructor : dataDefinition.getConstructors()) {
-        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(constructor, true));
-        visitor.getDataStream().writeBoolean(constructor.hasErrors());
-        writeDefinition(visitor.getDataStream(), constructor);
-        if (!constructor.hasErrors()) {
-          writeUniverse(visitor.getDataStream(), constructor.getUniverse());
-          writeArguments(visitor, constructor.getArguments());
-        } else {
-          errors += 1;
-        }
-      }
-      return errors;
+      return serializeDataDefinition(visitor, (DataDefinition) definition);
     } else
     if (definition instanceof ClassDefinition) {
       return serializeClassDefinition(visitor, (ClassDefinition) definition);
     } else {
+        throw new IllegalStateException();
+    }
+  }
+
+  private static int serializeDataDefinition(SerializeVisitor visitor, DataDefinition definition) throws IOException {
+    int errors = definition.hasErrors() ? 1 : 0;
+    if (!definition.hasErrors()) {
+      writeUniverse(visitor.getDataStream(), definition.getUniverse());
+      writeArguments(visitor, definition.getParameters());
+    }
+    visitor.getDataStream().writeInt(definition.getConstructors().size());
+    for (Constructor constructor : definition.getConstructors()) {
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(constructor.getResolvedName(), true));
+      visitor.getDataStream().writeBoolean(constructor.hasErrors());
+      if (!constructor.hasErrors()) {
+        writeUniverse(visitor.getDataStream(), constructor.getUniverse());
+        writeArguments(visitor, constructor.getArguments());
+      } else {
+        errors += 1;
+      }
+    }
+    return errors;
+  }
+
+  public enum DefinitionCodes {
+    FUNCTION_CODE {
+      @Override
+      FunctionDefinition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
+        return new FunctionDefinition(parent, name, precedence, null);
+      }
+    },
+    DATA_CODE {
+      @Override
+      DataDefinition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
+        return new DataDefinition(parent, name, precedence);
+      }
+    },
+    CLASS_CODE {
+      @Override
+      ClassDefinition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
+        return new ClassDefinition(parent, name);
+      }
+    },
+    CONSTRUCTOR_CODE {
+      @Override
+      Constructor toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
+        return new Constructor(parent, name, precedence, null);
+      }
+    },
+    OVERRIDDEN_CODE {
+      @Override
+      OverriddenDefinition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
+        return new OverriddenDefinition(parent, name, precedence, null);
+      }
+    },
+    CLASS_FIELD_CODE {
+      @Override
+      ClassField toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
+        return new ClassField(parent, name, precedence, null, null);
+      }
+    };
+
+    abstract Definition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence);
+
+    public static DefinitionCodes getDefinitionCode(Definition definition) {
+      if (definition instanceof OverriddenDefinition) return OVERRIDDEN_CODE;
+      if (definition instanceof FunctionDefinition) return FUNCTION_CODE;
+      if (definition instanceof DataDefinition) return DATA_CODE;
+      if (definition instanceof ClassDefinition) return CLASS_CODE;
+      if (definition instanceof Constructor) return CONSTRUCTOR_CODE;
+      if (definition instanceof ClassField) return CLASS_FIELD_CODE;
       throw new IllegalStateException();
     }
   }
 
-  public static int FUNCTION_CODE = 0;
-  public static int DATA_CODE = 1;
-  public static int CLASS_CODE = 2;
-  public static int CONSTRUCTOR_CODE = 3;
-  public static int OVERRIDDEN_CODE = 4;
-  public static int NAMESPACE_CODE = 5;
-
-  public static int getDefinitionCode(Definition definition) {
-    if (definition instanceof OverriddenDefinition) return OVERRIDDEN_CODE;
-    if (definition instanceof FunctionDefinition) return FUNCTION_CODE;
-    if (definition instanceof DataDefinition) return DATA_CODE;
-    if (definition instanceof ClassDefinition) return CLASS_CODE;
-    if (definition instanceof Constructor) return CONSTRUCTOR_CODE;
-    // TODO
-    // if (definition instanceof Namespace) return NAMESPACE_CODE;
-    throw new IllegalStateException();
-  }
-
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
+    serializeNamespace(visitor, definition.getParentNamespace().getChild(definition.getName()));
+
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
-    // TODO
-    // visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(definition.getLocalNamespace(), false));
-    return 0; // serializeNamespace(visitor, definition.getLocalNamespace());
+
+    visitor.getDataStream().writeInt(definition.getFields().size());
+    for (ClassField field : definition.getFields()) {
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(field.getResolvedName(), true));
+      visitor.getDataStream().writeBoolean(field.hasErrors());
+      if (!field.hasErrors()) {
+        writeUniverse(visitor.getDataStream(), field.getUniverse());
+        field.getType().accept(visitor);
+      }
+    }
+
+    return 0;
   }
 
   private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
 
-    writeDefinition(visitor.getDataStream(), definition);
+    serializeNamespace(visitor, definition.getStaticNamespace());
+
+    /*
     if (definition instanceof OverriddenDefinition)
-      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefinitionIndex(((OverriddenDefinition) definition).getOverriddenFunction(), false));
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(((OverriddenDefinition) definition).getOverriddenFunction(), false));
+    */
 
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {
@@ -153,10 +209,18 @@ public class ModuleSerialization {
     return errors;
   }
 
-  private static void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
-    stream.write(definition.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 1 : 2);
-    stream.writeByte(definition.getPrecedence().priority);
-    stream.write(definition.getName().fixity == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
+  public static void writeName(DataOutputStream stream, Name name) throws IOException {
+    stream.writeUTF(name.name);
+    stream.write(name.fixity == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
+  }
+
+  public static void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
+    stream.writeInt(DefinitionCodes.getDefinitionCode(definition).ordinal());
+    if (!(definition instanceof ClassDefinition)) {
+      stream.write(definition.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 1 : 2);
+      stream.writeByte(definition.getPrecedence().priority);
+    }
+    writeName(stream, definition.getName());
   }
 
   public static void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {

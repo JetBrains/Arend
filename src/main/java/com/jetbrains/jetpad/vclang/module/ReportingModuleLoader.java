@@ -18,6 +18,11 @@ public class ReportingModuleLoader extends BaseModuleLoader {
   }
 
   @Override
+  public void savingError(GeneralError error) {
+    myErrorReporter.report(error);
+  }
+
+  @Override
   public void loadingError(GeneralError error) {
     myErrorReporter.report(error);
   }

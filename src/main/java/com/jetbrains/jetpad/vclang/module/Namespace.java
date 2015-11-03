@@ -99,6 +99,11 @@ public class Namespace {
     return member == null ? null : member.definition;
   }
 
+  public Abstract.Definition getAbstractDefinition(String name) {
+    NamespaceMember member = getMember(name);
+    return member == null ? null : member.abstractDefinition;
+  }
+
   public NamespaceMember locateName(String name) {
     for (Namespace namespace = this; namespace != null; namespace = namespace.getParent()) {
       NamespaceMember member = namespace.getMember(name);

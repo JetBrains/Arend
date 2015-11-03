@@ -69,6 +69,11 @@ public class ConsoleMain {
     final List<ResolvedName> loadedModules = new ArrayList<>();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
       @Override
+      public void savingError(GeneralError error) {
+        System.err.println(error);
+      }
+
+      @Override
       public void loadingError(GeneralError error) {
         System.err.println(error);
       }
@@ -85,7 +90,7 @@ public class ConsoleMain {
     };
 
     final ListErrorReporter errorReporter = new ListErrorReporter();
-    ModuleDeserialization moduleDeserialization = new ModuleDeserialization(moduleLoader);
+    ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     moduleLoader.setSourceSupplier(new FileSourceSupplier(moduleLoader, errorReporter, sourceDir));
     moduleLoader.setOutputSupplier(new FileOutputSupplier(moduleDeserialization, outputDir, libDirs));
 
@@ -120,6 +125,11 @@ public class ConsoleMain {
 
     for (GeneralError error : errorReporter.getErrorList()) {
       System.err.println(error);
+    }
+
+   for (ResolvedName rn : loadedModules) {
+      if (rn.toDefinition() != null && rn.toAbstractDefinition() != null)
+        moduleLoader.save(rn);
     }
   }
 

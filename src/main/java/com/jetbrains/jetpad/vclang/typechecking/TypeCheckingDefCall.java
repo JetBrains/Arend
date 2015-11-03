@@ -235,8 +235,8 @@ public class TypeCheckingDefCall {
     ResolvedName resolvedName = expr.getResolvedName();
     Name name;
     if (resolvedName != null) {
-      if (resolvedName.namespace != result.member.namespace) {
-        TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, resolvedName.namespace.getResolvedName());
+      if (resolvedName.parent != result.member.namespace) {
+        TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, resolvedName.parent.getResolvedName());
         expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
         myErrorReporter.report(error);
         return null;
