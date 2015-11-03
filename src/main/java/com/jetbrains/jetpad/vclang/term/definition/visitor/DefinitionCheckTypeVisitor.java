@@ -106,7 +106,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
     Name name = def.getName();
     FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence(), def.getArrow());
-    typeCheckStatements(null, def.getStatements(), myNamespace.getChild(name));
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -590,9 +589,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   private void typeCheckStatements(ClassDefinition classDefinition, Collection<? extends Abstract.Statement> statements, Namespace namespace) {
     for (Abstract.Statement statement : statements) {
-      if (statement instanceof Abstract.DefineStatement) {
-        Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
-        NamespaceMember member = namespace.getMember(definition.getName().name);
+      if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.AbstractDefinition) {
+        Abstract.AbstractDefinition definition = (Abstract.AbstractDefinition) ((Abstract.DefineStatement) statement).getDefinition();
+        NamespaceMember member = namespace.getMember(((Abstract.DefineStatement) statement).getDefinition().getName().name);
         if (member != null) {
           typeCheck(member, namespace, myErrorReporter);
           if (classDefinition != null && member.definition instanceof ClassField) {

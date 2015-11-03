@@ -49,7 +49,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
 
     if (expr.getResolvedName() == null) {
       if (expression != null) {
-        if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null) {
+        if (expression instanceof Abstract.DefCallExpression) {
           ResolvedName parentName = ((Abstract.DefCallExpression) expression).getResolvedName();
           if (parentName == null) {
             return null;

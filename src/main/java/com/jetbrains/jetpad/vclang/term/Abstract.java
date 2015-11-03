@@ -226,11 +226,6 @@ public final class Abstract {
       public boolean equals(Object obj) {
         return this == obj || obj instanceof Precedence && associativity == ((Precedence) obj).associativity && priority == ((Precedence) obj).priority;
       }
-
-      @Override
-      public int hashCode() {
-        return associativity.ordinal() * Byte.SIZE + priority;
-      }
     }
 
     Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
