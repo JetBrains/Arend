@@ -38,9 +38,7 @@ public class DefinitionTest {
 
   @Test
   public void function() {
-    // f : N => 0;
-    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), Nat(), Definition.Arrow.RIGHT, Zero());
-    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
+    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f : Nat => 0");
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());
@@ -48,24 +46,16 @@ public class DefinitionTest {
 
   @Test
   public void functionUntyped() {
-    // f => 0;
-    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, new ArrayList<Argument>(), null, Definition.Arrow.RIGHT, Zero());
-    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
+    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
-    assertFalse(def.hasErrors());
+    assertFalse(typedDef.hasErrors());
     assertEquals(Nat(), typedDef.getType());
   }
 
   @Test
   public void functionWithArgs() {
-    // f (x : N) (y : N -> N) => y;
-    List<Argument> arguments = new ArrayList<>();
-    arguments.add(Tele(vars("x"), Nat()));
-    arguments.add(Tele(vars("y"), Pi(Nat(), Nat())));
-
-    FunctionDefinition def = new FunctionDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, null, Definition.Arrow.RIGHT, Index(0));
-    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDefinition(def);
+    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());
@@ -74,27 +64,22 @@ public class DefinitionTest {
 
   @Test
   public void dataType() {
-    // \data D {A B : \Type0} (I : A -> B -> Type0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)
+    DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D {A B : \\Type0} (I : A -> B -> \\Type0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)");
+
     List<TypeArgument> parameters = new ArrayList<>(4);
     parameters.add(Tele(false, vars("A", "B"), Universe(0)));
     parameters.add(Tele(vars("I"), Pi(Index(1), Pi(Index(0), Universe(0)))));
     parameters.add(Tele(vars("a"), Index(2)));
     parameters.add(Tele(vars("b"), Index(2)));
 
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, parameters);
-    Namespace defNamespace = def.getParentNamespace().getChild(def.getName());
-
     List<TypeArgument> arguments1 = new ArrayList<>(6);
     arguments1.add(Tele(vars("x"), Index(4)));
     arguments1.add(TypeArg(Apps(Index(3), Index(0), Index(1))));
-    def.addConstructor(new Constructor(defNamespace, new Name("con1"), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(6);
     arguments2.add(Tele(false, vars("y"), Index(3)));
     arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
-    def.addConstructor(new Constructor(defNamespace, new Name("con2"), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
 
-    DataDefinition typedDef = (DataDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());
@@ -107,24 +92,19 @@ public class DefinitionTest {
 
   @Test
   public void dataType2() {
-    // \data D (A : \7-Type2) = con1 (X : \1-Type5) X | con2 (Y : \2-Type3) A Y
+    DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D (A : \\7-Type2) | con1 (X : \\1-Type5) X | con2 (Y : \\2-Type3) A Y");
     List<TypeArgument> parameters = new ArrayList<>(1);
     parameters.add(Tele(vars("A"), Universe(2, 7)));
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, parameters);
-    Namespace namespace = def.getParentNamespace().getChild(def.getName());
 
     List<TypeArgument> arguments1 = new ArrayList<>(3);
     arguments1.add(Tele(vars("X"), Universe(5, 1)));
     arguments1.add(TypeArg(Index(0)));
-    def.addConstructor(new Constructor(namespace, new Name("con1"), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments1, def));
 
     List<TypeArgument> arguments2 = new ArrayList<>(4);
     arguments2.add(Tele(vars("Y"), Universe(3, 2)));
     arguments2.add(TypeArg(Index(1)));
     arguments2.add(TypeArg(Index(1)));
-    def.addConstructor(new Constructor(namespace, new Name("con2"), Abstract.Definition.DEFAULT_PRECEDENCE, null, arguments2, def));
 
-    DataDefinition typedDef = (DataDefinition) typeCheckDefinition(def);
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());

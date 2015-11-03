@@ -522,7 +522,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx == null) return null;
     String text = ctx.TRUNCATED_UNIVERSE().getText();
     int indexOfMinusSign = text.indexOf('-');
-    return new Concrete.UniverseExpression(tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol()), new Universe.Type(Integer.valueOf(text.substring(1, indexOfMinusSign)), Integer.valueOf(text.substring(indexOfMinusSign + "-Type".length()))));
+    return new Concrete.UniverseExpression(tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol()), new Universe.Type(Integer.valueOf(text.substring(indexOfMinusSign + "-Type".length())), Integer.valueOf(text.substring(1, indexOfMinusSign))));
   }
 
   @Override

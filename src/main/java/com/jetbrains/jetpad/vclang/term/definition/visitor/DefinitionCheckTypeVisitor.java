@@ -458,9 +458,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
       member.definition = typedConstructor;
 
-      Universe maxUniverse = typedUniverse.max(member.definition.getUniverse());
+      Universe maxUniverse = typedUniverse.max(typedConstructor.getUniverse());
       if (maxUniverse == null) {
-        String msg = "Universe " + member.definition.getUniverse() + " of constructor " + constructor.getName() + " is not compatible with universe " + typedUniverse + " of previous constructors";
+        String msg = "Universe " + typedConstructor.getUniverse() + " of constructor '" + constructor.getName() + "' is not compatible with universe " + typedUniverse + " of previous constructors";
         myErrorReporter.report(new TypeCheckingError(msg, null, null));
       } else {
         typedUniverse = maxUniverse;
@@ -475,6 +475,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         myErrorReporter.report(new TypeMismatchError(new UniverseExpression(universe), new UniverseExpression(typedUniverse), null, new ArrayList<String>()));
         dataDefinition.setUniverse(typedUniverse);
       }
+    } else {
+      dataDefinition.setUniverse(typedUniverse);
     }
 
     return dataDefinition;
