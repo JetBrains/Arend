@@ -18,13 +18,11 @@ public interface ModuleLoader {
         error.setLevel(GeneralError.Level.INFO);
         moduleLoader.loadingError(error);
       } else {
-        if (result.namespaceMember != null && (result.namespaceMember.abstractDefinition != null || result.namespaceMember.definition != null)) {
-          moduleLoader.loadingSucceeded(module, result.namespaceMember, result.compiled);
+        if (result.namespaceMember != null) {
+          module.parent.addMember(result.namespaceMember);
+          if (result.namespaceMember.abstractDefinition != null || result.namespaceMember.definition != null)
+            moduleLoader.loadingSucceeded(module, result.namespaceMember, result.compiled);
         }
-      }
-
-      if (result != null && result.namespaceMember != null) {
-        module.parent.addMember(result.namespaceMember);
       }
     }
   }
