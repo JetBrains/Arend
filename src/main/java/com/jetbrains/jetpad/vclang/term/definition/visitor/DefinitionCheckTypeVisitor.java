@@ -331,12 +331,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public ClassField visitAbstract(Abstract.AbstractDefinition def, Void params) {
-    ClassDefinition thisClass = getNamespaceClass(myNamespace);
-    if (thisClass == null) {
-      myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), "Abstract definitions are allowed only inside a class definition", def, new ArrayList<String>()));
-      return null;
-    }
+    throw new IllegalStateException();
+  }
 
+  public ClassField visitAbstract(Abstract.AbstractDefinition def, ClassDefinition thisClass) {
     Name name = def.getName();
     List<? extends Abstract.Argument> arguments = def.getArguments();
     List<TypeArgument> typedArguments = new ArrayList<>(arguments.size());
@@ -589,22 +587,28 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   private void typeCheckStatements(ClassDefinition classDefinition, Collection<? extends Abstract.Statement> statements, Namespace namespace) {
     for (Abstract.Statement statement : statements) {
-      if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.AbstractDefinition) {
-        Abstract.AbstractDefinition definition = (Abstract.AbstractDefinition) ((Abstract.DefineStatement) statement).getDefinition();
-        NamespaceMember member = namespace.getMember(((Abstract.DefineStatement) statement).getDefinition().getName().name);
-        if (member != null) {
-          typeCheck(member, namespace, myErrorReporter);
-          if (classDefinition != null && member.definition instanceof ClassField) {
-            ClassField field = (ClassField) member.definition;
-            Universe oldUniverse = classDefinition.getUniverse();
-            Universe newUniverse = field.getUniverse();
-            Universe maxUniverse = oldUniverse.max(newUniverse);
-            if (maxUniverse == null) {
-              String error = "Universe " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
-              myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), error, definition, new ArrayList<String>()));
-            } else {
-              classDefinition.setUniverse(maxUniverse);
-              classDefinition.addField(field);
+      if (statement instanceof Abstract.DefineStatement) {
+        Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
+        if (definition instanceof Abstract.AbstractDefinition) {
+          NamespaceMember member = namespace.getMember(definition.getName().name);
+          if (member != null) {
+            if (!member.isTypeChecked()) {
+              DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(member, namespace, myErrorReporter);
+              member.definition = visitor.visitAbstract((Abstract.AbstractDefinition) definition, classDefinition);
+            }
+
+            if (member.definition instanceof ClassField) {
+              ClassField field = (ClassField) member.definition;
+              Universe oldUniverse = classDefinition.getUniverse();
+              Universe newUniverse = field.getUniverse();
+              Universe maxUniverse = oldUniverse.max(newUniverse);
+              if (maxUniverse == null) {
+                String error = "Universe " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
+                myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), error, definition, new ArrayList<String>()));
+              } else {
+                classDefinition.setUniverse(maxUniverse);
+                classDefinition.addField(field);
+              }
             }
           }
         }
