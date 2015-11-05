@@ -69,7 +69,7 @@ public class TypecheckingOrdering {
 
       myVisiting.add(name);
       for (final ResolvedName rn : member.abstractDefinition.accept(new DefinitionGetDepsVisitor(member.namespace, myOthers, myClassToNonStatic), false)) {
-        boolean good = rn.toAbstractDefinition().accept(new AbstractDefinitionVisitor<Void, Boolean>() {
+        Boolean good = rn.toAbstractDefinition().accept(new AbstractDefinitionVisitor<Void, Boolean>() {
           @Override
           public Boolean visitFunction(Abstract.FunctionDefinition def, Void params) {
             return rn.equals(name) || doOrder(rn);
