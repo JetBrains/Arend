@@ -26,6 +26,8 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
     Set<ResolvedName> result = new HashSet<>();
 
+    visitStatements(def.getStatements(), false, true);
+
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
         result.addAll(((Abstract.TypeArgument) arg).getType().accept(new GetDepsVisitor(), null));
@@ -100,11 +102,10 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   public Set<ResolvedName> visitStatements(Collection<? extends Abstract.Statement> statements, boolean isStatic, boolean isFunction) {
     Set<ResolvedName> result = new HashSet<>();
-    Set<ResolvedName> nonStatic = !isStatic ? new HashSet<ResolvedName>() : null;
+    Set<ResolvedName> nonStatic = !isStatic && !isFunction ? new HashSet<ResolvedName>() : null;
     for (Abstract.Statement statement : statements) {
       if (statement instanceof Abstract.DefineStatement) {
         Abstract.DefineStatement defineStatement = (Abstract.DefineStatement) statement;
-        myOthers.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
         if (isStatic) {
           if (defineStatement.isStatic() || isFunction) {
             result.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
@@ -113,19 +114,22 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
             ));
           }
         } else {
-          if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.AbstractDefinition) {
-            result.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
-          }
-          if (!((Abstract.DefineStatement) statement).isStatic()) {
-            nonStatic.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
-            nonStatic.addAll(((Abstract.DefineStatement) statement).getDefinition().accept(
-               new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true
-            ));
+          myOthers.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
+          if (!isFunction) {
+            if (((Abstract.DefineStatement) statement).getDefinition() instanceof Abstract.AbstractDefinition) {
+              result.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
+            }
+            if (!((Abstract.DefineStatement) statement).isStatic()) {
+              nonStatic.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
+              nonStatic.addAll(((Abstract.DefineStatement) statement).getDefinition().accept(
+                  new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true
+              ));
+            }
           }
         }
       }
     }
-    if (!isStatic) {
+    if (nonStatic != null) {
       myClassToNonStatics.put(myNamespace.getResolvedName(), new ArrayList<>(nonStatic));
     }
     return result;
