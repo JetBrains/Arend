@@ -143,10 +143,15 @@ public class TypecheckingOrdering {
     return orderer.getResult();
   }
 
-  private static void typecheck(Result result, ErrorReporter errorReporter) {
+  private static void typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (result instanceof OKResult) {
       for (ResolvedName rn : ((OKResult) result).order) {
         DefinitionCheckTypeVisitor.typeCheck(rn.toNamespaceMember(), rn.parent, new LocalErrorReporter(rn, errorReporter));
+        if (rn.toDefinition() == null) {
+          typecheckedReporter.typecheckingFailed(rn);
+        } else {
+          typecheckedReporter.typecheckingSucceeded(rn);
+        }
       }
     } else if (result instanceof CycleResult) {
       StringBuilder errorMessage = new StringBuilder();
@@ -157,12 +162,19 @@ public class TypecheckingOrdering {
       errorReporter.report(new GeneralError(errorMessage.toString()));
     }
   }
-
   public static void typecheck(ResolvedName rname, ErrorReporter errorReporter) {
-    typecheck(order(rname), errorReporter);
+    typecheck(rname, errorReporter, new DummyTypecheckedReported());
+  }
+
+  public static void typecheck(ResolvedName rname, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+    typecheck(order(rname), errorReporter, typecheckedReporter);
   }
 
   public static void typecheck(List<ResolvedName> rnames, ErrorReporter errorReporter) {
-    typecheck(order(rnames), errorReporter);
+    typecheck(rnames, errorReporter, new DummyTypecheckedReported());
+  }
+
+  public static void typecheck(List<ResolvedName> rnames, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+    typecheck(order(rnames), errorReporter, typecheckedReporter);
   }
 }

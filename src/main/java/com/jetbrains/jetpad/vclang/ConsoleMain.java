@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -82,7 +83,7 @@ public class ConsoleMain {
       public void loadingSucceeded(ResolvedName resolvedName, NamespaceMember definition, boolean compiled) {
         loadedModules.add(resolvedName);
         if (compiled) {
-          System.out.println("[OK] " + resolvedName);
+          System.out.println("[Resolved] " + resolvedName);
         } else {
           System.out.println("[Loaded] " + resolvedName);
         }
@@ -121,7 +122,17 @@ public class ConsoleMain {
       }
     }
 
-    TypecheckingOrdering.typecheck(loadedModules, errorReporter);
+    TypecheckingOrdering.typecheck(loadedModules, errorReporter, new TypecheckedReporter() {
+      @Override
+      public void typecheckingSucceeded(ResolvedName definitionName) {
+        System.out.println("[OK] " + definitionName);
+      }
+
+      @Override
+      public void typecheckingFailed(ResolvedName definitionName) {
+        System.out.println("[FAILED] " + definitionName);
+      }
+    });
 
     for (GeneralError error : errorReporter.getErrorList()) {
       System.err.println(error);
