@@ -152,7 +152,6 @@ public class ModuleLoaderTest {
 
   @Test
   public void nonStaticTestError2() {
-    sourceSupplier.add(moduleName("A"), "\\abstract f : Nat \\static \\class B { \\abstract g : Nat \\function h => g }");
     sourceSupplier.add(moduleName("A"), "\\abstract f : Nat \\class B { \\abstract g : Nat \\static \\function (+) (f g : Nat) => f \\function h => f + g }");
     sourceSupplier.add(moduleName("B"), "\\static \\function f (p : A.B) => p.h");
 

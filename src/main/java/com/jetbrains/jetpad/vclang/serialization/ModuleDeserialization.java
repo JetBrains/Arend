@@ -111,7 +111,11 @@ public class ModuleDeserialization {
       return null;
 
     Definition definition = code.toDefinition(name, rn.parent, precedence);
-    rn.parent.addDefinition(definition);
+    if (rn.name.name.equals("\\parent"))
+      ((ClassDefinition) rn.parent.getResolvedName().toDefinition()).addField((ClassField) definition);
+    else {
+      rn.parent.addDefinition(definition);
+    }
     return definition;
   }
 
@@ -151,8 +155,10 @@ public class ModuleDeserialization {
       } else {
         rn = fullPathToResolvedName(readFullPath(stream));
       }
-      if (!createStubs)
-        result.put(i, rn.toDefinition());
+      if (!createStubs) {
+        result.put(i, rn.name.name.equals("\\parent") ?
+            ((ClassDefinition) rn.parent.getResolvedName().toDefinition()).getField("\\parent") : rn.toDefinition());
+      }
     }
 
     return createStubs ? null : result;
@@ -172,6 +178,8 @@ public class ModuleDeserialization {
 
   private Definition deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     Definition definition = definitionMap.get(stream.readInt());
+    if (stream.readBoolean())
+      definition.setThisClass((ClassDefinition) definitionMap.get(stream.readInt()));
     definition.hasErrors(stream.readBoolean());
 
     if (definition instanceof FunctionDefinition) {

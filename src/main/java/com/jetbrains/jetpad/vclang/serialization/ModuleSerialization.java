@@ -82,6 +82,9 @@ public class ModuleSerialization {
 
   public static int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
     visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(definition.getResolvedName(), true));
+    visitor.getDataStream().writeBoolean(definition.getThisClass() != null);
+    if (definition.getThisClass() != null)
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(definition.getThisClass().getResolvedName(), false));
     visitor.getDataStream().writeBoolean(definition.hasErrors());
 
     if (definition instanceof FunctionDefinition) {
