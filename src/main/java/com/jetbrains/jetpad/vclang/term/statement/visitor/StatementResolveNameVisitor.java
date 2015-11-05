@@ -117,12 +117,24 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
         if (member1 == null) {
           myErrorReporter.report(new NameDefinedError(false, stat, name.getName(), member.namespace.getResolvedName()));
         } else {
-          processNamespaceCommand(member1, export, remove, stat);
+          if (member1.abstractDefinition != null) {
+            Abstract.DefineStatement parentStatement = member1.abstractDefinition.getParentStatement();
+            if (parentStatement != null && parentStatement.isStatic()) {
+              processNamespaceCommand(member1, export, remove, stat);
+            } else {
+              myErrorReporter.report(new TypeCheckingError("Definition '" + name.getName() + "' is not static", stat, null));
+            }
+          }
         }
       }
     } else {
       for (NamespaceMember member1 : member.namespace.getMembers()) {
-        processNamespaceCommand(member1, export, remove, stat);
+        if (member1.abstractDefinition != null) {
+          Abstract.DefineStatement parentStatement = member1.abstractDefinition.getParentStatement();
+          if (parentStatement != null && parentStatement.isStatic()) {
+            processNamespaceCommand(member1, export, remove, stat);
+          }
+        }
       }
     }
     return null;
