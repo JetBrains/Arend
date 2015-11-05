@@ -26,6 +26,12 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
+  public Expression applyThis(Expression thisExpr) {
+    // TODO
+    return this;
+  }
+
+  @Override
   public Constructor getDefinition() {
     return (Constructor) super.getDefinition();
   }

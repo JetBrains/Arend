@@ -21,6 +21,8 @@ public abstract class DefCallExpression extends Expression implements Abstract.D
     return new ResolvedName(myDefinition.getParentNamespace(), myDefinition.getName());
   }
 
+  public abstract Expression applyThis(Expression thisExpr);
+
   public Definition getDefinition() {
     return myDefinition;
   }

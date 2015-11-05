@@ -170,4 +170,47 @@ public class ClassesTest {
         "}\n" +
         "\\static \\function f (b : B) (a : b.A) : b.f 0 => a.g");
   }
+
+  @Test
+  public void constructorTest() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n) \n" +
+        "}\n" +
+        "\\static \\function f (a : A) : a.D (a.x) (\\lam y => y) => a.con1 (path (\\lam _ => a.x))\n" +
+        "\\static \\function g (a : A) : a.D (a.x) (\\lam y => y) => a.con2 (path (\\lam _ => a.x))");
+  }
+
+  @Test
+  public void constructorThisTest() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n) \n" +
+        "  \\function f : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
+        "  \\function g : D x (\\lam y => y) => con2 (path (\\lam _ => x))\n"+
+        "}\n" +
+        "\\static \\function f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
+        "\\static \\function g (a : A) : a.D (a.x) (\\lam y => y) => a.g");
+  }
+
+  @Test
+  public void constructorIndicesThisTest() {
+    typeCheckClass(
+        "\\abstract (+) (x y : Nat) : Nat\n" +
+        "\\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\data D (n : Nat) (f : Nat -> Nat -> Nat)" +
+        "    | D zero f => con1 (f x x = f x x)\n" +
+        "    | D (suc n) f => con2 (D n f) (f n x = f n x)\n" +
+        "  \\function f (n : Nat) : D n (+) <= \\elim n\n" +
+        "    | zero => con1 (path (\\lam _ => x + x))\n" +
+        "    | suc n => con2 (f n) (path (\\lam _ => n + x))\n" +
+        "}\n" +
+        "\\function f (a : A) (n : Nat) : a.D n (+) => a.f\n" +
+        "\\function g (a : A) (n : Nat) : a.D n (+) <= \\elim n\n" +
+        "  | zero => con1 (path (\\lam _ => x + x))\n" +
+        "  | suc n => con2 (g a n) (path (\\lam _ => n + a.x))");
+  }
 }

@@ -58,7 +58,7 @@ public class TypeCheckingDefCall {
 
     CheckTypeVisitor.OKResult okResult = result.baseResult == null ? new CheckTypeVisitor.OKResult(null, null, null) : (CheckTypeVisitor.OKResult) result.baseResult;
     Expression thisExpr = okResult.expression;
-    okResult.expression = result.member.definition.getDefCallWithThis();
+    DefCallExpression expression = result.member.definition.getDefCallWithThis();
     okResult.type = result.member.definition.getBaseType();
 
     if (result.member.definition instanceof Constructor) {
@@ -76,10 +76,12 @@ public class TypeCheckingDefCall {
     }
 
     if (thisExpr != null) {
-      okResult.expression = Apps(okResult.expression, thisExpr);
+      okResult.expression = expression.applyThis(thisExpr);
       if (okResult.type != null) {
         okResult.type = okResult.type.subst(thisExpr, 0);
       }
+    } else {
+      okResult.expression = expression;
     }
 
     return okResult;

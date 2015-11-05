@@ -19,6 +19,12 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   @Override
+  public Expression applyThis(Expression thisExpr) {
+    // TODO
+    return this;
+  }
+
+  @Override
   public ClassDefinition getDefinition() {
     return (ClassDefinition) super.getDefinition();
   }

@@ -77,6 +77,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   public Concrete.Expression visitExpr(ExprContext expr) {
+    if (expr == null) return null;
     return (Concrete.Expression) visit(expr);
   }
 
