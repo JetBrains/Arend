@@ -77,7 +77,9 @@ public class TypeCheckingDefCall {
 
     if (thisExpr != null) {
       okResult.expression = Apps(okResult.expression, thisExpr);
-      okResult.type = okResult.type.subst(thisExpr, 0);
+      if (okResult.type != null) {
+        okResult.type = okResult.type.subst(thisExpr, 0);
+      }
     }
 
     return okResult;
@@ -233,27 +235,26 @@ public class TypeCheckingDefCall {
     }
 
     ResolvedName resolvedName = expr.getResolvedName();
-    Name name;
+    NamespaceMember member;
     if (resolvedName != null) {
-      NamespaceMember member = result.member.namespace.getMember(resolvedName.name.name);
+      member = result.member.namespace.getMember(resolvedName.name.name);
       if (member == null || resolvedName.parent != member.namespace.getParent()) {
         TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, resolvedName.parent.getResolvedName());
         expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
         myErrorReporter.report(error);
         return null;
       }
-      name = resolvedName.name;
     } else {
-      name = expr.getName();
+      Name name = expr.getName();
+      member = result.member.namespace.getMember(name.name);
+      if (member == null) {
+        TypeCheckingError error = new NameDefinedError(false, expr, name, new ResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
+        expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
+        myErrorReporter.report(error);
+        return null;
+      }
     }
 
-    NamespaceMember member = result.member.namespace.getMember(name.name);
-    if (member == null) {
-      TypeCheckingError error = new NameDefinedError(false, expr, name, new ResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
-      expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
-      myErrorReporter.report(error);
-      return null;
-    }
     if (member.definition != null && member.definition.getThisClass() != result.baseClassDefinition) {
       TypeCheckingError error = new TypeCheckingError("Definition '" + member.definition.getName() + "' cannot be called from here", expr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));

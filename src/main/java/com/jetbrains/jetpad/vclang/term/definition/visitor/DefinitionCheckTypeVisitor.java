@@ -123,6 +123,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     if (thisClass != null) {
       context.add(new TypedBinding("\\this", ClassCall(thisClass)));
       visitor.setThisClass(thisClass);
+      typedDef.setThisClass(thisClass);
     }
 
     /*
@@ -403,6 +404,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     ClassField typedDef = new ClassField(myNamespace, name, def.getPrecedence(), Pi(typedArguments, typedResultType), thisClass);
     typedDef.setUniverse(universe);
+    typedDef.setThisClass(thisClass);
     myNamespaceMember.definition = typedDef;
     return typedDef;
   }
@@ -411,7 +413,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   public DataDefinition visitData(Abstract.DataDefinition def, Void params) {
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
     List<TypeArgument> typedParameters = new ArrayList<>(parameters.size());
-    DataDefinition dataDefinition;
     Universe universe = def.getUniverse();
     Universe typedUniverse = new Universe.Type(0, Universe.Type.PROP);
 
@@ -439,7 +440,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
 
     Name name = def.getName();
-    dataDefinition = new DataDefinition(myNamespace, name, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), typedParameters);
+    DataDefinition dataDefinition = new DataDefinition(myNamespace, name, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), typedParameters);
+    dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
     myNamespace = myNamespace.getChild(name);
@@ -579,6 +581,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name, def.getPrecedence(), universe, typeArguments, dataDefinition, typedPatterns);
+      constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
       dataDefinition.getParentNamespace().addDefinition(constructor);
       return constructor;

@@ -33,7 +33,8 @@ public abstract class Definition extends Binding implements Abstract.Definition 
 
   @Override
   public Expression getType() {
-    return myThisClass != null ? Pi("\\this", ClassCall(myThisClass), getBaseType()) : getBaseType();
+    Expression baseType = getBaseType();
+    return myThisClass != null && baseType != null ? Pi("\\this", ClassCall(myThisClass), baseType) : baseType;
   }
 
   public ClassDefinition getThisClass() {

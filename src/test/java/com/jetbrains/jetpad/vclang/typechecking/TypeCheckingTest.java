@@ -48,6 +48,11 @@ public class TypeCheckingTest {
   }
 
   @Test
+  public void defCallStaticTestError() {
+    typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\function y (a : A) => a.x", 1);
+  }
+
+  @Test
   public void defCallInnerNonStaticTestError() {
     typeCheckClass("\\static \\class A { \\class B { \\function x => 0 } } \\static \\function y (a : A) => a.B.x", 1);
   }
@@ -69,7 +74,7 @@ public class TypeCheckingTest {
 
   @Test
   public void nameResolverPiOpenError() {
-    typeCheckExpr("\\Pi (a b : Nat a) -> Nat a b", null, 2);
+    typeCheckExpr("\\Pi (A : Nat -> \\Type0) (a b : A a) -> A 0", null, 1);
   }
 
   @Test
