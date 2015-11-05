@@ -20,39 +20,27 @@ import java.util.*;
 public abstract class BaseModuleLoader implements ModuleLoader {
   private final List<ResolvedName> myLoadingModules = new ArrayList<>();
 
-  // TODO: extract deserialization
-  private final static class DeserializingModuleInfo {
-    public final Output.Header header;
-    public final Output output;
-    public final Source source;
-    public ModuleLoadingResult result;
-
-
-    private DeserializingModuleInfo(Output.Header header, Output output, Source source) {
-      this.header = header;
-      this.output = output;
-      this.source = source;
-    }
-  }
-
-  private final Map<ResolvedName, DeserializingModuleInfo> myDeserializingModules = new HashMap<>();
-
   private SourceSupplier mySourceSupplier;
   private OutputSupplier myOutputSupplier;
+
+  private final DeserializingLoader myDeserializingLoader;
   private final boolean myRecompile;
 
   public BaseModuleLoader(boolean recompile) {
     mySourceSupplier = DummySourceSupplier.getInstance();
     myOutputSupplier = DummyOutputSupplier.getInstance();
     myRecompile = recompile;
+    myDeserializingLoader = new DeserializingLoader(myLoadingModules, this, mySourceSupplier, myOutputSupplier);
   }
 
   public void setSourceSupplier(SourceSupplier sourceSupplier) {
     mySourceSupplier = sourceSupplier;
+    myDeserializingLoader.setSourceSupplier(sourceSupplier);
   }
 
   public void setOutputSupplier(OutputSupplier outputSupplier) {
     myOutputSupplier = outputSupplier;
+    myDeserializingLoader.setOutputSupplier(outputSupplier);
   }
 
   @Override
@@ -64,165 +52,6 @@ public abstract class BaseModuleLoader implements ModuleLoader {
       } catch (IOException e) {
         savingError(new GeneralError(module, GeneralError.ioError(e)));
       }
-    }
-  }
-
-  private boolean deserializeStubs(ResolvedName name, List<ResolvedName> deserializedModules) {
-    DeserializingModuleInfo info = myDeserializingModules.get(name);
-
-    if (name.toDefinition() != null || info.output.isContainer())
-      return true;
-    try {
-      info.output.readStubs();
-      if (info.source.isAvailable())
-        info.source.load(true);
-    } catch (IOException e) {
-      for (ResolvedName rn : deserializedModules) {
-        myDeserializingModules.remove(rn);
-        rn.parent.removeMember(rn.toNamespaceMember());
-      }
-      loadingError(new GeneralError(name, GeneralError.ioError(e)));
-      return false;
-    }
-
-    deserializedModules.add(name);
-    for (List<String> dependency : myDeserializingModules.get(name).header.dependencies) {
-      ResolvedName depName = new ResolvedName(null, "\\root");
-      for (String aPath : dependency) {
-        depName = new ResolvedName(depName.toNamespace(), aPath);
-        if (!deserializeStubs(depName, deserializedModules)) {
-          return false;
-        }
-      }
-    }
-
-    return true;
-  }
-
-  private boolean tryDeserialize(ResolvedName module) {
-    return tryDeserialize(module, new HashSet<ResolvedName>()) != null;
-  }
-
-  private Set<ResolvedName> tryDeserialize(ResolvedName module, Set<ResolvedName> visiting) {
-    Source source = mySourceSupplier.getSource(module);
-    Output output = myOutputSupplier.getOutput(module);
-    if (!output.canRead()) {
-      output = myOutputSupplier.locateOutput(module);
-    }
-    if (!output.canRead()) {
-      return null;
-    }
-
-    if (output.isContainer() && (source.isContainer() || !source.isAvailable())) {
-      try {
-        myDeserializingModules.put(module, new DeserializingModuleInfo(
-            new Output.Header(Collections.<List<String>>emptyList(), Collections.<String>emptyList()), output, source));
-        myDeserializingModules.get(module).result = new ModuleLoadingResult(module.toNamespaceMember(), false, 0);
-        output.readStubs();
-        if (source.isAvailable())
-          source.load(true);
-        return Collections.emptySet();
-      } catch (IOException e) {
-        loadingError(new GeneralError(module, GeneralError.ioError(e)));
-        module.parent.removeMember(module.toNamespaceMember());
-        return null;
-      }
-    }
-
-    if (source.isAvailable() && (source.isContainer() != output.isContainer() || source.lastModified() > output.lastModified()))
-      return null;
-
-    Output.Header header;
-    try {
-      header = output.getHeader();
-    } catch (IOException e) {
-      loadingError(new GeneralError(module, GeneralError.ioError(e)));
-      return null;
-    }
-
-    Set<ResolvedName> visitingDeps = new HashSet<>();
-    myDeserializingModules.put(module, new DeserializingModuleInfo(header, output, source));
-    visiting.add(module);
-
-    boolean failed = false;
-    dependencies_loop:
-    for (List<String> dependency : header.dependencies) {
-      ResolvedName depName = new ResolvedName(null, "\\root");
-      boolean isContainer = false;
-      for (String aPath : dependency) {
-        if (myDeserializingModules.containsKey(depName) && myDeserializingModules.get(depName).header.provided.contains(aPath)) {
-          break;
-        }
-        depName = new ResolvedName(depName.toNamespace(), aPath);
-        if (depName.toAbstractDefinition() != null || myLoadingModules.contains(depName)) {
-          failed = true;
-          break dependencies_loop;
-        }
-        if (!myDeserializingModules.containsKey(depName)) {
-          Set<ResolvedName> nestedVisitngDeps = tryDeserialize(depName, visiting);
-          if (nestedVisitngDeps == null) {
-            failed = true;
-            break dependencies_loop;
-          }
-          visitingDeps.addAll(nestedVisitngDeps);
-        }
-        DeserializingModuleInfo nestedInfo = myDeserializingModules.get(depName);
-        if (nestedInfo.source.isAvailable() && !nestedInfo.source.isContainer() && nestedInfo.source.lastModified() > output.lastModified()) {
-          failed = true;
-          break dependencies_loop;
-        }
-        isContainer = nestedInfo.source.isContainer();
-      }
-      if (isContainer) {
-        failed = true;
-        break;
-      }
-    }
-    visiting.remove(module);
-    if (failed) {
-      myDeserializingModules.remove(module);
-      return null;
-    }
-
-    visitingDeps.remove(module);
-
-    if (visitingDeps.isEmpty()) {
-      List<ResolvedName> deserializedModules = new ArrayList<>();
-      if (!deserializeStubs(module, deserializedModules)) {
-        return null;
-      }
-        for (ResolvedName nestedModule : deserializedModules) {
-          try {
-            ModuleLoadingResult nestedResult = myDeserializingModules.get(nestedModule).output.read();
-            processLoaded(nestedModule, nestedResult);
-            myDeserializingModules.get(nestedModule).result = nestedResult;
-          } catch (IOException e) {
-            for (ResolvedName loaded : deserializedModules) {
-              myDeserializingModules.remove(loaded);
-              loaded.parent.removeMember(loaded.toNamespaceMember());
-            }
-            loadingError(new GeneralError(nestedModule, GeneralError.ioError(e)));
-            return null;
-          }
-        }
-    }
-
-    return visitingDeps;
-  }
-
-  private void processLoaded(ResolvedName module, ModuleLoadingResult result) {
-    if (result == null || result.errorsNumber != 0) {
-      GeneralError error = new GeneralError(module.parent.getResolvedName(), result == null ? "cannot load module '" + module.name + "'" : "module '" + module.name + "' contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
-      error.setLevel(GeneralError.Level.INFO);
-      loadingError(error);
-    } else {
-      if (result.namespaceMember != null && (result.namespaceMember.abstractDefinition != null || result.namespaceMember.definition != null)) {
-        loadingSucceeded(module, result.namespaceMember, result.compiled);
-      }
-    }
-
-    if (result != null && result.namespaceMember != null) {
-      module.parent.addMember(result.namespaceMember);
     }
   }
 
@@ -240,8 +69,10 @@ public abstract class BaseModuleLoader implements ModuleLoader {
     }
 
     try {
-      if (!myRecompile && tryDeserialize(module)) {
-        return myDeserializingModules.get(module).result;
+      if (!myRecompile) {
+        ModuleLoadingResult result = myDeserializingLoader.load(module);
+        if (result != null)
+          return result;
       }
 
       Source source = mySourceSupplier.getSource(module);
@@ -256,7 +87,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
         myLoadingModules.add(module);
 
         ModuleLoadingResult result = source.load(false);
-        processLoaded(module, result);
+        Helper.processLoaded(this, module, result);
 
         return result;
       } finally {
