@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
@@ -30,6 +31,8 @@ public abstract class Definition extends Binding implements Abstract.Definition 
   }
 
   public abstract Expression getBaseType();
+
+  public abstract DefCallExpression getDefCallWithThis();
 
   @Override
   public Expression getType() {

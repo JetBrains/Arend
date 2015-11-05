@@ -36,25 +36,6 @@ public class ExpressionFactory {
     return new AppExpression(expr, new ArgumentExpression(arg, explicit, hidden));
   }
 
-  public static DefCallExpression DefCall(Definition definition) {
-    if (definition instanceof FunctionDefinition) {
-      return new FunCallExpression((FunctionDefinition) definition);
-    }
-    if (definition instanceof DataDefinition) {
-      return new DataCallExpression((DataDefinition) definition);
-    }
-    if (definition instanceof ClassField) {
-      return new FieldCallExpression((ClassField) definition);
-    }
-    if (definition instanceof ClassDefinition) {
-      return ClassCall((ClassDefinition) definition);
-    }
-    if (definition instanceof Constructor) {
-      return ConCall((Constructor) definition);
-    }
-    throw new IllegalStateException();
-  }
-
   public static FunCallExpression FunCall(FunctionDefinition definition) {
     return new FunCallExpression(definition);
   }
@@ -84,7 +65,7 @@ public class ExpressionFactory {
   }
 
   public static Expression BinOp(Expression left, Definition binOp, Expression right) {
-    return Apps(DefCall(binOp), left, right);
+    return Apps(binOp.getDefCallWithThis(), left, right);
   }
 
   public static NewExpression New(Expression expression) {

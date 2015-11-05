@@ -331,7 +331,7 @@ public class ModuleDeserialization {
         Definition definition = definitionMap.get(stream.readInt());
         int size = stream.readInt();
         if (size == 0) {
-          return DefCall(definition);
+          return definition.getDefCallWithThis();
         }
         if (!(definition instanceof Constructor)) {
           throw new IncorrectFormat();

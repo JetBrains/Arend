@@ -11,7 +11,7 @@ public class SubstTest {
   @Test
   public void substConst() {
     // zero -> N [0 := S] = zero -> N
-    Expression expr = Pi(Zero(), DefCall(Prelude.NAT));
+    Expression expr = Pi(Zero(), DataCall(Prelude.NAT));
     assertEquals(expr, expr.subst(Suc(), 0));
   }
 

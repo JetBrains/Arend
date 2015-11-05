@@ -4,6 +4,9 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
 
 public class ClassField extends Definition {
   private Expression myType;
@@ -19,7 +22,12 @@ public class ClassField extends Definition {
   public Expression getBaseType() {
     return myType;
   }
-  
+
+  @Override
+  public FieldCallExpression getDefCallWithThis() {
+    return FieldCall(this);
+  }
+
   public void setBaseType(Expression type) {
     myType = type;
   }

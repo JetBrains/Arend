@@ -18,16 +18,16 @@ public class GetTypeTest {
   public void constructorTest() {
     ClassDefinition def = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => cons 0 nil");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
-    assertEquals(Apps(DefCall(namespace.getDefinition("List")), Nat()), namespace.getDefinition("test").getType());
-    assertEquals(Apps(DefCall(namespace.getDefinition("List")), Nat()), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Apps(namespace.getDefinition("List").getDefCallWithThis(), Nat()), namespace.getDefinition("test").getType());
+    assertEquals(Apps(namespace.getDefinition("List").getDefCallWithThis(), Nat()), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
   public void nilConstructorTest() {
     ClassDefinition def = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => (List Nat).nil");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
-    assertEquals(Apps(DefCall(namespace.getDefinition("List")), Nat()), namespace.getDefinition("test").getType());
-    assertEquals(Apps(DefCall(namespace.getDefinition("List")), Nat()), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Apps(namespace.getDefinition("List").getDefCallWithThis(), Nat()), namespace.getDefinition("test").getType());
+    assertEquals(Apps(namespace.getDefinition("List").getDefCallWithThis(), Nat()), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
@@ -57,9 +57,9 @@ public class GetTypeTest {
   public void fieldAccTest() {
     ClassDefinition def = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
-    Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(DefCall(((ClassDefinition) namespace.getDefinition("C")).getField("x")), Apps(Index(0), Zero())));
+    Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(FieldCall(((ClassDefinition) namespace.getDefinition("C")).getField("x")), Apps(Index(0), Zero())));
     List<Binding> context = new ArrayList<>(1);
-    context.add(new TypedBinding("p", Pi(Nat(), DefCall(namespace.getDefinition("C")))));
+    context.add(new TypedBinding("p", Pi(Nat(), namespace.getDefinition("C").getDefCallWithThis())));
     assertEquals(Pi(args(Tele(vars("p"), context.get(0).getType())), Pi(type, type)), namespace.getDefinition("test").getType());
     assertEquals(Pi(type, type), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(context));
   }
@@ -82,8 +82,8 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass(
         "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
-    assertEquals(Apps(DefCall(namespace.getMember("C").definition), Zero()), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c1").getType());
-    assertEquals(Pi("n", Nat(), Apps(DefCall(namespace.getMember("C").definition), Suc(Index(1)))), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
+    assertEquals(Apps(namespace.getMember("C").definition.getDefCallWithThis(), Zero()), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c1").getType());
+    assertEquals(Pi("n", Nat(), Apps(namespace.getMember("C").definition.getDefCallWithThis(), Suc(Index(1)))), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
   }
 
   @Test

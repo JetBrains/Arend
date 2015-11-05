@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.statement.DefineStatement;
@@ -11,6 +12,8 @@ import com.jetbrains.jetpad.vclang.term.statement.DefineStatement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition, Function {
   private Arrow myArrow;
@@ -119,6 +122,11 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
       return null;
     }
     return Utils.getFunctionType(this);
+  }
+
+  @Override
+  public FunCallExpression getDefCallWithThis() {
+    return FunCall(this);
   }
 
   @Override

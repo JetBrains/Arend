@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -10,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DataCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class DataDefinition extends Definition implements Abstract.DataDefinition {
@@ -61,6 +63,11 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   public Expression getBaseType() {
     Expression resultType = new UniverseExpression(getUniverse());
     return myParameters.isEmpty() ? resultType : Pi(myParameters, resultType);
+  }
+
+  @Override
+  public DataCallExpression getDefCallWithThis() {
+    return DataCall(this);
   }
 
   @Override

@@ -23,7 +23,7 @@ public class LiftTest {
   @Test
   public void liftConst() {
     // lift( null -> zero , 0, 1) = null -> zero
-    Expression expr = Pi(Zero(), DefCall(Prelude.NAT));
+    Expression expr = Pi(Zero(), DataCall(Prelude.NAT));
     assertEquals(expr, expr.liftIndex(0, 1));
   }
 

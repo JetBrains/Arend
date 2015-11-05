@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -23,6 +24,11 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   @Override
   public Expression getBaseType() {
     return new UniverseExpression(getUniverse());
+  }
+
+  @Override
+  public ClassCallExpression getDefCallWithThis() {
+    return ClassCall(this);
   }
 
   public ClassField getField(String name) {

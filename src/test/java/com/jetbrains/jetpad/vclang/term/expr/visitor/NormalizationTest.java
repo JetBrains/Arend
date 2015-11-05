@@ -50,14 +50,14 @@ public class NormalizationTest {
     ElimExpression facTerm = Elim(Index(0), facClauses);
     fac = new FunctionDefinition(testNS, new Name("fac"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, facTerm);
     testNS.addDefinition(fac);
-    facClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Suc(Zero()), facTerm)); facClauses.add(new Clause(match(Prelude.SUC, match("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Suc(Index(0)), mul, Apps(DefCall(fac), Index(0))), facTerm));
+    facClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Suc(Zero()), facTerm)); facClauses.add(new Clause(match(Prelude.SUC, match("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Suc(Index(0)), mul, Apps(FunCall(fac), Index(0))), facTerm));
 
     List<Clause> nelimClauses = new ArrayList<>(2);
     ElimExpression nelimTerm = Elim(Index(0), nelimClauses);
     nelim = new FunctionDefinition(testNS, new Name("nelim"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
     testNS.addDefinition(nelim);
     nelimClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(1), nelimTerm));
-    nelimClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(DefCall(nelim), Index(2), Index(1), Index(0))), nelimTerm));
+    nelimClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(FunCall(nelim), Index(2), Index(1), Index(0))), nelimTerm));
   }
 
   @Test
@@ -91,14 +91,14 @@ public class NormalizationTest {
   @Test
   public void normalizeNelimZero() {
     // normalize( N-elim (suc zero) suc 0 ) = suc zero
-    Expression expr = Apps(DefCall(nelim), Suc(Zero()), Suc(), Zero());
+    Expression expr = Apps(FunCall(nelim), Suc(Zero()), Suc(), Zero());
     assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeNelimOne() {
     // normalize( N-elim (suc zero) (\x y. (var(0)) y) (suc zero) ) = var(0) (suc zero)
-    Expression expr = Apps(DefCall(nelim), Suc(Zero()), Lam("x", Lam("y", Apps(Index(2), Index(0)))), Suc(Zero()));
+    Expression expr = Apps(FunCall(nelim), Suc(Zero()), Lam("x", Lam("y", Apps(Index(2), Index(0)))), Suc(Zero()));
     assertEquals(Apps(Index(0), Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -106,7 +106,7 @@ public class NormalizationTest {
   public void normalizeNelimArg() {
     // normalize( N-elim (suc zero) (var(0)) ((\x. x) zero) ) = suc zero
     Expression arg = Apps(Lam("x", Index(0)), Zero());
-    Expression expr = Apps(DefCall(nelim), Suc(Zero()), Index(0), arg);
+    Expression expr = Apps(FunCall(nelim), Suc(Zero()), Index(0), arg);
     Expression result = expr.normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Suc(Zero()), result);
   }
@@ -156,7 +156,7 @@ public class NormalizationTest {
   @Test
   public void normalizeFac3() {
     // normalize (fac 3) = 6
-    Expression expr = Apps(DefCall(fac), Suc(Suc(Suc(Zero()))));
+    Expression expr = Apps(FunCall(fac), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -223,6 +223,6 @@ public class NormalizationTest {
         "\\static \\data D | d Nat\n" +
         "\\static \\function test (x : D) : Nat => \\elim x | _! => 0");
     FunctionDefinition test = (FunctionDefinition) def.getParentNamespace().getChild(def.getName()).getMember("test").definition;
-    assertEquals(Apps(DefCall(test), Index(0)).normalize(NormalizeVisitor.Mode.NF), Apps(DefCall(test), Index(0)));
+    assertEquals(Apps(FunCall(test), Index(0)).normalize(NormalizeVisitor.Mode.NF), Apps(FunCall(test), Index(0)));
   }
 }
