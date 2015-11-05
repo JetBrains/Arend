@@ -118,6 +118,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     Concrete.DefineStatement statement = new Concrete.DefineStatement(definition.getPosition(), ctx.staticMod() instanceof StaticStaticContext, definition);
     definition.setParentStatement(statement);
+    if (definition instanceof Concrete.DataDefinition) {
+      for (Concrete.Constructor constructor : ((Concrete.DataDefinition) definition).getConstructors()) {
+        constructor.setParentStatement(statement);
+      }
+    }
     return statement;
   }
 
