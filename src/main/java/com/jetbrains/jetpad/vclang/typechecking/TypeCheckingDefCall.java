@@ -59,7 +59,7 @@ public class TypeCheckingDefCall {
     CheckTypeVisitor.OKResult okResult = result.baseResult == null ? new CheckTypeVisitor.OKResult(null, null, null) : (CheckTypeVisitor.OKResult) result.baseResult;
     Expression thisExpr = okResult.expression;
     okResult.expression = DefCall(result.member.definition);
-    okResult.type = result.member.definition.getType();
+    okResult.type = result.member.definition.getBaseType();
 
     if (result.member.definition instanceof Constructor) {
       Constructor constructor = (Constructor) result.member.definition;
@@ -172,7 +172,7 @@ public class TypeCheckingDefCall {
           myErrorReporter.report(error);
           return null;
         }
-        return new DefCallResult(new CheckTypeVisitor.OKResult(thisExpr, null, null), null, member, null);
+        return new DefCallResult(new CheckTypeVisitor.OKResult(thisExpr, null, null), definition.getThisClass(), member, null);
       } else {
         TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr, getNames(myLocalContext));
         expr.setWellTyped(myLocalContext, Error(null, error));
