@@ -69,7 +69,7 @@ public class TypeCheckingTest {
 
   @Test
   public void nonStaticClassExportTest() {
-    typeCheckClass("\\class A { \\static \\function x => 0 } \\static \\class B { \\export A } \\static \\function y => B.x");
+    typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\class B { \\export A } \\static \\function y => B.x");
   }
 
   @Test

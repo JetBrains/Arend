@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -40,16 +41,15 @@ public class TypeCheckingTestCase {
 
   public static Definition typeCheckDef(Concrete.Definition definition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    TypecheckingOrdering.typecheck(new ResolvedName(RootModule.ROOT.getChild(new Name("test")), definition.getName()), errorReporter);
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(RootModule.ROOT.getChild(new Name("test")), errorReporter);
+    visitor.setNamespaceMember(RootModule.ROOT.getChild(new Name("test")).getMember(definition.getName().name));
+    Definition result = definition.accept(visitor, null);
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
-    return RootModule.ROOT.getChild(new Name("test")).getDefinition(definition.getName().name);
+    return result;
   }
 
   public static Definition typeCheckDef(String text, int errors) {
-    Concrete.ClassDefinition classDefinition = parseClass("test", text);
-    resolveNamesClass(classDefinition, 0);
-    RootModule.ROOT.addAbstractDefinition(classDefinition);
-    return typeCheckClass(classDefinition, errors).getResolvedName().toNamespace().getDefinition(((Concrete.DefineStatement) classDefinition.getStatements().get(0)).getDefinition().getName().name);
+    return typeCheckDef(resolveNamesDef(text), errors);
   }
 
   public static Definition typeCheckDef(String text) {
