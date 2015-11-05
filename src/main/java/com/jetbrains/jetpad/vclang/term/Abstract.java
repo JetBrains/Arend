@@ -266,6 +266,7 @@ public final class Abstract {
 
   public interface Pattern extends PrettyPrintableSourceNode {
     boolean getExplicit();
+    void setWellTyped(com.jetbrains.jetpad.vclang.term.pattern.Pattern pattern);
   }
 
   public interface NamePattern extends Pattern {

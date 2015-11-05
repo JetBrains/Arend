@@ -34,4 +34,9 @@ public abstract class Pattern implements Abstract.Pattern {
   }
 
   public abstract Utils.PatternMatchResult match(Expression expr, List<Binding> context);
+
+  @Override
+  public void setWellTyped(Pattern pattern) {
+
+  }
 }

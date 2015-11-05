@@ -955,6 +955,11 @@ public final class Concrete {
       prettyPrintPattern(this, builder, names);
     }
 
+    @Override
+    public void setWellTyped(com.jetbrains.jetpad.vclang.term.pattern.Pattern pattern) {
+
+    }
+
     public abstract String getName();
   }
 

@@ -1041,6 +1041,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       } else {
         myLocalContext.add(new TypedBinding(((Abstract.NamePattern) pattern).getName(), binding.getType()));
       }
+      pattern.setWellTyped(new NamePattern(name, pattern.getExplicit()));
       return new ExpandPatternOKResult(Index(0), new NamePattern(name, pattern.getExplicit()), 1);
     } else if (pattern instanceof Abstract.AnyConstructorPattern) {
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
@@ -1050,6 +1051,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         myErrorReporter.report(error);
         return new ExpandPatternErrorResult(error);
       }
+      pattern.setWellTyped(new AnyConstructorPattern(pattern.getExplicit()));
       myLocalContext.add(binding);
       return new ExpandPatternOKResult(Index(0), new AnyConstructorPattern(pattern.getExplicit()), 1);
     } else if (pattern instanceof Abstract.ConstructorPattern) {
@@ -1146,6 +1148,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         numBindings += okResult.numBindings;
       }
 
+      pattern.setWellTyped(new ConstructorPattern(constructor, resultPatterns, pattern.getExplicit()));
       return new ExpandPatternOKResult(substExpression, new ConstructorPattern(constructor, resultPatterns, pattern.getExplicit()), numBindings);
     } else {
       throw new IllegalStateException();
