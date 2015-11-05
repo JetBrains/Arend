@@ -68,8 +68,13 @@ public class TypeCheckingTest {
   }
 
   @Test
-  public void nonStaticClassExportTest() {
+  public void staticClassExportTest() {
     typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\class B { \\export A } \\static \\function y => B.x");
+  }
+
+  @Test
+  public void nonStaticClassExportTestError() {
+    typeCheckClass("\\class A { \\static \\function x => 0 } \\static \\class B { \\export A } \\static \\function y => B.x", 1);
   }
 
   @Test
