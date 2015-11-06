@@ -64,42 +64,42 @@ public class NormalizationTest {
   public void normalizeLamId() {
     // normalize( (\x.x) (suc zero) ) = suc zero
     Expression expr = Apps(Lam("x", Index(0)), Suc(Zero()));
-    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLamK() {
     // normalize( (\x y. x) (suc zero) ) = \z. suc zero
     Expression expr = Apps(Lam("x", Lam("y", Index(1))), Suc(Zero()));
-    assertEquals(Lam("z", Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Lam("z", Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLamKstar() {
     // normalize( (\x y. y) (suc zero) ) = \z. z
     Expression expr = Apps(Lam("x", Lam("y", Index(0))), Suc(Zero()));
-    assertEquals(Lam("z", Index(0)), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Lam("z", Index(0)), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLamKOpen() {
     // normalize( (\x y. x) (suc (var(0))) ) = \z. suc (var(0))
     Expression expr = Apps(Lam("x", Lam("y", Index(1))), Suc(Index(0)));
-    assertEquals(Lam("z", Suc(Index(1))), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Lam("z", Suc(Index(1))), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeNelimZero() {
     // normalize( N-elim (suc zero) suc 0 ) = suc zero
     Expression expr = Apps(FunCall(nelim), Suc(Zero()), Suc(), Zero());
-    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeNelimOne() {
     // normalize( N-elim (suc zero) (\x y. (var(0)) y) (suc zero) ) = var(0) (suc zero)
     Expression expr = Apps(FunCall(nelim), Suc(Zero()), Lam("x", Lam("y", Apps(Index(2), Index(0)))), Suc(Zero()));
-    assertEquals(Apps(Index(0), Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Apps(Index(0), Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
@@ -107,7 +107,7 @@ public class NormalizationTest {
     // normalize( N-elim (suc zero) (var(0)) ((\x. x) zero) ) = suc zero
     Expression arg = Apps(Lam("x", Index(0)), Zero());
     Expression expr = Apps(FunCall(nelim), Suc(Zero()), Index(0), arg);
-    Expression result = expr.normalize(NormalizeVisitor.Mode.NF);
+    Expression result = expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>());
     assertEquals(Suc(Zero()), result);
   }
 
@@ -115,49 +115,49 @@ public class NormalizationTest {
   public void normalizePlus0a3() {
     // normalize (plus 0 3) = 3
     Expression expr = BinOp(Zero(), plus, Suc(Suc(Suc(Zero()))));
-    assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizePlus3a0() {
     // normalize (plus 3 0) = 3
     Expression expr = BinOp(Suc(Suc(Suc(Zero()))), plus, Zero());
-    assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizePlus3a3() {
     // normalize (plus 3 3) = 6
     Expression expr = BinOp(Suc(Suc(Suc(Zero()))), plus, Suc(Suc(Suc(Zero()))));
-    assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeMul3a0() {
     // normalize (mul 3 0) = 0
     Expression expr = BinOp(Suc(Suc(Suc(Zero()))), mul, Zero());
-    assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeMul0a3() {
     // normalize (mul 0 3) = 0
     Expression expr = BinOp(Zero(), mul, Suc(Suc(Suc(Zero()))));
-    assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeMul3a3() {
     // normalize (mul 3 3) = 9
     Expression expr = BinOp(Suc(Suc(Suc(Zero()))), mul, Suc(Suc(Suc(Zero()))));
-    assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero()))))))))), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero()))))))))), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeFac3() {
     // normalize (fac 3) = 6
     Expression expr = Apps(FunCall(fac), Suc(Suc(Suc(Zero()))));
-    assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   private static Expression typecheckExpression(Expression expr) {
@@ -176,21 +176,21 @@ public class NormalizationTest {
   public void normalizeLet1() {
     // normalize (\let | x => zero \in \let | y = S \in y x) = 1
     Expression expr = typecheckExpression(Let(lets(let("x", Zero())), Let(lets(let("y", Suc())), Apps(Index(0), Index(1)))));
-    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLet2() {
     // normalize (\let | x => zero \in \let | y = S \in y x) = 1
     Expression expr = typecheckExpression(Let(lets(let("x", Suc())), Let(lets(let("y", Zero())), Apps(Index(1), Index(0)))));
-    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLetNo() {
     // normalize (\let | x (y z : N) => zero \in x zero) = \lam (z : N) => zero
     Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y", "z"), Nat())), Zero())), Apps(Index(0), Zero())));
-    assertEquals(Lam("x", Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Lam("x", Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
@@ -202,7 +202,7 @@ public class NormalizationTest {
     clauses.add(new Clause(match(Prelude.SUC, match(null)), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
     Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)),
         Apps(Index(0), Index(1))), new ArrayList<Binding>(Collections.singleton(new TypedBinding("n", Nat()))));
-    assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
 
@@ -214,7 +214,7 @@ public class NormalizationTest {
     clauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Universe(0), elim));
     clauses.add(new Clause(match(Prelude.SUC, match(null)), Abstract.Definition.Arrow.RIGHT, Universe(1), elim));
     Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Universe(2), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(0), Zero())));
-    assertEquals(Universe(0), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Universe(0), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
@@ -223,6 +223,6 @@ public class NormalizationTest {
         "\\static \\data D | d Nat\n" +
         "\\static \\function test (x : D) : Nat => \\elim x | _! => 0");
     FunctionDefinition test = (FunctionDefinition) def.getParentNamespace().getChild(def.getName()).getMember("test").definition;
-    assertEquals(Apps(FunCall(test), Index(0)).normalize(NormalizeVisitor.Mode.NF), Apps(FunCall(test), Index(0)));
+    assertEquals(Apps(FunCall(test), Index(0)).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()), Apps(FunCall(test), Index(0)));
   }
 }

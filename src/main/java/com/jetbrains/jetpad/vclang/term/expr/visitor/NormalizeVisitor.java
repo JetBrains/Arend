@@ -22,11 +22,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
   private final Mode myMode;
   private final List<Binding> myContext;
 
-  public NormalizeVisitor(Mode mode) {
-    myContext = new ArrayList<>();
-    myMode = mode;
-  }
-
   public NormalizeVisitor(Mode mode, List<Binding> context) {
     myContext = context;
     myMode = mode;
@@ -141,6 +136,30 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
   public Expression visitDefCall(DefCallExpression defCallExpr, List<ArgumentExpression> args) {
     if (defCallExpr.getDefinition().hasErrors()) {
       return myMode == Mode.TOP ? null : applyDefCall(defCallExpr, args);
+    }
+
+    if (defCallExpr.getDefinition() instanceof ClassField) {
+      if (args.isEmpty()) {
+        if (myMode == Mode.TOP) {
+          return null;
+        }
+        return FieldCall((ClassField) defCallExpr.getDefinition());
+      }
+
+      ArgumentExpression thisArg = args.get(args.size() - 1);
+      Expression thisType = thisArg.getExpression().getType(myContext);
+      if (thisType == null) {
+        assert false;
+      } else {
+        thisType = thisType.normalize(Mode.WHNF, myContext);
+        if (thisType instanceof ClassCallExpression) {
+          ClassCallExpression.OverrideElem elem = ((ClassCallExpression) thisType).getOverrideElems().get(defCallExpr.getDefinition());
+          if (elem != null && elem.term != null) {
+            Expression result = Apps(elem.term, args.subList(0, args.size() - 1).toArray(new ArgumentExpression[args.size() - 1]));
+            return myMode == Mode.TOP ? result : result.accept(this);
+          }
+        }
+      }
     }
 
     if (defCallExpr.getDefinition() instanceof Function) {
@@ -405,7 +424,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
 
   @Override
   public Expression visitProj(ProjExpression expr) {
-    Expression exprNorm = expr.getExpression().normalize(Mode.WHNF);
+    Expression exprNorm = expr.getExpression().normalize(Mode.WHNF, myContext);
     if (exprNorm instanceof TupleExpression) {
       Expression result = ((TupleExpression) exprNorm).getFields().get(expr.getField());
       return myMode == Mode.TOP ? result : result.accept(this);

@@ -39,7 +39,7 @@ public class AppExpression extends Expression implements Abstract.AppExpression 
     Expression function = getFunction(arguments);
     Expression type = function.getType(context);
     if (!(type instanceof PiExpression)) return null;
-    return type.splitAt(arguments.size(), new ArrayList<TypeArgument>(arguments.size())).subst(arguments, 0);
+    return type.splitAt(arguments.size(), new ArrayList<TypeArgument>(arguments.size()), context).subst(arguments, 0);
   }
 
   @Override

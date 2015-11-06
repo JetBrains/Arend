@@ -67,10 +67,6 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return accept(new NormalizeVisitor(mode, context));
   }
 
-  public final Expression normalize(NormalizeVisitor.Mode mode) {
-    return accept(new NormalizeVisitor(mode));
-  }
-
   public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, ErrorReporter errorReporter) {
     return new CheckTypeVisitor(localContext, 0, errorReporter).checkType(this, expectedType);
   }
@@ -126,11 +122,13 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return result;
   }
 
-  public Expression splitAt(int index, List<TypeArgument> arguments) {
+  public Expression splitAt(int index, List<TypeArgument> arguments, List<Binding> context) {
     int count = 0;
     Expression type = this;
     while (count < index) {
-      type = type.normalize(NormalizeVisitor.Mode.WHNF);
+      if (context != null) {
+        type = type.normalize(NormalizeVisitor.Mode.WHNF, context);
+      }
       if (type instanceof PiExpression) {
         PiExpression piType = (PiExpression) type;
         TelescopeArgument additionalArgument = null;

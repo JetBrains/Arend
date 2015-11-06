@@ -122,7 +122,7 @@ public class CoverageCheker {
       constructorMatchedParameters.add(matchedParameters);
       validConstructors.add(constructor);
       validConstructorArgs.add(new ArrayList<TypeArgument>());
-      splitArguments(constructor.getType().subst(matchedParameters, 0), validConstructorArgs.get(validConstructorArgs.size() - 1));
+      splitArguments(constructor.getType().subst(matchedParameters, 0), validConstructorArgs.get(validConstructorArgs.size() - 1), myLocalContext);
     }
 
     List<CoverageCheckingBranch> result = new ArrayList<>();

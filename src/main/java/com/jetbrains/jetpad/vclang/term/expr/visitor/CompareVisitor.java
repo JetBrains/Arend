@@ -486,7 +486,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       List<Abstract.TypeArgument> args1 = new ArrayList<>();
       Abstract.Expression codomain1 = piArgs(expr, args1);
       List<TypeArgument> args2 = new ArrayList<>(numberOfVariables(args1));
-      Expression codomain2 = other.splitAt(numberOfVariables(args1), args2);
+      Expression codomain2 = other.splitAt(numberOfVariables(args1), args2, null);
 
       Result maybeResult = null;
       CMP cmp = CMP.EQUALS;
@@ -542,7 +542,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
   @Override
   public Result visitInferHole(Abstract.InferHoleExpression expr, Expression other) {
-    myEquations.add(new Equation(expr, other.normalize(NormalizeVisitor.Mode.NF)));
+    myEquations.add(new Equation(expr, other));
     return new JustResult(CMP.EQUALS);
   }
 

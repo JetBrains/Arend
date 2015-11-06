@@ -557,7 +557,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       Name name = def.getName();
 
       for (int j = 0; j < typeArguments.size(); ++j) {
-        Expression type = typeArguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF);
+        Expression type = typeArguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF, context);
         while (type instanceof PiExpression) {
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
             if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition))) {
@@ -566,7 +566,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               return null;
             }
           }
-          type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+          type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF, context);
         }
 
         List<Expression> exprs = new ArrayList<>();

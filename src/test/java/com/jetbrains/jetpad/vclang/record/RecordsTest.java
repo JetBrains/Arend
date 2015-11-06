@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
@@ -171,7 +172,7 @@ public class RecordsTest {
     Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName().name);
     Expression resultType = ((FunctionDefinition) namespace.getDefinition("test")).getResultType();
     List<Expression> arguments = new ArrayList<>(3);
-    Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
+    Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF, new ArrayList<Binding>()).getFunction(arguments);
     assertEquals(3, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 
@@ -214,7 +215,7 @@ public class RecordsTest {
     Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName().name);
     Expression resultType = ((FunctionDefinition) namespace.getDefinition("test")).getResultType();
     List<Expression> arguments = new ArrayList<>(3);
-    Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
+    Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF, new ArrayList<Binding>()).getFunction(arguments);
     assertEquals(3, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 
@@ -258,18 +259,18 @@ public class RecordsTest {
     assertEquals(Index(2), ((DefCallExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getExpression());
     assertEquals(((ClassDefinition) namespace.getMember("A").definition).getField("x"), ((DefCallExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getDefinition());
 
-    List<Expression> parameters = ((ConCallExpression) parameterFunction).getParameters();
+    List<Expression> parameters = ((ConCallExpression) parameterFunction.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>())).getParameters();
     assertEquals(3, parameters.size());
 
     assertTrue(parameters.get(0) instanceof LamExpression);
     assertEquals(Nat(), ((LamExpression) parameters.get(0)).getBody());
 
-    parameters.set(1, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
+    parameters.set(1, parameters.get(1));
     assertTrue(parameters.get(1) instanceof DefCallExpression);
     assertEquals(Index(1), ((DefCallExpression) parameters.get(1)).getExpression());
     assertEquals(((ClassDefinition) namespace.getMember("A").definition).getField("x"), ((DefCallExpression) parameters.get(1)).getDefinition());
 
-    parameters.set(2, parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF));
+    parameters.set(2, parameters.get(2));
     assertTrue(parameters.get(2) instanceof DefCallExpression);
     assertEquals(Index(1), ((DefCallExpression) parameters.get(2)).getExpression());
     assertEquals(((ClassDefinition) namespace.getMember("A").definition).getField("x"), ((DefCallExpression) parameters.get(2)).getDefinition());

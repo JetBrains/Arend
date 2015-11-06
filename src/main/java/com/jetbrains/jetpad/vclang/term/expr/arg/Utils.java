@@ -63,9 +63,9 @@ public class Utils {
     return result;
   }
 
-  public static int numberOfVariables(Expression expr) {
+  public static int numberOfVariables(Expression expr, List<Binding> ctx) {
     List<TypeArgument> args = new ArrayList<>();
-    splitArguments(expr, args);
+    splitArguments(expr, args, ctx);
     return args.size();
   }
 
@@ -167,10 +167,6 @@ public class Utils {
       }
       return type;
     }
-  }
-
-  public static Expression splitArguments(Expression type, List<TypeArgument> result) {
-    return splitArguments(type, result, new ArrayList<Binding>());
   }
 
   public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, byte prec, int indent) {

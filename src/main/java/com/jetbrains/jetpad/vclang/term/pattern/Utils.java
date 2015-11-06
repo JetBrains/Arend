@@ -274,8 +274,8 @@ public class Utils {
     return origIndicies;
   }
 
-  public static List<TypeArgument> expandConstructorParameters(Constructor constructor) {
-    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters());
+  public static List<TypeArgument> expandConstructorParameters(Constructor constructor, List<Binding> context) {
+    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters(), context);
 
     List<TypeArgument> result = new ArrayList<>();
     for (PatternExpansion.Result nestedResult : results) {
@@ -285,7 +285,7 @@ public class Utils {
   }
 
   public static List<ArgumentExpression> constructorPatternsToExpressions(Constructor constructor) {
-    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters());
+    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters(), new ArrayList<Binding>());
 
     List<ArgumentExpression> result = new ArrayList<>();
     int shift = numberOfVariables(constructor.getArguments());

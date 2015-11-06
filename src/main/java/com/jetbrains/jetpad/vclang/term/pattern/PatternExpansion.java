@@ -39,7 +39,7 @@ class PatternExpansion {
     }
   }
 
-  static Result expandPattern(Pattern pattern, Expression type) {
+  static Result expandPattern(Pattern pattern, Expression type, List<Binding> context) {
     if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern) {
       return new Result(new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit()),
           Collections.singletonList(pattern instanceof NamePattern ? Tele(pattern.getExplicit(), Collections.singletonList(((NamePattern) pattern).getName()), type) : TypeArg(pattern.getExplicit(), type)));
@@ -47,9 +47,9 @@ class PatternExpansion {
       ConstructorPattern constructorPattern = (ConstructorPattern) pattern;
 
       List<Expression> parameters = new ArrayList<>();
-      type.normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
+      type.normalize(NormalizeVisitor.Mode.WHNF, context).getFunction(parameters);
       Collections.reverse(parameters);
-      List<Result> nestedResults = expandPatterns(constructorPattern.getPatterns(), getConstructorArguments(constructorPattern, parameters));
+      List<Result> nestedResults = expandPatterns(constructorPattern.getPatterns(), getConstructorArguments(constructorPattern, parameters, context), context);
 
       Expression resultExpression = ConCall(constructorPattern.getConstructor(), getMatchedParameters(constructorPattern, parameters));
       List<TypeArgument> resultArgs = new ArrayList<>();
@@ -64,7 +64,7 @@ class PatternExpansion {
     }
   }
 
-  static List<Result> expandPatterns(List<Pattern> patterns, List<TypeArgument> args) {
+  static List<Result> expandPatterns(List<Pattern> patterns, List<TypeArgument> args, List<Binding> context) {
     List<TypeArgument> argsSplitted = new ArrayList<>();
     splitArguments(args, argsSplitted);
 
@@ -73,7 +73,7 @@ class PatternExpansion {
       Expression argumentType = argsSplitted.get(i).getType();
       for (int j = 0; j < i; j++)
         argumentType = expandPatternSubstitute(patterns.get(j), i - j - 1, results.get(j).expression.getExpression(), argumentType);
-      Result nestedResult = expandPattern(patterns.get(i), argumentType);
+      Result nestedResult = expandPattern(patterns.get(i), argumentType, context);
       results.add(nestedResult);
     }
     return results;
@@ -87,12 +87,12 @@ class PatternExpansion {
     }
    }
 
-  private static List<TypeArgument> getConstructorArguments(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters) {
+  private static List<TypeArgument> getConstructorArguments(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters, List<Binding> context) {
     List<Expression> matchedParameters = getMatchedParameters(constructorPattern, dataTypeParameters);
     Collections.reverse(matchedParameters);
 
     List<TypeArgument> constructorArguments = new ArrayList<>();
-    splitArguments(constructorPattern.getConstructor().getType().subst(matchedParameters, 0), constructorArguments);
+    splitArguments(constructorPattern.getConstructor().getType().subst(matchedParameters, 0), constructorArguments, context);
     return constructorArguments;
   }
 }

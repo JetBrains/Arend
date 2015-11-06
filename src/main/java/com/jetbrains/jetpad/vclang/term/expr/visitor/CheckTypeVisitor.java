@@ -139,7 +139,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return result;
     }
 
-    if (numberOfVariables(result.type) > numberOfVariables(expectedType)) {
+    if (numberOfVariables(result.type, myLocalContext) > numberOfVariables(expectedType, myLocalContext)) {
       return typeCheckFunctionApps(expression, new ArrayList<Abstract.ArgumentExpression>(), expectedType, expression);
     } else {
       return checkResult(expectedType, result, expression);
@@ -310,12 +310,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (((Constructor) def).getPatterns() == null) {
           parametersNumber = numberOfVariables(((Constructor) def).getDataType().getParameters());
         } else {
-          parametersNumber = expandConstructorParameters((Constructor) def).size();
+          parametersNumber = expandConstructorParameters((Constructor) def, myLocalContext).size();
         }
       }
     }
 
-    Expression signatureResultType = splitArguments(okFunction.type, signatureArguments);
+    Expression signatureResultType = splitArguments(okFunction.type, signatureArguments, myLocalContext);
     assert parametersNumber <= signatureArguments.size();
     Arg[] argsImp = new Arg[signatureArguments.size()];
     int i, j;
@@ -415,7 +415,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (expectedType != null && j == args.size()) {
-      for (; i < signatureArguments.size() - numberOfVariables(expectedType); ++i) {
+      for (; i < signatureArguments.size() - numberOfVariables(expectedType, myLocalContext); ++i) {
         if (signatureArguments.get(i).getExplicit()) {
           break;
         } else {
@@ -627,7 +627,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         resultType = null;
         fresultType = null;
       } else {
-        resultType = expectedType.splitAt(lambdaArgs.size(), piArgs).normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
+        resultType = expectedType.splitAt(lambdaArgs.size(), piArgs, myLocalContext).normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
         fresultType = resultType.getFunction(new ArrayList<Expression>());
         actualNumberOfPiArgs = piArgs.size();
         if (fresultType instanceof InferHoleExpression) {
@@ -721,24 +721,29 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Result bodyResult = typeCheck(expr.getBody(), fresultType instanceof InferHoleExpression ? null : resultType);
 
-    for (int i = 0; i < lambdaArgs.size(); ++i) {
-      myLocalContext.remove(myLocalContext.size() - 1);
+    if (!(bodyResult instanceof OKResult)) {
+      for (int i = 0; i < lambdaArgs.size(); ++i) {
+        myLocalContext.remove(myLocalContext.size() - 1);
+      }
+      return bodyResult;
     }
-
-    if (!(bodyResult instanceof OKResult)) return bodyResult;
     OKResult okBodyResult = (OKResult) bodyResult;
     addLiftedEquations(okBodyResult, resultEquations, lambdaArgs.size());
 
-      if (resultType instanceof InferHoleExpression) {
-        Expression actualType = okBodyResult.type;
-        if (lambdaArgs.size() > actualNumberOfPiArgs) {
-          actualType = Pi(argumentTypes.subList(actualNumberOfPiArgs, lambdaArgs.size()), actualType);
-        }
-        Expression expr1 = actualType.normalize(NormalizeVisitor.Mode.NF, myLocalContext).liftIndex(0, -actualNumberOfPiArgs);
-        if (expr1 != null) {
-          resultEquations.add(new CompareVisitor.Equation((InferHoleExpression) resultType, expr1));
-        }
+    if (resultType instanceof InferHoleExpression) {
+      Expression actualType = okBodyResult.type;
+      if (lambdaArgs.size() > actualNumberOfPiArgs) {
+        actualType = Pi(argumentTypes.subList(actualNumberOfPiArgs, lambdaArgs.size()), actualType);
       }
+      Expression expr1 = actualType.normalize(NormalizeVisitor.Mode.NF, myLocalContext).liftIndex(0, -actualNumberOfPiArgs);
+      if (expr1 != null) {
+        resultEquations.add(new CompareVisitor.Equation((InferHoleExpression) resultType, expr1));
+      }
+    }
+
+    for (int i = 0; i < lambdaArgs.size(); ++i) {
+      myLocalContext.remove(myLocalContext.size() - 1);
+    }
 
     List<Argument> resultLambdaArgs = new ArrayList<>(argumentTypes.size());
     for (TypeArgument argumentType : argumentTypes) {
@@ -1113,7 +1118,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Expression substExpression = ConCall(constructor, matchedParameters);
       Collections.reverse(matchedParameters);
       List<TypeArgument> constructorArguments = new ArrayList<>();
-      splitArguments(constructor.getType().subst(matchedParameters, 0), constructorArguments);
+      splitArguments(constructor.getType().subst(matchedParameters, 0), constructorArguments, myLocalContext);
 
       Utils.ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getPatterns(), constructorArguments);
       if (implicitResult.patterns == null) {
@@ -1474,7 +1479,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (!(result instanceof OKResult)) {
       return result;
     }
-    Expression normalizedBaseClassExpr = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression normalizedBaseClassExpr = result.expression.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
     if (!(normalizedBaseClassExpr instanceof DefCallExpression && ((DefCallExpression) normalizedBaseClassExpr).getDefinition() instanceof ClassDefinition)) {
       TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getBaseClassExpression(), getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(normalizedBaseClassExpr, error));

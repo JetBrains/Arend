@@ -3,14 +3,12 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LamExpression;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void> {
@@ -53,7 +51,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         }
       }
 
-      if (((Abstract.DefCallExpression) expr).getResolvedName().toDefinition() == Prelude.PATH && args.size() == 3 && args.get(0).getExpression() instanceof Expression && Apps(((Expression) args.get(0).getExpression()).liftIndex(0, 1), Index(0)).normalize(NormalizeVisitor.Mode.NF).liftIndex(0, -1) != null) {
+      if (((Abstract.DefCallExpression) expr).getResolvedName().toDefinition() == Prelude.PATH && args.size() == 3 && args.get(0).getExpression() instanceof LamExpression && ((LamExpression) args.get(0).getExpression()).getBody().liftIndex(0, -1) != null) {
         if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append('(');
         args.get(1).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
         myBuilder.append(" = ");

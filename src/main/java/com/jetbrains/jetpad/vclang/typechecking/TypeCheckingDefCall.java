@@ -65,7 +65,7 @@ public class TypeCheckingDefCall {
       Constructor constructor = (Constructor) result.member.definition;
       List<TypeArgument> parameters;
       if (constructor.getPatterns() != null) {
-        parameters = expandConstructorParameters(constructor);
+        parameters = expandConstructorParameters(constructor, myLocalContext);
       } else {
         parameters = constructor.getDataType().getParameters();
       }
@@ -208,7 +208,7 @@ public class TypeCheckingDefCall {
 
     if (result.member == null) {
       CheckTypeVisitor.OKResult okResult = (CheckTypeVisitor.OKResult) result.baseResult;
-      Expression type = okResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+      Expression type = okResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
 
       if (type instanceof ClassCallExpression) {
         ClassDefinition classDefinition = ((ClassCallExpression) type).getDefinition();
@@ -218,7 +218,7 @@ public class TypeCheckingDefCall {
       } else {
         if (type instanceof UniverseExpression) {
           List<Expression> arguments = new ArrayList<>();
-          Expression function = okResult.expression.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
+          Expression function = okResult.expression.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(arguments);
           if (function instanceof DataCallExpression) {
             CheckTypeVisitor.OKResult conResult = typeCheckConstructor(((DataCallExpression) function).getDefinition(), arguments, expr.getName(), expr);
             if (conResult == null) {
