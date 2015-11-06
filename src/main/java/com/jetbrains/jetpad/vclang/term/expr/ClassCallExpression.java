@@ -7,12 +7,13 @@ import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
+import java.util.Map;
 
 public class ClassCallExpression extends DefCallExpression {
-  private final List<OverrideElem> myElems;
+  private final Map<ClassField, OverrideElem> myElems;
   private final Universe myUniverse;
 
-  public ClassCallExpression(ClassDefinition definition, List<OverrideElem> elems, Universe universe) {
+  public ClassCallExpression(ClassDefinition definition, Map<ClassField, OverrideElem> elems, Universe universe) {
     super(definition);
     myElems = elems;
     myUniverse = universe;
@@ -29,7 +30,7 @@ public class ClassCallExpression extends DefCallExpression {
     return (ClassDefinition) super.getDefinition();
   }
 
-  public List<OverrideElem> getOverrideElems() {
+  public Map<ClassField, OverrideElem> getOverrideElems() {
     return myElems;
   }
 
@@ -48,12 +49,10 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   public static class OverrideElem {
-    public ClassField field;
     public Expression type;
     public Expression term;
 
-    public OverrideElem(ClassField field, Expression type, Expression term) {
-      this.field = field;
+    public OverrideElem(Expression type, Expression term) {
       this.type = type;
       this.term = term;
     }

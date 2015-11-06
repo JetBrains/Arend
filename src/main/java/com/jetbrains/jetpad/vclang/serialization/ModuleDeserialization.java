@@ -398,7 +398,7 @@ public class ModuleDeserialization {
           throw new IncorrectFormat();
         }
         int size = stream.readInt();
-        List<ClassCallExpression.OverrideElem> elems = new ArrayList<>(size);
+        Map<ClassField, ClassCallExpression.OverrideElem> elems = new HashMap<>();
         for (int i = 0; i < size; ++i) {
           Definition field = definitionMap.get(stream.readInt());
           if (!(field instanceof ClassField)) {
@@ -406,7 +406,7 @@ public class ModuleDeserialization {
           }
           Expression type = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
           Expression term = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
-          elems.add(new ClassCallExpression.OverrideElem((ClassField) field, type, term));
+          elems.put((ClassField) field, new ClassCallExpression.OverrideElem(type, term));
         }
         return ClassCall((ClassDefinition) definition, elems, readUniverse(stream));
       }

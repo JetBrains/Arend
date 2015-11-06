@@ -1,11 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.List;
+import java.util.Map;
 
 public class FindDefCallVisitor extends BaseExpressionVisitor<Boolean> {
   private final Definition myDef;
@@ -42,8 +44,8 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Boolean> {
     if (expr.getDefinition() == myDef) {
       return true;
     }
-    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
-      if (elem.field == myDef || elem.type != null && elem.type.accept(this) || elem.term != null && elem.term.accept(this)) {
+    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+      if (elem.getKey() == myDef || elem.getValue().type != null && elem.getValue().type.accept(this) || elem.getValue().term != null && elem.getValue().term.accept(this)) {
         return true;
       }
     }

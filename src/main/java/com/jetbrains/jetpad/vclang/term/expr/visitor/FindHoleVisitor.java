@@ -1,10 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.List;
+import java.util.Map;
 
 public class FindHoleVisitor extends BaseExpressionVisitor<InferHoleExpression> {
   @Override
@@ -29,13 +31,16 @@ public class FindHoleVisitor extends BaseExpressionVisitor<InferHoleExpression> 
 
   @Override
   public InferHoleExpression visitClassCall(ClassCallExpression expr) {
-    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
-      if (elem.type != null) {
-        InferHoleExpression result = elem.type.accept(this);
+    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+      Expression type = elem.getValue().type;
+      if (type != null) {
+        InferHoleExpression result = type.accept(this);
         if (result != null) return result;
       }
-      if (elem.term != null) {
-        InferHoleExpression result = elem.term.accept(this);
+      
+      Expression term = elem.getValue().term;
+      if (term != null) {
+        InferHoleExpression result = term.accept(this);
         if (result != null) return result;
       }
     }

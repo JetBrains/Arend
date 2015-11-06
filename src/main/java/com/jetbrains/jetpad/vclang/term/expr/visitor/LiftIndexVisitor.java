@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -7,7 +8,9 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
@@ -49,9 +52,9 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Expression> {
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr) {
-    List<ClassCallExpression.OverrideElem> elems = new ArrayList<>(expr.getOverrideElems().size());
-    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
-      elems.add(new ClassCallExpression.OverrideElem(elem.field, elem.type == null ? null : elem.type.accept(this), elem.term == null ? null : elem.term.accept(this)));
+    Map<ClassField, ClassCallExpression.OverrideElem> elems = new HashMap<>();
+    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+      elems.put(elem.getKey(), new ClassCallExpression.OverrideElem(elem.getValue().type == null ? null : elem.getValue().type.accept(this), elem.getValue().term == null ? null : elem.getValue().term.accept(this)));
     }
     return ClassCall(expr.getDefinition(), elems, expr.getUniverse());
   }

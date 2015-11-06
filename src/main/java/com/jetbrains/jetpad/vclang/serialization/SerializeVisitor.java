@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -12,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 public class SerializeVisitor extends BaseExpressionVisitor<Void> {
   private int myErrors = 0;
@@ -86,15 +88,19 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
     try {
       myDataStream.writeInt(index);
       myDataStream.writeInt(expr.getOverrideElems().size());
-      for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
-        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(elem.field.getResolvedName(), true));
-        myDataStream.writeBoolean(elem.type != null);
-        if (elem.type != null) {
-          elem.type.accept(this);
+      for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(elem.getKey().getResolvedName(), true));
+
+        Expression type = elem.getValue().type;
+        myDataStream.writeBoolean(type != null);
+        if (type != null) {
+          type.accept(this);
         }
-        myDataStream.writeBoolean(elem.term != null);
-        if (elem.term != null) {
-          elem.term.accept(this);
+
+        Expression term = elem.getValue().term;
+        myDataStream.writeBoolean(term != null);
+        if (term != null) {
+          term.accept(this);
         }
       }
       ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());

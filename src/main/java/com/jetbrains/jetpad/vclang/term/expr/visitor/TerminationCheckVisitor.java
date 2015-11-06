@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -9,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
@@ -101,11 +103,8 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr) {
-    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
-      if (elem.type != null && !elem.type.accept(this)) {
-        return false;
-      }
-      if (elem.term != null && !elem.term.accept(this)) {
+    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+      if (elem.getValue().type != null && !elem.getValue().type.accept(this) || elem.getValue().term != null && !elem.getValue().term.accept(this)) {
         return false;
       }
     }

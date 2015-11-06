@@ -2,10 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.Function;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
@@ -13,9 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
@@ -306,9 +301,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
     if (myMode == Mode.TOP) return null;
     if (myMode == Mode.WHNF) return expr;
 
-    List<ClassCallExpression.OverrideElem> elems = new ArrayList<>(expr.getOverrideElems().size());
-    for (ClassCallExpression.OverrideElem elem : expr.getOverrideElems()) {
-      elems.add(new ClassCallExpression.OverrideElem(elem.field, elem.type == null ? null : elem.type.accept(this), elem.term == null ? null : elem.term.accept(this)));
+    Map<ClassField, ClassCallExpression.OverrideElem> elems = new HashMap<>();
+    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+      elems.put(elem.getKey(), new ClassCallExpression.OverrideElem(elem.getValue().type == null ? null : elem.getValue().type.accept(this), elem.getValue().term == null ? null : elem.getValue().term.accept(this)));
     }
 
     return ClassCall(expr.getDefinition(), elems, expr.getUniverse());
