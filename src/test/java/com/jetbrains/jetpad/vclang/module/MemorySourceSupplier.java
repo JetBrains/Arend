@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.module.source.DummySource;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
@@ -25,7 +26,7 @@ public class MemorySourceSupplier implements SourceSupplier {
 
   private final ModuleLoader myModuleLoader;
   private final ErrorReporter myErrorReporter;
-  private final Map<List<String>, MemorySourceEntry> myMap = new HashMap<>();
+  private final Map<List<Name>, MemorySourceEntry> myMap = new HashMap<>();
 
   public MemorySourceSupplier(ModuleLoader moduleLoader, ErrorReporter errorReporter) {
     myModuleLoader = moduleLoader;
@@ -33,20 +34,24 @@ public class MemorySourceSupplier implements SourceSupplier {
     add(moduleName(), null);
   }
 
-  public void add(List<String> module, String source) {
+  public void add(List<Name> module, String source) {
     MemorySourceEntry oldEntry = myMap.get(module);
     myMap.put(module, new MemorySourceEntry(source, oldEntry == null ? new ArrayList<String>() : oldEntry.children));
     if (!module.isEmpty()) {
-      myMap.get(module.subList(0, module.size() - 1)).children.add(module.get(module.size() - 1));
+      myMap.get(module.subList(0, module.size() - 1)).children.add(module.get(module.size() - 1).name);
     }
    }
 
-  public void touch(List<String> module) {
+  public void touch(List<Name> module) {
     add(module, myMap.get(module).source);
   }
 
-  public static List<String> moduleName(String... module) {
-    return Arrays.asList(module);
+  public static List<Name> moduleName(String... module) {
+    List<Name> result = new ArrayList<>();
+    for (String aPath : module) {
+      result.add(new Name(aPath));
+    }
+    return result;
   }
 
   @Override

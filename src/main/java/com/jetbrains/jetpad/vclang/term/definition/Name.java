@@ -31,7 +31,7 @@ public class Name {
 
   @Override
   public boolean equals(Object other) {
-    return other == this || other instanceof Name && ((Name) other).name.equals(name);
+    return other == this || other instanceof Name && ((Name) other).name.equals(name) && fixity == ((Name) other).fixity;
   }
 
   @Override

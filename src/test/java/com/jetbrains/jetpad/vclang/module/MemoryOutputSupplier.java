@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.module.output.OutputSupplier;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.util.ArrayList;
@@ -15,11 +16,11 @@ public class MemoryOutputSupplier implements OutputSupplier {
     byte[] data;
     long lastModified;
   }
-  private HashMap<List<String>, MemoryOutputEntry> myOutputs = new HashMap<>();
+  private HashMap<List<Name>, MemoryOutputEntry> myOutputs = new HashMap<>();
 
   @Override
   public MemoryOutput getOutput(ResolvedName module) {
-    List<String> modulePath = toPath(module);
+    List<Name> modulePath = toPath(module);
     if (!modulePath.isEmpty()) {
       getOutput(module.parent.getResolvedName());
       MemoryOutputEntry parentEntry = myOutputs.get(toPath(module.parent.getResolvedName()));

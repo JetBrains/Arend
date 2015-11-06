@@ -64,10 +64,10 @@ public class ResolvedName {
     return Arrays.hashCode(new Object[]{parent, name == null ? null : name.name});
   }
 
-  public static List<String> toPath(ResolvedName rn) {
-    List<String> path = new ArrayList<>();
+  public static List<Name> toPath(ResolvedName rn) {
+    List<Name> path = new ArrayList<>();
     for (; rn.parent != null; rn = rn.parent.getResolvedName()) {
-      path.add(rn.name.name);
+      path.add(rn.name);
     }
     Collections.reverse(path);
     return path;
