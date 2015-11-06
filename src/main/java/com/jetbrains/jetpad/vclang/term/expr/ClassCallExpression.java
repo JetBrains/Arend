@@ -21,7 +21,8 @@ public class ClassCallExpression extends DefCallExpression {
 
   @Override
   public Expression applyThis(Expression thisExpr) {
-    // TODO
+    ClassField parent = getDefinition().getParentField();
+    myElems.put(parent, new OverrideElem(null, thisExpr));
     return this;
   }
 

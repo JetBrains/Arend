@@ -28,7 +28,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
 
   @Override
   public ClassCallExpression getDefCallWithThis() {
-    return ClassCall(this);
+    return ClassCall(this, new HashMap<ClassField, ClassCallExpression.OverrideElem>(), getUniverse());
   }
 
   public ClassField getField(String name) {
