@@ -172,7 +172,7 @@ public class ModuleSerialization {
   }
 
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
-    serializeNamespace(visitor, definition.getParentNamespace().getChild(definition.getName()));
+    int errors = serializeNamespace(visitor, definition.getParentNamespace().getChild(definition.getName()));
 
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
 
@@ -186,7 +186,7 @@ public class ModuleSerialization {
       }
     }
 
-    return 0;
+    return errors;
   }
 
   private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
