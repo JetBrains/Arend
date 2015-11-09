@@ -17,6 +17,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 public class DataDefinition extends Definition implements Abstract.DataDefinition {
   private List<Constructor> myConstructors;
   private List<TypeArgument> myParameters;
+  private List<Condition> myConditions;
 
   public DataDefinition(Namespace parentNamespace, Name name, Precedence precedence) {
     super(parentNamespace, name, precedence);
@@ -43,6 +44,18 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   @Override
   public List<Constructor> getConstructors() {
     return myConstructors;
+  }
+
+  public void addCondition(Condition condition) {
+    if (myConditions == null) {
+      myConditions = new ArrayList<>();
+    }
+    myConditions.add(condition);
+  }
+
+  @Override
+  public List<Condition> getConditions() {
+    return myConditions;
   }
 
   public Constructor getConstructor(String name) {

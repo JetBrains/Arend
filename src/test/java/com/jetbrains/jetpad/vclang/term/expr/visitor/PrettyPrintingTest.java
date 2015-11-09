@@ -71,4 +71,11 @@ public class PrettyPrintingTest {
     assertNotNull(def);
     def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC), null);
   }
+
+  @Test
+  public void prettyPrintingDataWithConditions() {
+    Concrete.Definition def = parseDef("\\data Z | neg Nat | pos Nat \\with | pos zero => neg zero");
+    assertNotNull(def);
+    def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC), null);
+  }
 }

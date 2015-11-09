@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.definition.Condition.prettyPrintCondition;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
@@ -148,6 +149,17 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
       PrettyPrintVisitor.printIndent(myBuilder, myIndent);
       myBuilder.append("| ");
       constructor.accept(this, null);
+    }
+    if (def.getConditions() != null) {
+      myBuilder.append("\n\\with");
+      myIndent++;
+      for (Abstract.Condition condition : def.getConditions()) {
+        myBuilder.append('\n');
+        PrettyPrintVisitor.printIndent(myBuilder, myIndent);
+        myBuilder.append("| ");
+        prettyPrintCondition(condition, myBuilder, myNames);
+      }
+      --myIndent;
     }
     --myIndent;
     if (parameters != null) {

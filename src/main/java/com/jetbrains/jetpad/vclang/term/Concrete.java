@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisit
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.definition.Condition.prettyPrintCondition;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
 
 public final class Concrete {
@@ -881,15 +882,43 @@ public final class Concrete {
     }
   }
 
+  public static class Condition extends SourceNode implements Abstract.Condition {
+    private final ConstructorPattern myPattern;
+    private final Expression myTerm;
+
+    public Condition(Position position, ConstructorPattern pattern, Expression term) {
+      super(position);
+      this.myPattern = pattern;
+      this.myTerm = term;
+    }
+
+    @Override
+    public ConstructorPattern getPattern() {
+      return myPattern;
+    }
+
+    @Override
+    public Expression getTerm() {
+      return myTerm;
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+      prettyPrintCondition(this, builder, names);
+    }
+  }
+
   public static class DataDefinition extends Definition implements Abstract.DataDefinition {
     private final List<Constructor> myConstructors;
     private final List<TypeArgument> myParameters;
+    private final List<Condition> myConditions;
     private final Universe myUniverse;
 
-    public DataDefinition(Position position, Name name, Precedence precedence, List<TypeArgument> parameters, Universe universe, List<Concrete.Constructor> constructors) {
+    public DataDefinition(Position position, Name name, Precedence precedence, List<TypeArgument> parameters, Universe universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
       super(position, name, precedence);
       myParameters = parameters;
       myConstructors = constructors;
+      myConditions = conditions;
       myUniverse = universe;
     }
 
@@ -901,6 +930,11 @@ public final class Concrete {
     @Override
     public List<Constructor> getConstructors() {
       return myConstructors;
+    }
+
+    @Override
+    public List<? extends Abstract.Condition> getConditions() {
+      return myConditions;
     }
 
     @Override

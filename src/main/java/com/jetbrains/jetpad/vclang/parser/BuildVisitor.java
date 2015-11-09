@@ -345,11 +345,31 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     List<Concrete.Constructor> constructors = new ArrayList<>(ctx.constructorDef().size());
-    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, parameters, universe, constructors);
+    List<Concrete.Condition> conditions = ctx.conditionDef() != null ? visitConditionDef(ctx.conditionDef()) : null;
+    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, parameters, universe, constructors, conditions);
     for (ConstructorDefContext constructorDefContext : ctx.constructorDef()) {
       visitConstructorDef(constructorDefContext, dataDefinition);
     }
     return dataDefinition;
+  }
+
+  @Override
+  public List<Concrete.Condition> visitConditionDef(ConditionDefContext ctx) {
+    List<Concrete.Condition> result = new ArrayList<>(ctx.condition().size());
+    for (ConditionContext conditionCtx : ctx.condition()) {
+      Concrete.Condition condition = visitCondition(conditionCtx);
+      if (condition == null)
+        return null;
+      result.add(visitCondition(conditionCtx));
+    }
+    return result;
+  }
+
+  public Concrete.Condition visitCondition(ConditionContext ctx) {
+    Concrete.Identifier constructorName = visitName(ctx.name());
+    Concrete.Expression term = visitExpr(ctx.expr());
+
+    return term != null ? new Concrete.Condition(tokenPosition(ctx.start), new Concrete.ConstructorPattern(constructorName.getPosition(), constructorName.getName(), visitPatternxs(ctx.patternx())), term) : null;
   }
 
   private void visitConstructorDef(ConstructorDefContext ctx, Concrete.DataDefinition def) {

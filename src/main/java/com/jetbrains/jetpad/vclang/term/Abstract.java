@@ -257,6 +257,7 @@ public final class Abstract {
   public interface DataDefinition extends Definition {
     List<? extends TypeArgument> getParameters();
     List<? extends Constructor> getConstructors();
+    List<? extends Condition> getConditions();
     Universe getUniverse();
   }
 
@@ -287,6 +288,11 @@ public final class Abstract {
   public interface Constructor extends Definition, PatternContainer {
     List<? extends TypeArgument> getArguments();
     DataDefinition getDataType();
+  }
+
+  public interface Condition extends PrettyPrintableSourceNode {
+    ConstructorPattern getPattern();
+    Expression getTerm();
   }
 
   public interface NamespaceCommandStatement extends Statement {
