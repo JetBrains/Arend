@@ -225,4 +225,11 @@ public class NormalizationTest {
     FunctionDefinition test = (FunctionDefinition) def.getParentNamespace().getChild(def.getName()).getMember("test").definition;
     assertEquals(Apps(FunCall(test), Index(0)).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()), Apps(FunCall(test), Index(0)));
   }
+
+  @Test
+  public void letNormalizationContext() {
+    List<Binding> ctx = new ArrayList<>();
+    Let(lets(let("x", lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Index(0)).normalize(NormalizeVisitor.Mode.NF, ctx);
+    assertTrue(ctx.isEmpty());
+  }
 }

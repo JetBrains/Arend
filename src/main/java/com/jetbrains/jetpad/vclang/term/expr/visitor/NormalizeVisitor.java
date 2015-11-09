@@ -440,14 +440,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
 
   @Override
   public Expression visitLet(LetExpression letExpression) {
-    for (LetClause clause : letExpression.getClauses()) {
-      myContext.add(clause);
-    }
+    try (ContextSaver ignore = new ContextSaver(myContext)) {
+      for (LetClause clause : letExpression.getClauses()) {
+        myContext.add(clause);
+      }
 
-    Expression term = letExpression.getExpression().accept(this);
-    if (term.liftIndex(0, - letExpression.getClauses().size()) != null)
-      return term.liftIndex(0, -letExpression.getClauses().size());
-    else
-      return Let(letExpression.getClauses(), term);
+      Expression term = letExpression.getExpression().accept(this);
+      if (term.liftIndex(0, -letExpression.getClauses().size()) != null)
+        return term.liftIndex(0, -letExpression.getClauses().size());
+      else
+        return Let(letExpression.getClauses(), term);
+    }
   }
 }
