@@ -86,7 +86,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myTypeCheckingDefCall = typeCheckingDefCall;
   }
 
-  private CheckTypeVisitor(List<Binding> localContext, ErrorReporter errorReporter, TypeCheckingDefCall typeCheckingDefCall) {
+  public CheckTypeVisitor(List<Binding> localContext, ErrorReporter errorReporter, TypeCheckingDefCall typeCheckingDefCall) {
     this(localContext, null, errorReporter, typeCheckingDefCall);
   }
 

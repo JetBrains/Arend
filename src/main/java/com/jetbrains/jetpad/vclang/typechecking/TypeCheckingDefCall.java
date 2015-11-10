@@ -222,7 +222,7 @@ public class TypeCheckingDefCall {
         return result;
       }
     } else {
-      CheckTypeVisitor.Result result1 = left.accept(new CheckTypeVisitor(myLocalContext, myErrorReporter), null);
+      CheckTypeVisitor.Result result1 = left.accept(new CheckTypeVisitor(myLocalContext, myErrorReporter, this), null);
       result = new DefCallResult(result1, null, null, null);
       if (!(result1 instanceof CheckTypeVisitor.OKResult)) {
         return result;
