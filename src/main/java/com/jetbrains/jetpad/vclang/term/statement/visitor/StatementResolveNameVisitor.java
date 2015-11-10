@@ -58,7 +58,8 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
         return null;
       }
       if (stat.getDefinition() instanceof Abstract.DataDefinition) {
-        for (Abstract.Constructor constructor : ((Abstract.DataDefinition) stat.getDefinition()).getConstructors()) {
+        Abstract.DataDefinition dataDefinition = (Abstract.DataDefinition) stat.getDefinition();
+        for (Abstract.Constructor constructor : dataDefinition.getConstructors()) {
           namespaceMember.namespace.addAbstractDefinition(constructor);
           myNamespace.addAbstractDefinition(constructor);
         }

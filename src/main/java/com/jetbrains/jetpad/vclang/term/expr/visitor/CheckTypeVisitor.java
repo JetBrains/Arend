@@ -1635,4 +1635,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     return finalResult;
   }
+
+  public List<Pattern> visitPatterns(List<Abstract.Pattern> patterns, List<Expression> substIn) {
+    List<Pattern> typedPatterns;
+    typedPatterns = new ArrayList<>();
+    for (int i = 0; i < patterns.size(); i++) {
+      ExpandPatternResult result = expandPatternOn(patterns.get(i), patterns.size() - 1 - i);
+      if (result == null || result instanceof ExpandPatternErrorResult)
+        return null;
+
+      typedPatterns.add(((ExpandPatternOKResult) result).pattern);
+
+      for (int j = 0; j < substIn.size(); j++) {
+        substIn.set(j, expandPatternSubstitute(((ExpandPatternOKResult) result).pattern, patterns.size() - i - 1, ((ExpandPatternOKResult) result).expression, substIn.get(j)));
+      }
+    }
+    return typedPatterns;
+  }
 }

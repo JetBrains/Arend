@@ -293,4 +293,20 @@ public class DefinitionTest {
         "\\static \\data Test (A : \\Set0)\n" +
         "  | Test (suc n) => foo (f n)", 1);
   }
+
+  @Test
+  public void dataTypeWithConditions() {
+    typeCheckClass(
+        "\\static \\data Z | zpos Nat | zneg Nat\n" +
+            "\\with | zpos zero => zneg zero"
+    );
+  }
+
+  @Test
+  public void dataTypeWithConditionsWrongType() {
+    typeCheckClass(
+        "\\static \\data Z | zpos Nat | zneg Nat\n" +
+            "\\with | zpos zero => zero"
+    );
+  }
 }

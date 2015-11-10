@@ -16,12 +16,14 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -478,6 +480,39 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       dataDefinition.setUniverse(typedUniverse);
     }
 
+    //TODO: extract
+    if (def.getConditions() != null) {
+      for (Abstract.Condition cond : def.getConditions()) {
+        Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName().name);
+        if (constructor == null) {
+          myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
+          continue;
+        }
+        try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
+          List<TypeArgument> constructorParameters = new ArrayList<>();
+          List<Expression> resultType = new ArrayList<>(Collections.singletonList(Utils.splitArguments(constructor.getBaseType(), constructorParameters, context)));
+          for (TypeArgument arg : constructorParameters) {
+            Utils.pushArgument(context, arg);
+          }
+          for (TypeArgument arg : constructor.getArguments()) {
+            Utils.pushArgument(context, arg);
+          }
+
+          List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), context, cond.getPatterns());
+          if (processedPatterns == null)
+            continue;
+
+          List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType);
+
+          CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
+          if (result == null)
+            continue;
+
+          dataDefinition.addCondition(new Condition(constructor, typedPatterns, result.expression));
+        }
+      }
+    }
+
     return dataDefinition;
   }
 
@@ -498,26 +533,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       List<? extends Abstract.Pattern> patterns = def.getPatterns();
       List<Pattern> typedPatterns = null;
       if (patterns != null) {
-        typedPatterns = new ArrayList<>();
 
-        ProcessImplicitResult processImplicitResult = processImplicit(patterns, dataDefinition.getParameters());
-        if (processImplicitResult.patterns == null) {
-          if (processImplicitResult.numExcessive != 0) {
-            myErrorReporter.report(new TypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", def, getNames(context)));
-          } else if (processImplicitResult.wrongImplicitPosition < typedPatterns.size()) {
-            myErrorReporter.report(new TypeCheckingError("Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition), getNames(context)));
-          } else {
-            myErrorReporter.report(new TypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, def, getNames(context)));
-          }
+        List<Abstract.Pattern> processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), context, patterns);
+        if (processedPatterns == null)
           return null;
-        }
-        List<Abstract.Pattern> processedPatterns = processImplicitResult.patterns;
-        for (int i = 0; i < processImplicitResult.patterns.size(); i++) {
-          CheckTypeVisitor.ExpandPatternResult result = visitor.expandPatternOn(processedPatterns.get(i), processedPatterns.size() - 1 - i);
-          if (result == null || result instanceof CheckTypeVisitor.ExpandPatternErrorResult)
-            return null;
-          typedPatterns.add(((CheckTypeVisitor.ExpandPatternOKResult) result).pattern);
-        }
+
+        typedPatterns = visitor.visitPatterns(processedPatterns, Collections.<Expression>emptyList());
+        if (typedPatterns == null)
+          return null;
       }
 
       for (Abstract.TypeArgument argument : arguments) {
@@ -586,6 +609,23 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       dataDefinition.getParentNamespace().addDefinition(constructor);
       return constructor;
     }
+  }
+
+  private List<Abstract.Pattern> processImplicitPatterns(Abstract.SourceNode expression, List<TypeArgument> arguments, List<Binding> context, List<? extends Abstract.Pattern> patterns) {
+    List<Abstract.Pattern> processedPatterns = null;
+    ProcessImplicitResult processImplicitResult = processImplicit(patterns, arguments);
+    if (processImplicitResult.patterns == null) {
+      if (processImplicitResult.numExcessive != 0) {
+        myErrorReporter.report(new TypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", expression, getNames(context)));
+      } else if (processImplicitResult.wrongImplicitPosition < patterns.size()) {
+        myErrorReporter.report(new TypeCheckingError("Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition), getNames(context)));
+      } else {
+        myErrorReporter.report(new TypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, expression, getNames(context)));
+      }
+    } else {
+      processedPatterns = processImplicitResult.patterns;
+    }
+    return processedPatterns;
   }
 
   private void typeCheckStatements(ClassDefinition classDefinition, Collection<? extends Abstract.Statement> statements, Namespace namespace) {

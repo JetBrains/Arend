@@ -668,6 +668,14 @@ public final class Concrete {
     }
   }
 
+  public static class PatternContainerHelper {
+    public static void replacePatternWithConstructor(List<Pattern> patterns, int index) {
+      Pattern pattern = patterns.get(index);
+      patterns.set(index, new ConstructorPattern(pattern.getPosition(), new Name(pattern.getName()), new ArrayList<Pattern>(0)));
+      patterns.get(index).setExplicit(pattern.getExplicit());
+    }
+  }
+
   public static class Clause extends SourceNode implements Abstract.Clause {
     private final List<Pattern> myPatterns;
     private final Definition.Arrow myArrow;
@@ -702,9 +710,7 @@ public final class Concrete {
 
     @Override
     public void replacePatternWithConstructor(int index) {
-      Pattern pattern = myPatterns.get(index);
-      myPatterns.set(index, new ConstructorPattern(pattern.getPosition(), new Name(pattern.getName()), new ArrayList<Pattern>(0)));
-      myPatterns.get(index).setExplicit(pattern.getExplicit());
+      PatternContainerHelper.replacePatternWithConstructor(myPatterns, index);
     }
   }
 
@@ -883,18 +889,30 @@ public final class Concrete {
   }
 
   public static class Condition extends SourceNode implements Abstract.Condition {
-    private final ConstructorPattern myPattern;
+    private final Name myConstructorName;
+    private final List<Pattern> myPatterns;
     private final Expression myTerm;
 
-    public Condition(Position position, ConstructorPattern pattern, Expression term) {
+    public Condition(Position position, Name constructorName, List<Pattern> patterns, Expression term) {
       super(position);
-      this.myPattern = pattern;
-      this.myTerm = term;
+      myConstructorName = constructorName;
+      myPatterns = patterns;
+      myTerm = term;
     }
 
     @Override
-    public ConstructorPattern getPattern() {
-      return myPattern;
+    public Name getConstructorName() {
+      return myConstructorName;
+    }
+
+    @Override
+    public List<Pattern> getPatterns() {
+      return myPatterns;
+    }
+
+    @Override
+    public void replacePatternWithConstructor(int index) {
+      PatternContainerHelper.replacePatternWithConstructor(myPatterns, index);
     }
 
     @Override
@@ -1032,9 +1050,7 @@ public final class Concrete {
 
     @Override
     public void replacePatternWithConstructor(int index) {
-      Pattern pattern = myArguments.get(index);
-      myArguments.set(index, new ConstructorPattern(pattern.getPosition(), new Name(pattern.getName()), new ArrayList<Pattern>(0)));
-      myArguments.get(index).setExplicit(pattern.getExplicit());
+      PatternContainerHelper.replacePatternWithConstructor(myArguments, index);
     }
 
     @Override
@@ -1073,9 +1089,7 @@ public final class Concrete {
 
     @Override
     public void replacePatternWithConstructor(int index) {
-      Pattern pattern = myPatterns.get(index);
-      myPatterns.set(index, new ConstructorPattern(pattern.getPosition(), new Name(pattern.getName()), new ArrayList<Pattern>(0)));
-      myPatterns.get(index).setExplicit(pattern.getExplicit());
+      PatternContainerHelper.replacePatternWithConstructor(myPatterns, index);
     }
 
     @Override

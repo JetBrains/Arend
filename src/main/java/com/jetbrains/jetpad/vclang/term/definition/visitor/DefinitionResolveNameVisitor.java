@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.MultiNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.SingleNameResolver;
 
@@ -120,15 +121,32 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       }
 
       Name name = def.getName();
+
+      MultiNameResolver conditionsResolver = new MultiNameResolver();
+      conditionsResolver.add(new NamespaceMember(myNamespace.getChild(name), def, null));
       myNameResolver.pushNameResolver(new SingleNameResolver(name.name, new NamespaceMember(myNamespace.getChild(name), def, null)));
 
       for (Abstract.Constructor constructor : def.getConstructors()) {
+        conditionsResolver.add(new NamespaceMember(myNamespace.getChild(name).getChild(constructor.getName()), constructor, null));
         if (constructor.getPatterns() == null) {
           visitConstructor(constructor, null);
         } else {
           myContext = saver.getOldContext();
           visitConstructor(constructor, null);
           myContext = saver.getCurrentContext();
+        }
+      }
+      myNameResolver.popNameResolver();
+
+      myNameResolver.pushNameResolver(conditionsResolver);
+      if (def.getConditions() != null) {
+        for (Abstract.Condition cond : def.getConditions()) {
+          try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
+            for (int i = 0; i < cond.getPatterns().size(); ++i) {
+              visitor.visitPattern(cond, i);
+            }
+            cond.getTerm().accept(visitor, null);
+          }
         }
       }
       myNameResolver.popNameResolver();

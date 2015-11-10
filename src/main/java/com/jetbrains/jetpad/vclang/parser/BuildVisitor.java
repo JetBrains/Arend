@@ -366,10 +366,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   public Concrete.Condition visitCondition(ConditionContext ctx) {
-    Concrete.Identifier constructorName = visitName(ctx.name());
     Concrete.Expression term = visitExpr(ctx.expr());
-
-    return term != null ? new Concrete.Condition(tokenPosition(ctx.start), new Concrete.ConstructorPattern(constructorName.getPosition(), constructorName.getName(), visitPatternxs(ctx.patternx())), term) : null;
+    return term != null ? new Concrete.Condition(tokenPosition(ctx.start), visitName(ctx.name()).getName(), visitPatternxs(ctx.patternx()), term) : null;
   }
 
   private void visitConstructorDef(ConstructorDefContext ctx, Concrete.DataDefinition def) {

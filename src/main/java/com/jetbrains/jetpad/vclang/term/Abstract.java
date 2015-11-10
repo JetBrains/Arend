@@ -290,8 +290,8 @@ public final class Abstract {
     DataDefinition getDataType();
   }
 
-  public interface Condition extends PrettyPrintableSourceNode {
-    ConstructorPattern getPattern();
+  public interface Condition extends PrettyPrintableSourceNode, PatternContainer {
+    Name getConstructorName();
     Expression getTerm();
   }
 
