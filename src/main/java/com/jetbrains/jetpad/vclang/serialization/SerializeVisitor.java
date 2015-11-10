@@ -58,7 +58,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
     myStream.write(2);
     try {
       myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false));
-      myDataStream.writeInt(0);
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -67,7 +66,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
 
   @Override
   public Void visitConCall(ConCallExpression expr) {
-    myStream.write(2);
+    myStream.write(3);
     int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
     try {
       myDataStream.writeInt(index);
@@ -83,7 +82,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
 
   @Override
   public Void visitClassCall(ClassCallExpression expr) {
-    myStream.write(15);
+    myStream.write(4);
     int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
     try {
       myDataStream.writeInt(index);
@@ -112,7 +111,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
 
   @Override
   public Void visitIndex(IndexExpression expr) {
-    myStream.write(3);
+    myStream.write(5);
     try {
       myDataStream.writeInt(expr.getIndex());
     } catch (IOException e) {
@@ -123,7 +122,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
 
   @Override
   public Void visitLam(LamExpression expr) {
-    myStream.write(4);
+    myStream.write(6);
     expr.getBody().accept(this);
     try {
       ModuleSerialization.writeArguments(this, expr.getArguments());
@@ -135,7 +134,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
 
   @Override
   public Void visitPi(PiExpression expr) {
-    myStream.write(5);
+    myStream.write(7);
     try {
       ModuleSerialization.writeArguments(this, expr.getArguments());
     } catch (IOException e) {
@@ -147,7 +146,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
 
   @Override
   public Void visitUniverse(UniverseExpression expr) {
-    myStream.write(6);
+    myStream.write(8);
     try {
       ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());
     } catch (IOException e) {
@@ -263,7 +262,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
 
   @Override
   public Void visitProj(ProjExpression expr) {
-    myStream.write(14);
+    myStream.write(13);
     expr.getExpression().accept(this);
     try {
       myDataStream.writeInt(expr.getField());
@@ -275,14 +274,14 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
 
   @Override
   public Void visitNew(NewExpression expr) {
-    myStream.write(16);
+    myStream.write(14);
     expr.getExpression().accept(this);
     return null;
   }
 
   @Override
   public Void visitLet(LetExpression letExpression) {
-    myStream.write(17);
+    myStream.write(15);
     try {
       myDataStream.writeInt(letExpression.getClauses().size());
       for (LetClause letClause : letExpression.getClauses()) {

@@ -58,7 +58,7 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression ConCall(Constructor definition) {
-    return new ConCallExpression(definition, definition.getDataType().getNumberOfAllParameters() == 0 ? Collections.<Expression>emptyList() : new ArrayList<Expression>(definition.getDataType().getParameters().size()));
+    return new ConCallExpression(definition, definition.getDataType().getNumberOfAllParameters() == 0 ? Collections.<Expression>emptyList() : new ArrayList<Expression>(definition.getDataType().getNumberOfAllParameters()));
   }
 
   public static Expression BinOp(Expression left, Definition binOp, Expression right) {

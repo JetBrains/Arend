@@ -328,32 +328,51 @@ public class ModuleDeserialization {
         return Apps(function, new ArgumentExpression(argument, explicit, hidden));
       }
       case 2: {
+        return definitionMap.get(stream.readInt()).getDefCall();
+      }
+      case 3: {
         Definition definition = definitionMap.get(stream.readInt());
         int size = stream.readInt();
-        if (size == 0) {
-          return definition.getDefCall();
-        }
         if (!(definition instanceof Constructor)) {
           throw new IncorrectFormat();
         }
+
         List<Expression> parameters = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
           parameters.add(readExpression(stream, definitionMap));
         }
         return ConCall((Constructor) definition, parameters);
       }
-      case 3: {
+      case 4: {
+        Definition definition = definitionMap.get(stream.readInt());
+        if (!(definition instanceof ClassDefinition)) {
+          throw new IncorrectFormat();
+        }
+        int size = stream.readInt();
+        Map<ClassField, ClassCallExpression.OverrideElem> elems = new HashMap<>();
+        for (int i = 0; i < size; ++i) {
+          Definition field = definitionMap.get(stream.readInt());
+          if (!(field instanceof ClassField)) {
+            throw new IncorrectFormat();
+          }
+          Expression type = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+          Expression term = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
+          elems.put((ClassField) field, new ClassCallExpression.OverrideElem(type, term));
+        }
+        return ClassCall((ClassDefinition) definition, elems, readUniverse(stream));
+      }
+      case 5: {
         return Index(stream.readInt());
       }
-      case 4: {
+      case 6: {
         Expression body = readExpression(stream, definitionMap);
         return Lam(readArguments(stream, definitionMap), body);
       }
-      case 5: {
+      case 7: {
         List<TypeArgument> arguments = readTypeArguments(stream, definitionMap);
         return Pi(arguments, readExpression(stream, definitionMap));
       }
-      case 6: {
+      case 8: {
         return new UniverseExpression(readUniverse(stream));
       }
       case 9: {
@@ -388,32 +407,14 @@ public class ModuleDeserialization {
 
         return result;
       }
-      case 14: {
+      case 13: {
         Expression expr = readExpression(stream, definitionMap);
         return Proj(expr, stream.readInt());
       }
-      case 15: {
-        Definition definition = definitionMap.get(stream.readInt());
-        if (!(definition instanceof ClassDefinition)) {
-          throw new IncorrectFormat();
-        }
-        int size = stream.readInt();
-        Map<ClassField, ClassCallExpression.OverrideElem> elems = new HashMap<>();
-        for (int i = 0; i < size; ++i) {
-          Definition field = definitionMap.get(stream.readInt());
-          if (!(field instanceof ClassField)) {
-            throw new IncorrectFormat();
-          }
-          Expression type = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
-          Expression term = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
-          elems.put((ClassField) field, new ClassCallExpression.OverrideElem(type, term));
-        }
-        return ClassCall((ClassDefinition) definition, elems, readUniverse(stream));
-      }
-      case 16: {
+      case 14: {
         return New(readExpression(stream, definitionMap));
       }
-      case 17: {
+      case 15: {
         final int numClauses = stream.readInt();
         final List<LetClause> clauses = new ArrayList<>(numClauses);
         for (int i = 0; i < numClauses; i++) {
