@@ -322,7 +322,7 @@ public class TypeCheckingDefCall {
     }
 
     Collections.reverse(arguments);
-    Expression resultType = constructor.getType().subst(arguments, 0);
+    Expression resultType = constructor.getBaseType().subst(arguments, 0);
     Collections.reverse(arguments);
     return new CheckTypeVisitor.OKResult(ConCall(constructor, arguments), resultType, null);
   }
