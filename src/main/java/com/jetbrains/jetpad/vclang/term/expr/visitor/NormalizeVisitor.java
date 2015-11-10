@@ -174,7 +174,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
 
     List<TypeArgument> arguments;
     if (defCallExpr instanceof DataCallExpression) {
-      arguments = ((DataCallExpression) defCallExpr).getDefinition().getParameters();
+      DataDefinition dataDefinition = ((DataCallExpression) defCallExpr).getDefinition();
+      if (dataDefinition.getThisClass() == null) {
+        arguments = dataDefinition.getParameters();
+      } else {
+        arguments = new ArrayList<>(dataDefinition.getParameters().size() + 1);
+        arguments.add(TypeArg(ClassCall(dataDefinition.getThisClass())));
+        arguments.addAll(dataDefinition.getParameters());
+      }
     } else
     if (defCallExpr instanceof ConCallExpression) {
       List<TypeArgument> arguments1 = ((Constructor) defCallExpr.getDefinition()).getArguments();

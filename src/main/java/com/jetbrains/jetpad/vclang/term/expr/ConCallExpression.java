@@ -27,7 +27,10 @@ public class ConCallExpression extends DefCallExpression {
 
   @Override
   public Expression applyThis(Expression thisExpr) {
-    // TODO
+    List<Expression> parameters = new ArrayList<>(myParameters.size() + 1);
+    parameters.add(thisExpr);
+    parameters.addAll(myParameters);
+    myParameters = parameters;
     return this;
   }
 
