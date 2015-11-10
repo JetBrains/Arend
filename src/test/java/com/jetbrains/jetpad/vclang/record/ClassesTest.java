@@ -231,7 +231,7 @@ public class ClassesTest {
         "\\abstract (+) (x y : Nat) : Nat\n" +
         "\\class A {\n" +
         "  \\abstract x : Nat\n" +
-        "  \\data D (n : Nat) (f : Nat -> Nat -> Nat)" +
+        "  \\data D (n : Nat) (f : Nat -> Nat -> Nat)\n" +
         "    | D zero f => con1 (f x x = f x x)\n" +
         "    | D (suc n) f => con2 (D n f) (f n x = f n x)\n" +
         "  \\function f (n : Nat) : D n (+) <= \\elim n\n" +
