@@ -42,10 +42,20 @@ public class TypeCheckingDefCall {
     if (expr instanceof ConCallExpression) {
       Constructor constructor = ((ConCallExpression) expr).getDefinition();
       Expression type = constructor.getBaseType();
-      if (!constructor.getDataType().getParameters().isEmpty()) {
-        type = Pi(constructor.getDataType().getParameters(), type);
+
+      List<TypeArgument> parameters;
+      if (constructor.getPatterns() != null) {
+        parameters = expandConstructorParameters(constructor, myLocalContext);
+      } else {
+        parameters = constructor.getDataType().getParameters();
       }
-      type = constructor.getThisClass() != null && type != null ? Pi("\\this", ClassCall(constructor.getThisClass()), type) : type;
+
+      if (!parameters.isEmpty()) {
+        type = Pi(parameters, type);
+      }
+      if (constructor.getThisClass() != null) {
+        type = Pi("\\this", ClassCall(constructor.getThisClass()), type);
+      }
       return new CheckTypeVisitor.OKResult(ConCall(constructor), type, null);
     }
     if (expr instanceof DefCallExpression) {
