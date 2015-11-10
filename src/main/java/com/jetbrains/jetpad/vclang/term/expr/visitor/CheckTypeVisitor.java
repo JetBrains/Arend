@@ -140,6 +140,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (numberOfVariables(result.type, myLocalContext) > numberOfVariables(expectedType, myLocalContext)) {
+      // TODO: This looks suspicious.
       return typeCheckFunctionApps(expression, new ArrayList<Abstract.ArgumentExpression>(), expectedType, expression);
     } else {
       return checkResult(expectedType, result, expression);
@@ -278,18 +279,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   private Result typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
     Result function;
-    if (fun instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) fun).getResolvedName() != null
-        && ((Abstract.DefCallExpression) fun).getResolvedName().toDefinition() instanceof Constructor
-        && !((Constructor) ((Abstract.DefCallExpression) fun).getResolvedName().toDefinition()).getDataType().getParameters().isEmpty()) {
-      function = typeCheckDefCall((Abstract.DefCallExpression) fun, null);
-      if (function instanceof OKResult) {
-        return typeCheckApps(fun, 0, (OKResult) function, args, expectedType, expression);
-      }
+    if (fun instanceof Abstract.DefCallExpression) {
+      function = myTypeCheckingDefCall.typeCheckDefCall((Abstract.DefCallExpression) fun);
     } else {
       function = typeCheck(fun, null);
-      if (function instanceof OKResult) {
-        return typeCheckApps(fun, 0, (OKResult) function, args, expectedType, expression);
-      }
+    }
+    if (function instanceof OKResult) {
+      return typeCheckApps(fun, 0, (OKResult) function, args, expectedType, expression);
     }
 
     if (function instanceof InferErrorResult) {
@@ -304,15 +300,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private Result typeCheckApps(Abstract.Expression fun, int argsSkipped, OKResult okFunction, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
     List<TypeArgument> signatureArguments = new ArrayList<>();
     int parametersNumber = 0;
-    if (okFunction.expression instanceof DefCallExpression) {
-      Definition def = ((DefCallExpression) okFunction.expression).getDefinition();
-      if (def instanceof Constructor) {
-        if (((Constructor) def).getPatterns() == null) {
-          parametersNumber = numberOfVariables(((Constructor) def).getDataType().getParameters());
-        } else {
-          parametersNumber = expandConstructorParameters((Constructor) def, myLocalContext).size();
-        }
+    if (okFunction.expression instanceof ConCallExpression) {
+      Constructor def = ((ConCallExpression) okFunction.expression).getDefinition();
+      if (def.getPatterns() == null) {
+        parametersNumber = numberOfVariables(def.getDataType().getParameters());
+      } else {
+        parametersNumber = expandConstructorParameters(def, myLocalContext).size();
       }
+      if (def.getThisClass() != null) {
+        ++parametersNumber;
+      }
+      parametersNumber -= ((ConCallExpression) okFunction.expression).getParameters().size();
     }
 
     Expression signatureResultType = splitArguments(okFunction.type, signatureArguments, myLocalContext);
@@ -515,8 +513,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression resultExpr = okFunction.expression;
     List<Expression> parameters = null;
     if (parametersNumber > 0) {
-      parameters = new ArrayList<>(parametersNumber);
-      ((ConCallExpression) resultExpr).setParameters(parameters);
+      parameters = ((ConCallExpression) resultExpr).getParameters();
     }
     for (i = 0; i < parametersNumber; ++i) {
       assert parameters != null;
@@ -577,14 +574,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result result = typeCheckDefCall(expr, expectedType);
     if (result instanceof OKResult && result.expression instanceof ConCallExpression) {
       ConCallExpression defCall = (ConCallExpression) result.expression;
-      if (!defCall.getParameters().isEmpty()) {
+      if (defCall.getParameters().size() == defCall.getDefinition().getDataType().getNumberOfAllParameters()) {
         return result;
-      }
-      if (!defCall.getDefinition().getDataType().getParameters().isEmpty()) {
+      } else {
         return typeCheckApps(expr, 0, (OKResult) result, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr);
       }
+    } else {
+      return result;
     }
-    return result instanceof OKResult ? checkResultImplicit(expectedType, (OKResult) result, expr) : result;
   }
 
   @Override

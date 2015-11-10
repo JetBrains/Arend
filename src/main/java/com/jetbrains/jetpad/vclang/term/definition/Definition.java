@@ -32,7 +32,7 @@ public abstract class Definition extends Binding implements Abstract.Definition 
 
   public abstract Expression getBaseType();
 
-  public abstract DefCallExpression getDefCallWithThis();
+  public abstract DefCallExpression getDefCall();
 
   @Override
   public Expression getType() {

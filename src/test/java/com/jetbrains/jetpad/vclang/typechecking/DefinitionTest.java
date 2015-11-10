@@ -1,12 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -28,14 +25,6 @@ public class DefinitionTest {
   public void initialize() {
     RootModule.initialize();
     errorReporter = new ListErrorReporter();
-  }
-
-  private Definition typeCheckDefinition(Definition definition) {
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(definition.getParentNamespace(), errorReporter);
-    // TODO: check for null?
-    definition.getParentNamespace().addMember(definition.getName());
-    visitor.setNamespaceMember(definition.getParentNamespace().getMember(definition.getName().name));
-    return definition.accept(visitor, null);
   }
 
   @Test
@@ -292,5 +281,14 @@ public class DefinitionTest {
         "\\static \\function f (x : Nat -> Nat) => x 0\n" +
         "\\static \\data Test (A : \\Set0)\n" +
         "  | Test (suc n) => foo (f n)", 1);
+  }
+
+
+  @Test
+  public void constructorTest() {
+    typeCheckClass(
+        "\\static \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f 0 = n)\n" +
+        "\\static \\function f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
+        "\\static \\function g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
   }
 }

@@ -39,6 +39,11 @@ public class TypeCheckingDefCall {
   }
 
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
+    if (expr instanceof DefCallExpression) {
+      Definition definition = ((DefCallExpression) expr).getDefinition();
+      return new CheckTypeVisitor.OKResult(definition.getDefCall(), definition.getType(), null);
+    }
+
     DefCallResult result = typeCheckNamespace(expr);
     if (result == null) {
       return null;
@@ -55,10 +60,16 @@ public class TypeCheckingDefCall {
       myErrorReporter.report(error);
       return null;
     }
+    if (result.member.definition instanceof FunctionDefinition && ((FunctionDefinition) result.member.definition).typeHasErrors() || !(result.member.definition instanceof FunctionDefinition) && result.member.definition.hasErrors()) {
+      TypeCheckingError error = new HasErrors(result.member.definition.getName(), expr);
+      expr.setWellTyped(myLocalContext, Error(result.member.definition.getDefCall(), error));
+      myErrorReporter.report(error);
+      return null;
+    }
 
     CheckTypeVisitor.OKResult okResult = result.baseResult == null ? new CheckTypeVisitor.OKResult(null, null, null) : (CheckTypeVisitor.OKResult) result.baseResult;
     Expression thisExpr = okResult.expression;
-    DefCallExpression expression = result.member.definition.getDefCallWithThis();
+    DefCallExpression expression = result.member.definition.getDefCall();
     okResult.type = result.member.definition.getBaseType();
 
     if (result.member.definition instanceof Constructor) {
@@ -155,13 +166,6 @@ public class TypeCheckingDefCall {
     }
 
     Definition definition = member.definition;
-    if (definition instanceof FunctionDefinition && ((FunctionDefinition) definition).typeHasErrors() || !(definition instanceof FunctionDefinition) && definition.hasErrors()) {
-      TypeCheckingError error = new HasErrors(name, expr);
-      expr.setWellTyped(myLocalContext, Error(definition.getDefCallWithThis(), error));
-      myErrorReporter.report(error);
-      return null;
-    }
-
     if (definition.getThisClass() != null) {
       if (myThisClass != null) {
         assert myLocalContext.size() > 0;

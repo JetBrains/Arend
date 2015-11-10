@@ -176,10 +176,23 @@ public class ClassesTest {
     typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract x : Nat\n" +
-        "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n) \n" +
+        "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "}\n" +
         "\\static \\function f (a : A) : a.D (a.x) (\\lam y => y) => a.con1 (path (\\lam _ => a.x))\n" +
         "\\static \\function g (a : A) : a.D (a.x) (\\lam y => y) => a.con2 (path (\\lam _ => a.x))");
+  }
+
+  @Test
+  public void constructorWithParamsTest() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
+        "}\n" +
+        "\\static \\function f (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
+        "\\static \\function f' (a : A) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
+        "\\static \\function g (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))\n" +
+        "\\static \\function g' (a : A) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))");
   }
 
   @Test
@@ -187,12 +200,29 @@ public class ClassesTest {
     typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract x : Nat\n" +
-        "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n) \n" +
+        "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "  \\function f : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
         "  \\function g : D x (\\lam y => y) => con2 (path (\\lam _ => x))\n"+
         "}\n" +
         "\\static \\function f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
-        "\\static \\function g (a : A) : a.D (a.x) (\\lam y => y) => a.g");
+        "\\static \\function f' (a : A) => a.f\n" +
+        "\\static \\function g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
+        "\\static \\function g' (a : A) => a.g");
+  }
+
+  @Test
+  public void constructorWithParamsThisTest() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
+        "  \\function f : D x (\\lam y => y) => (D x (\\lam y => y)).con1 (path (\\lam _ => x))\n" +
+        "  \\function g => (D x (\\lam y => y)).con2 (path (\\lam _ => x))\n"+
+        "}\n" +
+        "\\static \\function f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
+        "\\static \\function f' (a : A) => a.f\n" +
+        "\\static \\function g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
+        "\\static \\function g' (a : A) => a.g");
   }
 
   @Test
@@ -209,6 +239,7 @@ public class ClassesTest {
         "    | suc n => con2 (f n) (path (\\lam _ => n + x))\n" +
         "}\n" +
         "\\function f (a : A) (n : Nat) : a.D n (+) => a.f\n" +
+        "\\function f' (a : A) (n : Nat) => a.f\n" +
         "\\function g (a : A) (n : Nat) : a.D n (+) <= \\elim n\n" +
         "  | zero => con1 (path (\\lam _ => x + x))\n" +
         "  | suc n => con2 (g a n) (path (\\lam _ => n + a.x))");
