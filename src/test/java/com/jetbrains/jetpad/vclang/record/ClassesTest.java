@@ -1,8 +1,17 @@
 package com.jetbrains.jetpad.vclang.record;
 
+import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ClassesTest {
   @Test
@@ -202,7 +211,7 @@ public class ClassesTest {
         "  \\abstract x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "  \\function f : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
-        "  \\function g : D x (\\lam y => y) => con2 (path (\\lam _ => x))\n"+
+        "  \\function g : D x (\\lam y => y) => con2 (path (\\lam _ => x))\n" +
         "}\n" +
         "\\static \\function f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
         "\\static \\function f' (a : A) => a.f\n" +
@@ -217,7 +226,7 @@ public class ClassesTest {
         "  \\abstract x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "  \\function f : D x (\\lam y => y) => (D x (\\lam y => y)).con1 (path (\\lam _ => x))\n" +
-        "  \\function g => (D x (\\lam y => y)).con2 (path (\\lam _ => x))\n"+
+        "  \\function g => (D x (\\lam y => y)).con2 (path (\\lam _ => x))\n" +
         "}\n" +
         "\\static \\function f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
         "\\static \\function f' (a : A) => a.f\n" +
@@ -243,5 +252,67 @@ public class ClassesTest {
         "\\function g (a : A) (n : Nat) : a.D n (+) <= \\elim n\n" +
         "  | zero => a.con1 (path (\\lam _ => a.x + a.x))\n" +
         "  | suc n => a.con2 (g a n) (path (\\lam _ => n + a.x))");
+  }
+
+  @Test
+  public void fieldCallTest() {
+    ClassDefinition testClass = typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : \\Type0\n" +
+        "}\n" +
+        "\\static \\class B {\n" +
+        "  \\abstract a : A\n" +
+        "  \\abstract y : a.x\n" +
+        "}");
+    Namespace namespace = testClass.getParentNamespace().findChild("test");
+    ClassDefinition aClass = (ClassDefinition) namespace.getDefinition("A");
+    ClassDefinition bClass = (ClassDefinition) namespace.getDefinition("B");
+    ClassField xField = aClass.getField("x");
+    ClassField aField = bClass.getField("a");
+    Expression type = bClass.getField("y").getBaseType();
+    assertTrue(type instanceof AppExpression);
+    AppExpression appType = (AppExpression) type;
+    assertEquals(FieldCall(xField), appType.getFunction());
+    assertTrue(appType.getArgument().getExpression() instanceof AppExpression);
+    AppExpression appArg = (AppExpression) appType.getArgument().getExpression();
+    assertEquals(FieldCall(aField), appArg.getFunction());
+    assertEquals(Index(0), appArg.getArgument().getExpression());
+  }
+
+  @Test
+  public void fieldCallInClass() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\class B {\n" +
+        "  \\abstract a : A\n" +
+        "  \\abstract y : a.x = a.x\n" +
+        "}");
+  }
+
+  @Test
+  public void fieldCallInClass2() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\class B {\n" +
+        "  \\abstract a : A\n" +
+        "  \\abstract y : a.x = a.x\n" +
+        "  \\abstract z : y = y\n" +
+        "}");
+  }
+
+  @Test
+  public void fieldCallInClass3() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\class B {\n" +
+        "  \\abstract a : A\n" +
+        "  \\abstract y : path (\\lam _ => a.x) = path (\\lam _ => a.x)\n" +
+        "}");
   }
 }

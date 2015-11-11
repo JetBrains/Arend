@@ -92,17 +92,7 @@ public class TypeCheckingDefCall {
     okResult.type = result.member.definition.getBaseType();
 
     if (result.member.definition instanceof Constructor) {
-      Constructor constructor = (Constructor) result.member.definition;
-      List<TypeArgument> parameters;
-      if (constructor.getPatterns() != null) {
-        parameters = expandConstructorParameters(constructor, myLocalContext);
-      } else {
-        parameters = constructor.getDataType().getParameters();
-      }
-
-      if (!parameters.isEmpty()) {
-        okResult.type = Pi(parameters, okResult.type);
-      }
+      fixConstructorParameters((Constructor) result.member.definition, okResult);
     }
 
     if (thisExpr != null) {
@@ -115,6 +105,19 @@ public class TypeCheckingDefCall {
     }
 
     return okResult;
+  }
+
+  private void fixConstructorParameters(Constructor constructor, CheckTypeVisitor.OKResult result) {
+    List<TypeArgument> parameters;
+    if (constructor.getPatterns() != null) {
+      parameters = expandConstructorParameters(constructor, myLocalContext);
+    } else {
+      parameters = constructor.getDataType().getParameters();
+    }
+
+    if (!parameters.isEmpty()) {
+      result.type = Pi(parameters, result.type);
+    }
   }
 
   private Expression findParent(ClassDefinition classDefinition, ClassDefinition parent, Expression expr) {
@@ -163,12 +166,12 @@ public class TypeCheckingDefCall {
     Name name = expr.getName();
     ResolvedName resolvedName = expr.getResolvedName();
     if (resolvedName == null) {
-      CheckTypeVisitor.OKResult result1 = getLocalVar(name, expr);
-      if (result1 == null) {
+      CheckTypeVisitor.OKResult result = getLocalVar(name, expr);
+      if (result == null) {
         return null;
       }
-      result1.type = result1.type.liftIndex(0, ((IndexExpression) result1.expression).getIndex() + 1);
-      return new DefCallResult(result1, null, null, null);
+      result.type = result.type.liftIndex(0, ((IndexExpression) result.expression).getIndex() + 1);
+      return new DefCallResult(result, null, null, null);
     }
 
     NamespaceMember member = resolvedName.toNamespaceMember();
@@ -180,11 +183,11 @@ public class TypeCheckingDefCall {
       return null;
     }
 
-    if (member.definition == null) {
+    Definition definition = member.definition;
+    if (definition == null) {
       return new DefCallResult(new CheckTypeVisitor.OKResult(null, null, null), null, member, null);
     }
 
-    Definition definition = member.definition;
     if (definition.getThisClass() != null) {
       if (myThisClass != null) {
         assert myLocalContext.size() > 0;
@@ -197,7 +200,17 @@ public class TypeCheckingDefCall {
           myErrorReporter.report(error);
           return null;
         }
-        return new DefCallResult(new CheckTypeVisitor.OKResult(thisExpr, null, null), definition.getThisClass(), member, null);
+
+        if (!(definition instanceof ClassDefinition) && !(definition instanceof FunctionDefinition)) {
+          CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(definition.getDefCall().applyThis(thisExpr), definition.getBaseType(), null);
+          if (definition instanceof Constructor) {
+            fixConstructorParameters((Constructor) definition, result);
+          }
+          result.type = result.type.subst(thisExpr, 0);
+          return new DefCallResult(result, null, null, null);
+        } else {
+          return new DefCallResult(new CheckTypeVisitor.OKResult(thisExpr, null, null), definition.getThisClass(), member, null);
+        }
       } else {
         TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr, getNames(myLocalContext));
         expr.setWellTyped(myLocalContext, Error(null, error));
@@ -205,7 +218,15 @@ public class TypeCheckingDefCall {
         return null;
       }
     } else {
-      return new DefCallResult(new CheckTypeVisitor.OKResult(null, null, null), null, member, null);
+      if (!(definition instanceof ClassDefinition) && !(definition instanceof FunctionDefinition)) {
+        CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(definition.getDefCall(), definition.getBaseType(), null);
+        if (definition instanceof Constructor) {
+          fixConstructorParameters((Constructor) definition, result);
+        }
+        return new DefCallResult(result, null, null, null);
+      } else {
+        return new DefCallResult(new CheckTypeVisitor.OKResult(null, null, null), null, member, null);
+      }
     }
   }
 
