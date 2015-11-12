@@ -133,9 +133,8 @@ public class GetDepsVisitor implements AbstractExpressionVisitor<Void, Set<Resol
   @Override
   public Set<ResolvedName> visitClassExt(Abstract.ClassExtExpression expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
-
-    for (Abstract.Statement statement : expr.getStatements()) {
-        // TODO: fix
+    for (Abstract.ImplementStatement statement : expr.getStatements()) {
+      statement.getExpression().accept(this, null);
     }
     return myDependencies;
   }

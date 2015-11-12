@@ -32,7 +32,7 @@ public class GetTypeTest {
 
   @Test
   public void classExtTest() {
-    ClassDefinition def = typeCheckClass("\\static \\class Test { \\function A : \\Type0 \\function a : A } \\static \\function test => Test { \\override A => Nat }");
+    ClassDefinition def = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     assertEquals(Universe(1), namespace.getDefinition("Test").getType());
     assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("test").getType());

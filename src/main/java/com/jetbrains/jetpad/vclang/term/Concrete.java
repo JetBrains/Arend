@@ -334,9 +334,9 @@ public final class Concrete {
 
   public static class ClassExtExpression extends Expression implements Abstract.ClassExtExpression {
     private final Expression myBaseClassExpression;
-    private final List<Statement> myDefinitions;
+    private final List<ImplementStatement> myDefinitions;
 
-    public ClassExtExpression(Position position, Expression baseClassExpression, List<Statement> definitions) {
+    public ClassExtExpression(Position position, Expression baseClassExpression, List<ImplementStatement> definitions) {
       super(position);
       myBaseClassExpression = baseClassExpression;
       myDefinitions = definitions;
@@ -348,13 +348,34 @@ public final class Concrete {
     }
 
     @Override
-    public List<Statement> getStatements() {
+    public List<ImplementStatement> getStatements() {
       return myDefinitions;
     }
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClassExt(this, params);
+    }
+  }
+
+  public static class ImplementStatement extends SourceNode implements Abstract.ImplementStatement {
+    private final Name myName;
+    private final Expression myExpression;
+
+    public ImplementStatement(Position position, Name name, Expression expression) {
+      super(position);
+      myName = name;
+      myExpression = expression;
+    }
+
+    @Override
+    public Name getName() {
+      return myName;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
     }
   }
 

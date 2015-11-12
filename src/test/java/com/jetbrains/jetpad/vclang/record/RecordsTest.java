@@ -24,35 +24,37 @@ public class RecordsTest {
   public void unknownExtTestError() {
     typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
-        "\\static \\function C => Point { \\override x => 0 \\override z => 0 \\override y => 0 }", 1);
+        "\\static \\function C => Point { x => 0 | z => 0 | y => 0 }", 1);
   }
 
+  /*
   @Test
   public void typeMismatchMoreTestError() {
     typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
-        "\\static \\function C => Point { \\override x (a : Nat) => a }", 1);
+        "\\static \\function C => Point { x (a : Nat) => a }", 1);
   }
 
   @Test
   public void typeMismatchLessTest() {
     typeCheckClass(
         "\\static \\class C { \\abstract f (x y z : Nat) : Nat }\n" +
-        "\\static \\function D => C { \\override f a => \\lam z w => z }");
+        "\\static \\function D => C { f a => \\lam z w => z }");
   }
 
   @Test
   public void argTypeMismatchTestError() {
     typeCheckClass(
         "\\static \\class C { \\abstract f (a : Nat) : Nat }\n" +
-        "\\static \\function D => C { \\override f (a : Nat -> Nat) => 0 }", 1);
+        "\\static \\function D => C { f (a : Nat -> Nat) => 0 }", 1);
   }
+  */
 
   @Test
   public void resultTypeMismatchTestError() {
     typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
-        "\\static \\function C => Point { \\override x => \\lam (t : Nat) => t }", 1);
+        "\\static \\function C => Point { x => \\lam (t : Nat) => t }", 1);
   }
 
   @Test
@@ -63,25 +65,28 @@ public class RecordsTest {
         "  \\abstract f : Nat -> Nat\n" +
         "}\n" +
         "\\static \\function B => A {\n" +
-        "  \\override f n <= c n n\n" +
+        "  f n => c n n\n" +
         "}");
   }
 
+  /*
   @Test
   public void recursiveTestError() {
     typeCheckClass(
         "\\static \\class A { \\abstract f : Nat -> Nat }\n" +
         "\\static \\function B => A { \\override f n <= \\elim n | zero => zero | suc n' => f (suc n') }", 1);
   }
+  */
 
   @Test
   public void duplicateNameTestError() {
     typeCheckClass(
         "\\static \\class A {\n" +
-        "  \\abstract f : Nat -> Nat\n" +
+        "  \\abstract f : Nat\n" +
         "}\n" +
         "\\static \\function B => A {\n" +
-        "  \\function f (n : Nat) <= n\n" +
+        "  | f => 0\n" +
+        "  | f => 1\n" +
         "}", 1);
   }
 
@@ -93,8 +98,8 @@ public class RecordsTest {
         "  \\abstract y : Nat\n" +
         "}\n" +
         "\\static \\function diagonal => \\lam (d : Nat) => Point {\n" +
-        "  \\override x => d\n" +
-        "  \\override y => d\n" +
+        "  | x => d\n" +
+        "  | y => d\n" +
         "}\n" +
         "\\static \\function test (p : diagonal 0) : p.x = 0 => path (\\lam _ => 0)");
   }
@@ -106,9 +111,7 @@ public class RecordsTest {
         "  \\abstract x : Nat\n" +
         "  \\abstract y : Nat\n" +
         "}\n" +
-        "\\static \\function diagonal => Point {\n" +
-        "  \\override y => x\n" +
-        "}\n" +
+        "\\static \\function diagonal => Point { y => x }\n" +
         "\\static \\function test => \\new diagonal", 1);
   }
 
@@ -120,12 +123,12 @@ public class RecordsTest {
         "  \\abstract y : Nat\n" +
         "}\n" +
         "\\static \\function diagonal => \\lam (d : Nat) => Point {\n" +
-        "  \\override x => d\n" +
-        "  \\override y => d\n" +
+        "  | x => d\n" +
+        "  | y => d\n" +
         "}\n" +
         "\\static \\function diagonal1 => Point {\n" +
-        "  \\override x => 0\n" +
-        "  \\override y => x\n" +
+        "  | x => 0\n" +
+        "  | y => x\n" +
         "}\n" +
         "\\static \\function test : \\new diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new diagonal 0)");
   }
@@ -138,8 +141,8 @@ public class RecordsTest {
         "  \\abstract y : Nat\n" +
         "}\n" +
         "\\static \\function test => Point {\n" +
-        "  \\override x => y\n" +
-        "  \\override y => x\n" +
+        "  | x => y\n" +
+        "  | y => x\n" +
         "}", 1);
   }
 
@@ -147,21 +150,41 @@ public class RecordsTest {
   public void splitClassTestError() {
     resolveNamesClass("test",
         "\\static \\class A {\n" +
-            "  \\static \\function x => 0\n" +
-            "}\n" +
-            "\\static \\class A {\n" +
-            "  \\static \\function y => 0\n" +
-            "}", 1);
+        "  \\static \\function x => 0\n" +
+        "}\n" +
+        "\\static \\class A {\n" +
+        "  \\static \\function y => 0\n" +
+        "}", 1);
   }
 
   @Test
   public void recordUniverseTest() {
     ClassDefinition result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
-        "\\static \\function C => Point { \\override x => 0 }");
+        "\\static \\function C => Point { x => 0 }");
     Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
     assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
     assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("C").getUniverse());
+  }
+
+  @Test
+  public void recordUniverseTest2() {
+    ClassDefinition result = typeCheckClass(
+        "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
+        "\\static \\function C => Point { x => 0 | y => 1 }");
+    Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
+    assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
+    assertEquals(new Universe.Type(0, Universe.Type.PROP), namespace.getDefinition("C").getUniverse());
+  }
+
+  @Test
+  public void recordUniverseTest3() {
+    ClassDefinition result = typeCheckClass(
+        "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
+        "\\static \\function C => Point { x => Nat }");
+    Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
+    assertEquals(new Universe.Type(4, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("Point").getUniverse());
+    assertEquals(new Universe.Type(2, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("C").getUniverse());
   }
 
   @Test

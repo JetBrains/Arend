@@ -10,7 +10,7 @@ definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  
             | '\\abstract' precedence name tele* ':' expr                       # defAbstract
             // | '\\override' name ('\\as' name)? tele* typeTermOpt where?         # defOverride
             | '\\data' precedence name tele* (':' literal)? constructorDef*     # defData
-            | '\\class' ID classFields                                          # defClass
+            | '\\class' ID '{' statement* '}'                                   # defClass
             ;
 
 staticMod : '\\static'                  # staticStatic
@@ -19,8 +19,6 @@ staticMod : '\\static'                  # staticStatic
           ;
 
 where : '\\where' ('{' statement+ '}' | statement);
-
-classFields : '{' statement* '}';
 
 nsCmd : '\\open'                        # openCmd
       | '\\close'                       # closeCmd
@@ -106,7 +104,9 @@ atom  : '(' expr (',' expr)* ')'        # tuple
       | NUMBER                          # atomNumber
       ;
 
-atomFieldsAcc : atom fieldAcc* classFields?;
+atomFieldsAcc : atom fieldAcc* ('{' implementStatement* '}')?;
+
+implementStatement : '|'? name '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
          | '{' expr '}'                 # argumentImplicit
