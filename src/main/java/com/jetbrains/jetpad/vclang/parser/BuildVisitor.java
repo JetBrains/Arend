@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import org.antlr.v4.runtime.Token;
@@ -592,15 +591,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Expression visitAtomNumber(AtomNumberContext ctx) {
+  public Concrete.NumericLiteral visitAtomNumber(AtomNumberContext ctx) {
     if (ctx == null) return null;
-    int number = Integer.valueOf(ctx.NUMBER().getText());
-    Concrete.Position pos = tokenPosition(ctx.NUMBER().getSymbol());
-    Concrete.Expression result = new Concrete.DefCallExpression(pos, Prelude.ZERO);
-    for (int i = 0; i < number; ++i) {
-      result = new Concrete.AppExpression(pos, new Concrete.DefCallExpression(pos, Prelude.SUC), new Concrete.ArgumentExpression(result, true, false));
-    }
-    return result;
+    return new Concrete.NumericLiteral(tokenPosition(ctx.NUMBER().getSymbol()), Integer.valueOf(ctx.NUMBER().getText()));
   }
 
   @Override

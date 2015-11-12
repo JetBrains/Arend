@@ -347,6 +347,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  @Override
+  public Void visitNumericLiteral(Abstract.NumericLiteral expr, Byte params) {
+    myBuilder.append(expr.getNumber());
+    return null;
+  }
+
   public static void printIndent(StringBuilder builder, int indent) {
     for (int i = 0; i < indent; ++i) {
       builder.append(' ');

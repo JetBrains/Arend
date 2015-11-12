@@ -9,6 +9,8 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Suc;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Zero;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
@@ -799,6 +801,19 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       exprExpression = ((Abstract.LetExpression) exprExpression).getExpression();
     }
     return visitLet(exprLetClauses, exprExpression, otherLet.getClauses(), otherLet.getExpression());
+  }
+
+  @Override
+  public Result visitNumericLiteral(Abstract.NumericLiteral expr, Expression other) {
+    if (expr == other) {
+      return new JustResult(CMP.EQUALS);
+    }
+    Expression expr1 = Zero();
+    int number = expr.getNumber();
+    for (int i = 0; i < number; ++i) {
+      expr1 = Suc(expr1);
+    }
+    return new JustResult(expr1.equals(other) ? CMP.EQUALS : CMP.NOT_EQUIV);
   }
 
   @Override

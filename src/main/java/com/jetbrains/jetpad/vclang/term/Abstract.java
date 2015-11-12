@@ -187,6 +187,10 @@ public final class Abstract {
     Expression getExpression();
   }
 
+  public interface NumericLiteral extends Expression {
+    int getNumber();
+  }
+
   public interface Binding extends SourceNode {
     Name getName();
   }

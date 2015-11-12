@@ -313,4 +313,9 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
     }
     return null;
   }
+
+  @Override
+  public Void visitNumericLiteral(Abstract.NumericLiteral expr, Void params) {
+    return null;
+  }
 }

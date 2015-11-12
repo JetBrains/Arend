@@ -1477,14 +1477,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return result;
     }
     Expression normalizedBaseClassExpr = result.expression.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
-    if (!(normalizedBaseClassExpr instanceof DefCallExpression && ((DefCallExpression) normalizedBaseClassExpr).getDefinition() instanceof ClassDefinition)) {
+    if (!(normalizedBaseClassExpr instanceof ClassCallExpression)) {
       TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getBaseClassExpression(), getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(normalizedBaseClassExpr, error));
       myErrorReporter.report(error);
       return null;
     }
 
-    ClassDefinition baseClass = (ClassDefinition) ((DefCallExpression) normalizedBaseClassExpr).getDefinition();
+    ClassDefinition baseClass = ((ClassCallExpression) normalizedBaseClassExpr).getDefinition();
     if (baseClass.hasErrors()) {
       TypeCheckingError error = new HasErrors(baseClass.getName(), expr.getBaseClassExpression());
       expr.setWellTyped(myLocalContext, Error(normalizedBaseClassExpr, error));
@@ -1492,10 +1492,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    // TODO
     // if (expr.getStatements().isEmpty()) {
       return checkResultImplicit(expectedType, new OKResult(normalizedBaseClassExpr, baseClass.getType(), null), expr);
     // }
+
+    // List<ClassField> fields = new ArrayList<>(baseClass.getFields());
+    // baseClass.getFields().clear();
 
     /*
     Map<String, FunctionDefinition> abstracts = new HashMap<>();
@@ -1631,5 +1633,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       finalResult = new OKResult(Let(clauses, okResult.expression), normalizedResultType, equations);
     }
     return finalResult;
+  }
+
+  @Override
+  public Result visitNumericLiteral(Abstract.NumericLiteral expr, Expression expectedType) {
+    int number = expr.getNumber();
+    Expression expression = Zero();
+    for (int i = 0; i < number; ++i) {
+      expression = Suc(expression);
+    }
+    return checkResult(expectedType, new OKResult(expression, Nat(), null), expr);
   }
 }

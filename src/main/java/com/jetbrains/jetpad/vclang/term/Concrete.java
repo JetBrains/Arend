@@ -728,6 +728,25 @@ public final class Concrete {
     }
   }
 
+  public static class NumericLiteral extends Expression implements Abstract.NumericLiteral {
+    private final int myNumber;
+
+    public NumericLiteral(Position position, int number) {
+      super(position);
+      myNumber = number;
+    }
+
+    @Override
+    public int getNumber() {
+      return myNumber;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitNumericLiteral(this, params);
+    }
+  }
+
   public static abstract class Binding extends SourceNode implements Abstract.Binding {
     private final Name myName;
 

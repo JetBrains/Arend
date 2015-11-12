@@ -157,4 +157,9 @@ public class GetDepsVisitor implements AbstractExpressionVisitor<Void, Set<Resol
     letExpression.getExpression().accept(this, null);
     return myDependencies;
   }
+
+  @Override
+  public Set<ResolvedName> visitNumericLiteral(Abstract.NumericLiteral expr, Void params) {
+    return myDependencies;
+  }
 }

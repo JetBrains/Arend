@@ -191,15 +191,15 @@ public class ExpressionFactory {
     return new ProjExpression(expr, field);
   }
 
-  public static DefCallExpression Nat() {
+  public static DataCallExpression Nat() {
     return DataCall(Prelude.NAT);
   }
 
-  public static DefCallExpression Zero() {
+  public static ConCallExpression Zero() {
     return ConCall(Prelude.ZERO);
   }
 
-  public static DefCallExpression Suc() {
+  public static ConCallExpression Suc() {
     return ConCall(Prelude.SUC);
   }
 
