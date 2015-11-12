@@ -1035,7 +1035,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
- private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding) {
+  private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding) {
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null) {

@@ -24,6 +24,14 @@ public class GoalError extends TypeCheckingError {
     myType = type;
   }
 
+  public List<Binding> getContext() {
+    return myContext;
+  }
+
+  public Expression getExpectedType() {
+    return myType;
+  }
+
   @Override
   public String toString() {
     if (myContext.isEmpty() && myType == null) {
