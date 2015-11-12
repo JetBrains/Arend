@@ -355,18 +355,18 @@ public final class Concrete {
   }
 
   public static class ImplementStatement extends SourceNode implements Abstract.ImplementStatement {
-    private final Name myName;
+    private final Identifier myIdentifier;
     private final Expression myExpression;
 
-    public ImplementStatement(Position position, Name name, Expression expression) {
-      super(position);
-      myName = name;
+    public ImplementStatement(Identifier identifier, Expression expression) {
+      super(identifier.getPosition());
+      myIdentifier = identifier;
       myExpression = expression;
     }
 
     @Override
-    public Name getName() {
-      return myName;
+    public Identifier getIdentifier() {
+      return myIdentifier;
     }
 
     @Override

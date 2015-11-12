@@ -295,7 +295,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myIndent += INDENT;
     for (Abstract.ImplementStatement statement : expr.getStatements()) {
       printIndent(myBuilder, myIndent);
-      myBuilder.append("| ").append(statement.getName().getPrefixName()).append(" => ");
+      myBuilder.append("| ").append(statement.getIdentifier().getName().getPrefixName()).append(" => ");
       statement.getExpression().accept(this, Abstract.Expression.PREC);
       myBuilder.append("\n");
     }

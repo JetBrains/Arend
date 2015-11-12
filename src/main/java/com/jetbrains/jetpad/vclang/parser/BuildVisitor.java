@@ -711,7 +711,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         Concrete.Identifier identifier = visitName(implementStatement.name());
         Concrete.Expression expression1 = visitExpr(implementStatement.expr());
         if (identifier != null && expression1 != null) {
-          implementStatements.add(new Concrete.ImplementStatement(identifier.getPosition(), identifier.getName(), expression1));
+          implementStatements.add(new Concrete.ImplementStatement(identifier, expression1));
         }
       }
       expression = new Concrete.ClassExtExpression(tokenPosition(ctx.getStart()), expression, implementStatements);

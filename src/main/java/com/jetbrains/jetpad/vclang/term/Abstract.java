@@ -78,7 +78,7 @@ public final class Abstract {
   }
 
   public interface ImplementStatement extends SourceNode {
-    Name getName();
+    Identifier getIdentifier();
     Expression getExpression();
   }
 

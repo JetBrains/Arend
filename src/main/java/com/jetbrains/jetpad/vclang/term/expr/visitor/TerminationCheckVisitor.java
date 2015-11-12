@@ -109,7 +109,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr) {
-    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
       if (elem.getValue().type != null && !elem.getValue().type.accept(this) || elem.getValue().term != null && !elem.getValue().term.accept(this)) {
         return false;
       }

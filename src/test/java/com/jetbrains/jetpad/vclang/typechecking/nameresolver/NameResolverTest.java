@@ -21,11 +21,6 @@ import static org.junit.Assert.*;
 
 public class NameResolverTest {
   @Test
-  public void nameResolverError() {
-    resolveNamesExpr("A { x => 0 }", 1);
-  }
-
-  @Test
   public void parserInfix() {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));

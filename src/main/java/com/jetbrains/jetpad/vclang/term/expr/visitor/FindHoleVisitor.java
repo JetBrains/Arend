@@ -31,7 +31,7 @@ public class FindHoleVisitor extends BaseExpressionVisitor<InferHoleExpression> 
 
   @Override
   public InferHoleExpression visitClassCall(ClassCallExpression expr) {
-    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
       Expression type = elem.getValue().type;
       if (type != null) {
         InferHoleExpression result = type.accept(this);

@@ -86,8 +86,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
     int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
     try {
       myDataStream.writeInt(index);
-      myDataStream.writeInt(expr.getOverrideElems().size());
-      for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+      myDataStream.writeInt(expr.getImplementStatements().size());
+      for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
         myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(elem.getKey().getResolvedName(), true));
 
         Expression type = elem.getValue().type;
@@ -102,7 +102,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void> {
           term.accept(this);
         }
       }
-      ModuleSerialization.writeUniverse(myDataStream, expr.getUniverse());
     } catch (IOException e) {
       throw new IllegalStateException();
     }

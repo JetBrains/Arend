@@ -16,9 +16,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -1472,13 +1470,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitClassExt(Abstract.ClassExtExpression expr, Expression expectedType) {
-    Result result = typeCheck(expr.getBaseClassExpression(), null);
+    Abstract.Expression baseClassExpr = expr.getBaseClassExpression();
+    Result result = typeCheck(baseClassExpr, null);
     if (!(result instanceof OKResult)) {
       return result;
     }
     Expression normalizedBaseClassExpr = result.expression.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
     if (!(normalizedBaseClassExpr instanceof ClassCallExpression)) {
-      TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getBaseClassExpression(), getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("Expected a class", baseClassExpr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(normalizedBaseClassExpr, error));
       myErrorReporter.report(error);
       return null;
@@ -1486,46 +1485,75 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     ClassDefinition baseClass = ((ClassCallExpression) normalizedBaseClassExpr).getDefinition();
     if (baseClass.hasErrors()) {
-      TypeCheckingError error = new HasErrors(baseClass.getName(), expr.getBaseClassExpression());
+      TypeCheckingError error = new HasErrors(baseClass.getName(), baseClassExpr);
       expr.setWellTyped(myLocalContext, Error(normalizedBaseClassExpr, error));
       myErrorReporter.report(error);
       return null;
     }
 
-    // if (expr.getStatements().isEmpty()) {
+    Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
+    if (statements.isEmpty()) {
       return checkResultImplicit(expectedType, new OKResult(normalizedBaseClassExpr, baseClass.getType(), null), expr);
-    // }
+    }
 
-    // List<ClassField> fields = new ArrayList<>(baseClass.getFields());
-    // baseClass.getFields().clear();
+    class ImplementStatement {
+      ClassField classField;
+      Abstract.Expression term;
 
-    /*
-    Map<String, FunctionDefinition> abstracts = new HashMap<>();
-    for (Definition definition : baseClass.getStatements()) {
-      if (definition instanceof FunctionDefinition && definition.isAbstract()) {
-        abstracts.put(definition.getName().name, (FunctionDefinition) definition);
+      public ImplementStatement(ClassField classField, Abstract.Expression term) {
+        this.classField = classField;
+        this.term = term;
       }
     }
 
-    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
-    for (Abstract.FunctionDefinition definition : expr.getStatements()) {
-      FunctionDefinition oldDefinition = abstracts.remove(definition.getName().name);
-      if (oldDefinition == null) {
-        myErrorReporter.report(new TypeCheckingError(myNamespace, definition.getName() + " is not defined in " + expr.getBaseClass().getNamespace().getFullName(), definition, getNames(myLocalContext)));
+    List<ImplementStatement> fields = new ArrayList<>(statements.size());
+    for (Abstract.ImplementStatement statement : statements) {
+      Abstract.Identifier identifier = statement.getIdentifier();
+      Name name = identifier.getName();
+      ClassField field = baseClass.removeField(name.name);
+      if (field == null) {
+        TypeCheckingError error = new TypeCheckingError("Class '" + baseClass.getName() + "' does not have field '" + name + "'", identifier, null);
+        myErrorReporter.report(error);
       } else {
-        OverriddenDefinition newDefinition = (OverriddenDefinition) TypeChecking.typeCheckFunctionBegin(myErrorReporter, myNamespace, expr.getBaseClass().getLocalNamespace(), definition, myLocalContext, oldDefinition);
-        if (newDefinition == null) return null;
-        TypeChecking.typeCheckFunctionEnd(myErrorReporter, myNamespace, definition.getTerm(), newDefinition, myLocalContext, oldDefinition);
-        definitions.put(oldDefinition, newDefinition);
+        fields.add(new ImplementStatement(field, statement.getExpression()));
       }
     }
 
-    Universe universe = new Universe.Type(0, Universe.Type.PROP);
-    for (FunctionDefinition definition : abstracts.values()) {
-      universe = universe.max(definition.getUniverse());
+    List<CompareVisitor.Equation> equations = null;
+    Map<ClassField, ClassCallExpression.ImplementStatement> typeCheckedStatements = new HashMap<>();
+    try (ContextSaver ignored = new ContextSaver(myLocalContext)) {
+      myLocalContext.add(new TypedBinding("\\this", ClassCall(baseClass, typeCheckedStatements)));
+      for (ImplementStatement field : fields) {
+        Result result1 = typeCheck(field.term, field.classField.getBaseType());
+        baseClass.addField(field.classField);
+        if (!(result1 instanceof OKResult)) {
+          return result1;
+        }
+        OKResult okResult = (OKResult) result1;
+        typeCheckedStatements.put(field.classField, new ClassCallExpression.ImplementStatement(okResult.type, okResult.expression));
+        if (okResult.equations != null) {
+          if (equations == null) {
+            equations = okResult.equations;
+          } else {
+            equations.addAll(okResult.equations);
+          }
+        }
+      }
     }
-    return checkResultImplicit(expectedType, new OKResult(ClassExt(expr.getBaseClass(), definitions, universe), new UniverseExpression(universe), null), expr);
-    */
+
+    if (equations != null) {
+      for (int i = 0; i < equations.size(); ++i) {
+        Expression expression = equations.get(i).expression.liftIndex(0, -1);
+        if (expression == null) {
+          equations.remove(i--);
+        } else {
+          equations.set(i, new CompareVisitor.Equation(equations.get(i).hole, expression));
+        }
+      }
+    }
+
+    ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
+    return checkResultImplicit(expectedType, new OKResult(resultExpr, new UniverseExpression(resultExpr.getUniverse()), equations), expr);
   }
 
   @Override

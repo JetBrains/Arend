@@ -336,10 +336,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     ClassCallExpression classExt = (ClassCallExpression) expr;
     ClassCallExpression otherClassExt = (ClassCallExpression) other;
     if (classExt.getDefinition() != otherClassExt.getDefinition()) return new JustResult(CMP.NOT_EQUIV);
-    if (classExt.getOverrideElems().size() != otherClassExt.getOverrideElems().size()) return new JustResult(CMP.NOT_EQUIV);
+    if (classExt.getImplementStatements().size() != otherClassExt.getImplementStatements().size()) return new JustResult(CMP.NOT_EQUIV);
     ClassCallExpression smaller;
     ClassCallExpression bigger;
-    if (classExt.getOverrideElems().size() > otherClassExt.getOverrideElems().size()) {
+    if (classExt.getImplementStatements().size() > otherClassExt.getImplementStatements().size()) {
       smaller = otherClassExt;
       bigger = classExt;
     } else {
@@ -350,8 +350,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     CMP cmp = CMP.EQUALS;
     MaybeResult maybeResult = null;
     smaller_loop:
-    for (ClassCallExpression.OverrideElem elem : smaller.getOverrideElems()) {
-      for (ClassCallExpression.OverrideElem otherElem : bigger.getOverrideElems()) {
+    for (ClassCallExpression.OverrideElem elem : smaller.getImplementStatements()) {
+      for (ClassCallExpression.OverrideElem otherElem : bigger.getImplementStatements()) {
         // TODO
         if (elem.field == otherElem.field) {
           Result result = otherElem.type.accept(this, elem.type);

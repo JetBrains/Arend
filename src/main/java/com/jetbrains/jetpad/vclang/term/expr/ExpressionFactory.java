@@ -46,11 +46,11 @@ public class ExpressionFactory {
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {
-    return new ClassCallExpression(definition, Collections.<ClassField, ClassCallExpression.OverrideElem>emptyMap(), definition.getUniverse());
+    return new ClassCallExpression(definition);
   }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition, Map<ClassField, ClassCallExpression.OverrideElem> elems, Universe universe) {
-    return new ClassCallExpression(definition, elems, universe);
+  public static ClassCallExpression ClassCall(ClassDefinition definition, Map<ClassField, ClassCallExpression.ImplementStatement> statements) {
+    return new ClassCallExpression(definition, statements);
   }
 
   public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {
