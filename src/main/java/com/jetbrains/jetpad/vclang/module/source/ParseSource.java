@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporte
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.DeepNamespaceNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.LoadingNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteResolveListener;
 import org.antlr.v4.runtime.*;
 
 import java.io.IOException;
@@ -89,7 +90,9 @@ public abstract class ParseSource implements Source {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
       }
     }
-    new DefinitionResolveNameVisitor(errorReporter, myModule.parent, nameResolver).visitClass(classDefinition, null);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, myModule.parent, nameResolver);
+    visitor.setResolveListener(new ConcreteResolveListener());
+    visitor.visitClass(classDefinition, null);
     return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
   }
 }

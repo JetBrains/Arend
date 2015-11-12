@@ -69,7 +69,6 @@ public final class Abstract {
     Name getName();
     Expression getExpression();
     ResolvedName getResolvedName();
-    void setResolvedName(ResolvedName name);
   }
 
   public interface ClassExtExpression extends Expression {
@@ -145,9 +144,6 @@ public final class Abstract {
     byte PREC = 0;
     Expression getLeft();
     List<BinOpSequenceElem> getSequence();
-    BinOpExpression makeBinOp(Expression left, ResolvedName name, DefCallExpression var, Expression right);
-    Expression makeError(SourceNode node);
-    void replace(Expression expression);
   }
 
   public interface UniverseExpression extends Expression {

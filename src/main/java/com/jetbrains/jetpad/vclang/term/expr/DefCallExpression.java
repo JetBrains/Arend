@@ -38,11 +38,6 @@ public abstract class DefCallExpression extends Expression implements Abstract.D
   }
 
   @Override
-  public void setResolvedName(ResolvedName name) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Expression getType(List<Binding> context) {
     return myDefinition.getType();
   }

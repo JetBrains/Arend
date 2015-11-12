@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.SingleNameResolver;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,6 +22,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   private final Namespace myNamespace;
   private final CompositeNameResolver myNameResolver;
   private List<String> myContext;
+  private ResolveListener myResolveListener;
 
   public DefinitionResolveNameVisitor(ErrorReporter errorReporter, Namespace namespace, NameResolver nameResolver) {
     this(errorReporter, namespace, new CompositeNameResolver(), new ArrayList<String>());
@@ -36,6 +38,10 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     myContext = context;
   }
 
+  public void setResolveListener(ResolveListener resolveListener) {
+    myResolveListener = resolveListener;
+  }
+
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, Boolean isStatic) {
     Collection<? extends Abstract.Statement> statements = def.getStatements();
@@ -43,9 +49,10 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       visitFunction(def);
       return null;
     } else {
-      try (StatementResolveNameVisitor statementVisitor = new StatementResolveNameVisitor(myErrorReporter, myNamespace.getChild(def.getName()), myNameResolver, myContext)) {
+      try (StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, myNamespace.getChild(def.getName()), myNameResolver, myContext)) {
+        visitor.setResolveListener(myResolveListener);
         for (Abstract.Statement statement : statements) {
-          statement.accept(statementVisitor, isStatic ? StatementResolveNameVisitor.Flag.MUST_BE_STATIC : null);
+          statement.accept(visitor, isStatic ? StatementResolveNameVisitor.Flag.MUST_BE_STATIC : null);
         }
         visitFunction(def);
       }
@@ -55,7 +62,11 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitAbstract(Abstract.AbstractDefinition def, Boolean isStatic) {
-    ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext);
+    if (myResolveListener == null) {
+      return null;
+    }
+
+    ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.Argument argument : def.getArguments()) {
         if (argument instanceof Abstract.TypeArgument) {
@@ -78,7 +89,11 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   }
 
   private void visitFunction(Abstract.FunctionDefinition def) {
-    ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext);
+    if (myResolveListener == null) {
+      return;
+    }
+
+    ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.Argument argument : def.getArguments()) {
         if (argument instanceof Abstract.TypeArgument) {
@@ -109,8 +124,11 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitData(Abstract.DataDefinition def, Boolean isStatic) {
-    ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext);
+    if (myResolveListener == null) {
+      return null;
+    }
 
+    ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext, myResolveListener);
     try (Utils.CompleteContextSaver<String> saver = new Utils.CompleteContextSaver<>(myContext)) {
       for (Abstract.TypeArgument parameter : def.getParameters()) {
         parameter.getType().accept(visitor, null);
@@ -139,8 +157,12 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitConstructor(Abstract.Constructor def, Boolean isStatic) {
+    if (myResolveListener == null) {
+      return null;
+    }
+
+    ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext);
       List<? extends Abstract.Pattern> patterns = def.getPatterns();
       if (patterns != null) {
         for (int i = 0; i < patterns.size(); ++i) {
@@ -162,6 +184,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
     try (StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, myNamespace.getChild(def.getName()), myNameResolver, myContext)) {
+      visitor.setResolveListener(myResolveListener);
       for (Abstract.Statement statement : def.getStatements()) {
         statement.accept(visitor, null);
       }

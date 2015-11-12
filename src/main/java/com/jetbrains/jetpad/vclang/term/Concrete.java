@@ -223,18 +223,15 @@ public final class Concrete {
       return mySequence;
     }
 
-    @Override
     public BinOpExpression makeBinOp(Abstract.Expression left, ResolvedName name, Abstract.DefCallExpression var, Abstract.Expression right) {
       assert left instanceof Expression && right instanceof Expression && var instanceof Expression;
       return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, name, (Expression) right);
     }
 
-    @Override
     public Expression makeError(Abstract.SourceNode node) {
       return new Concrete.InferHoleExpression(((SourceNode) node).getPosition());
     }
 
-    @Override
     public void replace(Abstract.Expression expression) {
       assert expression instanceof Expression;
       myLeft = (Expression) expression;
@@ -316,7 +313,6 @@ public final class Concrete {
       return myResolvedName;
     }
 
-    @Override
     public void setResolvedName(ResolvedName name) {
       myResolvedName = name;
     }
