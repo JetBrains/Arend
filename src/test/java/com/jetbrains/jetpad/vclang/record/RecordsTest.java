@@ -134,16 +134,45 @@ public class RecordsTest {
   }
 
   @Test
+  public void mutualRecursionTest() {
+    typeCheckClass(
+        "\\static \\class Point {\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\abstract y : Nat\n" +
+        "}\n" +
+        "\\static \\function test (p : Point {\n" +
+        "  | x => y\n" +
+        "  | y => x\n" +
+        "}) => p.x\n" +
+        "\\static \\function test2 => test (\\new Point { x => 1 | y => 1 })");
+  }
+
+  @Test
   public void mutualRecursionTestError() {
     typeCheckClass(
         "\\static \\class Point {\n" +
         "  \\abstract x : Nat\n" +
         "  \\abstract y : Nat\n" +
         "}\n" +
-        "\\static \\function test => Point {\n" +
+        "\\static \\function test (p : Point {\n" +
         "  | x => y\n" +
         "  | y => x\n" +
-        "}", 1);
+        "}) => p.x\n" +
+        "\\static \\function test2 => test (\\new Point { x => 0 | y => 1 })", 1);
+  }
+
+  @Test
+  public void mutualRecursionTestError2() {
+    typeCheckClass(
+        "\\static \\class Point {\n" +
+        "  \\abstract x : Nat\n" +
+        "  \\abstract y : Nat\n" +
+        "}\n" +
+        "\\static \\function test (p : Point {\n" +
+        "  | x => y\n" +
+        "  | y => x\n" +
+        "}) => p.x\n" +
+        "\\static \\function test2 => test (\\new Point { x => y | y => x })", 1);
   }
 
   @Test

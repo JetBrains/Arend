@@ -1523,8 +1523,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Map<ClassField, ClassCallExpression.ImplementStatement> typeCheckedStatements = new HashMap<>();
     try (ContextSaver ignored = new ContextSaver(myLocalContext)) {
       myLocalContext.add(new TypedBinding("\\this", ClassCall(baseClass, typeCheckedStatements)));
+      TypeCheckingDefCall typeCheckingDefCall = new TypeCheckingDefCall(myLocalContext, myErrorReporter);
+      typeCheckingDefCall.setThisClass(baseClass);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(myLocalContext, myArgsStartCtxIndex, myErrorReporter, typeCheckingDefCall);
       for (ImplementStatement field : fields) {
-        Result result1 = typeCheck(field.term, field.classField.getBaseType());
+        Result result1 = visitor.typeCheck(field.term, field.classField.getBaseType());
         baseClass.addField(field.classField);
         if (!(result1 instanceof OKResult)) {
           return result1;
@@ -1568,8 +1571,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrorReporter.report(error);
       return null;
     }
-    // TODO: Check that the class extension implements all fields.
-    return checkResultImplicit(expectedType, new OKResult(New(okExprResult.expression), normExpr, okExprResult.equations), expr);
+
+    ClassCallExpression classCall = (ClassCallExpression) normExpr;
+    if (classCall.getImplementStatements().size() == classCall.getDefinition().getFields().size()) {
+      return checkResultImplicit(expectedType, new OKResult(New(normExpr), normExpr, okExprResult.equations), expr);
+    } else {
+      TypeCheckingError error = new TypeCheckingError("Class '" + classCall.getDefinition().getName() + "' has " + classCall.getDefinition().getNumberOfVisibleFields() + " fields", expr, getNames(myLocalContext));
+      expr.setWellTyped(myLocalContext, Error(null, error));
+      myErrorReporter.report(error);
+      return null;
+    }
   }
 
   private Result typeCheckLetClause(Abstract.LetClause clause) {
