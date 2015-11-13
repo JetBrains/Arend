@@ -65,8 +65,8 @@ public class RecordsTest {
         "  \\abstract f : Nat -> Nat\n" +
         "}\n" +
         "\\static \\function B => A {\n" +
-        "  f n => c n n\n" +
-        "}");
+        "  f => \\lam n => c n n\n" +
+        "}", 1);
   }
 
   /*
@@ -111,7 +111,7 @@ public class RecordsTest {
         "  \\abstract x : Nat\n" +
         "  \\abstract y : Nat\n" +
         "}\n" +
-        "\\static \\function diagonal => Point { y => x }\n" +
+        "\\static \\function diagonal => Point { y => 0 }\n" +
         "\\static \\function test => \\new diagonal", 1);
   }
 
@@ -128,23 +128,9 @@ public class RecordsTest {
         "}\n" +
         "\\static \\function diagonal1 => Point {\n" +
         "  | x => 0\n" +
-        "  | y => x\n" +
+        "  | y => 0\n" +
         "}\n" +
-        "\\static \\function test : \\new diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new diagonal 0)");
-  }
-
-  @Test
-  public void mutualRecursionTest() {
-    typeCheckClass(
-        "\\static \\class Point {\n" +
-        "  \\abstract x : Nat\n" +
-        "  \\abstract y : Nat\n" +
-        "}\n" +
-        "\\static \\function test (p : Point {\n" +
-        "  | x => y\n" +
-        "  | y => x\n" +
-        "}) => p.x\n" +
-        "\\static \\function test2 => test (\\new Point { x => 1 | y => 1 })");
+        "\\static \\function test : \\new diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new Point { x => 0 | y => 0 })");
   }
 
   @Test
@@ -154,25 +140,10 @@ public class RecordsTest {
         "  \\abstract x : Nat\n" +
         "  \\abstract y : Nat\n" +
         "}\n" +
-        "\\static \\function test (p : Point {\n" +
+        "\\static \\function test => Point {\n" +
         "  | x => y\n" +
         "  | y => x\n" +
-        "}) => p.x\n" +
-        "\\static \\function test2 => test (\\new Point { x => 0 | y => 1 })", 1);
-  }
-
-  @Test
-  public void mutualRecursionTestError2() {
-    typeCheckClass(
-        "\\static \\class Point {\n" +
-        "  \\abstract x : Nat\n" +
-        "  \\abstract y : Nat\n" +
-        "}\n" +
-        "\\static \\function test (p : Point {\n" +
-        "  | x => y\n" +
-        "  | y => x\n" +
-        "}) => p.x\n" +
-        "\\static \\function test2 => test (\\new Point { x => y | y => x })", 1);
+        "}", 1);
   }
 
   @Test
@@ -261,7 +232,7 @@ public class RecordsTest {
       "\\static \\class A {\n" +
       "  \\abstract x : Nat\n" +
       "  \\data Foo (p : x = x) | foo (p = p)\n" +
-      "  \\abstract y : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))\n" +
+      "  \\function y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
       "}\n" +
       "\\static \\function test (q : A) => q.y");
     Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName().name);

@@ -275,20 +275,9 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
 
   @Override
   public Void visitClassExt(Abstract.ClassExtExpression expr, Void params) {
-    Abstract.Expression baseExpr = expr.getBaseClassExpression();
-    baseExpr.accept(this, null);
-    CompositeNameResolver nameResolver = null;
-    if (baseExpr instanceof Abstract.DefCallExpression) {
-      ResolvedName resolvedName = ((Abstract.DefCallExpression) baseExpr).getResolvedName();
-      Namespace namespace = resolvedName == null ? null : resolvedName.toNamespace();
-      if (namespace != null) {
-        nameResolver = new CompositeNameResolver();
-        nameResolver.pushNameResolver(myNameResolver);
-        nameResolver.pushNameResolver(new NamespaceNameResolver(namespace));
-      }
-    }
+    expr.getBaseClassExpression().accept(this, null);
     for (Abstract.ImplementStatement statement : expr.getStatements()) {
-      statement.getExpression().accept(nameResolver == null ? this : new ResolveNameVisitor(myErrorReporter, nameResolver, myContext, myResolveListener), null);
+      statement.getExpression().accept(this, null);
     }
     return null;
   }

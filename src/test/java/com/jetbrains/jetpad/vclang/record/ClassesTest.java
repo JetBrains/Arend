@@ -40,7 +40,7 @@ public class ClassesTest {
   public void staticFromDynamicCall() {
     typeCheckClass(
         "\\static \\function f => 0\n" +
-            "\\function h : Nat => f");
+        "\\function h : Nat => f");
   }
 
   @Test
@@ -52,6 +52,30 @@ public class ClassesTest {
         "    \\function h : Nat => f\n" +
         "  }\n" +
         "}");
+  }
+
+  @Test
+  public void dynamicFromAbstractCall() {
+    typeCheckClass(
+        "\\function f => 0\n" +
+        "\\abstract h : f = 0", 1);
+  }
+
+  @Test
+  public void dynamicFromDynamicCall() {
+    typeCheckClass(
+        "\\function f => 0\n" +
+        "\\function h (_ : f = 0) => 0");
+  }
+
+  @Test
+  public void dynamicConstructorFromDynamicCall() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\data D | con\n" +
+        "  \\function x (_ : con = con) => 0\n" +
+        "}\n" +
+        "\\static \\function test (a : A) => a.x\n");
   }
 
   @Test

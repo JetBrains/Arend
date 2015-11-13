@@ -1521,25 +1521,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<CompareVisitor.Equation> equations = null;
     Map<ClassField, ClassCallExpression.ImplementStatement> typeCheckedStatements = new HashMap<>();
-    try (ContextSaver ignored = new ContextSaver(myLocalContext)) {
-      myLocalContext.add(new TypedBinding("\\this", ClassCall(baseClass, typeCheckedStatements)));
-      TypeCheckingDefCall typeCheckingDefCall = new TypeCheckingDefCall(myLocalContext, myErrorReporter);
-      typeCheckingDefCall.setThisClass(baseClass);
-      CheckTypeVisitor visitor = new CheckTypeVisitor(myLocalContext, myArgsStartCtxIndex, myErrorReporter, typeCheckingDefCall);
-      for (ImplementStatement field : fields) {
-        Result result1 = visitor.typeCheck(field.term, field.classField.getBaseType());
-        baseClass.addField(field.classField);
-        if (!(result1 instanceof OKResult)) {
-          return result1;
-        }
-        OKResult okResult = (OKResult) result1;
-        typeCheckedStatements.put(field.classField, new ClassCallExpression.ImplementStatement(okResult.type, okResult.expression));
-        if (okResult.equations != null) {
-          if (equations == null) {
-            equations = okResult.equations;
-          } else {
-            equations.addAll(okResult.equations);
-          }
+    for (ImplementStatement field : fields) {
+      Result result1 = typeCheck(field.term, field.classField.getBaseType());
+      baseClass.addField(field.classField);
+      if (!(result1 instanceof OKResult)) {
+        return result1;
+      }
+      OKResult okResult = (OKResult) result1;
+      typeCheckedStatements.put(field.classField, new ClassCallExpression.ImplementStatement(okResult.type, okResult.expression));
+      if (okResult.equations != null) {
+        if (equations == null) {
+          equations = okResult.equations;
+        } else {
+          equations.addAll(okResult.equations);
         }
       }
     }
