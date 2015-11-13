@@ -1522,7 +1522,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     List<CompareVisitor.Equation> equations = null;
     Map<ClassField, ClassCallExpression.ImplementStatement> typeCheckedStatements = new HashMap<>();
     for (ImplementStatement field : fields) {
-      Result result1 = typeCheck(field.term, field.classField.getBaseType());
+      Result result1 = typeCheck(field.term, field.classField.getBaseType().subst(New(ClassCall(baseClass, typeCheckedStatements)), 0));
       baseClass.addField(field.classField);
       if (!(result1 instanceof OKResult)) {
         return result1;

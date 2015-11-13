@@ -155,8 +155,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
         if (thisType instanceof ClassCallExpression) {
           ClassCallExpression.ImplementStatement elem = ((ClassCallExpression) thisType).getImplementStatements().get(defCallExpr.getDefinition());
           if (elem != null && elem.term != null) {
-            Expression result = Apps(elem.term, args.subList(0, args.size() - 1).toArray(new ArgumentExpression[args.size() - 1]));
-            return myMode == Mode.TOP ? result : result.accept(this);
+            if (myMode == Mode.TOP) {
+              Collections.reverse(args);
+              return Apps(elem.term, args.subList(1, args.size()).toArray(new ArgumentExpression[args.size() - 1]));
+            } else {
+              return visitApps(elem.term, args.subList(0, args.size() - 1));
+            }
           }
         }
       }
