@@ -164,7 +164,7 @@ public class RecordsTest {
         "\\static \\function C => Point { x => 0 }");
     Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
     assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
-    assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("C").getUniverse());
+    assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("C").getType());
   }
 
   @Test
@@ -174,7 +174,7 @@ public class RecordsTest {
         "\\static \\function C => Point { x => 0 | y => 1 }");
     Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
     assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
-    assertEquals(new Universe.Type(0, Universe.Type.PROP), namespace.getDefinition("C").getUniverse());
+    assertEquals(Universe(0, Universe.Type.PROP), namespace.getDefinition("C").getType());
   }
 
   @Test
@@ -184,7 +184,7 @@ public class RecordsTest {
         "\\static \\function C => Point { x => Nat }");
     Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
     assertEquals(new Universe.Type(4, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("Point").getUniverse());
-    assertEquals(new Universe.Type(2, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("C").getUniverse());
+    assertEquals(Universe(2, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("C").getType());
   }
 
   @Test
