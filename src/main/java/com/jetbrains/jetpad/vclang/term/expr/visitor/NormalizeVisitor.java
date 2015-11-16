@@ -164,6 +164,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
 
     if (defCallExpr.getDefinition() instanceof Function) {
       return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr, args);
+    } else if (defCallExpr instanceof ConCallExpression) {
+      return visitConstructorCall((ConCallExpression) defCallExpr, args);
     }
 
     if (myMode == Mode.TOP) return null;
@@ -175,31 +177,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
     List<TypeArgument> arguments;
     if (defCallExpr instanceof DataCallExpression) {
       arguments = ((DataCallExpression) defCallExpr).getDefinition().getParameters();
-    } else
-    if (defCallExpr instanceof ConCallExpression) {
-      List<TypeArgument> arguments1 = ((Constructor) defCallExpr.getDefinition()).getArguments();
-      List<Expression> parameters = ((ConCallExpression) defCallExpr).getParameters();
-      if (!parameters.isEmpty()) {
-        List<Expression> substExprs = new ArrayList<>(parameters);
-        Collections.reverse(substExprs);
-        arguments = new ArrayList<>(arguments1.size());
-        for (int j = 0; j < arguments1.size(); ++j) {
-          int num;
-          if (arguments1.get(j) instanceof TelescopeArgument) {
-            arguments.add(Tele(arguments1.get(j).getExplicit(), ((TelescopeArgument) arguments1.get(j)).getNames(), arguments1.get(j).getType().subst(substExprs, 0)));
-            num = ((TelescopeArgument) arguments1.get(j)).getNames().size();
-          } else {
-            arguments.add(TypeArg(arguments1.get(j).getExplicit(), arguments1.get(j).getType().subst(substExprs, j)));
-            num = 1;
-          }
-
-          for (int i = 0; i < substExprs.size(); ++i) {
-            substExprs.set(i, substExprs.get(i).liftIndex(0, num));
-          }
-        }
-      } else {
-        arguments = arguments1;
-      }
     } else {
       throw new IllegalStateException();
     }
@@ -225,6 +202,82 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       result = Apps(result, new ArgumentExpression(Index(i), splitArguments.get(splitArguments.size() - 1 - i).getExplicit(), !splitArguments.get(splitArguments.size() - 1 - i).getExplicit()));
     }
     return addLambdas(arguments, args.size(), result);
+  }
+
+  private Expression visitConstructorCall(ConCallExpression conCallExpression, List<ArgumentExpression> args) {
+    List<TypeArgument> origArgs = Collections.unmodifiableList(conCallExpression.getDefinition().getArguments());
+    List<TypeArgument> arguments;
+
+    List<Expression> parameters = conCallExpression.getParameters();
+    if (!parameters.isEmpty()) {
+      List<Expression> substExprs = new ArrayList<>(parameters);
+      Collections.reverse(substExprs);
+      arguments = new ArrayList<>(origArgs.size());
+      for (int j = 0; j < conCallExpression.getDefinition().getArguments().size(); ++j) {
+        int num;
+        if (origArgs.get(j) instanceof TelescopeArgument) {
+          arguments.add(Tele(origArgs.get(j).getExplicit(), ((TelescopeArgument) origArgs.get(j)).getNames(), origArgs.get(j).getType().subst(substExprs, 0)));
+          num = ((TelescopeArgument) origArgs.get(j)).getNames().size();
+        } else {
+          arguments.add(TypeArg(origArgs.get(j).getExplicit(), origArgs.get(j).getType().subst(substExprs, j)));
+          num = 1;
+        }
+
+        for (int i = 0; i < substExprs.size(); ++i) {
+          substExprs.set(i, substExprs.get(i).liftIndex(0, num));
+        }
+      }
+    } else {
+      arguments = origArgs;
+    }
+
+    int numberOfArgs = numberOfVariables(arguments);
+
+    if (myMode == Mode.WHNF && numberOfArgs > args.size()) {
+      return applyDefCall(conCallExpression, args);
+    }
+
+    List<Expression> args2 = new ArrayList<>(numberOfArgs);
+    for (int i = 0; i < numberOfArgs - args.size(); i++) {
+      args2.add(Index(i));
+    }
+    for (ArgumentExpression arg : args) {
+      args2.add(arg.getExpression().liftIndex(0, numberOfArgs - args.size()));
+    }
+
+    Expression result = null;
+
+    if (conCallExpression.getDefinition().getDataType().getConditions() != null) {
+      for (Condition condition : conCallExpression.getDefinition().getDataType().getConditions()) {
+        if (condition.getConstructor() == conCallExpression.getDefinition()) {
+          List<Expression> substExpressions = new ArrayList<>();
+          for (int i = 0; i < condition.getPatterns().size(); i++) {
+            Utils.PatternMatchResult matchResult = condition.getPatterns().get(i).match(args2.get(args2.size() - 1 - i), myContext);
+            if (matchResult instanceof Utils.PatternMatchOKResult) {
+              substExpressions.addAll(((Utils.PatternMatchOKResult) matchResult).expressions);
+            } else {
+              substExpressions = null;
+              break;
+            }
+          }
+          if (substExpressions != null) {
+            Collections.reverse(substExpressions);
+            result = condition.getTerm().liftIndex(0, numberOfArgs - args.size()).subst(substExpressions, 0);
+            break;
+          }
+        }
+      }
+    }
+
+    if (result == null) {
+      return applyDefCall(conCallExpression, args);
+    }
+
+    if (args.size() < numberOfArgs) {
+      result = addLambdas(arguments, args.size(), result);
+    }
+
+    return myMode == Mode.TOP ? result : result.accept(this);
   }
 
   private Expression visitFunctionCall(Function func, Expression defCallExpr, List<ArgumentExpression> args) {

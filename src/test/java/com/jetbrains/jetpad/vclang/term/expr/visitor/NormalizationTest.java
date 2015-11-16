@@ -29,6 +29,11 @@ public class NormalizationTest {
   private final FunctionDefinition fac;
   // \function nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat <= elim x | zero => z | suc x' => s x' (nelim z s x')
   private final FunctionDefinition nelim;
+  private final DataDefinition bdList;
+  private final Constructor bdNil;
+  private final Constructor bdCons;
+  private final Constructor bdSnoc;
+
 
   public NormalizationTest() {
     testNS = new Namespace("test");
@@ -58,6 +63,14 @@ public class NormalizationTest {
     testNS.addDefinition(nelim);
     nelimClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(1), nelimTerm));
     nelimClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(FunCall(nelim), Index(2), Index(1), Index(0))), nelimTerm));
+    ClassDefinition classDefinition = typeCheckClass(
+        "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A" +
+            "\\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
+    );
+    bdList = (DataDefinition) classDefinition.getResolvedName().toNamespace().getDefinition("BD-list");
+    bdNil = bdList.getConstructor("nil");
+    bdCons = bdList.getConstructor("cons");
+    bdSnoc = bdList.getConstructor("snoc");
   }
 
   @Test
@@ -231,5 +244,25 @@ public class NormalizationTest {
     List<Binding> ctx = new ArrayList<>();
     Let(lets(let("x", lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Index(0)).normalize(NormalizeVisitor.Mode.NF, ctx);
     assertTrue(ctx.isEmpty());
+  }
+
+  @Test
+  public void testConditionNormalization() {
+    typeCheckClass(
+        "\\static \\data Z | pos Nat | neg Nat \\with | pos zero => neg 0\n" +
+            "\\static \\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
+    );
+  }
+
+  @Test
+  public void testConCallNormFull() {
+    Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil, Nat()), Zero());
+    assertEquals(Apps(ConCall(bdCons, Nat()), Zero(), ConCall(bdNil, Nat())), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+  }
+
+  @Test
+  public void testConCallPartial() {
+    Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil));
+    assertEquals(Lam(lamArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 }

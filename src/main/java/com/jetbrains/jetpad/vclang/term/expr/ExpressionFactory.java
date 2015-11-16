@@ -61,6 +61,10 @@ public class ExpressionFactory {
     return new ConCallExpression(definition, Collections.<Expression>emptyList());
   }
 
+  public static ConCallExpression ConCall(Constructor definition, Expression... parameters) {
+    return ConCall(definition, Arrays.asList(parameters));
+  }
+
   public static Expression BinOp(Expression left, Definition binOp, Expression right) {
     return Apps(binOp.getDefCallWithThis(), left, right);
   }

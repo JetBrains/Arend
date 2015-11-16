@@ -306,7 +306,7 @@ public class DefinitionTest {
   public void dataTypeWithConditionsWrongType() {
     typeCheckClass(
         "\\static \\data Z | zpos Nat | zneg Nat\n" +
-            "\\with | zpos zero => zero"
+            "\\with | zpos zero => zero", 1
     );
   }
 }

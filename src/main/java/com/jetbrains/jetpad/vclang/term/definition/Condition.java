@@ -20,6 +20,10 @@ public class Condition implements Abstract.Condition {
     myTerm = term;
   }
 
+  public Constructor getConstructor() {
+    return myConstructor;
+  }
+
   @Override
   public Name getConstructorName() {
     return myConstructor.getName();
@@ -36,7 +40,7 @@ public class Condition implements Abstract.Condition {
   }
 
   @Override
-  public Abstract.Expression getTerm() {
+  public Expression getTerm() {
     return myTerm;
   }
 

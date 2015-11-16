@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandConstructorParameters;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
@@ -481,39 +482,53 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
 
     //TODO: extract
+    context.clear();
     if (def.getConditions() != null) {
       for (Abstract.Condition cond : def.getConditions()) {
-        Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName().name);
-        if (constructor == null) {
-          myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
-          continue;
-        }
-        try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
-          List<TypeArgument> constructorParameters = new ArrayList<>();
-          List<Expression> resultType = new ArrayList<>(Collections.singletonList(Utils.splitArguments(constructor.getBaseType(), constructorParameters, context)));
-          for (TypeArgument arg : constructorParameters) {
-            Utils.pushArgument(context, arg);
-          }
-          for (TypeArgument arg : constructor.getArguments()) {
-            Utils.pushArgument(context, arg);
-          }
-
-          List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), context, cond.getPatterns());
-          if (processedPatterns == null)
-            continue;
-
-          List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType);
-
-          CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
-          if (result == null)
-            continue;
-
-          dataDefinition.addCondition(new Condition(constructor, typedPatterns, result.expression));
-        }
+        Condition condition = typeCheckCondition(dataDefinition, cond);
+        if (condition != null)
+          dataDefinition.addCondition(condition);
       }
     }
 
     return dataDefinition;
+  }
+
+  private Condition typeCheckCondition(DataDefinition dataDefinition, Abstract.Condition cond) {
+    List<Binding> context = new ArrayList<>();
+    CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
+    Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName().name);
+    if (constructor == null) {
+      myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
+      return null;
+    }
+    try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
+      List<Expression> resultType = new ArrayList<>(Collections.singletonList(Utils.splitArguments(constructor.getBaseType(), new ArrayList<TypeArgument>(), context)));
+      if (constructor.getPatterns() != null) {
+        for (TypeArgument arg : expandConstructorParameters(constructor, context)) {
+          Utils.pushArgument(context, arg);
+        }
+      } else {
+        for (TypeArgument arg : dataDefinition.getParameters()) {
+          Utils.pushArgument(context, arg);
+        }
+      }
+      for (TypeArgument arg : constructor.getArguments()) {
+        Utils.pushArgument(context, arg);
+      }
+
+      List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), context, cond.getPatterns());
+      if (processedPatterns == null)
+        return null;
+
+      List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType);
+
+      CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
+      if (result == null)
+        return null;
+
+      return new Condition(constructor, typedPatterns, result.expression);
+    }
   }
 
   @Override
