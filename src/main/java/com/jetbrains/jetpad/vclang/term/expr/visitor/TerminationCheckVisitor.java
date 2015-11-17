@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -18,7 +19,7 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubsti
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternToExpression;
 
 public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
-  private final FunctionDefinition myDef;
+  private final Definition myDef;
   private final List<Expression> myPatterns;
 
   public TerminationCheckVisitor(FunctionDefinition def) {
@@ -31,7 +32,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
     }
   }
 
-  private TerminationCheckVisitor(FunctionDefinition def, List<Expression> patterns) {
+  public TerminationCheckVisitor(Definition def, List<Expression> patterns) {
     myDef = def;
     myPatterns = patterns;
   }
@@ -69,7 +70,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
       if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
         return false;
       }
-      if (fun instanceof ConCallExpression && !visitConCall((ConCallExpression) fun)) {
+      if (fun instanceof ConCallExpression && ((ConCallExpression) fun).getDefinition() != myDef && !visitConCall((ConCallExpression) fun)) {
         return false;
       }
     } else {
@@ -98,7 +99,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
         return false;
       }
     }
-    return true;
+    return expr.getDefinition() != myDef;
   }
 
   @Override

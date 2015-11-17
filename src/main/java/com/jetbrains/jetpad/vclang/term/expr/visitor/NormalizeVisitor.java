@@ -276,7 +276,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       return applyDefCall(conCallExpression, args);
     }
 
-    bindExcessiveArgs(args, result, arguments, numberOfArgs, numberOfArgs);
+    result = bindExcessiveArgs(args, result, arguments, numberOfArgs, numberOfArgs);
 
     return myMode == Mode.TOP ? result : result.accept(this);
   }

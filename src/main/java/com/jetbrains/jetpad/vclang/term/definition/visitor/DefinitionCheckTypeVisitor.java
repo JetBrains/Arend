@@ -27,8 +27,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandConstructorParameters;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
@@ -481,26 +480,23 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       dataDefinition.setUniverse(typedUniverse);
     }
 
-    //TODO: extract
     context.clear();
     if (def.getConditions() != null) {
       for (Abstract.Condition cond : def.getConditions()) {
-        Condition condition = typeCheckCondition(dataDefinition, cond);
-        if (condition != null)
-          dataDefinition.addCondition(condition);
+        typeCheckCondition(dataDefinition, cond);
       }
     }
 
     return dataDefinition;
   }
 
-  private Condition typeCheckCondition(DataDefinition dataDefinition, Abstract.Condition cond) {
+  private void typeCheckCondition(DataDefinition dataDefinition, Abstract.Condition cond) {
     List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
     Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName().name);
     if (constructor == null) {
       myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
-      return null;
+      return;
     }
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
       List<Expression> resultType = new ArrayList<>(Collections.singletonList(Utils.splitArguments(constructor.getBaseType(), new ArrayList<TypeArgument>(), context)));
@@ -519,15 +515,30 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), context, cond.getPatterns());
       if (processedPatterns == null)
-        return null;
+        return;
 
       List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType);
 
       CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
       if (result == null)
-        return null;
+        return;
 
-      return new Condition(constructor, typedPatterns, result.expression);
+      List<Expression> tcPatterns = new ArrayList<>(typedPatterns.size());
+      for (int i = 0; i < typedPatterns.size(); i++) {
+        tcPatterns.add(Index(i));
+      }
+      for (int i = 0; i < typedPatterns.size(); i++) {
+        Expression newExpr = patternToExpression(typedPatterns.get(i)).getExpression();
+        for (int j = 0; j < tcPatterns.size(); j++) {
+          tcPatterns.set(j, expandPatternSubstitute(typedPatterns.get(i), typedPatterns.size() - 1 - i, newExpr, tcPatterns.get(j)));
+        }
+      }
+      if (!result.expression.accept(new TerminationCheckVisitor(constructor, tcPatterns))) {
+        myErrorReporter.report(new TypeCheckingError("Termination check failed", cond.getTerm(), getNames(context)));
+        return;
+      }
+
+      dataDefinition.addCondition(new Condition(constructor, typedPatterns, result.expression));
     }
   }
 

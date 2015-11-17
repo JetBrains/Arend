@@ -309,4 +309,28 @@ public class DefinitionTest {
             "\\with | zpos zero => zero", 1
     );
   }
+
+  @Test
+  public void dataTypeWithConditionsTCFailed1() {
+    typeCheckClass(
+        "\\static \\data Z | zpos Nat | zneg Nat\n" +
+            "\\with | zpos zero => zpos 1"
+    , 1);
+  }
+
+  @Test
+  public void dataTypeWithConditionsTCFailed2() {
+    typeCheckClass(
+        "\\static \\data Z | zpos | zneg \n" +
+            "\\with | zpos => zpos"
+    , 1);
+  }
+
+  @Test
+  public void dataTypeWithConditionsMutualDep() {
+    typeCheckClass(
+       "\\static \\data Z | zpos | zneg \n"  +
+           "\\with | zpos => zneg | zneg => zpos\n"
+    , 1);
+  }
 }

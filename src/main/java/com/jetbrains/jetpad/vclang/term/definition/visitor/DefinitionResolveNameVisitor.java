@@ -136,7 +136,6 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
           myContext = saver.getCurrentContext();
         }
       }
-      myNameResolver.popNameResolver();
 
       myNameResolver.pushNameResolver(conditionsResolver);
       if (def.getConditions() != null) {
@@ -149,6 +148,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
           }
         }
       }
+      myNameResolver.popNameResolver();
       myNameResolver.popNameResolver();
     }
 

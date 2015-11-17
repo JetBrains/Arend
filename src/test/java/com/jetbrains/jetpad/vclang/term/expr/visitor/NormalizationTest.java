@@ -29,10 +29,11 @@ public class NormalizationTest {
   private final FunctionDefinition fac;
   // \function nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat <= elim x | zero => z | suc x' => s x' (nelim z s x')
   private final FunctionDefinition nelim;
-  private final DataDefinition bdList;
-  private final Constructor bdNil;
-  private final Constructor bdCons;
-  private final Constructor bdSnoc;
+
+  private DataDefinition bdList;
+  private Constructor bdNil;
+  private Constructor bdCons;
+  private Constructor bdSnoc;
 
 
   public NormalizationTest() {
@@ -63,6 +64,9 @@ public class NormalizationTest {
     testNS.addDefinition(nelim);
     nelimClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(1), nelimTerm));
     nelimClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(FunCall(nelim), Index(2), Index(1), Index(0))), nelimTerm));
+  }
+
+  private void initializeBDList() {
     ClassDefinition classDefinition = typeCheckClass(
         "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A" +
             "\\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
@@ -256,12 +260,14 @@ public class NormalizationTest {
 
   @Test
   public void testConCallNormFull() {
+    initializeBDList();
     Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil, Nat()), Zero());
     assertEquals(Apps(ConCall(bdCons, Nat()), Zero(), ConCall(bdNil, Nat())), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void testConCallPartial() {
+    initializeBDList();
     Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil));
     assertEquals(Lam(lamArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }

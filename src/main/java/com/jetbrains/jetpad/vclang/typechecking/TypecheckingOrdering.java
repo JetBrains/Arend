@@ -87,6 +87,10 @@ public class TypecheckingOrdering {
 
           @Override
           public Boolean visitConstructor(Abstract.Constructor def, Void params) {
+            if (!rn.equals(name) && !doOrder(rn))
+              return false;
+            if (name.parent == rn.parent)
+              return true;
             return rn.parent.getResolvedName().equals(name) || doOrder(rn.parent.getResolvedName());
           }
 
@@ -108,16 +112,17 @@ public class TypecheckingOrdering {
           return false;
       }
 
-      for (ResolvedName trueName = name; trueName.toAbstractDefinition() != null && trueName.toAbstractDefinition().getParentStatement() != null; trueName = trueName.parent.getResolvedName()) {
-        if (!trueName.toAbstractDefinition().getParentStatement().isStatic()) {
-          if (!doOrder(trueName.parent.getResolvedName()))
-            return false;
+      if (!(member.abstractDefinition instanceof Abstract.Constructor) && !(member.abstractDefinition instanceof Abstract.AbstractDefinition)) {
+        for (ResolvedName trueName = name; trueName.toAbstractDefinition() != null && trueName.toAbstractDefinition().getParentStatement() != null; trueName = trueName.parent.getResolvedName()) {
+          if (!trueName.toAbstractDefinition().getParentStatement().isStatic()) {
+            if (!doOrder(trueName.parent.getResolvedName()))
+              return false;
+          }
         }
+        myResult.add(name);
       }
 
       myVisiting.remove(name);
-      if (!(member.abstractDefinition instanceof Abstract.Constructor) && !(member.abstractDefinition instanceof Abstract.AbstractDefinition))
-        myResult.add(name);
     }
 
     myVisited.add(name);
