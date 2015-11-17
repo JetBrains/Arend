@@ -205,12 +205,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
   }
 
   private Expression visitConstructorCall(ConCallExpression conCallExpression, List<ArgumentExpression> args) {
-    List<TypeArgument> origArgs = Collections.unmodifiableList(conCallExpression.getDefinition().getArguments());
-    List<TypeArgument> arguments;
+    List<TypeArgument> origArgs = conCallExpression.getDefinition().getArguments();
 
-    List<Expression> parameters = conCallExpression.getParameters();
-    if (!parameters.isEmpty()) {
-      List<Expression> substExprs = new ArrayList<>(parameters);
+    List<TypeArgument> arguments;
+    if (!conCallExpression.getParameters().isEmpty()) {
+      List<Expression> substExprs = new ArrayList<>(conCallExpression.getParameters());
       Collections.reverse(substExprs);
       arguments = new ArrayList<>(origArgs.size());
       for (int j = 0; j < conCallExpression.getDefinition().getArguments().size(); ++j) {
@@ -237,35 +236,39 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       return applyDefCall(conCallExpression, args);
     }
 
-    List<Expression> args2 = new ArrayList<>(numberOfArgs);
-    for (int i = 0; i < numberOfArgs - args.size(); i++) {
-      args2.add(Index(i));
-    }
-    for (ArgumentExpression arg : args) {
-      args2.add(arg.getExpression().liftIndex(0, numberOfArgs - args.size()));
-    }
+    List<Expression> args2 = completeArgs(args, numberOfArgs, numberOfArgs);
 
     Expression result = null;
-
     if (conCallExpression.getDefinition().getDataType().getConditions() != null) {
+      // TODO: here and in \\elim we must explicitely do the same thing
+      List<List<Pattern>> patterns = new ArrayList<>(numberOfArgs);
+      List<Expression> exprs = new ArrayList<>();
+      for (int i = 0; i < numberOfArgs; i++) {
+        patterns.add(new ArrayList<Pattern>());
+        exprs.add(args2.get(args2.size() - 1 - i));
+      }
+
+      List<Condition> conditions = new ArrayList<>();
       for (Condition condition : conCallExpression.getDefinition().getDataType().getConditions()) {
         if (condition.getConstructor() == conCallExpression.getDefinition()) {
-          List<Expression> substExpressions = new ArrayList<>();
-          for (int i = 0; i < condition.getPatterns().size(); i++) {
-            Utils.PatternMatchResult matchResult = condition.getPatterns().get(i).match(args2.get(args2.size() - 1 - i), myContext);
-            if (matchResult instanceof Utils.PatternMatchOKResult) {
-              substExpressions.addAll(((Utils.PatternMatchOKResult) matchResult).expressions);
-            } else {
-              substExpressions = null;
-              break;
-            }
-          }
-          if (substExpressions != null) {
-            Collections.reverse(substExpressions);
-            result = condition.getTerm().liftIndex(0, numberOfArgs - args.size()).subst(substExpressions, 0);
-            break;
+          conditions.add(condition);
+          for (int i = 0; i < numberOfArgs; i++) {
+            patterns.get(i).add(condition.getPatterns().get(i));
           }
         }
+      }
+
+      List<Integer> validConditions = patternMultipleMatch(patterns, exprs, myContext, conditions.size());
+
+      if (!validConditions.isEmpty()) {
+        Condition conditionOK = conditions.get(validConditions.get(0));
+        List<Expression> substExpressions = new ArrayList<>();
+        for (int i = 0; i < conditionOK.getPatterns().size(); i++) {
+          Utils.PatternMatchOKResult matchOKResult = (Utils.PatternMatchOKResult) conditionOK.getPatterns().get(i).match(args2.get(args2.size() - 1 - i), myContext);
+          substExpressions.addAll(matchOKResult.expressions);
+        }
+        Collections.reverse(substExpressions);
+        result = conditionOK.getTerm().liftIndex(0, numberOfArgs - args.size()).subst(substExpressions, 0);
       }
     }
 
@@ -273,9 +276,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       return applyDefCall(conCallExpression, args);
     }
 
-    if (args.size() < numberOfArgs) {
-      result = addLambdas(arguments, args.size(), result);
-    }
+    bindExcessiveArgs(args, result, arguments, numberOfArgs, numberOfArgs);
 
     return myMode == Mode.TOP ? result : result.accept(this);
   }
@@ -294,14 +295,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       return applyDefCall(defCallExpr, args);
     }
 
-    List<Expression> args2 = new ArrayList<>(numberOfArgs);
     int numberOfSubstArgs = numberOfVariables(func.getArguments());
-    for (int i = numberOfArgs - numberOfSubstArgs; i < numberOfArgs - args.size(); ++i) {
-      args2.add(Index(i));
-    }
-    for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()); i < args.size(); ++i) {
-      args2.add(args.get(i).getExpression().liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0));
-    }
+    List<Expression> args2 = completeArgs(args, numberOfArgs, numberOfSubstArgs);
 
     Abstract.Definition.Arrow arrow = func.getArrow();
     while (result instanceof ElimExpression) {
@@ -349,6 +344,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       }
     }
 
+    result = bindExcessiveArgs(args, result, args1, numberOfArgs, numberOfSubstArgs);
+
+    return myMode == Mode.TOP ? result : result.accept(this);
+  }
+
+  private Expression bindExcessiveArgs(List<ArgumentExpression> args, Expression result, List<TypeArgument> argTypes, int numberOfArgs, int numberOfSubstArgs) {
     for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()) - 1; i >= 0; --i) {
       result = Apps(result, args.get(i));
     }
@@ -357,10 +358,20 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       result = Apps(result, Index(i));
     }
     if (args.size() < numberOfArgs) {
-      result = addLambdas(args1, args.size(), result);
+      result = addLambdas(argTypes, args.size(), result);
     }
+    return result;
+  }
 
-    return myMode == Mode.TOP ? result : result.accept(this);
+  private List<Expression> completeArgs(List<ArgumentExpression> args, int numberOfArgs, int numberOfSubstArgs) {
+    List<Expression> args2 = new ArrayList<>(numberOfArgs);
+    for (int i = numberOfArgs - numberOfSubstArgs; i < numberOfArgs - args.size(); ++i) {
+      args2.add(Index(i));
+    }
+    for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()); i < args.size(); ++i) {
+      args2.add(args.get(i).getExpression().liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0));
+    }
+    return args2;
   }
 
   @Override
