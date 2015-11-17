@@ -74,7 +74,7 @@ public class TypeCheckingDefCall {
       return result.baseResult;
     }
     if (result.member.definition == null) {
-      TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not a definition", expr, getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not available here or not a definition", expr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -256,6 +256,29 @@ public class TypeCheckingDefCall {
 
       if (type instanceof ClassCallExpression) {
         ClassDefinition classDefinition = ((ClassCallExpression) type).getDefinition();
+        /*
+        ResolvedName resolvedName = expr.getResolvedName();
+        ClassField classField;
+        if (resolvedName != null) {
+          classField = classDefinition.getField(resolvedName.name.name);
+          if (classField == null || resolvedName.parent != classDefinition.getParentNamespace()) {
+            TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, classDefinition.getResolvedName());
+            expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
+            myErrorReporter.report(error);
+            return null;
+          }
+        } else {
+          Name name = expr.getName();
+          classField = classDefinition.getField(name.name);
+          if (classField == null) {
+            TypeCheckingError error = new NameDefinedError(false, expr, name, classDefinition.getResolvedName());
+            expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
+            myErrorReporter.report(error);
+            return null;
+          }
+        }
+        return new DefCallResult(new CheckTypeVisitor.OKResult(Apps(FieldCall(classField), okResult.expression), classField.getBaseType().subst(okResult.expression, 0), okResult.equations), null, null, null);
+        */
         NamespaceMember member = classDefinition.getParentNamespace().getMember(classDefinition.getName().name);
         assert member != null;
         result = new DefCallResult(okResult, classDefinition, member, null);

@@ -15,6 +15,25 @@ import static org.junit.Assert.assertTrue;
 
 public class ClassesTest {
   @Test
+  public void dynamicStaticCallError() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\static \\function f => 0\n" +
+        "}\n" +
+        "\\static \\function h (a : A) => a.f", 1);
+  }
+
+  @Test
+  public void dynamicStaticCallError2() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\static \\function f => 0\n" +
+        "}\n" +
+        "\\static \\function g (a : A) => A.f\n" +
+        "\\static \\function h (a : A) => a.f", 1);
+  }
+
+  @Test
   public void dynamicInnerFunctionCall() {
     typeCheckClass(
         "\\static \\class A {\n" +
