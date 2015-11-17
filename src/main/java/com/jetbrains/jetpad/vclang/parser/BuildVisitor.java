@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import org.antlr.v4.runtime.Token;
@@ -402,8 +401,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
-    if (ctx == null || ctx.classFields() == null) return null;
-    List<Concrete.Statement> statements = visitStatementList(ctx.classFields().statement());
+    if (ctx == null || ctx.statement() == null) return null;
+    List<Concrete.Statement> statements = visitStatementList(ctx.statement());
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
@@ -610,15 +609,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Expression visitAtomNumber(AtomNumberContext ctx) {
+  public Concrete.NumericLiteral visitAtomNumber(AtomNumberContext ctx) {
     if (ctx == null) return null;
-    int number = Integer.valueOf(ctx.NUMBER().getText());
-    Concrete.Position pos = tokenPosition(ctx.NUMBER().getSymbol());
-    Concrete.Expression result = new Concrete.DefCallExpression(pos, Prelude.ZERO);
-    for (int i = 0; i < number; ++i) {
-      result = new Concrete.AppExpression(pos, new Concrete.DefCallExpression(pos, Prelude.SUC), new Concrete.ArgumentExpression(result, true, false));
-    }
-    return result;
+    return new Concrete.NumericLiteral(tokenPosition(ctx.NUMBER().getSymbol()), Integer.valueOf(ctx.NUMBER().getText()));
   }
 
   @Override
@@ -730,8 +723,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    if (ctx.classFields() != null) {
-      expression = new Concrete.ClassExtExpression(tokenPosition(ctx.getStart()), expression, visitStatementList(ctx.classFields().statement()));
+    if (ctx.implementStatement() != null && !ctx.implementStatement().isEmpty()) {
+      List<Concrete.ImplementStatement> implementStatements = new ArrayList<>(ctx.implementStatement().size());
+      for (ImplementStatementContext implementStatement : ctx.implementStatement()) {
+        Concrete.Identifier identifier = visitName(implementStatement.name());
+        Concrete.Expression expression1 = visitExpr(implementStatement.expr());
+        if (identifier != null && expression1 != null) {
+          implementStatements.add(new Concrete.ImplementStatement(identifier, expression1));
+        }
+      }
+      expression = new Concrete.ClassExtExpression(tokenPosition(ctx.getStart()), expression, implementStatements);
     }
     return expression;
   }

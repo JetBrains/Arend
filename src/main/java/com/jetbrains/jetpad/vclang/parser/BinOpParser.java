@@ -5,16 +5,19 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
 
 import java.util.List;
 
 public class BinOpParser {
   private final ErrorReporter myErrorReporter;
   private final Abstract.BinOpSequenceExpression myBinOpExpression;
+  private final ResolveListener myResolveListener;
 
-  public BinOpParser(ErrorReporter errorReporter, Abstract.BinOpSequenceExpression binOpExpression) {
+  public BinOpParser(ErrorReporter errorReporter, Abstract.BinOpSequenceExpression binOpExpression, ResolveListener resolveListener) {
     myErrorReporter = errorReporter;
     myBinOpExpression = binOpExpression;
+    myResolveListener = resolveListener;
   }
 
   public class StackElem {
@@ -50,12 +53,12 @@ public class BinOpParser {
       myErrorReporter.report(new TypeCheckingError(msg, elem.var, null));
     }
     stack.remove(stack.size() - 1);
-    pushOnStack(stack, myBinOpExpression.makeBinOp(topElem.argument, topElem.name, topElem.var, elem.argument), elem.name, elem.prec, elem.var);
+    pushOnStack(stack, myResolveListener.makeBinOp(myBinOpExpression, topElem.argument, topElem.name, topElem.var, elem.argument), elem.name, elem.prec, elem.var);
   }
 
   public Abstract.Expression rollUpStack(List<StackElem> stack, Abstract.Expression expr) {
     for (int i = stack.size() - 1; i >= 0; --i) {
-      expr = myBinOpExpression.makeBinOp(stack.get(i).argument, stack.get(i).name, stack.get(i).var, expr);
+      expr = myResolveListener.makeBinOp(myBinOpExpression, stack.get(i).argument, stack.get(i).name, stack.get(i).var, expr);
     }
     return expr;
   }

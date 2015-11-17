@@ -224,18 +224,15 @@ public final class Concrete {
       return mySequence;
     }
 
-    @Override
     public BinOpExpression makeBinOp(Abstract.Expression left, ResolvedName name, Abstract.DefCallExpression var, Abstract.Expression right) {
       assert left instanceof Expression && right instanceof Expression && var instanceof Expression;
       return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, name, (Expression) right);
     }
 
-    @Override
     public Expression makeError(Abstract.SourceNode node) {
       return new Concrete.InferHoleExpression(((SourceNode) node).getPosition());
     }
 
-    @Override
     public void replace(Abstract.Expression expression) {
       assert expression instanceof Expression;
       myLeft = (Expression) expression;
@@ -317,7 +314,6 @@ public final class Concrete {
       return myResolvedName;
     }
 
-    @Override
     public void setResolvedName(ResolvedName name) {
       myResolvedName = name;
     }
@@ -335,9 +331,9 @@ public final class Concrete {
 
   public static class ClassExtExpression extends Expression implements Abstract.ClassExtExpression {
     private final Expression myBaseClassExpression;
-    private final List<Statement> myDefinitions;
+    private final List<ImplementStatement> myDefinitions;
 
-    public ClassExtExpression(Position position, Expression baseClassExpression, List<Statement> definitions) {
+    public ClassExtExpression(Position position, Expression baseClassExpression, List<ImplementStatement> definitions) {
       super(position);
       myBaseClassExpression = baseClassExpression;
       myDefinitions = definitions;
@@ -349,13 +345,34 @@ public final class Concrete {
     }
 
     @Override
-    public List<Statement> getStatements() {
+    public List<ImplementStatement> getStatements() {
       return myDefinitions;
     }
 
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClassExt(this, params);
+    }
+  }
+
+  public static class ImplementStatement extends SourceNode implements Abstract.ImplementStatement {
+    private final Identifier myIdentifier;
+    private final Expression myExpression;
+
+    public ImplementStatement(Identifier identifier, Expression expression) {
+      super(identifier.getPosition());
+      myIdentifier = identifier;
+      myExpression = expression;
+    }
+
+    @Override
+    public Identifier getIdentifier() {
+      return myIdentifier;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
     }
   }
 
@@ -711,6 +728,25 @@ public final class Concrete {
     @Override
     public void replacePatternWithConstructor(int index) {
       PatternContainerHelper.replacePatternWithConstructor(myPatterns, index);
+    }
+  }
+
+  public static class NumericLiteral extends Expression implements Abstract.NumericLiteral {
+    private final int myNumber;
+
+    public NumericLiteral(Position position, int number) {
+      super(position);
+      myNumber = number;
+    }
+
+    @Override
+    public int getNumber() {
+      return myNumber;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitNumericLiteral(this, params);
     }
   }
 

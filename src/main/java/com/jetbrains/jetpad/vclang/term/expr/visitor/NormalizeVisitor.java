@@ -153,10 +153,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       } else {
         thisType = thisType.normalize(Mode.WHNF, myContext);
         if (thisType instanceof ClassCallExpression) {
-          ClassCallExpression.OverrideElem elem = ((ClassCallExpression) thisType).getOverrideElems().get(defCallExpr.getDefinition());
+          ClassCallExpression.ImplementStatement elem = ((ClassCallExpression) thisType).getImplementStatements().get(defCallExpr.getDefinition());
           if (elem != null && elem.term != null) {
-            Expression result = Apps(elem.term, args.subList(0, args.size() - 1).toArray(new ArgumentExpression[args.size() - 1]));
-            return myMode == Mode.TOP ? result : result.accept(this);
+            if (myMode == Mode.TOP) {
+              Collections.reverse(args);
+              return Apps(elem.term, args.subList(1, args.size()).toArray(new ArgumentExpression[args.size() - 1]));
+            } else {
+              return visitApps(elem.term, args.subList(0, args.size() - 1));
+            }
           }
         }
       }
@@ -176,7 +180,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
 
     List<TypeArgument> arguments;
     if (defCallExpr instanceof DataCallExpression) {
-      arguments = ((DataCallExpression) defCallExpr).getDefinition().getParameters();
+      DataDefinition dataDefinition = ((DataCallExpression) defCallExpr).getDefinition();
+      if (dataDefinition.getThisClass() == null) {
+        arguments = dataDefinition.getParameters();
+      } else {
+        arguments = new ArrayList<>(dataDefinition.getParameters().size() + 1);
+        arguments.add(TypeArg(ClassCall(dataDefinition.getThisClass())));
+        arguments.addAll(dataDefinition.getParameters());
+      }
     } else {
       throw new IllegalStateException();
     }
@@ -384,12 +395,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
     if (myMode == Mode.TOP) return null;
     if (myMode == Mode.WHNF) return expr;
 
-    Map<ClassField, ClassCallExpression.OverrideElem> elems = new HashMap<>();
-    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
-      elems.put(elem.getKey(), new ClassCallExpression.OverrideElem(elem.getValue().type == null ? null : elem.getValue().type.accept(this), elem.getValue().term == null ? null : elem.getValue().term.accept(this)));
+    Map<ClassField, ClassCallExpression.ImplementStatement> statements = new HashMap<>();
+    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
+      statements.put(elem.getKey(), new ClassCallExpression.ImplementStatement(elem.getValue().type == null ? null : elem.getValue().type.accept(this), elem.getValue().term == null ? null : elem.getValue().term.accept(this)));
     }
 
-    return ClassCall(expr.getDefinition(), elems, expr.getUniverse());
+    return ClassCall(expr.getDefinition(), statements);
   }
 
   @Override

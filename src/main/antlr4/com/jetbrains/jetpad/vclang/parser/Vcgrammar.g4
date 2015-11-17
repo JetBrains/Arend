@@ -6,11 +6,11 @@ statement : staticMod definition                              # statDef
           | nsCmd name fieldAcc* ('(' name (',' name)* ')')?  # statCmd
           ;
 
-definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?               # defFunction
-            | '\\abstract' precedence name tele* ':' expr                                    # defAbstract
-            // | '\\override' name ('\\as' name)? tele* typeTermOpt where?                      # defOverride
-            | '\\data' precedence name tele* (':' literal)? constructorDef* conditionDef?    # defData
-            | '\\class' ID classFields                                                       # defClass
+definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
+            | '\\abstract' precedence name tele* ':' expr                                 # defAbstract
+            // | '\\override' name ('\\as' name)? tele* typeTermOpt where?                   # defOverride
+            | '\\data' precedence name tele* (':' literal)? constructorDef* conditionDef? # defData
+            | '\\class' ID '{' statement* '}'                                             # defClass
             ;
 
 conditionDef : '\\with' condition*;
@@ -23,8 +23,6 @@ staticMod : '\\static'                  # staticStatic
           ;
 
 where : '\\where' ('{' statement+ '}' | statement);
-
-classFields : '{' statement* '}';
 
 nsCmd : '\\open'                        # openCmd
       | '\\close'                       # closeCmd
@@ -110,7 +108,9 @@ atom  : '(' expr (',' expr)* ')'        # tuple
       | NUMBER                          # atomNumber
       ;
 
-atomFieldsAcc : atom fieldAcc* classFields?;
+atomFieldsAcc : atom fieldAcc* ('{' implementStatement* '}')?;
+
+implementStatement : '|'? name '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
          | '{' expr '}'                 # argumentImplicit

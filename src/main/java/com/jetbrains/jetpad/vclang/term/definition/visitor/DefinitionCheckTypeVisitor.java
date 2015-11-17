@@ -448,7 +448,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     myNamespace = myNamespace.getChild(name);
     for (Abstract.Constructor constructor : def.getConstructors()) {
-      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, context);
+      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, context, visitor);
       if (typedConstructor == null) {
         continue;
       }
@@ -547,7 +547,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     throw new IllegalStateException();
   }
 
-  public Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, List<Binding> context) {
+  public Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, List<Binding> context, CheckTypeVisitor visitor) {
     try (Utils.CompleteContextSaver ignored = new Utils.CompleteContextSaver<>(context)) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       List<TypeArgument> typeArguments = new ArrayList<>(arguments.size());
@@ -555,7 +555,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       int index = 1;
       boolean ok = true;
 
-      CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
       List<? extends Abstract.Pattern> patterns = def.getPatterns();
       List<Pattern> typedPatterns = null;
       if (patterns != null) {

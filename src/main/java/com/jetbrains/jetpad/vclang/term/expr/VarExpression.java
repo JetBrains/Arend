@@ -37,11 +37,6 @@ public class VarExpression extends Expression implements Abstract.DefCallExpress
   }
 
   @Override
-  public void setResolvedName(ResolvedName name) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Expression getType(List<Binding> context) {
     return null;
   }

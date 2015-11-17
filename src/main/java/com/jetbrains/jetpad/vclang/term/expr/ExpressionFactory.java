@@ -46,11 +46,11 @@ public class ExpressionFactory {
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {
-    return new ClassCallExpression(definition, Collections.<ClassField, ClassCallExpression.OverrideElem>emptyMap(), definition.getUniverse());
+    return new ClassCallExpression(definition);
   }
 
-  public static ClassCallExpression ClassCall(ClassDefinition definition, Map<ClassField, ClassCallExpression.OverrideElem> elems, Universe universe) {
-    return new ClassCallExpression(definition, elems, universe);
+  public static ClassCallExpression ClassCall(ClassDefinition definition, Map<ClassField, ClassCallExpression.ImplementStatement> statements) {
+    return new ClassCallExpression(definition, statements);
   }
 
   public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {
@@ -58,7 +58,7 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression ConCall(Constructor definition) {
-    return new ConCallExpression(definition, Collections.<Expression>emptyList());
+    return new ConCallExpression(definition, definition.getDataType().getNumberOfAllParameters() == 0 ? Collections.<Expression>emptyList() : new ArrayList<Expression>(definition.getDataType().getNumberOfAllParameters()));
   }
 
   public static ConCallExpression ConCall(Constructor definition, Expression... parameters) {
@@ -66,7 +66,7 @@ public class ExpressionFactory {
   }
 
   public static Expression BinOp(Expression left, Definition binOp, Expression right) {
-    return Apps(binOp.getDefCallWithThis(), left, right);
+    return Apps(binOp.getDefCall(), left, right);
   }
 
   public static NewExpression New(Expression expression) {
@@ -195,15 +195,15 @@ public class ExpressionFactory {
     return new ProjExpression(expr, field);
   }
 
-  public static DefCallExpression Nat() {
+  public static DataCallExpression Nat() {
     return DataCall(Prelude.NAT);
   }
 
-  public static DefCallExpression Zero() {
+  public static ConCallExpression Zero() {
     return ConCall(Prelude.ZERO);
   }
 
-  public static DefCallExpression Suc() {
+  public static ConCallExpression Suc() {
     return ConCall(Prelude.SUC);
   }
 

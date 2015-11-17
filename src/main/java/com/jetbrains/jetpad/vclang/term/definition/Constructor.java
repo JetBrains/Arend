@@ -71,6 +71,9 @@ public class Constructor extends Definition implements Abstract.Constructor {
   public Expression getBaseType() {
     Expression resultType = DataCall(myDataType);
     int numberOfVars = numberOfVariables(myArguments);
+    if (myDataType.getThisClass() != null) {
+      resultType = Apps(resultType, new ArgumentExpression(Index(numberOfVars + myDataType.getParameters().size()), true, false));
+    }
     if (myPatterns == null) {
       for (int i = numberOfVariables(myDataType.getParameters()) - 1, j = 0; i >= 0; ++j) {
         if (myDataType.getParameters().get(j) instanceof TelescopeArgument) {
@@ -91,7 +94,7 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public ConCallExpression getDefCallWithThis() {
+  public ConCallExpression getDefCall() {
     return ConCall(this);
   }
 

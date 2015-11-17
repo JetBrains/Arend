@@ -37,6 +37,10 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
     return myParameters;
   }
 
+  public int getNumberOfAllParameters() {
+    return myParameters.size() + (getThisClass() == null ? 0 : 1);
+  }
+
   public void setParameters(List<TypeArgument> arguments) {
     myParameters = arguments;
   }
@@ -79,7 +83,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   }
 
   @Override
-  public DataCallExpression getDefCallWithThis() {
+  public DataCallExpression getDefCall() {
     return DataCall(this);
   }
 

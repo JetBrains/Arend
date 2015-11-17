@@ -21,11 +21,6 @@ import static org.junit.Assert.*;
 
 public class NameResolverTest {
   @Test
-  public void nameResolverError() {
-    resolveNamesExpr("A { \\function f (x : Nat) <= \\elim x | zero => zero | suc x' => zero }", 1);
-  }
-
-  @Test
   public void parserInfix() {
     List<Argument> arguments = new ArrayList<>(1);
     arguments.add(Tele(true, vars("x", "y"), Nat()));
@@ -134,13 +129,13 @@ public class NameResolverTest {
 
   @Test
   public void numberOfFieldsTest() {
-    resolveNamesClass("test", "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat } \\static \\function C => Point { \\override x => 0 }");
+    resolveNamesClass("test", "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat } \\static \\function C => Point { x => 0 }");
     assertNotNull(RootModule.ROOT.getMember("test"));
-    Namespace staticNamespace = RootModule.ROOT.getMember("test").namespace;
+    Namespace namespace = RootModule.ROOT.getMember("test").namespace;
 
     assertEquals(2, RootModule.ROOT.getMember("test").namespace.getMembers().size());
-    assertEquals(0, staticNamespace.getChild(new Name("Point")).getMembers().size());
-    assertEquals(2, ((Abstract.ClassDefinition) staticNamespace.getMember("Point").abstractDefinition).getStatements().size());
+    assertEquals(2, namespace.getChild(new Name("Point")).getMembers().size());
+    assertEquals(2, ((Abstract.ClassDefinition) namespace.getMember("Point").abstractDefinition).getStatements().size());
   }
 
   @Test
@@ -287,11 +282,6 @@ public class NameResolverTest {
         "  \\static \\function d => 0\n" +
         "  \\static \\function d => 1\n" +
         "}", 1);
-  }
-
-  @Test
-  public void overrideWhere() {
-    resolveNamesClass("test", "\\static \\class A { \\function x => 0 } \\static \\function C => A { \\override x => y \\where \\function y => 0 }", 1);
   }
 
   @Test

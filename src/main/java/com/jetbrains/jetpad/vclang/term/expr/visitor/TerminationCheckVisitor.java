@@ -67,10 +67,16 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
     List<Expression> args = new ArrayList<>();
     Expression fun = expr.getFunction(args);
     if (fun instanceof DefCallExpression) {
+      if (((DefCallExpression) fun).getDefinition().getThisClass() != null && !args.isEmpty()) {
+        args.remove(args.size() - 1);
+      }
       if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
         return false;
       }
       if (fun instanceof ConCallExpression && ((ConCallExpression) fun).getDefinition() != myDef && !visitConCall((ConCallExpression) fun)) {
+        return false;
+      }
+      if (fun instanceof ClassCallExpression && !visitClassCall((ClassCallExpression) fun)) {
         return false;
       }
     } else {
@@ -104,7 +110,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr) {
-    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
+    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
       if (elem.getValue().type != null && !elem.getValue().type.accept(this) || elem.getValue().term != null && !elem.getValue().term.accept(this)) {
         return false;
       }

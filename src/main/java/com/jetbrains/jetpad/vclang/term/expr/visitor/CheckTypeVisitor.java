@@ -16,9 +16,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -86,7 +84,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myTypeCheckingDefCall = typeCheckingDefCall;
   }
 
-  private CheckTypeVisitor(List<Binding> localContext, ErrorReporter errorReporter, TypeCheckingDefCall typeCheckingDefCall) {
+  public CheckTypeVisitor(List<Binding> localContext, ErrorReporter errorReporter, TypeCheckingDefCall typeCheckingDefCall) {
     this(localContext, null, errorReporter, typeCheckingDefCall);
   }
 
@@ -140,6 +138,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (numberOfVariables(result.type, myLocalContext) > numberOfVariables(expectedType, myLocalContext)) {
+      // TODO: This looks suspicious.
       return typeCheckFunctionApps(expression, new ArrayList<Abstract.ArgumentExpression>(), expectedType, expression);
     } else {
       return checkResult(expectedType, result, expression);
@@ -278,18 +277,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   private Result typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
     Result function;
-    if (fun instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) fun).getResolvedName() != null
-        && ((Abstract.DefCallExpression) fun).getResolvedName().toDefinition() instanceof Constructor
-        && !((Constructor) ((Abstract.DefCallExpression) fun).getResolvedName().toDefinition()).getDataType().getParameters().isEmpty()) {
-      function = typeCheckDefCall((Abstract.DefCallExpression) fun, null);
-      if (function instanceof OKResult) {
-        return typeCheckApps(fun, 0, (OKResult) function, args, expectedType, expression);
-      }
+    if (fun instanceof Abstract.DefCallExpression) {
+      function = myTypeCheckingDefCall.typeCheckDefCall((Abstract.DefCallExpression) fun);
     } else {
       function = typeCheck(fun, null);
-      if (function instanceof OKResult) {
-        return typeCheckApps(fun, 0, (OKResult) function, args, expectedType, expression);
-      }
+    }
+    if (function instanceof OKResult) {
+      return typeCheckApps(fun, 0, (OKResult) function, args, expectedType, expression);
     }
 
     if (function instanceof InferErrorResult) {
@@ -304,15 +298,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private Result typeCheckApps(Abstract.Expression fun, int argsSkipped, OKResult okFunction, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
     List<TypeArgument> signatureArguments = new ArrayList<>();
     int parametersNumber = 0;
-    if (okFunction.expression instanceof DefCallExpression) {
-      Definition def = ((DefCallExpression) okFunction.expression).getDefinition();
-      if (def instanceof Constructor) {
-        if (((Constructor) def).getPatterns() == null) {
-          parametersNumber = numberOfVariables(((Constructor) def).getDataType().getParameters());
-        } else {
-          parametersNumber = expandConstructorParameters((Constructor) def, myLocalContext).size();
-        }
+    if (okFunction.expression instanceof ConCallExpression) {
+      Constructor def = ((ConCallExpression) okFunction.expression).getDefinition();
+      if (def.getPatterns() == null) {
+        parametersNumber = numberOfVariables(def.getDataType().getParameters());
+      } else {
+        parametersNumber = expandConstructorParameters(def, myLocalContext).size();
       }
+      if (def.getThisClass() != null) {
+        ++parametersNumber;
+      }
+      parametersNumber -= ((ConCallExpression) okFunction.expression).getParameters().size();
     }
 
     Expression signatureResultType = splitArguments(okFunction.type, signatureArguments, myLocalContext);
@@ -515,8 +511,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression resultExpr = okFunction.expression;
     List<Expression> parameters = null;
     if (parametersNumber > 0) {
-      parameters = new ArrayList<>(parametersNumber);
-      ((ConCallExpression) resultExpr).setParameters(parameters);
+      parameters = ((ConCallExpression) resultExpr).getParameters();
     }
     for (i = 0; i < parametersNumber; ++i) {
       assert parameters != null;
@@ -577,14 +572,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result result = typeCheckDefCall(expr, expectedType);
     if (result instanceof OKResult && result.expression instanceof ConCallExpression) {
       ConCallExpression defCall = (ConCallExpression) result.expression;
-      if (!defCall.getParameters().isEmpty()) {
+      if (defCall.getParameters().size() == defCall.getDefinition().getDataType().getNumberOfAllParameters()) {
         return result;
-      }
-      if (!defCall.getDefinition().getDataType().getParameters().isEmpty()) {
+      } else {
         return typeCheckApps(expr, 0, (OKResult) result, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr);
       }
+    } else {
+      return result;
     }
-    return result instanceof OKResult ? checkResultImplicit(expectedType, (OKResult) result, expr) : result;
   }
 
   @Override
@@ -1038,7 +1033,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
- private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding) {
+  private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding) {
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null) {
@@ -1475,58 +1470,94 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitClassExt(Abstract.ClassExtExpression expr, Expression expectedType) {
-    Result result = typeCheck(expr.getBaseClassExpression(), null);
+    Abstract.Expression baseClassExpr = expr.getBaseClassExpression();
+    Result result = typeCheck(baseClassExpr, null);
     if (!(result instanceof OKResult)) {
       return result;
     }
     Expression normalizedBaseClassExpr = result.expression.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
-    if (!(normalizedBaseClassExpr instanceof DefCallExpression && ((DefCallExpression) normalizedBaseClassExpr).getDefinition() instanceof ClassDefinition)) {
-      TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getBaseClassExpression(), getNames(myLocalContext));
+    if (!(normalizedBaseClassExpr instanceof ClassCallExpression)) {
+      TypeCheckingError error = new TypeCheckingError("Expected a class", baseClassExpr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(normalizedBaseClassExpr, error));
       myErrorReporter.report(error);
       return null;
     }
 
-    ClassDefinition baseClass = (ClassDefinition) ((DefCallExpression) normalizedBaseClassExpr).getDefinition();
+    ClassDefinition baseClass = ((ClassCallExpression) normalizedBaseClassExpr).getDefinition();
     if (baseClass.hasErrors()) {
-      TypeCheckingError error = new HasErrors(baseClass.getName(), expr.getBaseClassExpression());
+      TypeCheckingError error = new HasErrors(baseClass.getName(), baseClassExpr);
       expr.setWellTyped(myLocalContext, Error(normalizedBaseClassExpr, error));
       myErrorReporter.report(error);
       return null;
     }
 
-    // TODO
-    // if (expr.getStatements().isEmpty()) {
+    Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
+    if (statements.isEmpty()) {
       return checkResultImplicit(expectedType, new OKResult(normalizedBaseClassExpr, baseClass.getType(), null), expr);
-    // }
+    }
 
-    /*
-    Map<String, FunctionDefinition> abstracts = new HashMap<>();
-    for (Definition definition : baseClass.getStatements()) {
-      if (definition instanceof FunctionDefinition && definition.isAbstract()) {
-        abstracts.put(definition.getName().name, (FunctionDefinition) definition);
+    class ImplementStatement {
+      ClassField classField;
+      Abstract.Expression term;
+
+      public ImplementStatement(ClassField classField, Abstract.Expression term) {
+        this.classField = classField;
+        this.term = term;
       }
     }
 
-    Map<FunctionDefinition, OverriddenDefinition> definitions = new HashMap<>();
-    for (Abstract.FunctionDefinition definition : expr.getStatements()) {
-      FunctionDefinition oldDefinition = abstracts.remove(definition.getName().name);
-      if (oldDefinition == null) {
-        myErrorReporter.report(new TypeCheckingError(myNamespace, definition.getName() + " is not defined in " + expr.getBaseClass().getNamespace().getFullName(), definition, getNames(myLocalContext)));
+    List<ImplementStatement> fields = new ArrayList<>(statements.size());
+    for (Abstract.ImplementStatement statement : statements) {
+      Abstract.Identifier identifier = statement.getIdentifier();
+      Name name = identifier.getName();
+      ClassField field = baseClass.removeField(name.name);
+      if (field == null) {
+        TypeCheckingError error = new TypeCheckingError("Class '" + baseClass.getName() + "' does not have field '" + name + "'", identifier, null);
+        myErrorReporter.report(error);
       } else {
-        OverriddenDefinition newDefinition = (OverriddenDefinition) TypeChecking.typeCheckFunctionBegin(myErrorReporter, myNamespace, expr.getBaseClass().getLocalNamespace(), definition, myLocalContext, oldDefinition);
-        if (newDefinition == null) return null;
-        TypeChecking.typeCheckFunctionEnd(myErrorReporter, myNamespace, definition.getTerm(), newDefinition, myLocalContext, oldDefinition);
-        definitions.put(oldDefinition, newDefinition);
+        fields.add(new ImplementStatement(field, statement.getExpression()));
       }
     }
 
-    Universe universe = new Universe.Type(0, Universe.Type.PROP);
-    for (FunctionDefinition definition : abstracts.values()) {
-      universe = universe.max(definition.getUniverse());
+    List<CompareVisitor.Equation> equations = null;
+    Map<ClassField, ClassCallExpression.ImplementStatement> typeCheckedStatements = new HashMap<>();
+    for (int i = 0; i < fields.size(); i++) {
+      ImplementStatement field = fields.get(i);
+      Expression thisExpr = New(ClassCall(baseClass, typeCheckedStatements));
+      Result result1 = typeCheck(field.term, field.classField.getBaseType().subst(thisExpr, 0));
+      baseClass.addField(field.classField);
+      if (!(result1 instanceof OKResult)) {
+        for (i++; i < fields.size(); i++) {
+          typeCheck(fields.get(i).term, fields.get(i).classField.getBaseType().subst(thisExpr, 0));
+          baseClass.addField(fields.get(i).classField);
+        }
+        return result1;
+      }
+
+      OKResult okResult = (OKResult) result1;
+      typeCheckedStatements.put(field.classField, new ClassCallExpression.ImplementStatement(okResult.type, okResult.expression));
+      if (okResult.equations != null) {
+        if (equations == null) {
+          equations = okResult.equations;
+        } else {
+          equations.addAll(okResult.equations);
+        }
+      }
     }
-    return checkResultImplicit(expectedType, new OKResult(ClassExt(expr.getBaseClass(), definitions, universe), new UniverseExpression(universe), null), expr);
-    */
+
+    if (equations != null) {
+      for (int i = 0; i < equations.size(); ++i) {
+        Expression expression = equations.get(i).expression.liftIndex(0, -1);
+        if (expression == null) {
+          equations.remove(i--);
+        } else {
+          equations.set(i, new CompareVisitor.Equation(equations.get(i).hole, expression));
+        }
+      }
+    }
+
+    ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
+    return checkResultImplicit(expectedType, new OKResult(resultExpr, new UniverseExpression(resultExpr.getUniverse()), equations), expr);
   }
 
   @Override
@@ -1541,8 +1572,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrorReporter.report(error);
       return null;
     }
-    // TODO: Check that the class extension implements all fields.
-    return checkResultImplicit(expectedType, new OKResult(New(okExprResult.expression), normExpr, okExprResult.equations), expr);
+
+    ClassCallExpression classCall = (ClassCallExpression) normExpr;
+    if (classCall.getImplementStatements().size() == classCall.getDefinition().getFields().size()) {
+      return checkResultImplicit(expectedType, new OKResult(New(normExpr), normExpr, okExprResult.equations), expr);
+    } else {
+      TypeCheckingError error = new TypeCheckingError("Class '" + classCall.getDefinition().getName() + "' has " + classCall.getDefinition().getNumberOfVisibleFields() + " fields", expr, getNames(myLocalContext));
+      expr.setWellTyped(myLocalContext, Error(null, error));
+      myErrorReporter.report(error);
+      return null;
+    }
   }
 
   private Result typeCheckLetClause(Abstract.LetClause clause) {
@@ -1634,6 +1673,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       finalResult = new OKResult(Let(clauses, okResult.expression), normalizedResultType, equations);
     }
     return finalResult;
+  }
+
+  @Override
+  public Result visitNumericLiteral(Abstract.NumericLiteral expr, Expression expectedType) {
+    int number = expr.getNumber();
+    Expression expression = Zero();
+    for (int i = 0; i < number; ++i) {
+      expression = Suc(expression);
+    }
+    return checkResult(expectedType, new OKResult(expression, Nat(), null), expr);
   }
 
   public List<Pattern> visitPatterns(List<Abstract.Pattern> patterns, List<Expression> substIn) {

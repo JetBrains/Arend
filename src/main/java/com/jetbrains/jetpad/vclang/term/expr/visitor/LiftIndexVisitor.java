@@ -52,11 +52,11 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Expression> {
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr) {
-    Map<ClassField, ClassCallExpression.OverrideElem> elems = new HashMap<>();
-    for (Map.Entry<ClassField, ClassCallExpression.OverrideElem> elem : expr.getOverrideElems().entrySet()) {
-      elems.put(elem.getKey(), new ClassCallExpression.OverrideElem(elem.getValue().type == null ? null : elem.getValue().type.accept(this), elem.getValue().term == null ? null : elem.getValue().term.accept(this)));
+    Map<ClassField, ClassCallExpression.ImplementStatement> statements = new HashMap<>();
+    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
+      statements.put(elem.getKey(), new ClassCallExpression.ImplementStatement(elem.getValue().type == null ? null : elem.getValue().type.accept(this), elem.getValue().term == null ? null : elem.getValue().term.accept(this)));
     }
-    return ClassCall(expr.getDefinition(), elems, expr.getUniverse());
+    return ClassCall(expr.getDefinition(), statements);
   }
 
   @Override

@@ -9,12 +9,12 @@ import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
-import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NamespaceNameResolver;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,14 +23,17 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
   private final ErrorReporter myErrorReporter;
   private final NameResolver myNameResolver;
   private final List<String> myContext;
+  private final ResolveListener myResolveListener;
 
-  public ResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, List<String> context) {
+  public ResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, List<String> context, ResolveListener resolveListener) {
+    assert resolveListener != null;
     myErrorReporter = errorReporter;
     CompositeNameResolver compositeNameResolver = new CompositeNameResolver();
     compositeNameResolver.pushNameResolver(nameResolver);
     compositeNameResolver.pushNameResolver(new NamespaceNameResolver(Prelude.PRELUDE));
     myNameResolver = compositeNameResolver;
     myContext = context;
+    myResolveListener = resolveListener;
   }
 
   @Override
@@ -61,7 +64,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
           
           NamespaceMember member = myNameResolver.getMember(parentNamespace, expr.getName().name);
           if (member != null) {
-            expr.setResolvedName(member.getResolvedName());
+            myResolveListener.nameResolved(expr, member.getResolvedName());
           }
         }
       } else {
@@ -69,7 +72,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
         if (name.fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(name.name)) {
           NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name.name, false);
           if (member != null) {
-            expr.setResolvedName(member.getResolvedName());
+            myResolveListener.nameResolved(expr, member.getResolvedName());
           }
         }
       }
@@ -176,9 +179,9 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
     if (expr.getSequence().isEmpty()) {
       Abstract.Expression left = expr.getLeft();
       left.accept(this, null);
-      expr.replace(left);
+      myResolveListener.replaceBinOp(expr, left);
     } else {
-      BinOpParser parser = new BinOpParser(myErrorReporter, expr);
+      BinOpParser parser = new BinOpParser(myErrorReporter, expr, myResolveListener);
       List<Abstract.BinOpSequenceElem> sequence = expr.getSequence();
       List<BinOpParser.StackElem> stack = new ArrayList<>(sequence.size());
       Abstract.Expression expression = expr.getLeft();
@@ -197,9 +200,9 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
         }
       }
       if (error == null) {
-        expr.replace(parser.rollUpStack(stack, expression));
+        myResolveListener.replaceBinOp(expr, parser.rollUpStack(stack, expression));
       } else {
-        expr.replace(expr.makeError(error.getCause()));
+        myResolveListener.replaceBinOp(expr, myResolveListener.makeError(expr, error.getCause()));
       }
     }
     return null;
@@ -273,11 +276,8 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
   @Override
   public Void visitClassExt(Abstract.ClassExtExpression expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
-    CompositeNameResolver nameResolver = new CompositeNameResolver();
-    nameResolver.pushNameResolver(myNameResolver);
-    StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, new Namespace("<anonymous>"), nameResolver, myContext);
-    for (Abstract.Statement statement : expr.getStatements()) {
-      statement.accept(visitor, StatementResolveNameVisitor.Flag.MUST_BE_DYNAMIC);
+    for (Abstract.ImplementStatement statement : expr.getStatements()) {
+      statement.getExpression().accept(this, null);
     }
     return null;
   }
@@ -313,6 +313,11 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
 
       expr.getExpression().accept(this, null);
     }
+    return null;
+  }
+
+  @Override
+  public Void visitNumericLiteral(Abstract.NumericLiteral expr, Void params) {
     return null;
   }
 }

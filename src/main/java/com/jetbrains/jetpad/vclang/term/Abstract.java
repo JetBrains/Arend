@@ -69,13 +69,17 @@ public final class Abstract {
     Name getName();
     Expression getExpression();
     ResolvedName getResolvedName();
-    void setResolvedName(ResolvedName name);
   }
 
   public interface ClassExtExpression extends Expression {
     byte PREC = 12;
     Expression getBaseClassExpression();
-    Collection<? extends Statement> getStatements();
+    Collection<? extends ImplementStatement> getStatements();
+  }
+
+  public interface ImplementStatement extends SourceNode {
+    Identifier getIdentifier();
+    Expression getExpression();
   }
 
   public interface NewExpression extends Expression {
@@ -140,9 +144,6 @@ public final class Abstract {
     byte PREC = 0;
     Expression getLeft();
     List<BinOpSequenceElem> getSequence();
-    BinOpExpression makeBinOp(Expression left, ResolvedName name, DefCallExpression var, Expression right);
-    Expression makeError(SourceNode node);
-    void replace(Expression expression);
   }
 
   public interface UniverseExpression extends Expression {
@@ -180,6 +181,10 @@ public final class Abstract {
   public interface Clause extends PatternContainer, PrettyPrintableSourceNode {
     Definition.Arrow getArrow();
     Expression getExpression();
+  }
+
+  public interface NumericLiteral extends Expression {
+    int getNumber();
   }
 
   public interface Binding extends SourceNode {

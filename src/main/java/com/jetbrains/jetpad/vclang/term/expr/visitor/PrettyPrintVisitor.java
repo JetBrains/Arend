@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.LamExpression;
-import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -294,9 +293,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     expr.getBaseClassExpression().accept(this, (byte) -Abstract.ClassExtExpression.PREC);
     myBuilder.append(" {\n");
     myIndent += INDENT;
-    StatementPrettyPrintVisitor visitor = new StatementPrettyPrintVisitor(myBuilder, myNames, myIndent);
-    for (Abstract.Statement statement : expr.getStatements()) {
-      statement.accept(visitor, null);
+    for (Abstract.ImplementStatement statement : expr.getStatements()) {
+      printIndent(myBuilder, myIndent);
+      myBuilder.append("| ").append(statement.getIdentifier().getName().getPrefixName()).append(" => ");
+      statement.getExpression().accept(this, Abstract.Expression.PREC);
       myBuilder.append("\n");
     }
     myIndent -= INDENT;
@@ -344,6 +344,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myIndent -= INDENT;
 
     trimToSize(myNames, oldNamesSize);
+    return null;
+  }
+
+  @Override
+  public Void visitNumericLiteral(Abstract.NumericLiteral expr, Byte params) {
+    myBuilder.append(expr.getNumber());
     return null;
   }
 

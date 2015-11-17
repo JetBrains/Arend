@@ -9,6 +9,8 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Suc;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Zero;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
@@ -334,10 +336,10 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     ClassCallExpression classExt = (ClassCallExpression) expr;
     ClassCallExpression otherClassExt = (ClassCallExpression) other;
     if (classExt.getDefinition() != otherClassExt.getDefinition()) return new JustResult(CMP.NOT_EQUIV);
-    if (classExt.getOverrideElems().size() != otherClassExt.getOverrideElems().size()) return new JustResult(CMP.NOT_EQUIV);
+    if (classExt.getImplementStatements().size() != otherClassExt.getImplementStatements().size()) return new JustResult(CMP.NOT_EQUIV);
     ClassCallExpression smaller;
     ClassCallExpression bigger;
-    if (classExt.getOverrideElems().size() > otherClassExt.getOverrideElems().size()) {
+    if (classExt.getImplementStatements().size() > otherClassExt.getImplementStatements().size()) {
       smaller = otherClassExt;
       bigger = classExt;
     } else {
@@ -348,8 +350,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     CMP cmp = CMP.EQUALS;
     MaybeResult maybeResult = null;
     smaller_loop:
-    for (ClassCallExpression.OverrideElem elem : smaller.getOverrideElems()) {
-      for (ClassCallExpression.OverrideElem otherElem : bigger.getOverrideElems()) {
+    for (ClassCallExpression.OverrideElem elem : smaller.getImplementStatements()) {
+      for (ClassCallExpression.OverrideElem otherElem : bigger.getImplementStatements()) {
         // TODO
         if (elem.field == otherElem.field) {
           Result result = otherElem.type.accept(this, elem.type);
@@ -799,6 +801,19 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       exprExpression = ((Abstract.LetExpression) exprExpression).getExpression();
     }
     return visitLet(exprLetClauses, exprExpression, otherLet.getClauses(), otherLet.getExpression());
+  }
+
+  @Override
+  public Result visitNumericLiteral(Abstract.NumericLiteral expr, Expression other) {
+    if (expr == other) {
+      return new JustResult(CMP.EQUALS);
+    }
+    Expression expr1 = Zero();
+    int number = expr.getNumber();
+    for (int i = 0; i < number; ++i) {
+      expr1 = Suc(expr1);
+    }
+    return new JustResult(expr1.equals(other) ? CMP.EQUALS : CMP.NOT_EQUIV);
   }
 
   @Override

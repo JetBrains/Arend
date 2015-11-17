@@ -15,7 +15,7 @@ import java.util.*;
 
 public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
-  public static final int VERSION = 0;
+  public static final int VERSION = 1;
 
   public static void writeFile(ResolvedName resolvedName, File outputFile) throws IOException {
     Files.createDirectories(outputFile.getParentFile().toPath());

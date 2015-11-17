@@ -125,7 +125,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
-  public FunCallExpression getDefCallWithThis() {
+  public FunCallExpression getDefCall() {
     return FunCall(this);
   }
 

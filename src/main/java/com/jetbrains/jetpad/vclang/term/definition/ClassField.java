@@ -24,7 +24,7 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public FieldCallExpression getDefCallWithThis() {
+  public FieldCallExpression getDefCall() {
     return FieldCall(this);
   }
 

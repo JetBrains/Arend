@@ -27,8 +27,8 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
   }
 
   @Override
-  public ClassCallExpression getDefCallWithThis() {
-    return ClassCall(this, new HashMap<ClassField, ClassCallExpression.OverrideElem>(), getUniverse());
+  public ClassCallExpression getDefCall() {
+    return ClassCall(this, new HashMap<ClassField, ClassCallExpression.ImplementStatement>());
   }
 
   public ClassField getField(String name) {
@@ -39,6 +39,17 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     return myFields == null ? Collections.<ClassField>emptyList() : myFields.values();
   }
 
+  public int getNumberOfVisibleFields() {
+    if (myFields == null) {
+      return 0;
+    }
+    int result = myFields.size();
+    if (getParentField() != null) {
+      --result;
+    }
+    return result;
+  }
+
   public void addField(ClassField field) {
     if (myFields == null) {
       myFields = new HashMap<>();
@@ -47,10 +58,8 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     field.setThisClass(this);
   }
 
-  public void removeField(String name) {
-    if (myFields != null) {
-      myFields.remove(name);
-    }
+  public ClassField removeField(String name) {
+    return myFields != null ? myFields.remove(name) : null;
   }
 
   public void removeField(ClassField field) {

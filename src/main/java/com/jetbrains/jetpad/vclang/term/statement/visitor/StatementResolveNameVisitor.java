@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolv
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.MultiNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NamespaceNameResolver;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
 
 import java.util.List;
 
@@ -23,6 +24,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
   private final MultiNameResolver myPrivateNameResolver;
   private final CompositeNameResolver myNameResolver;
   private final List<String> myContext;
+  private ResolveListener myResolveListener;
 
   public StatementResolveNameVisitor(ErrorReporter errorReporter, Namespace namespace, CompositeNameResolver nameResolver, List<String> context) {
     myErrorReporter = errorReporter;
@@ -36,6 +38,10 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
   }
 
   public enum Flag { MUST_BE_STATIC, MUST_BE_DYNAMIC }
+
+  public void setResolveListener(ResolveListener resolveListener) {
+    myResolveListener = resolveListener;
+  }
 
   @Override
   public NamespaceMember visitDefine(Abstract.DefineStatement stat, Flag flag) {
@@ -51,7 +57,9 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
       myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat, myContext));
       return null;
     } else {
-      stat.getDefinition().accept(new DefinitionResolveNameVisitor(myErrorReporter, myNamespace, myNameResolver, myContext), stat.isStatic());
+      DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myErrorReporter, myNamespace, myNameResolver, myContext);
+      visitor.setResolveListener(myResolveListener);
+      stat.getDefinition().accept(visitor, stat.isStatic());
       NamespaceMember namespaceMember = myNamespace.addAbstractDefinition(stat.getDefinition());
       if (namespaceMember == null) {
         myErrorReporter.report(new NameDefinedError(true, stat, stat.getDefinition().getName(), myNamespace.getResolvedName()));
@@ -61,7 +69,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
         Abstract.DataDefinition dataDefinition = (Abstract.DataDefinition) stat.getDefinition();
         for (Abstract.Constructor constructor : dataDefinition.getConstructors()) {
           namespaceMember.namespace.addAbstractDefinition(constructor);
-          myNamespace.addAbstractDefinition(constructor);
+          myNamespace.addMember(namespaceMember.namespace.getMember(constructor.getName().name));
         }
       }
 

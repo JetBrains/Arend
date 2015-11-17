@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveName
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteResolveListener;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class NameResolverTestCase {
   public static Collection<? extends GeneralError> resolveNamesExpr(Concrete.Expression expression, NameResolver nameResolver) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    expression.accept(new ResolveNameVisitor(errorReporter, nameResolver, new ArrayList<String>(0)), null);
+    expression.accept(new ResolveNameVisitor(errorReporter, nameResolver, new ArrayList<String>(0), new ConcreteResolveListener()), null);
     return errorReporter.getErrorList();
   }
 
@@ -49,7 +50,9 @@ public class NameResolverTestCase {
 
   public static Collection<? extends GeneralError> resolveNamesDef(Concrete.Definition definition) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    definition.accept(new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT.getChild(new Name("test")), DummyNameResolver.getInstance()), null);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT.getChild(new Name("test")), DummyNameResolver.getInstance());
+    visitor.setResolveListener(new ConcreteResolveListener());
+    definition.accept(visitor, null);
     return errorReporter.getErrorList();
   }
 
@@ -66,7 +69,9 @@ public class NameResolverTestCase {
 
   public static void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT, DummyNameResolver.getInstance()).visitClass(classDefinition, null);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT, DummyNameResolver.getInstance());
+    visitor.setResolveListener(new ConcreteResolveListener());
+    visitor.visitClass(classDefinition, null);
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
   }
 
