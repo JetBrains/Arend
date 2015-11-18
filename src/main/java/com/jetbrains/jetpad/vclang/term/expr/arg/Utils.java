@@ -80,10 +80,12 @@ public class Utils {
     }
   }
 
-  public static void splitArguments(List<? extends TypeArgument> arguments, List<TypeArgument> result) {
+  public static List<TypeArgument> splitArguments(List<? extends TypeArgument> arguments) {
+    List<TypeArgument> result = new ArrayList<>();
     for (TypeArgument argument : arguments) {
       addArgs(argument, result);
     }
+    return result;
   }
 
   public static class ContextSaver implements AutoCloseable {
@@ -159,7 +161,7 @@ public class Utils {
       type = type.normalize(NormalizeVisitor.Mode.WHNF, ctx);
       while (type instanceof PiExpression) {
         PiExpression pi = (PiExpression) type;
-        splitArguments(pi.getArguments(), result);
+        result.addAll(splitArguments(pi.getArguments()));
         for (TypeArgument arg : pi.getArguments()) {
           pushArgument(ctx, arg);
         }

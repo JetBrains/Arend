@@ -65,8 +65,7 @@ class PatternExpansion {
   }
 
   static List<Result> expandPatterns(List<Pattern> patterns, List<TypeArgument> args, List<Binding> context) {
-    List<TypeArgument> argsSplitted = new ArrayList<>();
-    splitArguments(args, argsSplitted);
+    List<TypeArgument> argsSplitted = splitArguments(args);
 
     List<Result> results = new ArrayList<>();
     for (int i = 0; i < patterns.size(); i++) {

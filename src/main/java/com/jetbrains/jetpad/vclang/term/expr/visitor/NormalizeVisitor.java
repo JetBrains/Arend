@@ -192,8 +192,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       throw new IllegalStateException();
     }
 
-    List<TypeArgument> splitArguments = new ArrayList<>();
-    splitArguments(arguments, splitArguments);
+    List<TypeArgument> splitArguments = splitArguments(arguments);
     if (myMode == Mode.WHNF && splitArguments.size() >= args.size()) {
       return applyDefCall(defCallExpr, args);
     }

@@ -710,8 +710,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   Result compareTypeArguments(List<? extends Abstract.TypeArgument> args1, List<TypeArgument> args2) {
     try (EquationsLifter lifter = new EquationsLifter(myEquations)) {
       List<Abstract.Expression> types1 = splitConcreteTypeArgumentsTypes(args1);
-      List<TypeArgument> args2Splitted = new ArrayList<>();
-      splitArguments(args2, args2Splitted);
+      List<TypeArgument> args2Splitted = splitArguments(args2);
 
       if (types1.size() != args2Splitted.size())
         return new JustResult(CMP.NOT_EQUIV);

@@ -9,9 +9,10 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
-import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingBranch;
-import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingFailedBranch;
-import com.jetbrains.jetpad.vclang.term.pattern.ArgsCoverageChecker.ArgsCoverageCheckingIncompleteBranch;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsBranch;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsFailedBranch;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsIncompleteBranch;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -861,8 +862,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           return new InferErrorResult(hole, hole.getError(), null);
         }
 
-        List<TypeArgument> sigmaArgs = new ArrayList<>();
-        splitArguments(((SigmaExpression) expectedTypeNorm).getArguments(), sigmaArgs);
+        List<TypeArgument> sigmaArgs = splitArguments(((SigmaExpression) expectedTypeNorm).getArguments());
 
         if (expr.getFields().size() != sigmaArgs.size()) {
           TypeCheckingError error = new TypeCheckingError("Expected a tuple with " + sigmaArgs.size() + " fields, but given " + expr.getFields().size(), expr, getNames(myLocalContext));
@@ -1302,28 +1302,34 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<Binding> tail = new ArrayList<>(myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()));
     myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()).clear();
-    List<ArgsCoverageCheckingBranch> branches = new ArgsCoverageChecker(myLocalContext).checkCoverage(types, patterns, clauses.size() + emptyPatterns.size());
+    List<ArgsBranch<CoverageChecker.CoverageCheckingBranch>> branches = new ArgsElimTreeExpander<CoverageChecker.CoverageCheckingBranch>(myLocalContext).expandElimTree(new CoverageChecker(), types, patterns, clauses.size() + emptyPatterns.size());
     myLocalContext.addAll(tail);
     if (branches == null)
       return null;
 
     StringBuilder coverageCheckMsg = new StringBuilder();
     coverageCheckMsg.append("Coverage checking failed: \n");
-    for (ArgsCoverageCheckingBranch branch : branches) {
-      if (branch instanceof ArgsCoverageCheckingIncompleteBranch) {
-        ArgsCoverageCheckingIncompleteBranch  incompleteBranch = (ArgsCoverageCheckingIncompleteBranch) branch;
+    for (ArgsBranch<CoverageChecker.CoverageCheckingBranch> branch : branches) {
+      if (branch instanceof ArgsIncompleteBranch) {
+        ArgsIncompleteBranch incompleteBranch = (ArgsIncompleteBranch) branch;
         coverageCheckMsg.append("missing pattern: ");
-        for (IndexExpression elimIdx : elimExprs)
-          coverageCheckMsg.append(incompleteBranch.incompletePatterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+        for (IndexExpression elimIdx : elimExprs) {
+          coverageCheckMsg.append(incompleteBranch.results.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+          if (incompleteBranch.results instanceof CoverageChecker.CoverageCheckingIncompleteBranch)
+            break;
+        }
         coverageCheckMsg.append("\n");
         wasError = true;
-      } else if (branch instanceof ArgsCoverageCheckingFailedBranch) {
-        ArgsCoverageCheckingFailedBranch failedBranch = (ArgsCoverageCheckingFailedBranch) branch;
+      } else if (branch instanceof ArgsFailedBranch) {
+        ArgsFailedBranch failedBranch = (ArgsFailedBranch) branch;
         coverageCheckMsg.append("failed match in branch: ");
-        for (IndexExpression elimIdx : elimExprs)
-          coverageCheckMsg.append(failedBranch.failedPatterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+        for (IndexExpression elimIdx : elimExprs) {
+          coverageCheckMsg.append(failedBranch.results.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+          if (failedBranch.results instanceof CoverageChecker.CoverageCheckingFailedBranch)
+            break;
+        }
         coverageCheckMsg.append(" because of ");
-        for (int i : ((ArgsCoverageCheckingFailedBranch) branch).bad) {
+        for (int i : ((ArgsFailedBranch<CoverageChecker.CoverageCheckingBranch>) branch).bad) {
           for (Pattern pattern : clauses.get(i).getPatterns()) {
             coverageCheckMsg.append(pattern.toString()).append(" ");
           }
@@ -1340,13 +1346,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     for (int i = 0; i < emptyPatterns.size(); i++) {
-      for (ArgsCoverageCheckingBranch branch : branches) {
-        if (branch instanceof ArgsCoverageChecker.ArgsCoverageCheckingOKBranch
-            && ((ArgsCoverageChecker.ArgsCoverageCheckingOKBranch) branch).good.contains(clauses.size() + i)) {
+      for (ArgsBranch<CoverageChecker.CoverageCheckingBranch> branch : branches) {
+        if (branch instanceof ArgsElimTreeExpander.ArgsOKBranch
+            && ((ArgsElimTreeExpander.ArgsOKBranch) branch).good.contains(clauses.size() + i)) {
           StringBuilder errorMsg = new StringBuilder();
           errorMsg.append("Empty clause is reachable through: ");
           for (IndexExpression elimIdx : elimExprs)
-            errorMsg.append(((ArgsCoverageChecker.ArgsCoverageCheckingOKBranch) branch).patterns.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+            errorMsg.append(((ArgsElimTreeExpander.ArgsOKBranch<CoverageChecker.CoverageCheckingBranch>) branch).results.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
           error = new TypeCheckingError(errorMsg.toString(), emptyClauses.get(i), getNames(myLocalContext));
           expr.setWellTyped(myLocalContext, Error(null, error));
           myErrorReporter.report(error);
@@ -1452,8 +1458,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    List<TypeArgument> splitArgs = new ArrayList<>();
-    splitArguments(((SigmaExpression) type).getArguments(), splitArgs);
+    List<TypeArgument> splitArgs = splitArguments(((SigmaExpression) type).getArguments());
     if (expr.getField() < 0 || expr.getField() >= splitArgs.size()) {
       TypeCheckingError error = new TypeCheckingError("Index " + (expr.getField() + 1) + " out of range", expr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(null, error));
