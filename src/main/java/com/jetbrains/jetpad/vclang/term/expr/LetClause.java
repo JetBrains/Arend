@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -61,6 +62,11 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
   @Override
   public Expression getResultType() {
     return myResultType;
+  }
+
+  @Override
+  public ClassDefinition getThisClass() {
+    return null;
   }
 
   @Override

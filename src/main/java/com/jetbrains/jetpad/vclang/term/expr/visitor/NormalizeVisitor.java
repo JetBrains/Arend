@@ -246,6 +246,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
 
     Expression result = func.getTerm();
     List<TypeArgument> args1 = new ArrayList<>();
+    ClassDefinition thisClass = func.getThisClass();
+    if (thisClass != null) {
+      args1.add(TypeArg(ClassCall(thisClass)));
+    }
     splitArguments(getFunctionType(func), args1, myContext);
     int numberOfArgs = numberOfVariables(args1);
     if (myMode == Mode.WHNF && numberOfArgs > args.size() || result == null) {
@@ -253,7 +257,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
     }
 
     List<Expression> args2 = new ArrayList<>(numberOfArgs);
-    int numberOfSubstArgs = numberOfVariables(func.getArguments());
+    int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (thisClass != null ? 1 : 0);
     for (int i = numberOfArgs - numberOfSubstArgs; i < numberOfArgs - args.size(); ++i) {
       args2.add(Index(i));
     }
