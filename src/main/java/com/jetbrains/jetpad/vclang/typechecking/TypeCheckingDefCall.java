@@ -63,48 +63,29 @@ public class TypeCheckingDefCall {
       return new CheckTypeVisitor.OKResult(definition.getDefCall(), definition.getType(), null);
     }
 
-    DefCallResult result = typeCheckNamespace(expr);
+    DefCallResult result = typeCheckNamespace(expr, null);
     if (result == null) {
       return null;
     }
-    if (result.result != null) {
-      return result.result;
-    }
-    if (result.member == null) {
-      return result.baseResult;
-    }
-    if (result.member.definition == null) {
+    if (result.baseResult == null) {
       TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not available here or not a definition", expr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
-    if (result.member.definition instanceof FunctionDefinition && ((FunctionDefinition) result.member.definition).typeHasErrors() || !(result.member.definition instanceof FunctionDefinition) && result.member.definition.hasErrors()) {
-      TypeCheckingError error = new HasErrors(result.member.definition.getName(), expr);
-      expr.setWellTyped(myLocalContext, Error(result.member.definition.getDefCall(), error));
+
+    return result.baseResult;
+  }
+
+  private CheckTypeVisitor.OKResult checkDefinition(Definition definition, Abstract.Expression expr) {
+    if (definition instanceof FunctionDefinition && ((FunctionDefinition) definition).typeHasErrors() || !(definition instanceof FunctionDefinition) && definition.hasErrors()) {
+      TypeCheckingError error = new HasErrors(definition.getName(), expr);
+      expr.setWellTyped(myLocalContext, Error(definition.getDefCall(), error));
       myErrorReporter.report(error);
       return null;
-    }
-
-    CheckTypeVisitor.OKResult okResult = result.baseResult == null ? new CheckTypeVisitor.OKResult(null, null, null) : (CheckTypeVisitor.OKResult) result.baseResult;
-    Expression thisExpr = okResult.expression;
-    DefCallExpression expression = result.member.definition.getDefCall();
-    okResult.type = result.member.definition.getBaseType();
-
-    if (result.member.definition instanceof Constructor) {
-      fixConstructorParameters((Constructor) result.member.definition, okResult);
-    }
-
-    if (thisExpr != null) {
-      okResult.expression = expression.applyThis(thisExpr);
-      if (okResult.type != null) {
-        okResult.type = okResult.type.subst(thisExpr, 0);
-      }
     } else {
-      okResult.expression = expression;
+      return new CheckTypeVisitor.OKResult(definition.getDefCall(), definition.getBaseType(), null);
     }
-
-    return okResult;
   }
 
   private void fixConstructorParameters(Constructor constructor, CheckTypeVisitor.OKResult result) {
@@ -152,17 +133,15 @@ public class TypeCheckingDefCall {
     CheckTypeVisitor.Result baseResult;
     ClassDefinition baseClassDefinition;
     NamespaceMember member;
-    CheckTypeVisitor.OKResult result;
 
-    public DefCallResult(CheckTypeVisitor.Result baseResult, ClassDefinition baseClassDefinition, NamespaceMember member, CheckTypeVisitor.OKResult result) {
+    public DefCallResult(CheckTypeVisitor.Result baseResult, ClassDefinition baseClassDefinition, NamespaceMember member) {
       this.baseResult = baseResult;
       this.baseClassDefinition = baseClassDefinition;
       this.member = member;
-      this.result = result;
     }
   }
 
-  private DefCallResult typeCheckName(Abstract.DefCallExpression expr) {
+  private DefCallResult typeCheckName(Abstract.DefCallExpression expr, String next) {
     Name name = expr.getName();
     ResolvedName resolvedName = expr.getResolvedName();
     if (resolvedName == null) {
@@ -171,7 +150,7 @@ public class TypeCheckingDefCall {
         return null;
       }
       result.type = result.type.liftIndex(0, ((IndexExpression) result.expression).getIndex() + 1);
-      return new DefCallResult(result, null, null, null);
+      return new DefCallResult(result, null, null);
     }
 
     NamespaceMember member = resolvedName.toNamespaceMember();
@@ -183,9 +162,13 @@ public class TypeCheckingDefCall {
       return null;
     }
 
+    return getDefCallResult(member, expr, next);
+  }
+
+  private DefCallResult getDefCallResult(NamespaceMember member, Abstract.Expression expr, String next) {
     Definition definition = member.definition;
-    if (definition == null) {
-      return new DefCallResult(new CheckTypeVisitor.OKResult(null, null, null), null, member, null);
+    if (definition == null || next != null && (definition instanceof ClassDefinition || definition instanceof FunctionDefinition && member.namespace.getMember(next) != null)) {
+      return new DefCallResult(null, null, member);
     }
 
     if (definition.getThisClass() != null) {
@@ -201,16 +184,16 @@ public class TypeCheckingDefCall {
           return null;
         }
 
-        if (!(definition instanceof ClassDefinition) && !(definition instanceof FunctionDefinition)) {
-          CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(definition.getDefCall().applyThis(thisExpr), definition.getBaseType(), null);
-          if (definition instanceof Constructor) {
-            fixConstructorParameters((Constructor) definition, result);
-          }
-          result.type = result.type.subst(thisExpr, 0);
-          return new DefCallResult(result, null, null, null);
-        } else {
-          return new DefCallResult(new CheckTypeVisitor.OKResult(thisExpr, null, null), definition.getThisClass(), member, null);
+        CheckTypeVisitor.OKResult result = checkDefinition(definition, expr);
+        if (result == null) {
+          return null;
         }
+        result.expression = ((DefCallExpression) result.expression).applyThis(thisExpr);
+        if (definition instanceof Constructor) {
+          fixConstructorParameters((Constructor) definition, result);
+        }
+        result.type = result.type.subst(thisExpr, 0);
+        return new DefCallResult(result, null, null);
       } else {
         TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr, getNames(myLocalContext));
         expr.setWellTyped(myLocalContext, Error(null, error));
@@ -218,98 +201,25 @@ public class TypeCheckingDefCall {
         return null;
       }
     } else {
-      if (!(definition instanceof ClassDefinition) && !(definition instanceof FunctionDefinition)) {
-        CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(definition.getDefCall(), definition.getBaseType(), null);
-        if (definition instanceof Constructor) {
-          fixConstructorParameters((Constructor) definition, result);
-        }
-        return new DefCallResult(result, null, null, null);
-      } else {
-        return new DefCallResult(new CheckTypeVisitor.OKResult(null, null, null), null, member, null);
+      CheckTypeVisitor.OKResult result = checkDefinition(definition, expr);
+      if (result == null) {
+        return null;
       }
+      if (definition instanceof Constructor) {
+        fixConstructorParameters((Constructor) definition, result);
+      }
+      return new DefCallResult(result, null, member);
     }
   }
 
-  private DefCallResult typeCheckNamespace(Abstract.DefCallExpression expr) {
-    Abstract.Expression left = expr.getExpression();
-    if (left == null) {
-      return typeCheckName(expr);
-    }
-
-    DefCallResult result;
-    if (left instanceof Abstract.DefCallExpression) {
-      result = typeCheckNamespace(((Abstract.DefCallExpression) left));
-      if (result == null || !(result.baseResult instanceof CheckTypeVisitor.OKResult)) {
-        return result;
-      }
-    } else {
-      CheckTypeVisitor.Result result1 = left.accept(new CheckTypeVisitor(myLocalContext, myErrorReporter, this), null);
-      result = new DefCallResult(result1, null, null, null);
-      if (!(result1 instanceof CheckTypeVisitor.OKResult)) {
-        return result;
-      }
-    }
-
-    if (result.member == null) {
-      CheckTypeVisitor.OKResult okResult = (CheckTypeVisitor.OKResult) result.baseResult;
-      Expression type = okResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
-
-      if (type instanceof ClassCallExpression) {
-        ClassDefinition classDefinition = ((ClassCallExpression) type).getDefinition();
-        /*
-        ResolvedName resolvedName = expr.getResolvedName();
-        ClassField classField;
-        if (resolvedName != null) {
-          classField = classDefinition.getField(resolvedName.name.name);
-          if (classField == null || resolvedName.parent != classDefinition.getParentNamespace()) {
-            TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, classDefinition.getResolvedName());
-            expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
-            myErrorReporter.report(error);
-            return null;
-          }
-        } else {
-          Name name = expr.getName();
-          classField = classDefinition.getField(name.name);
-          if (classField == null) {
-            TypeCheckingError error = new NameDefinedError(false, expr, name, classDefinition.getResolvedName());
-            expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
-            myErrorReporter.report(error);
-            return null;
-          }
-        }
-        return new DefCallResult(new CheckTypeVisitor.OKResult(Apps(FieldCall(classField), okResult.expression), classField.getBaseType().subst(okResult.expression, 0), okResult.equations), null, null, null);
-        */
-        NamespaceMember member = classDefinition.getParentNamespace().getMember(classDefinition.getName().name);
-        assert member != null;
-        result = new DefCallResult(okResult, classDefinition, member, null);
-      } else {
-        if (type instanceof UniverseExpression) {
-          List<Expression> arguments = new ArrayList<>();
-          Expression function = okResult.expression.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(arguments);
-          if (function instanceof DataCallExpression) {
-            CheckTypeVisitor.OKResult conResult = typeCheckConstructor(((DataCallExpression) function).getDefinition(), arguments, expr.getName(), expr);
-            if (conResult == null) {
-              return null;
-            }
-            conResult.equations = okResult.equations;
-            return new DefCallResult(null, null, null, conResult);
-          }
-        }
-
-        TypeCheckingError error = new TypeCheckingError("Expected an expression of a class type or a data type", expr, getNames(myLocalContext));
-        expr.setWellTyped(myLocalContext, Error(okResult.expression, error));
-        myErrorReporter.report(error);
-        return null;
-      }
-    }
-
-    ResolvedName resolvedName = expr.getResolvedName();
+  private DefCallResult nextResult(DefCallResult result, Abstract.DefCallExpression expr, String next) {
     NamespaceMember member;
+    ResolvedName resolvedName = expr.getResolvedName();
     if (resolvedName != null) {
       member = result.member.namespace.getMember(resolvedName.name.name);
       if (member == null || resolvedName.parent != member.namespace.getParent()) {
         TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, resolvedName.parent.getResolvedName());
-        expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
+        expr.setWellTyped(myLocalContext, Error(result.baseResult == null ? null : result.baseResult.expression, error));
         myErrorReporter.report(error);
         return null;
       }
@@ -318,21 +228,103 @@ public class TypeCheckingDefCall {
       member = result.member.namespace.getMember(name.name);
       if (member == null) {
         TypeCheckingError error = new NameDefinedError(false, expr, name, new ResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
-        expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
+        expr.setWellTyped(myLocalContext, Error(result.baseResult == null ? null : result.baseResult.expression, error));
         myErrorReporter.report(error);
         return null;
       }
     }
 
-    if (member.definition != null && member.definition.getThisClass() != result.baseClassDefinition) {
-      TypeCheckingError error = new TypeCheckingError("Definition '" + member.definition.getName() + "' cannot be called from here", expr, getNames(myLocalContext));
-      expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
-      myErrorReporter.report(error);
-      return null;
+    if (!(member.definition == null || next != null && (member.definition instanceof ClassDefinition || member.definition instanceof FunctionDefinition && member.namespace.getMember(next) != null))) {
+      if (result.baseResult instanceof CheckTypeVisitor.OKResult) {
+        if (result.baseClassDefinition != null && result.baseClassDefinition == member.definition.getThisClass()) {
+          CheckTypeVisitor.OKResult okResult = checkDefinition(member.definition, expr);
+          if (okResult == null) {
+            return null;
+          }
+          okResult.expression = ((DefCallExpression) okResult.expression).applyThis(result.baseResult.expression);
+          okResult.equations = result.baseResult.equations;
+          if (member.definition instanceof Constructor) {
+            fixConstructorParameters((Constructor) member.definition, okResult);
+          }
+          okResult.type = okResult.type.subst(result.baseResult.expression, 0);
+          result.baseResult = okResult;
+          result.baseClassDefinition = null;
+          result.member = null;
+          return result;
+        } else {
+          TypeCheckingError error = new TypeCheckingError("Definition '" + member.definition.getName() + "' cannot be called from here", expr, getNames(myLocalContext));
+          expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
+          myErrorReporter.report(error);
+          return null;
+        }
+      } else {
+        return getDefCallResult(member, expr, next);
+      }
+    }
+    if (member.definition == null && next == null) {
+      result.baseResult = null;
     }
 
     result.member = member;
     return result;
+  }
+
+  private DefCallResult typeCheckNamespace(Abstract.DefCallExpression expr, String next) {
+    Name name = expr.getName();
+    Abstract.Expression left = expr.getExpression();
+    if (left == null) {
+      return typeCheckName(expr, next);
+    }
+
+    DefCallResult result;
+    if (left instanceof Abstract.DefCallExpression) {
+      result = typeCheckNamespace((Abstract.DefCallExpression) left, name.name);
+      if (result == null || result.baseResult != null && !(result.baseResult instanceof CheckTypeVisitor.OKResult)) {
+        return result;
+      }
+    } else {
+      CheckTypeVisitor.Result result1 = left.accept(new CheckTypeVisitor(myLocalContext, myErrorReporter, this), null);
+      if (result1 == null) {
+        return null;
+      }
+      result = new DefCallResult(result1, null, null);
+    }
+
+    if (result.baseResult != null) {
+      if (!(result.baseResult instanceof CheckTypeVisitor.OKResult)) {
+        return result;
+      }
+
+      if (result.member == null) {
+        CheckTypeVisitor.OKResult okResult = (CheckTypeVisitor.OKResult) result.baseResult;
+        Expression type = okResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
+
+        if (type instanceof ClassCallExpression) {
+          result.baseClassDefinition = ((ClassCallExpression) type).getDefinition();
+          result.member = result.baseClassDefinition.getParentNamespace().getMember(result.baseClassDefinition.getName().name);
+        } else {
+          if (type instanceof UniverseExpression) {
+            List<Expression> arguments = new ArrayList<>();
+            Expression function = okResult.expression.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(arguments);
+            if (function instanceof DataCallExpression) {
+              CheckTypeVisitor.OKResult conResult = typeCheckConstructor(((DataCallExpression) function).getDefinition(), arguments, name, expr);
+              if (conResult == null) {
+                return null;
+              }
+              conResult.equations = okResult.equations;
+              return new DefCallResult(conResult, null, null);
+            }
+          }
+
+          TypeCheckingError error = new TypeCheckingError("Expected an expression of a class type or a data type", expr, getNames(myLocalContext));
+          expr.setWellTyped(myLocalContext, Error(okResult.expression, error));
+          myErrorReporter.report(error);
+          return null;
+        }
+      }
+    }
+
+    return nextResult(result, expr, next);
   }
 
   private CheckTypeVisitor.OKResult typeCheckConstructor(DataDefinition dataDefinition, List<Expression> arguments, Name conName, Abstract.Expression expr) {

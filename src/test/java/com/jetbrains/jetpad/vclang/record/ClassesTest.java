@@ -358,4 +358,157 @@ public class ClassesTest {
         "  \\abstract y : path (\\lam _ => a.x) = path (\\lam _ => a.x)\n" +
         "}");
   }
+
+  @Test
+  public void fieldCallWithArg0() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\class B {\n" +
+        "  \\abstract a : A\n" +
+        "}\n" +
+        "\\static \\function y (b : B) => b.a.x");
+  }
+
+  @Test
+  public void fieldCallWithArg1() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\class B {\n" +
+        "  \\abstract a : A\n" +
+        "}\n" +
+        "\\static \\function y (b : Nat -> B) => (b 0).a.x");
+  }
+
+  @Test
+  public void fieldCallWithArg2() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+            "  \\abstract x : Nat\n" +
+            "}\n" +
+            "\\static \\class B {\n" +
+            "  \\abstract a : Nat -> A\n" +
+            "}\n" +
+            "\\static \\function y (b : B) => (b.a 1).x");
+  }
+
+  @Test
+  public void fieldCallWithArg3() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\class B {\n" +
+        "  \\abstract a : Nat -> A\n" +
+        "}\n" +
+        "\\static \\function y (b : Nat -> B) => ((b 0).a 1).x");
+  }
+
+  @Test
+  public void staticDynamicCall() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\class B {\n" +
+        "    \\static \\function f => 0\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function y (a : A) => a.B.f");
+  }
+
+  @Test
+  public void staticDynamicCall2() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\class B {\n" +
+        "    \\static \\class C {\n" +
+        "      \\static \\function f => 0\n" +
+        "    }\n" +
+        "  }\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\function y (a : A) => a.B.C.f");
+  }
+
+  @Test
+  public void staticDynamicCall3() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\class B {\n" +
+        "    \\static \\class C {\n" +
+        "      \\static \\function f => 0\n" +
+        "    }\n" +
+        "  }\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\function y (a : A) : \\Prop => a.B.C");
+  }
+
+  @Test
+  public void staticDynamicCall4() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\class B {\n" +
+        "    \\static \\class C {\n" +
+        "      \\static \\function f => 0\n" +
+        "    }\n" +
+        "  }\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\function y (a : A) : \\Prop => a.B");
+  }
+
+  @Test
+  public void staticDynamicCall5() {
+    typeCheckClass(
+        "\\static \\class D {\n" +
+        "  \\class E {\n" +
+        "    \\static \\function f => 0\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\class A {\n" +
+        "  \\class B {\n" +
+        "    \\static \\class C {\n" +
+        "      \\static \\function d : D => \\new D\n" +
+        "    }\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
+  }
+
+  @Test
+  public void staticDynamicCall6() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\class B {\n" +
+        "    \\static \\class C {\n" +
+        "      \\static \\function d => e\n" +
+        "        \\where \\static \\function e => 0\n" +
+        "    }\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function y (a : A) => a.B.C.d.e");
+  }
+
+  @Test
+  public void staticDynamicCall7() {
+    typeCheckClass(
+        "\\static \\class D {\n" +
+        "  \\class E {\n" +
+        "    \\static \\function f => 0\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\class A {\n" +
+        "  \\class B {\n" +
+        "    \\static \\class C {\n" +
+        "      \\static \\function d : D => \\new D\n" +
+        "        \\where\n" +
+        "          \\static \\function E => 0\n" +
+        "    }\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function y (a : A) : a.B.C.d.E = 0 => path (\\lam _ => 0)");
+  }
 }
