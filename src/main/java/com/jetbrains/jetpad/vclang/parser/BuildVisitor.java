@@ -302,7 +302,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     List<Concrete.Statement> statements = ctx.where() == null ? Collections.<Concrete.Statement>emptyList() : visitStatementList(ctx.where().statement());
-    return new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, arguments, resultType, arrow, term, false, null, statements);
+    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(tokenPosition(ctx.getStart()), identifier.getName(), precedence, arguments, resultType, arrow, term, false, null, statements);
+    for (Concrete.Statement statement : statements) {
+      if (statement instanceof Concrete.DefineStatement) {
+        ((Concrete.DefineStatement) statement).setParentDefinition(result);
+      }
+    }
+    return result;
   }
 
   private List<Concrete.Argument> visitFunctionArguments(List<TeleContext> teleCtx, boolean overridden) {
