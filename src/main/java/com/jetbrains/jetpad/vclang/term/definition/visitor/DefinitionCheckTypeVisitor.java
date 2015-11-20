@@ -118,7 +118,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<? extends Abstract.Argument> arguments = def.getArguments();
     List<Argument> typedArguments = new ArrayList<>(arguments.size());
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def, myNamespace);
     if (thisClass != null) {
       context.add(new TypedBinding("\\this", ClassCall(thisClass)));
@@ -342,8 +342,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Expression typedResultType;
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("\\this", ClassCall(thisClass)));
-    CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
-    visitor.setThisClass(thisClass);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).thisClass(thisClass).build();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
 
     int index = 0;
@@ -417,7 +416,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Universe typedUniverse = new Universe.Type(0, Universe.Type.PROP);
 
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def, myNamespace);
     if (thisClass != null) {
       context.add(new TypedBinding("\\this", ClassCall(thisClass)));

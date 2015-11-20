@@ -19,6 +19,10 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   public abstract Expression getType(List<Binding> context);
 
+  public Expression apply(ArgumentExpression arg) {
+    return Apps(this, arg);
+  }
+
   @Override
   public void setWellTyped(List<Binding> context, Expression wellTyped) {}
 
