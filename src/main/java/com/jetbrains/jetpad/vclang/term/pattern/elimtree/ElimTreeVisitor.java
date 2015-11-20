@@ -7,7 +7,7 @@ import java.util.List;
 public interface ElimTreeVisitor<T> {
   T visitElimOK(boolean isExplicit, Constructor constructor, List<T> children);
   T visitElimIncomplete(boolean isExplicit, Constructor constructor, List<T> children);
-  T visitFailed(boolean isExplicit, Constructor constructor, List<T> children);
+  T visitElimFailed(boolean isExplicit, Constructor constructor, List<T> children);
 
   T visitName(boolean isExplicit);
   T visitFailed(boolean isExplicit);

@@ -32,22 +32,22 @@ public class ElimTreeExpander {
 
   public static abstract class Branch<T> {
     public final T result;
+    public final List<Integer> indices;
 
-    protected Branch(T result) {
+    protected Branch(T result, List<Integer> indices) {
       this.result = result;
+      this.indices = indices;
     }
   }
 
   public static class OKBranch<T> extends Branch<T> {
     public final Expression expression;
     public final List<Binding> context;
-    public final List<Integer> good;
 
-    OKBranch(Expression expression, List<Binding> context, List<Integer> good, T result) {
-      super(result);
+    OKBranch(Expression expression, List<Binding> context, List<Integer> indicies, T result) {
+      super(result, indicies);
       this.expression = expression;
       this.context = context;
-      this.good = good;
     }
   }
 
@@ -55,17 +55,26 @@ public class ElimTreeExpander {
     public final List<OKBranch<T>> maybeBranches;
 
     IncompleteBranch(List<OKBranch<T>> maybeBranches, T result) {
-      super(result);
+      super(result, Collections.<Integer>emptyList());
       this.maybeBranches = maybeBranches;
     }
   }
 
   public static class FailedBranch<T> extends Branch<T> {
-    public final List<Integer> bad;
+    FailedBranch(List<Integer> indicies, T result) {
+      super(result, indicies);
+    }
+  }
 
-    FailedBranch(List<Integer> bad, T result) {
-      super(result);
-      this.bad = bad;
+  private static class ConstructorInfo {
+    private final Constructor constructor;
+    private final List<TypeArgument> arguments;
+    private final List<Expression> parameters;
+
+    private ConstructorInfo(Constructor constructor, List<TypeArgument> arguments, List<Expression> parameters) {
+      this.constructor = constructor;
+      this.arguments = arguments;
+      this.parameters = parameters;
     }
   }
 
@@ -93,10 +102,9 @@ public class ElimTreeExpander {
           new OKBranch<T>(Index(0), Collections.<Binding>singletonList(new TypedBinding((String) null, type)), null, null)),
           visitor.visitIncomplete(isExplicit, null)));
     }
+
     DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
-    List<Constructor> validConstructors = new ArrayList<>();
-    List<List<Expression>> constructorMatchedParameters = new ArrayList<>();
-    List<List<TypeArgument>> validConstructorArgs = new ArrayList<>();
+    List<ConstructorInfo> validConstructors = new ArrayList<>();
     for (Constructor constructor : dataType.getConstructors()) {
       if (constructor.hasErrors())
         continue;
@@ -114,8 +122,7 @@ public class ElimTreeExpander {
             if (patterns.get(i) instanceof ConstructorPattern)
               bad.add(i);
           }
-          return Collections.<Branch<T>>singletonList(new FailedBranch<>(bad,
-              visitor.visitFailed(isExplicit)));
+          return Collections.<Branch<T>>singletonList(new FailedBranch<>(bad, visitor.visitFailed(isExplicit)));
         } else if (matchResult instanceof Utils.PatternMatchFailedResult) {
           continue;
         } else if (matchResult instanceof Utils.PatternMatchOKResult) {
@@ -124,81 +131,81 @@ public class ElimTreeExpander {
       } else {
         matchedParameters = parameters;
       }
-      constructorMatchedParameters.add(matchedParameters);
-      validConstructors.add(constructor);
-      validConstructorArgs.add(new ArrayList<TypeArgument>());
-      splitArguments(constructor.getType().subst(matchedParameters, 0), validConstructorArgs.get(validConstructorArgs.size() - 1), myLocalContext);
+
+      ArrayList<TypeArgument> arguments = new ArrayList<>();
+      validConstructors.add(new ConstructorInfo(constructor, arguments, matchedParameters));
+      splitArguments(constructor.getType().subst(matchedParameters, 0), arguments, myLocalContext);
     }
 
     List<Branch<T>> result = new ArrayList<>();
-    for (int i = 0; i < validConstructors.size(); i++) {
-      List<Integer> goodPatternIdxs = new ArrayList<>();
-      List<List<Pattern>> goodPatternNested = new ArrayList<>();
-      for (int j = 0; j < validConstructorArgs.get(i).size(); j++) {
-        goodPatternNested.add(new ArrayList<Pattern>());
-      }
+    for (ConstructorInfo info : validConstructors) {
+      MatchingPatterns matching = new MatchingPatterns(patterns, info.constructor, info.arguments);
 
-      for (int j = 0; j < patterns.size(); j++) {
-        if (patterns.get(j) instanceof NamePattern || patterns.get(j) instanceof AnyConstructorPattern) {
-          goodPatternIdxs.add(j);
-          for (int k = 0; k < goodPatternNested.size(); k++) {
-            goodPatternNested.get(k).add(match(validConstructorArgs.get(i).get(k).getExplicit(), null));
-          }
-        } else if (patterns.get(j) instanceof ConstructorPattern
-            && ((ConstructorPattern) patterns.get(j)).getConstructor() == validConstructors.get(i)) {
-          goodPatternIdxs.add(j);
-          for (int k = 0; k < goodPatternNested.size(); k++) {
-            goodPatternNested.get(k).add(((ConstructorPattern) patterns.get(j)).getPatterns().get(k));
-          }
-        }
-      }
-
-      if (goodPatternIdxs.isEmpty()) {
+      if (matching.indices.isEmpty()) {
         List<Binding> ctx = new ArrayList<>();
-        Expression expr = ConCall(validConstructors.get(i), constructorMatchedParameters.get(i));
-        for (int j = 0; j < validConstructorArgs.get(i).size(); j++) {
-          ctx.add(new TypedBinding((String) null, validConstructorArgs.get(i).get(j).getType()));
+        Expression expr = ConCall(info.constructor, info.parameters);
+        for (TypeArgument arg : info.arguments) {
+          ctx.add(new TypedBinding((String) null, arg.getType()));
           expr = Apps(expr.liftIndex(0, 1), Index(0));
         }
-        result.add(new IncompleteBranch<>(Collections.singletonList(
-            new OKBranch<T>(expr, ctx, null, null)), visitor.visitIncomplete(isExplicit, validConstructors.get(i))));
+        result.add(new IncompleteBranch<>(Collections.singletonList(new OKBranch<T>(expr, ctx, null, null)), visitor.visitIncomplete(isExplicit, info.constructor)));
         continue;
       }
 
-      List<ArgsBranch<T>> nestedBranches = new ArgsElimTreeExpander<T>(myLocalContext).expandElimTree(visitor, getTypes(validConstructorArgs.get(i)), goodPatternNested, goodPatternIdxs.size());
+      List<ArgsBranch<T>> nestedBranches = new ArgsElimTreeExpander<T>(myLocalContext).expandElimTree(visitor, getTypes(info.arguments), matching.nestedPatterns, matching.indices.size());
       for (ArgsBranch<T> branch : nestedBranches) {
         if (branch instanceof ArgsIncompleteBranch) {
           List<OKBranch<T>> maybeBranches = new ArrayList<>();
           for (ArgsOKBranch<T> maybeBranch : ((ArgsIncompleteBranch<T>) branch).maybeBranches) {
-            Expression expr = ConCall(validConstructors.get(i), constructorMatchedParameters.get(i)).liftIndex(0, maybeBranch.context.size());
-            for (Expression subExpr : maybeBranch.expressions) {
-              expr = Apps(expr, subExpr);
-            }
-            maybeBranches.add(new OKBranch<>(expr, maybeBranch.context, null,
-                visitor.visitElimIncomplete(isExplicit, validConstructors.get(i), maybeBranch.results)));
+            Expression expr = ConCall(info.constructor, info.parameters).liftIndex(0, maybeBranch.context.size());
+            expr = Apps(expr, maybeBranch.expressions.toArray(new Expression[maybeBranch.expressions.size()]));
+            maybeBranches.add(new OKBranch<T>(expr, maybeBranch.context, null, null));
           }
-          result.add(new IncompleteBranch<>(maybeBranches, visitor.visitElimIncomplete(isExplicit, validConstructors.get(i), ((ArgsIncompleteBranch<T>) branch).results)));
+          result.add(new IncompleteBranch<>(maybeBranches, visitor.visitElimIncomplete(isExplicit, info.constructor, branch.results)));
         } else if (branch instanceof ArgsFailedBranch) {
-          List<Integer> bad = new ArrayList<>();
-          for (int j : ((ArgsFailedBranch<T>) branch).bad)
-            bad.add(j);
-          result.add(new FailedBranch<>(bad, visitor.visitFailed(isExplicit, validConstructors.get(i), ((ArgsFailedBranch<T>) branch).results)));
+          result.add(new FailedBranch<>(recalcIndicies(matching.indices, branch.indices), visitor.visitElimFailed(isExplicit, info.constructor, branch.results)));
         } else if (branch instanceof ArgsOKBranch){
           ArgsOKBranch<T> okBranch = (ArgsOKBranch<T>) branch;
-          Expression expr = ConCall(validConstructors.get(i), constructorMatchedParameters.get(i)).liftIndex(0, okBranch.context.size());
-          for (Expression subExpr : okBranch.expressions) {
-            expr = Apps(expr, subExpr);
-          }
-          List<Integer> good = new ArrayList<>();
-          for (int j : okBranch.good)
-            good.add(goodPatternIdxs.get(j));
-
-          result.add(new OKBranch<>(expr, okBranch.context,
-              good, visitor.visitElimOK(isExplicit, validConstructors.get(i), okBranch.results)));
+          Expression expr = ConCall(info.constructor, info.parameters).liftIndex(0, okBranch.context.size());
+          expr = Apps(expr, okBranch.expressions.toArray(new Expression[okBranch.expressions.size()]));
+          result.add(new OKBranch<>(expr, okBranch.context, recalcIndicies(matching.indices, okBranch.indices), visitor.visitElimOK(isExplicit, info.constructor, branch.results)));
         }
       }
     }
 
     return result;
+  }
+
+  private static class MatchingPatterns {
+    private final List<Integer> indices = new ArrayList<>();
+    private final List<List<Pattern>> nestedPatterns = new ArrayList<>();
+
+    private MatchingPatterns(List<Pattern> patterns, Constructor constructor, List<TypeArgument> constructorArgs) {
+      for (int j = 0; j < constructorArgs.size(); j++) {
+        nestedPatterns.add(new ArrayList<Pattern>());
+      }
+
+      for (int j = 0; j < patterns.size(); j++) {
+        if (patterns.get(j) instanceof NamePattern || patterns.get(j) instanceof AnyConstructorPattern) {
+          indices.add(j);
+          for (int k = 0; k < nestedPatterns.size(); k++) {
+            nestedPatterns.get(k).add(match(constructorArgs.get(k).getExplicit(), null));
+          }
+        } else if (patterns.get(j) instanceof ConstructorPattern &&
+            ((ConstructorPattern) patterns.get(j)).getConstructor() == constructor) {
+          indices.add(j);
+          for (int k = 0; k < nestedPatterns.size(); k++) {
+            nestedPatterns.get(k).add(((ConstructorPattern) patterns.get(j)).getPatterns().get(k));
+          }
+        }
+      }
+    }
+  }
+
+  public static ArrayList<Integer> recalcIndicies(List<Integer> valid, List<Integer> newValid) {
+    ArrayList<Integer> indicies = new ArrayList<>();
+    for (int i : newValid)
+      indicies.add(valid.get(i));
+    return indicies;
   }
 }

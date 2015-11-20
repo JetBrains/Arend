@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsBranch;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsFailedBranch;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsIncompleteBranch;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
@@ -1302,34 +1301,40 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<Binding> tail = new ArrayList<>(myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()));
     myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()).clear();
-    List<ArgsBranch<CoverageChecker.CoverageCheckingBranch>> branches = new ArgsElimTreeExpander<CoverageChecker.CoverageCheckingBranch>(myLocalContext).expandElimTree(new CoverageChecker(), types, patterns, clauses.size() + emptyPatterns.size());
+    List<ArgsBranch<CoverageChecker.CoverageCheckingResult>> branches = new ArgsElimTreeExpander<CoverageChecker.CoverageCheckingResult>(myLocalContext).expandElimTree(new CoverageChecker(), types, patterns, clauses.size() + emptyPatterns.size());
     myLocalContext.addAll(tail);
     if (branches == null)
       return null;
 
     StringBuilder coverageCheckMsg = new StringBuilder();
     coverageCheckMsg.append("Coverage checking failed: \n");
-    for (ArgsBranch<CoverageChecker.CoverageCheckingBranch> branch : branches) {
+    for (ArgsBranch<CoverageChecker.CoverageCheckingResult> branch : branches) {
       if (branch instanceof ArgsIncompleteBranch) {
-        ArgsIncompleteBranch incompleteBranch = (ArgsIncompleteBranch) branch;
         coverageCheckMsg.append("missing pattern: ");
         for (IndexExpression elimIdx : elimExprs) {
-          coverageCheckMsg.append(incompleteBranch.results.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
-          if (incompleteBranch.results instanceof CoverageChecker.CoverageCheckingIncompleteBranch)
+          CoverageChecker.CoverageCheckingResult nestedResult = branch.results.get(types.size() - 1 - elimIdx.getIndex());
+          if (nestedResult instanceof CoverageChecker.CoverageCheckingOKResult) {
+            coverageCheckMsg.append(((CoverageChecker.CoverageCheckingOKResult)nestedResult).branchPattern).append(" ");
+          } else if (nestedResult instanceof CoverageChecker.CoverageCheckingIncompleteResult) {
+            coverageCheckMsg.append(((CoverageChecker.CoverageCheckingIncompleteResult)nestedResult).noncoveredPattern).append(" ");
             break;
+          }
         }
         coverageCheckMsg.append("\n");
         wasError = true;
-      } else if (branch instanceof ArgsFailedBranch) {
-        ArgsFailedBranch failedBranch = (ArgsFailedBranch) branch;
+      } else if (branch instanceof ArgsElimTreeExpander.ArgsFailedBranch) {
         coverageCheckMsg.append("failed match in branch: ");
         for (IndexExpression elimIdx : elimExprs) {
-          coverageCheckMsg.append(failedBranch.results.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
-          if (failedBranch.results instanceof CoverageChecker.CoverageCheckingFailedBranch)
+          CoverageChecker.CoverageCheckingResult nestedResult = branch.results.get(types.size() - 1 - elimIdx.getIndex());
+          if (nestedResult instanceof CoverageChecker.CoverageCheckingOKResult) {
+            coverageCheckMsg.append(((CoverageChecker.CoverageCheckingOKResult)nestedResult).branchPattern).append(" ");
+          } else if (nestedResult instanceof CoverageChecker.CoverageCheckingFailedResult) {
+            coverageCheckMsg.append(((CoverageChecker.CoverageCheckingFailedResult)nestedResult).failedPattern).append(" ");
             break;
+          }
         }
         coverageCheckMsg.append(" because of ");
-        for (int i : ((ArgsFailedBranch<CoverageChecker.CoverageCheckingBranch>) branch).bad) {
+        for (int i : branch.indices) {
           for (Pattern pattern : clauses.get(i).getPatterns()) {
             coverageCheckMsg.append(pattern.toString()).append(" ");
           }
@@ -1346,13 +1351,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     for (int i = 0; i < emptyPatterns.size(); i++) {
-      for (ArgsBranch<CoverageChecker.CoverageCheckingBranch> branch : branches) {
-        if (branch instanceof ArgsElimTreeExpander.ArgsOKBranch
-            && ((ArgsElimTreeExpander.ArgsOKBranch) branch).good.contains(clauses.size() + i)) {
+      for (ArgsBranch<CoverageChecker.CoverageCheckingResult> branch : branches) {
+        if (branch instanceof ArgsElimTreeExpander.ArgsOKBranch && branch.indices.contains(clauses.size() + i)) {
           StringBuilder errorMsg = new StringBuilder();
           errorMsg.append("Empty clause is reachable through: ");
-          for (IndexExpression elimIdx : elimExprs)
-            errorMsg.append(((ArgsElimTreeExpander.ArgsOKBranch<CoverageChecker.CoverageCheckingBranch>) branch).results.get(types.size() - 1 - elimIdx.getIndex())).append(" ");
+          for (IndexExpression elimIdx : elimExprs) {
+            CoverageChecker.CoverageCheckingResult nestedResult = branch.results.get(types.size() - 1 - elimIdx.getIndex());
+            errorMsg.append(((CoverageChecker.CoverageCheckingOKResult)nestedResult).branchPattern).append(" ");
+          }
           error = new TypeCheckingError(errorMsg.toString(), emptyClauses.get(i), getNames(myLocalContext));
           expr.setWellTyped(myLocalContext, Error(null, error));
           myErrorReporter.report(error);

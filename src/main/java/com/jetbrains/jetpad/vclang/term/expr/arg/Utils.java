@@ -88,6 +88,25 @@ public class Utils {
     return result;
   }
 
+  public static class MultiContextSaver implements AutoCloseable {
+    private final List[] myContexts;
+    private final int[] myOldContextSizes;
+
+    public MultiContextSaver(List... contexts) {
+      myContexts = contexts;
+      myOldContextSizes = new int[contexts.length];
+      for (int i = 0; i < contexts.length; i++) {
+        myOldContextSizes[i] = contexts[i].size();
+      }
+    }
+
+    @Override
+    public void close() {
+      for (int i = 0; i < myContexts.length; i++)
+        trimToSize(myContexts[i], myOldContextSizes[i]);
+    }
+  }
+
   public static class ContextSaver implements AutoCloseable {
     private final List myContext;
     private final int myOldContextSize;

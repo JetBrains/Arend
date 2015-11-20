@@ -10,47 +10,45 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeExpander.OKBran
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
+import static com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeExpander.recalcIndicies;
 
 public class ArgsElimTreeExpander<T> {
   public static abstract class ArgsBranch<T> {
     public final List<T> results;
+    public final List<Integer> indices;
 
-    protected ArgsBranch(List<T> results) {
+    protected ArgsBranch(List<T> results, List<Integer> indices) {
       this.results = results;
+      this.indices = indices;
     }
   }
 
   public static class ArgsOKBranch<T> extends ArgsBranch<T> {
     public final List<Expression> expressions;
     public final List<Binding> context;
-    public final List<Integer> good;
 
-    private ArgsOKBranch(List<Expression> expressions, List<Binding> context, List<Integer> good, List<T> results) {
-      super(results);
+    private ArgsOKBranch(List<Expression> expressions, List<Binding> context, List<Integer> indicies, List<T> results) {
+      super(results, indicies);
       this.expressions = expressions;
       this.context = context;
-      this.good = good;
     }
   }
 
   public static class ArgsIncompleteBranch<T> extends ArgsBranch<T> {
-    public final List<ArgsOKBranch<T>> maybeBranches;
+    public final List<ArgsOKBranch<T>> maybeBranches = new ArrayList<>();
 
-    private ArgsIncompleteBranch(List<ArgsOKBranch<T>> maybeBranches, List<T> results) {
-      super(results);
-      this.maybeBranches = maybeBranches;
+    private ArgsIncompleteBranch(List<T> results) {
+      super(results, Collections.<Integer>emptyList());
     }
   }
 
   public static class ArgsFailedBranch<T> extends ArgsBranch<T> {
-    public final List<Integer> bad;
-
-    private ArgsFailedBranch(List<Integer> bad, List<T> results) {
-      super(results);
-      this.bad = bad;
+    private ArgsFailedBranch(List<Integer> indicies, List<T> results) {
+      super(results, indicies);
     }
   }
 
@@ -58,9 +56,7 @@ public class ArgsElimTreeExpander<T> {
   private final int myOldContextSize;
   private List<List<Pattern>> myNestedPatterns;
 
-  private final List<T> currentResults = new ArrayList<>();
-  private final List<Expression> currentExpressions = new ArrayList<>();
-  private final List<Integer> expressionLifting = new ArrayList<>();
+  private final List<OKBranch<T>> currentOKBranches = new ArrayList<>();
 
   private List<ArgsBranch<T>> result;
 
@@ -81,13 +77,13 @@ public class ArgsElimTreeExpander<T> {
 
   private List<ArgsBranch<T>> expandElimTreeRecurse(ElimTreeVisitor<T> visitor, List<Integer> valid, List<Expression> types, ArgsIncompleteBranch<T> incomplete) {
     if (types.isEmpty()) {
-      List<Expression> expressions = new ArrayList<>(currentExpressions);
-      for (int lift = 0, i = expressions.size() - 1; i >= 0; lift += expressionLifting.get(i), --i) {
-        expressions.set(i, expressions.get(i).liftIndex(0, lift));
+      List<Expression> expressions = new ArrayList<>(currentOKBranches.size());
+      for (int lift = 0, i = currentOKBranches.size() - 1; i >= 0; lift += currentOKBranches.get(i).context.size(), --i) {
+        expressions.add(currentOKBranches.get(i).expression.liftIndex(0, lift));
       }
+      Collections.reverse(expressions);
 
-      ArgsOKBranch<T> okBranch = new ArgsOKBranch<>(expressions,
-          new ArrayList<>(myLocalContext.subList(myOldContextSize, myLocalContext.size())), valid, new ArrayList<>(currentResults));
+      ArgsOKBranch<T> okBranch = new ArgsOKBranch<>(expressions, new ArrayList<>(myLocalContext.subList(myOldContextSize, myLocalContext.size())), valid, retrieveResults());
       if (incomplete == null) {
         result.add(okBranch);
       } else {
@@ -104,60 +100,42 @@ public class ArgsElimTreeExpander<T> {
     final boolean isExplicit = myNestedPatterns.get(myNestedPatterns.size() - types.size()).isEmpty() || myNestedPatterns.get(myNestedPatterns.size() - types.size()).get(0).getExplicit();
     List<Branch<T>> nestedBranches = new ElimTreeExpander(myLocalContext).expandElimTree(visitor, patterns, types.get(0), isExplicit);
 
-    if (nestedBranches == null)
-      return null;
-
     for (Branch<T> branch : nestedBranches) {
       if (branch instanceof OKBranch) {
-        assert incomplete == null;
-        try (Utils.ContextSaver ignore = new Utils.ContextSaver(myLocalContext)) {
+        try (Utils.MultiContextSaver ignore = new Utils.MultiContextSaver(myLocalContext, currentOKBranches)) {
           OKBranch<T> okBranch = (OKBranch<T>) branch;
           myLocalContext.addAll(okBranch.context);
-
-          currentResults.add(okBranch.result);
-          currentExpressions.add(okBranch.expression);
-          expressionLifting.add(okBranch.context.size());
-
-          List<Integer> newValid = new ArrayList<>();
-          for (int i : okBranch.good)
-            newValid.add(valid.get(i));
-
-          expandElimTreeRecurse(visitor, newValid, substituteInTypes(types, okBranch), null);
-
-          expressionLifting.remove(expressionLifting.size() - 1);
-          currentExpressions.remove(currentExpressions.size() - 1);
-          currentResults.remove(currentResults.size() - 1);
+          currentOKBranches.add(okBranch);
+          expandElimTreeRecurse(visitor, recalcIndicies(valid, okBranch.indices), substituteInTypes(types, okBranch), null);
         }
       } else if (branch instanceof IncompleteBranch) {
-        List<T> results = new ArrayList<>(currentResults);
-        results.add(((IncompleteBranch<T>) branch).result);
-        ArgsIncompleteBranch<T> newIncomplete = incomplete != null ? incomplete
-            : new ArgsIncompleteBranch<>(new ArrayList<ArgsOKBranch<T>>(), results);
+        List<T> results = retrieveResults();
+        results.add(branch.result);
+        ArgsIncompleteBranch<T> newIncomplete = incomplete != null ? incomplete : new ArgsIncompleteBranch<>(results);
 
         for (OKBranch<T> maybeBranch : ((IncompleteBranch<T>) branch).maybeBranches) {
-          try (Utils.ContextSaver ignore = new Utils.ContextSaver(myLocalContext)) {
+          try (Utils.MultiContextSaver ignore = new Utils.MultiContextSaver(myLocalContext, currentOKBranches)) {
             myLocalContext.addAll(maybeBranch.context);
-            currentResults.add(maybeBranch.result);
-            currentExpressions.add(maybeBranch.expression);
-            expressionLifting.add(maybeBranch.context.size());
-            expandElimTreeRecurse(visitor, new ArrayList<Integer>(), substituteInTypes(types, maybeBranch), newIncomplete);
-            expressionLifting.remove(expressionLifting.size() - 1);
-            currentExpressions.remove(currentExpressions.size() - 1);
-            currentResults.remove(currentResults.size() - 1);
+            currentOKBranches.add(maybeBranch);
+            expandElimTreeRecurse(visitor, Collections.<Integer>emptyList(), substituteInTypes(types, maybeBranch), newIncomplete);
           }
         }
       } else if (branch instanceof FailedBranch) {
-        assert incomplete == null;
-        ArrayList<Integer> bad = new ArrayList<>();
-        for (int i : ((FailedBranch<T>) branch).bad)
-          bad.add(valid.get(i));
-        List<T> results = new ArrayList<>(currentResults);
-        results.add(((FailedBranch<T>) branch).result);
-        result.add(new ArgsFailedBranch<>(bad, results));
+        List<T> results = retrieveResults();
+        results.add(branch.result);
+        result.add(new ArgsFailedBranch<>(recalcIndicies(valid, branch.indices), results));
       }
     }
 
     return result;
+  }
+
+  private List<T> retrieveResults() {
+    List<T> results = new ArrayList<>(currentOKBranches.size());
+    for (OKBranch<T> okBranch : currentOKBranches) {
+      results.add(okBranch.result);
+    }
+    return results;
   }
 
   private List<Expression> substituteInTypes(List<Expression> types, OKBranch okBranch) {

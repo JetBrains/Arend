@@ -10,38 +10,62 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.match;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
-public class CoverageChecker implements ElimTreeVisitor<CoverageChecker.CoverageCheckingBranch> {
-  public CoverageChecker() {}
+public class CoverageChecker implements ElimTreeVisitor<CoverageChecker.CoverageCheckingResult> {
+  public static abstract class CoverageCheckingResult {}
 
-  @Override
-  public CoverageChecker.CoverageCheckingBranch visitElimOK(boolean isExplicit, Constructor constructor, List<CoverageCheckingBranch> children) {
-    return new CoverageCheckingOKBranch(new ConstructorPattern(constructor, fillTheRest(constructor, children), isExplicit));
+  public static class CoverageCheckingOKResult extends CoverageCheckingResult {
+    public final Pattern branchPattern;
+
+    CoverageCheckingOKResult(Pattern branchPattern) {
+      this.branchPattern = branchPattern;
+    }
+  }
+
+  public static class CoverageCheckingIncompleteResult extends CoverageCheckingResult {
+    public final Pattern noncoveredPattern;
+
+    CoverageCheckingIncompleteResult(Pattern noncoveredPattern) {
+      this.noncoveredPattern = noncoveredPattern;
+    }
+  }
+
+  public static class CoverageCheckingFailedResult extends CoverageCheckingResult {
+    public final Pattern failedPattern;
+
+    CoverageCheckingFailedResult(Pattern failedPattern) {
+      this.failedPattern = failedPattern;
+    }
   }
 
   @Override
-  public CoverageCheckingBranch visitElimIncomplete(boolean isExplicit, Constructor constructor, List<CoverageCheckingBranch> children) {
-    return new CoverageCheckingIncompleteBranch(new ConstructorPattern(constructor, fillTheRest(constructor, children), isExplicit));
+  public CoverageCheckingResult visitElimOK(boolean isExplicit, Constructor constructor, List<CoverageCheckingResult> children) {
+    return new CoverageCheckingOKResult(new ConstructorPattern(constructor, fillTheRest(constructor, children), isExplicit));
   }
 
-  private List<Pattern> fillTheRest(Constructor constructor, List<CoverageCheckingBranch> children) {
+  @Override
+  public CoverageCheckingResult visitElimIncomplete(boolean isExplicit, Constructor constructor, List<CoverageCheckingResult> children) {
+    return new CoverageCheckingIncompleteResult(new ConstructorPattern(constructor, fillTheRest(constructor, children), isExplicit));
+  }
+
+  @Override
+  public CoverageCheckingResult visitElimFailed(boolean isExplicit, Constructor constructor, List<CoverageCheckingResult> children) {
+    return new CoverageCheckingFailedResult(new ConstructorPattern(constructor, fillTheRest(constructor, children), isExplicit));
+  }
+
+  private List<Pattern> fillTheRest(Constructor constructor, List<CoverageCheckingResult> children) {
     List<Pattern> args = new ArrayList<>();
-    for (CoverageCheckingBranch branch : children) {
-      if (branch instanceof CoverageCheckingOKBranch) {
-        args.add(((CoverageCheckingOKBranch) branch).branchPattern);
-      } else if (branch instanceof CoverageCheckingIncompleteBranch) {
-        args.add(((CoverageCheckingIncompleteBranch) branch).noncoveredPattern);
+    for (CoverageCheckingResult branch : children) {
+      if (branch instanceof CoverageCheckingOKResult) {
+        args.add(((CoverageCheckingOKResult) branch).branchPattern);
+      } else if (branch instanceof CoverageCheckingIncompleteResult) {
+        args.add(((CoverageCheckingIncompleteResult) branch).noncoveredPattern);
         break;
-      } else if (branch instanceof CoverageCheckingFailedBranch){
-        args.add(((CoverageCheckingFailedBranch) branch).failedPattern);
+      } else if (branch instanceof CoverageCheckingFailedResult){
+        args.add(((CoverageCheckingFailedResult) branch).failedPattern);
         break;
       }
     }
     return fillTheRestPatterns(constructor, args);
-  }
-
-  @Override
-  public CoverageCheckingBranch visitFailed(boolean isExplicit, Constructor constructor, List<CoverageCheckingBranch> children) {
-    return new CoverageCheckingFailedBranch(new ConstructorPattern(constructor, fillTheRest(constructor, children), isExplicit));
   }
 
   private List<Pattern> fillTheRestPatterns(Constructor constructor, List<Pattern> args) {
@@ -53,46 +77,21 @@ public class CoverageChecker implements ElimTreeVisitor<CoverageChecker.Coverage
   }
 
   @Override
-  public CoverageCheckingBranch visitIncomplete(boolean isExplicit, Constructor constructor) {
+  public CoverageCheckingResult visitIncomplete(boolean isExplicit, Constructor constructor) {
     if (constructor == null)
-      return new CoverageCheckingIncompleteBranch(match(isExplicit, null));
+      return new CoverageCheckingIncompleteResult(match(isExplicit, null));
     else
-      return new CoverageCheckingIncompleteBranch(new ConstructorPattern(constructor, fillTheRestPatterns(constructor, new ArrayList<Pattern>()), isExplicit));
+      return new CoverageCheckingIncompleteResult(new ConstructorPattern(constructor, fillTheRestPatterns(constructor, new ArrayList<Pattern>()), isExplicit));
   }
 
   @Override
-  public CoverageCheckingBranch visitFailed(boolean isExplicit) {
-    return new CoverageCheckingFailedBranch(match(isExplicit, "*"));
+  public CoverageCheckingResult visitFailed(boolean isExplicit) {
+    return new CoverageCheckingFailedResult(match(isExplicit, "*"));
   }
 
   @Override
-  public CoverageCheckingBranch visitName(boolean isExplicit) {
-    return new CoverageCheckingOKBranch(match(isExplicit, null));
+  public CoverageCheckingResult visitName(boolean isExplicit) {
+    return new CoverageCheckingOKResult(match(isExplicit, null));
   }
 
-  public static abstract class CoverageCheckingBranch {}
-
-  public static class CoverageCheckingOKBranch extends CoverageCheckingBranch {
-    public final Pattern branchPattern;
-
-    CoverageCheckingOKBranch(Pattern branchPattern) {
-      this.branchPattern = branchPattern;
-    }
-  }
-
-  public static class CoverageCheckingIncompleteBranch extends CoverageCheckingBranch {
-    public final Pattern noncoveredPattern;
-
-    CoverageCheckingIncompleteBranch(Pattern noncoveredPattern) {
-      this.noncoveredPattern = noncoveredPattern;
-    }
-  }
-
-  public static class CoverageCheckingFailedBranch extends CoverageCheckingBranch {
-    public final Pattern failedPattern;
-
-    CoverageCheckingFailedBranch(Pattern failedPattern) {
-      this.failedPattern = failedPattern;
-    }
-  }
 }
