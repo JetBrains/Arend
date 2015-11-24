@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -137,6 +136,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     myArgsStartCtxIndex = index;
   }
 
+  public TypeCheckingDefCall getTypeCheckingDefCall() {
+    return myTypeCheckingDefCall;
+  }
+
   public void setThisClass(ClassDefinition thisClass) {
     myTypeCheckingDefCall.setThisClass(thisClass);
   }
@@ -184,7 +187,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (numberOfVariables(result.type, myLocalContext) > numberOfVariables(expectedType, myLocalContext)) {
       // TODO: This looks suspicious.
-      return typeCheckFunctionApps(expression, new ArrayList<Abstract.ArgumentExpression>(), expectedType, expression);
+      // return typeCheckFunctionApps(expression, new ArrayList<Abstract.ArgumentExpression>(), expectedType, expression);
+      Result result1 = myArgsInference.inferTail(result, expectedType, expectedType);
+      return result1 instanceof OKResult ? checkResult(expectedType, (OKResult) result1, expression) : result1;
     } else {
       return checkResult(expectedType, result, expression);
     }
@@ -213,27 +218,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return result;
   }
 
-  private Result typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
-    Result function;
-    if (fun instanceof Abstract.DefCallExpression) {
-      function = myTypeCheckingDefCall.typeCheckDefCall((Abstract.DefCallExpression) fun);
-    } else {
-      function = typeCheck(fun, null);
-    }
-    if (function instanceof OKResult) {
-      function = myArgsInference.infer((OKResult) function, args, expectedType, fun, expression);
-      return function instanceof OKResult ? checkResult(expectedType, (OKResult) function, expression) : function;
-    }
-
-    if (function instanceof InferErrorResult) {
-      myErrorReporter.report(((InferErrorResult) function).error);
-    }
-    for (Abstract.ArgumentExpression arg : args) {
-      typeCheck(arg.getExpression(), null);
-    }
-    return null;
-  }
-
   public OKResult checkType(Abstract.Expression expr, Expression expectedType) {
     Result result = typeCheck(expr, expectedType);
     if (result == null) return null;
@@ -245,8 +229,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
-    List<Abstract.ArgumentExpression> args = new ArrayList<>();
-    return typeCheckFunctionApps(Abstract.getFunction(expr, args), args, expectedType, expr);
+    Result result = myArgsInference.infer(expr, expectedType);
+    return result instanceof OKResult ? checkResult(expectedType, (OKResult) result, expr) : result;
   }
 
   private Result typeCheckDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
@@ -262,7 +246,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (defCall.getParameters().size() == defCall.getDefinition().getDataType().getNumberOfAllParameters()) {
         return result;
       } else {
-        result = myArgsInference.infer((OKResult) result, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr, expr);
+        result = myArgsInference.inferTail((OKResult) result, expectedType, expr);
         return result instanceof OKResult ? checkResult(expectedType, (OKResult) result, expr) : result;
       }
     } else {
@@ -656,41 +640,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitBinOp(Abstract.BinOpExpression expr, final Expression expectedType) {
-    class AbstractArgumentExpression implements Abstract.ArgumentExpression {
-      Abstract.Expression expression;
-
-      public AbstractArgumentExpression(Abstract.Expression expression) {
-        this.expression = expression;
-      }
-
-      @Override
-      public Abstract.Expression getExpression() {
-        return expression;
-      }
-
-      @Override
-      public boolean isExplicit() {
-        return true;
-      }
-
-      @Override
-      public boolean isHidden() {
-        return false;
-      }
-
-      @Override
-      public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-        expression.prettyPrint(builder, names, prec);
-      }
-    }
-
-    List<Abstract.ArgumentExpression> args = new ArrayList<>(2);
-    args.add(new AbstractArgumentExpression(expr.getLeft()));
-    args.add(new AbstractArgumentExpression(expr.getRight()));
-
-    Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
-    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), args, expectedType, expr);
+  public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
+    Result result = myArgsInference.infer(expr, expectedType);
+    return result instanceof OKResult ? checkResult(expectedType, (OKResult) result, expr) : result;
   }
 
   @Override

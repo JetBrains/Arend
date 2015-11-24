@@ -27,22 +27,14 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandConstructorPa
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
 
-public class OldArgsInference extends BaseImplicitArgsInference {
-  private final CheckTypeVisitor myVisitor;
-
+public class OldArgsInference extends RowImplicitArgsInference {
   public OldArgsInference(CheckTypeVisitor visitor) {
-    myVisitor = visitor;
+    super(visitor);
   }
 
   @Override
-  public CheckTypeVisitor.Result infer(CheckTypeVisitor.OKResult fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression funExpr, Abstract.Expression expr) {
+  public CheckTypeVisitor.Result inferRow(CheckTypeVisitor.OKResult fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression funExpr, Abstract.Expression expr) {
     return typeCheckApps(funExpr, 0, fun, args, expectedType, expr);
-  }
-
-  @Override
-  public CheckTypeVisitor.OKResult inferTail(Expression fun, List<Expression> argTypes, Expression actualType, Expression expectedType) {
-    // TODO
-    return null;
   }
 
   private static class Arg {
