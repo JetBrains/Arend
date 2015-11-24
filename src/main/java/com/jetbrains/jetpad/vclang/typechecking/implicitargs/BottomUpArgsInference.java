@@ -8,7 +8,7 @@ import java.util.List;
 
 public class BottomUpArgsInference extends BaseImplicitArgsInference {
   @Override
-  public CheckTypeVisitor.OKResult infer(CheckTypeVisitor.OKResult fun, List<Abstract.ArgumentExpression> args, Expression expectedType) {
+  public CheckTypeVisitor.Result infer(CheckTypeVisitor.OKResult fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression funExpr, Abstract.Expression expr) {
     // TODO
     return null;
   }

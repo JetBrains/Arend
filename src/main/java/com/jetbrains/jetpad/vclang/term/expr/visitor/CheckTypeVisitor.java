@@ -30,8 +30,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private final List<Binding> myLocalContext;
   private final ErrorReporter myErrorReporter;
   private Integer myArgsStartCtxIndex;
-  private final TypeCheckingDefCall myTypeCheckingDefCall;
-  private final ImplicitArgsInference myArgsInference;
+  private TypeCheckingDefCall myTypeCheckingDefCall;
+  private ImplicitArgsInference myArgsInference;
 
   private static class Arg {
     boolean isExplicit;
@@ -129,8 +129,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     public CheckTypeVisitor build() {
-      CheckTypeVisitor visitor = new CheckTypeVisitor(myLocalContext, myArgsStartCtxIndex, myErrorReporter, myTypeCheckingDefCall == null ? new TypeCheckingDefCall(myLocalContext, myErrorReporter) : myTypeCheckingDefCall, myArgsInference == null ? new OldArgsInference(this) : myArgsInference);
-      visitor.setThisClass(myThisClass);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(myLocalContext, myArgsStartCtxIndex, myErrorReporter, myTypeCheckingDefCall, myArgsInference);
+      if (myTypeCheckingDefCall == null) {
+        visitor.myTypeCheckingDefCall = new TypeCheckingDefCall(visitor);
+        visitor.myTypeCheckingDefCall.setThisClass(myThisClass);
+      }
+      if (myArgsInference == null) {
+        visitor.myArgsInference = new OldArgsInference(visitor);
+      }
       return visitor;
     }
   }
@@ -195,8 +201,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result typeCheck(Abstract.Expression expr, Expression expectedType) {
     if (expr == null) {
       return null;
-    } else if (!(expr instanceof Abstract.ElimExpression) && myArgsStartCtxIndex != null){
-      return new Builder(this).argsStartCtxIndex(null).build().typeCheck(expr, expectedType);
+    } else
+    if (!(expr instanceof Abstract.ElimExpression) && myArgsStartCtxIndex != null){
+      Integer oldArgsStartIndex = myArgsStartCtxIndex;
+      myArgsStartCtxIndex = null;
+      Result result = expr.accept(this, expectedType);
+      myArgsStartCtxIndex = oldArgsStartIndex;
+      return result;
     } else {
       return expr.accept(this, expectedType);
     }
@@ -210,7 +221,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       function = typeCheck(fun, null);
     }
     if (function instanceof OKResult) {
-      return typeCheckApps(fun, 0, (OKResult) function, args, expectedType, expression);
+      function = myArgsInference.infer((OKResult) function, args, expectedType, fun, expression);
+      return function instanceof OKResult ? checkResult(expectedType, (OKResult) function, expression) : function;
     }
 
     if (function instanceof InferErrorResult) {
@@ -250,7 +262,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (defCall.getParameters().size() == defCall.getDefinition().getDataType().getNumberOfAllParameters()) {
         return result;
       } else {
-        return typeCheckApps(expr, 0, (OKResult) result, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr);
+        result = myArgsInference.infer((OKResult) result, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr, expr);
+        return result instanceof OKResult ? checkResult(expectedType, (OKResult) result, expr) : result;
       }
     } else {
       return result;

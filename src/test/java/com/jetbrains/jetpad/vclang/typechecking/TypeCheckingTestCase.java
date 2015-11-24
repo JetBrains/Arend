@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 
 public class TypeCheckingTestCase {
   public static CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
-    return expression.accept(new CheckTypeVisitor(new ArrayList<Binding>(0), errorReporter), expectedType);
+    return expression.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(0), errorReporter).build(), expectedType);
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, int errors) {

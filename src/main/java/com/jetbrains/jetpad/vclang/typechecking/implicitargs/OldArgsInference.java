@@ -35,9 +35,8 @@ public class OldArgsInference extends BaseImplicitArgsInference {
   }
 
   @Override
-  public CheckTypeVisitor.OKResult infer(CheckTypeVisitor.OKResult fun, List<Abstract.ArgumentExpression> args, Expression expectedType) {
-    // TODO
-    return null;
+  public CheckTypeVisitor.Result infer(CheckTypeVisitor.OKResult fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression funExpr, Abstract.Expression expr) {
+    return typeCheckApps(funExpr, 0, fun, args, expectedType, expr);
   }
 
   @Override
@@ -290,7 +289,7 @@ public class OldArgsInference extends BaseImplicitArgsInference {
       parameters.add(parameter2);
       parameters.add(parameter3);
       Expression resultExpr = Apps(ConCall(Prelude.PATH_CON, parameters), new ArgumentExpression(argResult.expression, true, false));
-      return checkResult(expectedType, new CheckTypeVisitor.OKResult(resultExpr, resultType, resultEquations), expression);
+      return new CheckTypeVisitor.OKResult(resultExpr, resultType, resultEquations);
     }
 
     if (expectedType != null && j == args.size()) {
@@ -412,7 +411,7 @@ public class OldArgsInference extends BaseImplicitArgsInference {
         }
         return typeCheckApps(fun, argsSkipped + j, new CheckTypeVisitor.OKResult(resultExpr, resultType, resultEquations), restArgs, expectedType, expression);
       } else {
-        return checkResult(expectedType, new CheckTypeVisitor.OKResult(resultExpr, resultType, resultEquations), expression);
+        return new CheckTypeVisitor.OKResult(resultExpr, resultType, resultEquations);
       }
     } else {
       TypeCheckingError error;
