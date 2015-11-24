@@ -100,14 +100,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrorReporter = errorReporter;
     }
 
-    public Builder(CheckTypeVisitor visitor) {
-      myLocalContext = visitor.myLocalContext;
-      myErrorReporter = visitor.myErrorReporter;
-      myArgsStartCtxIndex = visitor.myArgsStartCtxIndex;
-      myTypeCheckingDefCall = visitor.myTypeCheckingDefCall;
-      myArgsInference = visitor.myArgsInference;
-    }
-
     public Builder argsStartCtxIndex(Integer index) {
       myArgsStartCtxIndex = index;
       return this;
@@ -211,6 +203,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     } else {
       return expr.accept(this, expectedType);
     }
+  }
+
+  private Result typeCheckLocal(Abstract.Expression expr, Integer argsStartIndex, Expression expectedType) {
+    Integer oldArgsStartIndex = myArgsStartCtxIndex;
+    myArgsStartCtxIndex = argsStartIndex;
+    Result result = typeCheck(expr, expectedType);
+    myArgsStartCtxIndex = oldArgsStartIndex;
+    return result;
   }
 
   private Result typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
@@ -950,7 +950,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           emptyClauses.add(clause);
           continue;
         }
-        Result clauseResult = new Builder(this).argsStartCtxIndex(clause.getArrow() == Abstract.Definition.Arrow.RIGHT ? null : myArgsStartCtxIndex).build().typeCheck(clause.getExpression(), clauseExpectedType);
+        Result clauseResult = typeCheckLocal(clause.getExpression(), clause.getArrow() == Abstract.Definition.Arrow.RIGHT ? null : myArgsStartCtxIndex, clauseExpectedType);
         if (!(clauseResult instanceof OKResult)) {
           wasError = true;
           if (errorResult == null) {
@@ -1081,7 +1081,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myLocalContext.add(new TypedBinding("caseA" + i, ((TelescopeArgument) args.get(i)).getType()));
     }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
-    Result elimResult = elim.accept(new Builder(this).argsStartCtxIndex(myLocalContext.size() - args.size()).build(), expectedType.liftIndex(0, 1));
+    Integer oldArgsStartCtxIndex = myArgsStartCtxIndex;
+    myArgsStartCtxIndex = myLocalContext.size() - args.size();
+    Result elimResult = visitElim(elim, expectedType.liftIndex(0, 1));
+    myArgsStartCtxIndex = oldArgsStartCtxIndex;
     if (!(elimResult instanceof OKResult)) return elimResult;
     OKResult elimOKResult = (OKResult) elimResult;
     addLiftedEquations(elimOKResult, equations, 1);
@@ -1310,7 +1313,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         addLiftedEquations(result, equations, numVarsPassed);
         expectedType = result.expression;
       }
-      Result termResult = clause.getTerm().accept(new Builder(this).argsStartCtxIndex(myLocalContext.size() - numVarsPassed).build(), expectedType);
+      Result termResult = typeCheckLocal(clause.getTerm(), myLocalContext.size() - numVarsPassed, expectedType);
       if (!(termResult instanceof OKResult)) return termResult;
       addLiftedEquations(termResult, equations, numVarsPassed);
 
@@ -1346,7 +1349,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         addLiftedEquations(clauseResult, equations, i);
         clauses.add(((LetClauseResult) clauseResult).letClause);
       }
-      Result result = new Builder(this).argsStartCtxIndex(null).build().typeCheck(expr.getExpression(), expectedType == null ? null : expectedType.liftIndex(0, expr.getClauses().size()));
+      Result result = typeCheckLocal(expr.getExpression(), null, expectedType == null ? null : expectedType.liftIndex(0, expr.getClauses().size()));
       if (!(result instanceof OKResult)) return result;
       OKResult okResult = (OKResult) result;
       addLiftedEquations(okResult, equations, expr.getClauses().size());
