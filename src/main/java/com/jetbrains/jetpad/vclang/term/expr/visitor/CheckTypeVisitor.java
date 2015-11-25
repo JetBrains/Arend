@@ -185,14 +185,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return result;
     }
 
-    if (numberOfVariables(result.type, myLocalContext) > numberOfVariables(expectedType, myLocalContext)) {
-      // TODO: This looks suspicious.
-      // return typeCheckFunctionApps(expression, new ArrayList<Abstract.ArgumentExpression>(), expectedType, expression);
-      Result result1 = myArgsInference.inferTail(result, expectedType, expectedType);
-      return result1 instanceof OKResult ? checkResult(expectedType, (OKResult) result1, expression) : result1;
-    } else {
-      return checkResult(expectedType, result, expression);
-    }
+    Result result1 = myArgsInference.inferTail(result, expectedType, expression);
+    return result1 instanceof OKResult ? checkResult(expectedType, (OKResult) result1, expression) : result1;
   }
 
   public Result typeCheck(Abstract.Expression expr, Expression expectedType) {
@@ -233,14 +227,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return result instanceof OKResult ? checkResult(expectedType, (OKResult) result, expr) : result;
   }
 
-  private Result typeCheckDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
-    return result instanceof OKResult ? checkResultImplicit(expectedType, (OKResult) result, expr) : result;
-  }
-
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    Result result = typeCheckDefCall(expr, expectedType);
+    Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
+    result = result instanceof OKResult ? checkResultImplicit(expectedType, (OKResult) result, expr) : result;
     if (result instanceof OKResult && result.expression instanceof ConCallExpression) {
       ConCallExpression defCall = (ConCallExpression) result.expression;
       if (defCall.getParameters().size() == defCall.getDefinition().getDataType().getNumberOfAllParameters()) {
@@ -1136,7 +1126,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
     if (statements.isEmpty()) {
-      return checkResultImplicit(expectedType, new OKResult(normalizedBaseClassExpr, baseClass.getType(), null), expr);
+      return checkResult(expectedType, new OKResult(normalizedBaseClassExpr, baseClass.getType(), null), expr);
     }
 
     class ImplementStatement {
@@ -1200,7 +1190,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
-    return checkResultImplicit(expectedType, new OKResult(resultExpr, new UniverseExpression(resultExpr.getUniverse()), equations), expr);
+    return checkResult(expectedType, new OKResult(resultExpr, new UniverseExpression(resultExpr.getUniverse()), equations), expr);
   }
 
   @Override
@@ -1218,7 +1208,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     ClassCallExpression classCall = (ClassCallExpression) normExpr;
     if (classCall.getImplementStatements().size() == classCall.getDefinition().getFields().size()) {
-      return checkResultImplicit(expectedType, new OKResult(New(normExpr), normExpr, okExprResult.equations), expr);
+      return checkResult(expectedType, new OKResult(New(normExpr), normExpr, okExprResult.equations), expr);
     } else {
       TypeCheckingError error = new TypeCheckingError("Class '" + classCall.getDefinition().getName() + "' has " + classCall.getDefinition().getNumberOfVisibleFields() + " fields", expr, getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(null, error));
