@@ -133,10 +133,10 @@ public class TypecheckingOrdering {
   }
 
   public static Result order(Collection<ResolvedName> rnames) {
-    ArrayDeque<ResolvedName> queue = new ArrayDeque<>(rnames);
+    Queue<ResolvedName> queue = new LinkedList<>(rnames);
     TypecheckingOrdering orderer = new TypecheckingOrdering(queue);
     while (!queue.isEmpty()) {
-      if (!orderer.doOrder(queue.pollFirst())) {
+      if (!orderer.doOrder(queue.poll())) {
         return orderer.getResult();
       }
     }
