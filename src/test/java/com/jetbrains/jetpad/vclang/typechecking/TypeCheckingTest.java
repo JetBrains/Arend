@@ -32,10 +32,28 @@ public class TypeCheckingTest {
   }
 
   @Test
-  public void typeCheckConstructor() {
+  public void typeCheckConstructor1() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
         "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
-        "\\static \\function f : con {0} {0} {0} = (D 0 {0} 0).con => idp");
+        "\\static \\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
+  }
+
+  @Test
+  public void typeCheckConstructor2() {
+    typeCheckClass(
+        "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
+        "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
+  }
+
+  @Test
+  public void testEither() {
+    typeCheckClass(
+        "\\static \\data Either (A B : \\Type0) | inl A | inr B\n" +
+        "\\static \\function fun {A B : \\Type0} (e : Either A B) : \\Set0 <= \\elim e\n" +
+        "  | inl _ => Nat\n" +
+        "  | inr _ => Nat\n" +
+        "\\static \\function test : fun (inl {Nat} {Nat} 0) => 0");
   }
 }

@@ -32,16 +32,6 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression apply(ArgumentExpression arg) {
-    if (getDefinition().getDataType().getParameters().size() > myParameters.size()) {
-      myParameters.add(arg.getExpression());
-      return this;
-    } else {
-      return super.apply(arg);
-    }
-  }
-
-  @Override
   public Constructor getDefinition() {
     return (Constructor) super.getDefinition();
   }

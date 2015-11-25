@@ -176,6 +176,24 @@ public class NormalizeVisitor extends BaseExpressionVisitor<Expression> {
       return applyDefCall(defCallExpr, args);
     }
 
+    if (defCallExpr instanceof ConCallExpression) {
+      ConCallExpression conCallExpr = (ConCallExpression) defCallExpr;
+      int take = conCallExpr.getDefinition().getDataType().getNumberOfAllParameters() - conCallExpr.getParameters().size();
+      if (take > 0) {
+        int to = args.size() - take;
+        if (to < 0) {
+          to = 0;
+        }
+        List<Expression> parameters = new ArrayList<>(conCallExpr.getParameters().size() + args.size() - to);
+        parameters.addAll(conCallExpr.getParameters());
+        for (int i = args.size() - 1; i >= to; --i) {
+          parameters.add(args.get(i).getExpression());
+        }
+        args = args.subList(0, to);
+        defCallExpr = ConCall(conCallExpr.getDefinition(), parameters);
+      }
+    }
+
     List<TypeArgument> arguments;
     if (defCallExpr instanceof DataCallExpression) {
       DataDefinition dataDefinition = ((DataCallExpression) defCallExpr).getDefinition();

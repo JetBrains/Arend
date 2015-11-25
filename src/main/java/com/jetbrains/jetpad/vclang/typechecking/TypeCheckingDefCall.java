@@ -38,22 +38,12 @@ public class TypeCheckingDefCall {
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
     if (expr instanceof ConCallExpression) {
       Constructor constructor = ((ConCallExpression) expr).getDefinition();
-      Expression type = constructor.getBaseType();
-
-      List<TypeArgument> parameters;
-      if (constructor.getPatterns() != null) {
-        parameters = expandConstructorParameters(constructor, myVisitor.getLocalContext());
-      } else {
-        parameters = constructor.getDataType().getParameters();
-      }
-
-      if (!parameters.isEmpty()) {
-        type = Pi(parameters, type);
-      }
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(ConCall(constructor), constructor.getBaseType(), null);
+      fixConstructorParameters(constructor, result);
       if (constructor.getThisClass() != null) {
-        type = Pi("\\this", ClassCall(constructor.getThisClass()), type);
+        result.type = Pi("\\this", ClassCall(constructor.getThisClass()), result.type);
       }
-      return new CheckTypeVisitor.OKResult(ConCall(constructor), type, null);
+      return result;
     }
     if (expr instanceof DefCallExpression) {
       Definition definition = ((DefCallExpression) expr).getDefinition();
@@ -90,7 +80,10 @@ public class TypeCheckingDefCall {
     if (constructor.getPatterns() != null) {
       parameters = expandConstructorParameters(constructor, myVisitor.getLocalContext());
     } else {
-      parameters = constructor.getDataType().getParameters();
+      parameters = new ArrayList<>(constructor.getDataType().getParameters().size());
+      for (TypeArgument argument : constructor.getDataType().getParameters()) {
+        parameters.add(argument.toExplicit(false));
+      }
     }
 
     if (!parameters.isEmpty()) {

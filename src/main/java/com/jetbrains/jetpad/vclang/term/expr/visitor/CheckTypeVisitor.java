@@ -230,18 +230,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
-    result = result instanceof OKResult ? checkResultImplicit(expectedType, (OKResult) result, expr) : result;
-    if (result instanceof OKResult && result.expression instanceof ConCallExpression) {
-      ConCallExpression defCall = (ConCallExpression) result.expression;
-      if (defCall.getParameters().size() == defCall.getDefinition().getDataType().getNumberOfAllParameters()) {
-        return result;
-      } else {
-        result = myArgsInference.inferTail((OKResult) result, expectedType, expr);
-        return result instanceof OKResult ? checkResult(expectedType, (OKResult) result, expr) : result;
-      }
-    } else {
-      return result;
-    }
+    return result instanceof OKResult ? checkResultImplicit(expectedType, (OKResult) result, expr) : result;
   }
 
   @Override

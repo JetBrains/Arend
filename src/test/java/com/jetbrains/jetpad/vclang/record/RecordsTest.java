@@ -2,10 +2,7 @@ package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
@@ -246,7 +243,9 @@ public class RecordsTest {
     Expression xCall = namespace.findChild("A").getDefinition("x").getDefCall();
     List<Expression> arguments = new ArrayList<>(3);
     assertTrue(resultType instanceof PiExpression);
-    Expression function = ((PiExpression) resultType).getArguments().get(0).getType().normalize(NormalizeVisitor.Mode.WHNF, new ArrayList<Binding>()).getFunction(arguments);
+    List<Binding> context = new ArrayList<>(1);
+    context.add(new TypedBinding("q", ClassCall((ClassDefinition) namespace.getDefinition("A"))));
+    Expression function = ((PiExpression) resultType).getArguments().get(0).getType().normalize(NormalizeVisitor.Mode.NF, context).getFunction(arguments);
     assertEquals(3, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 

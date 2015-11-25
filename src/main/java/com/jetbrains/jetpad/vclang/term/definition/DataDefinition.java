@@ -13,6 +13,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DataCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class DataDefinition extends Definition implements Abstract.DataDefinition {
   private List<Constructor> myConstructors;
@@ -37,7 +38,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   }
 
   public int getNumberOfAllParameters() {
-    return myParameters.size() + (getThisClass() == null ? 0 : 1);
+    return numberOfVariables(myParameters) + (getThisClass() == null ? 0 : 1);
   }
 
   public void setParameters(List<TypeArgument> arguments) {
