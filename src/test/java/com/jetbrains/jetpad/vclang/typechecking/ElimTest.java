@@ -13,6 +13,7 @@ import java.util.ArrayList;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static org.junit.Assert.assertEquals;
 
 public class ElimTest {
@@ -272,5 +273,13 @@ public class ElimTest {
                    "leq-trans {n m k : Nat} (nm : n =< m) (mk : m =< k) : n =< k <= \\elim n, nm, m\n" +
                    "  | zero, le_z, _ => {?}\n" +
                    "  | suc n', le_ss nm', suc m' => {?}", 1);
+  }
+
+  @Test
+  public void arrowTest() {
+    typeCheckDef(
+        "\\function (+) (x y : Nat) : Nat => \\elim x" +
+            "  | zero => y\n" +
+            "  | suc x => suc (x + y)", 1);
   }
 }

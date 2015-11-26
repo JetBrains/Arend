@@ -65,7 +65,14 @@ public class InferenceTest {
   }
 
   @Test
-  public void inferConstructor1() {
+  public void inferConstructor1a() {
+    typeCheckClass(
+        "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
+        "\\static \\function f => con {0} (path (\\lam _ => 1))");
+  }
+
+  @Test
+  public void inferConstructor1b() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (n = k) (k = m)\n" +
         "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
@@ -73,7 +80,14 @@ public class InferenceTest {
   }
 
   @Test
-  public void inferConstructor2() {
+  public void inferConstructor2a() {
+    typeCheckClass(
+        "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
+        "\\static \\function f => (D 0).con (path (\\lam _ => 1))");
+  }
+
+  @Test
+  public void inferConstructor2b() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (n = k) (k = m)\n" +
         "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +

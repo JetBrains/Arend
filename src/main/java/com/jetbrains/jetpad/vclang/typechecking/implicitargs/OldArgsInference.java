@@ -130,12 +130,8 @@ public class OldArgsInference extends RowImplicitArgsInference {
       CheckTypeVisitor.Result result;
       /* TODO
       if (argsImp[i].expression instanceof Expression) {
-        List<Expression> context = new ArrayList<>(myVisitor.getLocalContext().size());
-        for (Binding binding : myVisitor.getLocalContext()) {
-          context.add(binding.getType());
-        }
-        Expression actualType = ((Expression) argsImp[i].expression).getType(context);
-        result = checkResult(type, new OKResult((Expression) argsImp[i].expression, actualType, null), argsImp[i].expression);
+        Expression actualType = ((Expression) argsImp[i].expression).getType(myVisitor.getLocalContext());
+        result = myVisitor.checkResult(type, new CheckTypeVisitor.OKResult((Expression) argsImp[i].expression, actualType, null), argsImp[i].expression);
       } else { */
       result = myVisitor.typeCheck(argsImp[i].expression, type);
       // }

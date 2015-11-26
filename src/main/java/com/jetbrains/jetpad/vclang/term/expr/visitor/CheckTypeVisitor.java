@@ -152,7 +152,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return myErrorReporter;
   }
 
-  private Result checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
+  public Result checkResult(Expression expectedType, OKResult result, Abstract.Expression expression) {
     if (result == null) return null;
     if (expectedType == null) {
       expression.setWellTyped(myLocalContext, result.expression);

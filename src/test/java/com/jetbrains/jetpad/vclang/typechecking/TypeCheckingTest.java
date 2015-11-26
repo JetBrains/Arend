@@ -40,11 +40,27 @@ public class TypeCheckingTest {
   }
 
   @Test
+  public void typeCheckConstructor1d() {
+    typeCheckClass(
+        "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
+        "\\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
+        "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
+  }
+
+  @Test
   public void typeCheckConstructor2() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
         "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
+  }
+
+  @Test
+  public void typeCheckConstructor2d() {
+    typeCheckClass(
+        "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
+        "\\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
+        "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
   }
 
   @Test

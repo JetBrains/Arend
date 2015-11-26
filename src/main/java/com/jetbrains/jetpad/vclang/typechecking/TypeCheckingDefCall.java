@@ -38,11 +38,8 @@ public class TypeCheckingDefCall {
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
     if (expr instanceof ConCallExpression) {
       Constructor constructor = ((ConCallExpression) expr).getDefinition();
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(ConCall(constructor), constructor.getBaseType(), null);
-      fixConstructorParameters(constructor, result);
-      if (constructor.getThisClass() != null) {
-        result.type = Pi("\\this", ClassCall(constructor.getThisClass()), result.type);
-      }
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult((Expression) expr, constructor.getBaseType(), null);
+      fixConstructorParameters(constructor, result, true);
       return result;
     }
     if (expr instanceof DefCallExpression) {
@@ -75,7 +72,7 @@ public class TypeCheckingDefCall {
     }
   }
 
-  private void fixConstructorParameters(Constructor constructor, CheckTypeVisitor.OKResult result) {
+  private void fixConstructorParameters(Constructor constructor, CheckTypeVisitor.OKResult result, boolean doSubst) {
     List<TypeArgument> parameters;
     if (constructor.getPatterns() != null) {
       parameters = expandConstructorParameters(constructor, myVisitor.getLocalContext());
@@ -88,6 +85,15 @@ public class TypeCheckingDefCall {
 
     if (!parameters.isEmpty()) {
       result.type = Pi(parameters, result.type);
+    }
+    if (doSubst && result.expression instanceof ConCallExpression) {
+      List<Expression> args = ((ConCallExpression) result.expression).getParameters();
+      if (!args.isEmpty()) {
+        int argsNumber = args.size() - (constructor.getDataType().getThisClass() != null ? 1 : 0);
+        Collections.reverse(args);
+        result.type = result.type.splitAt(argsNumber, null, null).subst(args, 0);
+        Collections.reverse(args);
+      }
     }
   }
 
@@ -180,7 +186,7 @@ public class TypeCheckingDefCall {
         }
         result.expression = ((DefCallExpression) result.expression).applyThis(thisExpr);
         if (definition instanceof Constructor) {
-          fixConstructorParameters((Constructor) definition, result);
+          fixConstructorParameters((Constructor) definition, result, false);
         }
         result.type = result.type.subst(thisExpr, 0);
         return new DefCallResult(result, null, null);
@@ -196,7 +202,7 @@ public class TypeCheckingDefCall {
         return null;
       }
       if (definition instanceof Constructor) {
-        fixConstructorParameters((Constructor) definition, result);
+        fixConstructorParameters((Constructor) definition, result, false);
       }
       return new DefCallResult(result, null, member);
     }
@@ -234,7 +240,7 @@ public class TypeCheckingDefCall {
           okResult.expression = ((DefCallExpression) okResult.expression).applyThis(result.baseResult.expression);
           okResult.equations = result.baseResult.equations;
           if (member.definition instanceof Constructor) {
-            fixConstructorParameters((Constructor) member.definition, okResult);
+            fixConstructorParameters((Constructor) member.definition, okResult, false);
           }
           okResult.type = okResult.type.subst(result.baseResult.expression, 0);
           result.baseResult = okResult;
@@ -293,7 +299,7 @@ public class TypeCheckingDefCall {
           result.baseClassDefinition = ((ClassCallExpression) type).getDefinition();
           result.member = result.baseClassDefinition.getParentNamespace().getMember(result.baseClassDefinition.getName().name);
         } else {
-          if (type instanceof UniverseExpression) {
+          if (type instanceof UniverseExpression || type instanceof PiExpression) {
             List<Expression> arguments = new ArrayList<>();
             Expression function = okResult.expression.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getLocalContext()).getFunction(arguments);
             if (function instanceof DataCallExpression) {
@@ -347,9 +353,8 @@ public class TypeCheckingDefCall {
       }
     }
 
-    Collections.reverse(arguments);
-    Expression resultType = constructor.getBaseType().subst(arguments, 0);
-    Collections.reverse(arguments);
-    return new CheckTypeVisitor.OKResult(ConCall(constructor, arguments), resultType, null);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(ConCall(constructor, arguments), constructor.getBaseType(), null);
+    fixConstructorParameters(constructor, result, true);
+    return result;
   }
 }
