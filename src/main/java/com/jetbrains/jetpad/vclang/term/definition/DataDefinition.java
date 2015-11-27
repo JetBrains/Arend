@@ -3,16 +3,20 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DataCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
 public class DataDefinition extends Definition implements Abstract.DataDefinition {
   private List<Constructor> myConstructors;
@@ -48,6 +52,30 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   @Override
   public List<Constructor> getConstructors() {
     return myConstructors;
+  }
+
+  public List<ConCallExpression> getConstructors(List<Expression> parameters, List<Binding> context) {
+    List<ConCallExpression> result = new ArrayList<>();
+    for (Constructor constructor : myConstructors) {
+      if (constructor.hasErrors())
+        continue;
+      List<Expression> matchedParameters = null;
+      if (constructor.getPatterns() != null) {
+        Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, context);
+        if (matchResult instanceof Utils.PatternMatchMaybeResult) {
+          return null;
+        } else if (matchResult instanceof Utils.PatternMatchFailedResult) {
+          continue;
+        } else if (matchResult instanceof Utils.PatternMatchOKResult) {
+          matchedParameters = ((Utils.PatternMatchOKResult) matchResult).expressions;
+        }
+      } else {
+        matchedParameters = parameters;
+      }
+
+      result.add(ConCall(constructor, matchedParameters));
+    }
+    return result;
   }
 
   public void addCondition(Condition condition) {

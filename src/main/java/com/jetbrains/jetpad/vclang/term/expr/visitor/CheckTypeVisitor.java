@@ -11,7 +11,9 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsBranch;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsIncompleteBranch;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ReplaceElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -1280,97 +1282,79 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return errorResult;
     }
 
-    List<List<Pattern>> patterns = new ArrayList<>();
-    List<Expression> types = new ArrayList<>();
-    for (int i = elimExprs.get(0).getIndex(); i >= 0; i--) {
-      patterns.add(new ArrayList<Pattern>(Collections.nCopies(clauses.size() + emptyPatterns.size(), match(null))));
-      types.add(myLocalContext.get(myLocalContext.size() - 1 - i).getType());
-    }
-
-    for (int j = 0; j < clauses.size(); j++) {
-     for (int i = 0; i < clauses.get(j).getPatterns().size(); i++) {
-        patterns.get(types.size() - 1 - elimExprs.get(i).getIndex()).set(j, clauses.get(j).getPatterns().get(i));
+    if (clauses.isEmpty() && emptyClauses.isEmpty()) {
+      if (!new CoverageChecker<Void>(myLocalContext).checkEmptyContext(elimExprs.get(0).getIndex())) {
+        error = new TypeCheckingError("Empty elim, while there are non-empty data types", expr, getNames(myLocalContext));
+        expr.setWellTyped(myLocalContext, Error(null, error));
+        myErrorReporter.report(error);
+        return null;
       }
-    }
-
-    for (int j = 0; j < emptyPatterns.size(); j++) {
-      for (int i = 0; i < emptyPatterns.get(j).size(); i++) {
-        patterns.get(types.size() - 1 - elimExprs.get(i).getIndex()).set(clauses.size() + j, emptyPatterns.get(j).get(i));
+    } else {
+      List<List<Pattern>> patterns = new ArrayList<>();
+      List<Expression> types = new ArrayList<>();
+      for (int i = elimExprs.get(0).getIndex(); i >= 0; i--) {
+        patterns.add(new ArrayList<Pattern>(Collections.nCopies(clauses.size() + emptyPatterns.size(), match(null))));
+        types.add(myLocalContext.get(myLocalContext.size() - 1 - i).getType());
       }
-    }
 
-    List<Binding> tail = new ArrayList<>(myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()));
-    myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()).clear();
-    List<ArgsBranch<CoverageChecker.CoverageCheckingResult>> branches = new ArgsElimTreeExpander<CoverageChecker.CoverageCheckingResult>(myLocalContext).expandElimTree(new CoverageChecker(), types, patterns, clauses.size() + emptyPatterns.size());
-    myLocalContext.addAll(tail);
-    if (branches == null)
-      return null;
+      for (int j = 0; j < clauses.size(); j++) {
+       for (int i = 0; i < clauses.get(j).getPatterns().size(); i++) {
+          patterns.get(types.size() - 1 - elimExprs.get(i).getIndex()).set(j, clauses.get(j).getPatterns().get(i));
+        }
+      }
 
-    StringBuilder coverageCheckMsg = new StringBuilder();
-    coverageCheckMsg.append("Coverage checking failed: \n");
-    for (ArgsBranch<CoverageChecker.CoverageCheckingResult> branch : branches) {
-      if (branch instanceof ArgsIncompleteBranch) {
+      for (int j = 0; j < emptyPatterns.size(); j++) {
+        for (int i = 0; i < emptyPatterns.get(j).size(); i++) {
+          patterns.get(types.size() - 1 - elimExprs.get(i).getIndex()).set(clauses.size() + j, emptyPatterns.get(j).get(i));
+        }
+      }
+
+      List<Binding> tail = new ArrayList<>(myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()));
+      myLocalContext.subList(myLocalContext.size() - types.size(), myLocalContext.size()).clear();
+      ArgsElimTreeExpander.ArgsExpansionResult treeExpansionResult = new ArgsElimTreeExpander(myLocalContext).expandElimTree(types, patterns, clauses.size() + emptyPatterns.size());
+      myLocalContext.addAll(tail);
+
+      for (int i = 0; i < emptyPatterns.size(); i++) {
+        for (ArgsBranch branch : treeExpansionResult.branches) {
+          if (branch.leaf.getValue().contains(clauses.size() + i)) {
+            error = new TypeCheckingError("Empty clause is reachable", emptyClauses.get(i), getNames(myLocalContext));
+            expr.setWellTyped(myLocalContext, Error(null, error));
+            myErrorReporter.report(error);
+            wasError = true;
+          }
+        }
+      }
+
+      if (wasError) {
+        return null;
+      }
+
+      Map<List<Integer>, Clause> clauseMap = new IdentityHashMap<>();
+      for (ArgsBranch branch : treeExpansionResult.branches) {
+        clauseMap.put(branch.leaf.getValue(), clauses.get(branch.leaf.getValue().get(0)));
+      }
+      ElimTreeNode<Clause> treeNode = treeExpansionResult.tree.accept(new ReplaceElimTreeNodeVisitor<List<Integer>, Clause>(), clauseMap);
+
+      StringBuilder coverageCheckMsg = new StringBuilder();
+      coverageCheckMsg.append("Coverage checking failed: \n");
+      for (List<Pattern> failed : treeNode.accept(new CoverageChecker<Clause>(myLocalContext), true)) {
         coverageCheckMsg.append("missing pattern: ");
         for (IndexExpression elimIdx : elimExprs) {
-          CoverageChecker.CoverageCheckingResult nestedResult = branch.results.get(types.size() - 1 - elimIdx.getIndex());
-          if (nestedResult instanceof CoverageChecker.CoverageCheckingOKResult) {
-            coverageCheckMsg.append(((CoverageChecker.CoverageCheckingOKResult)nestedResult).branchPattern).append(" ");
-          } else if (nestedResult instanceof CoverageChecker.CoverageCheckingIncompleteResult) {
-            coverageCheckMsg.append(((CoverageChecker.CoverageCheckingIncompleteResult)nestedResult).noncoveredPattern).append(" ");
-            break;
-          }
+          coverageCheckMsg.append(failed.get(elimIdx.getIndex())).append(" ");
         }
         coverageCheckMsg.append("\n");
         wasError = true;
-      } else if (branch instanceof ArgsElimTreeExpander.ArgsFailedBranch) {
-        coverageCheckMsg.append("failed match in branch: ");
-        for (IndexExpression elimIdx : elimExprs) {
-          CoverageChecker.CoverageCheckingResult nestedResult = branch.results.get(types.size() - 1 - elimIdx.getIndex());
-          if (nestedResult instanceof CoverageChecker.CoverageCheckingOKResult) {
-            coverageCheckMsg.append(((CoverageChecker.CoverageCheckingOKResult)nestedResult).branchPattern).append(" ");
-          } else if (nestedResult instanceof CoverageChecker.CoverageCheckingFailedResult) {
-            coverageCheckMsg.append(((CoverageChecker.CoverageCheckingFailedResult)nestedResult).failedPattern).append(" ");
-            break;
-          }
-        }
-        coverageCheckMsg.append(" because of ");
-        for (int i : branch.indices) {
-          for (Pattern pattern : clauses.get(i).getPatterns()) {
-            coverageCheckMsg.append(pattern.toString()).append(" ");
-          }
-        }
-        wasError = true;
+      }
+
+      if (wasError) {
+        error = new TypeCheckingError(coverageCheckMsg.toString(), expr, getNames(myLocalContext));
+        expr.setWellTyped(myLocalContext, Error(null, error));
+        myErrorReporter.report(error);
+        return null;
       }
     }
 
-    if (wasError) {
-      error = new TypeCheckingError(coverageCheckMsg.toString(), expr, getNames(myLocalContext));
-      expr.setWellTyped(myLocalContext, Error(null, error));
-      myErrorReporter.report(error);
-      return null;
-    }
-
-    for (int i = 0; i < emptyPatterns.size(); i++) {
-      for (ArgsBranch<CoverageChecker.CoverageCheckingResult> branch : branches) {
-        if (branch instanceof ArgsElimTreeExpander.ArgsOKBranch && branch.indices.contains(clauses.size() + i)) {
-          StringBuilder errorMsg = new StringBuilder();
-          errorMsg.append("Empty clause is reachable through: ");
-          for (IndexExpression elimIdx : elimExprs) {
-            CoverageChecker.CoverageCheckingResult nestedResult = branch.results.get(types.size() - 1 - elimIdx.getIndex());
-            errorMsg.append(((CoverageChecker.CoverageCheckingOKResult)nestedResult).branchPattern).append(" ");
-          }
-          error = new TypeCheckingError(errorMsg.toString(), emptyClauses.get(i), getNames(myLocalContext));
-          expr.setWellTyped(myLocalContext, Error(null, error));
-          myErrorReporter.report(error);
-          wasError = true;
-        }
-      }
-    }
-
-    if (wasError)
-      return null;
-
-    ElimExpression result = Elim(elimExprs, clauses);
+    ElimExpression result = new ElimExpression(elimExprs, clauses);
     for (Clause clause : clauses) {
       clause.setElimExpression(result);
     }

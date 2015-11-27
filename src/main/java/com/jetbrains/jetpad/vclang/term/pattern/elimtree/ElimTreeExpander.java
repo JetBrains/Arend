@@ -4,15 +4,13 @@ import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsBranch;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsFailedBranch;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsIncompleteBranch;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsOKBranch;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,64 +19,41 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getTypes;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
 public class ElimTreeExpander {
+  public static class Branch {
+    public final LeafElimTreeNode<List<Integer>> leaf;
+    public final Expression expression;
+    public final List<Binding> context;
+
+    private Branch(Expression expression, List<Binding> context, LeafElimTreeNode<List<Integer>> value) {
+      this.leaf = value;
+      this.expression = expression;
+      this.context = context;
+    }
+  }
+
+  public static class ExpansionResult {
+    public final ElimTreeNode<List<Integer>> result;
+    public final List<Branch> branches;
+
+    private ExpansionResult(ElimTreeNode<List<Integer>> result, List<Branch> branches) {
+      this.result = result;
+      this.branches = branches;
+    }
+  }
+
   private final List<Binding> myLocalContext;
 
   public ElimTreeExpander(List<Binding> localContext) {
     this.myLocalContext = localContext;
   }
 
-  public static abstract class Branch<T> {
-    public final T result;
-    public final List<Integer> indices;
-
-    protected Branch(T result, List<Integer> indices) {
-      this.result = result;
-      this.indices = indices;
+  public ExpansionResult expandElimTree(int index, List<Pattern> patterns, Expression type, boolean isExplicit) {
+    if (patterns.isEmpty()) {
+      return null;
     }
-  }
 
-  public static class OKBranch<T> extends Branch<T> {
-    public final Expression expression;
-    public final List<Binding> context;
-
-    OKBranch(Expression expression, List<Binding> context, List<Integer> indicies, T result) {
-      super(result, indicies);
-      this.expression = expression;
-      this.context = context;
-    }
-  }
-
-  public static class IncompleteBranch<T> extends Branch<T> {
-    public final List<OKBranch<T>> maybeBranches;
-
-    IncompleteBranch(List<OKBranch<T>> maybeBranches, T result) {
-      super(result, Collections.<Integer>emptyList());
-      this.maybeBranches = maybeBranches;
-    }
-  }
-
-  public static class FailedBranch<T> extends Branch<T> {
-    FailedBranch(List<Integer> indicies, T result) {
-      super(result, indicies);
-    }
-  }
-
-  private static class ConstructorInfo {
-    private final Constructor constructor;
-    private final List<TypeArgument> arguments;
-    private final List<Expression> parameters;
-
-    private ConstructorInfo(Constructor constructor, List<TypeArgument> arguments, List<Expression> parameters) {
-      this.constructor = constructor;
-      this.arguments = arguments;
-      this.parameters = parameters;
-    }
-  }
-
-  public <T> List<Branch<T>> expandElimTree(ElimTreeVisitor<T> visitor, List<Pattern> patterns, Expression type, boolean isExplicit) {
     List<Integer> namePatternIdxs = new ArrayList<>();
     boolean hasConstructorPattern = false;
     for (int i = 0; i < patterns.size(); i++) {
@@ -89,91 +64,41 @@ public class ElimTreeExpander {
       }
     }
 
-    if (!hasConstructorPattern && !patterns.isEmpty()) {
-      return Collections.<Branch<T>>singletonList(new OKBranch<>(Index(0),
-          Collections.<Binding>singletonList(new TypedBinding((String) null, type)), namePatternIdxs, visitor.visitName(isExplicit)));
+    if (!hasConstructorPattern) {
+      LeafElimTreeNode<List<Integer>> leaf = new LeafElimTreeNode<>(namePatternIdxs);
+      return new ExpansionResult(leaf, Collections.singletonList(new Branch(Index(0),
+          Collections.<Binding>singletonList(new TypedBinding((String) null, type)), leaf)));
     }
 
     List<Expression> parameters = new ArrayList<>();
     Expression ftype = type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(parameters);
     Collections.reverse(parameters);
-    if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-      return Collections.<Branch<T>>singletonList(new IncompleteBranch<>(Collections.singletonList(
-          new OKBranch<T>(Index(0), Collections.<Binding>singletonList(new TypedBinding((String) null, type)), null, null)),
-          visitor.visitIncomplete(isExplicit, null)));
-    }
+    List<ConCallExpression> validConstructors = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getConstructors(parameters, myLocalContext);
 
-    DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
-    List<ConstructorInfo> validConstructors = new ArrayList<>();
-    for (Constructor constructor : dataType.getConstructors()) {
-      if (constructor.hasErrors())
-        continue;
-      List<Expression> matchedParameters = null;
-      if (constructor.getPatterns() != null) {
-        Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, myLocalContext);
-        if (matchResult instanceof Utils.PatternMatchMaybeResult) {
-          if (patterns.isEmpty()) {
-            return Collections.<Branch<T>>singletonList(new IncompleteBranch<>(Collections.singletonList(
-                new OKBranch<T>(Index(0), Collections.<Binding>singletonList(new TypedBinding((String) null, type)), null, null)),
-                visitor.visitIncomplete(isExplicit, null)));
-          }
-          List<Integer> bad = new ArrayList<>();
-          for (int i = 0; i < patterns.size(); i++) {
-            if (patterns.get(i) instanceof ConstructorPattern)
-              bad.add(i);
-          }
-          return Collections.<Branch<T>>singletonList(new FailedBranch<>(bad, visitor.visitFailed(isExplicit)));
-        } else if (matchResult instanceof Utils.PatternMatchFailedResult) {
-          continue;
-        } else if (matchResult instanceof Utils.PatternMatchOKResult) {
-          matchedParameters = ((Utils.PatternMatchOKResult) matchResult).expressions;
-        }
-      } else {
-        matchedParameters = parameters;
-      }
-
-      ArrayList<TypeArgument> arguments = new ArrayList<>();
-      validConstructors.add(new ConstructorInfo(constructor, arguments, matchedParameters));
-      splitArguments(constructor.getType().subst(matchedParameters, 0), arguments, myLocalContext);
-    }
-
-    List<Branch<T>> result = new ArrayList<>();
-    for (ConstructorInfo info : validConstructors) {
-      MatchingPatterns matching = new MatchingPatterns(patterns, info.constructor, info.arguments);
+    BranchElimTreeNode<List<Integer>> resultTree = new BranchElimTreeNode<>(index);
+    List<Branch> resultBranches = new ArrayList<>();
+    for (ConCallExpression conCall : validConstructors) {
+      List<TypeArgument> constructorArgs = new ArrayList<>();
+      splitArguments(conCall.getType(myLocalContext), constructorArgs, myLocalContext);
+      MatchingPatterns matching = new MatchingPatterns(patterns, conCall.getDefinition(), constructorArgs);
 
       if (matching.indices.isEmpty()) {
-        List<Binding> ctx = new ArrayList<>();
-        Expression expr = ConCall(info.constructor, info.parameters);
-        for (TypeArgument arg : info.arguments) {
-          ctx.add(new TypedBinding((String) null, arg.getType()));
-          expr = Apps(expr.liftIndex(0, 1), Index(0));
-        }
-        result.add(new IncompleteBranch<>(Collections.singletonList(new OKBranch<T>(expr, ctx, null, null)), visitor.visitIncomplete(isExplicit, info.constructor)));
         continue;
       }
 
-      List<ArgsBranch<T>> nestedBranches = new ArgsElimTreeExpander<T>(myLocalContext).expandElimTree(visitor, getTypes(info.arguments), matching.nestedPatterns, matching.indices.size());
-      for (ArgsBranch<T> branch : nestedBranches) {
-        if (branch instanceof ArgsIncompleteBranch) {
-          List<OKBranch<T>> maybeBranches = new ArrayList<>();
-          for (ArgsOKBranch<T> maybeBranch : ((ArgsIncompleteBranch<T>) branch).maybeBranches) {
-            Expression expr = ConCall(info.constructor, info.parameters).liftIndex(0, maybeBranch.context.size());
-            expr = Apps(expr, maybeBranch.expressions.toArray(new Expression[maybeBranch.expressions.size()]));
-            maybeBranches.add(new OKBranch<T>(expr, maybeBranch.context, null, null));
-          }
-          result.add(new IncompleteBranch<>(maybeBranches, visitor.visitElimIncomplete(isExplicit, info.constructor, branch.results)));
-        } else if (branch instanceof ArgsFailedBranch) {
-          result.add(new FailedBranch<>(recalcIndicies(matching.indices, branch.indices), visitor.visitElimFailed(isExplicit, info.constructor, branch.results)));
-        } else if (branch instanceof ArgsOKBranch){
-          ArgsOKBranch<T> okBranch = (ArgsOKBranch<T>) branch;
-          Expression expr = ConCall(info.constructor, info.parameters).liftIndex(0, okBranch.context.size());
-          expr = Apps(expr, okBranch.expressions.toArray(new Expression[okBranch.expressions.size()]));
-          result.add(new OKBranch<>(expr, okBranch.context, recalcIndicies(matching.indices, okBranch.indices), visitor.visitElimOK(isExplicit, info.constructor, branch.results)));
-        }
+      ArgsElimTreeExpander.ArgsExpansionResult nestedResult = new ArgsElimTreeExpander(myLocalContext).expandElimTree(
+          index, getTypes(constructorArgs), matching.nestedPatterns, matching.indices.size());
+      resultTree.addClause(conCall.getDefinition(), nestedResult.tree);
+
+      for (ArgsBranch branch : nestedResult.branches) {
+        Expression expr = conCall.liftIndex(0, branch.context.size());
+        expr = Apps(expr, branch.expressions.toArray(new Expression[branch.expressions.size()]));
+        branch.leaf.setValue(recalcIndicies(matching.indices, branch.leaf.getValue()));
+        resultBranches.add(new Branch(expr, branch.context, branch.leaf));
       }
     }
 
-    return result;
+    return new ExpansionResult(resultTree, resultBranches);
   }
 
   private static class MatchingPatterns {
