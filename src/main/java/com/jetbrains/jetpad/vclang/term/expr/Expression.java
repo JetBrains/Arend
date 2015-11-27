@@ -15,7 +15,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public abstract class Expression implements PrettyPrintable, Abstract.Expression {
-  public abstract <T> T accept(ExpressionVisitor<? extends T> visitor);
+  public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   public abstract Expression getType(List<Binding> context);
 
@@ -50,21 +50,21 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public final Expression liftIndex(int from, int on) {
-    return on == 0 ? this : accept(new LiftIndexVisitor(from, on));
+    return on == 0 ? this : accept(new LiftIndexVisitor(on), from);
   }
 
   public final Expression subst(Expression substExpr, int from) {
     List<Expression> substExprs = new ArrayList<>(1);
     substExprs.add(substExpr);
-    return accept(new SubstVisitor(substExprs, from));
+    return accept(new SubstVisitor(substExprs, from), null);
   }
 
   public final Expression subst(List<Expression> substExprs, int from) {
-    return substExprs.isEmpty() ? this : accept(new SubstVisitor(substExprs, from));
+    return substExprs.isEmpty() ? this : accept(new SubstVisitor(substExprs, from), null);
   }
 
   public final Expression normalize(NormalizeVisitor.Mode mode, List<Binding> context) {
-    return accept(new NormalizeVisitor(mode, context));
+    return accept(new NormalizeVisitor(context), mode);
   }
 
   public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, ErrorReporter errorReporter) {

@@ -29,8 +29,8 @@ public class AppExpression extends Expression implements Abstract.AppExpression 
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitApp(this);
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitApp(this, params);
   }
 
   @Override

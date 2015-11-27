@@ -301,7 +301,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
       } else
       if (piArgs.get(i) != null && lambdaArgs.get(i).expression == null) {
-        InferHoleExpression hole = piArgs.get(i).getType().accept(new FindHoleVisitor());
+        InferHoleExpression hole = piArgs.get(i).getType().accept(new FindHoleVisitor(), null);
         if (hole != null) {
           if (!errors.isEmpty()) {
             break;
@@ -507,7 +507,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       if (expectedTypeNorm instanceof SigmaExpression) {
-        InferHoleExpression hole = expectedTypeNorm.accept(new FindHoleVisitor());
+        InferHoleExpression hole = expectedTypeNorm.accept(new FindHoleVisitor(), null);
         if (hole != null) {
           return new InferErrorResult(hole, hole.getError(), null);
         }
@@ -1187,7 +1187,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result exprResult = typeCheck(expr.getExpression(), null);
     if (!(exprResult instanceof OKResult)) return exprResult;
     OKResult okExprResult = (OKResult) exprResult;
-    Expression normExpr = okExprResult.expression.accept(new NormalizeVisitor(NormalizeVisitor.Mode.WHNF, myLocalContext));
+    Expression normExpr = okExprResult.expression.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
     if (!(normExpr instanceof ClassCallExpression)) {
       TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getExpression(), getNames(myLocalContext));
       expr.setWellTyped(myLocalContext, Error(null, error));

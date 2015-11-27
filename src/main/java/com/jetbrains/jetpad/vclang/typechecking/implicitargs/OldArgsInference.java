@@ -304,7 +304,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
       }
     }
 
-    if (argIndex != 0 && expectedType != null && j == args.size() && expectedType.accept(new FindHoleVisitor()) == null) {
+    if (argIndex != 0 && expectedType != null && j == args.size() && expectedType.accept(new FindHoleVisitor(), null) == null) {
       Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext());
       Expression actualNorm = resultType.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext());
       List<CompareVisitor.Equation> equations = new ArrayList<>();

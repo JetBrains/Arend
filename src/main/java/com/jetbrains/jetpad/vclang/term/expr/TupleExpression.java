@@ -22,17 +22,17 @@ public class TupleExpression extends Expression implements Abstract.TupleExpress
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitTuple(this);
-  }
-
-  @Override
   public SigmaExpression getType(List<Binding> context) {
     return myType;
   }
 
   public SigmaExpression getType() {
     return myType;
+  }
+
+  @Override
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitTuple(this, params);
   }
 
   @Override

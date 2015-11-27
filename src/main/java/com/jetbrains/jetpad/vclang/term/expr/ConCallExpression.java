@@ -49,7 +49,7 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitConCall(this);
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitConCall(this, params);
   }
 }

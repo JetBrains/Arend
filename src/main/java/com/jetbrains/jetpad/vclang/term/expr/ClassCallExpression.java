@@ -60,8 +60,8 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitClassCall(this);
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitClassCall(this, params);
   }
 
   public static class ImplementStatement {

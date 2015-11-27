@@ -296,7 +296,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           typedDef.setResultType(termResult.type);
         }
 
-        if (!termResult.expression.accept(new TerminationCheckVisitor(/* overriddenFunction == null ? */ typedDef /* : overriddenFunction */))) {
+        if (!termResult.expression.accept(new TerminationCheckVisitor(/* overriddenFunction == null ? */ typedDef /* : overriddenFunction */), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", term, getNames(context)));
           termResult = null;
         }
@@ -561,7 +561,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         Expression type = typeArguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF, context);
         while (type instanceof PiExpression) {
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
-            if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition))) {
+            if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition), null)) {
               String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
               myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context)));
               return null;
@@ -573,7 +573,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         List<Expression> exprs = new ArrayList<>();
         type.getFunction(exprs);
         for (Expression expr : exprs) {
-          if (expr.accept(new FindDefCallVisitor(dataDefinition))) {
+          if (expr.accept(new FindDefCallVisitor(dataDefinition), null)) {
             String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
             myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context)));
             return null;

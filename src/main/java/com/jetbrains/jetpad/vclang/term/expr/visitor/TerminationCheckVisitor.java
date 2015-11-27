@@ -17,7 +17,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternToExpression;
 
-public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
+public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean> {
   private final FunctionDefinition myDef;
   private final List<Expression> myPatterns;
 
@@ -62,7 +62,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitApp(AppExpression expr) {
+  public Boolean visitApp(AppExpression expr, Void params) {
     List<Expression> args = new ArrayList<>();
     Expression fun = expr.getFunction(args);
     if (fun instanceof DefCallExpression) {
@@ -72,20 +72,20 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
       if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
         return false;
       }
-      if (fun instanceof ConCallExpression && !visitConCall((ConCallExpression) fun)) {
+      if (fun instanceof ConCallExpression && !visitConCall((ConCallExpression) fun, null)) {
         return false;
       }
-      if (fun instanceof ClassCallExpression && !visitClassCall((ClassCallExpression) fun)) {
+      if (fun instanceof ClassCallExpression && !visitClassCall((ClassCallExpression) fun, null)) {
         return false;
       }
     } else {
-      if (!fun.accept(this)) {
+      if (!fun.accept(this, null)) {
         return false;
       }
     }
 
     for (Expression arg : args) {
-      if (!arg.accept(this)) {
+      if (!arg.accept(this, null)) {
         return false;
       }
     }
@@ -93,14 +93,14 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitDefCall(DefCallExpression expr) {
+  public Boolean visitDefCall(DefCallExpression expr, Void params) {
     return expr.getDefinition() != myDef;
   }
 
   @Override
-  public Boolean visitConCall(ConCallExpression expr) {
+  public Boolean visitConCall(ConCallExpression expr, Void params) {
     for (Expression parameter : expr.getParameters()) {
-      if (!parameter.accept(this)) {
+      if (!parameter.accept(this, null)) {
         return false;
       }
     }
@@ -108,9 +108,9 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitClassCall(ClassCallExpression expr) {
+  public Boolean visitClassCall(ClassCallExpression expr, Void params) {
     for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
-      if (elem.getValue().type != null && !elem.getValue().type.accept(this) || elem.getValue().term != null && !elem.getValue().term.accept(this)) {
+      if (elem.getValue().type != null && !elem.getValue().type.accept(this, null) || elem.getValue().term != null && !elem.getValue().term.accept(this, null)) {
         return false;
       }
     }
@@ -118,7 +118,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitIndex(IndexExpression expr) {
+  public Boolean visitIndex(IndexExpression expr, Void params) {
     return true;
   }
 
@@ -144,7 +144,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitLam(LamExpression expr) {
+  public Boolean visitLam(LamExpression expr, Void params) {
     return visitLamArguments(expr.getArguments(), expr.getBody(), null);
   }
 
@@ -154,7 +154,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
         if (argument instanceof NameArgument) {
           lifter.liftPatterns();
         } else if (argument instanceof TelescopeArgument) {
-          if (!((TypeArgument) argument).getType().accept(this)) {
+          if (!((TypeArgument) argument).getType().accept(this, null)) {
             return false;
           }
           lifter.liftPatterns(((TelescopeArgument) argument).getNames().size());
@@ -162,7 +162,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
           throw new IllegalStateException();
         }
       }
-      return (body1 == null ? true : body1.accept(this)) && (body2 == null ? true : body2.accept(this));
+      return (body1 == null ? true : body1.accept(this, null)) && (body2 == null ? true : body2.accept(this, null));
     }
   }
   
@@ -172,7 +172,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
         lifter.liftPatterns();
       } else
       if (argument instanceof TypeArgument) {
-        if (!((TypeArgument) argument).getType().accept(this)) {
+        if (!((TypeArgument) argument).getType().accept(this, null)) {
           return false;
         }
         if (argument instanceof TelescopeArgument) {
@@ -183,7 +183,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
       }
     }
 
-    return codomain != null ? codomain.accept(this) : true;
+    return codomain != null ? codomain.accept(this, null) : true;
   }
 
   private Boolean visitArguments(List<? extends Argument> arguments, PatternLifter lifter) {
@@ -191,31 +191,31 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitPi(PiExpression expr) {
+  public Boolean visitPi(PiExpression expr, Void params) {
     try (PatternLifter lifter = new PatternLifter()) {
       return visitArguments(expr.getArguments(), expr.getCodomain(), lifter);
     }
   }
 
   @Override
-  public Boolean visitUniverse(UniverseExpression expr) {
+  public Boolean visitUniverse(UniverseExpression expr, Void params) {
     return true;
   }
 
   @Override
-  public Boolean visitInferHole(InferHoleExpression expr) {
+  public Boolean visitInferHole(InferHoleExpression expr, Void params) {
     return true;
   }
 
   @Override
-  public Boolean visitError(ErrorExpression expr) {
+  public Boolean visitError(ErrorExpression expr, Void params) {
     return true;
   }
 
   @Override
-  public Boolean visitTuple(TupleExpression expr) {
+  public Boolean visitTuple(TupleExpression expr, Void params) {
     for (Expression field : expr.getFields()) {
-      if (!field.accept(this)) {
+      if (!field.accept(this, null)) {
         return false;
       }
     }
@@ -223,14 +223,14 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitSigma(SigmaExpression expr) {
+  public Boolean visitSigma(SigmaExpression expr, Void params) {
     try (PatternLifter lifter = new PatternLifter()) {
       return visitArguments(expr.getArguments(), lifter);
     }
   }
 
   @Override
-  public Boolean visitElim(ElimExpression expr) {
+  public Boolean visitElim(ElimExpression expr, Void params) {
     for (Clause clause : expr.getClauses()) {
       List<Expression> patterns = new ArrayList<>(myPatterns);
       for (int i = 0; i < clause.getPatterns().size(); i++) {
@@ -240,7 +240,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
         }
       }
 
-      if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns))) {
+      if (!clause.getExpression().accept(new TerminationCheckVisitor(myDef, patterns), null)) {
         return false;
       }
     }
@@ -249,17 +249,17 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
   }
 
   @Override
-  public Boolean visitProj(ProjExpression expr) {
-    return expr.getExpression().accept(this);
+  public Boolean visitProj(ProjExpression expr, Void params) {
+    return expr.getExpression().accept(this, null);
   }
 
   @Override
-  public Boolean visitNew(NewExpression expr) {
-    return expr.getExpression().accept(this);
+  public Boolean visitNew(NewExpression expr, Void params) {
+    return expr.getExpression().accept(this, null);
   }
 
   @Override
-  public Boolean visitLet(LetExpression letExpression) {
+  public Boolean visitLet(LetExpression letExpression, Void params) {
     try (PatternLifter lifter = new PatternLifter()) {
       for (LetClause clause : letExpression.getClauses()) {
         if (!visitLetClause(clause)) {
@@ -268,7 +268,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
         lifter.liftPatterns();
       }
 
-      return letExpression.getExpression().accept(this);
+      return letExpression.getExpression().accept(this, null);
     }
   }
 
@@ -277,7 +277,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Boolean> {
       if (!visitArguments(clause.getArguments(), lifter1)) {
         return false;
       }
-      return clause.getTerm().accept(this);
+      return clause.getTerm().accept(this, null);
     }
   }
 }

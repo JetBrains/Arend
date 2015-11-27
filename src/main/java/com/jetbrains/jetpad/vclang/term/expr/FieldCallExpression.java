@@ -21,7 +21,7 @@ public class FieldCallExpression extends DefCallExpression {
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitFieldCall(this);
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitFieldCall(this, params);
   }
 }

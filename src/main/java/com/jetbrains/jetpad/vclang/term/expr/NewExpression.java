@@ -20,13 +20,13 @@ public class NewExpression extends Expression implements Abstract.NewExpression 
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitNew(this);
+  public Expression getType(List<Binding> context) {
+    return myExpression;
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    return myExpression;
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitNew(this, params);
   }
 
   @Override
