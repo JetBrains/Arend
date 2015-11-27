@@ -32,13 +32,13 @@ public class ElimExpression extends Expression implements Abstract.ElimExpressio
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitElim(this);
+  public Expression getType(List<Binding> context) {
+    return null;
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    return null;
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitElim(this, params);
   }
 
   @Override

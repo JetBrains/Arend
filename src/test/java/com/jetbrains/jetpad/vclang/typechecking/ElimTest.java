@@ -13,6 +13,7 @@ import java.util.ArrayList;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static org.junit.Assert.assertEquals;
 
 public class ElimTest {
@@ -58,7 +59,7 @@ public class ElimTest {
   public void elim5() {
     typeCheckClass(
         "\\static \\data D (x : Nat) | D zero => d0 | D (suc n) => d1\n" +
-        "\\static \\function test (x : D 0) : Nat => \\elim x | d0 => 0");
+        "\\static \\function test (x : D 0) : Nat <= \\elim x | d0 => 0");
   }
 
   @Test
@@ -129,14 +130,14 @@ public class ElimTest {
   public void elim6() {
     typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
-            "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc _) _ => 1 | d _ (suc _) => 2");
+        "\\static \\function test (x : D) : Nat <= \\elim x | d zero zero => 0 | d (suc _) _ => 1 | d _ (suc _) => 2");
   }
 
   @Test
   public void elim7() {
     typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
-        "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc (suc _)) zero => 0", 1);
+        "\\static \\function test (x : D) : Nat <= \\elim x | d zero zero => 0 | d (suc (suc _)) zero => 0", 1);
   }
 
   @Test
@@ -272,5 +273,13 @@ public class ElimTest {
                    "leq-trans {n m k : Nat} (nm : n =< m) (mk : m =< k) : n =< k <= \\elim n, nm, m\n" +
                    "  | zero, le_z, _ => {?}\n" +
                    "  | suc n', le_ss nm', suc m' => {?}", 1);
+  }
+
+  @Test
+  public void arrowTest() {
+    typeCheckDef(
+        "\\function (+) (x y : Nat) : Nat => \\elim x" +
+        "  | zero => y\n" +
+        "  | suc x => suc (x + y)", 1);
   }
 }

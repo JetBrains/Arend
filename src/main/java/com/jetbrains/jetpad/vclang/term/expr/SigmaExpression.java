@@ -27,11 +27,6 @@ public class SigmaExpression extends Expression implements Abstract.SigmaExpress
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitSigma(this);
-  }
-
-  @Override
   public Expression getType(List<Binding> context) {
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     int origSize = context.size();
@@ -52,6 +47,11 @@ public class SigmaExpression extends Expression implements Abstract.SigmaExpress
 
     trimToSize(context, origSize);
     return new UniverseExpression(universe);
+  }
+
+  @Override
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitSigma(this, params);
   }
 
   @Override

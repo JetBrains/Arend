@@ -20,8 +20,8 @@ public class InferHoleExpression extends Expression implements Abstract.InferHol
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitInferHole(this);
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitInferHole(this, params);
   }
 
   @Override

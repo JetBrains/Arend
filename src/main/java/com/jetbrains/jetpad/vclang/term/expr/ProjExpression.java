@@ -29,11 +29,6 @@ public class ProjExpression extends Expression implements Abstract.ProjExpressio
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitProj(this);
-  }
-
-  @Override
   public Expression getType(List<Binding> context) {
     Expression type = myExpression.getType(context);
     if (!(type instanceof SigmaExpression)) return null;
@@ -53,6 +48,11 @@ public class ProjExpression extends Expression implements Abstract.ProjExpressio
       }
     }
     return null;
+  }
+
+  @Override
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitProj(this, params);
   }
 
   @Override

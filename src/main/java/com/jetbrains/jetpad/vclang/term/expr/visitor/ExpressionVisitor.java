@@ -2,23 +2,23 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
-public interface ExpressionVisitor<T> {
-  T visitApp(AppExpression expr);
-  T visitFunCall(FunCallExpression expr);
-  T visitConCall(ConCallExpression expr);
-  T visitDataCall(DataCallExpression expr);
-  T visitFieldCall(FieldCallExpression expr);
-  T visitClassCall(ClassCallExpression expr);
-  T visitIndex(IndexExpression expr);
-  T visitLam(LamExpression expr);
-  T visitPi(PiExpression expr);
-  T visitUniverse(UniverseExpression expr);
-  T visitInferHole(InferHoleExpression expr);
-  T visitError(ErrorExpression expr);
-  T visitTuple(TupleExpression expr);
-  T visitSigma(SigmaExpression expr);
-  T visitElim(ElimExpression expr);
-  T visitProj(ProjExpression expr);
-  T visitNew(NewExpression expr);
-  T visitLet(LetExpression letExpression);
+public interface ExpressionVisitor<P, R> {
+  R visitApp(AppExpression expr, P params);
+  R visitFunCall(FunCallExpression expr, P params);
+  R visitConCall(ConCallExpression expr, P params);
+  R visitDataCall(DataCallExpression expr, P params);
+  R visitFieldCall(FieldCallExpression expr, P params);
+  R visitClassCall(ClassCallExpression expr, P params);
+  R visitIndex(IndexExpression expr, P params);
+  R visitLam(LamExpression expr, P params);
+  R visitPi(PiExpression expr, P params);
+  R visitUniverse(UniverseExpression expr, P params);
+  R visitInferHole(InferHoleExpression expr, P params);
+  R visitError(ErrorExpression expr, P params);
+  R visitTuple(TupleExpression expr, P params);
+  R visitSigma(SigmaExpression expr, P params);
+  R visitElim(ElimExpression expr, P params);
+  R visitProj(ProjExpression expr, P params);
+  R visitNew(NewExpression expr, P params);
+  R visitLet(LetExpression letExpression, P params);
 }

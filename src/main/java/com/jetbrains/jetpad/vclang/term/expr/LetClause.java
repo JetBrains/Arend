@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -39,10 +40,6 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
     prettyPrintLetClause(this, builder, names, 0);
   }
 
-  public final LetClause liftIndex(int from, int on) {
-    return on == 0 ? this : new LiftIndexVisitor(from, on).visitLetClause(this);
-  }
-
   @Override
   public Abstract.Definition.Arrow getArrow() {
     return myArrow;
@@ -64,12 +61,17 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
   }
 
   @Override
+  public ClassDefinition getThisClass() {
+    return null;
+  }
+
+  @Override
   public Expression getType() {
     return getFunctionType(this);
   }
 
   @Override
   public LetClause lift(int on) {
-    return new LiftIndexVisitor(0, on).visitLetClause(this);
+    return on == 0 ? this : new LiftIndexVisitor(on).visitLetClause(this, 0);
   }
 }

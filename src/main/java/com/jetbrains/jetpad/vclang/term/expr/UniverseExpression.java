@@ -21,13 +21,13 @@ public class UniverseExpression extends Expression implements Abstract.UniverseE
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitUniverse(this);
+  public UniverseExpression getType(List<Binding> context) {
+    return new UniverseExpression(myUniverse.succ());
   }
 
   @Override
-  public UniverseExpression getType(List<Binding> context) {
-    return new UniverseExpression(myUniverse.succ());
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitUniverse(this, params);
   }
 
   @Override

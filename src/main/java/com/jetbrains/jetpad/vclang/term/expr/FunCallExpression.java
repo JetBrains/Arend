@@ -21,7 +21,7 @@ public class FunCallExpression extends DefCallExpression {
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitFunCall(this);
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitFunCall(this, params);
   }
 }

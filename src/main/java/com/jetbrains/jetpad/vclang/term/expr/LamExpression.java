@@ -36,11 +36,6 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitLam(this);
-  }
-
-  @Override
   public Expression getType(List<Binding> context) {
     int origSize = context.size();
     List<TypeArgument> resultArgs = new ArrayList<>(myArguments.size());
@@ -59,6 +54,11 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
     Expression resultCodomain = myBody.getType(context);
     trimToSize(context, origSize);
     return Pi(resultArgs, resultCodomain);
+  }
+
+  @Override
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitLam(this, params);
   }
 
   @Override

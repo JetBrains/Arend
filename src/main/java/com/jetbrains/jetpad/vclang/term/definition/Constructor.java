@@ -15,6 +15,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.constructorPatternsToExpressions;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 
 public class Constructor extends Definition implements Abstract.Constructor {
   private DataDefinition myDataType;
@@ -67,15 +68,24 @@ public class Constructor extends Definition implements Abstract.Constructor {
     myDataType = dataType;
   }
 
+  public int getNumberOfAllParameters() {
+    if (myPatterns == null) {
+      return myDataType.getNumberOfAllParameters();
+    } else {
+      return getNumArguments(myPatterns) + (myDataType.getThisClass() == null ? 0 : 1);
+    }
+  }
+
   @Override
   public Expression getBaseType() {
     Expression resultType = DataCall(myDataType);
     int numberOfVars = numberOfVariables(myArguments);
+    int numberOfParams = numberOfVariables(myDataType.getParameters());
     if (myDataType.getThisClass() != null) {
-      resultType = Apps(resultType, new ArgumentExpression(Index(numberOfVars + myDataType.getParameters().size()), true, false));
+      resultType = Apps(resultType, new ArgumentExpression(Index(numberOfVars + numberOfParams), true, false));
     }
     if (myPatterns == null) {
-      for (int i = numberOfVariables(myDataType.getParameters()) - 1, j = 0; i >= 0; ++j) {
+      for (int i = numberOfParams - 1, j = 0; i >= 0; ++j) {
         if (myDataType.getParameters().get(j) instanceof TelescopeArgument) {
           for (String ignored : ((TelescopeArgument) myDataType.getParameters().get(j)).getNames()) {
             resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameters().get(j).getExplicit(), !myDataType.getParameters().get(j).getExplicit()));

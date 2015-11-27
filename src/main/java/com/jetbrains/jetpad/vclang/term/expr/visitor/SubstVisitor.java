@@ -15,7 +15,7 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-public class SubstVisitor extends BaseExpressionVisitor<Expression> {
+public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   private final List<Expression> mySubstExprs;
   private final int myFrom;
 
@@ -25,21 +25,21 @@ public class SubstVisitor extends BaseExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitApp(AppExpression expr) {
-    return Apps(expr.getFunction().accept(this), new ArgumentExpression(expr.getArgument().getExpression().accept(this), expr.getArgument().isExplicit(), expr.getArgument().isHidden()));
+  public Expression visitApp(AppExpression expr, Void params) {
+    return Apps(expr.getFunction().accept(this, null), new ArgumentExpression(expr.getArgument().getExpression().accept(this, null), expr.getArgument().isExplicit(), expr.getArgument().isHidden()));
   }
 
   @Override
-  public DefCallExpression visitDefCall(DefCallExpression expr) {
+  public DefCallExpression visitDefCall(DefCallExpression expr, Void params) {
     return expr;
   }
 
   @Override
-  public ConCallExpression visitConCall(ConCallExpression expr) {
+  public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
     if (expr.getParameters().isEmpty()) return expr;
     List<Expression> parameters = new ArrayList<>(expr.getParameters().size());
     for (Expression parameter : expr.getParameters()) {
-      Expression expr2 = parameter.accept(this);
+      Expression expr2 = parameter.accept(this, null);
       if (expr2 == null) return null;
       parameters.add(expr2);
     }
@@ -47,23 +47,23 @@ public class SubstVisitor extends BaseExpressionVisitor<Expression> {
   }
 
   @Override
-  public ClassCallExpression visitClassCall(ClassCallExpression expr) {
+  public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     Map<ClassField, ClassCallExpression.ImplementStatement> statements = new HashMap<>();
     for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
-      statements.put(elem.getKey(), new ClassCallExpression.ImplementStatement(elem.getValue().type == null ? null : elem.getValue().type.accept(this), elem.getValue().term == null ? null : elem.getValue().term.accept(this)));
+      statements.put(elem.getKey(), new ClassCallExpression.ImplementStatement(elem.getValue().type == null ? null : elem.getValue().type.accept(this, null), elem.getValue().term == null ? null : elem.getValue().term.accept(this, null)));
     }
     return ClassCall(expr.getDefinition(), statements);
   }
 
   @Override
-  public Expression visitIndex(IndexExpression expr) {
+  public Expression visitIndex(IndexExpression expr, Void params) {
     if (expr.getIndex() < myFrom) return Index(expr.getIndex());
     if (expr.getIndex() >= mySubstExprs.size() + myFrom) return Index(expr.getIndex() - mySubstExprs.size());
     return mySubstExprs.get(expr.getIndex() - myFrom);
   }
 
   @Override
-  public Expression visitLam(LamExpression expr) {
+  public Expression visitLam(LamExpression expr, Void params) {
     List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
     Expression[] result = visitLamArguments(expr.getArguments(), arguments, expr.getBody());
     return Lam(arguments, result[0]);
@@ -145,46 +145,46 @@ public class SubstVisitor extends BaseExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitPi(PiExpression expr) {
+  public Expression visitPi(PiExpression expr, Void params) {
     SubstVisitorContext ctx = new SubstVisitorContext(mySubstExprs, myFrom);
     return Pi(visitTypeArguments(expr.getArguments(), ctx), ctx.subst(expr.getCodomain()));
   }
 
   @Override
-  public Expression visitUniverse(UniverseExpression expr) {
+  public Expression visitUniverse(UniverseExpression expr, Void params) {
     return expr;
   }
 
   @Override
-  public Expression visitError(ErrorExpression expr) {
-    return expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this), expr.getError());
+  public Expression visitError(ErrorExpression expr, Void params) {
+    return expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this, null), expr.getError());
   }
 
   @Override
-  public Expression visitInferHole(InferHoleExpression expr) {
+  public Expression visitInferHole(InferHoleExpression expr, Void params) {
     return expr;
   }
 
   @Override
-  public Expression visitTuple(TupleExpression expr) {
+  public Expression visitTuple(TupleExpression expr, Void params) {
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
-      fields.add(field.accept(this));
+      fields.add(field.accept(this, null));
     }
-    return Tuple(fields, (SigmaExpression) expr.getType().accept(this));
+    return Tuple(fields, (SigmaExpression) expr.getType().accept(this, null));
   }
 
   @Override
-  public Expression visitSigma(SigmaExpression expr) {
+  public Expression visitSigma(SigmaExpression expr, Void params) {
     return Sigma(visitTypeArguments(expr.getArguments(), new SubstVisitorContext(mySubstExprs, myFrom)));
   }
 
   @Override
-  public Expression visitElim(ElimExpression expr) {
+  public Expression visitElim(ElimExpression expr, Void params) {
     List<IndexExpression> expressions = new ArrayList<>();
     for (IndexExpression index : expr.getExpressions()) {
       assert index.getIndex() < myFrom;
-      expressions.add((IndexExpression) index.accept(this));
+      expressions.add((IndexExpression) index.accept(this, null));
     }
     List<Clause> clauses = new ArrayList<>();
     ElimExpression result = new ElimExpression(expressions, clauses);
@@ -197,17 +197,17 @@ public class SubstVisitor extends BaseExpressionVisitor<Expression> {
   }
 
   @Override
-  public Expression visitProj(ProjExpression expr) {
-    return Proj(expr.getExpression().accept(this), expr.getField());
+  public Expression visitProj(ProjExpression expr, Void params) {
+    return Proj(expr.getExpression().accept(this, null), expr.getField());
   }
 
   @Override
-  public Expression visitNew(NewExpression expr) {
-    return New(expr.getExpression().accept(this));
+  public Expression visitNew(NewExpression expr, Void params) {
+    return New(expr.getExpression().accept(this, null));
   }
 
   @Override
-  public LetExpression visitLet(LetExpression letExpression) {
+  public LetExpression visitLet(LetExpression letExpression, Void params) {
     final List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     final SubstVisitorContext ctx = new SubstVisitorContext(mySubstExprs, myFrom);
 

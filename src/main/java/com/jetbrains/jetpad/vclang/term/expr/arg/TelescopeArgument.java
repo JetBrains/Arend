@@ -14,6 +14,11 @@ public class TelescopeArgument extends TypeArgument implements Abstract.Telescop
   }
 
   @Override
+  public TelescopeArgument toExplicit(boolean explicit) {
+    return new TelescopeArgument(explicit, myNames, getType());
+  }
+
+  @Override
   public List<String> getNames() {
     return myNames;
   }
