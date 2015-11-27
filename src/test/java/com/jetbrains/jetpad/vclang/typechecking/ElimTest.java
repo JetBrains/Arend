@@ -59,7 +59,7 @@ public class ElimTest {
   public void elim5() {
     typeCheckClass(
         "\\static \\data D (x : Nat) | D zero => d0 | D (suc n) => d1\n" +
-        "\\static \\function test (x : D 0) : Nat => \\elim x | d0 => 0");
+        "\\static \\function test (x : D 0) : Nat <= \\elim x | d0 => 0");
   }
 
   @Test
@@ -130,14 +130,14 @@ public class ElimTest {
   public void elim6() {
     typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
-            "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc _) _ => 1 | d _ (suc _) => 2");
+        "\\static \\function test (x : D) : Nat <= \\elim x | d zero zero => 0 | d (suc _) _ => 1 | d _ (suc _) => 2");
   }
 
   @Test
   public void elim7() {
     typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
-        "\\static \\function test (x : D) : Nat => \\elim x | d zero zero => 0 | d (suc (suc _)) zero => 0", 1);
+        "\\static \\function test (x : D) : Nat <= \\elim x | d zero zero => 0 | d (suc (suc _)) zero => 0", 1);
   }
 
   @Test
@@ -279,7 +279,7 @@ public class ElimTest {
   public void arrowTest() {
     typeCheckDef(
         "\\function (+) (x y : Nat) : Nat => \\elim x" +
-            "  | zero => y\n" +
-            "  | suc x => suc (x + y)", 1);
+        "  | zero => y\n" +
+        "  | suc x => suc (x + y)", 1);
   }
 }

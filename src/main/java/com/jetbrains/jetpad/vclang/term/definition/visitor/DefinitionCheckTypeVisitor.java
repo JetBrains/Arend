@@ -105,7 +105,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
     Name name = def.getName();
-    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence(), def.getArrow());
+    Abstract.Definition.Arrow arrow = def.getArrow();
+    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence(), arrow);
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -284,7 +285,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     myNamespaceMember.definition = typedDef;
     Abstract.Expression term = def.getTerm();
     if (term != null) {
-      visitor.setArgsStartCtxIndex(0);
+      if (arrow == Abstract.Definition.Arrow.LEFT) {
+        visitor.setArgsStartCtxIndex(0);
+      }
       CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
 
       if (termResult != null) {

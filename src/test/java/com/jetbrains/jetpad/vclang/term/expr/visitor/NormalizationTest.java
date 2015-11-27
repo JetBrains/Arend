@@ -205,7 +205,6 @@ public class NormalizationTest {
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
-
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \Type2 <= \elim y | \Type0 => \Type1 | succ _ => \Type1 \in x zero) = \Type0
@@ -221,7 +220,7 @@ public class NormalizationTest {
   public void normalizeElimAnyConstructor() {
     ClassDefinition def = typeCheckClass(
         "\\static \\data D | d Nat\n" +
-        "\\static \\function test (x : D) : Nat => \\elim x | _! => 0");
+        "\\static \\function test (x : D) : Nat <= \\elim x | _! => 0");
     FunctionDefinition test = (FunctionDefinition) def.getParentNamespace().getChild(def.getName()).getMember("test").definition;
     assertEquals(Apps(FunCall(test), Index(0)).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()), Apps(FunCall(test), Index(0)));
   }

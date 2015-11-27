@@ -38,8 +38,11 @@ public class TypeCheckingDefCall {
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
     if (expr instanceof ConCallExpression) {
       Constructor constructor = ((ConCallExpression) expr).getDefinition();
-      CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult((Expression) expr, constructor.getBaseType(), null);
-      fixConstructorParameters(constructor, result, true);
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(ConCall(constructor), constructor.getBaseType(), null);
+      fixConstructorParameters(constructor, result, false);
+      if (constructor.getThisClass() != null) {
+        result.type = Pi("\\this", ClassCall(constructor.getThisClass()), result.type);
+      }
       return result;
     }
     if (expr instanceof DefCallExpression) {
