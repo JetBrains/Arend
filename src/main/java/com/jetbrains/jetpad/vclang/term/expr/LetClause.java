@@ -40,10 +40,6 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
     prettyPrintLetClause(this, builder, names, 0);
   }
 
-  public final LetClause liftIndex(int from, int on) {
-    return on == 0 ? this : new LiftIndexVisitor(from, on).visitLetClause(this);
-  }
-
   @Override
   public Abstract.Definition.Arrow getArrow() {
     return myArrow;
@@ -76,6 +72,6 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
 
   @Override
   public LetClause lift(int on) {
-    return new LiftIndexVisitor(0, on).visitLetClause(this);
+    return on == 0 ? this : new LiftIndexVisitor(on).visitLetClause(this, 0);
   }
 }

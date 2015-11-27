@@ -20,13 +20,13 @@ public class IndexExpression extends Expression implements Abstract.IndexExpress
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitIndex(this);
+  public Expression getType(List<Binding> context) {
+    return context.get(context.size() - 1 - myIndex).lift(myIndex + 1).getType();
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    return context.get(context.size() - 1 - myIndex).lift(myIndex + 1).getType();
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitIndex(this, params);
   }
 
   @Override

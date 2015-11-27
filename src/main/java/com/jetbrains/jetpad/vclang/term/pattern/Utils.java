@@ -279,7 +279,9 @@ public class Utils {
 
     List<TypeArgument> result = new ArrayList<>();
     for (PatternExpansion.Result nestedResult : results) {
-      result.addAll(nestedResult.args);
+      for (TypeArgument arg : nestedResult.args) {
+        result.add(arg.toExplicit(false));
+      }
     }
     return result;
   }

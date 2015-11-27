@@ -11,6 +11,10 @@ public class TypeArgument extends Argument implements Abstract.TypeArgument {
     myType = type;
   }
 
+  public TypeArgument toExplicit(boolean explicit) {
+    return new TypeArgument(explicit, myType);
+  }
+
   @Override
   public Expression getType() {
     return myType;

@@ -105,7 +105,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
     Name name = def.getName();
-    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence(), def.getArrow());
+    Abstract.Definition.Arrow arrow = def.getArrow();
+    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence(), arrow);
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -118,7 +119,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<? extends Abstract.Argument> arguments = def.getArguments();
     List<Argument> typedArguments = new ArrayList<>(arguments.size());
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def, myNamespace);
     if (thisClass != null) {
       context.add(new TypedBinding("\\this", ClassCall(thisClass)));
@@ -284,7 +285,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     myNamespaceMember.definition = typedDef;
     Abstract.Expression term = def.getTerm();
     if (term != null) {
-      visitor.setArgsStartCtxIndex(0);
+      if (arrow == Abstract.Definition.Arrow.LEFT) {
+        visitor.setArgsStartCtxIndex(0);
+      }
       CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
 
       if (termResult != null) {
@@ -293,7 +296,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           typedDef.setResultType(termResult.type);
         }
 
-        if (!termResult.expression.accept(new TerminationCheckVisitor(/* overriddenFunction == null ? */ typedDef /* : overriddenFunction */))) {
+        if (!termResult.expression.accept(new TerminationCheckVisitor(/* overriddenFunction == null ? */ typedDef /* : overriddenFunction */), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", term, getNames(context)));
           termResult = null;
         }
@@ -342,8 +345,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Expression typedResultType;
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("\\this", ClassCall(thisClass)));
-    CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
-    visitor.setThisClass(thisClass);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).thisClass(thisClass).build();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
 
     int index = 0;
@@ -417,7 +419,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Universe typedUniverse = new Universe.Type(0, Universe.Type.PROP);
 
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(context, myErrorReporter);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def, myNamespace);
     if (thisClass != null) {
       context.add(new TypedBinding("\\this", ClassCall(thisClass)));
@@ -559,7 +561,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         Expression type = typeArguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF, context);
         while (type instanceof PiExpression) {
           for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
-            if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition))) {
+            if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition), null)) {
               String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
               myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context)));
               return null;
@@ -571,7 +573,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         List<Expression> exprs = new ArrayList<>();
         type.getFunction(exprs);
         for (Expression expr : exprs) {
-          if (expr.accept(new FindDefCallVisitor(dataDefinition))) {
+          if (expr.accept(new FindDefCallVisitor(dataDefinition), null)) {
             String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
             myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context)));
             return null;

@@ -134,7 +134,7 @@ public class DefinitionTest {
     localContext.add(new TypedBinding("f", Pi(Apps(DataCall(def), Pi(Nat(), Nat())), Nat())));
 
     CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errorReporter);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     assertNotNull(result);
     assertEquals(Nat(), result.type);
   }
@@ -152,7 +152,7 @@ public class DefinitionTest {
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DataCall(def), Nat())), Pi(Nat(), Nat()))));
 
     CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errorReporter);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }

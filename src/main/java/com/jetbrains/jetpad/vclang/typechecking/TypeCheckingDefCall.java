@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
 import com.jetbrains.jetpad.vclang.typechecking.error.NameDefinedError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,13 +24,11 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
 
 public class TypeCheckingDefCall {
-  private final List<Binding> myLocalContext;
-  private final ErrorReporter myErrorReporter;
+  private final CheckTypeVisitor myVisitor;
   private ClassDefinition myThisClass;
 
-  public TypeCheckingDefCall(List<Binding> localContext, ErrorReporter errorReporter) {
-    myLocalContext = localContext;
-    myErrorReporter = errorReporter;
+  public TypeCheckingDefCall(CheckTypeVisitor visitor) {
+    myVisitor = visitor;
   }
 
   public void setThisClass(ClassDefinition thisClass) {
@@ -41,22 +38,12 @@ public class TypeCheckingDefCall {
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
     if (expr instanceof ConCallExpression) {
       Constructor constructor = ((ConCallExpression) expr).getDefinition();
-      Expression type = constructor.getBaseType();
-
-      List<TypeArgument> parameters;
-      if (constructor.getPatterns() != null) {
-        parameters = expandConstructorParameters(constructor, myLocalContext);
-      } else {
-        parameters = constructor.getDataType().getParameters();
-      }
-
-      if (!parameters.isEmpty()) {
-        type = Pi(parameters, type);
-      }
+      CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(ConCall(constructor), constructor.getBaseType(), null);
+      fixConstructorParameters(constructor, result, false);
       if (constructor.getThisClass() != null) {
-        type = Pi("\\this", ClassCall(constructor.getThisClass()), type);
+        result.type = Pi("\\this", ClassCall(constructor.getThisClass()), result.type);
       }
-      return new CheckTypeVisitor.OKResult(ConCall(constructor), type, null);
+      return result;
     }
     if (expr instanceof DefCallExpression) {
       Definition definition = ((DefCallExpression) expr).getDefinition();
@@ -68,9 +55,9 @@ public class TypeCheckingDefCall {
       return null;
     }
     if (result.baseResult == null) {
-      TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not available here or not a definition", expr, getNames(myLocalContext));
-      expr.setWellTyped(myLocalContext, Error(null, error));
-      myErrorReporter.report(error);
+      TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not available here or not a definition", expr, getNames(myVisitor.getLocalContext()));
+      expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      myVisitor.getErrorReporter().report(error);
       return null;
     }
 
@@ -80,24 +67,36 @@ public class TypeCheckingDefCall {
   private CheckTypeVisitor.OKResult checkDefinition(Definition definition, Abstract.Expression expr) {
     if (definition instanceof FunctionDefinition && ((FunctionDefinition) definition).typeHasErrors() || !(definition instanceof FunctionDefinition) && definition.hasErrors()) {
       TypeCheckingError error = new HasErrors(definition.getName(), expr);
-      expr.setWellTyped(myLocalContext, Error(definition.getDefCall(), error));
-      myErrorReporter.report(error);
+      expr.setWellTyped(myVisitor.getLocalContext(), Error(definition.getDefCall(), error));
+      myVisitor.getErrorReporter().report(error);
       return null;
     } else {
       return new CheckTypeVisitor.OKResult(definition.getDefCall(), definition.getBaseType(), null);
     }
   }
 
-  private void fixConstructorParameters(Constructor constructor, CheckTypeVisitor.OKResult result) {
+  private void fixConstructorParameters(Constructor constructor, CheckTypeVisitor.OKResult result, boolean doSubst) {
     List<TypeArgument> parameters;
     if (constructor.getPatterns() != null) {
-      parameters = expandConstructorParameters(constructor, myLocalContext);
+      parameters = expandConstructorParameters(constructor, myVisitor.getLocalContext());
     } else {
-      parameters = constructor.getDataType().getParameters();
+      parameters = new ArrayList<>(constructor.getDataType().getParameters().size());
+      for (TypeArgument argument : constructor.getDataType().getParameters()) {
+        parameters.add(argument.toExplicit(false));
+      }
     }
 
     if (!parameters.isEmpty()) {
       result.type = Pi(parameters, result.type);
+    }
+    if (doSubst && result.expression instanceof ConCallExpression) {
+      List<Expression> args = ((ConCallExpression) result.expression).getParameters();
+      if (!args.isEmpty()) {
+        int argsNumber = args.size() - (constructor.getDataType().getThisClass() != null ? 1 : 0);
+        Collections.reverse(args);
+        result.type = result.type.splitAt(argsNumber, null, null).subst(args, 0);
+        Collections.reverse(args);
+      }
     }
   }
 
@@ -113,7 +112,7 @@ public class TypeCheckingDefCall {
   }
 
   public CheckTypeVisitor.OKResult getLocalVar(Name name, Abstract.Expression expr) {
-    ListIterator<Binding> it = myLocalContext.listIterator(myLocalContext.size());
+    ListIterator<Binding> it = myVisitor.getLocalContext().listIterator(myVisitor.getLocalContext().size());
     int index = 0;
     while (it.hasPrevious()) {
       Binding def = it.previous();
@@ -124,8 +123,8 @@ public class TypeCheckingDefCall {
     }
 
     TypeCheckingError error = new NotInScopeError(expr, name);
-    expr.setWellTyped(myLocalContext, Error(null, error));
-    myErrorReporter.report(error);
+    expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+    myVisitor.getErrorReporter().report(error);
     return null;
   }
 
@@ -156,9 +155,9 @@ public class TypeCheckingDefCall {
     NamespaceMember member = resolvedName.toNamespaceMember();
     if (member == null) {
       assert false;
-      TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + name + "' is not available yet", expr, getNames(myLocalContext));
-      expr.setWellTyped(myLocalContext, Error(null, error));
-      myErrorReporter.report(error);
+      TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + name + "' is not available yet", expr, getNames(myVisitor.getLocalContext()));
+      expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      myVisitor.getErrorReporter().report(error);
       return null;
     }
 
@@ -173,14 +172,14 @@ public class TypeCheckingDefCall {
 
     if (definition.getThisClass() != null) {
       if (myThisClass != null) {
-        assert myLocalContext.size() > 0;
-        assert myLocalContext.get(0).getName().name.equals("\\this");
-        Expression thisExpr = Index(myLocalContext.size() - 1);
+        assert myVisitor.getLocalContext().size() > 0;
+        assert myVisitor.getLocalContext().get(0).getName().name.equals("\\this");
+        Expression thisExpr = Index(myVisitor.getLocalContext().size() - 1);
         thisExpr = findParent(myThisClass, definition.getThisClass(), thisExpr);
         if (thisExpr == null) {
-          TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr, getNames(myLocalContext));
-          expr.setWellTyped(myLocalContext, Error(null, error));
-          myErrorReporter.report(error);
+          TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr, getNames(myVisitor.getLocalContext()));
+          expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+          myVisitor.getErrorReporter().report(error);
           return null;
         }
 
@@ -190,14 +189,14 @@ public class TypeCheckingDefCall {
         }
         result.expression = ((DefCallExpression) result.expression).applyThis(thisExpr);
         if (definition instanceof Constructor) {
-          fixConstructorParameters((Constructor) definition, result);
+          fixConstructorParameters((Constructor) definition, result, false);
         }
         result.type = result.type.subst(thisExpr, 0);
         return new DefCallResult(result, null, null);
       } else {
-        TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr, getNames(myLocalContext));
-        expr.setWellTyped(myLocalContext, Error(null, error));
-        myErrorReporter.report(error);
+        TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr, getNames(myVisitor.getLocalContext()));
+        expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+        myVisitor.getErrorReporter().report(error);
         return null;
       }
     } else {
@@ -206,7 +205,7 @@ public class TypeCheckingDefCall {
         return null;
       }
       if (definition instanceof Constructor) {
-        fixConstructorParameters((Constructor) definition, result);
+        fixConstructorParameters((Constructor) definition, result, false);
       }
       return new DefCallResult(result, null, member);
     }
@@ -219,8 +218,8 @@ public class TypeCheckingDefCall {
       member = result.member.namespace.getMember(resolvedName.name.name);
       if (member == null || resolvedName.parent != member.namespace.getParent()) {
         TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, resolvedName.parent.getResolvedName());
-        expr.setWellTyped(myLocalContext, Error(result.baseResult == null ? null : result.baseResult.expression, error));
-        myErrorReporter.report(error);
+        expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
+        myVisitor.getErrorReporter().report(error);
         return null;
       }
     } else {
@@ -228,8 +227,8 @@ public class TypeCheckingDefCall {
       member = result.member.namespace.getMember(name.name);
       if (member == null) {
         TypeCheckingError error = new NameDefinedError(false, expr, name, new ResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
-        expr.setWellTyped(myLocalContext, Error(result.baseResult == null ? null : result.baseResult.expression, error));
-        myErrorReporter.report(error);
+        expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
+        myVisitor.getErrorReporter().report(error);
         return null;
       }
     }
@@ -244,7 +243,7 @@ public class TypeCheckingDefCall {
           okResult.expression = ((DefCallExpression) okResult.expression).applyThis(result.baseResult.expression);
           okResult.equations = result.baseResult.equations;
           if (member.definition instanceof Constructor) {
-            fixConstructorParameters((Constructor) member.definition, okResult);
+            fixConstructorParameters((Constructor) member.definition, okResult, false);
           }
           okResult.type = okResult.type.subst(result.baseResult.expression, 0);
           result.baseResult = okResult;
@@ -252,9 +251,9 @@ public class TypeCheckingDefCall {
           result.member = null;
           return result;
         } else {
-          TypeCheckingError error = new TypeCheckingError("Definition '" + member.definition.getName() + "' cannot be called from here", expr, getNames(myLocalContext));
-          expr.setWellTyped(myLocalContext, Error(result.baseResult.expression, error));
-          myErrorReporter.report(error);
+          TypeCheckingError error = new TypeCheckingError("Definition '" + member.definition.getName() + "' cannot be called from here", expr, getNames(myVisitor.getLocalContext()));
+          expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult.expression, error));
+          myVisitor.getErrorReporter().report(error);
           return null;
         }
       } else {
@@ -283,7 +282,7 @@ public class TypeCheckingDefCall {
         return result;
       }
     } else {
-      CheckTypeVisitor.Result result1 = left.accept(new CheckTypeVisitor(myLocalContext, myErrorReporter, this), null);
+      CheckTypeVisitor.Result result1 = left.accept(myVisitor, null);
       if (result1 == null) {
         return null;
       }
@@ -297,15 +296,15 @@ public class TypeCheckingDefCall {
 
       if (result.member == null) {
         CheckTypeVisitor.OKResult okResult = (CheckTypeVisitor.OKResult) result.baseResult;
-        Expression type = okResult.type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
+        Expression type = okResult.type.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getLocalContext());
 
         if (type instanceof ClassCallExpression) {
           result.baseClassDefinition = ((ClassCallExpression) type).getDefinition();
           result.member = result.baseClassDefinition.getParentNamespace().getMember(result.baseClassDefinition.getName().name);
         } else {
-          if (type instanceof UniverseExpression) {
+          if (type instanceof UniverseExpression || type instanceof PiExpression) {
             List<Expression> arguments = new ArrayList<>();
-            Expression function = okResult.expression.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(arguments);
+            Expression function = okResult.expression.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getLocalContext()).getFunction(arguments);
             if (function instanceof DataCallExpression) {
               CheckTypeVisitor.OKResult conResult = typeCheckConstructor(((DataCallExpression) function).getDefinition(), arguments, name, expr);
               if (conResult == null) {
@@ -316,9 +315,9 @@ public class TypeCheckingDefCall {
             }
           }
 
-          TypeCheckingError error = new TypeCheckingError("Expected an expression of a class type or a data type", expr, getNames(myLocalContext));
-          expr.setWellTyped(myLocalContext, Error(okResult.expression, error));
-          myErrorReporter.report(error);
+          TypeCheckingError error = new TypeCheckingError("Expected an expression of a class type or a data type", expr, getNames(myVisitor.getLocalContext()));
+          expr.setWellTyped(myVisitor.getLocalContext(), Error(okResult.expression, error));
+          myVisitor.getErrorReporter().report(error);
           return null;
         }
       }
@@ -331,35 +330,34 @@ public class TypeCheckingDefCall {
     Collections.reverse(arguments);
     Constructor constructor = dataDefinition.getConstructor(conName.name);
     if (constructor == null) {
-      TypeCheckingError error = new TypeCheckingError("Constructor '" + conName + "' is not defined in data type '" + dataDefinition.getName() + "'", expr, getNames(myLocalContext));
-      expr.setWellTyped(myLocalContext, Error(null, error));
-      myErrorReporter.report(error);
+      TypeCheckingError error = new TypeCheckingError("Constructor '" + conName + "' is not defined in data type '" + dataDefinition.getName() + "'", expr, getNames(myVisitor.getLocalContext()));
+      expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      myVisitor.getErrorReporter().report(error);
       return null;
     }
 
     if (constructor.getPatterns() != null) {
-      Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), arguments, myLocalContext);
+      Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), arguments, myVisitor.getLocalContext());
       TypeCheckingError error = null;
       if (matchResult instanceof Utils.PatternMatchMaybeResult) {
         error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
-            "Expected " + ((Utils.PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((Utils.PatternMatchMaybeResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), expr, getNames(myLocalContext));
+            "Expected " + ((Utils.PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((Utils.PatternMatchMaybeResult) matchResult).actualExpression.prettyPrint(getNames(myVisitor.getLocalContext())), expr, getNames(myVisitor.getLocalContext()));
       } else if (matchResult instanceof Utils.PatternMatchFailedResult) {
         error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
-            "Expected " + ((Utils.PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((Utils.PatternMatchFailedResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), expr, getNames(myLocalContext));
+            "Expected " + ((Utils.PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((Utils.PatternMatchFailedResult) matchResult).actualExpression.prettyPrint(getNames(myVisitor.getLocalContext())), expr, getNames(myVisitor.getLocalContext()));
       } else if (matchResult instanceof Utils.PatternMatchOKResult) {
         arguments = ((Utils.PatternMatchOKResult) matchResult).expressions;
       }
 
       if (error != null) {
-        expr.setWellTyped(myLocalContext, Error(null, error));
-        myErrorReporter.report(error);
+        expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+        myVisitor.getErrorReporter().report(error);
         return null;
       }
     }
 
-    Collections.reverse(arguments);
-    Expression resultType = constructor.getBaseType().subst(arguments, 0);
-    Collections.reverse(arguments);
-    return new CheckTypeVisitor.OKResult(ConCall(constructor, arguments), resultType, null);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.OKResult(ConCall(constructor, arguments), constructor.getBaseType(), null);
+    fixConstructorParameters(constructor, result, true);
+    return result;
   }
 }

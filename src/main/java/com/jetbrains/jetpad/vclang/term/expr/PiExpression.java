@@ -40,11 +40,6 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitPi(this);
-  }
-
-  @Override
   public Expression getType(List<Binding> context) {
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
     int origSize = context.size();
@@ -69,6 +64,11 @@ public class PiExpression extends Expression implements Abstract.PiExpression {
 
     trimToSize(context, origSize);
     return universe == null ? null : new UniverseExpression(universe);
+  }
+
+  @Override
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitPi(this, params);
   }
 
   @Override

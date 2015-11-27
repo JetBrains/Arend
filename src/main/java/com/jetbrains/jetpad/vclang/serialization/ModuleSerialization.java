@@ -11,7 +11,9 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
@@ -182,7 +184,7 @@ public class ModuleSerialization {
       visitor.getDataStream().writeBoolean(field.hasErrors());
       if (!field.hasErrors()) {
         writeUniverse(visitor.getDataStream(), field.getUniverse());
-        field.getType().accept(visitor);
+        field.getType().accept(visitor, null);
       }
     }
 
@@ -202,11 +204,11 @@ public class ModuleSerialization {
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {
       writeArguments(visitor, definition.getArguments());
-      definition.getResultType().accept(visitor);
+      definition.getResultType().accept(visitor, null);
     }
     visitor.getDataStream().write(definition.getArrow() == null ? 0 : definition.getArrow() == Abstract.Definition.Arrow.LEFT ? 1 : 2);
     if (!definition.hasErrors() && !definition.isAbstract()) {
-      definition.getTerm().accept(visitor);
+      definition.getTerm().accept(visitor, null);
     }
 
     return errors;
@@ -253,10 +255,10 @@ public class ModuleSerialization {
           visitor.getDataStream().writeUTF(name);
         }
       }
-      ((TypeArgument) argument).getType().accept(visitor);
+      ((TypeArgument) argument).getType().accept(visitor, null);
     } else if (argument instanceof TypeArgument) {
       visitor.getDataStream().write(1);
-      ((TypeArgument) argument).getType().accept(visitor);
+      ((TypeArgument) argument).getType().accept(visitor, null);
     } else if (argument instanceof NameArgument) {
       visitor.getDataStream().write(2);
       String name = ((NameArgument) argument).getName();

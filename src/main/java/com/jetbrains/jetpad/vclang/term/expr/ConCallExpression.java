@@ -27,10 +27,7 @@ public class ConCallExpression extends DefCallExpression {
 
   @Override
   public Expression applyThis(Expression thisExpr) {
-    List<Expression> parameters = new ArrayList<>(myParameters.size() + 1);
-    parameters.add(thisExpr);
-    parameters.addAll(myParameters);
-    myParameters = parameters;
+    myParameters.add(thisExpr);
     return this;
   }
 
@@ -52,7 +49,7 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return visitor.visitConCall(this);
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitConCall(this, params);
   }
 }

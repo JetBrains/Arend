@@ -17,11 +17,6 @@ public class VarExpression extends Expression implements Abstract.DefCallExpress
   }
 
   @Override
-  public <T> T accept(ExpressionVisitor<? extends T> visitor) {
-    return (T) this;
-  }
-
-  @Override
   public Name getName() {
     return myName;
   }
@@ -34,6 +29,11 @@ public class VarExpression extends Expression implements Abstract.DefCallExpress
   @Override
   public ResolvedName getResolvedName() {
     return null;
+  }
+
+  @Override
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return (R) this;
   }
 
   @Override

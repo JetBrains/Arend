@@ -2,31 +2,31 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
-public abstract class BaseExpressionVisitor<T> implements ExpressionVisitor<T> {
-  public abstract T visitDefCall(DefCallExpression expr);
+public abstract class BaseExpressionVisitor<P, R> implements ExpressionVisitor<P, R> {
+  public abstract R visitDefCall(DefCallExpression expr, P params);
 
   @Override
-  public T visitFunCall(FunCallExpression expr) {
-    return visitDefCall(expr);
+  public R visitFunCall(FunCallExpression expr, P params) {
+    return visitDefCall(expr, params);
   }
 
   @Override
-  public T visitConCall(ConCallExpression expr) {
-    return visitDefCall(expr);
+  public R visitConCall(ConCallExpression expr, P params) {
+    return visitDefCall(expr, params);
   }
 
   @Override
-  public T visitDataCall(DataCallExpression expr) {
-    return visitDefCall(expr);
+  public R visitDataCall(DataCallExpression expr, P params) {
+    return visitDefCall(expr, params);
   }
 
   @Override
-  public T visitFieldCall(FieldCallExpression expr) {
-    return visitDefCall(expr);
+  public R visitFieldCall(FieldCallExpression expr, P params) {
+    return visitDefCall(expr, params);
   }
 
   @Override
-  public T visitClassCall(ClassCallExpression expr) {
-    return visitDefCall(expr);
+  public R visitClassCall(ClassCallExpression expr, P params) {
+    return visitDefCall(expr, params);
   }
 }
