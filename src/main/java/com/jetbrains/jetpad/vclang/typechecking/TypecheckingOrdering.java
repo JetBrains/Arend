@@ -116,8 +116,7 @@ public class TypecheckingOrdering {
       }
 
       myVisiting.remove(name);
-      if (!(member.abstractDefinition instanceof Abstract.Constructor) && !(member.abstractDefinition instanceof Abstract.AbstractDefinition))
-        myResult.add(name);
+      myResult.add(name);
     }
 
     myVisited.add(name);
