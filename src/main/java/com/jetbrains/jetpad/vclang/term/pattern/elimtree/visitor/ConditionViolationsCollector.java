@@ -12,55 +12,46 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.PatternExpansion.expandPattern;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
 
-public class ConditionViolationsCollector<T> implements ElimTreeNodeVisitor<T, List<ConditionViolationsCollector.ConditionCheckPair<T>>, Void>  {
-
-  public static class ConditionCheckPair<T> {
-    public final List<Binding> ctx;
-    public final T v1;
-    public final List<Expression> subst1;
-    public final T v2;
-    public final List<Expression> subst2;
-
-    public ConditionCheckPair(List<Binding> ctx, T v1, List<Expression> subst1, T v2, List<Expression> subst2) {
-      this.ctx = ctx;
-      this.v1 = v1;
-      this.subst1 = subst1;
-      this.v2 = v2;
-      this.subst2 = subst2;
-    }
+public class ConditionViolationsCollector<T> implements ElimTreeNodeVisitor<T, Void, List<Expression>>  {
+  public interface ConditionViolationChecker<T> {
+    void check(List<Binding> context, T v1, List<Expression> subst1, T v2, List<Expression> subst2);
   }
 
   private final List<Binding> myContext;
+  private final ConditionViolationChecker<T> myChecker;
 
-  public ConditionViolationsCollector(List<Binding> context) {
-    this.myContext = context;
+  private ConditionViolationsCollector(List<Binding> context, ConditionViolationChecker<T> checker) {
+    myContext = context;
+    myChecker = checker;
+  }
+
+  public static <T> void check(List<Binding> context, ElimTreeNode<T> tree, ConditionViolationChecker<T> checker) {
+    tree.accept(new ConditionViolationsCollector<>(context, checker), null);
   }
 
   @Override
-  public List<ConditionCheckPair<T>> visitBranch(BranchElimTreeNode<T> branchNode, Void params) {
+  public Void visitBranch(final BranchElimTreeNode<T> branchNode, List<Expression> expressions) {
+    if (expressions == null) {
+      expressions = new ArrayList<>(branchNode.getIndex() + 1);
+      for (int i = 0; i <= branchNode.getIndex(); i++) {
+        expressions.add(Index(i));
+      }
+    }
+
     List<Expression> parameters = new ArrayList<>();
     Expression type = myContext.get(myContext.size() - 1 - branchNode.getIndex()).getType().liftIndex(0, branchNode.getIndex());
     DataDefinition dataType = ((DataCallExpression) type.normalize(NormalizeVisitor.Mode.NF, myContext).getFunction(parameters)).getDefinition();
-    List<ConditionCheckPair<T>> result = new ArrayList<>();
     for (ConCallExpression conCall : dataType.getConstructors(parameters, myContext)) {
       ElimTreeNode<T> child = branchNode.getChild(conCall.getDefinition());
       if (child != null) {
-        try (ConCallContextExpander ignore = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
-          int numArgs = splitArguments(conCall.getDefinition().getArguments()).size();
-          for (ConditionCheckPair<T> pair : child.accept(this, null)) {
-            fixSubst(branchNode.getIndex(), conCall, numArgs, pair.ctx, pair.subst1);
-            fixSubst(branchNode.getIndex(), conCall, numArgs, pair.ctx, pair.subst2);
-            result.add(pair);
-          }
+        try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
+          child.accept(this, expander.substIn(expressions));
         }
       }
     }
@@ -71,52 +62,55 @@ public class ConditionViolationsCollector<T> implements ElimTreeNodeVisitor<T, L
           List<Binding> tail = new ArrayList<>(myContext.subList(myContext.size() - 1 - branchNode.getIndex(), myContext.size()));
           myContext.subList(myContext.size() - 1 - branchNode.getIndex(), myContext.size()).clear();
           Pattern pattern = new ConstructorPattern(condition.getConstructor(), condition.getPatterns(), true);
-          PatternExpansion.Result expansionResult = expandPattern(pattern, type.liftIndex(0, -branchNode.getIndex()), myContext);
+          final PatternExpansion.Result expansionResult = expandPattern(pattern, type.liftIndex(0, -branchNode.getIndex()), myContext);
           for (TypeArgument arg : expansionResult.args) {
             myContext.add(new TypedBinding((String) null, arg.getType()));
           }
           for (int i = 1; i < tail.size(); i++) {
             myContext.add(new TypedBinding((String) null, expandPatternSubstitute(pattern, i - 1, expansionResult.expression.getExpression().liftIndex(0, i - 1), tail.get(i).getType())));
           }
+
           List<Expression> subst = new ArrayList<>();
           for (int i = 0; i < tail.size() - 1; i++) {
             subst.add(Index(i));
           }
-          subst.add(expansionResult.expression.getExpression().liftIndex(0, tail.size() - 1));
+          subst.add(expansionResult.expression.getExpression().liftIndex(0, branchNode.getIndex()));
 
-          for (SubstituteExpander.SubstituteExpansionResult<T> nestedResult : branchNode.accept(new SubstituteExpander<T>(myContext),
-              new SubstituteExpander.SubstituteExpansionParams(subst, condition.getTerm().liftIndex(0, branchNode.getIndex())))) {
-            Expression newExpression = nestedResult.subst.get(nestedResult.subst.size() - 1);
-            nestedResult.subst.remove(nestedResult.subst.size() - 1);
-            nestedResult.subst.add(nestedResult.expression);
-            for (SubstituteExpander.SubstituteExpansionResult<T> veryNestedResult : branchNode.accept(new SubstituteExpander<T>(nestedResult.context),
-                new SubstituteExpander.SubstituteExpansionParams(nestedResult.subst, newExpression))) {
-              List<Expression> subst1 = new ArrayList<>(veryNestedResult.subst.subList(0, veryNestedResult.subst.size() - 1));
-              subst1.add(veryNestedResult.expression);
-              result.add(new ConditionCheckPair<>(
-                veryNestedResult.context, nestedResult.value, subst1, veryNestedResult.value, veryNestedResult.subst
-              ));
-            }
+          List<Expression> newExpressions = new ArrayList<>(expressions.size());
+          for (Expression expr : expressions) {
+            newExpressions.add(expandPatternSubstitute(pattern, branchNode.getIndex(), expansionResult.expression.getExpression().liftIndex(0, branchNode.getIndex()), expr));
           }
+          for (Expression expr : expressions) {
+            newExpressions.add(expandPatternSubstitute(pattern, branchNode.getIndex(), condition.getTerm().liftIndex(0, branchNode.getIndex()), expr));
+          }
+          for (int i = 0; i < tail.size() - 1; i++) {
+            newExpressions.add(Index(i));
+          }
+          newExpressions.add(condition.getTerm().liftIndex(0, branchNode.getIndex()));
+
+
+          SubstituteExpander.substituteExpand(myContext, subst, branchNode, newExpressions, new SubstituteExpander.SubstituteExpansionProcessor<T>() {
+            @Override
+            public void process(List<Expression> expressions1, List<Binding> context, final T lhsValue) {
+              List<Expression> newSubst = new ArrayList<>(expressions1.subList(expressions1.size() - 1 - branchNode.getIndex(), expressions1.size()));
+              expressions1.subList(expressions1.size() - 1 - branchNode.getIndex(), expressions1.size()).clear();
+              SubstituteExpander.substituteExpand(context, newSubst, branchNode, expressions1, new SubstituteExpander.SubstituteExpansionProcessor<T>() {
+                @Override
+                public void process(List<Expression> expressions2, List<Binding> context, T rhsValue) {
+                  myChecker.check(context, lhsValue, new ArrayList<>(expressions2.subList(0, expressions2.size() / 2)), rhsValue, new ArrayList<>(expressions2.subList(expressions2.size() / 2, expressions2.size())));
+                }
+              });
+            }
+          });
         }
       }
     }
 
-    return result;
-  }
-
-  private void fixSubst(int index, ConCallExpression conCall, int numArgs, List<Binding> newContext, List<Expression> subst) {
-    while (subst.size() < index + numArgs) {
-      subst.add(Index(newContext.size() - 1 - (myContext.size() - 1 - subst.size())));
-    }
-
-    List<Expression> args1 = new ArrayList<>(subst.subList(index, index + numArgs));
-    subst.subList(index, index + numArgs).clear();
-    subst.add(index, Apps(conCall.liftIndex(0, newContext.size() - myContext.size()), args1.toArray(new Expression[args1.size()])));
+    return null;
   }
 
   @Override
-  public List<ConditionCheckPair<T>> visitLeaf(LeafElimTreeNode<T> leafNode, Void params) {
-    return Collections.emptyList();
+  public Void visitLeaf(LeafElimTreeNode<T> leafNode, List<Expression> expressions) {
+    return null;
   }
 }

@@ -810,7 +810,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitElim(Abstract.ElimExpression expr, Expression expectedType) {
+  public Result visitElim(final Abstract.ElimExpression expr, Expression expectedType) {
     TypeCheckingError error = null;
     if (expectedType == null) {
       error = new TypeCheckingError("Cannot infer type of the expression", expr, getNames(myLocalContext));
@@ -825,7 +825,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
      }
 
-    List<IndexExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
+    final List<IndexExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
     for (Abstract.Expression var : expr.getExpressions()){
       OKResult exprOKResult = lookupLocalVar(var, expr);
       if (exprOKResult == null) {
@@ -973,24 +973,49 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return null;
       }
 
-      for (ConditionViolationsCollector.ConditionCheckPair<Clause> pair : treeNode.accept(new ConditionViolationsCollector<Clause>(myLocalContext), null)) {
-        for (int i = 0; i < elimExprs.size(); i++) {
-          int var = elimExprs.get(i).getIndex();
-          List<Expression> matched1 = ((PatternMatchOKResult) pair.v1.getPatterns().get(i).match(pair.subst1.get(var))).expressions;
-          pair.subst1.remove(var);
-          pair.subst1.addAll(var, matched1);
-          List<Expression> matched2 = ((PatternMatchOKResult) pair.v2.getPatterns().get(i).match(pair.subst2.get(var))).expressions;
-          pair.subst2.remove(var);
-          pair.subst2.addAll(var, matched2);
+      class ClauseConditionChecker implements ConditionViolationsCollector.ConditionViolationChecker<Clause> {
+        boolean wasError = false;
+
+        @Override
+        public void check(List<Binding> context, Clause v1, List<Expression> subst1, Clause v2, List<Expression> subst2) {
+          Expression expr1 = v1.getExpression().subst(match(v1, subst1), 0).normalize(NormalizeVisitor.Mode.NF, context);
+          Expression expr2 = v2.getExpression().subst(match(v2, subst2), 0).normalize(NormalizeVisitor.Mode.NF, context);
+          if (!expr1.equals(expr2)){
+            StringBuilder errorMsg = new StringBuilder();
+            errorMsg.append("Condition check failed: \n");
+            errorMsg.append(" 1)");
+            for (IndexExpression expr : elimExprs) {
+              errorMsg.append(" (").append(subst1.get(expr.getIndex())).append(")");
+            }
+            errorMsg.append(" = ").append(expr1).append("\n");
+            errorMsg.append(" 2)");
+            for (IndexExpression expr : elimExprs) {
+              errorMsg.append(" (").append(subst2.get(expr.getIndex())).append(")");
+            }
+            errorMsg.append(" = ").append(expr2).append("\n");
+
+            TypeCheckingError error = new TypeCheckingError(errorMsg.toString(), expr, getNames(myLocalContext));
+            myErrorReporter.report(error);
+            wasError = true;
+          }
         }
 
-        if (!pair.v1.getExpression().subst(pair.subst1, 0).normalize(NormalizeVisitor.Mode.NF, pair.ctx).equals(
-            pair.v2.getExpression().subst(pair.subst2, 0).normalize(NormalizeVisitor.Mode.NF, pair.ctx))) {
-          error = new TypeCheckingError("Condition check failed.", expr, getNames(myLocalContext));
-          myErrorReporter.report(error);
-          return null;
+        private List<Expression> match(Clause v, List<Expression> subst) {
+          List<Expression> result = new ArrayList<>(subst);
+          for (int i = 0; i < elimExprs.size(); i++) {
+            int var = elimExprs.get(i).getIndex();
+            List<Expression> matched1 = ((PatternMatchOKResult) v.getPatterns().get(i).match(result.get(var))).expressions;
+            result.remove(var);
+            result.addAll(var, matched1);
+          }
+          return result;
         }
       }
+
+      ClauseConditionChecker checker = new ClauseConditionChecker();
+      ConditionViolationsCollector.check(myLocalContext, treeNode, checker);
+      if (checker.wasError)
+        return null;
     }
 
     ElimExpression result = new ElimExpression(elimExprs, clauses);

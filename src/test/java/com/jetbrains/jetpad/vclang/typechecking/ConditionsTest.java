@@ -67,7 +67,7 @@ public class ConditionsTest {
             "| zneg (suc (suc _)) => 0\n" +
             "| zneg (suc zero) => 1\n" +
             "| zneg zero => 2\n" +
-            "| zpos x => suc x"
+            "| zpos x => suc x", 1
     );
   }
 
@@ -77,7 +77,7 @@ public class ConditionsTest {
         "\\static \\data Z  | positive Nat | negative Nat\n" +
         "  \\with | positive zero => negative zero\n" +
         "\n" +
-        "\\static \\function test (n : Z) (m : Nat) : Nat <= \\elim n, m\n" +
+        "\\static \\function test (x : Z) (y : Nat) : Nat <= \\elim x, y\n" +
         "| positive (suc n), m => n\n" +
         "| positive zero, m => m\n" +
         "| negative n, zero => zero\n" +
@@ -90,9 +90,10 @@ public class ConditionsTest {
         "\\static \\data Z  | positive Nat | negative Nat\n" +
         "  \\with | positive zero => negative zero\n" +
         "\n" +
-        "\\static \\function test (n : Z) (m : Nat) : Nat <= \\elim n, m\n" +
+        "\\static \\function test (x : Z) (y : Nat) : Nat <= \\elim x, y\n" +
         "| positive (suc n), m => n\n" +
         "| positive zero, m => m\n" +
         "| negative n, zero => zero\n" +
         "| negative n, suc m => suc (suc m)", 1);
-  }}
+  }
+}

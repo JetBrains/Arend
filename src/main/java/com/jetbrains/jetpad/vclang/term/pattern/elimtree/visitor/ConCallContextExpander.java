@@ -52,6 +52,14 @@ class ConCallContextExpander implements AutoCloseable {
     return expression.liftIndex(myIndex + 1, myNumConstructorArguments).subst(mySubst.liftIndex(0, myTail.size()), myIndex);
   }
 
+  public final List<Expression> substIn(List<Expression> expressions) {
+    List<Expression> result = new ArrayList<>();
+    for (Expression expr : expressions) {
+      result.add(substIn(expr));
+    }
+    return result;
+  }
+
   @Override
   public void close() {
     trimToSize(myContext, myOldContextSize);
