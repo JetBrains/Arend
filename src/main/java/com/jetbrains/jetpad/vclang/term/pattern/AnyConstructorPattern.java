@@ -18,7 +18,7 @@ public class AnyConstructorPattern extends ConstructorPattern implements Abstrac
 
   @Override
   public Utils.PatternMatchResult match(Expression expr, List<Binding> context) {
-    expr = expr.normalize(NormalizeVisitor.Mode.WHNF, context).getFunction(new ArrayList<Expression>());
+    expr = (context == null ? expr : expr.normalize(NormalizeVisitor.Mode.WHNF, context)).getFunction(new ArrayList<Expression>());
     if (!(expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Abstract.Constructor)) {
       return new Utils.PatternMatchMaybeResult(this, expr);
     } else {

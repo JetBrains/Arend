@@ -149,8 +149,15 @@ public class Utils {
 
   public static List<Expression> getTypes(List<TypeArgument> args) {
     List<Expression> result = new ArrayList<>();
-    for (TypeArgument arg : args)
-      result.add(arg.getType());
+    for (TypeArgument arg : args) {
+      if (arg instanceof TelescopeArgument) {
+        for (int i = 0; i < ((TelescopeArgument) arg).getNames().size(); i++) {
+          result.add(arg.getType().liftIndex(0, i));
+        }
+      } else {
+        result.add(arg.getType());
+      }
+    }
     return result;
   }
 

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getTypes;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class Utils {
@@ -275,7 +276,7 @@ public class Utils {
   }
 
   public static List<TypeArgument> expandConstructorParameters(Constructor constructor, List<Binding> context) {
-    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters(), context);
+    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), context);
 
     List<TypeArgument> result = new ArrayList<>();
     for (PatternExpansion.Result nestedResult : results) {
@@ -287,7 +288,7 @@ public class Utils {
   }
 
   public static List<ArgumentExpression> constructorPatternsToExpressions(Constructor constructor) {
-    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters(), new ArrayList<Binding>());
+    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), new ArrayList<Binding>());
 
     List<ArgumentExpression> result = new ArrayList<>();
     int shift = numberOfVariables(constructor.getArguments());

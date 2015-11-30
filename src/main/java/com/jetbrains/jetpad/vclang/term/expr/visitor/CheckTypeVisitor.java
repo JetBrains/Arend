@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsBranch;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ConditionViolationsCollector;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ReplaceElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -970,6 +971,25 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
+      }
+
+      for (ConditionViolationsCollector.ConditionCheckPair<Clause> pair : treeNode.accept(new ConditionViolationsCollector<Clause>(myLocalContext), null)) {
+        for (int i = 0; i < elimExprs.size(); i++) {
+          int var = elimExprs.get(i).getIndex();
+          List<Expression> matched1 = ((PatternMatchOKResult) pair.v1.getPatterns().get(i).match(pair.subst1.get(var))).expressions;
+          pair.subst1.remove(var);
+          pair.subst1.addAll(var, matched1);
+          List<Expression> matched2 = ((PatternMatchOKResult) pair.v2.getPatterns().get(i).match(pair.subst2.get(var))).expressions;
+          pair.subst2.remove(var);
+          pair.subst2.addAll(var, matched2);
+        }
+
+        if (!pair.v1.getExpression().subst(pair.subst1, 0).normalize(NormalizeVisitor.Mode.NF, pair.ctx).equals(
+            pair.v2.getExpression().subst(pair.subst2, 0).normalize(NormalizeVisitor.Mode.NF, pair.ctx))) {
+          error = new TypeCheckingError("Condition check failed.", expr, getNames(myLocalContext));
+          myErrorReporter.report(error);
+          return null;
+        }
       }
     }
 

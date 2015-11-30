@@ -291,44 +291,4 @@ public class DefinitionTest {
         "\\static \\function f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
         "\\static \\function g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
   }
-
-  @Test
-  public void dataTypeWithConditions() {
-    typeCheckClass(
-        "\\static \\data Z | zpos Nat | zneg Nat\n" +
-            "\\with | zpos zero => zneg zero"
-    );
-  }
-
-  @Test
-  public void dataTypeWithConditionsWrongType() {
-    typeCheckClass(
-        "\\static \\data Z | zpos Nat | zneg Nat\n" +
-            "\\with | zpos zero => zero", 1
-    );
-  }
-
-  @Test
-  public void dataTypeWithConditionsTCFailed1() {
-    typeCheckClass(
-        "\\static \\data Z | zpos Nat | zneg Nat\n" +
-            "\\with | zpos zero => zpos 1"
-    , 1);
-  }
-
-  @Test
-  public void dataTypeWithConditionsTCFailed2() {
-    typeCheckClass(
-        "\\static \\data Z | zpos | zneg \n" +
-            "\\with | zpos => zpos"
-    , 1);
-  }
-
-  @Test
-  public void dataTypeWithConditionsMutualDep() {
-    typeCheckClass(
-       "\\static \\data Z | zpos | zneg \n"  +
-           "\\with | zpos => zneg | zneg => zpos\n"
-    , 1);
-  }
 }

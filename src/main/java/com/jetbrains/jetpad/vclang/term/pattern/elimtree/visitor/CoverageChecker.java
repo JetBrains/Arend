@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -16,45 +15,10 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.match;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class CoverageChecker<U> implements ElimTreeNodeVisitor<U, List<List<Pattern>>, Boolean> {
-  private static class ConCallContextExpander implements AutoCloseable {
-    private final int myOldContextSize;
-    private final List<Binding> myContext;
-    private final List<Binding> myTail;
-
-    private ConCallContextExpander(int index, ConCallExpression conCall, List<Binding> context) {
-      myContext = context;
-      myTail = new ArrayList<>(context.subList(context.size() - 1 - index, context.size()));
-      context.subList(context.size() - 1 - index, context.size()).clear();
-      conCall = (ConCallExpression) conCall.liftIndex(0, -index);
-
-
-      List<TypeArgument> conArguments = new ArrayList<>();
-      splitArguments(conCall.getType(myContext), conArguments, myContext);
-      myOldContextSize = myContext.size();
-      Expression subst = conCall;
-      for (TypeArgument arg : conArguments) {
-        myContext.add(new TypedBinding((String) null, arg.getType()));
-        subst = Apps(subst.liftIndex(0, 1), Index(0));
-      }
-
-      for (int i = 1; i < myTail.size(); i++) {
-        myContext.add(new TypedBinding(myTail.get(i).getName(),
-            myTail.get(i).getType().liftIndex(i, conArguments.size()).subst(subst.liftIndex(0, i - 1), i - 1)));
-      }
-    }
-
-    @Override
-    public void close() {
-      trimToSize(myContext, myOldContextSize);
-      myContext.addAll(myTail);
-    }
-  }
 
   private final List<Binding> myContext;
 
