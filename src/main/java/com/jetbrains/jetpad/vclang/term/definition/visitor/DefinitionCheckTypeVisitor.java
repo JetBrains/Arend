@@ -522,6 +522,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
       if (result == null)
         return;
+      Expression lhs = result.expression.normalize(NormalizeVisitor.Mode.NF, visitor.getLocalContext());
 
       List<Expression> tcPatterns = new ArrayList<>(typedPatterns.size());
       for (int i = 0; i < typedPatterns.size(); i++) {
@@ -536,12 +537,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           tcPatterns.set(j, expandPatternSubstitute(typedPatterns.get(i), typedPatterns.size() - 1 - i, newExpr, tcPatterns.get(j)));
         }
       }
-      if (!result.expression.accept(new TerminationCheckVisitor(constructor, tcPatterns), null)) {
+      if (!lhs.accept(new TerminationCheckVisitor(constructor, tcPatterns), null)) {
         myErrorReporter.report(new TypeCheckingError("Termination check failed", cond.getTerm(), getNames(visitor.getLocalContext())));
         return;
       }
 
-      dataDefinition.addCondition(new Condition(constructor, typedPatterns, result.expression));
+      dataDefinition.addCondition(new Condition(constructor, typedPatterns, lhs));
     }
   }
 
