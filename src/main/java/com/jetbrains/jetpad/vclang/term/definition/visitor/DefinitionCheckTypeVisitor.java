@@ -527,6 +527,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       for (int i = 0; i < typedPatterns.size(); i++) {
         tcPatterns.add(Index(i));
       }
+      for (int i = 0; i < constructor.getNumberOfAllParameters(); i++) {
+        tcPatterns.add(Index(typedPatterns.size() + i));
+      }
       for (int i = 0; i < typedPatterns.size(); i++) {
         Expression newExpr = patternToExpression(typedPatterns.get(i)).getExpression();
         for (int j = 0; j < tcPatterns.size(); j++) {

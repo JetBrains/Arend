@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -66,6 +67,10 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   public Boolean visitApp(AppExpression expr, Void params) {
     List<Expression> args = new ArrayList<>();
     Expression fun = expr.getFunction(args);
+    if (fun instanceof ConCallExpression) {
+      args.addAll(((ConCallExpression) fun).getParameters());
+      Collections.reverse(args.subList(args.size() - ((ConCallExpression) fun).getParameters().size(), args.size()));
+    }
     if (fun instanceof DefCallExpression) {
       if (((DefCallExpression) fun).getDefinition().getThisClass() != null && !args.isEmpty()) {
         args.remove(args.size() - 1);
