@@ -49,13 +49,10 @@ public class ModuleSerializationTest {
   @Test
   public void serializeElimTest() throws IOException {
     ClassDefinition def = typeCheckClass("\\static \\function\n" +
-        " f (x y : Nat) : Nat <= \\elim y\n" +
-        "     | zero => 0\n" +
-        "     | suc x <= \\elim x\n" +
-        "         | zero => x\n" +
-        "         | suc x <= suc x\n" +
-        "         ;\n" +
-        "     ;");
+        " f (x y : Nat) : Nat <= \\elim x, y\n" +
+        "  | _, zero => 0\n" +
+        "  | x, suc zero => x\n" +
+        "  | _, suc (suc x) => suc x");
     Namespace namespace = def.getResolvedName().toNamespace();
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);

@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
@@ -47,6 +48,7 @@ public class ConditionViolationsCollector<T> implements ElimTreeNodeVisitor<T, V
     List<Expression> parameters = new ArrayList<>();
     Expression type = myContext.get(myContext.size() - 1 - branchNode.getIndex()).getType().liftIndex(0, branchNode.getIndex());
     DataDefinition dataType = ((DataCallExpression) type.normalize(NormalizeVisitor.Mode.NF, myContext).getFunction(parameters)).getDefinition();
+    Collections.reverse(parameters);
     for (ConCallExpression conCall : dataType.getConstructors(parameters, myContext)) {
       ElimTreeNode<T> child = branchNode.getChild(conCall.getDefinition());
       if (child != null) {

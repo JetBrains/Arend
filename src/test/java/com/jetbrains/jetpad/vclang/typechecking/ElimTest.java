@@ -24,28 +24,22 @@ public class ElimTest {
         "\\static \\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
         "  | con2 _ _ _ _ => Nat -> Nat\n" +
         "  | con1 _ => Nat\n" +
-        "\\static \\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
-        "  | con1 s <= \\elim e\n" +
-        "    | con2 x y z t => x\n" +
-        "    | con1 _ => s\n" +
-        "  ;\n" +
-        "  | con2 x y z t <= \\elim e\n" +
-        "    | con1 s => x q\n" +
-        "    | con2 _ y z t => x");
+        "\\static \\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim e, r\n" +
+        " | con2 x y z t, con1 s => x\n" +
+        " | con1 _, con1 s => s\n" +
+        " | con1 s, con2 x y z t => x q\n" +
+        " | con2 _ y z t, con2 x y z t => x");
   }
 
   @Test
   public void elim3() {
     typeCheckClass(
         "\\static \\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
-        "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
-        "  | con1 s <= \\elim e\n" +
-        "    | con2 _ {y} {z} {t} => q t\n" +
-        "    | con1 {z} _ => z\n" +
-        "    ;\n" +
-        "  | con2 y <= \\elim e\n" +
-        "    | con1 s => y s\n" +
-        "    | con2 _ {a} {b} => y (q b)");
+        "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim e, r\n" +
+        "  | con2 _ {y} {z} {t}, con1 s => q t\n" +
+        "  | con1 {z} _, con1 s => z\n" +
+        "  | con1 s, con2 y => y s\n" +
+        "  | con2 _ {a} {b}, con2 y => y (q b)");
   }
 
   @Test

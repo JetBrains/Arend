@@ -883,7 +883,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           emptyClauses.add(clause);
           continue;
         }
-        Result clauseResult = typeCheckLocal(clause.getExpression(), clause.getArrow() == Abstract.Definition.Arrow.RIGHT ? null : myArgsStartCtxIndex, clauseExpectedType);
+        Result clauseResult = typeCheckLocal(clause.getExpression(), null, clauseExpectedType);
         if (!(clauseResult instanceof OKResult)) {
           wasError = true;
           if (errorResult == null) {
