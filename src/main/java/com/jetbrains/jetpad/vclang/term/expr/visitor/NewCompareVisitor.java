@@ -2,11 +2,11 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.CompareResult;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.Equations;
 
 import java.util.ArrayList;
@@ -15,11 +15,13 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
-public class NewCompareVisitor extends BaseExpressionVisitor<Expression, CompareResult> {
+public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewCompareVisitor.Result> {
   private final Equations myEquations;
+  private CMP myCMP;
 
-  private NewCompareVisitor(Equations equations) {
+  private NewCompareVisitor(Equations equations, CMP cmp) {
     myEquations = equations;
+    myCMP = cmp;
   }
 
   private class NumberOfLambdas {
@@ -83,9 +85,9 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
     return atArgs.get(1).liftIndex(0, -1);
   }
 
-  public CompareResult compare(Expression expr1, Expression expr2) {
+  public Result compare(Expression expr1, Expression expr2) {
     if (expr1 == expr2 || expr1 instanceof ErrorExpression || expr2 instanceof ErrorExpression) {
-      return CompareResult.EQUIV;
+      return Result.YES;
     }
 
     if (expr1 instanceof LamExpression || expr2 instanceof LamExpression) {
@@ -99,12 +101,15 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
       int diff = maxNumber.number - minNumber.number;
       maxBody = lamEtaReduce(maxBody, diff);
       if (maxBody == null) {
-        return CompareResult.NOT_EQUIV;
+        return Result.NO;
       }
       Equations equations = new Equations();
-      CompareResult result = new NewCompareVisitor(equations).compare(firstGreater ? maxBody : minNumber.body, firstGreater ? minNumber.body : maxBody).mustBeEquiv();
+      Result result = new NewCompareVisitor(equations, CMP.EQ).compare(firstGreater ? maxBody : minNumber.body, firstGreater ? minNumber.body : maxBody);
+      if (result == Result.NO) {
+        return Result.NO;
+      }
       if (!equations.lift(-diff)) {
-        return CompareResult.NOT_EQUIV;
+        return Result.MAYBE;
       }
       myEquations.add(equations);
       return result;
@@ -113,13 +118,15 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
     if (expr1 instanceof AppExpression) {
       Expression expr = pathEtaReduce((AppExpression) expr1);
       if (expr != null) {
-        return compare(expr, expr2).mustBeEquiv();
+        myCMP = CMP.EQ;
+        return compare(expr, expr2);
       }
     }
     if (expr2 instanceof AppExpression) {
       Expression expr = pathEtaReduce((AppExpression) expr2);
       if (expr != null) {
-        return compare(expr1, expr).mustBeEquiv();
+        myCMP = CMP.EQ;
+        return compare(expr1, expr);
       }
     }
 
@@ -133,127 +140,125 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
   }
 
   @Override
-  public CompareResult visitApp(AppExpression expr1, Expression expr2) {
+  public Result visitApp(AppExpression expr1, Expression expr2) {
     List<Expression> args1 = new ArrayList<>();
     Expression fun1 = expr1.getFunction(args1);
     List<Expression> args2 = new ArrayList<>(args1.size());
     Expression fun2 = expr1.getFunction(args2);
     if (isInferVar(fun1) || isInferVar(fun2)) {
-      return CompareResult.MAYBE_EQUIV;
+      return Result.MAYBE;
     }
     if (args1.size() != args2.size()) {
-      return CompareResult.NOT_EQUIV;
+      return Result.NO;
     }
 
-    CompareResult result = compare(fun1, fun2).mustBeEquiv();
-    if (result == CompareResult.NOT_EQUIV) {
-      return CompareResult.NOT_EQUIV;
+    myCMP = CMP.EQ;
+    Result result = compare(fun1, fun2);
+    if (result == Result.NO) {
+      return Result.NO;
     }
     for (int i = 0; i < args1.size(); i++) {
-      result = compare(args1.get(i), args2.get(i)).mustBeEquiv().and(result);
-      if (result == CompareResult.NOT_EQUIV) {
-        return CompareResult.NOT_EQUIV;
+      result = compare(args1.get(i), args2.get(i)).and(result);
+      if (result == Result.NO) {
+        return Result.NO;
       }
     }
     return result;
   }
 
   @Override
-  public CompareResult visitDefCall(DefCallExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof DefCallExpression)) return CompareResult.NOT_EQUIV;
-    return expr1.getDefinition() == ((DefCallExpression) expr2).getDefinition() ? CompareResult.EQUIV : CompareResult.NOT_EQUIV;
+  public Result visitDefCall(DefCallExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof DefCallExpression)) return Result.NO;
+    return expr1.getDefinition() == ((DefCallExpression) expr2).getDefinition() ? Result.YES : Result.NO;
   }
 
   @Override
-  public CompareResult visitClassCall(ClassCallExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof ClassCallExpression) || expr1.getDefinition() != ((ClassCallExpression) expr2).getDefinition()) return CompareResult.NOT_EQUIV;
+  public Result visitClassCall(ClassCallExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof ClassCallExpression) || expr1.getDefinition() != ((ClassCallExpression) expr2).getDefinition()) return Result.NO;
     Map<ClassField, ClassCallExpression.ImplementStatement> implStats1 = expr1.getImplementStatements();
     Map<ClassField, ClassCallExpression.ImplementStatement> implStats2 = ((ClassCallExpression) expr2).getImplementStatements();
+    if (myCMP == CMP.EQ && implStats1.size() != implStats2.size() ||
+        myCMP == CMP.LE && implStats1.size() <  implStats2.size() ||
+        myCMP == CMP.GE && implStats1.size() >  implStats2.size()) {
+      return Result.NO;
+    }
+    Map<ClassField, ClassCallExpression.ImplementStatement> minImplStats = implStats1.size() <= implStats2.size() ? implStats1 : implStats2;
+    Map<ClassField, ClassCallExpression.ImplementStatement> maxImplStats = implStats1.size() <= implStats2.size() ? implStats2 : implStats1;
 
-    CompareResult result = CompareResult.EQUIV;
-    for (ClassField field : expr1.getDefinition().getFields()) {
-      ClassCallExpression.ImplementStatement implStat1 = implStats1.get(field);
-      ClassCallExpression.ImplementStatement implStat2 = implStats2.get(field);
-
-      if (implStat1 == null && implStat2 == null) {
-        continue;
+    CMP oldCMP = myCMP;
+    Result result = Result.YES;
+    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : minImplStats.entrySet()) {
+      ClassCallExpression.ImplementStatement maxStat = maxImplStats.get(entry.getKey());
+      if (maxStat == null) {
+        return Result.NO;
       }
-      if (implStat2 == null) {
-        result = CompareResult.LESS.and(result);
-        if (result == CompareResult.NOT_EQUIV) {
-          return CompareResult.NOT_EQUIV;
+      ClassCallExpression.ImplementStatement implStat1 = implStats1.size() <= implStats2.size() ? entry.getValue() : maxStat;
+      ClassCallExpression.ImplementStatement implStat2 = implStats1.size() <= implStats2.size() ? maxStat : entry.getValue();
+
+      if (implStat1.term != null && implStat2.term != null) {
+        myCMP = CMP.EQ;
+        result = compare(implStat1.term, implStat2.term).and(result);
+        if (result == Result.NO) {
+          return Result.NO;
         }
       } else
-      if (implStat1 == null) {
-        result = CompareResult.GREATER.and(result);
-        if (result == CompareResult.NOT_EQUIV) {
-          return CompareResult.NOT_EQUIV;
-        }
-      } else {
-        if (implStat1.term != null && implStat2.term != null) {
-          CompareResult result1 = compare(implStat1.term, implStat2.term).mustBeEquiv();
-          result = result1.and(result);
-          if (result == CompareResult.NOT_EQUIV) {
-            return CompareResult.NOT_EQUIV;
-          }
-        } else
-        if (implStat1.term != null || implStat2.term != null) {
-          return CompareResult.NOT_EQUIV;
-        }
+      if (implStat1.term != null || implStat2.term != null) {
+        return Result.NO;
+      }
+      myCMP = oldCMP;
 
-        if (implStat1.type == null && implStat2.type == null) {
+      if (implStat1.type == null && implStat2.type == null) {
+        continue;
+      }
+      Expression type1 = implStat1.type;
+      Expression type2 = implStat2.type;
+      if (type1 == null) {
+        if (myCMP == CMP.GE) {
           continue;
         }
-        Expression type1 = implStat1.type;
-        Expression type2 = implStat2.type;
-        if (type1 == null) {
-          if (!result.isEquiv()) {
-            continue;
-          }
-          type1 = field.getBaseType();
+        type1 = entry.getKey().getBaseType();
+      }
+      if (type2 == null) {
+        if (myCMP == CMP.LE) {
+          continue;
         }
-        if (type2 == null) {
-          if (!result.isEquiv()) {
-            continue;
-          }
-          type2 = field.getBaseType();
-        }
-        result = compare(type1, type2).and(result);
-        if (result == CompareResult.NOT_EQUIV) {
-          return CompareResult.NOT_EQUIV;
-        }
+        type2 = entry.getKey().getBaseType();
+      }
+      result = compare(type1, type2).and(result);
+      if (result == Result.NO) {
+        return Result.NO;
       }
     }
     return result;
   }
 
   @Override
-  public CompareResult visitIndex(IndexExpression expr1, Expression expr2) {
+  public Result visitIndex(IndexExpression expr1, Expression expr2) {
     // TODO: inference variables
-    if (!(expr2 instanceof IndexExpression)) return CompareResult.NOT_EQUIV;
-    return expr1.getIndex() == ((IndexExpression) expr2).getIndex() ? CompareResult.EQUIV : CompareResult.NOT_EQUIV;
+    if (!(expr2 instanceof IndexExpression)) return Result.NO;
+    return expr1.getIndex() == ((IndexExpression) expr2).getIndex() ? Result.YES : Result.NO;
   }
 
   @Override
-  public CompareResult visitLam(LamExpression expr1, Expression expr2) {
+  public Result visitLam(LamExpression expr1, Expression expr2) {
     throw new IllegalStateException();
   }
 
-  private CompareResult compareTypeArguments(List<? extends Argument> args1, List<? extends Argument> args2, NewCompareVisitor visitor) {
+  private Result compareTypeArguments(List<? extends Argument> args1, List<? extends Argument> args2, NewCompareVisitor visitor) {
     if (args1.size() != args2.size()) {
-      return CompareResult.NOT_EQUIV;
+      return Result.NO;
     }
 
-    CompareResult result = CompareResult.EQUIV;
+    Result result = Result.YES;
     for (int i = 0; i < args1.size(); i++) {
       if (args1.get(i) instanceof TypeArgument && args2.get(i) instanceof TypeArgument) {
-        result = visitor.compare(((TypeArgument) args1.get(i)).getType(), ((TypeArgument) args2.get(i)).getType()).mustBeEquiv().and(result);
+        result = visitor.compare(((TypeArgument) args1.get(i)).getType(), ((TypeArgument) args2.get(i)).getType()).and(result);
       }
-      if (result == CompareResult.NOT_EQUIV) {
-        return CompareResult.NOT_EQUIV;
+      if (result == Result.NO) {
+        return Result.NO;
       }
       if (!visitor.myEquations.lift(-i)) {
-        return CompareResult.NOT_EQUIV;
+        return Result.MAYBE;
       }
       myEquations.add(visitor.myEquations);
       visitor.myEquations.clear();
@@ -263,118 +268,110 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
   }
 
   @Override
-  public CompareResult visitPi(PiExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof PiExpression)) return CompareResult.NOT_EQUIV;
+  public Result visitPi(PiExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof PiExpression)) return Result.NO;
     List<TypeArgument> args1 = new ArrayList<>();
     splitArguments(expr1, args1, null);
     List<TypeArgument> args2 = new ArrayList<>(args1.size());
     splitArguments(expr2, args2, null);
 
     Equations equations = new Equations();
-    NewCompareVisitor visitor = new NewCompareVisitor(equations);
-    CompareResult result = compareTypeArguments(args1, args2, visitor);
-    if (result == CompareResult.NOT_EQUIV) {
-      return CompareResult.NOT_EQUIV;
+    NewCompareVisitor visitor = new NewCompareVisitor(equations, CMP.EQ);
+    Result result = compareTypeArguments(args1, args2, visitor);
+    if (result == Result.NO) {
+      return Result.NO;
     }
 
-    result = visitor.compare(expr1.getCodomain(), ((PiExpression) expr2).getCodomain()).mustBeEquiv().and(result);
-    if (result == CompareResult.NOT_EQUIV) {
-      return CompareResult.NOT_EQUIV;
+    result = visitor.compare(expr1.getCodomain(), ((PiExpression) expr2).getCodomain()).and(result);
+    if (result == Result.NO) {
+      return Result.NO;
     }
     if (!equations.lift(-args1.size())) {
-      return CompareResult.NOT_EQUIV;
+      return Result.MAYBE;
     }
     myEquations.add(equations);
     return result;
   }
 
   @Override
-  public CompareResult visitUniverse(UniverseExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof UniverseExpression)) return CompareResult.NOT_EQUIV;
-    switch (expr1.getUniverse().compare(((UniverseExpression) expr2).getUniverse())) {
-      case EQUALS:
-        return CompareResult.EQUIV;
-      case LESS:
-        return CompareResult.LESS;
-      case GREATER:
-        return CompareResult.GREATER;
-      case NOT_COMPARABLE:
-        return CompareResult.NOT_EQUIV;
-    }
-    throw new IllegalStateException();
+  public Result visitUniverse(UniverseExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof UniverseExpression)) return Result.NO;
+    Universe.Cmp result = expr1.getUniverse().compare(((UniverseExpression) expr2).getUniverse());
+    return result == Universe.Cmp.EQUALS || result == myCMP.toUniverseCmp() ? Result.YES : Result.NO;
   }
 
   @Override
-  public CompareResult visitInferHole(InferHoleExpression expr1, Expression expr2) {
+  public Result visitInferHole(InferHoleExpression expr1, Expression expr2) {
     return null;
   }
 
   @Override
-  public CompareResult visitError(ErrorExpression expr1, Expression expr2) {
-    return CompareResult.NOT_EQUIV;
+  public Result visitError(ErrorExpression expr1, Expression expr2) {
+    return Result.NO;
   }
 
   @Override
-  public CompareResult visitTuple(TupleExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof TupleExpression)) return CompareResult.NOT_EQUIV;
+  public Result visitTuple(TupleExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof TupleExpression)) return Result.NO;
     TupleExpression tupleExpr2 = (TupleExpression) expr2;
     if (expr1.getFields().size() != tupleExpr2.getFields().size()) {
-      return CompareResult.NOT_EQUIV;
+      return Result.NO;
     }
 
-    CompareResult result = CompareResult.EQUIV;
+    myCMP = CMP.EQ;
+    Result result = Result.YES;
     for (int i = 0; i < expr1.getFields().size(); i++) {
-      result = compare(expr1.getFields().get(i), tupleExpr2.getFields().get(i)).mustBeEquiv().and(result);
-      if (result == CompareResult.NOT_EQUIV) {
-        return CompareResult.NOT_EQUIV;
+      result = compare(expr1.getFields().get(i), tupleExpr2.getFields().get(i)).and(result);
+      if (result == Result.NO) {
+        return Result.NO;
       }
     }
     return result;
   }
 
   @Override
-  public CompareResult visitSigma(SigmaExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof SigmaExpression)) return CompareResult.NOT_EQUIV;
+  public Result visitSigma(SigmaExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof SigmaExpression)) return Result.NO;
     List<TypeArgument> args1 = new ArrayList<>();
     splitArguments(expr1.getArguments(), args1);
     List<TypeArgument> args2 = new ArrayList<>(args1.size());
     splitArguments(((SigmaExpression) expr2).getArguments(), args2);
-    return compareTypeArguments(args1, args2, new NewCompareVisitor(new Equations()));
+    return compareTypeArguments(args1, args2, new NewCompareVisitor(new Equations(), CMP.EQ));
   }
 
-  private CompareResult visitClause(Clause clause1, Clause clause2) {
-    if (clause1 == clause2) return CompareResult.EQUIV;
-    if (clause1 == null || clause2 == null) return CompareResult.NOT_EQUIV;
+  private Result visitClause(Clause clause1, Clause clause2) {
+    if (clause1 == clause2) return Result.YES;
+    if (clause1 == null || clause2 == null) return Result.NO;
 
     if (!clause2.getPatterns().equals(clause1.getPatterns()) || clause1.getArrow() != clause2.getArrow()) {
-      return CompareResult.NOT_EQUIV;
+      return Result.NO;
     }
 
-    return compare(clause1.getExpression(), clause2.getExpression()).mustBeEquiv();
+    return compare(clause1.getExpression(), clause2.getExpression());
   }
 
   @Override
-  public CompareResult visitElim(ElimExpression expr1, Expression expr2) {
-    if (expr1 == expr2) return CompareResult.EQUIV;
-    if (!(expr2 instanceof ElimExpression)) return CompareResult.NOT_EQUIV;
+  public Result visitElim(ElimExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof ElimExpression)) return Result.NO;
 
     ElimExpression elimExpr2 = (ElimExpression) expr2;
     if (expr1.getClauses().size() != elimExpr2.getClauses().size() || expr1.getExpressions().size() != elimExpr2.getExpressions().size()) {
-      return CompareResult.NOT_EQUIV;
+      return Result.NO;
     }
 
-    CompareResult result = CompareResult.EQUIV;
+    myCMP = CMP.EQ;
+    Result result = Result.YES;
     for (int i = 0; i < expr1.getExpressions().size(); i++) {
-      result = compare(expr1.getExpressions().get(i), elimExpr2.getExpressions().get(i)).mustBeEquiv().and(result);
-      if (result == CompareResult.NOT_EQUIV) {
-        return CompareResult.NOT_EQUIV;
+      result = compare(expr1.getExpressions().get(i), elimExpr2.getExpressions().get(i)).and(result);
+      if (result == Result.NO) {
+        return Result.NO;
       }
     }
 
     for (int i = 0; i < expr1.getClauses().size(); i++) {
-      result = visitClause(expr1.getClauses().get(i), elimExpr2.getClauses().get(i)).mustBeEquiv().and(result);
-      if (result == CompareResult.NOT_EQUIV) {
-        return CompareResult.NOT_EQUIV;
+      result = visitClause(expr1.getClauses().get(i), elimExpr2.getClauses().get(i)).and(result);
+      if (result == Result.NO) {
+        return Result.NO;
       }
     }
 
@@ -382,56 +379,89 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
   }
 
   @Override
-  public CompareResult visitProj(ProjExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof ProjExpression)) return CompareResult.NOT_EQUIV;
+  public Result visitProj(ProjExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof ProjExpression)) return Result.NO;
     ProjExpression projExpr2 = (ProjExpression) expr2;
     if (expr1.getField() != projExpr2.getField()) {
-      return CompareResult.NOT_EQUIV;
+      return Result.NO;
     }
-    return compare(expr1.getExpression(), projExpr2.getExpression()).mustBeEquiv();
+    myCMP = CMP.EQ;
+    return compare(expr1.getExpression(), projExpr2.getExpression());
   }
 
   @Override
-  public CompareResult visitNew(NewExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof NewExpression)) return CompareResult.NOT_EQUIV;
-    return compare(expr1.getExpression(), ((NewExpression) expr2).getExpression()).mustBeEquiv();
+  public Result visitNew(NewExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof NewExpression)) return Result.NO;
+    myCMP = CMP.EQ;
+    return compare(expr1.getExpression(), ((NewExpression) expr2).getExpression());
   }
 
   @Override
-  public CompareResult visitLet(LetExpression expr1, Expression expr2) {
+  public Result visitLet(LetExpression expr1, Expression expr2) {
     if (!(expr2 instanceof LetExpression)) {
-      return CompareResult.NOT_EQUIV;
+      return Result.NO;
     }
     LetExpression letExpr1 = expr1.mergeNestedLets();
     LetExpression letExpr2 = ((LetExpression) expr2).mergeNestedLets();
     if (letExpr1.getClauses().size() != letExpr2.getClauses().size()) {
-      return CompareResult.NOT_EQUIV;
+      return Result.NO;
     }
 
-    CompareResult result = CompareResult.EQUIV;
+    Result result = Result.YES;
+    Equations equations = new Equations();
+    NewCompareVisitor visitor = new NewCompareVisitor(equations, CMP.EQ);
     for (int i = 0; i < letExpr1.getClauses().size(); i++) {
       List<TypeArgument> args1 = new ArrayList<>();
       splitArguments(letExpr1.getClauses().get(i).getArguments(), args1);
       List<TypeArgument> args2 = new ArrayList<>(args1.size());
       splitArguments(letExpr1.getClauses().get(i).getArguments(), args2);
 
-      Equations equations = new Equations();
-      NewCompareVisitor visitor = new NewCompareVisitor(equations);
-      result = compareTypeArguments(args1, args2, visitor).mustBeEquiv().and(result);
-      if (result == CompareResult.NOT_EQUIV) {
-        return CompareResult.NOT_EQUIV;
+      result = compareTypeArguments(args1, args2, visitor).and(result);
+      if (result == Result.NO) {
+        return Result.NO;
       }
 
-      result = visitor.compare(letExpr1.getExpression(), letExpr2.getExpression()).mustBeEquiv().and(result);
-      if (result == CompareResult.NOT_EQUIV) {
-        return CompareResult.NOT_EQUIV;
+      result = visitor.compare(letExpr1.getClauses().get(i).getTerm(), letExpr2.getClauses().get(i).getTerm()).and(result);
+      if (result == Result.NO) {
+        return Result.NO;
       }
-      if (!equations.lift(-args1.size())) {
-        return CompareResult.NOT_EQUIV;
+      if (!equations.lift(-(args1.size() + i))) {
+        return Result.MAYBE;
       }
       myEquations.add(equations);
+      equations.clear();
     }
 
-    return compare(letExpr1.getExpression(), letExpr2.getExpression()).mustBeEquiv().and(result);
+    visitor.myCMP = myCMP;
+    result = visitor.compare(letExpr1.getExpression(), letExpr2.getExpression()).and(result);
+    if (result == Result.NO) {
+      return Result.NO;
+    }
+    if (!equations.lift(-letExpr1.getClauses().size())) {
+      return Result.MAYBE;
+    }
+    myEquations.add(equations);
+    return result;
+  }
+
+  public enum CMP {
+    LE, EQ, GE;
+
+    public Universe.Cmp toUniverseCmp() {
+      switch (this) {
+        case LE: return Universe.Cmp.LESS;
+        case EQ: return Universe.Cmp.EQUALS;
+        case GE: return Universe.Cmp.GREATER;
+      }
+      throw new IllegalStateException();
+    }
+  }
+
+  public enum Result {
+    YES, NO, MAYBE;
+
+    public Result and(Result result) {
+      return this == NO || result == NO ? NO : this == MAYBE || result == MAYBE ? MAYBE : YES;
+    }
   }
 }
