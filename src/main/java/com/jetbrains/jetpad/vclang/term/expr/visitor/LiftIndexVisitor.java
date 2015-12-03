@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
@@ -66,28 +64,19 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
 
   @Override
   public Expression visitLam(LamExpression expr, Integer from) {
-    List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
+    List<TelescopeArgument> arguments = new ArrayList<>(expr.getArguments().size());
     from = visitArguments(expr.getArguments(), arguments, from);
     if (from == -1) return null;
     Expression body = expr.getBody().accept(this, from);
     return body == null ? null : Lam(arguments, body);
   }
 
-  private int visitArguments(List<Argument> arguments, List<Argument> result, int from) {
-    for (Argument argument : arguments) {
-      if (argument instanceof NameArgument) {
-        result.add(argument);
-        ++from;
-      } else
-      if (argument instanceof TelescopeArgument) {
-        TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        Expression arg = teleArgument.getType().accept(this, from);
-        if (arg == null) return -1;
-        result.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), arg));
-        from += teleArgument.getNames().size();
-      } else {
-        throw new IllegalStateException();
-      }
+  private int visitArguments(List<TelescopeArgument> arguments, List<TelescopeArgument> result, int from) {
+    for (TelescopeArgument argument : arguments) {
+      Expression arg = argument.getType().accept(this, from);
+      if (arg == null) return -1;
+      result.add(Tele(argument.getExplicit(), argument.getNames(), arg));
+      from += argument.getNames().size();
     }
     return from;
   }

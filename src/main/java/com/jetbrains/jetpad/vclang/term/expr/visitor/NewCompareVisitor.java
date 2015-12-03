@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
@@ -46,18 +45,13 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewComp
     }
     LamExpression lamExpr = (LamExpression) expr;
     NumberOfLambdas result = getNumberOfLambdas(lamExpr.getBody(), modifyContext);
-    for (Argument arg : lamExpr.getArguments()) {
-      if (arg instanceof TelescopeArgument) {
-        TelescopeArgument teleArg = (TelescopeArgument) arg;
-        if (modifyContext) {
-          for (int i = 0; i < teleArg.getNames().size(); i++) {
-            myContext.add(new TypedBinding(teleArg.getNames().get(i), teleArg.getType().liftIndex(0, i)));
-          }
+    for (TelescopeArgument arg : lamExpr.getArguments()) {
+      if (modifyContext) {
+        for (int i = 0; i < arg.getNames().size(); i++) {
+          myContext.add(new TypedBinding(arg.getNames().get(i), arg.getType().liftIndex(0, i)));
         }
-        result.number += teleArg.getNames().size();
-      } else {
-        result.number++;
       }
+      result.number += arg.getNames().size();
     }
     return result;
   }

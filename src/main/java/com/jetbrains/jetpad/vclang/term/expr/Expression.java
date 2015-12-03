@@ -85,27 +85,23 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
         TelescopeArgument additionalArgument = null;
         int i;
         for (i = 0; i < lamExpr.getArguments().size() && arguments.size() < index; ++i) {
-          if (lamExpr.getArguments().get(i) instanceof TelescopeArgument) {
-            TelescopeArgument teleArg = (TelescopeArgument) lamExpr.getArguments().get(i);
-            int j;
-            for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
-              arguments.add(Tele(lamExpr.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType()));
+          TelescopeArgument teleArg = lamExpr.getArguments().get(i);
+          int j;
+          for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
+            arguments.add(Tele(lamExpr.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType()));
+          }
+          if (j < teleArg.getNames().size()) {
+            List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
+            for (; j < teleArg.getNames().size(); ++j) {
+              names.add(teleArg.getNames().get(j));
             }
-            if (j < teleArg.getNames().size()) {
-              List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
-              for (; j < teleArg.getNames().size(); ++j) {
-                names.add(teleArg.getNames().get(j));
-              }
-              additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType());
-            }
-          } else {
-            arguments.add(lamExpr.getArguments().get(i));
+            additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType());
           }
         }
 
         result = lamExpr.getBody();
         if (i < lamExpr.getArguments().size() || additionalArgument != null) {
-          List<Argument> arguments1 = new ArrayList<>(lamExpr.getArguments().size() - i + (additionalArgument == null ? 0 : 1));
+          List<TelescopeArgument> arguments1 = new ArrayList<>(lamExpr.getArguments().size() - i + (additionalArgument == null ? 0 : 1));
           if (additionalArgument != null) {
             arguments1.add(additionalArgument);
           }

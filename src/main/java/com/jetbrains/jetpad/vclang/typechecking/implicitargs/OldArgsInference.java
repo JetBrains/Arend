@@ -241,7 +241,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
       }
 
       Expression type = arguments.size() > 0 ? Pi(arguments, piType.getCodomain()) : piType.getCodomain();
-      Expression parameter1 = Lam(lamArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type);
+      Expression parameter1 = Lam(teleArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type);
       Expression parameter2 = Apps(argResult.expression, ConCall(Prelude.LEFT));
       Expression parameter3 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
       Expression resultType = Apps(DataCall(Prelude.PATH), parameter1, parameter2, parameter3);
@@ -250,7 +250,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
         if (resultEquations == null) {
           resultEquations = new ArrayList<>(1);
         }
-        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(lamArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext()))));
+        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(teleArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext()))));
       }
 
       List<Expression> parameters = new ArrayList<>(3);

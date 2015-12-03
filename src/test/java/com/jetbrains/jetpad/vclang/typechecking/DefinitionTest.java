@@ -129,7 +129,7 @@ public class DefinitionTest {
     Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, args(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(Index(0), Apps(ConCall(con), Nat(), Lam("x", Index(0)), Zero()));
+    Expression expr = Apps(Index(0), Apps(ConCall(con), Nat(), Lam("x", Nat(), Index(0)), Zero()));
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DataCall(def), Pi(Nat(), Nat())), Nat())));
 

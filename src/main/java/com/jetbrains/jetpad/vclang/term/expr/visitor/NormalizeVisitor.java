@@ -82,7 +82,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression addLambdas(List<? extends TypeArgument> args1, int drop, Expression expr) {
-    List<Argument> arguments = new ArrayList<>();
+    List<TelescopeArgument> arguments = new ArrayList<>();
     int j = 0, i = 0;
     if (i < drop) {
       for (; j < args1.size(); ++j) {
@@ -108,7 +108,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     for (; j < args1.size(); ++j) {
       if (args1.get(j) instanceof TelescopeArgument) {
-        arguments.add(args1.get(j));
+        arguments.add((TelescopeArgument) args1.get(j));
       } else {
         arguments.add(Tele(args1.get(j).getExplicit(), vars("x"), args1.get(j).getType()));
       }
@@ -378,18 +378,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
   }
 
-  private List<Argument> visitArguments(List<Argument> arguments, Mode mode) {
-    List<Argument> result = new ArrayList<>(arguments.size());
-    for (Argument argument : arguments) {
-      if (argument instanceof TelescopeArgument) {
-        result.add(new TelescopeArgument(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), ((TelescopeArgument) argument).getType().accept(this, mode)));
-      } else {
-        if (argument instanceof TypeArgument) {
-          result.add(new TypeArgument(argument.getExplicit(), ((TypeArgument) argument).getType().accept(this, mode)));
-        } else {
-          result.add(argument);
-        }
-      }
+  private List<TelescopeArgument> visitArguments(List<TelescopeArgument> arguments, Mode mode) {
+    List<TelescopeArgument> result = new ArrayList<>(arguments.size());
+    for (TelescopeArgument argument : arguments) {
+      result.add(new TelescopeArgument(argument.getExplicit(), argument.getNames(), argument.getType().accept(this, mode)));
       pushArgument(myContext, argument);
     }
     return result;

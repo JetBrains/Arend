@@ -73,13 +73,13 @@ public class ExpressionFactory {
     return new IndexExpression(i);
   }
 
-  public static LamExpression Lam(List<Argument> arguments, Expression body) {
+  public static LamExpression Lam(List<TelescopeArgument> arguments, Expression body) {
     return new LamExpression(arguments, body);
   }
 
-  public static LamExpression Lam(String var, Expression body) {
-    List<Argument> arguments = new ArrayList<>(1);
-    arguments.add(new NameArgument(true, var));
+  public static LamExpression Lam(String var, Expression type, Expression body) {
+    List<TelescopeArgument> arguments = new ArrayList<>(1);
+    arguments.add(new TelescopeArgument(true, vars(var), type));
     return Lam(arguments, body);
   }
 

@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -391,9 +390,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myLocalContext.remove(myLocalContext.size() - 1);
     }
 
-    List<Argument> resultLambdaArgs = new ArrayList<>(argumentTypes.size());
+    List<TelescopeArgument> resultLambdaArgs = new ArrayList<>(argumentTypes.size());
     for (TypeArgument argumentType : argumentTypes) {
-      resultLambdaArgs.add(argumentType);
+      resultLambdaArgs.add((TelescopeArgument) argumentType);
     }
     OKResult result = new OKResult(Lam(resultLambdaArgs, okBodyResult.expression), Pi(argumentTypes, okBodyResult.type), resultEquations);
     expr.setWellTyped(myLocalContext, result.expression);

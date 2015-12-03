@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
@@ -64,12 +62,12 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitLam(LamExpression expr, Void params) {
-    List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
+    List<TelescopeArgument> arguments = new ArrayList<>(expr.getArguments().size());
     Expression[] result = visitLamArguments(expr.getArguments(), arguments, expr.getBody());
     return Lam(arguments, result[0]);
   }
 
-  private Expression[] visitLamArguments(List<Argument> inputArgs, List<Argument> outputArgs, Expression... exprs) {
+  private Expression[] visitLamArguments(List<TelescopeArgument> inputArgs, List<TelescopeArgument> outputArgs, Expression... exprs) {
     SubstVisitorContext ctx = new SubstVisitorContext(mySubstExprs, myFrom);
     outputArgs.addAll(visitArguments(inputArgs, ctx));
 
@@ -115,23 +113,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     return result;
   }
 
-  static Argument visitArgument(Argument argument, SubstVisitorContext ctx) {
-    Argument result;
-    if (argument instanceof NameArgument) {
-      result = argument;
-      ctx.lift(1);
-    } else if (argument instanceof TypeArgument) {
-      result = visitTypeArgument((TypeArgument) argument, ctx);
-    } else {
-      throw new IllegalStateException();
-    }
-    return result;
-  }
-
-  static List<Argument> visitArguments(List<Argument> arguments, SubstVisitorContext ctx) {
-    List<Argument> result = new ArrayList<>(arguments.size());
-    for (Argument arg : arguments) {
-      result.add(visitArgument(arg, ctx));
+  static List<TelescopeArgument> visitArguments(List<TelescopeArgument> arguments, SubstVisitorContext ctx) {
+    List<TelescopeArgument> result = new ArrayList<>(arguments.size());
+    for (TelescopeArgument arg : arguments) {
+      result.add((TelescopeArgument) visitTypeArgument(arg, ctx));
     }
     return result;
   }

@@ -148,19 +148,13 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     return visitLamArguments(expr.getArguments(), expr.getBody(), null);
   }
 
-  private boolean visitLamArguments(List<Argument> arguments, Expression body1, Expression body2) {
+  private boolean visitLamArguments(List<TelescopeArgument> arguments, Expression body1, Expression body2) {
     try (PatternLifter lifter = new PatternLifter()) {
-      for (Argument argument : arguments) {
-        if (argument instanceof NameArgument) {
-          lifter.liftPatterns();
-        } else if (argument instanceof TelescopeArgument) {
-          if (!((TypeArgument) argument).getType().accept(this, null)) {
-            return false;
-          }
-          lifter.liftPatterns(((TelescopeArgument) argument).getNames().size());
-        } else {
-          throw new IllegalStateException();
+      for (TelescopeArgument argument : arguments) {
+        if (!argument.getType().accept(this, null)) {
+          return false;
         }
+        lifter.liftPatterns(argument.getNames().size());
       }
       return (body1 == null ? true : body1.accept(this, null)) && (body2 == null ? true : body2.accept(this, null));
     }
