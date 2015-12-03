@@ -1,12 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.Equations;
 
 import java.util.ArrayList;
@@ -16,11 +16,13 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewCompareVisitor.Result> {
+  private final List<Binding> myContext;
   private final Equations myEquations;
   private CMP myCMP;
 
-  private NewCompareVisitor(Equations equations, CMP cmp) {
+  private NewCompareVisitor(Equations equations, CMP cmp, List<Binding> context) {
     myEquations = equations;
+    myContext = context;
     myCMP = cmp;
   }
 
@@ -34,15 +36,25 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewComp
     }
   }
 
-  private NumberOfLambdas getNumberOfLambdas(Expression expr) {
+  public static Result compare(Equations equations, CMP cmp, List<Binding> context, Expression expr1, Expression expr2) {
+    return new NewCompareVisitor(equations, cmp, context).compare(expr1, expr2);
+  }
+
+  private NumberOfLambdas getNumberOfLambdas(Expression expr, boolean modifyContext) {
     if (!(expr instanceof LamExpression)) {
       return new NumberOfLambdas(0, expr);
     }
     LamExpression lamExpr = (LamExpression) expr;
-    NumberOfLambdas result = getNumberOfLambdas(lamExpr.getBody());
+    NumberOfLambdas result = getNumberOfLambdas(lamExpr.getBody(), modifyContext);
     for (Argument arg : lamExpr.getArguments()) {
       if (arg instanceof TelescopeArgument) {
-        result.number += ((TelescopeArgument) arg).getNames().size();
+        TelescopeArgument teleArg = (TelescopeArgument) arg;
+        if (modifyContext) {
+          for (int i = 0; i < teleArg.getNames().size(); i++) {
+            myContext.add(new TypedBinding(teleArg.getNames().get(i), teleArg.getType().liftIndex(0, i)));
+          }
+        }
+        result.number += teleArg.getNames().size();
       } else {
         result.number++;
       }
@@ -68,51 +80,56 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewComp
     if (!(expr.getFunction() instanceof ConCallExpression && ((ConCallExpression) expr.getFunction()).getDefinition() != Prelude.PATH_CON)) {
       return null;
     }
-    NumberOfLambdas numberOfLambdas = getNumberOfLambdas(expr.getArgument().getExpression());
-    if (numberOfLambdas.number < 1) {
-      return null;
-    }
-    Expression atExpr = lamEtaReduce(numberOfLambdas.body, numberOfLambdas.number - 1);
-    if (atExpr == null) {
-      return null;
-    }
 
-    List<Expression> atArgs = new ArrayList<>(5);
-    Expression atFun = atExpr.getFunction(atArgs);
-    if (!(atArgs.size() == 5 && atArgs.get(0) instanceof IndexExpression && ((IndexExpression) atArgs.get(0)).getIndex() == 0 && atFun instanceof FunCallExpression && ((FunCallExpression) atFun).getDefinition() == Prelude.AT)) {
-      return null;
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
+      NumberOfLambdas numberOfLambdas = getNumberOfLambdas(expr.getArgument().getExpression(), true);
+      if (numberOfLambdas.number < 1) {
+        return null;
+      }
+      Expression atExpr = lamEtaReduce(numberOfLambdas.body, numberOfLambdas.number - 1);
+      if (atExpr == null) {
+        return null;
+      }
+
+      List<Expression> atArgs = new ArrayList<>(5);
+      Expression atFun = atExpr.getFunction(atArgs);
+      if (!(atArgs.size() == 5 && atArgs.get(0) instanceof IndexExpression && ((IndexExpression) atArgs.get(0)).getIndex() == 0 && atFun instanceof FunCallExpression && ((FunCallExpression) atFun).getDefinition() == Prelude.AT)) {
+        return null;
+      }
+      return atArgs.get(1).liftIndex(0, -1);
     }
-    return atArgs.get(1).liftIndex(0, -1);
   }
 
-  public Result compare(Expression expr1, Expression expr2) {
+  private Result compare(Expression expr1, Expression expr2) {
     if (expr1 == expr2 || expr1 instanceof ErrorExpression || expr2 instanceof ErrorExpression) {
       return Result.YES;
     }
 
     if (expr1 instanceof LamExpression || expr2 instanceof LamExpression) {
-      NumberOfLambdas number1 = getNumberOfLambdas(expr1);
-      NumberOfLambdas number2 = getNumberOfLambdas(expr2);
-      boolean firstGreater = number1.number >= number2.number;
-      NumberOfLambdas maxNumber = firstGreater ? number1 : number2;
-      NumberOfLambdas minNumber = firstGreater ? number2 : number1;
-      Expression maxBody = maxNumber.body;
+      try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
+        NumberOfLambdas number1 = getNumberOfLambdas(expr1, false);
+        NumberOfLambdas number2 = getNumberOfLambdas(expr2, true);
+        boolean firstGreater = number1.number >= number2.number;
+        NumberOfLambdas maxNumber = firstGreater ? number1 : number2;
+        NumberOfLambdas minNumber = firstGreater ? number2 : number1;
+        Expression maxBody = maxNumber.body;
 
-      int diff = maxNumber.number - minNumber.number;
-      maxBody = lamEtaReduce(maxBody, diff);
-      if (maxBody == null) {
-        return Result.NO;
+        int diff = maxNumber.number - minNumber.number;
+        maxBody = lamEtaReduce(maxBody, diff);
+        if (maxBody == null) {
+          return Result.NO;
+        }
+        Equations equations = new Equations();
+        Result result = new NewCompareVisitor(equations, CMP.EQ, myContext).compare(firstGreater ? maxBody : minNumber.body, firstGreater ? minNumber.body : maxBody);
+        if (result == Result.NO) {
+          return Result.NO;
+        }
+        if (!equations.lift(-diff)) {
+          return Result.MAYBE;
+        }
+        myEquations.add(equations);
+        return result;
       }
-      Equations equations = new Equations();
-      Result result = new NewCompareVisitor(equations, CMP.EQ).compare(firstGreater ? maxBody : minNumber.body, firstGreater ? minNumber.body : maxBody);
-      if (result == Result.NO) {
-        return Result.NO;
-      }
-      if (!equations.lift(-diff)) {
-        return Result.MAYBE;
-      }
-      myEquations.add(equations);
-      return result;
     }
 
     if (expr1 instanceof AppExpression) {
@@ -135,8 +152,11 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewComp
   }
 
   private boolean isInferVar(Expression expr) {
-    // TODO
-    return expr instanceof IndexExpression;
+    if (!(expr instanceof IndexExpression)) {
+      return false;
+    }
+    int index = ((IndexExpression) expr).getIndex();
+    return index < myContext.size() && myContext.get(myContext.size() - 1 - index).isInference();
   }
 
   @Override
@@ -244,16 +264,14 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewComp
     throw new IllegalStateException();
   }
 
-  private Result compareTypeArguments(List<? extends Argument> args1, List<? extends Argument> args2, NewCompareVisitor visitor) {
+  private Result compareTypeArguments(List<TypeArgument> args1, List<TypeArgument> args2, NewCompareVisitor visitor) {
     if (args1.size() != args2.size()) {
       return Result.NO;
     }
 
     Result result = Result.YES;
     for (int i = 0; i < args1.size(); i++) {
-      if (args1.get(i) instanceof TypeArgument && args2.get(i) instanceof TypeArgument) {
-        result = visitor.compare(((TypeArgument) args1.get(i)).getType(), ((TypeArgument) args2.get(i)).getType()).and(result);
-      }
+      result = visitor.compare(args1.get(i).getType(), args2.get(i).getType()).and(result);
       if (result == Result.NO) {
         return Result.NO;
       }
@@ -262,6 +280,11 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewComp
       }
       myEquations.add(visitor.myEquations);
       visitor.myEquations.clear();
+      Name name =
+          args1.get(i) instanceof TelescopeArgument ? new Name(((TelescopeArgument) args1.get(i)).getNames().get(0)) :
+          args2.get(i) instanceof TelescopeArgument ? new Name(((TelescopeArgument) args2.get(i)).getNames().get(0)) :
+          null;
+      myContext.add(new TypedBinding(name, args1.get(i).getType()));
     }
 
     return result;
@@ -276,21 +299,23 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewComp
     splitArguments(expr2, args2, null);
 
     Equations equations = new Equations();
-    NewCompareVisitor visitor = new NewCompareVisitor(equations, CMP.EQ);
-    Result result = compareTypeArguments(args1, args2, visitor);
-    if (result == Result.NO) {
-      return Result.NO;
-    }
+    NewCompareVisitor visitor = new NewCompareVisitor(equations, CMP.EQ, myContext);
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
+      Result result = compareTypeArguments(args1, args2, visitor);
+      if (result == Result.NO) {
+        return Result.NO;
+      }
 
-    result = visitor.compare(expr1.getCodomain(), ((PiExpression) expr2).getCodomain()).and(result);
-    if (result == Result.NO) {
-      return Result.NO;
+      result = visitor.compare(expr1.getCodomain(), ((PiExpression) expr2).getCodomain()).and(result);
+      if (result == Result.NO) {
+        return Result.NO;
+      }
+      if (!equations.lift(-args1.size())) {
+        return Result.MAYBE;
+      }
+      myEquations.add(equations);
+      return result;
     }
-    if (!equations.lift(-args1.size())) {
-      return Result.MAYBE;
-    }
-    myEquations.add(equations);
-    return result;
   }
 
   @Override
@@ -336,7 +361,9 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewComp
     splitArguments(expr1.getArguments(), args1);
     List<TypeArgument> args2 = new ArrayList<>(args1.size());
     splitArguments(((SigmaExpression) expr2).getArguments(), args2);
-    return compareTypeArguments(args1, args2, new NewCompareVisitor(new Equations(), CMP.EQ));
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
+      return compareTypeArguments(args1, args2, new NewCompareVisitor(new Equations(), CMP.EQ, myContext));
+    }
   }
 
   private Result visitClause(Clause clause1, Clause clause2) {
@@ -409,31 +436,33 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, NewComp
 
     Result result = Result.YES;
     Equations equations = new Equations();
-    NewCompareVisitor visitor = new NewCompareVisitor(equations, CMP.EQ);
-    for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      List<TypeArgument> args1 = new ArrayList<>();
-      splitArguments(letExpr1.getClauses().get(i).getArguments(), args1);
-      List<TypeArgument> args2 = new ArrayList<>(args1.size());
-      splitArguments(letExpr1.getClauses().get(i).getArguments(), args2);
+    NewCompareVisitor visitor = new NewCompareVisitor(equations, CMP.EQ, myContext);
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
+      for (int i = 0; i < letExpr1.getClauses().size(); i++) {
+        List<TypeArgument> args1 = new ArrayList<>();
+        splitArguments(letExpr1.getClauses().get(i).getArguments(), args1);
+        List<TypeArgument> args2 = new ArrayList<>(args1.size());
+        splitArguments(letExpr1.getClauses().get(i).getArguments(), args2);
 
-      result = compareTypeArguments(args1, args2, visitor).and(result);
-      if (result == Result.NO) {
-        return Result.NO;
+        result = compareTypeArguments(args1, args2, visitor).and(result);
+        if (result == Result.NO) {
+          return Result.NO;
+        }
+
+        result = visitor.compare(letExpr1.getClauses().get(i).getTerm(), letExpr2.getClauses().get(i).getTerm()).and(result);
+        if (result == Result.NO) {
+          return Result.NO;
+        }
+        if (!equations.lift(-(args1.size() + i))) {
+          return Result.MAYBE;
+        }
+        myEquations.add(equations);
+        equations.clear();
       }
 
-      result = visitor.compare(letExpr1.getClauses().get(i).getTerm(), letExpr2.getClauses().get(i).getTerm()).and(result);
-      if (result == Result.NO) {
-        return Result.NO;
-      }
-      if (!equations.lift(-(args1.size() + i))) {
-        return Result.MAYBE;
-      }
-      myEquations.add(equations);
-      equations.clear();
+      visitor.myCMP = myCMP;
+      result = visitor.compare(letExpr1.getExpression(), letExpr2.getExpression()).and(result);
     }
-
-    visitor.myCMP = myCMP;
-    result = visitor.compare(letExpr1.getExpression(), letExpr2.getExpression()).and(result);
     if (result == Result.NO) {
       return Result.NO;
     }
