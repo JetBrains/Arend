@@ -104,23 +104,23 @@ public class ComparisonTest {
 
   @Test
   public void letsNotEqual() {
-    Expression expr1 = Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Index(0))), Apps(Index(0), Zero()));
-    Expression expr2 = Let(lets(let("x", lamArgs(Tele(vars("y"), Universe(0))), Index(0))), Apps(Index(0), Nat()));
+    Expression expr1 = Let(lets(let("x", args(Tele(vars("y"), Nat())), Index(0))), Apps(Index(0), Zero()));
+    Expression expr2 = Let(lets(let("x", args(Tele(vars("y"), Universe(0))), Index(0))), Apps(Index(0), Nat()));
     assertNotEquals(expr1, expr2);
   }
 
   @Test
   public void letsTelseEqual() {
-    Expression expr1 = Let(lets(let("x", lamArgs(Tele(vars("y", "z"), Index(0))), Index(0))), Apps(Index(0), Zero()));
-    Expression expr2 = Let(lets(let("x", lamArgs(Tele(vars("y"), Index(0)), Tele(vars("z"), Index(1))), Index(0))), Apps(Index(0), Zero()));
+    Expression expr1 = Let(lets(let("x", args(Tele(vars("y", "z"), Index(0))), Index(0))), Apps(Index(0), Zero()));
+    Expression expr2 = Let(lets(let("x", args(Tele(vars("y"), Index(0)), Tele(vars("z"), Index(1))), Index(0))), Apps(Index(0), Zero()));
     assertEquals(expr1, expr2);
     assertEquals(expr2, expr1);
   }
 
   @Test
   public void letsTelesNotEqual() {
-    Expression expr1 = Let(lets(let("x", lamArgs(Tele(vars("y", "z"), Index(0))), Index(0))), Apps(Index(0), Zero()));
-    Expression expr2 = Let(lets(let("x", lamArgs(Tele(vars("y"), Index(0)), Tele(vars("z"), Index(0))), Index(0))), Apps(Index(0), Zero()));
+    Expression expr1 = Let(lets(let("x", args(Tele(vars("y", "z"), Index(0))), Index(0))), Apps(Index(0), Zero()));
+    Expression expr2 = Let(lets(let("x", args(Tele(vars("y"), Index(0)), Tele(vars("z"), Index(0))), Index(0))), Apps(Index(0), Zero()));
     assertNotEquals(expr1, expr2);
     assertNotEquals(expr2, expr1);
   }

@@ -9,7 +9,7 @@ import java.util.List;
 public interface Function extends Abstract.Function {
   Abstract.Definition.Arrow getArrow();
   Expression getTerm();
-  List<Argument> getArguments();
+  List<? extends Argument> getArguments();
   Expression getResultType();
   ClassDefinition getThisClass();
 }

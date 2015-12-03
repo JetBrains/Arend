@@ -61,7 +61,7 @@ public class PrettyPrintingTest {
   @Test
   public void prettyPrintingLet() {
     // \let x {A : Type0} (y ; A) : A => y \in x Zero()
-    LetExpression expr = Let(lets(let("x", lamArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Index(0))), Index(0))), Apps(Index(0), Zero()));
+    LetExpression expr = Let(lets(let("x", args(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Index(0))), Index(0))), Apps(Index(0), Zero()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 

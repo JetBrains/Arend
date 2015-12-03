@@ -96,18 +96,18 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, Expression term) {
-    return new LetClause(name, lamArgs(), null, Abstract.Definition.Arrow.RIGHT, term);
+    return new LetClause(name, args(), null, Abstract.Definition.Arrow.RIGHT, term);
   }
 
-  public static LetClause let(String name, List<Argument> args, Expression term) {
+  public static LetClause let(String name, List<TypeArgument> args, Expression term) {
     return new LetClause(name, args, null, Abstract.Definition.Arrow.RIGHT, term);
   }
 
-  public static LetClause let(String name, List<Argument> args, Abstract.Definition.Arrow arrow, Expression term) {
+  public static LetClause let(String name, List<TypeArgument> args, Abstract.Definition.Arrow arrow, Expression term) {
     return new LetClause(name, args, null, arrow, term);
   }
 
-  public static LetClause let(String name, List<Argument> args, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+  public static LetClause let(String name, List<TypeArgument> args, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
     return new LetClause(name, args, resultType, arrow, term);
   }
 

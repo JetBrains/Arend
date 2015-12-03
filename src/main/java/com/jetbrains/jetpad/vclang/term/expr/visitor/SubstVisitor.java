@@ -136,7 +136,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     return result;
   }
 
-  List<TypeArgument> visitTypeArguments(List<TypeArgument> arguments, SubstVisitorContext ctx) {
+  static List<TypeArgument> visitTypeArguments(List<TypeArgument> arguments, SubstVisitorContext ctx) {
     List<TypeArgument> result = new ArrayList<>(arguments.size());
     for (TypeArgument arg : arguments) {
       result.add(visitTypeArgument(arg, ctx));
@@ -222,7 +222,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   public static LetClause visitLetClause(LetClause clause, List<Expression> substExprs, int from) {
     final SubstVisitorContext localCtx = new SubstVisitorContext(substExprs, from);
-    final List<Argument> arguments = visitArguments(clause.getArguments(), localCtx);
+    final List<TypeArgument> arguments = visitTypeArguments(clause.getArguments(), localCtx);
     final Expression resultType = clause.getResultType() == null ? null : localCtx.subst(clause.getResultType());
     final Expression expression = localCtx.subst(clause.getTerm());
     return new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), expression);

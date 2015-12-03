@@ -431,7 +431,7 @@ public class ModuleDeserialization {
 
   private LetClause readLetClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     final String name = stream.readUTF();
-    final List<Argument> arguments = readArguments(stream, definitionMap);
+    final List<TypeArgument> arguments = readTypeArguments(stream, definitionMap);
     final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
     final Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
     final Expression term = readExpression(stream, definitionMap);

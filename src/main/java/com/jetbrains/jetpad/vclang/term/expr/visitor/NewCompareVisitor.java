@@ -358,23 +358,10 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
 
     CompareResult result = CompareResult.EQUIV;
     for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      // TODO
-      List<TypeArgument> argsT1 = new ArrayList<>();
-      for (Argument argument : letExpr1.getClauses().get(i).getArguments()) {
-        if (argument instanceof TypeArgument) {
-          argsT1.add((TypeArgument) argument);
-        }
-      }
-      List<TypeArgument> argsT2 = new ArrayList<>();
-      for (Argument argument : letExpr2.getClauses().get(i).getArguments()) {
-        if (argument instanceof TypeArgument) {
-          argsT2.add((TypeArgument) argument);
-        }
-      }
       List<TypeArgument> args1 = new ArrayList<>();
-      splitArguments(argsT1, args1);
+      splitArguments(letExpr1.getClauses().get(i).getArguments(), args1);
       List<TypeArgument> args2 = new ArrayList<>(args1.size());
-      splitArguments(argsT2, args2);
+      splitArguments(letExpr1.getClauses().get(i).getArguments(), args2);
 
       Equations equations = new Equations();
       NewCompareVisitor visitor = new NewCompareVisitor(equations);

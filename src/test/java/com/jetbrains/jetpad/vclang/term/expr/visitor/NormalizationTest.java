@@ -189,7 +189,7 @@ public class NormalizationTest {
   @Test
   public void normalizeLetNo() {
     // normalize (\let | x (y z : N) => zero \in x zero) = \lam (z : N) => zero
-    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y", "z"), Nat())), Zero())), Apps(Index(0), Zero())));
+    Expression expr = typecheckExpression(Let(lets(let("x", args(Tele(vars("y", "z"), Nat())), Zero())), Apps(Index(0), Zero())));
     assertEquals(Lam("x", Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
@@ -200,7 +200,7 @@ public class NormalizationTest {
     ElimExpression elim = Elim(Index(0), clauses);
     clauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
     clauses.add(new Clause(match(Prelude.SUC, match(null)), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
-    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)),
+    Expression expr = typecheckExpression(Let(lets(let("x", args(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)),
         Apps(Index(0), Index(1))), new ArrayList<Binding>(Collections.singleton(new TypedBinding("n", Nat()))));
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
@@ -212,7 +212,7 @@ public class NormalizationTest {
     ElimExpression elim = Elim(Index(0), clauses);
     clauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Universe(0), elim));
     clauses.add(new Clause(match(Prelude.SUC, match(null)), Abstract.Definition.Arrow.RIGHT, Universe(1), elim));
-    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Universe(2), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(0), Zero())));
+    Expression expr = typecheckExpression(Let(lets(let("x", args(Tele(vars("y"), Nat())), Universe(2), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(0), Zero())));
     assertEquals(Universe(0), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
@@ -228,7 +228,7 @@ public class NormalizationTest {
   @Test
   public void letNormalizationContext() {
     List<Binding> ctx = new ArrayList<>();
-    Let(lets(let("x", lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Index(0)).normalize(NormalizeVisitor.Mode.NF, ctx);
+    Let(lets(let("x", args(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Index(0)).normalize(NormalizeVisitor.Mode.NF, ctx);
     assertTrue(ctx.isEmpty());
   }
 }

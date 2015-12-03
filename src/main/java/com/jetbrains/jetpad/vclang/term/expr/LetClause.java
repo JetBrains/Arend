@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LiftIndexVisitor;
 
 import java.util.List;
@@ -14,13 +14,12 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getFunctionType;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintLetClause;
 
 public class LetClause extends Binding implements Abstract.LetClause, Function {
-  // TODO: should be List<TypeArgument> myArguments;
-  private final List<Argument> myArguments;
+  private final List<TypeArgument> myArguments;
   private final Expression myResultType;
   private final Abstract.Definition.Arrow myArrow;
   private final Expression myTerm;
 
-  public LetClause(Name name, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+  public LetClause(Name name, List<TypeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
     super(name);
     myArguments = arguments;
     myResultType = resultType;
@@ -28,7 +27,7 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
     myTerm = term;
   }
 
-  public LetClause(String name, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+  public LetClause(String name, List<TypeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
     super(name);
     myArguments = arguments;
     myResultType = resultType;
@@ -52,7 +51,7 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
   }
 
   @Override
-  public List<Argument> getArguments() {
+  public List<TypeArgument> getArguments() {
     return myArguments;
   }
 

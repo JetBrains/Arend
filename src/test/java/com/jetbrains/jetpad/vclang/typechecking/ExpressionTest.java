@@ -198,7 +198,7 @@ public class ExpressionTest {
     Expression expr = Lam(lamArgs(
                     Tele(vars("F"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
                     Tele(vars("f"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
-            Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(1), Index(0))));
+            Let(lets(let("x", args(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(1), Index(0))));
     ListErrorReporter errorReporter = new ListErrorReporter();
     expr.checkType(new ArrayList<Binding>(), null, errorReporter);
     assertEquals(1, errorReporter.getErrorList().size());
@@ -207,7 +207,7 @@ public class ExpressionTest {
   @Test
   public void letArrowType() {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
-    Expression expr = Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Zero())), Index(0));
+    Expression expr = Let(lets(let("x", args(Tele(vars("y"), Nat())), Zero())), Index(0));
     ListErrorReporter errorReporter = new ListErrorReporter();
     assertEquals(Pi(Nat(), Nat()), expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Nat()), errorReporter).type);
     assertEquals(0, errorReporter.getErrorList().size());

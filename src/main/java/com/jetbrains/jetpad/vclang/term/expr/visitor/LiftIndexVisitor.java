@@ -68,12 +68,12 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
   public Expression visitLam(LamExpression expr, Integer from) {
     List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
     from = visitArguments(expr.getArguments(), arguments, from);
-    if (from == null) return null;
+    if (from == -1) return null;
     Expression body = expr.getBody().accept(this, from);
     return body == null ? null : Lam(arguments, body);
   }
 
-  private Integer visitArguments(List<Argument> arguments, List<Argument> result, Integer from) {
+  private int visitArguments(List<Argument> arguments, List<Argument> result, int from) {
     for (Argument argument : arguments) {
       if (argument instanceof NameArgument) {
         result.add(argument);
@@ -82,7 +82,7 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
       if (argument instanceof TelescopeArgument) {
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
         Expression arg = teleArgument.getType().accept(this, from);
-        if (arg == null) return null;
+        if (arg == null) return -1;
         result.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), arg));
         from += teleArgument.getNames().size();
       } else {
@@ -92,7 +92,7 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
     return from;
   }
 
-  private int visitTypeArguments(List<TypeArgument> arguments, List<TypeArgument> result, Integer from) {
+  private int visitTypeArguments(List<TypeArgument> arguments, List<TypeArgument> result, int from) {
     for (TypeArgument argument : arguments) {
       if (argument instanceof TelescopeArgument) {
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
@@ -114,7 +114,7 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
   public Expression visitPi(PiExpression expr, Integer from) {
     List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
     from = visitTypeArguments(expr.getArguments(), result, from);
-    if (from < 0) return null;
+    if (from == -1) return null;
     Expression codomain = expr.getCodomain().accept(this, from);
     return codomain == null ? null : Pi(result, codomain);
   }
@@ -150,7 +150,7 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
   @Override
   public Expression visitSigma(SigmaExpression expr, Integer from) {
     List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
-    return visitTypeArguments(expr.getArguments(), result, from) < 0 ? null : Sigma(result);
+    return visitTypeArguments(expr.getArguments(), result, from) == -1 ? null : Sigma(result);
   }
 
   private Clause visitClause(Clause clause, ElimExpression elimExpr, Integer from) {
@@ -201,9 +201,9 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
   }
 
   public LetClause visitLetClause(LetClause clause, Integer from) {
-    final List<Argument> arguments = new ArrayList<>(clause.getArguments().size());
-    from = visitArguments(clause.getArguments(), arguments, from);
-    if (from == null) return null;
+    final List<TypeArgument> arguments = new ArrayList<>(clause.getArguments().size());
+    from = visitTypeArguments(clause.getArguments(), arguments, from);
+    if (from == -1) return null;
     final Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, from);
     final Expression term = clause.getTerm().accept(this, from);
     return new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), term);

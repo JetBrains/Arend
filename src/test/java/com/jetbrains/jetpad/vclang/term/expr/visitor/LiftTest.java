@@ -138,11 +138,11 @@ public class LiftTest {
   public void liftLet() {
     // lift (\let | x (y : Nat) => <1> y | z => x zero \in <2> z,  0, 1) = (\let | x (y : Nat) > <2> y | z => x zero \in <3> z)
     Expression expr1 = Let(lets(
-            let("x", lamArgs(Tele(vars("y"), Nat())), Apps(Index(1), Index(0))),
+            let("x", args(Tele(vars("y"), Nat())), Apps(Index(1), Index(0))),
             let("z", Apps(Index(0), Zero()))
             ), Apps(Index(2), Index(0)));
     Expression expr2 = Let(lets(
-            let("x", lamArgs(Tele(vars("y"), Nat())), Apps(Index(2), Index(0))),
+            let("x", args(Tele(vars("y"), Nat())), Apps(Index(2), Index(0))),
             let("z", Apps(Index(0), Zero()))
             ), Apps(Index(3), Index(0)));
     assertEquals(expr1.liftIndex(0, 1), expr2);

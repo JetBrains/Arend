@@ -997,7 +997,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     Expression letTerm = Index(0);
-    List<Argument> args = new ArrayList<>();
+    List<TypeArgument> args = new ArrayList<>();
     for (int i = 0; i < expr.getExpressions().size(); i++) {
       Result exprResult = typeCheck(expr.getExpressions().get(i), null);
       if (!(exprResult instanceof OKResult)) return exprResult;
@@ -1009,7 +1009,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       letTerm = Apps(letTerm, exprOKResult.expression.liftIndex(0, 1));
     }
     for (int i = 0; i < args.size(); i++) {
-      myLocalContext.add(new TypedBinding("caseA" + i, ((TelescopeArgument) args.get(i)).getType()));
+      myLocalContext.add(new TypedBinding("caseA" + i, args.get(i).getType()));
     }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
     Integer oldArgsStartCtxIndex = myArgsStartCtxIndex;
@@ -1207,7 +1207,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private Result typeCheckLetClause(Abstract.LetClause clause) {
-    List<Argument> args = new ArrayList<>();
+    List<TypeArgument> args = new ArrayList<>();
     Expression resultType;
     Expression term;
     List<CompareVisitor.Equation> equations = new ArrayList<>();

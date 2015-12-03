@@ -13,8 +13,8 @@ public class ParserTest {
   public void parserLetToTheRight() {
     Concrete.Expression expr = parseExpr("\\lam x => \\let | x => Nat \\in x x");
     Concrete.Expression expr1 = parseExpr("\\let | x => Nat \\in \\lam x => x x");
-    assertTrue(compare(Lam("x", Let(lets(let("x", lamArgs(), Nat())), Apps(Var("x"), Var("x")))), expr));
-    assertTrue(compare(Let(lets(let("x", lamArgs(), Nat())), Lam("x", Apps(Var("x"), Var("x")))), expr1));
+    assertTrue(compare(Lam("x", Let(lets(let("x", args(), Nat())), Apps(Var("x"), Var("x")))), expr));
+    assertTrue(compare(Let(lets(let("x", args(), Nat())), Lam("x", Apps(Var("x"), Var("x")))), expr1));
   }
 
   @Test
@@ -26,7 +26,7 @@ public class ParserTest {
   @Test
   public void parseLetTyped() {
     Concrete.Expression expr = parseExpr("\\let | x : Nat => zero \\in x");
-    assertTrue(compare(Let(lets(let("x", lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Var("x")), expr));
+    assertTrue(compare(Let(lets(let("x", args(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Var("x")), expr));
   }
 
   @Test
