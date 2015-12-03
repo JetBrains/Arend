@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -47,6 +48,41 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
     return result;
   }
 
+  private Expression lamEtaReduce(Expression expr, int vars) {
+    for (int i = 0; i < vars; i++) {
+      if (!(expr instanceof AppExpression)) {
+        return null;
+      }
+      AppExpression appExpr = (AppExpression) expr;
+      if (!(appExpr.getArgument().getExpression() instanceof IndexExpression) || ((IndexExpression) appExpr.getArgument().getExpression()).getIndex() != i) {
+        return null;
+      }
+      expr = appExpr.getFunction();
+    }
+    return expr.liftIndex(0, -vars);
+  }
+
+  private Expression pathEtaReduce(AppExpression expr) {
+    if (!(expr.getFunction() instanceof ConCallExpression && ((ConCallExpression) expr.getFunction()).getDefinition() != Prelude.PATH_CON)) {
+      return null;
+    }
+    NumberOfLambdas numberOfLambdas = getNumberOfLambdas(expr.getArgument().getExpression());
+    if (numberOfLambdas.number < 1) {
+      return null;
+    }
+    Expression atExpr = lamEtaReduce(numberOfLambdas.body, numberOfLambdas.number - 1);
+    if (atExpr == null) {
+      return null;
+    }
+
+    List<Expression> atArgs = new ArrayList<>(5);
+    Expression atFun = atExpr.getFunction(atArgs);
+    if (!(atArgs.size() == 5 && atArgs.get(0) instanceof IndexExpression && ((IndexExpression) atArgs.get(0)).getIndex() == 0 && atFun instanceof FunCallExpression && ((FunCallExpression) atFun).getDefinition() == Prelude.AT)) {
+      return null;
+    }
+    return atArgs.get(1).liftIndex(0, -1);
+  }
+
   public CompareResult compare(Expression expr1, Expression expr2) {
     if (expr1 == expr2 || expr1 instanceof ErrorExpression || expr2 instanceof ErrorExpression) {
       return CompareResult.EQUIV;
@@ -59,18 +95,9 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
       NumberOfLambdas maxNumber = firstGreater ? number1 : number2;
       NumberOfLambdas minNumber = firstGreater ? number2 : number1;
       Expression maxBody = maxNumber.body;
+
       int diff = maxNumber.number - minNumber.number;
-      for (int i = 0; i < diff; i++) {
-        if (!(maxBody instanceof AppExpression)) {
-          return CompareResult.NOT_EQUIV;
-        }
-        AppExpression appExpr = (AppExpression) maxBody;
-        if (!(appExpr.getArgument().getExpression() instanceof IndexExpression) || ((IndexExpression) appExpr.getArgument().getExpression()).getIndex() != i) {
-          return CompareResult.NOT_EQUIV;
-        }
-        maxBody = appExpr.getFunction();
-      }
-      maxBody = maxBody.liftIndex(0, -diff);
+      maxBody = lamEtaReduce(maxBody, diff);
       if (maxBody == null) {
         return CompareResult.NOT_EQUIV;
       }
@@ -83,7 +110,19 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
       return result;
     }
 
-    // TODO: eta equivalence for paths and tuples
+    if (expr1 instanceof AppExpression) {
+      Expression expr = pathEtaReduce((AppExpression) expr1);
+      if (expr != null) {
+        return compare(expr, expr2).mustBeEquiv();
+      }
+    }
+    if (expr2 instanceof AppExpression) {
+      Expression expr = pathEtaReduce((AppExpression) expr2);
+      if (expr != null) {
+        return compare(expr1, expr).mustBeEquiv();
+      }
+    }
+
     // TODO: inference var in expr2
     return expr1.accept(this, expr2);
   }
@@ -277,7 +316,20 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Compare
 
   @Override
   public CompareResult visitTuple(TupleExpression expr1, Expression expr2) {
-    throw new IllegalStateException();
+    if (!(expr2 instanceof TupleExpression)) return CompareResult.NOT_EQUIV;
+    TupleExpression tupleExpr2 = (TupleExpression) expr2;
+    if (expr1.getFields().size() != tupleExpr2.getFields().size()) {
+      return CompareResult.NOT_EQUIV;
+    }
+
+    CompareResult result = CompareResult.EQUIV;
+    for (int i = 0; i < expr1.getFields().size(); i++) {
+      result = compare(expr1.getFields().get(i), tupleExpr2.getFields().get(i)).mustBeEquiv().and(result);
+      if (result == CompareResult.NOT_EQUIV) {
+        return CompareResult.NOT_EQUIV;
+      }
+    }
+    return result;
   }
 
   @Override
