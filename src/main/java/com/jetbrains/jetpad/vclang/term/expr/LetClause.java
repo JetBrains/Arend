@@ -14,6 +14,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getFunctionType;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintLetClause;
 
 public class LetClause extends Binding implements Abstract.LetClause, Function {
+  // TODO: should be List<TypeArgument> myArguments;
   private final List<Argument> myArguments;
   private final Expression myResultType;
   private final Abstract.Definition.Arrow myArrow;

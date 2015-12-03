@@ -64,7 +64,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public final Expression normalize(NormalizeVisitor.Mode mode, List<Binding> context) {
-    return accept(new NormalizeVisitor(context), mode);
+    return context == null ? this : accept(new NormalizeVisitor(context), mode);
   }
 
   public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, ErrorReporter errorReporter) {
