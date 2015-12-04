@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.Equations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,10 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   public boolean equals(Object obj) {
     if (this == obj) return true;
     if (!(obj instanceof Expression)) return false;
+    /*
+    Equations equations = new Equations();
+    return newCompare(this, (Expression) obj, equations) && equations.isEmpty();
+    */
     List<CompareVisitor.Equation> equations = new ArrayList<>(0);
     CompareVisitor.Result result = compare(this, (Expression) obj, equations);
     return result.isOK() != CompareVisitor.CMP.NOT_EQUIV && equations.size() == 0;
@@ -73,6 +78,10 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {
     return expr1.accept(new CompareVisitor(equations), expr2);
+  }
+
+  public static boolean newCompare(Expression expr1, Expression expr2, Equations equations) {
+    return NewCompareVisitor.compare(equations, NewCompareVisitor.CMP.EQ, new ArrayList<Binding>(), expr1, expr2) == NewCompareVisitor.Result.YES;
   }
 
   public Expression lamSplitAt(int index, List<Argument> arguments) {

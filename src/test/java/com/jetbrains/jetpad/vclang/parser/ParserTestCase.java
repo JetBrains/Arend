@@ -4,13 +4,11 @@ import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.antlr.v4.runtime.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -73,9 +71,7 @@ public class ParserTestCase {
     return classDefinition;
   }
 
-  public static boolean compare(Expression expr1, Abstract.Expression expr2) {
-    List<CompareVisitor.Equation> equations = new ArrayList<>();
-    CompareVisitor.Result result = Expression.compare(expr2, expr1, equations);
-    return result.isOK() != CompareVisitor.CMP.NOT_EQUIV && equations.size() == 0;
+  public static boolean compare(Abstract.Expression expr1, Abstract.Expression expr2) {
+    return expr1.accept(new AbstractCompareVisitor(), expr2);
   }
 }

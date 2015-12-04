@@ -23,14 +23,14 @@ public class PrettyPrintingTest {
   @Test
   public void prettyPrintingLam() {
     // \x. x x
-    Expression expr = Lam("x", Apps(Index(0), Index(0)));
+    Expression expr = Lam("x", Nat(), Apps(Index(0), Index(0)));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 
   @Test
   public void prettyPrintingLam2() {
     // \x. x (\y. y x) (\z w. x w z)
-    Expression expr = Lam("x", Apps(Index(0), Lam("y", Apps(Index(0), Index(1))), Lam("z", Lam("w", Apps(Index(2), Index(0), Index(1))))));
+    Expression expr = Lam("x", Nat(), Apps(Index(0), Lam("y", Nat(), Apps(Index(0), Index(1))), Lam("z", Nat(), Lam("w", Nat(), Apps(Index(2), Index(0), Index(1))))));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 
@@ -54,14 +54,14 @@ public class PrettyPrintingTest {
     List<Argument> arguments = new ArrayList<>(2);
     arguments.add(Tele(vars("X"), Universe(0)));
     arguments.add(Tele(vars("x"), Index(0)));
-    FunctionDefinition def = new FunctionDefinition(new Namespace("test"), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, Index(1), Definition.Arrow.RIGHT, Lam("X", Lam("x", Index(0))));
+    FunctionDefinition def = new FunctionDefinition(new Namespace("test"), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, Index(1), Definition.Arrow.RIGHT, Lam("X", Universe(0), Lam("x", Index(0), Index(0))));
     def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), null);
   }
 
   @Test
   public void prettyPrintingLet() {
     // \let x {A : Type0} (y ; A) : A => y \in x Zero()
-    LetExpression expr = Let(lets(let("x", args(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Index(0))), Index(0))), Apps(Index(0), Zero()));
+    LetExpression expr = Let(lets(let("x", typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Index(0))), Index(0))), Apps(Index(0), Zero()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 

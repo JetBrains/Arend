@@ -96,7 +96,7 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, Expression term) {
-    return new LetClause(name, args(), null, Abstract.Definition.Arrow.RIGHT, term);
+    return new LetClause(name, typeArgs(), null, Abstract.Definition.Arrow.RIGHT, term);
   }
 
   public static LetClause let(String name, List<TypeArgument> args, Expression term) {
@@ -115,7 +115,7 @@ public class ExpressionFactory {
     return Arrays.asList(vars);
   }
 
-  public static List<TypeArgument> args(TypeArgument... args) {
+  public static List<TypeArgument> typeArgs(TypeArgument... args) {
     return Arrays.asList(args);
   }
 
@@ -123,11 +123,7 @@ public class ExpressionFactory {
     return Arrays.asList(args);
   }
 
-  public static List<NameArgument> nameArgs(NameArgument... args) {
-    return Arrays.asList(args);
-  }
-
-  public static List<Argument> lamArgs(Argument... args) {
+  public static List<Argument> args(Argument... args) {
     return Arrays.asList(args);
   }
 

@@ -12,4 +12,8 @@ public class Equations {
   public void clear() {
 
   }
+
+  public boolean isEmpty() {
+    return true;
+  }
 }

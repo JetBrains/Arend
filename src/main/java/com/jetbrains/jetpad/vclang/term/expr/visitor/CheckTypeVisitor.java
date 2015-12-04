@@ -499,7 +499,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           return new InferErrorResult((InferHoleExpression) fExpectedTypeNorm, ((InferHoleExpression) fExpectedTypeNorm).getError(), null);
         }
 
-        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(args(TypeArg(Error(null, null)), TypeArg(Error(null, null)))), expr, getNames(myLocalContext));
+        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(typeArgs(TypeArg(Error(null, null)), TypeArg(Error(null, null)))), expr, getNames(myLocalContext));
         expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
