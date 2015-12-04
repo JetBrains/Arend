@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 
 public class ConditionsTest {
   @Test
@@ -97,6 +98,7 @@ public class ConditionsTest {
         "| negative n, zero => zero\n" +
         "| negative n, suc m => suc (suc m)", 1);
   }
+
   @Test
   public void bidirectionalList() {
     typeCheckClass(
@@ -107,6 +109,19 @@ public class ConditionsTest {
         "  | cons x xs => suc (length xs)\n" +
         "  | snoc xs x => suc (length xs)\n"
     );
+  }
+
+  @Test
+  public void conditionsInLet() {
+    typeCheckClass(
+        "\\static \\data Z | pos Nat | neg Nat \n" +
+        "\\with | neg zero => pos zero\n" +
+        "\\static \\function test (x : Z) =>" +
+            "\\let | f (x : Z) : Nat <= \\elim x\n" +
+            "          | pos x => 1\n" +
+            "          | neg x => 0\n" +
+            "\\in f x"
+    , 1);
   }
 
 }
