@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.Equations;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +81,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public static boolean newCompare(Expression expr1, Expression expr2, Equations equations) {
-    return NewCompareVisitor.compare(equations, NewCompareVisitor.CMP.EQ, new ArrayList<Binding>(), expr1, expr2) == NewCompareVisitor.Result.YES;
+    return NewCompareVisitor.compare(equations, Equations.CMP.EQ, new ArrayList<Binding>(), expr1, expr2) == NewCompareVisitor.Result.YES;
   }
 
   public Expression lamSplitAt(int index, List<Argument> arguments) {
