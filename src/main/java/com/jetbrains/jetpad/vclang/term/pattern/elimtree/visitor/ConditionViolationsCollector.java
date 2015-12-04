@@ -34,8 +34,8 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<List<Ex
   }
 
   public static void check(List<Binding> context, ElimTreeNode tree, ConditionViolationChecker checker, int argsStartIndex) {
-    List<Expression> expressions = new ArrayList<>(argsStartIndex + 1);
-      for (int i = 0; i <= argsStartIndex; i++) {
+    List<Expression> expressions = new ArrayList<>(context.size() - argsStartIndex);
+      for (int i = context.size() - argsStartIndex - 1; i >= 0; i--) {
         expressions.add(Index(i));
     }
     tree.accept(new ConditionViolationsCollector(context, checker), expressions);

@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -18,6 +19,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ConditionViolationsCollector;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
@@ -324,17 +326,67 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
             for (int i = 0, ii = 0; i < typedArguments.size(); i++) {
               if (typedArguments.get(i) instanceof Abstract.TelescopeArgument) {
                 for (int j = 0; j < ((Abstract.TelescopeArgument) typedArguments.get(i)).getNames().size(); j++) {
-                  incompleteCoverageMessage.append(" ");
-                  new ArgumentExpression(missing.get(ii++), typedArguments.get(i).getExplicit(), false).prettyPrint(incompleteCoverageMessage, new ArrayList<String>(), Definition.DEFAULT_PRECEDENCE.priority);
+                  incompleteCoverageMessage.append(" ").append(typedArguments.get(i).getExplicit() ? "(" : "{");
+                  incompleteCoverageMessage.append(missing.get(ii++));
+                  incompleteCoverageMessage.append(typedArguments.get(i).getExplicit() ? ")" : "}");
                 }
               } else {
-                incompleteCoverageMessage.append(" ");
-                new ArgumentExpression(missing.get(ii++), typedArguments.get(i).getExplicit(), false).prettyPrint(incompleteCoverageMessage, new ArrayList<String>(), Definition.DEFAULT_PRECEDENCE.priority);
+                incompleteCoverageMessage.append(" ").append(typedArguments.get(i).getExplicit() ? "(" : "{");
+                incompleteCoverageMessage.append(missing.get(ii++));
+                incompleteCoverageMessage.append(typedArguments.get(i).getExplicit() ? ")" : "}");
               }
             }
           }
         })) {
           TypeCheckingError error = new TypeCheckingError(incompleteCoverageMessage.toString(), def, getNames(context));
+          myErrorReporter.report(error);
+          elimTree = null;
+        }
+      }
+
+      if (elimTree != null) {
+        final StringBuilder errorMsg = new StringBuilder();
+        errorMsg.append("Condition check failed: ");
+
+        class ClauseConditionChecker implements ConditionViolationsCollector.ConditionViolationChecker {
+          boolean wasError = false;
+
+          @Override
+          public void check(List<Binding> context, Expression expr1, List<Expression> subst1, Expression expr2, List<Expression> subst2) {
+            expr1 = expr1.normalize(NormalizeVisitor.Mode.NF, context);
+            expr2 = expr2.normalize(NormalizeVisitor.Mode.NF, context);
+
+            if (!expr1.equals(expr2)){
+              errorMsg.append("\n").append(def.getName());
+              printArgs(subst1, errorMsg);
+              errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(def.getName());
+              printArgs(subst2, errorMsg);
+
+              wasError = true;
+            }
+          }
+
+          private void printArgs(List<Expression> subst1, StringBuilder errorMsg) {
+            for (int i = 0, ii = 0; i < typedArguments.size(); i++) {
+              if (typedArguments.get(i) instanceof TelescopeArgument) {
+                for (String ignore : ((TelescopeArgument) typedArguments.get(i)).getNames()) {
+                  errorMsg.append(" ").append(typedArguments.get(i).getExplicit() ? "(" : "{");
+                  errorMsg.append(subst1.get(ii++));
+                  errorMsg.append(typedArguments.get(i).getExplicit() ? ")" : "}");
+                }
+              } else {
+                errorMsg.append(" ").append(typedArguments.get(i).getExplicit() ? "(" : "{");
+                errorMsg.append(subst1.get(ii++));
+                errorMsg.append(typedArguments.get(i).getExplicit() ? ")" : "}");
+              }
+            }
+          }
+        }
+
+        ClauseConditionChecker checker = new ClauseConditionChecker();
+        ConditionViolationsCollector.check(context, elimTree, checker, thisClass == null ? 0 : 1);
+        if (checker.wasError) {
+          TypeCheckingError error = new TypeCheckingError(errorMsg.toString(), def, getNames(context));
           myErrorReporter.report(error);
           elimTree = null;
         }
