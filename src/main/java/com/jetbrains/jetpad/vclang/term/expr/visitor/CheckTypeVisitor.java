@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
@@ -625,7 +626,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding) {
+  public enum PatternExpansionMode {
+    FUNCTION, DATATYPE, CONDITION
+  }
+
+  private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode) {
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null) {
@@ -635,44 +640,53 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       pattern.setWellTyped(new NamePattern(name, pattern.getExplicit()));
       return new ExpandPatternOKResult(Index(0), new NamePattern(name, pattern.getExplicit()), 1);
-    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
-      Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
-      List<Expression> parameters = new ArrayList<>();
-      Expression ftype = type.getFunction(parameters);
-      Collections.reverse(parameters);
-      if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-        TypeCheckingError error = new TypeCheckingError("Pattern expected a data type, got: " + type.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
-        myErrorReporter.report(error);
-        return new ExpandPatternErrorResult(error);
-      }
-
-      if (((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getConstructors(parameters, myLocalContext) == null) {
-        TypeCheckingError error = new TypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern, getNames(myLocalContext));
-        myErrorReporter.report(error);
-        return new ExpandPatternErrorResult(error);
-      }
-      pattern.setWellTyped(new AnyConstructorPattern(pattern.getExplicit()));
-      myLocalContext.add(binding);
-      return new ExpandPatternOKResult(Index(0), new AnyConstructorPattern(pattern.getExplicit()), 1);
-    } else if (pattern instanceof Abstract.ConstructorPattern) {
+    } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       TypeCheckingError error = null;
-      Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
 
-      List<Expression> parameters = new ArrayList<>();
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
+      List<Expression> parameters = new ArrayList<>();
       Expression ftype = type.getFunction(parameters);
       Collections.reverse(parameters);
+
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         error = new TypeCheckingError("Pattern expected a data type, got: " + type.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
         myErrorReporter.report(error);
         return new ExpandPatternErrorResult(error);
       }
+
       DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
+
+      if (mode == PatternExpansionMode.DATATYPE && dataType.getConditions() != null) {
+        error = new TypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
+        myErrorReporter.report(error);
+        return new ExpandPatternErrorResult(error);
+      }
+
+      if ((mode == PatternExpansionMode.FUNCTION || mode == PatternExpansionMode.DATATYPE) && dataType == Prelude.INTERVAL) {
+        error = new TypeCheckingError("Pattern matching on an interval is not allowed here", pattern, getNames(myLocalContext));
+        myErrorReporter.report(error);
+        return new ExpandPatternErrorResult(error);
+      }
+
+      if (dataType.getConstructors(parameters, myLocalContext) == null) {
+        error = new TypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern, getNames(myLocalContext));
+        myErrorReporter.report(error);
+        return new ExpandPatternErrorResult(error);
+      }
+
+      if (pattern instanceof Abstract.AnyConstructorPattern) {
+        pattern.setWellTyped(new AnyConstructorPattern(pattern.getExplicit()));
+        myLocalContext.add(binding);
+        return new ExpandPatternOKResult(Index(0), new AnyConstructorPattern(pattern.getExplicit()), 1);
+      }
+
+      Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
 
       Constructor constructor = null;
       for (int index = 0; index < dataType.getConstructors().size(); ++index) {
         if (dataType.getConstructors().get(index).getName().equals(constructorPattern.getConstructorName())) {
           constructor = dataType.getConstructors().get(index);
+          break;
         }
       }
 
@@ -692,8 +706,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (constructor.getPatterns() != null) {
         Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, myLocalContext);
         if (matchResult instanceof PatternMatchMaybeResult) {
-          error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
-              "Expected " + ((PatternMatchMaybeResult) matchResult).maybePattern + ", got " + ((PatternMatchMaybeResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
+          throw new IllegalStateException();
         } else if (matchResult instanceof PatternMatchFailedResult) {
           error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
               "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
@@ -738,7 +751,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         for (int j = 0; j < i; j++) {
           argumentType = expandPatternSubstitute(resultPatterns.get(j), i - j - 1, substituteExpressions.get(j), argumentType);
         }
-        ExpandPatternResult result = expandPattern(patterns.get(i), new TypedBinding((Name) null, argumentType));
+        ExpandPatternResult result = expandPattern(patterns.get(i), new TypedBinding((Name) null, argumentType), mode);
         if (result instanceof ExpandPatternErrorResult)
           return result;
         ExpandPatternOKResult okResult  = (ExpandPatternOKResult) result;
@@ -755,14 +768,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  public ExpandPatternResult expandPatternOn(Abstract.Pattern pattern, int varIndex) {
+  public ExpandPatternResult expandPatternOn(Abstract.Pattern pattern, int varIndex, PatternExpansionMode mode) {
     int varContextIndex = myLocalContext.size() - 1 - varIndex;
 
     Binding binding = myLocalContext.get(varContextIndex);
     List<Binding> tail = new ArrayList<>(myLocalContext.subList(varContextIndex + 1, myLocalContext.size()));
     myLocalContext.subList(varContextIndex, myLocalContext.size()).clear();
 
-    ExpandPatternResult result = expandPattern(pattern, binding);
+    ExpandPatternResult result = expandPattern(pattern, binding, mode);
     if (result instanceof ExpandPatternErrorResult)
       return result;
     ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
@@ -857,7 +870,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         List<Pattern> clausePatterns = new ArrayList<>(emptyPatterns);
         Expression clauseExpectedType = expectedType;
         for (int i = 0; i < clause.getPatterns().size(); i++) {
-          ExpandPatternResult result = expandPatternOn(clause.getPatterns().get(i), elimExprs.get(i).getIndex());
+          ExpandPatternResult result = expandPatternOn(clause.getPatterns().get(i), elimExprs.get(i).getIndex(), PatternExpansionMode.FUNCTION);
           if (result instanceof ExpandPatternErrorResult) {
             expr.getExpressions().get(i).setWellTyped(myLocalContext, Error(null, ((ExpandPatternErrorResult) result).error));
             wasError = true;
@@ -1300,11 +1313,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new OKResult(expression, Nat(), null), expr);
   }
 
-  public List<Pattern> visitPatterns(List<Abstract.Pattern> patterns, List<Expression> substIn) {
+  public List<Pattern> visitPatterns(List<Abstract.Pattern> patterns, List<Expression> substIn, PatternExpansionMode mode) {
     List<Pattern> typedPatterns;
     typedPatterns = new ArrayList<>();
     for (int i = 0; i < patterns.size(); i++) {
-      ExpandPatternResult result = expandPatternOn(patterns.get(i), patterns.size() - 1 - i);
+      ExpandPatternResult result = expandPatternOn(patterns.get(i), patterns.size() - 1 - i, mode);
       if (result == null || result instanceof ExpandPatternErrorResult)
         return null;
 

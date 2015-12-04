@@ -97,7 +97,7 @@ public class ElimTest {
     typeCheckClass(
         "\\static \\data E | A | B | C\n" +
         "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
-        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | d2 => 2", 2);
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | d2 => 2", 3);
   }
 
   @Test
@@ -254,7 +254,7 @@ public class ElimTest {
         "  \\case x, y, p\n" +
         "    | m, zero, EqBase <= zero \n" +
         "    | zero, suc _, _!\n" +
-        "    | suc _, suc _, EqSuc q <= suc zero", 2);
+        "    | suc _, suc _, EqSuc q <= suc zero", 3);
   }
 
   @Test
@@ -281,9 +281,9 @@ public class ElimTest {
   @Test
   public void testAnyNoElimError() {
     typeCheckClass(
-      "\\static \\data D Nat | D zero => d0\n" +
-      "\\function test (x : Nat) (d : D x) : Nat <= \\elim d\n" +
-      " | _! => 0", 1
+        "\\static \\data D Nat | D zero => d0\n" +
+            "\\function test (x : Nat) (d : D x) : Nat <= \\elim d\n" +
+            " | _! => 0", 1
     );
   }
 
@@ -295,5 +295,15 @@ public class ElimTest {
       " | _ => n\n"
     );
     assertEquals(def.getElimTree(), branch(0, clause(Prelude.ZERO, Index(0)), clause(Prelude.SUC, Index(1))));
+  }
+
+  @Test
+  public void testElimOnIntervalError() {
+    typeCheckDef(
+        "\\function test (i : I) : Nat <= \\elim i\n" +
+        " | left => 0\n" +
+        " | right => 1\n"  +
+        " | _ => 0\n"
+    , 2);
   }
 }

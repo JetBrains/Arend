@@ -291,4 +291,11 @@ public class DefinitionTest {
         "\\static \\function f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
         "\\static \\function g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
   }
+
+  @Test
+  public void indexedWithConditionsError() {
+    typeCheckClass(
+        "\\static \\data S | base | loop I \\with | loop right => base | loop left => base\n" +
+        "\\static \\data Q S | Q (base) => cq", 1);
+  }
 }

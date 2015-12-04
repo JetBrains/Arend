@@ -553,7 +553,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (processedPatterns == null)
         return;
 
-      List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType);
+      List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType, CheckTypeVisitor.PatternExpansionMode.CONDITION);
 
       CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
       if (result == null)
@@ -602,7 +602,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (processedPatterns == null)
           return null;
 
-        typedPatterns = visitor.visitPatterns(processedPatterns, Collections.<Expression>emptyList());
+        typedPatterns = visitor.visitPatterns(processedPatterns, Collections.<Expression>emptyList(), CheckTypeVisitor.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null)
           return null;
       }
