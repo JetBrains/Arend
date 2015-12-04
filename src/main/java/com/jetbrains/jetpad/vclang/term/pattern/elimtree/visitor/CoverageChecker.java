@@ -5,56 +5,51 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.match;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 
-public class CoverageChecker implements ElimTreeNodeVisitor<Boolean, List<List<Pattern>>> {
+public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Boolean> {
+  public interface CoverageCheckerMissingProcessor {
+    void process(List<Binding> context, List<Expression> missing);
+  }
 
   private final List<Binding> myContext;
+  private final CoverageCheckerMissingProcessor myProcessor;
 
-  public CoverageChecker(List<Binding> context) {
+  private CoverageChecker(List<Binding> context, CoverageCheckerMissingProcessor processor) {
     myContext = context;
+    myProcessor = processor;
+  }
+
+  public static boolean check(List<Binding> context, ElimTreeNode tree, int argsStartIndex, CoverageCheckerMissingProcessor processor) {
+    List<Expression> expressions = new ArrayList<>(context.size() - argsStartIndex);
+       for (int i = context.size() - argsStartIndex - 1; i >= 0; i--) {
+         expressions.add(Index(i));
+    }
+    return tree.accept(new CoverageChecker(context, processor), expressions);
   }
 
   @Override
-  public List<List<Pattern>> visitBranch(BranchElimTreeNode branchNode, Boolean isExplicit) {
+  public Boolean visitBranch(BranchElimTreeNode branchNode, List<Expression> expressions) {
     Expression type = myContext.get(myContext.size() - 1 - branchNode.getIndex()).getType().liftIndex(0, branchNode.getIndex());
     List<Expression> parameters = new ArrayList<>();
     DefCallExpression ftype = (DefCallExpression) type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters);
     Collections.reverse(parameters);
 
-    // TODO: pattern construction is completely senseless
-    List<List<Pattern>> result = new ArrayList<>();
+    boolean result = true;
     for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getConstructors(parameters, myContext)) {
-      try (ConCallContextExpander ignore = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
+      try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
         if (branchNode.getChild(conCall.getDefinition()) != null) {
-          for (List<Pattern> nestedPatterns : branchNode.getChild(conCall.getDefinition()).accept(this, isExplicit)) {
-            List<Pattern> my = nestedPatterns.subList(nestedPatterns.size() - 1 - branchNode.getIndex() - conCall.getParameters().size(), nestedPatterns.size() - 1 - branchNode.getIndex());
-            ConstructorPattern newPattern = new ConstructorPattern(conCall.getDefinition(), new ArrayList<>(my), isExplicit);
-            my.clear();
-            my.add(newPattern);
-            result.add(nestedPatterns);
-          }
+          result &= branchNode.getChild(conCall.getDefinition()).accept(this, expander.substIn(expressions));
         } else {
-          if (!checkEmptyContext(branchNode.getIndex() - 1)) {
-            List<Pattern> args = new ArrayList<>();
-            for (TypeArgument arg : splitArguments(conCall.getDefinition().getArguments())) {
-              args.add(match(arg.getExplicit(), null));
-            }
-            List<Pattern> failed = new ArrayList<>(Collections.<Pattern>nCopies(branchNode.getIndex(), match(true, null)));
-            failed.add(new ConstructorPattern(conCall.getDefinition(), args, isExplicit));
-            result.add(failed);
-          }
+          result &= checkEmptyContext(branchNode.getIndex() - 1, expander.substIn(expressions));
         }
       }
     }
@@ -63,17 +58,18 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Boolean, List<List<P
   }
 
   @Override
-  public List<List<Pattern>> visitLeaf(LeafElimTreeNode leafNode, Boolean params) {
-    return Collections.emptyList();
+  public Boolean visitLeaf(LeafElimTreeNode leafNode, List<Expression> expressions) {
+    return true;
   }
 
   @Override
-  public List<List<Pattern>> visitEmpty(EmptyElimTreeNode emptyNode, Boolean params) {
-    return Collections.emptyList();
+  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, List<Expression> expressions) {
+    return checkEmptyContext(expressions.size() - 1, expressions);
   }
 
-  public boolean checkEmptyContext(int index) {
+  public boolean checkEmptyContext(int index, List<Expression> expressions) {
     if (index < 0) {
+      myProcessor.process(myContext, expressions);
       return false;
     }
 
@@ -81,20 +77,19 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Boolean, List<List<P
     List<Expression> parameters = new ArrayList<>();
     Expression ftype = type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters);
     Collections.reverse(parameters);
+
     if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-      return checkEmptyContext(index - 1);
+      return checkEmptyContext(index - 1, expressions);
     }
     List<ConCallExpression> validConCalls = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getConstructors(parameters, myContext);
-
     if (validConCalls == null) {
-      return checkEmptyContext(index - 1);
+      return checkEmptyContext(index - 1, expressions);
     }
 
     for (ConCallExpression conCall : validConCalls) {
-      try (ConCallContextExpander ignore = new ConCallContextExpander(index, conCall, myContext)) {
-        if (!checkEmptyContext(index - 1)) {
+      try (ConCallContextExpander expander = new ConCallContextExpander(index, conCall, myContext)) {
+        if (!checkEmptyContext(index - 1, expander.substIn(expressions)))
           return false;
-        }
       }
     }
     return true;

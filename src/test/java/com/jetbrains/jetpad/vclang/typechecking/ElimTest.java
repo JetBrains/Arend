@@ -253,12 +253,12 @@ public class ElimTest {
         "\\static \\function f (x y : Nat) (p : Geq x y) : Nat <=\n" +
         "  \\case x, y, p\n" +
         "    | m, zero, EqBase <= zero \n" +
-        "    | zero, suc _, x <= \\elim x ;\n" +
-        "    | suc _, suc _, EqSuc q <= suc zero", 3);
+        "    | zero, suc _, _!\n" +
+        "    | suc _, suc _, EqSuc q <= suc zero", 2);
   }
 
   @Test
-  public void testElim11() {
+  public void testElimOrderError() {
     typeCheckClass("\\static \\data \\infix 4\n" +
                    "(=<) (n m : Nat)\n" +
                    "  | (=<) zero m => le_z\n" +
@@ -276,6 +276,15 @@ public class ElimTest {
         "\\function (+) (x y : Nat) : Nat => \\elim x" +
         "  | zero => y\n" +
         "  | suc x => suc (x + y)", 1);
+  }
+
+  @Test
+  public void testAnyNoElimError() {
+    typeCheckClass(
+      "\\static \\data D Nat | D zero => d0\n" +
+      "\\function test (x : Nat) (d : D x) : Nat <= \\elim d\n" +
+      " | _! => 0", 1
+    );
   }
 
   @Test

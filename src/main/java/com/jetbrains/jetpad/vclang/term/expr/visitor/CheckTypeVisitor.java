@@ -637,9 +637,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return new ExpandPatternOKResult(Index(0), new NamePattern(name, pattern.getExplicit()), 1);
     } else if (pattern instanceof Abstract.AnyConstructorPattern) {
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
-      Expression ftype = type.getFunction(new ArrayList<Expression>());
+      List<Expression> parameters = new ArrayList<>();
+      Expression ftype = type.getFunction(parameters);
+      Collections.reverse(parameters);
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         TypeCheckingError error = new TypeCheckingError("Pattern expected a data type, got: " + type.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
+        myErrorReporter.report(error);
+        return new ExpandPatternErrorResult(error);
+      }
+
+      if (((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getConstructors(parameters, myLocalContext) == null) {
+        TypeCheckingError error = new TypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern, getNames(myLocalContext));
         myErrorReporter.report(error);
         return new ExpandPatternErrorResult(error);
       }
@@ -925,23 +933,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     });
 
     return treeExpansionResult.tree;
-    //StringBuilder coverageCheckMsg = new StringBuilder();
-    //coverageCheckMsg.append("Coverage checking failed: \n");
-    //for (List<Pattern> failed : treeNode.accept(new CoverageChecker<Clause>(myLocalContext), true)) {
-    //  coverageCheckMsg.append("missing pattern: ");
-    //  for (IndexExpression elimIdx : elimExprs) {
-    //    coverageCheckMsg.append(failed.get(elimIdx.getIndex())).append(" ");
-    //  }
-    //  coverageCheckMsg.append("\n");
-    //  wasError = true;
-    //}
-
-    //if (wasError) {
-    //  error = new TypeCheckingError(coverageCheckMsg.toString(), expr, getNames(myLocalContext));
-    //  expr.setWellTyped(myLocalContext, Error(null, error));
-    //  myErrorReporter.report(error);
-    //  return null;
-    //}
 
     //class ClauseConditionChecker implements ConditionViolationsCollector.ConditionViolationChecker<Clause> {
     //  boolean wasError = false;

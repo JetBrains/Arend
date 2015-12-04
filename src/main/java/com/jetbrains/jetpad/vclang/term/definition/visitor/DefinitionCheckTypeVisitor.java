@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
@@ -17,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -29,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
@@ -107,10 +110,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   }
 
   @Override
-  public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
+  public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, Void params) {
     Name name = def.getName();
     Abstract.Definition.Arrow arrow = def.getArrow();
-    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence());
+    final FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence());
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -121,8 +124,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     */
 
     List<? extends Abstract.Argument> arguments = def.getArguments();
-    List<Argument> typedArguments = new ArrayList<>(arguments.size());
-    List<Binding> context = new ArrayList<>();
+    final List<Argument> typedArguments = new ArrayList<>(arguments.size());
+    final List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def, myNamespace);
     if (thisClass != null) {
@@ -307,6 +310,32 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         if (!elimTree.accept(new TerminationCheckVisitor(typedDef), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", term, getNames(context)));
+          elimTree = null;
+        }
+      }
+
+      if (elimTree != null) {
+        final StringBuilder incompleteCoverageMessage = new StringBuilder();
+        incompleteCoverageMessage.append("Coverage check failed for: ");
+        if (!CoverageChecker.check(context, elimTree, thisClass == null ? 0 : 1, new CoverageChecker.CoverageCheckerMissingProcessor() {
+          @Override
+          public void process(List<Binding> missingContext, List<Expression> missing) {
+            incompleteCoverageMessage.append("\n ").append(def.getName());
+            for (int i = 0, ii = 0; i < typedArguments.size(); i++) {
+              if (typedArguments.get(i) instanceof Abstract.TelescopeArgument) {
+                for (int j = 0; j < ((Abstract.TelescopeArgument) typedArguments.get(i)).getNames().size(); j++) {
+                  incompleteCoverageMessage.append(" ");
+                  new ArgumentExpression(missing.get(ii++), typedArguments.get(i).getExplicit(), false).prettyPrint(incompleteCoverageMessage, new ArrayList<String>(), Definition.DEFAULT_PRECEDENCE.priority);
+                }
+              } else {
+                incompleteCoverageMessage.append(" ");
+                new ArgumentExpression(missing.get(ii++), typedArguments.get(i).getExplicit(), false).prettyPrint(incompleteCoverageMessage, new ArrayList<String>(), Definition.DEFAULT_PRECEDENCE.priority);
+              }
+            }
+          }
+        })) {
+          TypeCheckingError error = new TypeCheckingError(incompleteCoverageMessage.toString(), def, getNames(context));
+          myErrorReporter.report(error);
           elimTree = null;
         }
       }
@@ -506,7 +535,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       return;
     }
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getLocalContext())) {
-      List<Expression> resultType = new ArrayList<>(Collections.singletonList(Utils.splitArguments(constructor.getBaseType(), new ArrayList<TypeArgument>(), visitor.getLocalContext())));
+      List<Expression> resultType = new ArrayList<>(Collections.singletonList(splitArguments(constructor.getBaseType(), new ArrayList<TypeArgument>(), visitor.getLocalContext())));
       if (constructor.getPatterns() != null) {
         for (TypeArgument arg : expandConstructorParameters(constructor, visitor.getLocalContext())) {
           Utils.pushArgument(visitor.getLocalContext(), arg);

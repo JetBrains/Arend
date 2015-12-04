@@ -4,11 +4,17 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 
 public class ConstructorClause {
   private ElimTreeNode myChild;
+  private final BranchElimTreeNode myParent;
   private final Constructor myConstructor;
 
-  public ConstructorClause(Constructor constructor, ElimTreeNode child) {
+  public ConstructorClause(Constructor constructor, ElimTreeNode child, BranchElimTreeNode parent) {
     setChild(child);
+    myParent = parent;
     myConstructor = constructor;
+  }
+
+  public BranchElimTreeNode getParent() {
+    return myParent;
   }
 
   void setChild(ElimTreeNode child) {

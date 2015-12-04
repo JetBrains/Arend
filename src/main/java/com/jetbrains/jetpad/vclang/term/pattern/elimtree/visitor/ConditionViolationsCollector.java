@@ -48,10 +48,9 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<List<Ex
     DataDefinition dataType = ((DataCallExpression) type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters)).getDefinition();
     Collections.reverse(parameters);
     for (ConCallExpression conCall : dataType.getConstructors(parameters, myContext)) {
-      ElimTreeNode child = branchNode.getChild(conCall.getDefinition());
-      if (child != null) {
+      if (branchNode.getChild(conCall.getDefinition()) != null) {
         try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
-          child.accept(this, expander.substIn(expressions));
+          branchNode.getChild(conCall.getDefinition()).accept(this, expander.substIn(expressions));
         }
       }
     }

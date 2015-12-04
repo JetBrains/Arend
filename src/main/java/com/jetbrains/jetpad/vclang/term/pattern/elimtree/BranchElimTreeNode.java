@@ -23,7 +23,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
   }
 
   public void addClause(Constructor constructor, ElimTreeNode node) {
-    myClauses.put(constructor, new ConstructorClause(constructor, node));
+    myClauses.put(constructor, new ConstructorClause(constructor, node, this));
   }
 
   public ElimTreeNode getChild(Constructor constructor) {

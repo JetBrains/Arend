@@ -47,7 +47,6 @@ public class ArgsElimTreeExpander {
   private final List<Branch> currentBranches = new ArrayList<>();
 
   private List<ArgsBranch> resultBranches;
-  private ElimTreeNode resultTree;
 
   ArgsElimTreeExpander(List<Binding> localContext) {
     this.myLocalContext = localContext;
@@ -80,18 +79,11 @@ public class ArgsElimTreeExpander {
     for (int i = 0; i < patterns.size(); i++)
       valid.add(i);
     resultBranches = new ArrayList<>();
-    LeafElimTreeNode init = new LeafElimTreeNode();
-    resultTree = init;
 
-    expandElimTreeRecurse(valid, types, init);
-    if (resultBranches.isEmpty()) {
-      return new ArgsExpansionResult(EmptyElimTreeNode.getInstance(), Collections.<ArgsBranch>emptyList());
-    } else {
-      return new ArgsExpansionResult(resultTree, resultBranches);
-    }
+    return new ArgsExpansionResult(expandElimTreeRecurse(valid, types), resultBranches);
   }
 
-  private void expandElimTreeRecurse(List<Integer> valid, List<Expression> types, LeafElimTreeNode leaf) {
+  private ElimTreeNode expandElimTreeRecurse(List<Integer> valid, List<Expression> types) {
     if (types.isEmpty()) {
       List<Expression> expressions = new ArrayList<>(currentBranches.size());
       for (int lift = 0, i = currentBranches.size() - 1; i >= 0; lift += currentBranches.get(i).context.size(), --i) {
@@ -99,23 +91,26 @@ public class ArgsElimTreeExpander {
       }
       Collections.reverse(expressions);
 
+      LeafElimTreeNode leaf = new LeafElimTreeNode();
       resultBranches.add(new ArgsBranch(leaf, expressions, new ArrayList<>(myLocalContext.subList(myOldContextSize, myLocalContext.size())), valid));
-      return;
+      return leaf;
     }
 
     List<Pattern> patterns = new ArrayList<>();
     for (int i : valid)
       patterns.add(myNestedPatterns.get(i).get(myNestedPatterns.get(i).size() - types.size()));
     ElimTreeExpander.ExpansionResult nestedResult = new ElimTreeExpander(myLocalContext).expandElimTree(myIndex + types.size() - 1, patterns, types.get(0));
-    resultTree = leaf.replaceWith(resultTree, nestedResult.result);
+    ElimTreeNode resultTree = nestedResult.result;
 
     for (Branch branch : nestedResult.branches) {
       try (Utils.MultiContextSaver ignore = new Utils.MultiContextSaver(myLocalContext, currentBranches)) {
         myLocalContext.addAll(branch.context);
         currentBranches.add(branch);
-        expandElimTreeRecurse(recalcIndicies(valid, branch.indicies), substituteInTypes(types, branch), branch.leaf);
+        resultTree = branch.leaf.replaceWith(resultTree, expandElimTreeRecurse(recalcIndicies(valid, branch.indicies), substituteInTypes(types, branch)));
       }
     }
+
+    return resultTree;
   }
 
   private List<Expression> substituteInTypes(List<Expression> types, Branch branch) {

@@ -119,7 +119,8 @@ public class GetDepsVisitor implements AbstractExpressionVisitor<Void, Set<Resol
       caseExpr.accept(this, null);
     }
     for (Abstract.Clause clause : expr.getClauses()) {
-      clause.getExpression().accept(this, null);
+      if (clause.getExpression() != null)
+        clause.getExpression().accept(this, null);
     }
     return myDependencies;
   }

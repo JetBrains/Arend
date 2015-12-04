@@ -75,14 +75,11 @@ class ElimTreeExpander {
 
     BranchElimTreeNode resultTree = new BranchElimTreeNode(index);
     List<Branch> resultBranches = new ArrayList<>();
+
     for (ConCallExpression conCall : validConstructors) {
       List<TypeArgument> constructorArgs = new ArrayList<>();
       splitArguments(conCall.getType(myLocalContext), constructorArgs, myLocalContext);
       MatchingPatterns matching = new MatchingPatterns(patterns, conCall.getDefinition(), constructorArgs);
-
-      if (matching.indices.isEmpty()) {
-        continue;
-      }
 
       ArgsElimTreeExpander.ArgsExpansionResult nestedResult = new ArgsElimTreeExpander(myLocalContext).expandElimTree(
           index, getTypes(constructorArgs), matching.nestedPatterns);

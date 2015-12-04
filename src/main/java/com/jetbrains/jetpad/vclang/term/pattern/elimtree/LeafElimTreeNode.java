@@ -37,6 +37,16 @@ public class LeafElimTreeNode extends ElimTreeNode {
     if (getParent() == null) {
       return replacement;
     }
+
+    if (replacement == EmptyElimTreeNode.getInstance()) {
+      for (ConstructorClause clause = getParent(); clause != null; clause = clause.getParent().getParent()) {
+        clause.getParent().getConstructorClauses().remove(clause);
+        if (!clause.getParent().getConstructorClauses().isEmpty()) {
+          return root;
+        }
+      }
+      return EmptyElimTreeNode.getInstance();
+    }
     getParent().setChild(replacement);
     return root;
   }
