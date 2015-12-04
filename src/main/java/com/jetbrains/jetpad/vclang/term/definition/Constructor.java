@@ -45,6 +45,10 @@ public class Constructor extends Definition implements Abstract.Constructor {
     return myPatterns;
   }
 
+  public void setPatterns(List<Pattern> patterns) {
+    myPatterns = patterns;
+  }
+
   @Override
   public void replacePatternWithConstructor(int index) {
     throw new UnsupportedOperationException();

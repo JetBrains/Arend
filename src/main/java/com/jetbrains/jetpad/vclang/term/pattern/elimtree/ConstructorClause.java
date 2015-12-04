@@ -2,27 +2,21 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 
-public class ConstructorClause<T> {
-  private ElimTreeNode<T> myChild;
-  private final BranchElimTreeNode<T> myParent;
+public class ConstructorClause {
+  private ElimTreeNode myChild;
   private final Constructor myConstructor;
 
-  public ConstructorClause(Constructor constructor, ElimTreeNode<T> child, BranchElimTreeNode<T> parent) {
+  public ConstructorClause(Constructor constructor, ElimTreeNode child) {
     setChild(child);
-    myParent = parent;
     myConstructor = constructor;
   }
 
-  public BranchElimTreeNode<T> getParent() {
-    return myParent;
-  }
-
-  void setChild(ElimTreeNode<T> child) {
+  void setChild(ElimTreeNode child) {
     myChild = child;
     child.setParent(this);
   }
 
-  public ElimTreeNode<T> getChild() {
+  public ElimTreeNode getChild() {
     return myChild;
   }
 

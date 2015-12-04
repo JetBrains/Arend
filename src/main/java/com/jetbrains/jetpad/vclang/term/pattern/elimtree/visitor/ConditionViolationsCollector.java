@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternExpansion;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.ArrayList;
@@ -19,38 +20,35 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.pattern.PatternExpansion.expandPattern;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
 
-public class ConditionViolationsCollector<T> implements ElimTreeNodeVisitor<T, Void, List<Expression>>  {
-  public interface ConditionViolationChecker<T> {
-    void check(List<Binding> context, T v1, List<Expression> subst1, T v2, List<Expression> subst2);
+public class ConditionViolationsCollector implements ElimTreeNodeVisitor<List<Expression>, Void>  {
+  public interface ConditionViolationChecker {
+    void check(List<Binding> context, Expression expr1, List<Expression> subst1, Expression expr2, List<Expression> subst2);
   }
 
   private final List<Binding> myContext;
-  private final ConditionViolationChecker<T> myChecker;
+  private final ConditionViolationChecker myChecker;
 
-  private ConditionViolationsCollector(List<Binding> context, ConditionViolationChecker<T> checker) {
+  private ConditionViolationsCollector(List<Binding> context, ConditionViolationChecker checker) {
     myContext = context;
     myChecker = checker;
   }
 
-  public static <T> void check(List<Binding> context, ElimTreeNode<T> tree, ConditionViolationChecker<T> checker) {
-    tree.accept(new ConditionViolationsCollector<>(context, checker), null);
+  public static void check(List<Binding> context, ElimTreeNode tree, ConditionViolationChecker checker, int argsStartIndex) {
+    List<Expression> expressions = new ArrayList<>(argsStartIndex + 1);
+      for (int i = 0; i <= argsStartIndex; i++) {
+        expressions.add(Index(i));
+    }
+    tree.accept(new ConditionViolationsCollector(context, checker), expressions);
   }
 
   @Override
-  public Void visitBranch(final BranchElimTreeNode<T> branchNode, List<Expression> expressions) {
-    if (expressions == null) {
-      expressions = new ArrayList<>(branchNode.getIndex() + 1);
-      for (int i = 0; i <= branchNode.getIndex(); i++) {
-        expressions.add(Index(i));
-      }
-    }
-
+  public Void visitBranch(final BranchElimTreeNode branchNode, List<Expression> expressions) {
     List<Expression> parameters = new ArrayList<>();
     Expression type = myContext.get(myContext.size() - 1 - branchNode.getIndex()).getType().liftIndex(0, branchNode.getIndex());
-    DataDefinition dataType = ((DataCallExpression) type.normalize(NormalizeVisitor.Mode.NF, myContext).getFunction(parameters)).getDefinition();
+    DataDefinition dataType = ((DataCallExpression) type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters)).getDefinition();
     Collections.reverse(parameters);
     for (ConCallExpression conCall : dataType.getConstructors(parameters, myContext)) {
-      ElimTreeNode<T> child = branchNode.getChild(conCall.getDefinition());
+      ElimTreeNode child = branchNode.getChild(conCall.getDefinition());
       if (child != null) {
         try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
           child.accept(this, expander.substIn(expressions));
@@ -91,15 +89,19 @@ public class ConditionViolationsCollector<T> implements ElimTreeNodeVisitor<T, V
           newExpressions.add(condition.getTerm().liftIndex(0, branchNode.getIndex()));
 
 
-          SubstituteExpander.substituteExpand(myContext, subst, branchNode, newExpressions, new SubstituteExpander.SubstituteExpansionProcessor<T>() {
+          SubstituteExpander.substituteExpand(myContext, subst, branchNode, newExpressions, new SubstituteExpander.SubstituteExpansionProcessor() {
             @Override
-            public void process(List<Expression> expressions1, List<Binding> context, final T lhsValue) {
-              List<Expression> newSubst = new ArrayList<>(expressions1.subList(expressions1.size() - 1 - branchNode.getIndex(), expressions1.size()));
-              expressions1.subList(expressions1.size() - 1 - branchNode.getIndex(), expressions1.size()).clear();
-              SubstituteExpander.substituteExpand(context, newSubst, branchNode, expressions1, new SubstituteExpander.SubstituteExpansionProcessor<T>() {
+            public void process(List<Expression> expressions, List<Binding> context, final List<Expression> subst, LeafElimTreeNode leaf) {
+              List<Expression> newSubst = new ArrayList<>(expressions.subList(expressions.size() - 1 - branchNode.getIndex(), expressions.size()));
+              expressions.subList(expressions.size() - 1 - branchNode.getIndex(), expressions.size()).clear();
+              expressions.add(leaf.getExpression().subst(subst, 0));
+              SubstituteExpander.substituteExpand(context, newSubst, branchNode, expressions, new SubstituteExpander.SubstituteExpansionProcessor() {
                 @Override
-                public void process(List<Expression> expressions2, List<Binding> context, T rhsValue) {
-                  myChecker.check(context, lhsValue, new ArrayList<>(expressions2.subList(0, expressions2.size() / 2)), rhsValue, new ArrayList<>(expressions2.subList(expressions2.size() / 2, expressions2.size())));
+                public void process(List<Expression> expressions, List<Binding> context, List<Expression> subst, LeafElimTreeNode leaf) {
+                  Expression lhs = expressions.get(expressions.size() - 1);
+                  expressions.remove(expressions.size() - 1);
+                  Expression rhs = leaf.getExpression().subst(subst, 0);
+                  myChecker.check(context, lhs, new ArrayList<>(expressions.subList(0, expressions.size() / 2)), rhs, new ArrayList<>(expressions.subList(expressions.size() / 2, expressions.size())));
                 }
               });
             }
@@ -112,7 +114,12 @@ public class ConditionViolationsCollector<T> implements ElimTreeNodeVisitor<T, V
   }
 
   @Override
-  public Void visitLeaf(LeafElimTreeNode<T> leafNode, List<Expression> expressions) {
+  public Void visitLeaf(LeafElimTreeNode leafNode, List<Expression> expressions) {
+    return null;
+  }
+
+  @Override
+  public Void visitEmpty(EmptyElimTreeNode emptyNode, List<Expression> params) {
     return null;
   }
 }

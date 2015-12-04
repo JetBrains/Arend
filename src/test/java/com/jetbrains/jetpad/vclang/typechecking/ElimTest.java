@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
@@ -275,5 +276,15 @@ public class ElimTest {
         "\\function (+) (x y : Nat) : Nat => \\elim x" +
         "  | zero => y\n" +
         "  | suc x => suc (x + y)", 1);
+  }
+
+  @Test
+  public void testElimTranslationSubst() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef(
+      "\\function test (n m : Nat) : Nat <= \\elim m\n" +
+      " | zero => n\n" +
+      " | _ => n\n"
+    );
+    assertEquals(def.getElimTree(), branch(0, clause(Prelude.ZERO, Index(0)), clause(Prelude.SUC, Index(1))));
   }
 }

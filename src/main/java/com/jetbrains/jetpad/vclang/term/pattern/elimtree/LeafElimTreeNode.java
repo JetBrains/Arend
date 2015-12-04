@@ -1,23 +1,39 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
-public class LeafElimTreeNode<T> extends ElimTreeNode<T> {
-  private T myValue;
+public class LeafElimTreeNode extends ElimTreeNode {
+  private Abstract.Definition.Arrow myArrow;
+  private Expression myExpression;
 
-  public LeafElimTreeNode(T value) {
-    myValue = value;
+  public LeafElimTreeNode(Abstract.Definition.Arrow arrow, Expression expression) {
+    myArrow = arrow;
+    myExpression = expression;
   }
 
-  public T getValue() {
-    return myValue;
+  public LeafElimTreeNode() {
+    this(null, null);
   }
 
-  void setValue(T value) {
-    myValue = value;
+  public Expression getExpression() {
+    return myExpression;
   }
 
-  public ElimTreeNode<T> replaceWith(ElimTreeNode<T> root, ElimTreeNode<T> replacement) {
+  public void setExpression(Expression expression) {
+    myExpression = expression;
+  }
+
+  public Abstract.Definition.Arrow getArrow() {
+    return myArrow;
+  }
+
+  public void setArrow(Abstract.Definition.Arrow arrow) {
+    myArrow = arrow;
+  }
+
+  public ElimTreeNode replaceWith(ElimTreeNode root, ElimTreeNode replacement) {
     if (getParent() == null) {
       return replacement;
     }
@@ -26,7 +42,7 @@ public class LeafElimTreeNode<T> extends ElimTreeNode<T> {
   }
 
   @Override
-  public <R, P> R accept(ElimTreeNodeVisitor<T, R, P> visitor, P params) {
+  public <P, R> R accept(ElimTreeNodeVisitor<P, R> visitor, P params) {
     return visitor.visitLeaf(this, params);
   }
 }

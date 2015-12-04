@@ -14,6 +14,10 @@ import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.io.*;
@@ -210,6 +214,14 @@ public class ModuleDeserialization {
       constructor.hasErrors(stream.readBoolean());
 
       if (!constructor.hasErrors()) {
+        if (stream.readBoolean()) {
+          int numPatterns = stream.readInt();
+          List<Pattern> patterns = new ArrayList<>(numPatterns);
+          for (int j = 0; j < numPatterns; j++) {
+            patterns.add(readPattern(stream, definitionMap));
+          }
+          constructor.setPatterns(patterns);
+        }
         constructor.setUniverse(readUniverse(stream));
         constructor.setArguments(readTypeArguments(stream, definitionMap));
       }
@@ -222,22 +234,35 @@ public class ModuleDeserialization {
   private void deserializeFunctionDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, FunctionDefinition definition) throws IOException {
     deserializeNamespace(stream, definitionMap, definition);
 
-    /*
-      Something about overriden
-     */
-
     definition.typeHasErrors(stream.readBoolean());
     if (!definition.typeHasErrors()) {
       definition.setArguments(readArguments(stream, definitionMap));
       definition.setResultType(readExpression(stream, definitionMap));
     }
-    int arrowCode = stream.read();
-    if (arrowCode != 0 && arrowCode != 1 && arrowCode != 2) {
-      throw new IncorrectFormat();
+
+    if (stream.readBoolean()) {
+      definition.setElimTree(readElimTree(stream, definitionMap));
     }
-    definition.setArrow(arrowCode == 0 ? null : arrowCode == 1 ? Abstract.Definition.Arrow.LEFT : Abstract.Definition.Arrow.RIGHT);
-    if (!definition.hasErrors() && !definition.isAbstract()) {
-      definition.setTerm(readExpression(stream, definitionMap));
+  }
+
+  private ElimTreeNode readElimTree(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    switch (stream.readInt()) {
+      case 0: {
+        BranchElimTreeNode elimTree = new BranchElimTreeNode(stream.readInt());
+        int size = stream.readInt();
+        for (int i = 0; i < size; i++) {
+          elimTree.addClause((Constructor) definitionMap.get(stream.readInt()), readElimTree(stream, definitionMap));
+        }
+        return elimTree;
+      }
+      case 1: {
+        return new LeafElimTreeNode(stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT, readExpression(stream, definitionMap));
+      }
+      case 2: {
+        return EmptyElimTreeNode.getInstance();
+      }
+      default:
+        throw new IllegalStateException();
     }
   }
 
@@ -389,24 +414,6 @@ public class ModuleDeserialization {
       case 11: {
         return Sigma(readTypeArguments(stream, definitionMap));
       }
-      case 12: {
-        int numExpressions = stream.readInt();
-        List<IndexExpression> expressions = new ArrayList<>(numExpressions);
-        for (int i = 0; i < numExpressions; i++) {
-          expressions.add(Index(stream.readInt()));
-        }
-        int clausesNumber = stream.readInt();
-        List<Clause> clauses = new ArrayList<>(clausesNumber);
-        for (int i = 0; i < clausesNumber; ++i) {
-          clauses.add(readClause(stream, definitionMap));
-        }
-        ElimExpression result = Elim(expressions, clauses);
-        for (Clause clause : result.getClauses()) {
-          clause.setElimExpression(result);
-        }
-
-        return result;
-      }
       case 13: {
         Expression expr = readExpression(stream, definitionMap);
         return Proj(expr, stream.readInt());
@@ -433,9 +440,7 @@ public class ModuleDeserialization {
     final String name = stream.readUTF();
     final List<Argument> arguments = readArguments(stream, definitionMap);
     final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
-    final Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
-    final Expression term = readExpression(stream, definitionMap);
-    return let(name, arguments, resultType, arrow, term);
+    return let(name, arguments, resultType, readElimTree(stream, definitionMap));
   }
 
   public Pattern readPattern(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -464,15 +469,6 @@ public class ModuleDeserialization {
         throw new IllegalStateException();
       }
     }
-  }
-
-  public Clause readClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int numPatterns = stream.readInt();
-    List<Pattern> patterns = new ArrayList<>(numPatterns);
-    for (int i = 0; i < numPatterns; i++)
-      patterns.add(readPattern(stream, definitionMap));
-    Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
-    return new Clause(patterns, arrow, readExpression(stream, definitionMap), null);
   }
 
   public static class DeserializationException extends IOException {

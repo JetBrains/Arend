@@ -49,7 +49,7 @@ class ConCallContextExpander implements AutoCloseable {
   }
 
   public final Expression substIn(Expression expression) {
-    return expression.liftIndex(myIndex + 1, myNumConstructorArguments).subst(mySubst.liftIndex(0, myTail.size()), myIndex);
+    return expression.liftIndex(myIndex + 1, myNumConstructorArguments).subst(mySubst.liftIndex(0, myIndex), myIndex);
   }
 
   public final List<Expression> substIn(List<Expression> expressions) {

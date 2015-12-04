@@ -15,6 +15,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -108,7 +110,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
     Name name = def.getName();
     Abstract.Definition.Arrow arrow = def.getArrow();
-    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence(), arrow);
+    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence());
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -286,30 +288,35 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     myNamespaceMember.definition = typedDef;
     Abstract.Expression term = def.getTerm();
+
     if (term != null) {
-      if (arrow == Abstract.Definition.Arrow.LEFT) {
-        visitor.setArgsStartCtxIndex(0);
-      }
-      CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
-
-      if (termResult != null) {
-        typedDef.setTerm(termResult.expression);
-        if (expectedType == null) {
-          typedDef.setResultType(termResult.type);
+      ElimTreeNode elimTree = null;
+      if (term instanceof Abstract.ElimExpression) {
+        elimTree = visitor.typeCheckElim((Abstract.ElimExpression) term, arrow == Abstract.Definition.Arrow.LEFT ? 0 : null, expectedType);
+      } else {
+        CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
+        if (termResult != null) {
+          elimTree = new LeafElimTreeNode(def.getArrow(), termResult.expression);
+          if (expectedType == null)
+            typedDef.setResultType(termResult.type);
         }
+      }
 
-        if (!termResult.expression.accept(new TerminationCheckVisitor(/* overriddenFunction == null ? */ typedDef /* : overriddenFunction */), null)) {
+      if (elimTree != null) {
+        typedDef.setElimTree(elimTree);
+
+        if (!elimTree.accept(new TerminationCheckVisitor(typedDef), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", term, getNames(context)));
-          termResult = null;
+          elimTree = null;
         }
       }
 
-      if (termResult == null) {
-        typedDef.setTerm(null);
+      if (elimTree == null) {
+        typedDef.setElimTree(null);
       }
     }
 
-    if (typedDef.getTerm() != null || typedDef.isAbstract()) {
+    if (typedDef.getElimTree() != null || arrow == null) {
       typedDef.hasErrors(false);
     }
 
@@ -522,7 +529,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
       if (result == null)
         return;
-      Expression lhs = result.expression.normalize(NormalizeVisitor.Mode.NF, visitor.getLocalContext());
 
       List<Expression> tcPatterns = new ArrayList<>(typedPatterns.size());
       for (int i = 0; i < typedPatterns.size(); i++) {
@@ -537,12 +543,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           tcPatterns.set(j, expandPatternSubstitute(typedPatterns.get(i), typedPatterns.size() - 1 - i, newExpr, tcPatterns.get(j)));
         }
       }
-      if (!lhs.accept(new TerminationCheckVisitor(constructor, tcPatterns), null)) {
+      if (!result.expression.accept(new TerminationCheckVisitor(constructor, tcPatterns), null)) {
         myErrorReporter.report(new TypeCheckingError("Termination check failed", cond.getTerm(), getNames(visitor.getLocalContext())));
         return;
       }
 
-      dataDefinition.addCondition(new Condition(constructor, typedPatterns, lhs));
+      dataDefinition.addCondition(new Condition(constructor, typedPatterns, result.expression));
     }
   }
 

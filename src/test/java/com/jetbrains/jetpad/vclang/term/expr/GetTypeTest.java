@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => cons 0 nil");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), namespace.getDefinition("test").getType());
-    assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
@@ -27,7 +28,7 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => (List Nat).nil");
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), namespace.getDefinition("test").getType());
-    assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
@@ -36,21 +37,21 @@ public class GetTypeTest {
     Namespace namespace = def.getParentNamespace().findChild(def.getName().name);
     assertEquals(Universe(1), namespace.getDefinition("Test").getType());
     assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("test").getType());
-    assertEquals(Universe(0, Universe.Type.SET), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Universe(0, Universe.Type.SET), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
   public void lambdaTest() {
     Definition def = typeCheckDef("\\function test => \\lam (f : Nat -> Nat) => f 0");
     assertEquals(Pi(Pi(Nat(), Nat()), Nat()), def.getType());
-    assertEquals(Pi(Pi(Nat(), Nat()), Nat()), ((FunctionDefinition) def).getTerm().getType(new ArrayList<Binding>(1)));
+    assertEquals(Pi(Pi(Nat(), Nat()), Nat()), ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType(new ArrayList<Binding>(1)));
   }
 
   @Test
   public void lambdaTest2() {
     Definition def = typeCheckDef("\\function test => \\lam (A : \\Type0) (x : A) => x");
     assertEquals(Pi(args(Tele(vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Index(1)), def.getType());
-    assertEquals(Pi(args(Tele(vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Index(1)), ((FunctionDefinition) def).getTerm().getType(new ArrayList<Binding>(1)));
+    assertEquals(Pi(args(Tele(vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Index(1)), ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType(new ArrayList<Binding>(1)));
   }
 
   @Test
@@ -61,20 +62,20 @@ public class GetTypeTest {
     List<Binding> context = new ArrayList<>(1);
     context.add(new TypedBinding("p", Pi(Nat(), namespace.getDefinition("C").getDefCall())));
     assertEquals(Pi(args(Tele(vars("p"), context.get(0).getType())), Pi(type, type)), namespace.getDefinition("test").getType());
-    assertEquals(Pi(type, type), ((FunctionDefinition) namespace.getDefinition("test")).getTerm().getType(context));
+    assertEquals(Pi(type, type), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType(context));
   }
 
   @Test
   public void tupleTest() {
     Definition def = typeCheckDef("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
-    assertEquals(Sigma(args(Tele(vars("x", "y"), Nat()), TypeArg(Apps(FunCall(Prelude.PATH_INFIX), Nat(), Index(1), Index(0))))), ((FunctionDefinition) def).getTerm().getType(new ArrayList<Binding>(0)));
+    assertEquals(Sigma(args(Tele(vars("x", "y"), Nat()), TypeArg(Apps(FunCall(Prelude.PATH_INFIX), Nat(), Index(1), Index(0))))), ((LeafElimTreeNode)((FunctionDefinition) def).getElimTree()).getExpression().getType(new ArrayList<Binding>(0)));
   }
 
   @Test
   public void letTest() {
     Definition def = typeCheckDef("\\function test => \\lam (F : Nat -> \\Type0) (f : \\Pi (x : Nat) -> F x) => \\let | x => 0 \\in f x");
     assertEquals(Pi(args(Tele(vars("F"), Pi(Nat(), Universe())), Tele(vars("f"), Pi(args(Tele(vars("x"), Nat())), Apps(Index(1), Index(0))))), Apps(Index(1), Zero())),
-            ((FunctionDefinition) def).getTerm().getType(new ArrayList<Binding>()));
+        ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType(new ArrayList<Binding>()));
   }
 
   @Test

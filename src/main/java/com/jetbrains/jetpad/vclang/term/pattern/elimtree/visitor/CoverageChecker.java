@@ -10,15 +10,15 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.match;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
-public class CoverageChecker<U> implements ElimTreeNodeVisitor<U, List<List<Pattern>>, Boolean> {
+public class CoverageChecker implements ElimTreeNodeVisitor<Boolean, List<List<Pattern>>> {
 
   private final List<Binding> myContext;
 
@@ -27,18 +27,19 @@ public class CoverageChecker<U> implements ElimTreeNodeVisitor<U, List<List<Patt
   }
 
   @Override
-  public List<List<Pattern>> visitBranch(BranchElimTreeNode<U> branchNode, Boolean isExplicit) {
+  public List<List<Pattern>> visitBranch(BranchElimTreeNode branchNode, Boolean isExplicit) {
     Expression type = myContext.get(myContext.size() - 1 - branchNode.getIndex()).getType().liftIndex(0, branchNode.getIndex());
     List<Expression> parameters = new ArrayList<>();
-    DefCallExpression ftype = (DefCallExpression) type.normalize(NormalizeVisitor.Mode.NF, myContext).getFunction(parameters);
+    DefCallExpression ftype = (DefCallExpression) type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters);
     Collections.reverse(parameters);
 
+    // TODO: pattern construction is completely senseless
     List<List<Pattern>> result = new ArrayList<>();
     for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getConstructors(parameters, myContext)) {
       try (ConCallContextExpander ignore = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
         if (branchNode.getChild(conCall.getDefinition()) != null) {
           for (List<Pattern> nestedPatterns : branchNode.getChild(conCall.getDefinition()).accept(this, isExplicit)) {
-            List<Pattern> my = nestedPatterns.subList(branchNode.getIndex(), branchNode.getIndex() + conCall.getParameters().size());
+            List<Pattern> my = nestedPatterns.subList(nestedPatterns.size() - 1 - branchNode.getIndex() - conCall.getParameters().size(), nestedPatterns.size() - 1 - branchNode.getIndex());
             ConstructorPattern newPattern = new ConstructorPattern(conCall.getDefinition(), new ArrayList<>(my), isExplicit);
             my.clear();
             my.add(newPattern);
@@ -62,7 +63,12 @@ public class CoverageChecker<U> implements ElimTreeNodeVisitor<U, List<List<Patt
   }
 
   @Override
-  public List<List<Pattern>> visitLeaf(LeafElimTreeNode<U> leafNode, Boolean params) {
+  public List<List<Pattern>> visitLeaf(LeafElimTreeNode leafNode, Boolean params) {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public List<List<Pattern>> visitEmpty(EmptyElimTreeNode emptyNode, Boolean params) {
     return Collections.emptyList();
   }
 
@@ -73,7 +79,7 @@ public class CoverageChecker<U> implements ElimTreeNodeVisitor<U, List<List<Patt
 
     Expression type = myContext.get(myContext.size() - 1 - index).getType().liftIndex(0, index);
     List<Expression> parameters = new ArrayList<>();
-    Expression ftype = type.normalize(NormalizeVisitor.Mode.NF, myContext).getFunction(parameters);
+    Expression ftype = type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters);
     Collections.reverse(parameters);
     if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
       return checkEmptyContext(index - 1);

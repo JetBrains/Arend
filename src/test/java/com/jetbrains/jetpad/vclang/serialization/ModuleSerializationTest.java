@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.module.ReportingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +43,7 @@ public class ModuleSerializationTest {
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(CompareVisitor.CMP.EQUALS, compare(((FunctionDefinition) namespace.getDefinition("f")).getTerm(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getTerm(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
+    assertEquals(CompareVisitor.CMP.EQUALS, ElimTreeNode.compare(((FunctionDefinition) namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
@@ -67,7 +68,7 @@ public class ModuleSerializationTest {
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(CompareVisitor.CMP.EQUALS, compare(((FunctionDefinition) namespace.getDefinition("f")).getTerm(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getTerm(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
+    assertEquals(CompareVisitor.CMP.EQUALS, ElimTreeNode.compare(((FunctionDefinition) namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
     assertEquals(0, errorReporter.getErrorList().size());
   }
 

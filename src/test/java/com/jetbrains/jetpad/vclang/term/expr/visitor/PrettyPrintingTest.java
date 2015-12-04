@@ -54,7 +54,7 @@ public class PrettyPrintingTest {
     List<Argument> arguments = new ArrayList<>(2);
     arguments.add(Tele(vars("X"), Universe(0)));
     arguments.add(Tele(vars("x"), Index(0)));
-    FunctionDefinition def = new FunctionDefinition(new Namespace("test"), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, Index(1), Definition.Arrow.RIGHT, Lam("X", Lam("x", Index(0))));
+    FunctionDefinition def = new FunctionDefinition(new Namespace("test"), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, Index(1), leaf(Definition.Arrow.RIGHT, Lam("X", Lam("x", Index(0)))));
     def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), null);
   }
 

@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +16,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Zero;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
-public class CompareVisitor implements AbstractExpressionVisitor<Expression, CompareVisitor.Result> {
+public class CompareVisitor implements AbstractExpressionVisitor<Expression, CompareVisitor.Result>, ElimTreeNodeVisitor<ElimTreeNode, CompareVisitor.Result> {
   private final List<Equation> myEquations;
 
   public enum CMP { EQUIV, EQUALS, GREATER, LESS, NOT_EQUIV }
@@ -747,7 +749,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
   }
 
-  private Result visitLet(List<Abstract.LetClause> clauses, Abstract.Expression expr, List<LetClause> otherClauses, Expression other) {
+  private Result visitLet(List<LetClause> clauses, Expression expr, List<LetClause> otherClauses, Expression other) {
     try (EquationsLifter lifter = new EquationsLifter(myEquations)) {
       if (otherClauses.size() != clauses.size())
         return new JustResult(CMP.NOT_EQUIV);
@@ -769,7 +771,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         cmp = and(cmp, result.isOK());
 
         try (EquationsLifter ignore = new EquationsLifter(myEquations, letTypeArgs.size())) {
-          result = clauses.get(i).getTerm().accept(this, otherClauses.get(i).getTerm());
+          result = clauses.get(i).getElimTree().accept(this, otherClauses.get(i).getElimTree());
         }
 
         if (result.isOK() != CMP.EQUIV && result.isOK() != CMP.EQUALS)
@@ -791,13 +793,16 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       return new JustResult(CMP.EQUALS);
     if (!(other instanceof LetExpression))
       return new JustResult(CMP.NOT_EQUIV);
+    if (!(expr instanceof LetExpression))
+      return new JustResult(CMP.NOT_EQUIV);
     LetExpression otherLet = ((LetExpression) other).mergeNestedLets();
+    LetExpression letExpression = (LetExpression) expr;
 
-    List<Abstract.LetClause> exprLetClauses = new ArrayList<>(expr.getClauses());
-    Abstract.Expression exprExpression = expr.getExpression();
-    while (exprExpression instanceof Abstract.LetExpression) {
-      exprLetClauses.addAll(((Abstract.LetExpression) exprExpression).getClauses());
-      exprExpression = ((Abstract.LetExpression) exprExpression).getExpression();
+    List<LetClause> exprLetClauses = new ArrayList<>(letExpression.getClauses());
+    Expression exprExpression = letExpression.getExpression();
+    while (exprExpression instanceof LetExpression) {
+      exprLetClauses.addAll(((LetExpression) exprExpression).getClauses());
+      exprExpression = ((LetExpression) exprExpression).getExpression();
     }
     return visitLet(exprLetClauses, exprExpression, otherLet.getClauses(), otherLet.getExpression());
   }
@@ -817,26 +822,30 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
   @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression other) {
-    if (expr == other) return new JustResult(CMP.EQUALS);
-    if (!(other instanceof ElimExpression)) return new JustResult(CMP.NOT_EQUIV);
+    return new JustResult(CMP.NOT_EQUIV);
+  }
 
-    ElimExpression otherElim = (ElimExpression) other;
-    if (expr.getClauses().size() != otherElim.getClauses().size()) {
+  @Override
+  public Result visitCase(Abstract.CaseExpression expr, Expression params) {
+    return new JustResult(CMP.NOT_EQUIV);
+  }
+
+  @Override
+  public Result visitBranch(BranchElimTreeNode branchNode, ElimTreeNode node) {
+    if (node == branchNode)
+      return new JustResult(CMP.EQUALS);
+    if (!(node instanceof BranchElimTreeNode))
       return new JustResult(CMP.NOT_EQUIV);
-    }
-    if (expr.getExpressions().size() != otherElim.getExpressions().size())
-      return new JustResult(CMP.NOT_EQUIV);
+    BranchElimTreeNode other = (BranchElimTreeNode) node;
 
     CMP cmp = CMP.EQUALS;
-    for (int i = 0; i < expr.getExpressions().size(); i++) {
-      Result result = expr.getExpressions().get(i).accept(this, otherElim.getExpressions().get(i));
-      if (result.isOK() == CMP.NOT_EQUIV) return result;
-      cmp = and(cmp, result.isOK());
-    }
-
     MaybeResult maybeResult = null;
-    for (int i = 0; i < expr.getClauses().size(); ++i) {
-      Result result = visitClause(expr.getClauses().get(i), otherElim.getClauses().get(i));
+    if (other.getIndex() != branchNode.getIndex())
+      return new JustResult(CMP.NOT_EQUIV);
+    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
+      if (other.getChild(clause.getConstructor()) == null)
+        return new JustResult(CMP.NOT_EQUIV);
+      Result result = clause.getChild().accept(this, other.getChild(clause.getConstructor()));
       if (result.isOK() == CMP.NOT_EQUIV) {
         if (result instanceof MaybeResult) {
           if (maybeResult == null) {
@@ -848,47 +857,31 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       }
       cmp = and(cmp, result.isOK());
     }
+    for (ConstructorClause clause : other.getConstructorClauses()) {
+      if (branchNode.getChild(clause.getConstructor()) == null) {
+        return new JustResult(CMP.NOT_EQUIV);
+      }
+    }
 
     return maybeResult == null ? new JustResult(cmp) : maybeResult;
   }
 
   @Override
-  public Result visitCase(Abstract.CaseExpression expr, Expression params) {
+  public Result visitLeaf(LeafElimTreeNode leafNode, ElimTreeNode node) {
+    if (leafNode == node)
+      return new JustResult(CMP.EQUALS);
+    if (node instanceof LeafElimTreeNode) {
+      return leafNode.getExpression().accept(this, ((LeafElimTreeNode) node).getExpression());
+    }
     return new JustResult(CMP.NOT_EQUIV);
   }
 
-  public Result visitClause(Abstract.Clause clause, Clause other) {
-    if (clause == other) return new JustResult(CMP.EQUALS);
-    if (clause == null || other == null) return new JustResult(CMP.NOT_EQUIV);
-
-    if (!other.getPatterns().equals(clause.getPatterns()) || clause.getArrow() != other.getArrow())
-      return new JustResult(CMP.NOT_EQUIV);
-    List<Abstract.Expression> args1 = new ArrayList<>();
-    Abstract.Expression expr1 = lamArgs(clause.getExpression(), args1);
-    List<Abstract.Expression> args2 = new ArrayList<>();
-    Abstract.Expression expr2 = lamArgs(other.getExpression(), args2);
-    if (args1.size() != args2.size()) return new JustResult(CMP.NOT_EQUIV);
-    Result result = expr1.accept(this, (Expression) expr2);
-    if (result.isOK() == CMP.NOT_EQUIV) return result;
-
-    CMP cmp = result.isOK();
-    MaybeResult maybeResult = null;
-    for (int i = 0; i < args1.size(); ++i) {
-      if (args1.get(i) != null && args2.get(i) != null) {
-        result = args1.get(i).accept(this, (Expression) args2.get(i));
-        if (result.isOK() == CMP.NOT_EQUIV) {
-          if (result instanceof MaybeResult) {
-            if (maybeResult == null) {
-              maybeResult = (MaybeResult) result;
-            }
-          } else {
-            return result;
-          }
-        }
-        cmp = and(cmp, result.isOK());
-      }
-    }
-
-    return maybeResult == null ? new JustResult(cmp) : maybeResult;
+  @Override
+  public Result visitEmpty(EmptyElimTreeNode emptyNode, ElimTreeNode node) {
+    if (emptyNode == node)
+      return new JustResult(CMP.EQUALS);
+    if (node instanceof EmptyElimTreeNode)
+      return new JustResult(CMP.EQUALS);
+    return new JustResult(CMP.NOT_EQUIV);
   }
 }

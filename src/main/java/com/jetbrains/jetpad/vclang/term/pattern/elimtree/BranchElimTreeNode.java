@@ -5,16 +5,16 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVis
 
 import java.util.*;
 
-public class BranchElimTreeNode<T> extends ElimTreeNode<T> {
+public class BranchElimTreeNode extends ElimTreeNode {
   private final int myIndex;
-  private final Map<Constructor, ConstructorClause<T>> myClauses = new HashMap<>();
+  private final Map<Constructor, ConstructorClause> myClauses = new HashMap<>();
 
   public BranchElimTreeNode(int index) {
     myIndex = index;
   }
 
   @Override
-  public <R, P> R accept(ElimTreeNodeVisitor<T, R, P> visitor, P params) {
+  public <P, R> R accept(ElimTreeNodeVisitor<P, R> visitor, P params) {
     return visitor.visitBranch(this, params);
   }
 
@@ -22,15 +22,15 @@ public class BranchElimTreeNode<T> extends ElimTreeNode<T> {
     return myIndex;
   }
 
-  public void addClause(Constructor constructor, ElimTreeNode<T> node) {
-    myClauses.put(constructor, new ConstructorClause<>(constructor, node, this));
+  public void addClause(Constructor constructor, ElimTreeNode node) {
+    myClauses.put(constructor, new ConstructorClause(constructor, node));
   }
 
-  public ElimTreeNode<T> getChild(Constructor constructor) {
+  public ElimTreeNode getChild(Constructor constructor) {
     return myClauses.containsKey(constructor) ? myClauses.get(constructor).getChild() : null;
   }
 
-  public Collection<ConstructorClause<T>> getConstructorClauses() {
+  public Collection<ConstructorClause> getConstructorClauses() {
     return myClauses.values();
   }
 }

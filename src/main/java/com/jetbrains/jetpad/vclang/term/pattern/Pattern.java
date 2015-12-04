@@ -33,10 +33,6 @@ public abstract class Pattern implements Abstract.Pattern {
     return builder.toString();
   }
 
-  public Utils.PatternMatchResult match(Expression expr) {
-    return match(expr, null);
-  }
-
   public abstract Utils.PatternMatchResult match(Expression expr, List<Binding> context);
 
   @Override

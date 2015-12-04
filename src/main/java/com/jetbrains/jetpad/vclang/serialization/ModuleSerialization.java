@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -113,6 +114,14 @@ public class ModuleSerialization {
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(constructor.getResolvedName(), true));
       visitor.getDataStream().writeBoolean(constructor.hasErrors());
       if (!constructor.hasErrors()) {
+        // TODO: serialization test for patterns
+        visitor.getDataStream().writeBoolean(constructor.getPatterns() != null);
+        if (constructor.getPatterns() != null) {
+          visitor.getDataStream().writeInt(constructor.getPatterns().size());
+          for (Pattern pattern : constructor.getPatterns()) {
+            visitor.visitPattern(pattern);
+          }
+        }
         writeUniverse(visitor.getDataStream(), constructor.getUniverse());
         writeArguments(visitor, constructor.getArguments());
       } else {
@@ -126,7 +135,7 @@ public class ModuleSerialization {
     FUNCTION_CODE {
       @Override
       FunctionDefinition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
-        return new FunctionDefinition(parent, name, precedence, null);
+        return new FunctionDefinition(parent, name, precedence);
       }
     },
     DATA_CODE {
@@ -147,12 +156,6 @@ public class ModuleSerialization {
         return new Constructor(parent, name, precedence, null);
       }
     },
-    OVERRIDDEN_CODE {
-      @Override
-      OverriddenDefinition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
-        return new OverriddenDefinition(parent, name, precedence, null);
-      }
-    },
     CLASS_FIELD_CODE {
       @Override
       ClassField toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
@@ -163,7 +166,6 @@ public class ModuleSerialization {
     abstract Definition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence);
 
     public static DefinitionCodes getDefinitionCode(Definition definition) {
-      if (definition instanceof OverriddenDefinition) return OVERRIDDEN_CODE;
       if (definition instanceof FunctionDefinition) return FUNCTION_CODE;
       if (definition instanceof DataDefinition) return DATA_CODE;
       if (definition instanceof ClassDefinition) return CLASS_CODE;
@@ -196,19 +198,14 @@ public class ModuleSerialization {
 
     serializeNamespace(visitor, definition.getStaticNamespace());
 
-    /*
-    if (definition instanceof OverriddenDefinition)
-      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(((OverriddenDefinition) definition).getOverriddenFunction(), false));
-    */
-
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {
       writeArguments(visitor, definition.getArguments());
       definition.getResultType().accept(visitor, null);
     }
-    visitor.getDataStream().write(definition.getArrow() == null ? 0 : definition.getArrow() == Abstract.Definition.Arrow.LEFT ? 1 : 2);
-    if (!definition.hasErrors() && !definition.isAbstract()) {
-      definition.getTerm().accept(visitor, null);
+    visitor.getDataStream().writeBoolean(definition.getElimTree() != null);
+    if (definition.getElimTree() != null) {
+      definition.getElimTree().accept(visitor, null);
     }
 
     return errors;

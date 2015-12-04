@@ -9,6 +9,8 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.*;
 
@@ -17,7 +19,36 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMultipleMatch;
 
-public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression> {
+public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression> implements ElimTreeNodeVisitor<List<Expression>, LeafElimTreeNode> {
+  @Override
+  public LeafElimTreeNode visitBranch(BranchElimTreeNode branchNode, List<Expression> subst) {
+    List<Expression> arguments = new ArrayList<>();
+    Expression func = subst.get(branchNode.getIndex()).normalize(Mode.WHNF, myContext).getFunction(arguments);
+    if (func instanceof ConCallExpression) {
+      ElimTreeNode child = branchNode.getChild(((ConCallExpression) func).getDefinition());
+      if (child == null)
+        return null;
+      subst.remove(branchNode.getIndex());
+      subst.addAll(branchNode.getIndex(), arguments);
+      return child.accept(this, subst);
+    }
+    // @
+    ElimTreeNode child = branchNode.getChild(null);
+    if (child != null)
+      return child.accept(this, subst);
+    return null;
+  }
+
+  @Override
+  public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, List<Expression> subst) {
+    return leafNode;
+  }
+
+  @Override
+  public LeafElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, List<Expression> params) {
+    return null;
+  }
+
   public enum Mode { WHNF, NF, TOP }
 
   private final List<Binding> myContext;
@@ -312,7 +343,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return mode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this, mode);
     }
 
-    Expression result = func.getTerm();
     List<TypeArgument> args1 = new ArrayList<>();
     ClassDefinition thisClass = func.getThisClass();
     if (thisClass != null) {
@@ -320,48 +350,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     splitArguments(getFunctionType(func), args1, myContext);
     int numberOfArgs = numberOfVariables(args1);
-    if (mode == Mode.WHNF && numberOfArgs > args.size() || result == null) {
+    if (mode == Mode.WHNF && numberOfArgs > args.size() || func.getElimTree() == null) {
       return applyDefCall(defCallExpr, args, mode);
     }
 
     int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (thisClass != null ? 1 : 0);
     List<Expression> args2 = completeArgs(args, numberOfArgs, numberOfSubstArgs);
 
-    Abstract.Definition.Arrow arrow = func.getArrow();
-    while (result instanceof ElimExpression) {
-      List<Expression> exprs = new ArrayList<>();
-      List<List<Pattern>> patterns = new ArrayList<>();
-      for (Expression expr : ((ElimExpression) result).getExpressions()) {
-        exprs.add(expr.subst(args2, 0));
-        patterns.add(new ArrayList<Pattern>());
-      }
-      for (Clause clause : ((ElimExpression) result).getClauses()) {
-        for (int i = 0; i < clause.getPatterns().size(); i++)
-          patterns.get(i).add(clause.getPatterns().get(i));
-      }
-      List<Integer> validClauses = patternMultipleMatch(patterns, exprs, myContext, ((ElimExpression) result).getClauses().size());
-      if (validClauses.isEmpty() && func == Prelude.AT && ((ElimExpression) result).getClauses().size() == 3) {
-        validClauses = Collections.singletonList(2);
-      }
-      if (!validClauses.isEmpty()) {
-        Clause clauseOK = ((ElimExpression) result).getClauses().get(validClauses.get(0));
-        for (int i = 0; i < ((ElimExpression) result).getExpressions().size(); i++) {
-          Utils.PatternMatchOKResult matchOKResult = (Utils.PatternMatchOKResult) clauseOK.getPatterns().get(i).match(exprs.get(i), myContext);
-
-          int var = ((ElimExpression) result).getExpressions().get(i).getIndex();
-          args2.remove(var);
-          Collections.reverse(matchOKResult.expressions);
-          args2.addAll(var, matchOKResult.expressions);
-        }
-        result = clauseOK.getExpression();
-        arrow = clauseOK.getArrow();
-        continue;
-      }
+    LeafElimTreeNode leaf = func.getElimTree().accept(this, args2);
+    if (leaf == null)
       return applyDefCall(defCallExpr, args, mode);
-    }
-
-    result = result.liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0).subst(args2, 0);
-    if (arrow == Abstract.Definition.Arrow.LEFT) {
+    Expression result = leaf.getExpression().liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0).subst(args2, 0);
+    if (leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
       try (ContextSaver ignore = new ContextSaver(myContext)) {
         for (TypeArgument arg : args1) {
           pushArgument(myContext, arg);
@@ -508,11 +508,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     try (ContextSaver ignore = new ContextSaver(myContext)) {
       return mode == Mode.TOP ? null : mode == Mode.NF ? Sigma(visitTypeArguments(expr.getArguments(), mode)) : expr;
     }
-  }
-
-  @Override
-  public Expression visitElim(ElimExpression expr, Mode mode) {
-    throw new IllegalStateException();
   }
 
   @Override
