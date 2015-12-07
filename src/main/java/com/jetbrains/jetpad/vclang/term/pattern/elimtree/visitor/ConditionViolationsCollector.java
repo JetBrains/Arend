@@ -60,6 +60,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<List<Ex
         if (branchNode.getChild(condition.getConstructor()) != null) {
           List<Binding> tail = new ArrayList<>(myContext.subList(myContext.size() - 1 - branchNode.getIndex(), myContext.size()));
           myContext.subList(myContext.size() - 1 - branchNode.getIndex(), myContext.size()).clear();
+          final int numBindingsBefore = myContext.size();
           Pattern pattern = new ConstructorPattern(condition.getConstructor(), condition.getPatterns(), true);
           final PatternExpansion.Result expansionResult = expandPattern(pattern, type.liftIndex(0, -branchNode.getIndex()), myContext);
           for (TypeArgument arg : expansionResult.args) {
@@ -93,13 +94,13 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<List<Ex
             public void process(List<Expression> expressions, List<Binding> context, final List<Expression> subst, LeafElimTreeNode leaf) {
               List<Expression> newSubst = new ArrayList<>(expressions.subList(expressions.size() - 1 - branchNode.getIndex(), expressions.size()));
               expressions.subList(expressions.size() - 1 - branchNode.getIndex(), expressions.size()).clear();
-              expressions.add(leaf.getExpression().subst(subst, 0));
+              expressions.add(leaf.getExpression().liftIndex(subst.size(), context.size() - numBindingsBefore).subst(subst, 0));
               SubstituteExpander.substituteExpand(context, newSubst, branchNode, expressions, new SubstituteExpander.SubstituteExpansionProcessor() {
                 @Override
                 public void process(List<Expression> expressions, List<Binding> context, List<Expression> subst, LeafElimTreeNode leaf) {
                   Expression lhs = expressions.get(expressions.size() - 1);
                   expressions.remove(expressions.size() - 1);
-                  Expression rhs = leaf.getExpression().subst(subst, 0);
+                  Expression rhs = leaf.getExpression().liftIndex(subst.size(), context.size() - numBindingsBefore).subst(subst, 0);
                   myChecker.check(context, lhs, new ArrayList<>(expressions.subList(0, expressions.size() / 2)), rhs, new ArrayList<>(expressions.subList(expressions.size() / 2, expressions.size())));
                 }
               });
@@ -108,7 +109,6 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<List<Ex
         }
       }
     }
-
     return null;
   }
 

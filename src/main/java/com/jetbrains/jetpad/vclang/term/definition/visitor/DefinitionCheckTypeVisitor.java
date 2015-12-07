@@ -3,12 +3,10 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -17,10 +15,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ConditionViolationsCollector;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -290,115 +286,49 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     typedDef.setArguments(typedArguments);
     typedDef.setResultType(expectedType);
     typedDef.typeHasErrors(typedDef.getResultType() == null);
+    typedDef.hasErrors(false);
 
     myNamespaceMember.definition = typedDef;
     Abstract.Expression term = def.getTerm();
 
     if (term != null) {
-      ElimTreeNode elimTree = null;
       if (term instanceof Abstract.ElimExpression) {
-        elimTree = visitor.typeCheckElim((Abstract.ElimExpression) term, arrow == Abstract.Definition.Arrow.LEFT ? 0 : null, expectedType);
+        typedDef.setElimTree(visitor.typeCheckElim((Abstract.ElimExpression) term, arrow == Abstract.Definition.Arrow.LEFT ? (thisClass == null ? 0 : 1) : null, expectedType));
       } else {
         CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {
-          elimTree = new LeafElimTreeNode(def.getArrow(), termResult.expression);
+          typedDef.setElimTree(new LeafElimTreeNode(def.getArrow(), termResult.expression));
           if (expectedType == null)
             typedDef.setResultType(termResult.type);
         }
       }
 
-      if (elimTree != null) {
-        typedDef.setElimTree(elimTree);
-
-        if (!elimTree.accept(new TerminationCheckVisitor(typedDef), null)) {
+      if (typedDef.getElimTree() != null) {
+        if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", term, getNames(context)));
-          elimTree = null;
+          typedDef.setElimTree(null);
         }
       }
 
-      if (elimTree != null) {
-        final StringBuilder incompleteCoverageMessage = new StringBuilder();
-        incompleteCoverageMessage.append("Coverage check failed for: ");
-        if (!CoverageChecker.check(context, elimTree, thisClass == null ? 0 : 1, new CoverageChecker.CoverageCheckerMissingProcessor() {
-          @Override
-          public void process(List<Binding> missingContext, List<Expression> missing) {
-            incompleteCoverageMessage.append("\n ").append(def.getName());
-            for (int i = 0, ii = 0; i < typedArguments.size(); i++) {
-              if (typedArguments.get(i) instanceof Abstract.TelescopeArgument) {
-                for (int j = 0; j < ((Abstract.TelescopeArgument) typedArguments.get(i)).getNames().size(); j++) {
-                  incompleteCoverageMessage.append(" ").append(typedArguments.get(i).getExplicit() ? "(" : "{");
-                  incompleteCoverageMessage.append(missing.get(ii++));
-                  incompleteCoverageMessage.append(typedArguments.get(i).getExplicit() ? ")" : "}");
-                }
-              } else {
-                incompleteCoverageMessage.append(" ").append(typedArguments.get(i).getExplicit() ? "(" : "{");
-                incompleteCoverageMessage.append(missing.get(ii++));
-                incompleteCoverageMessage.append(typedArguments.get(i).getExplicit() ? ")" : "}");
-              }
-            }
-          }
-        })) {
-          TypeCheckingError error = new TypeCheckingError(incompleteCoverageMessage.toString(), def, getNames(context));
+      if (typedDef.getElimTree() != null) {
+        TypeCheckingError error = TypecheckingElim.checkCoverage(def, context, typedDef.getElimTree());
+        if (error != null) {
           myErrorReporter.report(error);
-          elimTree = null;
+          typedDef.setElimTree(null);
         }
       }
 
-      if (elimTree != null) {
-        final StringBuilder errorMsg = new StringBuilder();
-        errorMsg.append("Condition check failed: ");
-
-        class ClauseConditionChecker implements ConditionViolationsCollector.ConditionViolationChecker {
-          boolean wasError = false;
-
-          @Override
-          public void check(List<Binding> context, Expression expr1, List<Expression> subst1, Expression expr2, List<Expression> subst2) {
-            expr1 = expr1.normalize(NormalizeVisitor.Mode.NF, context);
-            expr2 = expr2.normalize(NormalizeVisitor.Mode.NF, context);
-
-            if (!expr1.equals(expr2)){
-              errorMsg.append("\n").append(def.getName());
-              printArgs(subst1, errorMsg);
-              errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(def.getName());
-              printArgs(subst2, errorMsg);
-
-              wasError = true;
-            }
-          }
-
-          private void printArgs(List<Expression> subst1, StringBuilder errorMsg) {
-            for (int i = 0, ii = 0; i < typedArguments.size(); i++) {
-              if (typedArguments.get(i) instanceof TelescopeArgument) {
-                for (String ignore : ((TelescopeArgument) typedArguments.get(i)).getNames()) {
-                  errorMsg.append(" ").append(typedArguments.get(i).getExplicit() ? "(" : "{");
-                  errorMsg.append(subst1.get(ii++));
-                  errorMsg.append(typedArguments.get(i).getExplicit() ? ")" : "}");
-                }
-              } else {
-                errorMsg.append(" ").append(typedArguments.get(i).getExplicit() ? "(" : "{");
-                errorMsg.append(subst1.get(ii++));
-                errorMsg.append(typedArguments.get(i).getExplicit() ? ")" : "}");
-              }
-            }
-          }
-        }
-
-        ClauseConditionChecker checker = new ClauseConditionChecker();
-        ConditionViolationsCollector.check(context, elimTree, checker, thisClass == null ? 0 : 1);
-        if (checker.wasError) {
-          TypeCheckingError error = new TypeCheckingError(errorMsg.toString(), def, getNames(context));
+      if (typedDef.getElimTree() != null) {
+        TypeCheckingError error = TypecheckingElim.checkConditions(def, context, typedDef.getElimTree());
+        if (error != null) {
           myErrorReporter.report(error);
-          elimTree = null;
+          typedDef.setElimTree(null);
         }
-      }
-
-      if (elimTree == null) {
-        typedDef.setElimTree(null);
       }
     }
 
-    if (typedDef.getElimTree() != null || arrow == null) {
-      typedDef.hasErrors(false);
+    if (typedDef.getElimTree() == null && arrow != null) {
+      typedDef.hasErrors(true);
     }
 
     typedDef.typeHasErrors(typedDef.getResultType() == null);

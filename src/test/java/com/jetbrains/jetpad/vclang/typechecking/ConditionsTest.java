@@ -1,10 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 
 public class ConditionsTest {
   @Test
@@ -103,7 +101,7 @@ public class ConditionsTest {
   public void bidirectionalList() {
     typeCheckClass(
         "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A\n" +
-        "  \\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n" +
+        "  \\with | snoc (cons x xs) y => cons x (snoc xs y) | snoc nil x => cons x nil\n" +
         "\\static \\function length {A : \\Type0} (x : BD-list A) : Nat <= \\elim x\n" +
         "  | nil => 0\n" +
         "  | cons x xs => suc (length xs)\n" +

@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.SubstituteExpander;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInference;
@@ -946,8 +947,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     });
 
     return treeExpansionResult.tree;
-
-
   }
 
   @Override
@@ -1214,7 +1213,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         elimTree = new LeafElimTreeNode(clause.getArrow(), termResult.expression);
         resultType = ((OKResult) termResult).type;
       }
+
+      TypeCheckingError error = TypecheckingElim.checkCoverage(clause, myLocalContext, elimTree);
+      if (error != null) {
+        myErrorReporter.report(error);
+        return null;
+      }
+      error = TypecheckingElim.checkConditions(clause, myLocalContext, elimTree);
+      if (error != null) {
+        myErrorReporter.report(error);
+        return null;
+      }
     }
+
+
 
     LetClause result = new LetClause(clause.getName(), args, resultType, elimTree);
     myLocalContext.add(result);
