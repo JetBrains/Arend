@@ -10,8 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DataCall;
@@ -22,7 +21,7 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 public class DataDefinition extends Definition implements Abstract.DataDefinition {
   private List<Constructor> myConstructors;
   private List<TypeArgument> myParameters;
-  private List<Condition> myConditions;
+  private Map<Constructor, Condition> myConditions;
 
   public DataDefinition(Namespace parentNamespace, Name name, Precedence precedence) {
     super(parentNamespace, name, precedence);
@@ -81,14 +80,18 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
 
   public void addCondition(Condition condition) {
     if (myConditions == null) {
-      myConditions = new ArrayList<>();
+      myConditions = new HashMap<>();
     }
-    myConditions.add(condition);
+    myConditions.put(condition.getConstructor(), condition);
   }
 
   @Override
-  public List<Condition> getConditions() {
-    return myConditions;
+  public Collection<Condition> getConditions() {
+    return myConditions == null ? null : myConditions.values();
+  }
+
+  public Condition getCondition(Constructor constructor) {
+    return myConditions == null ? null : myConditions.get(constructor);
   }
 
   public Constructor getConstructor(String name) {

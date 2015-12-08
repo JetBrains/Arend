@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -18,6 +19,10 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.g
 public class TypecheckingElim {
 
   public static TypeCheckingError checkConditions(final Abstract.Function def, List<Binding> context, ElimTreeNode elimTree) {
+    return checkConditions(def.getName(), def, def.getArguments(), context, elimTree);
+  }
+
+  public static TypeCheckingError checkConditions(final Name name, final Abstract.SourceNode source, final List<? extends Abstract.Argument> arguments, List<Binding> context, ElimTreeNode elimTree) {
     final StringBuilder errorMsg = new StringBuilder();
 
     ConditionViolationsCollector.check(context, elimTree, new ConditionViolationsCollector.ConditionViolationChecker() {
@@ -27,16 +32,16 @@ public class TypecheckingElim {
         expr2 = expr2.normalize(NormalizeVisitor.Mode.NF, context);
 
         if (!expr1.equals(expr2)){
-          errorMsg.append("\n").append(def.getName());
-          printArgs(subst1, def.getArguments(), errorMsg);
-          errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(def.getName());
-          printArgs(subst2, def.getArguments(), errorMsg);
+          errorMsg.append("\n").append(name);
+          printArgs(subst1, arguments, errorMsg);
+          errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(arguments);
+          printArgs(subst2, arguments, errorMsg);
        }
       }
-    }, context.size() - numberOfVariables(def.getArguments()));
+    }, context.size() - numberOfVariables(arguments));
 
     if (errorMsg.length() != 0) {
-      return new TypeCheckingError("Condition check failed: " + errorMsg.toString(), def, getNames(context));
+      return new TypeCheckingError("Condition check failed: " + errorMsg.toString(), source, getNames(context));
     }
     return null;
   }

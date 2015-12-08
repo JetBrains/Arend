@@ -262,7 +262,7 @@ public final class Abstract {
   public interface DataDefinition extends Definition {
     List<? extends TypeArgument> getParameters();
     List<? extends Constructor> getConstructors();
-    List<? extends Condition> getConditions();
+    Collection<? extends Condition> getConditions();
     Universe getUniverse();
   }
 

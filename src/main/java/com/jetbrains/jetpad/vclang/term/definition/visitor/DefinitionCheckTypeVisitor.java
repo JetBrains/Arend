@@ -15,7 +15,9 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.SubstituteExpander;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
@@ -23,12 +25,10 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
@@ -286,7 +286,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     typedDef.setArguments(typedArguments);
     typedDef.setResultType(expectedType);
     typedDef.typeHasErrors(typedDef.getResultType() == null);
-    typedDef.hasErrors(false);
 
     myNamespaceMember.definition = typedDef;
     Abstract.Expression term = def.getTerm();
@@ -304,7 +303,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       if (typedDef.getElimTree() != null) {
-        if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef), null)) {
+        if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, numberOfVariables(typedDef.getArguments())), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", term, getNames(context)));
           typedDef.setElimTree(null);
         }
@@ -319,6 +318,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       if (typedDef.getElimTree() != null) {
+        typedDef.hasErrors(false); // we need normalization here
         TypeCheckingError error = TypecheckingElim.checkConditions(def, context, typedDef.getElimTree());
         if (error != null) {
           myErrorReporter.report(error);
@@ -502,64 +502,110 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     context.clear();
     if (def.getConditions() != null) {
-      for (Abstract.Condition cond : def.getConditions()) {
-        typeCheckCondition(visitor, dataDefinition, cond);
+      typeCheckConditions(visitor, dataDefinition, def.getConditions());
+    }
+    if (dataDefinition.getConditions() != null) {
+      List<Condition> failedConditions = new ArrayList<>();
+      for (Condition condition : dataDefinition.getConditions()) {
+        try (Utils.CompleteContextSaver<Binding> ignore = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
+          expandConstructorContext(condition.getConstructor(), visitor.getLocalContext());
+          TypeCheckingError error = TypecheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getArguments(), visitor.getLocalContext(), condition.getElimTree());
+          if (error != null) {
+            myErrorReporter.report(error);
+            failedConditions.add(condition);
+          }
+
+        }
       }
+      dataDefinition.getConditions().removeAll(failedConditions);
     }
 
     return dataDefinition;
   }
 
-  private void typeCheckCondition(CheckTypeVisitor visitor, DataDefinition dataDefinition, Abstract.Condition cond) {
-    Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName().name);
-    if (constructor == null) {
-      myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
-      return;
+  private void typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Collection<? extends Abstract.Condition> conds) {
+    Map<Constructor, List<Abstract.Condition>> condMap = new HashMap<>();
+
+    for (Abstract.Condition cond : conds) {
+      Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName().name);
+      if (constructor == null) {
+        myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
+      }
+      if (!condMap.containsKey(constructor)) {
+        condMap.put(constructor, new ArrayList<Abstract.Condition>());
+      }
+      condMap.get(constructor).add(cond);
     }
-    try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getLocalContext())) {
-      List<Expression> resultType = new ArrayList<>(Collections.singletonList(splitArguments(constructor.getBaseType(), new ArrayList<TypeArgument>(), visitor.getLocalContext())));
-      if (constructor.getPatterns() != null) {
-        for (TypeArgument arg : expandConstructorParameters(constructor, visitor.getLocalContext())) {
-          Utils.pushArgument(visitor.getLocalContext(), arg);
+    for (Constructor constructor : condMap.keySet()) {
+      try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getLocalContext())) {
+        final List<List<Pattern>> patterns = new ArrayList<>();
+        final List<Expression> expressions = new ArrayList<>();
+        expandConstructorContext(constructor, visitor.getLocalContext());
+
+        for (Abstract.Condition cond : condMap.get(constructor)) {
+          try (Utils.CompleteContextSaver<Binding> saver = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(splitArguments(constructor.getBaseType(), new ArrayList<TypeArgument>(), visitor.getLocalContext())));
+            List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), visitor.getLocalContext(), cond.getPatterns());
+            if (processedPatterns == null)
+              continue;
+
+            List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType, CheckTypeVisitor.PatternExpansionMode.CONDITION);
+
+            CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
+            if (result == null)
+              continue;
+
+            patterns.add(typedPatterns);
+            expressions.add(result.expression);
+          }
         }
-      } else {
-        for (TypeArgument arg : dataDefinition.getParameters()) {
-          Utils.pushArgument(visitor.getLocalContext(), arg);
+
+        ArgsElimTreeExpander.ArgsExpansionResult treeExpansionResult = ArgsElimTreeExpander.expandElimTree(visitor.getLocalContext(), patterns);
+        final Map<LeafElimTreeNode, Integer> leaf2cond = new IdentityHashMap<>();
+        for (ArgsElimTreeExpander.ArgsBranch branch : treeExpansionResult.branches) {
+          leaf2cond.put(branch.leaf, branch.indicies.get(0));
         }
-      }
-      for (TypeArgument arg : constructor.getArguments()) {
-        Utils.pushArgument(visitor.getLocalContext(), arg);
-      }
-
-      List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), visitor.getLocalContext(), cond.getPatterns());
-      if (processedPatterns == null)
-        return;
-
-      List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType, CheckTypeVisitor.PatternExpansionMode.CONDITION);
-
-      CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
-      if (result == null)
-        return;
-
-      List<Expression> tcPatterns = new ArrayList<>(typedPatterns.size());
-      for (int i = 0; i < typedPatterns.size(); i++) {
-        tcPatterns.add(Index(i));
-      }
-      for (int i = 0; i < constructor.getNumberOfAllParameters(); i++) {
-        tcPatterns.add(Index(typedPatterns.size() + i));
-      }
-      for (int i = 0; i < typedPatterns.size(); i++) {
-        Expression newExpr = patternToExpression(typedPatterns.get(i)).getExpression();
-        for (int j = 0; j < tcPatterns.size(); j++) {
-          tcPatterns.set(j, expandPatternSubstitute(typedPatterns.get(i), typedPatterns.size() - 1 - i, newExpr, tcPatterns.get(j)));
+        int numberOfArguments = splitArguments(constructor.getArguments()).size();
+        List<Expression> subst = new ArrayList<>(numberOfArguments);
+        final List<Expression> exprs = new ArrayList<>(numberOfArguments);
+        for (int i = 0; i < numberOfArguments; i++) {
+          subst.add(Index(i));
+          exprs.add(Index(numberOfArguments - 1 - i));
         }
-      }
-      if (!result.expression.accept(new TerminationCheckVisitor(constructor, tcPatterns), null)) {
-        myErrorReporter.report(new TypeCheckingError("Termination check failed", cond.getTerm(), getNames(visitor.getLocalContext())));
-        return;
-      }
 
-      dataDefinition.addCondition(new Condition(constructor, typedPatterns, result.expression));
+        //TODO: unite with typeCheckElim
+        SubstituteExpander.substituteExpand(visitor.getLocalContext(), subst, treeExpansionResult.tree, exprs, new SubstituteExpander.SubstituteExpansionProcessor() {
+          @Override
+          public void process(List<Expression> exprs, List<Binding> context, List<Expression> subst, LeafElimTreeNode leaf) {
+            leaf.setArrow(Abstract.Definition.Arrow.RIGHT);
+            List<Expression> matchedSubst = ((PatternMatchOKResult) patternMatchAll(patterns.get(leaf2cond.get(leaf)), exprs, null)).expressions;
+            Collections.reverse(matchedSubst);
+            leaf.setExpression(expressions.get(leaf2cond.get(leaf)).liftIndex(matchedSubst.size(), subst.size()).subst(matchedSubst, 0));
+          }
+        });
+
+        if (!treeExpansionResult.tree.accept(new TerminationCheckVisitor(constructor, numberOfVariables(constructor.getArguments()) + constructor.getNumberOfAllParameters()), null)) {
+          myErrorReporter.report(new TypeCheckingError("Termination check failed", dataDefinition, getNames(visitor.getLocalContext())));
+          continue;
+        }
+
+        dataDefinition.addCondition(new Condition(constructor, treeExpansionResult.tree));
+      }
+    }
+  }
+
+  private void expandConstructorContext(Constructor constructor, List<Binding> context) {
+    if (constructor.getPatterns() != null) {
+      for (TypeArgument arg : expandConstructorParameters(constructor, context)) {
+        Utils.pushArgument(context, arg);
+      }
+    } else {
+      for (TypeArgument arg : constructor.getDataType().getParameters()) {
+        Utils.pushArgument(context, arg);
+      }
+    }
+    for (TypeArgument arg : constructor.getArguments()) {
+      Utils.pushArgument(context, arg);
     }
   }
 

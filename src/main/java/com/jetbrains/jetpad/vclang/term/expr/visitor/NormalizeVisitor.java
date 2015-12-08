@@ -7,8 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
@@ -16,8 +14,6 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMultipleMatch;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression> implements ElimTreeNodeVisitor<List<Expression>, LeafElimTreeNode> {
   @Override
@@ -294,43 +290,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     List<Expression> args2 = completeArgs(args, numberOfArgs, numberOfArgs);
 
-    Expression result = null;
-    if (conCallExpression.getDefinition().getDataType().getConditions() != null) {
-      // TODO: here and in \\elim we must explicitely do the same thing
-      List<List<Pattern>> patterns = new ArrayList<>(numberOfArgs);
-      List<Expression> exprs = new ArrayList<>();
-      for (int i = 0; i < numberOfArgs; i++) {
-        patterns.add(new ArrayList<Pattern>());
-        exprs.add(args2.get(args2.size() - 1 - i));
-      }
-
-      List<Condition> conditions = new ArrayList<>();
-      for (Condition condition : conCallExpression.getDefinition().getDataType().getConditions()) {
-        if (condition.getConstructor() == conCallExpression.getDefinition()) {
-          conditions.add(condition);
-          for (int i = 0; i < numberOfArgs; i++) {
-            patterns.get(i).add(condition.getPatterns().get(i));
-          }
-        }
-      }
-
-      List<Integer> validConditions = patternMultipleMatch(patterns, exprs, myContext, conditions.size());
-
-      if (!validConditions.isEmpty()) {
-        Condition conditionOK = conditions.get(validConditions.get(0));
-        List<Expression> substExpressions = new ArrayList<>();
-        for (int i = 0; i < conditionOK.getPatterns().size(); i++) {
-          Utils.PatternMatchOKResult matchOKResult = (Utils.PatternMatchOKResult) conditionOK.getPatterns().get(i).match(args2.get(args2.size() - 1 - i), myContext);
-          substExpressions.addAll(matchOKResult.expressions);
-        }
-        Collections.reverse(substExpressions);
-        result = conditionOK.getTerm().liftIndex(0, numberOfArgs - args.size()).subst(substExpressions, 0);
-      }
-    }
-
-    if (result == null) {
+    if (conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()) == null) {
       return applyDefCall(conCallExpression, args, mode);
     }
+
+    LeafElimTreeNode leaf = conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()).getElimTree().accept(this, args2);
+    if (leaf == null)
+      return applyDefCall(conCallExpression, args, mode);
+    Expression result = leaf.getExpression().liftIndex(0, numberOfArgs - args.size()).subst(args2, 0);
 
     result = bindExcessiveArgs(args, result, arguments, numberOfArgs, numberOfArgs);
 

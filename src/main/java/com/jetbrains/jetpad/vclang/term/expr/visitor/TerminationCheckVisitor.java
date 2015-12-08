@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
@@ -22,24 +21,22 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
   private final Definition myDef;
   private final List<Expression> myPatterns;
 
-  public TerminationCheckVisitor(FunctionDefinition def) {
+  public TerminationCheckVisitor(Definition def, int numberOfArguments) {
     myDef = def;
 
-    int vars = numberOfVariables(def.getArguments());
-    myPatterns = new ArrayList<>(vars);
-    for (int i = 0; i < vars; ++i) {
+    myPatterns = new ArrayList<>(numberOfArguments);
+    for (int i = 0; i < numberOfArguments; ++i) {
       myPatterns.add(Index(i));
     }
   }
 
-  public TerminationCheckVisitor(Definition def, List<Expression> patterns) {
+  private TerminationCheckVisitor(Definition def, List<Expression> patterns) {
     myDef = def;
     myPatterns = patterns;
   }

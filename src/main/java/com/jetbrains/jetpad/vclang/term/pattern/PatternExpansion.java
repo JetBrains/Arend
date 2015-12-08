@@ -26,20 +26,6 @@ public class PatternExpansion {
     }
   }
 
-  public static ArgumentExpression expandPattern(Pattern pattern) {
-    if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern)  {
-      return new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit());
-    } else if (pattern instanceof ConstructorPattern) {
-      Expression resultExpression = ConCall(((ConstructorPattern) pattern).getConstructor());
-      for (Pattern nestedPattern : ((ConstructorPattern) pattern).getPatterns())
-        resultExpression = Apps(resultExpression.liftIndex(0, getNumArguments(nestedPattern)), expandPattern(nestedPattern));
-
-      return new ArgumentExpression(resultExpression, pattern.getExplicit(), !pattern.getExplicit());
-    } else {
-      throw new IllegalStateException();
-    }
-  }
-
   public static Result expandPattern(Pattern pattern, Expression type, List<Binding> context) {
     if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern) {
       return new Result(new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit()),

@@ -1,9 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.List;
 
@@ -11,13 +10,11 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
 
 public class Condition implements Abstract.Condition {
   private final Constructor myConstructor;
-  private final List<Pattern>  myPatterns;
-  private final Expression  myTerm;
+  private final ElimTreeNode myElimTree;
 
-  public Condition(Constructor constructor, List<Pattern> patterns, Expression term) {
+  public Condition(Constructor constructor, ElimTreeNode elimTree) {
     myConstructor = constructor;
-    myPatterns = patterns;
-    myTerm = term;
+    myElimTree = elimTree;
   }
 
   public Constructor getConstructor() {
@@ -30,8 +27,12 @@ public class Condition implements Abstract.Condition {
   }
 
   @Override
-  public List<Pattern> getPatterns() {
-    return myPatterns;
+  public List<Abstract.Pattern> getPatterns() {
+    throw new UnsupportedOperationException();
+  }
+
+  public ElimTreeNode getElimTree() {
+    return myElimTree;
   }
 
   @Override
@@ -40,8 +41,8 @@ public class Condition implements Abstract.Condition {
   }
 
   @Override
-  public Expression getTerm() {
-    return myTerm;
+  public Abstract.Expression getTerm() {
+    throw new UnsupportedOperationException();
   }
 
   @Override
