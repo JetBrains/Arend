@@ -18,7 +18,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.SubstituteExpander;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckingElim;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -292,7 +292,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
-        typedDef.setElimTree(visitor.typeCheckElim((Abstract.ElimExpression) term, arrow == Abstract.Definition.Arrow.LEFT ? (thisClass == null ? 0 : 1) : null, expectedType));
+        typedDef.setElimTree(visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, arrow == Abstract.Definition.Arrow.LEFT ? (thisClass == null ? 0 : 1) : null, expectedType));
       } else {
         CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {
@@ -310,7 +310,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       if (typedDef.getElimTree() != null) {
-        TypeCheckingError error = TypecheckingElim.checkCoverage(def, context, typedDef.getElimTree());
+        TypeCheckingError error = TypeCheckingElim.checkCoverage(def, context, typedDef.getElimTree());
         if (error != null) {
           myErrorReporter.report(error);
           typedDef.setElimTree(null);
@@ -319,7 +319,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       if (typedDef.getElimTree() != null) {
         typedDef.hasErrors(false); // we need normalization here
-        TypeCheckingError error = TypecheckingElim.checkConditions(def, context, typedDef.getElimTree());
+        TypeCheckingError error = TypeCheckingElim.checkConditions(def, context, typedDef.getElimTree());
         if (error != null) {
           myErrorReporter.report(error);
           typedDef.setElimTree(null);
@@ -509,7 +509,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       for (Condition condition : dataDefinition.getConditions()) {
         try (Utils.CompleteContextSaver<Binding> ignore = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
           expandConstructorContext(condition.getConstructor(), visitor.getLocalContext());
-          TypeCheckingError error = TypecheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getArguments(), visitor.getLocalContext(), condition.getElimTree());
+          TypeCheckingError error = TypeCheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getArguments(), visitor.getLocalContext(), condition.getElimTree());
           if (error != null) {
             myErrorReporter.report(error);
             failedConditions.add(condition);

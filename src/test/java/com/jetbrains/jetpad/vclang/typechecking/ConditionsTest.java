@@ -181,6 +181,6 @@ public class ConditionsTest {
         "\\function test (s : S) : S' <= \\elim s" +
         "  | base => base'\n" +
         "  | loop i => loop' i\n"
-    , 0);
+    , 1);
   }
 }
