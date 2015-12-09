@@ -133,6 +133,8 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
             } else {
               myErrorReporter.report(new TypeCheckingError("Definition '" + name.getName() + "' is not static", stat, null));
             }
+          } else if (member1.definition != null && member1.definition.getThisClass() == null) {
+            processNamespaceCommand(member1, export, remove, stat);
           }
         }
       }
@@ -143,6 +145,8 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
           if (parentStatement != null && parentStatement.isStatic()) {
             processNamespaceCommand(member1, export, remove, stat);
           }
+        } else if (member1.definition != null && member1.definition.getThisClass() == null) {
+          processNamespaceCommand(member1, export, remove, stat);
         }
       }
     }

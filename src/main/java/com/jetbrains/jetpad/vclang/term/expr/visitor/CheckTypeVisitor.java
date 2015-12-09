@@ -809,7 +809,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return null;
   }
 
-
   public ElimTreeNode typeCheckElim(final Abstract.ElimExpression expr, Integer argsStartCtxIndex, Expression expectedType) {
     //TODO: check that argsStartCtxIndex respects \this
 
@@ -902,6 +901,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (wasError) {
+      // TODO: return errorResult
       return null;
     }
 

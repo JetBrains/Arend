@@ -306,4 +306,11 @@ public class ElimTest {
         " | _ => 0\n"
     , 2);
   }
+
+  @Test
+  public void emptyAfterAFew() {
+    typeCheckClass(
+        "\\static \\data D Nat | D zero => d\n" +
+        "\\static \\function test (x : Nat) (y : \\Pi(z : Nat) -> x = z) (a : D (suc x)) : Nat <= \\elim x\n");
+  }
 }

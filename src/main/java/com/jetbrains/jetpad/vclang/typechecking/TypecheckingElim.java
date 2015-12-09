@@ -34,7 +34,7 @@ public class TypecheckingElim {
         if (!expr1.equals(expr2)){
           errorMsg.append("\n").append(name);
           printArgs(subst1, arguments, errorMsg);
-          errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(arguments);
+          errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(name);
           printArgs(subst2, arguments, errorMsg);
        }
       }
@@ -63,8 +63,8 @@ public class TypecheckingElim {
 
   private static void printArgs(List<Expression> subst1, List<? extends Abstract.Argument> arguments, StringBuilder errorMsg) {
     for (int i = 0, ii = 0; i < arguments.size(); i++) {
-      if (arguments.get(i) instanceof TelescopeArgument) {
-        for (String ignore : ((TelescopeArgument) arguments.get(i)).getNames()) {
+      if (arguments.get(i) instanceof Abstract.TelescopeArgument) {
+        for (String ignore : ((Abstract.TelescopeArgument) arguments.get(i)).getNames()) {
           errorMsg.append(" ").append(arguments.get(i).getExplicit() ? "(" : "{");
           errorMsg.append(subst1.get(ii++));
           errorMsg.append(arguments.get(i).getExplicit() ? ")" : "}");

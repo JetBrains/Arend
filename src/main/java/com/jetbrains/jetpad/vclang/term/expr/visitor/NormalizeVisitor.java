@@ -327,7 +327,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     LeafElimTreeNode leaf = func.getElimTree().accept(this, args2);
     if (leaf == null)
       return applyDefCall(defCallExpr, args, mode);
-    Expression result = leaf.getExpression().liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0).subst(args2, 0);
+    Expression result = leaf.getExpression().liftIndex(0, numberOfSubstArgs > args.size() ? numberOfSubstArgs - args.size() : 0).subst(args2, 0);
     if (leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
       try (ContextSaver ignore = new ContextSaver(myContext)) {
         for (TypeArgument arg : args1) {
@@ -360,12 +360,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private List<Expression> completeArgs(List<ArgumentExpression> args, int numberOfArgs, int numberOfSubstArgs) {
-    List<Expression> args2 = new ArrayList<>(numberOfArgs);
+    List<Expression> args2 = new ArrayList<>(numberOfSubstArgs);
     for (int i = numberOfArgs - numberOfSubstArgs; i < numberOfArgs - args.size(); ++i) {
       args2.add(Index(i));
     }
     for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()); i < args.size(); ++i) {
-      args2.add(args.get(i).getExpression().liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0));
+      args2.add(args.get(i).getExpression().liftIndex(0, numberOfSubstArgs > args.size() ? numberOfSubstArgs - args.size() : 0));
     }
     return args2;
   }
