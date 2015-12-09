@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.GetDepsVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
 
 import java.util.*;
 
@@ -30,18 +30,18 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
-        result.addAll(((Abstract.TypeArgument) arg).getType().accept(new GetDepsVisitor(), null));
+        result.addAll(((Abstract.TypeArgument) arg).getType().accept(new CollectDefCallsVisitor(), false));
       }
     }
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      result.addAll(resultType.accept(new GetDepsVisitor(), null));
+      result.addAll(resultType.accept(new CollectDefCallsVisitor(), false));
     }
 
     Abstract.Expression term = def.getTerm();
     if (term != null) {
-      result.addAll(term.accept(new GetDepsVisitor(), null));
+      result.addAll(term.accept(new CollectDefCallsVisitor(), false));
     }
 
     return result;
@@ -57,13 +57,13 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
-        result.addAll(((Abstract.TypeArgument) arg).getType().accept(new GetDepsVisitor(), null));
+        result.addAll(((Abstract.TypeArgument) arg).getType().accept(new CollectDefCallsVisitor(), false));
       }
     }
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      result.addAll(resultType.accept(new GetDepsVisitor(), null));
+      result.addAll(resultType.accept(new CollectDefCallsVisitor(), false));
     }
 
     return result;
@@ -77,7 +77,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     Set<ResolvedName> result = new HashSet<>();
 
     for (Abstract.TypeArgument param : def.getParameters()) {
-      result.addAll(param.getType().accept(new GetDepsVisitor(), null));
+      result.addAll(param.getType().accept(new CollectDefCallsVisitor(), false));
     }
 
     for (Abstract.Constructor constructor : def.getConstructors()) {
@@ -95,12 +95,12 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   private Set<ResolvedName> visitConstructor(Abstract.Constructor def) {
     Set<ResolvedName> result = new HashSet<>();
     for (Abstract.TypeArgument arg : def.getArguments()) {
-      result.addAll(arg.getType().accept(new GetDepsVisitor(), null));
+      result.addAll(arg.getType().accept(new CollectDefCallsVisitor(), false));
     }
     if (def.getDataType().getConditions() != null) {
       for (Abstract.Condition cond : def.getDataType().getConditions()) {
         if (cond.getConstructorName().equals(def.getName())) {
-          result.addAll(cond.getTerm().accept(new GetDepsVisitor(), null));
+          result.addAll(cond.getTerm().accept(new CollectDefCallsVisitor(), false));
         }
       }
     }

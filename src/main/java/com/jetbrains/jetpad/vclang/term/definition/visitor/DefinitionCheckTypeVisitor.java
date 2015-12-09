@@ -9,12 +9,9 @@ import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.FindDefCallVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.SubstituteExpander;
@@ -502,7 +499,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     context.clear();
     if (def.getConditions() != null) {
-      typeCheckConditions(visitor, dataDefinition, def.getConditions());
+      List<Constructor> cycle = typeCheckConditions(visitor, dataDefinition, def.getConditions());
+      if (cycle != null) {
+        StringBuilder cycleConditionsError = new StringBuilder();
+        cycleConditionsError.append("Conditions form a cycle: ");
+        for (Constructor constructor : cycle) {
+          cycleConditionsError.append(constructor.getName()).append(" - ");
+        }
+        cycleConditionsError.append(cycle.get(0).getName());
+        TypeCheckingError error = new TypeCheckingError(cycleConditionsError.toString(), def, getNames(visitor.getLocalContext()));
+        myErrorReporter.report(error);
+      }
     }
     if (dataDefinition.getConditions() != null) {
       List<Condition> failedConditions = new ArrayList<>();
@@ -514,7 +521,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
             myErrorReporter.report(error);
             failedConditions.add(condition);
           }
-
         }
       }
       dataDefinition.getConditions().removeAll(failedConditions);
@@ -523,9 +529,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     return dataDefinition;
   }
 
-  private void typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Collection<? extends Abstract.Condition> conds) {
+  private List<Constructor> typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Collection<? extends Abstract.Condition> conds) {
     Map<Constructor, List<Abstract.Condition>> condMap = new HashMap<>();
-
     for (Abstract.Condition cond : conds) {
       Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName().name);
       if (constructor == null) {
@@ -535,6 +540,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         condMap.put(constructor, new ArrayList<Abstract.Condition>());
       }
       condMap.get(constructor).add(cond);
+    }
+    List<Constructor> cycle = searchConditionCycle(condMap);
+    if (cycle != null) {
+      return cycle;
     }
     for (Constructor constructor : condMap.keySet()) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getLocalContext())) {
@@ -592,6 +601,41 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         dataDefinition.addCondition(new Condition(constructor, treeExpansionResult.tree));
       }
     }
+    return null;
+  }
+
+  private List<Constructor> searchConditionCycle(Map<Constructor, List<Abstract.Condition>> condMap) {
+    Set<Constructor> visited = new HashSet<>();
+    List<Constructor> visiting = new ArrayList<>();
+    for (Constructor constructor : condMap.keySet()) {
+      List<Constructor> cycle = searchConditionCycle(condMap, constructor, visited, visiting);
+      if (cycle != null)
+        return cycle;
+    }
+    return null;
+  }
+
+  private List<Constructor> searchConditionCycle(Map<Constructor, List<Abstract.Condition>> condMap, Constructor constructor, Set<Constructor> visited, List<Constructor> visiting) {
+    if (visited.contains(constructor))
+      return null;
+    if (visiting.contains(constructor)) {
+      return visiting.subList(visiting.lastIndexOf(constructor), visiting.size());
+    }
+    visiting.add(constructor);
+    if (condMap.containsKey(constructor)) {
+      for (Abstract.Condition condition : condMap.get(constructor)) {
+        for (ResolvedName rn : condition.getTerm().accept(new CollectDefCallsVisitor(), true)) {
+          if (rn.toDefinition() != null && rn.toDefinition() != constructor && rn.toDefinition() instanceof Constructor && ((Constructor) rn.toDefinition()).getDataType().equals(constructor.getDataType())) {
+            List<Constructor> cycle = searchConditionCycle(condMap, (Constructor) rn.toDefinition(), visited, visiting);
+            if (cycle != null)
+              return cycle;
+          }
+        }
+      }
+    }
+    visiting.remove(visiting.size() - 1);
+    visited.add(constructor);
+    return null;
   }
 
   private void expandConstructorContext(Constructor constructor, List<Binding> context) {
