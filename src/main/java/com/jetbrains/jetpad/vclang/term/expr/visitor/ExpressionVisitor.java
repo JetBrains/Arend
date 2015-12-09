@@ -17,7 +17,6 @@ public interface ExpressionVisitor<P, R> {
   R visitError(ErrorExpression expr, P params);
   R visitTuple(TupleExpression expr, P params);
   R visitSigma(SigmaExpression expr, P params);
-  R visitElim(ElimExpression expr, P params);
   R visitProj(ProjExpression expr, P params);
   R visitNew(NewExpression expr, P params);
   R visitLet(LetExpression letExpression, P params);

@@ -47,7 +47,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   @Override
   public PatternMatchResult match(Expression expr, List<Binding> context) {
     List<Expression> constructorArgs = new ArrayList<>();
-    expr = expr.normalize(NormalizeVisitor.Mode.WHNF, context).getFunction(constructorArgs);
+    expr = (context == null ? expr : expr.normalize(NormalizeVisitor.Mode.WHNF, context)).getFunction(constructorArgs);
     Collections.reverse(constructorArgs);
     if (!(expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor)) {
       return new PatternMatchMaybeResult(this, expr);

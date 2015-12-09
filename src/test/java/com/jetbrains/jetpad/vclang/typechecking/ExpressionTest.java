@@ -6,10 +6,9 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.expr.Clause;
-import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
@@ -194,14 +193,14 @@ public class ExpressionTest {
     // \lam (F : \Pi {A : \Type0}  (a : A) -> \Type1) (f : \Pi {A : \Type0} (x : A) -> F x) =>
     //   \let | x (y : Nat) : Nat <= \elim y | zero => zero
     //                                       | suc x' => suc x' \in f x)
-    List<Clause> clauses = new ArrayList<>();
-    ElimExpression elim = Elim(Index(0), clauses);
-    clauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
-    clauses.add(new Clause(match(Prelude.SUC, match("x'")), Abstract.Definition.Arrow.RIGHT, Apps(Suc(), Index(0)), elim));
+    ElimTreeNode elimTree = branch(0,
+        clause(Prelude.ZERO, Zero()),
+        clause(Prelude.SUC, Suc(Index(0)))
+    );
     Expression expr = Lam(teleArgs(
-            Tele(vars("F"), Pi(typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
-            Tele(vars("f"), Pi(typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
-            Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(1), Index(0))));
+                    Tele(vars("F"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
+                    Tele(vars("f"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
+            Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Nat(), elimTree)), Apps(Index(1), Index(0))));
     ListErrorReporter errorReporter = new ListErrorReporter();
     expr.checkType(new ArrayList<Binding>(), null, errorReporter);
     assertEquals(1, errorReporter.getErrorList().size());
@@ -227,4 +226,10 @@ public class ExpressionTest {
   public void caseNoExpectedError() {
     typeCheckDef("\\function test => \\case 1 | zero => 0 | suc y => y", 1);
   }
+
+  @Test
+  public void coverageInLet() {
+    typeCheckDef("\\function test => \\let x (n : Nat) : Nat <= \\elim n | zero => 0 \\in x 1", 1);
+  }
+
 }

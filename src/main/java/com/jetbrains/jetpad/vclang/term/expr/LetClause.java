@@ -1,12 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Function;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LiftIndexVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimExpression;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.List;
 
@@ -15,24 +14,21 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintLetClau
 
 public class LetClause extends Binding implements Abstract.LetClause, Function {
   private final List<TypeArgument> myArguments;
+  private final ElimTreeNode myElimTree;
   private final Expression myResultType;
-  private final Abstract.Definition.Arrow myArrow;
-  private final Expression myTerm;
 
-  public LetClause(Name name, List<TypeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+  public LetClause(Name name, List<TypeArgument> arguments, Expression resultType, ElimTreeNode elimTree) {
     super(name);
     myArguments = arguments;
     myResultType = resultType;
-    myArrow = arrow;
-    myTerm = term;
+    myElimTree = elimTree;
   }
 
-  public LetClause(String name, List<TypeArgument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
+  public LetClause(String name, List<TypeArgument> arguments, Expression resultType, ElimTreeNode elimTree) {
     super(name);
     myArguments = arguments;
     myResultType = resultType;
-    myArrow = arrow;
-    myTerm = term;
+    myElimTree = elimTree;
   }
 
   @Override
@@ -41,13 +37,18 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
   }
 
   @Override
-  public Abstract.Definition.Arrow getArrow() {
-    return myArrow;
+  public ElimTreeNode getElimTree() {
+    return myElimTree;
   }
 
   @Override
-  public Expression getTerm() {
-    return myTerm;
+  public Abstract.Definition.Arrow getArrow() {
+    return ElimExpression.toArrow(myElimTree);
+  }
+
+  @Override
+  public Abstract.Expression getTerm() {
+    return ElimExpression.toElimExpression(myElimTree);
   }
 
   @Override

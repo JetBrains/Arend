@@ -15,6 +15,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.constructorPatternsToExpressions;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 
 public class Constructor extends Definition implements Abstract.Constructor {
   private DataDefinition myDataType;
@@ -44,6 +45,10 @@ public class Constructor extends Definition implements Abstract.Constructor {
     return myPatterns;
   }
 
+  public void setPatterns(List<Pattern> patterns) {
+    myPatterns = patterns;
+  }
+
   @Override
   public void replacePatternWithConstructor(int index) {
     throw new UnsupportedOperationException();
@@ -65,6 +70,14 @@ public class Constructor extends Definition implements Abstract.Constructor {
 
   public void setDataType(DataDefinition dataType) {
     myDataType = dataType;
+  }
+
+  public int getNumberOfAllParameters() {
+    if (myPatterns == null) {
+      return myDataType.getNumberOfAllParameters();
+    } else {
+      return getNumArguments(myPatterns) + (myDataType.getThisClass() == null ? 0 : 1);
+    }
   }
 
   @Override

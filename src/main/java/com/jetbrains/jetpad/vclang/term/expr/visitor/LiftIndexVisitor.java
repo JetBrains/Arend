@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
-public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression> {
+public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression> implements ElimTreeNodeVisitor<Integer, ElimTreeNode> {
   private final int myOn;
 
   public LiftIndexVisitor(int on) {
@@ -56,7 +58,7 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
   }
 
   @Override
-  public Expression visitIndex(IndexExpression expr, Integer from) {
+  public IndexExpression visitIndex(IndexExpression expr, Integer from) {
     if (expr.getIndex() < from) return expr;
     if (expr.getIndex() + myOn >= from) return Index(expr.getIndex() + myOn);
     return null;
@@ -142,29 +144,6 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
     return visitTypeArguments(expr.getArguments(), result, from) == -1 ? null : Sigma(result);
   }
 
-  private Clause visitClause(Clause clause, ElimExpression elimExpr, Integer from) {
-    int liftShift = 0;
-    for (int i = 0; i < clause.getPatterns().size(); i++) {
-      if (elimExpr.getExpressions().get(i).getIndex() < from) {
-        liftShift += getNumArguments(clause.getPatterns().get(i)) - 1;
-      }
-    }
-    return new Clause(clause.getPatterns(), clause.getArrow(),
-            clause.getExpression().accept(this, from + liftShift), elimExpr);
-  }
-
-  @Override
-  public Expression visitElim(ElimExpression expr, Integer from) {
-    List<Clause> clauses = new ArrayList<>();
-    List<IndexExpression> expressions = new ArrayList<>(expr.getExpressions().size());
-    ElimExpression result = Elim(expressions, clauses);
-    for (IndexExpression var : expr.getExpressions())
-      expressions.add((IndexExpression) var.accept(this, from));
-    for (Clause clause : expr.getClauses())
-      clauses.add(visitClause(clause, result, from));
-    return result;
-  }
-
   @Override
   public Expression visitProj(ProjExpression expr, Integer from) {
     Expression expr1 = expr.getExpression().accept(this, from);
@@ -194,7 +173,41 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
     from = visitTypeArguments(clause.getArguments(), arguments, from);
     if (from == -1) return null;
     final Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, from);
-    final Expression term = clause.getTerm().accept(this, from);
-    return new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), term);
+    final ElimTreeNode elimTree = clause.getElimTree().accept(this, from);
+    if (elimTree == null)
+      return null;
+    return new LetClause(clause.getName(), arguments, resultType, elimTree);
+  }
+
+  @Override
+  public ElimTreeNode visitBranch(BranchElimTreeNode branchNode, Integer from) {
+    IndexExpression newIndex = visitIndex(Index(branchNode.getIndex()), from);
+    if (newIndex == null)
+      return null;
+    BranchElimTreeNode result = new BranchElimTreeNode(newIndex.getIndex());
+
+    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
+      int liftShift = branchNode.getIndex() >= from ? 0
+          : splitArguments(clause.getConstructor().getArguments()).size() - 1;
+      ElimTreeNode node = clause.getChild().accept(this, from + liftShift);
+
+      if (node == null)
+        return null;
+      result.addClause(clause.getConstructor(), node);
+    }
+    return result;
+  }
+
+  @Override
+  public ElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Integer from) {
+    Expression expr = leafNode.getExpression().accept(this, from);
+    if (expr == null)
+      return null;
+    return new LeafElimTreeNode(leafNode.getArrow(), expr);
+  }
+
+  @Override
+  public ElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, Integer params) {
+    return EmptyElimTreeNode.getInstance();
   }
 }

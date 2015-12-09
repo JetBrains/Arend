@@ -11,13 +11,14 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getTypes;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 
-class PatternExpansion {
-  static class Result {
-    final ArgumentExpression expression;
-    final List<TypeArgument> args;
+public class PatternExpansion {
+  public static class Result {
+    public final ArgumentExpression expression;
+    public final List<TypeArgument> args;
 
     private Result(ArgumentExpression expression, List<TypeArgument> args) {
       this.expression = expression;
@@ -25,21 +26,7 @@ class PatternExpansion {
     }
   }
 
-  static ArgumentExpression expandPattern(Pattern pattern) {
-    if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern)  {
-      return new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit());
-    } else if (pattern instanceof ConstructorPattern) {
-      Expression resultExpression = ConCall(((ConstructorPattern) pattern).getConstructor());
-      for (Pattern nestedPattern : ((ConstructorPattern) pattern).getPatterns())
-        resultExpression = Apps(resultExpression.liftIndex(0, getNumArguments(nestedPattern)), expandPattern(nestedPattern));
-
-      return new ArgumentExpression(resultExpression, pattern.getExplicit(), !pattern.getExplicit());
-    } else {
-      throw new IllegalStateException();
-    }
-  }
-
-  static Result expandPattern(Pattern pattern, Expression type, List<Binding> context) {
+  public static Result expandPattern(Pattern pattern, Expression type, List<Binding> context) {
     if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern) {
       return new Result(new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit()),
           Collections.singletonList(pattern instanceof NamePattern ? Tele(pattern.getExplicit(), Collections.singletonList(((NamePattern) pattern).getName()), type) : TypeArg(pattern.getExplicit(), type)));
@@ -49,7 +36,7 @@ class PatternExpansion {
       List<Expression> parameters = new ArrayList<>();
       type.normalize(NormalizeVisitor.Mode.WHNF, context).getFunction(parameters);
       Collections.reverse(parameters);
-      List<Result> nestedResults = expandPatterns(constructorPattern.getPatterns(), getConstructorArguments(constructorPattern, parameters, context), context);
+      List<Result> nestedResults = expandPatterns(constructorPattern.getPatterns(), getTypes(getConstructorArguments(constructorPattern, parameters, context)), context);
 
       Expression resultExpression = ConCall(constructorPattern.getConstructor(), getMatchedParameters(constructorPattern, parameters));
       List<TypeArgument> resultArgs = new ArrayList<>();
@@ -64,13 +51,10 @@ class PatternExpansion {
     }
   }
 
-  static List<Result> expandPatterns(List<Pattern> patterns, List<TypeArgument> args, List<Binding> context) {
-    List<TypeArgument> argsSplitted = new ArrayList<>();
-    splitArguments(args, argsSplitted);
-
+  public static List<Result> expandPatterns(List<Pattern> patterns, List<Expression> types, List<Binding> context) {
     List<Result> results = new ArrayList<>();
     for (int i = 0; i < patterns.size(); i++) {
-      Expression argumentType = argsSplitted.get(i).getType();
+      Expression argumentType = types.get(i);
       for (int j = 0; j < i; j++)
         argumentType = expandPatternSubstitute(patterns.get(j), i - j - 1, results.get(j).expression.getExpression(), argumentType);
       Result nestedResult = expandPattern(patterns.get(i), argumentType, context);
@@ -85,7 +69,7 @@ class PatternExpansion {
     } else {
       return new ArrayList<>(dataTypeParameters);
     }
-   }
+  }
 
   private static List<TypeArgument> getConstructorArguments(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters, List<Binding> context) {
     List<Expression> matchedParameters = getMatchedParameters(constructorPattern, dataTypeParameters);

@@ -97,6 +97,14 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     for (Abstract.TypeArgument arg : def.getArguments()) {
       result.addAll(arg.getType().accept(new GetDepsVisitor(), null));
     }
+    if (def.getDataType().getConditions() != null) {
+      for (Abstract.Condition cond : def.getDataType().getConditions()) {
+        if (cond.getConstructorName().equals(def.getName())) {
+          result.addAll(cond.getTerm().accept(new GetDepsVisitor(), null));
+        }
+      }
+    }
+
     return result;
   }
 

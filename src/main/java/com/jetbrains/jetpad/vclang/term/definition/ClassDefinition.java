@@ -85,7 +85,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
 
     List<Abstract.Statement> statements = new ArrayList<>(fields.size() + size);
     for (ClassField field : fields) {
-      statements.add(new DefineStatement(new FunctionDefinition(namespace, field.getName(), field.getPrecedence(), Collections.<Argument>emptyList(), field.getType(), null, null), false));
+      statements.add(new DefineStatement(new FunctionDefinition(namespace, field.getName(), field.getPrecedence(), Collections.<Argument>emptyList(), field.getType(), null), false));
     }
     if (namespace != null) {
       for (NamespaceMember pair : namespace.getMembers()) {

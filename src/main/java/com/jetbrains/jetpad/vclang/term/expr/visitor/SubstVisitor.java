@@ -4,7 +4,8 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,8 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
-public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
+public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implements ElimTreeNodeVisitor<Void, ElimTreeNode> {
   private final List<Expression> mySubstExprs;
   private final int myFrom;
 
@@ -78,6 +80,26 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     return result;
   }
 
+  @Override
+  public ElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
+    BranchElimTreeNode newNode = new BranchElimTreeNode(((IndexExpression) visitIndex(Index(branchNode.getIndex()), null)).getIndex());
+    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
+      newNode.addClause(clause.getConstructor(), clause.getChild().accept(new SubstVisitor(
+          mySubstExprs, myFrom + splitArguments(clause.getConstructor().getArguments()).size() - 1), null));
+    }
+    return newNode;
+  }
+
+  @Override
+  public ElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
+    return new LeafElimTreeNode(leafNode.getArrow(), leafNode.getExpression().accept(this, null));
+  }
+
+  @Override
+  public ElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
+    return emptyNode;
+  }
+
   public static class SubstVisitorContext {
     private int myFrom;
     private final List<Expression> mySubstExprs;
@@ -98,6 +120,9 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
       return expr.subst(mySubstExprs, myFrom);
     }
 
+    ElimTreeNode subst(ElimTreeNode elimTree) {
+      return elimTree.accept(new SubstVisitor(mySubstExprs, myFrom), null);
+    }
   }
 
   static TypeArgument visitTypeArgument(TypeArgument argument, SubstVisitorContext ctx) {
@@ -165,23 +190,6 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public Expression visitElim(ElimExpression expr, Void params) {
-    List<IndexExpression> expressions = new ArrayList<>();
-    for (IndexExpression index : expr.getExpressions()) {
-      assert index.getIndex() < myFrom;
-      expressions.add((IndexExpression) index.accept(this, null));
-    }
-    List<Clause> clauses = new ArrayList<>();
-    ElimExpression result = new ElimExpression(expressions, clauses);
-    for (Clause clause : expr.getClauses()) {
-      clauses.add(new Clause(clause.getPatterns(), clause.getArrow(), clause.getExpression().subst(mySubstExprs,
-          myFrom + Utils.getNumArguments(clause.getPatterns()) - clause.getPatterns().size()), result));
-    }
-
-    return result;
-  }
-
-  @Override
   public Expression visitProj(ProjExpression expr, Void params) {
     return Proj(expr.getExpression().accept(this, null), expr.getField());
   }
@@ -209,7 +217,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     final SubstVisitorContext localCtx = new SubstVisitorContext(substExprs, from);
     final List<TypeArgument> arguments = visitTypeArguments(clause.getArguments(), localCtx);
     final Expression resultType = clause.getResultType() == null ? null : localCtx.subst(clause.getResultType());
-    final Expression expression = localCtx.subst(clause.getTerm());
-    return new LetClause(clause.getName(), arguments, resultType, clause.getArrow(), expression);
+    final ElimTreeNode elimTree = localCtx.subst(clause.getElimTree());
+    return new LetClause(clause.getName(), arguments, resultType, elimTree);
   }
 }

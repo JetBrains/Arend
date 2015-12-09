@@ -3,10 +3,12 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.statement.DefineStatement;
 
 import java.util.ArrayList;
@@ -16,28 +18,25 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Abstract.FunctionDefinition, Function {
-  private Arrow myArrow;
   // TODO: myArguments should have type List<TypeArguments>
   private List<Argument> myArguments;
   private Expression myResultType;
-  private Expression myTerm;
+  private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
 
-  public FunctionDefinition(Namespace parentNamespace, Name name, Precedence precedence, Arrow arrow) {
+  public FunctionDefinition(Namespace parentNamespace, Name name, Precedence precedence) {
     super(parentNamespace, name, precedence);
-    myArrow = arrow;
     myTypeHasErrors = true;
   }
 
-  public FunctionDefinition(Namespace parentNamespace, Name name, Precedence precedence, List<Argument> arguments, Expression resultType, Arrow arrow, Expression term) {
+  public FunctionDefinition(Namespace parentNamespace, Name name, Precedence precedence, List<Argument> arguments, Expression resultType, ElimTreeNode elimTree) {
     super(parentNamespace, name, precedence);
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);
     myArguments = arguments;
     myResultType = resultType;
-    myArrow = arrow;
     myTypeHasErrors = false;
-    myTerm = term;
+    myElimTree = elimTree;
   }
 
   public Namespace getStaticNamespace() {
@@ -46,16 +45,17 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
 
   @Override
   public Arrow getArrow() {
-    return myArrow;
+    return ElimExpression.toArrow(myElimTree);
   }
 
-  public void setArrow(Arrow arrow) {
-    myArrow = arrow;
+  @Override
+  public ElimTreeNode getElimTree() {
+    return myElimTree;
   }
 
   @Override
   public boolean isAbstract() {
-    return myArrow == null;
+    return myElimTree == null;
   }
 
   @Override
@@ -82,12 +82,12 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
   }
 
   @Override
-  public Expression getTerm() {
-    return myTerm;
+  public Abstract.Expression getTerm() {
+    return ElimExpression.toElimExpression(myElimTree);
   }
 
-  public void setTerm(Expression term) {
-    myTerm = term;
+  public void setElimTree(ElimTreeNode elimTree) {
+    myElimTree = elimTree;
   }
 
   @Override

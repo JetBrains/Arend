@@ -29,7 +29,7 @@ public class RecursiveTest {
 
   @Test
   public void doubleRec() {
-    assertFalse(typeCheckDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => suc x'' + (x'' + y)").hasErrors());
+    assertFalse(typeCheckDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc zero => y | suc (suc x'') => x'' + (x'' + y)").hasErrors());
   }
 
   @Test
@@ -39,7 +39,7 @@ public class RecursiveTest {
 
   @Test
   public void functionError2() {
-    assertTrue(typeCheckDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc x' <= \\elim x' | zero => y | suc x'' => y + y", 1).hasErrors());
+    assertTrue(typeCheckDef("\\function (+) (x y : Nat) : Nat <= \\elim x | zero => y | suc zero => y | suc (suc x'') => y + y", 1).hasErrors());
   }
 
   @Test

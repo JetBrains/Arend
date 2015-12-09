@@ -9,13 +9,18 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
-public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> {
+public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implements ElimTreeNodeVisitor<Void, Void> {
   private int myErrors = 0;
   private final DefNamesIndicies myDefNamesIndicies;
   private final ByteArrayOutputStream myStream;
@@ -200,28 +205,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> {
     return null;
   }
 
-  @Override
-  public Void visitElim(ElimExpression expr, Void params) {
-    myStream.write(12);
-    try {
-      myDataStream.writeInt(expr.getExpressions().size());
-      for (IndexExpression var : expr.getExpressions())
-        myDataStream.writeInt(var.getIndex());
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
-    try {
-      myDataStream.writeInt(expr.getClauses().size());
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
-    for (Clause clause : expr.getClauses()) {
-      visitClause(clause);
-    }
-    return null;
-  }
-
-  private void visitPattern(Pattern pattern) {
+  public void visitPattern(Pattern pattern) {
     try {
       myDataStream.writeBoolean(pattern.getExplicit());
       if (pattern instanceof NamePattern)
@@ -244,18 +228,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> {
       }
     } catch (IOException e) {
       e.printStackTrace();
-    }
-  }
-
-  private void visitClause(Clause clause) {
-    try {
-      myDataStream.writeInt(clause.getPatterns().size());
-      for (Pattern pattern : clause.getPatterns())
-        visitPattern(pattern);
-      myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
-      clause.getExpression().accept(this, null);
-    } catch (IOException e) {
-      throw new IllegalStateException();
     }
   }
 
@@ -301,10 +273,48 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> {
       if (clause.getResultType() != null) {
         clause.getResultType().accept(this, null);
       }
-      myDataStream.writeBoolean(clause.getArrow() == Abstract.Definition.Arrow.RIGHT);
-      clause.getTerm().accept(this, null);
+      clause.getElimTree().accept(this, null);
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+  }
+
+  @Override
+  public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
+    try {
+      myDataStream.writeInt(0);
+      myDataStream.writeInt(branchNode.getIndex());
+      myDataStream.writeInt(branchNode.getConstructorClauses().size());
+      for (ConstructorClause clause : branchNode.getConstructorClauses()) {
+        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(clause.getConstructor().getResolvedName(), false));
+        clause.getChild().accept(this, null);
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+
+    return null;
+  }
+
+  @Override
+  public Void visitLeaf(LeafElimTreeNode leafNode, Void params) {
+    try {
+      myDataStream.writeInt(1);
+      myDataStream.writeBoolean(leafNode.getArrow() == Abstract.Definition.Arrow.RIGHT);
+      leafNode.getExpression().accept(this, null);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
+    try {
+      myDataStream.writeInt(2);
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+    return null;
   }
 }
