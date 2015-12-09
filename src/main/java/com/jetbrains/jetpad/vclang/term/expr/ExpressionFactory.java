@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.*;
@@ -61,6 +62,10 @@ public class ExpressionFactory {
     return new ConCallExpression(definition, definition.getDataType().getNumberOfAllParameters() == 0 ? Collections.<Expression>emptyList() : new ArrayList<Expression>(definition.getDataType().getNumberOfAllParameters()));
   }
 
+  public static ConCallExpression ConCall(Constructor definition, Expression... parameters) {
+    return ConCall(definition, Arrays.asList(parameters));
+  }
+
   public static Expression BinOp(Expression left, Definition binOp, Expression right) {
     return Apps(binOp.getDefCall(), left, right);
   }
@@ -95,20 +100,32 @@ public class ExpressionFactory {
     return Arrays.asList(letClauses);
   }
 
-  public static LetClause let(String name, Expression term) {
-    return new LetClause(name, lamArgs(), null, Abstract.Definition.Arrow.RIGHT, term);
+  public static LetClause let(String name, Expression expr) {
+    return let(name, leaf(expr));
   }
 
-  public static LetClause let(String name, List<Argument> args, Expression term) {
-    return new LetClause(name, args, null, Abstract.Definition.Arrow.RIGHT, term);
+  public static LetClause let(String name, ElimTreeNode elimTree) {
+    return let(name, lamArgs(), elimTree);
   }
 
-  public static LetClause let(String name, List<Argument> args, Abstract.Definition.Arrow arrow, Expression term) {
-    return new LetClause(name, args, null, arrow, term);
+  public static LetClause let(String name, List<Argument> args, Expression expr) {
+    return let(name, args, leaf(expr));
   }
 
-  public static LetClause let(String name, List<Argument> args, Expression resultType, Abstract.Definition.Arrow arrow, Expression term) {
-    return new LetClause(name, args, resultType, arrow, term);
+  public static LetClause let(String name, List<Argument> args, ElimTreeNode elimTree) {
+    return let(name, args, null, elimTree);
+  }
+
+  public static LetClause let(String name, List<Argument> args, Expression resultType, Abstract.Definition.Arrow arrow, Expression expr) {
+    return let(name, args, resultType, leaf(arrow, expr));
+  }
+
+  public static LetClause let(String name, List<Argument> args, Expression resultType, Expression expr) {
+    return let(name, args, resultType, leaf(expr));
+  }
+
+  public static LetClause let(String name, List<Argument> args, Expression resultType, ElimTreeNode elimTree) {
+    return new LetClause(name, args, resultType, elimTree);
   }
 
   public static List<String> vars(String... vars) {
@@ -223,20 +240,50 @@ public class ExpressionFactory {
     return new ErrorExpression(expr, error);
   }
 
-  public static ElimExpression Elim(IndexExpression expression, List<Clause> clauses) {
-    return new ElimExpression(expression, clauses);
-  }
-
-  public static ElimExpression Elim(List<IndexExpression> expressions, List<Clause> clauses) {
-    return new ElimExpression(expressions, clauses);
-  }
-
   public static ConstructorPattern match(boolean isExplicit, Constructor constructor, Pattern... patterns) {
     return new ConstructorPattern(constructor, Arrays.asList(patterns), isExplicit);
   }
 
   public static ConstructorPattern match(Constructor constructor, Pattern... patterns) {
     return match(true, constructor, patterns);
+  }
+
+  public static class ConstructorClausePair {
+    private final Constructor constructor;
+    private final ElimTreeNode child;
+
+    private ConstructorClausePair(Constructor constructor, ElimTreeNode child) {
+      this.constructor = constructor;
+      this.child = child;
+    }
+  }
+
+  public static BranchElimTreeNode branch(int index, ConstructorClausePair... clauses) {
+    BranchElimTreeNode result = new BranchElimTreeNode(index);
+    for (ConstructorClausePair pair : clauses) {
+      result.addClause(pair.constructor, pair.child);
+    }
+    return result;
+  }
+
+  public static LeafElimTreeNode leaf(Expression expression) {
+    return new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expression);
+  }
+
+  public static LeafElimTreeNode leaf(Abstract.Definition.Arrow arrow, Expression expression) {
+    return new LeafElimTreeNode(arrow, expression);
+  }
+
+  public static ConstructorClausePair clause(Constructor constructor, BranchElimTreeNode node) {
+    return new ConstructorClausePair(constructor, node);
+  }
+
+  public static ConstructorClausePair clause(Constructor constructor, Abstract.Definition.Arrow arrow, Expression expr) {
+    return new ConstructorClausePair(constructor, leaf(arrow, expr));
+  }
+
+  public static ConstructorClausePair clause(Constructor constructor, Expression expr) {
+    return new ConstructorClausePair(constructor, new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expr));
   }
 
   public static NamePattern match(boolean isExplicit, String name) {

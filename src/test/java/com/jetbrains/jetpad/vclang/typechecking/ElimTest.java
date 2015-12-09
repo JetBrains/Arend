@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
@@ -24,28 +25,22 @@ public class ElimTest {
         "\\static \\function P (a1 b1 c1 : Nat) (d1 : D a1 b1 c1) (a2 b2 c2 : Nat) (d2 : D a2 b2 c2) : \\Type0 <= \\elim d1\n" +
         "  | con2 _ _ _ _ => Nat -> Nat\n" +
         "  | con1 _ => Nat\n" +
-        "\\static \\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim r\n" +
-        "  | con1 s <= \\elim e\n" +
-        "    | con2 x y z t => x\n" +
-        "    | con1 _ => s\n" +
-        "  ;\n" +
-        "  | con2 x y z t <= \\elim e\n" +
-        "    | con1 s => x q\n" +
-        "    | con2 _ y z t => x");
+        "\\static \\function test (q w : Nat) (e : D w 0 q) (r : D q w 1) : P w 0 q e q w 1 r <= \\elim e, r\n" +
+        " | con2 x y z t, con1 s => x\n" +
+        " | con1 _, con1 s => s\n" +
+        " | con1 s, con2 x y z t => x q\n" +
+        " | con2 _ y z t, con2 x y z t => x");
   }
 
   @Test
   public void elim3() {
     typeCheckClass(
         "\\static \\data D (x : Nat -> Nat) (y : Nat) | con1 {Nat} Nat | con2 (Nat -> Nat) {a b c : Nat}\n" +
-        "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim r\n" +
-        "  | con1 s <= \\elim e\n" +
-        "    | con2 _ {y} {z} {t} => q t\n" +
-        "    | con1 {z} _ => z\n" +
-        "    ;\n" +
-        "  | con2 y <= \\elim e\n" +
-        "    | con1 s => y s\n" +
-        "    | con2 _ {a} {b} => y (q b)");
+        "\\static \\function test (q : Nat -> Nat) (e : D q 0) (r : D (\\lam x => x) (q 1)) : Nat <= \\elim e, r\n" +
+        "  | con2 _ {y} {z} {t}, con1 s => q t\n" +
+        "  | con1 {z} _, con1 s => z\n" +
+        "  | con1 s, con2 y => y s\n" +
+        "  | con2 _ {a} {b}, con2 y => y (q b)");
   }
 
   @Test
@@ -102,7 +97,7 @@ public class ElimTest {
     typeCheckClass(
         "\\static \\data E | A | B | C\n" +
         "\\static \\data D (x : E) | D A => d0 | D B => d1 | D _ => d2\n" +
-        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | d2 => 2", 2);
+        "\\static \\function test (x : E) (y : D x) : Nat <= \\elim y | d0 => 0 | d1 => 1 | d2 => 2", 3);
   }
 
   @Test
@@ -258,12 +253,12 @@ public class ElimTest {
         "\\static \\function f (x y : Nat) (p : Geq x y) : Nat <=\n" +
         "  \\case x, y, p\n" +
         "    | m, zero, EqBase <= zero \n" +
-        "    | zero, suc _, x <= \\elim x ;\n" +
+        "    | zero, suc _, _!\n" +
         "    | suc _, suc _, EqSuc q <= suc zero", 3);
   }
 
   @Test
-  public void testElim11() {
+  public void testElimOrderError() {
     typeCheckClass("\\static \\data \\infix 4\n" +
                    "(=<) (n m : Nat)\n" +
                    "  | (=<) zero m => le_z\n" +
@@ -281,5 +276,41 @@ public class ElimTest {
         "\\function (+) (x y : Nat) : Nat => \\elim x" +
         "  | zero => y\n" +
         "  | suc x => suc (x + y)", 1);
+  }
+
+  @Test
+  public void testAnyNoElimError() {
+    typeCheckClass(
+        "\\static \\data D Nat | D zero => d0\n" +
+            "\\function test (x : Nat) (d : D x) : Nat <= \\elim d\n" +
+            " | _! => 0", 1
+    );
+  }
+
+  @Test
+  public void testElimTranslationSubst() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef(
+      "\\function test (n m : Nat) : Nat <= \\elim m\n" +
+      " | zero => n\n" +
+      " | _ => n\n"
+    );
+    assertEquals(def.getElimTree(), branch(0, clause(Prelude.ZERO, Index(0)), clause(Prelude.SUC, Index(1))));
+  }
+
+  @Test
+  public void testElimOnIntervalError() {
+    typeCheckDef(
+        "\\function test (i : I) : Nat <= \\elim i\n" +
+        " | left => 0\n" +
+        " | right => 1\n"  +
+        " | _ => 0\n"
+    , 2);
+  }
+
+  @Test
+  public void emptyAfterAFew() {
+    typeCheckClass(
+        "\\static \\data D Nat | D zero => d\n" +
+        "\\static \\function test (x : Nat) (y : \\Pi(z : Nat) -> x = z) (a : D (suc x)) : Nat <= \\elim x\n");
   }
 }

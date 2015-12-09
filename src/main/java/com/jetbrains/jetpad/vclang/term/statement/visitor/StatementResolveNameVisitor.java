@@ -66,7 +66,8 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
         return null;
       }
       if (stat.getDefinition() instanceof Abstract.DataDefinition) {
-        for (Abstract.Constructor constructor : ((Abstract.DataDefinition) stat.getDefinition()).getConstructors()) {
+        Abstract.DataDefinition dataDefinition = (Abstract.DataDefinition) stat.getDefinition();
+        for (Abstract.Constructor constructor : dataDefinition.getConstructors()) {
           namespaceMember.namespace.addAbstractDefinition(constructor);
           myNamespace.addMember(namespaceMember.namespace.getMember(constructor.getName().name));
         }
@@ -132,6 +133,8 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
             } else {
               myErrorReporter.report(new TypeCheckingError("Definition '" + name.getName() + "' is not static", stat, null));
             }
+          } else if (member1.definition != null && member1.definition.getThisClass() == null) {
+            processNamespaceCommand(member1, export, remove, stat);
           }
         }
       }
@@ -142,6 +145,8 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
           if (parentStatement != null && parentStatement.isStatic()) {
             processNamespaceCommand(member1, export, remove, stat);
           }
+        } else if (member1.definition != null && member1.definition.getThisClass() == null) {
+          processNamespaceCommand(member1, export, remove, stat);
         }
       }
     }

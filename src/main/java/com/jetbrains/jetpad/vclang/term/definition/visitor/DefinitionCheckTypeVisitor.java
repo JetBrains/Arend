@@ -15,17 +15,22 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.SubstituteExpander;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
@@ -103,10 +108,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   }
 
   @Override
-  public FunctionDefinition visitFunction(Abstract.FunctionDefinition def, Void params) {
+  public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, Void params) {
     Name name = def.getName();
     Abstract.Definition.Arrow arrow = def.getArrow();
-    FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence(), arrow);
+    final FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence());
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -117,8 +122,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     */
 
     List<? extends Abstract.Argument> arguments = def.getArguments();
-    List<Argument> typedArguments = new ArrayList<>(arguments.size());
-    List<Binding> context = new ArrayList<>();
+    final List<Argument> typedArguments = new ArrayList<>(arguments.size());
+    final List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def, myNamespace);
     if (thisClass != null) {
@@ -284,31 +289,46 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     myNamespaceMember.definition = typedDef;
     Abstract.Expression term = def.getTerm();
+
     if (term != null) {
-      if (arrow == Abstract.Definition.Arrow.LEFT) {
-        visitor.setArgsStartCtxIndex(0);
-      }
-      CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
-
-      if (termResult != null) {
-        typedDef.setTerm(termResult.expression);
-        if (expectedType == null) {
-          typedDef.setResultType(termResult.type);
+      if (term instanceof Abstract.ElimExpression) {
+        typedDef.setElimTree(visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, arrow == Abstract.Definition.Arrow.LEFT ? (thisClass == null ? 0 : 1) : null, expectedType));
+      } else {
+        CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
+        if (termResult != null) {
+          typedDef.setElimTree(new LeafElimTreeNode(def.getArrow(), termResult.expression));
+          if (expectedType == null)
+            typedDef.setResultType(termResult.type);
         }
+      }
 
-        if (!termResult.expression.accept(new TerminationCheckVisitor(/* overriddenFunction == null ? */ typedDef /* : overriddenFunction */), null)) {
+      if (typedDef.getElimTree() != null) {
+        if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, numberOfVariables(typedDef.getArguments())), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", term, getNames(context)));
-          termResult = null;
+          typedDef.setElimTree(null);
         }
       }
 
-      if (termResult == null) {
-        typedDef.setTerm(null);
+      if (typedDef.getElimTree() != null) {
+        TypeCheckingError error = TypeCheckingElim.checkCoverage(def, context, typedDef.getElimTree());
+        if (error != null) {
+          myErrorReporter.report(error);
+          typedDef.setElimTree(null);
+        }
+      }
+
+      if (typedDef.getElimTree() != null) {
+        typedDef.hasErrors(false); // we need normalization here
+        TypeCheckingError error = TypeCheckingElim.checkConditions(def, context, typedDef.getElimTree());
+        if (error != null) {
+          myErrorReporter.report(error);
+          typedDef.setElimTree(null);
+        }
       }
     }
 
-    if (typedDef.getTerm() != null || typedDef.isAbstract()) {
-      typedDef.hasErrors(false);
+    if (typedDef.getElimTree() == null && arrow != null) {
+      typedDef.hasErrors(true);
     }
 
     typedDef.typeHasErrors(typedDef.getResultType() == null);
@@ -480,7 +500,113 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       dataDefinition.setUniverse(typedUniverse);
     }
 
+    context.clear();
+    if (def.getConditions() != null) {
+      typeCheckConditions(visitor, dataDefinition, def.getConditions());
+    }
+    if (dataDefinition.getConditions() != null) {
+      List<Condition> failedConditions = new ArrayList<>();
+      for (Condition condition : dataDefinition.getConditions()) {
+        try (Utils.CompleteContextSaver<Binding> ignore = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
+          expandConstructorContext(condition.getConstructor(), visitor.getLocalContext());
+          TypeCheckingError error = TypeCheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getArguments(), visitor.getLocalContext(), condition.getElimTree());
+          if (error != null) {
+            myErrorReporter.report(error);
+            failedConditions.add(condition);
+          }
+
+        }
+      }
+      dataDefinition.getConditions().removeAll(failedConditions);
+    }
+
     return dataDefinition;
+  }
+
+  private void typeCheckConditions(CheckTypeVisitor visitor, DataDefinition dataDefinition, Collection<? extends Abstract.Condition> conds) {
+    Map<Constructor, List<Abstract.Condition>> condMap = new HashMap<>();
+
+    for (Abstract.Condition cond : conds) {
+      Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName().name);
+      if (constructor == null) {
+        myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
+      }
+      if (!condMap.containsKey(constructor)) {
+        condMap.put(constructor, new ArrayList<Abstract.Condition>());
+      }
+      condMap.get(constructor).add(cond);
+    }
+    for (Constructor constructor : condMap.keySet()) {
+      try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getLocalContext())) {
+        final List<List<Pattern>> patterns = new ArrayList<>();
+        final List<Expression> expressions = new ArrayList<>();
+        expandConstructorContext(constructor, visitor.getLocalContext());
+
+        for (Abstract.Condition cond : condMap.get(constructor)) {
+          try (Utils.CompleteContextSaver<Binding> saver = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(splitArguments(constructor.getBaseType(), new ArrayList<TypeArgument>(), visitor.getLocalContext())));
+            List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), visitor.getLocalContext(), cond.getPatterns());
+            if (processedPatterns == null)
+              continue;
+
+            List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType, CheckTypeVisitor.PatternExpansionMode.CONDITION);
+
+            CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
+            if (result == null)
+              continue;
+
+            patterns.add(typedPatterns);
+            expressions.add(result.expression);
+          }
+        }
+
+        ArgsElimTreeExpander.ArgsExpansionResult treeExpansionResult = ArgsElimTreeExpander.expandElimTree(visitor.getLocalContext(), patterns);
+        final Map<LeafElimTreeNode, Integer> leaf2cond = new IdentityHashMap<>();
+        for (ArgsElimTreeExpander.ArgsBranch branch : treeExpansionResult.branches) {
+          leaf2cond.put(branch.leaf, branch.indicies.get(0));
+        }
+        int numberOfArguments = splitArguments(constructor.getArguments()).size();
+        List<Expression> subst = new ArrayList<>(numberOfArguments);
+        final List<Expression> exprs = new ArrayList<>(numberOfArguments);
+        for (int i = 0; i < numberOfArguments; i++) {
+          subst.add(Index(i));
+          exprs.add(Index(numberOfArguments - 1 - i));
+        }
+
+        //TODO: unite with typeCheckElim
+        SubstituteExpander.substituteExpand(visitor.getLocalContext(), subst, treeExpansionResult.tree, exprs, new SubstituteExpander.SubstituteExpansionProcessor() {
+          @Override
+          public void process(List<Expression> exprs, List<Binding> context, List<Expression> subst, LeafElimTreeNode leaf) {
+            leaf.setArrow(Abstract.Definition.Arrow.RIGHT);
+            List<Expression> matchedSubst = ((PatternMatchOKResult) patternMatchAll(patterns.get(leaf2cond.get(leaf)), exprs, null)).expressions;
+            Collections.reverse(matchedSubst);
+            leaf.setExpression(expressions.get(leaf2cond.get(leaf)).liftIndex(matchedSubst.size(), subst.size()).subst(matchedSubst, 0));
+          }
+        });
+
+        if (!treeExpansionResult.tree.accept(new TerminationCheckVisitor(constructor, numberOfVariables(constructor.getArguments()) + constructor.getNumberOfAllParameters()), null)) {
+          myErrorReporter.report(new TypeCheckingError("Termination check failed", dataDefinition, getNames(visitor.getLocalContext())));
+          continue;
+        }
+
+        dataDefinition.addCondition(new Condition(constructor, treeExpansionResult.tree));
+      }
+    }
+  }
+
+  private void expandConstructorContext(Constructor constructor, List<Binding> context) {
+    if (constructor.getPatterns() != null) {
+      for (TypeArgument arg : expandConstructorParameters(constructor, context)) {
+        Utils.pushArgument(context, arg);
+      }
+    } else {
+      for (TypeArgument arg : constructor.getDataType().getParameters()) {
+        Utils.pushArgument(context, arg);
+      }
+    }
+    for (TypeArgument arg : constructor.getArguments()) {
+      Utils.pushArgument(context, arg);
+    }
   }
 
   @Override
@@ -499,26 +625,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       List<? extends Abstract.Pattern> patterns = def.getPatterns();
       List<Pattern> typedPatterns = null;
       if (patterns != null) {
-        typedPatterns = new ArrayList<>();
 
-        ProcessImplicitResult processImplicitResult = processImplicit(patterns, dataDefinition.getParameters());
-        if (processImplicitResult.patterns == null) {
-          if (processImplicitResult.numExcessive != 0) {
-            myErrorReporter.report(new TypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", def, getNames(context)));
-          } else if (processImplicitResult.wrongImplicitPosition < typedPatterns.size()) {
-            myErrorReporter.report(new TypeCheckingError("Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition), getNames(context)));
-          } else {
-            myErrorReporter.report(new TypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, def, getNames(context)));
-          }
+        List<Abstract.Pattern> processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), context, patterns);
+        if (processedPatterns == null)
           return null;
-        }
-        List<Abstract.Pattern> processedPatterns = processImplicitResult.patterns;
-        for (int i = 0; i < processImplicitResult.patterns.size(); i++) {
-          CheckTypeVisitor.ExpandPatternResult result = visitor.expandPatternOn(processedPatterns.get(i), processedPatterns.size() - 1 - i);
-          if (result == null || result instanceof CheckTypeVisitor.ExpandPatternErrorResult)
-            return null;
-          typedPatterns.add(((CheckTypeVisitor.ExpandPatternOKResult) result).pattern);
-        }
+
+        typedPatterns = visitor.visitPatterns(processedPatterns, Collections.<Expression>emptyList(), CheckTypeVisitor.PatternExpansionMode.DATATYPE);
+        if (typedPatterns == null)
+          return null;
       }
 
       for (Abstract.TypeArgument argument : arguments) {
@@ -587,6 +701,23 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       dataDefinition.getParentNamespace().addDefinition(constructor);
       return constructor;
     }
+  }
+
+  private List<Abstract.Pattern> processImplicitPatterns(Abstract.SourceNode expression, List<TypeArgument> arguments, List<Binding> context, List<? extends Abstract.Pattern> patterns) {
+    List<Abstract.Pattern> processedPatterns = null;
+    ProcessImplicitResult processImplicitResult = processImplicit(patterns, arguments);
+    if (processImplicitResult.patterns == null) {
+      if (processImplicitResult.numExcessive != 0) {
+        myErrorReporter.report(new TypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", expression, getNames(context)));
+      } else if (processImplicitResult.wrongImplicitPosition < patterns.size()) {
+        myErrorReporter.report(new TypeCheckingError("Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition), getNames(context)));
+      } else {
+        myErrorReporter.report(new TypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, expression, getNames(context)));
+      }
+    } else {
+      processedPatterns = processImplicitResult.patterns;
+    }
+    return processedPatterns;
   }
 
   private void typeCheckStatements(ClassDefinition classDefinition, Collection<? extends Abstract.Statement> statements, Namespace namespace) {

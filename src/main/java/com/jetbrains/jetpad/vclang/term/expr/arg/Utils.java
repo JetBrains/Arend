@@ -80,9 +80,30 @@ public class Utils {
     }
   }
 
-  public static void splitArguments(List<? extends TypeArgument> arguments, List<TypeArgument> result) {
+  public static List<TypeArgument> splitArguments(List<? extends TypeArgument> arguments) {
+    List<TypeArgument> result = new ArrayList<>();
     for (TypeArgument argument : arguments) {
       addArgs(argument, result);
+    }
+    return result;
+  }
+
+  public static class MultiContextSaver implements AutoCloseable {
+    private final List[] myContexts;
+    private final int[] myOldContextSizes;
+
+    public MultiContextSaver(List... contexts) {
+      myContexts = contexts;
+      myOldContextSizes = new int[contexts.length];
+      for (int i = 0; i < contexts.length; i++) {
+        myOldContextSizes[i] = contexts[i].size();
+      }
+    }
+
+    @Override
+    public void close() {
+      for (int i = 0; i < myContexts.length; i++)
+        trimToSize(myContexts[i], myOldContextSizes[i]);
     }
   }
 
@@ -128,8 +149,15 @@ public class Utils {
 
   public static List<Expression> getTypes(List<TypeArgument> args) {
     List<Expression> result = new ArrayList<>();
-    for (TypeArgument arg : args)
-      result.add(arg.getType());
+    for (TypeArgument arg : args) {
+      if (arg instanceof TelescopeArgument) {
+        for (int i = 0; i < ((TelescopeArgument) arg).getNames().size(); i++) {
+          result.add(arg.getType().liftIndex(0, i));
+        }
+      } else {
+        result.add(arg.getType());
+      }
+    }
     return result;
   }
 
@@ -159,7 +187,7 @@ public class Utils {
       type = type.normalize(NormalizeVisitor.Mode.WHNF, ctx);
       while (type instanceof PiExpression) {
         PiExpression pi = (PiExpression) type;
-        splitArguments(pi.getArguments(), result);
+        result.addAll(splitArguments(pi.getArguments()));
         for (TypeArgument arg : pi.getArguments()) {
           pushArgument(ctx, arg);
         }

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getTypes;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class Utils {
@@ -36,18 +37,6 @@ public class Utils {
     for (Abstract.Pattern pattern : patterns)
       result += getNumArguments(pattern);
     return result;
-  }
-
-  public static void collectPatternNames(Abstract.Pattern pattern, List<String> names) {
-    if (pattern instanceof Abstract.NamePattern) {
-      names.add(((Abstract.NamePattern) pattern).getName());
-    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
-      names.add(null);
-    } else if (pattern instanceof Abstract.ConstructorPattern) {
-      for (Abstract.Pattern nestedPattern : ((Abstract.ConstructorPattern) pattern).getPatterns()) {
-        collectPatternNames(nestedPattern, names);
-      }
-    }
   }
 
   public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names) {
@@ -207,75 +196,8 @@ public class Utils {
     return maybe != null ? maybe : new PatternMatchOKResult(result);
   }
 
-  public static List<Integer> patternMultipleMatch(List<Pattern> patterns, Expression expr, List<Binding> ctx) {
-    List<Integer> result = new ArrayList<>();
-    boolean hasConstructorPattern = false;
-    for (int i = 0; i < patterns.size(); i++) {
-      if (patterns.get(i) instanceof NamePattern) {
-        result.add(i);
-      } else if (patterns.get(i) instanceof ConstructorPattern) {
-        hasConstructorPattern = true;
-      }
-    }
-    if (!hasConstructorPattern)
-      return result;
-
-    List<Expression> constructorArgs = new ArrayList<>();
-    expr = expr.normalize(NormalizeVisitor.Mode.WHNF, ctx).getFunction(constructorArgs);
-    Collections.reverse(constructorArgs);
-    if (!(expr instanceof DefCallExpression && ((DefCallExpression) expr).getDefinition() instanceof Constructor)) {
-      return new ArrayList<>();
-    }
-
-    List<Integer> goodConstructorPatternsIdxs = new ArrayList<>();
-    List<List<Pattern>> goodConstructorNestedPatterns = new ArrayList<>();
-    for (int i = 0; i < constructorArgs.size(); i++)
-      goodConstructorNestedPatterns.add(new ArrayList<Pattern>());
-
-    for (int i = 0; i < patterns.size(); i++) {
-      if (patterns.get(i) instanceof ConstructorPattern) {
-        if (((ConstructorPattern) patterns.get(i)).getConstructor() == ((DefCallExpression) expr).getDefinition()) {
-          goodConstructorPatternsIdxs.add(i);
-          for (int j = 0; j < constructorArgs.size(); j++) {
-            goodConstructorNestedPatterns.get(j).add(((ConstructorPattern) patterns.get(i)).getPatterns().get(j));
-          }
-        }
-      } else if (patterns.get(i) instanceof AnyConstructorPattern) {
-        result.add(i);
-      }
-    }
-
-    result.addAll(patternMultipleMatch(goodConstructorNestedPatterns, constructorArgs, ctx, goodConstructorPatternsIdxs));
-    Collections.sort(result);
-    return result;
-  }
-
-  public static List<Integer> patternMultipleMatch(List<List<Pattern>> patterns, List<Expression> expressions, List<Binding> ctx, int numPatterns) {
-    List<Integer> origIndicies = new ArrayList<>();
-    for (int i = 0; i < numPatterns; i++) {
-      origIndicies.add(i);
-    }
-    return patternMultipleMatch(patterns, expressions, ctx, origIndicies);
-  }
-
-  public static List<Integer> patternMultipleMatch(List<List<Pattern>> patterns, List<Expression> expressions, List<Binding> ctx, List<Integer> origIndicies) {
-    for (int i = 0; i < expressions.size(); i++) {
-      List<Integer> goodPatterns = patternMultipleMatch(patterns.get(i), expressions.get(i), ctx);
-      for (int j = origIndicies.size() - 1; j >= 0; j--) {
-        if (!goodPatterns.contains(j)) {
-          origIndicies.remove(j);
-          for (List<Pattern> nestedPatterns : patterns) {
-            nestedPatterns.remove(j);
-          }
-        }
-      }
-    }
-
-    return origIndicies;
-  }
-
   public static List<TypeArgument> expandConstructorParameters(Constructor constructor, List<Binding> context) {
-    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters(), context);
+    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), context);
 
     List<TypeArgument> result = new ArrayList<>();
     for (PatternExpansion.Result nestedResult : results) {
@@ -287,7 +209,7 @@ public class Utils {
   }
 
   public static List<ArgumentExpression> constructorPatternsToExpressions(Constructor constructor) {
-    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), constructor.getDataType().getParameters(), new ArrayList<Binding>());
+    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), new ArrayList<Binding>());
 
     List<ArgumentExpression> result = new ArrayList<>();
     int shift = numberOfVariables(constructor.getArguments());
@@ -300,10 +222,6 @@ public class Utils {
     Collections.reverse(result);
 
     return result;
-  }
-
-  public static ArgumentExpression patternToExpression(Pattern pattern) {
-    return PatternExpansion.expandPattern(pattern);
   }
 
   public static Expression expandPatternSubstitute(Pattern pattern, int varIndex, Expression what, Expression where) {

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ParserTestCase {
   public static VcgrammarParser parse(final ErrorReporter errorReporter, String text) {
@@ -62,7 +63,9 @@ public class ParserTestCase {
   public static Concrete.ClassDefinition parseClass(String name, String text, int errors) {
     RootModule.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
-    List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(parse(errorReporter, text).statements());
+    VcgrammarParser.StatementsContext tree = parse(errorReporter, text).statements();
+    assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+    List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, name, statements);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {

@@ -4,11 +4,13 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.Clause;
-import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
+import org.omg.PortableInterceptor.SUCCESSFUL;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,34 +32,48 @@ public class NormalizationTest {
   // \function nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat <= elim x | zero => z | suc x' => s x' (nelim z s x')
   private final FunctionDefinition nelim;
 
+  private DataDefinition bdList;
+  private Constructor bdNil;
+  private Constructor bdCons;
+  private Constructor bdSnoc;
+
+
   public NormalizationTest() {
     testNS = new Namespace("test");
-    List<Clause> plusClauses = new ArrayList<>(2);
-    ElimExpression plusTerm = Elim(Index(1), plusClauses);
-    plus = new FunctionDefinition(testNS, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, plusTerm);
+    BranchElimTreeNode plusElimTree = branch(1);
+    plus = new FunctionDefinition(testNS, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), plusElimTree);
     testNS.addDefinition(plus);
-    plusClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(0), plusTerm));
-    plusClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Suc(BinOp(Index(0), plus, Index(1))), plusTerm));
+    plusElimTree.addClause(Prelude.ZERO, leaf(Index(0)));
+    plusElimTree.addClause(Prelude.SUC, leaf(Suc(BinOp(Index(0), plus, Index(1)))));
 
-    List<Clause> mulClauses = new ArrayList<>(2);
-    ElimExpression mulTerm = Elim(Index(1), mulClauses);
-    mul = new FunctionDefinition(testNS, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, mulTerm);
+    BranchElimTreeNode mulElimTree = branch(1);
+    mul = new FunctionDefinition(testNS, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), mulElimTree);
     testNS.addDefinition(mul);
-    mulClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Zero(), mulTerm));
-    mulClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0))), mulTerm));
+    mulElimTree.addClause(Prelude.ZERO, leaf(Zero()));
+    mulElimTree.addClause(Prelude.SUC, leaf(BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0)))));
 
-    List<Clause> facClauses = new ArrayList<>(2);
-    ElimExpression facTerm = Elim(Index(0), facClauses);
-    fac = new FunctionDefinition(testNS, new Name("fac"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, facTerm);
+    BranchElimTreeNode facElimTree = branch(0);
+    fac = new FunctionDefinition(testNS, new Name("fac"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x"), Nat())), Nat(), facElimTree);
     testNS.addDefinition(fac);
-    facClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Suc(Zero()), facTerm)); facClauses.add(new Clause(match(Prelude.SUC, match("x'")), Abstract.Definition.Arrow.RIGHT, BinOp(Suc(Index(0)), mul, Apps(FunCall(fac), Index(0))), facTerm));
+    facElimTree.addClause(Prelude.ZERO, leaf(Suc(Zero())));
+    facElimTree.addClause(Prelude.SUC, leaf(BinOp(Suc(Index(0)), mul, Apps(FunCall(fac), Index(0)))));
 
-    List<Clause> nelimClauses = new ArrayList<>(2);
-    ElimExpression nelimTerm = Elim(Index(0), nelimClauses);
-    nelim = new FunctionDefinition(testNS, new Name("nelim"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, nelimTerm);
+    BranchElimTreeNode nelimElimTree = branch(0);
+    nelim = new FunctionDefinition(testNS, new Name("nelim"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), nelimElimTree);
     testNS.addDefinition(nelim);
-    nelimClauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Index(1), nelimTerm));
-    nelimClauses.add(new Clause(match(Prelude.SUC, match("x")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0), Apps(FunCall(nelim), Index(2), Index(1), Index(0))), nelimTerm));
+    nelimElimTree.addClause(Prelude.ZERO, leaf(Index(1)));
+    nelimElimTree.addClause(Prelude.SUC, leaf(Apps(Index(1), Index(0), Apps(FunCall(nelim), Index(2), Index(1), Index(0)))));
+  }
+
+  private void initializeBDList() {
+    ClassDefinition classDefinition = typeCheckClass(
+        "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A" +
+            "\\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
+    );
+    bdList = (DataDefinition) classDefinition.getResolvedName().toNamespace().getDefinition("BD-list");
+    bdNil = bdList.getConstructor("nil");
+    bdCons = bdList.getConstructor("cons");
+    bdSnoc = bdList.getConstructor("snoc");
   }
 
   @Test
@@ -196,11 +212,8 @@ public class NormalizationTest {
   @Test
   public void normalizeLetElimStuck() {
     // normalize (\let | x (y : N) : N <= \elim y | zero => zero | succ _ => zero \in x <1>) = the same
-    List<Clause> clauses = new ArrayList<>();
-    ElimExpression elim = Elim(Index(0), clauses);
-    clauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
-    clauses.add(new Clause(match(Prelude.SUC, match(null)), Abstract.Definition.Arrow.RIGHT, Zero(), elim));
-    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), Abstract.Definition.Arrow.LEFT, elim)),
+    ElimTreeNode elimTree = branch(0, clause(Prelude.ZERO, Zero()), clause(Prelude.SUC, Zero()));
+    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), elimTree)),
         Apps(Index(0), Index(1))), new ArrayList<Binding>(Collections.singleton(new TypedBinding("n", Nat()))));
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
@@ -208,11 +221,11 @@ public class NormalizationTest {
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \Type2 <= \elim y | \Type0 => \Type1 | succ _ => \Type1 \in x zero) = \Type0
-    List<Clause> clauses = new ArrayList<>();
-    ElimExpression elim = Elim(Index(0), clauses);
-    clauses.add(new Clause(match(Prelude.ZERO), Abstract.Definition.Arrow.RIGHT, Universe(0), elim));
-    clauses.add(new Clause(match(Prelude.SUC, match(null)), Abstract.Definition.Arrow.RIGHT, Universe(1), elim));
-    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Universe(2), Abstract.Definition.Arrow.LEFT, elim)), Apps(Index(0), Zero())));
+    ElimTreeNode elimTree = branch(0,
+        clause(Prelude.ZERO, Universe(0)),
+        clause(Prelude.SUC, Universe(1))
+        );
+    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Universe(2), elimTree)), Apps(Index(0), Zero())));
     assertEquals(Universe(0), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
@@ -230,5 +243,27 @@ public class NormalizationTest {
     List<Binding> ctx = new ArrayList<>();
     Let(lets(let("x", lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Index(0)).normalize(NormalizeVisitor.Mode.NF, ctx);
     assertTrue(ctx.isEmpty());
+  }
+
+  @Test
+  public void testConditionNormalization() {
+    typeCheckClass(
+        "\\static \\data Z | pos Nat | neg Nat \\with | pos zero => neg 0\n" +
+            "\\static \\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
+    );
+  }
+
+  @Test
+  public void testConCallNormFull() {
+    initializeBDList();
+    Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil, Nat()), Zero());
+    assertEquals(Apps(ConCall(bdCons, Nat()), Zero(), ConCall(bdNil, Nat())), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+  }
+
+  @Test
+  public void testConCallPartial() {
+    initializeBDList();
+    Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil));
+    assertEquals(Lam(lamArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 }

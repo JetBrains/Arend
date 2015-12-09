@@ -5,11 +5,16 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.List;
 import java.util.Map;
 
-public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> {
+public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
   private final Definition myDef;
 
   public FindDefCallVisitor(Definition def) {
@@ -103,14 +108,6 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> {
   }
 
   @Override
-  public Boolean visitElim(ElimExpression expr, Void params) {
-    for (Clause clause : expr.getClauses()) {
-      if (clause.getExpression().accept(this, null)) return true;
-    }
-    return false;
-  }
-
-  @Override
   public Boolean visitProj(ProjExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
   }
@@ -138,6 +135,25 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> {
   public boolean visitLetClause(LetClause clause) {
     if (visitArguments(clause.getArguments())) return true;
     if (clause.getResultType() != null && clause.getResultType().accept(this, null)) return true;
-    return clause.getTerm().accept(this, null);
+    return clause.getElimTree().accept(this, null);
+  }
+
+  @Override
+  public Boolean visitBranch(BranchElimTreeNode branchNode, Void params) {
+    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
+      if (clause.getChild().accept(this, null))
+        return true;
+    }
+    return false;
+  }
+
+  @Override
+  public Boolean visitLeaf(LeafElimTreeNode leafNode, Void params) {
+    return leafNode.getExpression().accept(this, null);
+  }
+
+  @Override
+  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
+    return false;
   }
 }

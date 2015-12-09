@@ -7,16 +7,44 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMultipleMatch;
 
-public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression> {
+public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression> implements ElimTreeNodeVisitor<List<Expression>, LeafElimTreeNode> {
+  @Override
+  public LeafElimTreeNode visitBranch(BranchElimTreeNode branchNode, List<Expression> subst) {
+    List<Expression> arguments = new ArrayList<>();
+    Expression func = subst.get(branchNode.getIndex()).normalize(Mode.WHNF, myContext).getFunction(arguments);
+    if (func instanceof ConCallExpression) {
+      ElimTreeNode child = branchNode.getChild(((ConCallExpression) func).getDefinition());
+      if (child == null)
+        return null;
+      subst.remove(branchNode.getIndex());
+      subst.addAll(branchNode.getIndex(), arguments);
+      return child.accept(this, subst);
+    }
+    // @
+    ElimTreeNode child = branchNode.getChild(null);
+    if (child != null)
+      return child.accept(this, subst);
+    return null;
+  }
+
+  @Override
+  public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, List<Expression> subst) {
+    return leafNode;
+  }
+
+  @Override
+  public LeafElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, List<Expression> params) {
+    return null;
+  }
+
   public enum Mode { WHNF, NF, TOP }
 
   private final List<Binding> myContext;
@@ -166,30 +194,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     if (defCallExpr.getDefinition() instanceof Function) {
       return visitFunctionCall((Function) defCallExpr.getDefinition(), defCallExpr, args, mode);
+    } else if (defCallExpr instanceof ConCallExpression) {
+      return visitConstructorCall((ConCallExpression) defCallExpr, args, mode);
     }
 
     if (mode == Mode.TOP) return null;
 
     if (defCallExpr instanceof ClassCallExpression || defCallExpr instanceof FieldCallExpression) {
       return applyDefCall(defCallExpr, args, mode);
-    }
-
-    if (defCallExpr instanceof ConCallExpression) {
-      ConCallExpression conCallExpr = (ConCallExpression) defCallExpr;
-      int take = conCallExpr.getDefinition().getDataType().getNumberOfAllParameters() - conCallExpr.getParameters().size();
-      if (take > 0) {
-        int to = args.size() - take;
-        if (to < 0) {
-          to = 0;
-        }
-        List<Expression> parameters = new ArrayList<>(conCallExpr.getParameters().size() + args.size() - to);
-        parameters.addAll(conCallExpr.getParameters());
-        for (int i = args.size() - 1; i >= to; --i) {
-          parameters.add(args.get(i).getExpression());
-        }
-        args = args.subList(0, to);
-        defCallExpr = ConCall(conCallExpr.getDefinition(), parameters);
-      }
     }
 
     List<TypeArgument> arguments;
@@ -202,37 +214,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         arguments.add(TypeArg(ClassCall(dataDefinition.getThisClass())));
         arguments.addAll(dataDefinition.getParameters());
       }
-    } else
-    if (defCallExpr instanceof ConCallExpression) {
-      List<TypeArgument> arguments1 = ((Constructor) defCallExpr.getDefinition()).getArguments();
-      List<Expression> parameters = ((ConCallExpression) defCallExpr).getParameters();
-      if (!parameters.isEmpty()) {
-        List<Expression> substExprs = new ArrayList<>(parameters);
-        Collections.reverse(substExprs);
-        arguments = new ArrayList<>(arguments1.size());
-        for (int j = 0; j < arguments1.size(); ++j) {
-          int num;
-          if (arguments1.get(j) instanceof TelescopeArgument) {
-            arguments.add(Tele(arguments1.get(j).getExplicit(), ((TelescopeArgument) arguments1.get(j)).getNames(), arguments1.get(j).getType().subst(substExprs, 0)));
-            num = ((TelescopeArgument) arguments1.get(j)).getNames().size();
-          } else {
-            arguments.add(TypeArg(arguments1.get(j).getExplicit(), arguments1.get(j).getType().subst(substExprs, j)));
-            num = 1;
-          }
-
-          for (int i = 0; i < substExprs.size(); ++i) {
-            substExprs.set(i, substExprs.get(i).liftIndex(0, num));
-          }
-        }
-      } else {
-        arguments = arguments1;
-      }
     } else {
       throw new IllegalStateException();
     }
 
-    List<TypeArgument> splitArguments = new ArrayList<>();
-    splitArguments(arguments, splitArguments);
+    List<TypeArgument> splitArguments = splitArguments(arguments);
     if (mode == Mode.WHNF && splitArguments.size() >= args.size()) {
       return applyDefCall(defCallExpr, args, mode);
     }
@@ -254,13 +240,76 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return addLambdas(arguments, args.size(), result);
   }
 
+  private Expression visitConstructorCall(ConCallExpression conCallExpression, List<ArgumentExpression> args, Mode mode) {
+    int take = conCallExpression.getDefinition().getNumberOfAllParameters() - conCallExpression.getParameters().size();
+    if (take > 0) {
+      int to = args.size() - take;
+      if (to < 0) {
+        to = 0;
+      }
+      List<Expression> parameters = new ArrayList<>(conCallExpression.getParameters().size() + args.size() - to);
+      parameters.addAll(conCallExpression.getParameters());
+      for (int i = args.size() - 1; i >= to; --i) {
+        parameters.add(args.get(i).getExpression());
+      }
+      args = args.subList(0, to);
+      conCallExpression = ConCall(conCallExpression.getDefinition(), parameters);
+    }
+    // TODO: what if the list of parameters is still incomplete?
+
+    List<TypeArgument> origArgs = conCallExpression.getDefinition().getArguments();
+
+    List<TypeArgument> arguments;
+    if (!conCallExpression.getParameters().isEmpty()) {
+      List<Expression> substExprs = new ArrayList<>(conCallExpression.getParameters());
+      Collections.reverse(substExprs);
+      arguments = new ArrayList<>(origArgs.size());
+      for (int j = 0; j < conCallExpression.getDefinition().getArguments().size(); ++j) {
+        int num;
+        if (origArgs.get(j) instanceof TelescopeArgument) {
+          arguments.add(Tele(origArgs.get(j).getExplicit(), ((TelescopeArgument) origArgs.get(j)).getNames(), origArgs.get(j).getType().subst(substExprs, 0)));
+          num = ((TelescopeArgument) origArgs.get(j)).getNames().size();
+        } else {
+          arguments.add(TypeArg(origArgs.get(j).getExplicit(), origArgs.get(j).getType().subst(substExprs, j)));
+          num = 1;
+        }
+
+        for (int i = 0; i < substExprs.size(); ++i) {
+          substExprs.set(i, substExprs.get(i).liftIndex(0, num));
+        }
+      }
+    } else {
+      arguments = origArgs;
+    }
+
+    int numberOfArgs = numberOfVariables(arguments);
+
+    if (mode == Mode.WHNF && numberOfArgs > args.size()) {
+      return applyDefCall(conCallExpression, args, mode);
+    }
+
+    List<Expression> args2 = completeArgs(args, numberOfArgs, numberOfArgs);
+
+    if (conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()) == null) {
+      return applyDefCall(conCallExpression, args, mode);
+    }
+
+    LeafElimTreeNode leaf = conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()).getElimTree().accept(this, args2);
+    if (leaf == null)
+      return applyDefCall(conCallExpression, args, mode);
+    Expression result = leaf.getExpression().liftIndex(0, numberOfArgs - args.size()).subst(args2, 0);
+
+    result = bindExcessiveArgs(args, result, arguments, numberOfArgs, numberOfArgs);
+
+    return mode == Mode.TOP ? result : result.accept(this, mode);
+  }
+
   private Expression visitFunctionCall(Function func, Expression defCallExpr, List<ArgumentExpression> args, Mode mode) {
     if (func instanceof FunctionDefinition && func.equals(Prelude.COERCE) && args.size() == 3
       && Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0)).accept(this, Mode.NF).liftIndex(0, -1) != null) {
       return mode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this, mode);
     }
 
-    Expression result = func.getTerm();
     List<TypeArgument> args1 = new ArrayList<>();
     ClassDefinition thisClass = func.getThisClass();
     if (thisClass != null) {
@@ -268,54 +317,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     splitArguments(getFunctionType(func), args1, myContext);
     int numberOfArgs = numberOfVariables(args1);
-    if (mode == Mode.WHNF && numberOfArgs > args.size() || result == null) {
+    if (mode == Mode.WHNF && numberOfArgs > args.size() || func.getElimTree() == null) {
       return applyDefCall(defCallExpr, args, mode);
     }
 
-    List<Expression> args2 = new ArrayList<>(numberOfArgs);
     int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (thisClass != null ? 1 : 0);
-    for (int i = numberOfArgs - numberOfSubstArgs; i < numberOfArgs - args.size(); ++i) {
-      args2.add(Index(i));
-    }
-    for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()); i < args.size(); ++i) {
-      args2.add(args.get(i).getExpression().liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0));
-    }
+    List<Expression> args2 = completeArgs(args, numberOfArgs, numberOfSubstArgs);
 
-    Abstract.Definition.Arrow arrow = func.getArrow();
-    while (result instanceof ElimExpression) {
-      List<Expression> exprs = new ArrayList<>();
-      List<List<Pattern>> patterns = new ArrayList<>();
-      for (Expression expr : ((ElimExpression) result).getExpressions()) {
-        exprs.add(expr.subst(args2, 0));
-        patterns.add(new ArrayList<Pattern>());
-      }
-      for (Clause clause : ((ElimExpression) result).getClauses()) {
-        for (int i = 0; i < clause.getPatterns().size(); i++)
-          patterns.get(i).add(clause.getPatterns().get(i));
-      }
-      List<Integer> validClauses = patternMultipleMatch(patterns, exprs, myContext, ((ElimExpression) result).getClauses().size());
-      if (validClauses.isEmpty() && func == Prelude.AT && ((ElimExpression) result).getClauses().size() == 3) {
-        validClauses = Collections.singletonList(2);
-      }
-      if (!validClauses.isEmpty()) {
-        Clause clauseOK = ((ElimExpression) result).getClauses().get(validClauses.get(0));
-        for (int i = 0; i < ((ElimExpression) result).getExpressions().size(); i++) {
-          Utils.PatternMatchOKResult matchOKResult = (Utils.PatternMatchOKResult) clauseOK.getPatterns().get(i).match(exprs.get(i), myContext);
-
-          int var = ((ElimExpression) result).getExpressions().get(i).getIndex();
-          args2.remove(var);
-          Collections.reverse(matchOKResult.expressions);
-          args2.addAll(var, matchOKResult.expressions);
-        }
-        result = clauseOK.getExpression();
-        arrow = clauseOK.getArrow();
-        continue;
-      }
+    LeafElimTreeNode leaf = func.getElimTree().accept(this, args2);
+    if (leaf == null)
       return applyDefCall(defCallExpr, args, mode);
-    }
-
-    result = result.liftIndex(0, numberOfArgs > args.size() ? numberOfArgs - args.size() : 0).subst(args2, 0);
-    if (arrow == Abstract.Definition.Arrow.LEFT) {
+    Expression result = leaf.getExpression().liftIndex(0, numberOfSubstArgs > args.size() ? numberOfSubstArgs - args.size() : 0).subst(args2, 0);
+    if (leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
       try (ContextSaver ignore = new ContextSaver(myContext)) {
         for (TypeArgument arg : args1) {
           pushArgument(myContext, arg);
@@ -327,6 +340,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
+    result = bindExcessiveArgs(args, result, args1, numberOfArgs, numberOfSubstArgs);
+
+    return mode == Mode.TOP ? result : result.accept(this, mode);
+  }
+
+  private Expression bindExcessiveArgs(List<ArgumentExpression> args, Expression result, List<TypeArgument> argTypes, int numberOfArgs, int numberOfSubstArgs) {
     for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()) - 1; i >= 0; --i) {
       result = Apps(result, args.get(i));
     }
@@ -335,10 +354,20 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       result = Apps(result, Index(i));
     }
     if (args.size() < numberOfArgs) {
-      result = addLambdas(args1, args.size(), result);
+      result = addLambdas(argTypes, args.size(), result);
     }
+    return result;
+  }
 
-    return mode == Mode.TOP ? result : result.accept(this, mode);
+  private List<Expression> completeArgs(List<ArgumentExpression> args, int numberOfArgs, int numberOfSubstArgs) {
+    List<Expression> args2 = new ArrayList<>(numberOfSubstArgs);
+    for (int i = numberOfArgs - numberOfSubstArgs; i < numberOfArgs - args.size(); ++i) {
+      args2.add(Index(i));
+    }
+    for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()); i < args.size(); ++i) {
+      args2.add(args.get(i).getExpression().liftIndex(0, numberOfSubstArgs > args.size() ? numberOfSubstArgs - args.size() : 0));
+    }
+    return args2;
   }
 
   @Override
@@ -373,7 +402,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLam(LamExpression expr, Mode mode) {
-    try (ContextSaver saver = new ContextSaver(myContext)) {
+    try (ContextSaver ignore = new ContextSaver(myContext)) {
       return mode == Mode.TOP ? null : mode == Mode.NF ? Lam(visitArguments(expr.getArguments(), mode), expr.getBody().accept(this, mode)) : expr;
     }
   }
@@ -410,7 +439,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitPi(PiExpression expr, Mode mode) {
-    try (ContextSaver saver = new ContextSaver(myContext)) {
+    try (ContextSaver ignore = new ContextSaver(myContext)) {
       return mode == Mode.TOP ? null : mode == Mode.NF ? Pi(visitTypeArguments(expr.getArguments(), mode), expr.getCodomain().accept(this, mode)) : expr;
     }
   }
@@ -443,14 +472,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Mode mode) {
-    try (ContextSaver saver = new ContextSaver(myContext)) {
+    try (ContextSaver ignore = new ContextSaver(myContext)) {
       return mode == Mode.TOP ? null : mode == Mode.NF ? Sigma(visitTypeArguments(expr.getArguments(), mode)) : expr;
     }
-  }
-
-  @Override
-  public Expression visitElim(ElimExpression expr, Mode mode) {
-    throw new IllegalStateException();
   }
 
   @Override

@@ -7,14 +7,12 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.expr.Clause;
-import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
@@ -98,40 +96,38 @@ public class LiftTest {
 
   @Test
   public void liftElim() {
-    // lift (\elim <1> | con a b c => <2> <3> <4>, 0, 1) = \elim <2> | con a b c => <3> <4> <5>
+    // lift (\elim <1> | con a b c => <0> <2> <5>, 0, 1) = \elim <2> | con a b c => <1> <3> <6>
     DataDefinition def = new DataDefinition(null, new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
     Constructor con = new Constructor(new Namespace(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE,  new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
     def.addConstructor(con);
 
-    List<Clause> clauses1 = new ArrayList<>(1);
-    ElimExpression expr1 = Elim(Index(1), clauses1);
-    clauses1.add(new Clause(match(con, match("a"), match("b"), match("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(4)), expr1));
+    ElimTreeNode node1 = branch(1,
+        clause(con, Apps(Index(0), Index(2), Index(5)))
+    );
 
+    ElimTreeNode node2 = branch(2,
+        clause(con, Apps(Index(1), Index(3), Index(6)))
+    );
 
-    List<Clause> clauses2 = new ArrayList<>(1);
-    ElimExpression expr2 = Elim(Index(2), clauses2);
-    clauses2.add(new Clause(match(con, match("a"), match("b"), match("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(3), Index(4), Index(5)), expr2));
-
-
-    assertEquals(expr2, expr1.liftIndex(0, 1));
+    assertEquals(node2, node1.accept(new LiftIndexVisitor(1), 0));
   }
 
   @Test
   public void liftElim2() {
-    // lift (\elim <1> | con a b c => <2> <3> <5>, 2, 1) = \elim <1> | con a b c => <2> <3> <6>
+    // lift (\elim <1> | con a b c => <0> <2> <5>, 2, 1) = \elim <1> | con a b c => <0> <2> <6>
     DataDefinition def = new DataDefinition(null, new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), new ArrayList<TypeArgument>());
     Constructor con = new Constructor(new Namespace(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0), args(Tele(vars("a", "b", "c"), Nat())), def);
     def.addConstructor(con);
 
-    List<Clause> clauses1 = new ArrayList<>(1);
-    ElimExpression expr1 = Elim(Index(1), clauses1);
-    clauses1.add(new Clause(match(con, match("a"), match("b"), match("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(5)), expr1));
+    ElimTreeNode node1 = branch(1,
+        clause(con, Apps(Index(0), Index(2), Index(5)))
+    );
 
-    List<Clause> clauses2 = new ArrayList<>(1);
-    ElimExpression expr2 = Elim(Index(1), clauses2);
-    clauses2.add(new Clause(match(con, match("a"), match("b"), match("c")), Abstract.Definition.Arrow.RIGHT, Apps(Index(2), Index(3), Index(6)), expr2));
+    ElimTreeNode node2 = branch(1,
+        clause(con, Apps(Index(0), Index(2), Index(6)))
+    );
 
-    assertEquals(expr2, expr1.liftIndex(2, 1));
+    assertEquals(node2, node1.accept(new LiftIndexVisitor(1), 2));
   }
 
   @Test

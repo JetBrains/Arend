@@ -4,11 +4,16 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.List;
 import java.util.Map;
 
-public class FindHoleVisitor extends BaseExpressionVisitor<Void, InferHoleExpression> {
+public class FindHoleVisitor extends BaseExpressionVisitor<Void, InferHoleExpression> implements ElimTreeNodeVisitor<Void, InferHoleExpression> {
   @Override
   public InferHoleExpression visitApp(AppExpression expr, Void params) {
     InferHoleExpression result = expr.getFunction().accept(this, null);
@@ -95,15 +100,6 @@ public class FindHoleVisitor extends BaseExpressionVisitor<Void, InferHoleExpres
     return visitArguments(expr.getArguments());
   }
 
-  @Override
-  public InferHoleExpression visitElim(ElimExpression expr, Void params) {
-    for (Clause clause : expr.getClauses()) {
-      InferHoleExpression result = clause.getExpression().accept(this, null);
-      if (result != null) return result;
-    }
-    return null;
-  }
-
   private InferHoleExpression visitArguments(List<? extends Argument> arguments) {
     InferHoleExpression result;
     for (Argument argument : arguments) {
@@ -140,6 +136,25 @@ public class FindHoleVisitor extends BaseExpressionVisitor<Void, InferHoleExpres
     if (result != null) return result;
     if (clause.getType() != null) result = clause.getType().accept(this, null);
     if (result != null) return result;
-    return clause.getTerm().accept(this, null);
+    return clause.getElimTree().accept(this, null);
+  }
+
+  @Override
+  public InferHoleExpression visitBranch(BranchElimTreeNode branchNode, Void params) {
+    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
+      InferHoleExpression result = clause.getChild().accept(this, null);
+      if (result != null) return result;
+    }
+    return null;
+  }
+
+  @Override
+  public InferHoleExpression visitLeaf(LeafElimTreeNode leafNode, Void params) {
+    return leafNode.getExpression().accept(this, null);
+  }
+
+  @Override
+  public InferHoleExpression visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
+    return null;
   }
 }

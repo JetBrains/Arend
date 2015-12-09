@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.term;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.Clause;
-import com.jetbrains.jetpad.vclang.term.expr.ElimExpression;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,10 +65,8 @@ public class Prelude {
     coerceArguments.add(Tele(vars("type"), Pi(DataCall(INTERVAL), Universe(Universe.NO_LEVEL))));
     coerceArguments.add(Tele(vars("elem"), Apps(Index(0), ConCall(LEFT))));
     coerceArguments.add(Tele(vars("point"), DataCall(INTERVAL)));
-    List<Clause> coerceClauses = new ArrayList<>(1);
-    ElimExpression coerceTerm = Elim(Index(0), coerceClauses);
-    coerceClauses.add(new Clause(match(LEFT), Abstract.Definition.Arrow.RIGHT, Index(0), coerceTerm));
-    COERCE = new FunctionDefinition(PRELUDE, new Name("coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceArguments, Apps(Index(2), Index(0)), Abstract.Definition.Arrow.LEFT, coerceTerm);
+    BranchElimTreeNode coerceElimTreeNode = branch(0, clause(LEFT, Abstract.Definition.Arrow.RIGHT, Index(0)));
+    COERCE = new FunctionDefinition(PRELUDE, new Name("coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceArguments, Apps(Index(2), Index(0)), coerceElimTreeNode);
 
     PRELUDE.addDefinition(COERCE);
 
@@ -89,7 +87,7 @@ public class Prelude {
     pathInfixArguments.add(Tele(false, vars("A"), Universe(0)));
     pathInfixArguments.add(Tele(vars("a", "a'"), Index(0)));
     Expression pathInfixTerm = Apps(DataCall(PATH), Lam(lamArgs(Tele(vars("_"), DataCall(INTERVAL))), Index(3)), Index(1), Index(0));
-    PATH_INFIX = new FunctionDefinition(PRELUDE, new Name("=", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixArguments, Universe(0), Abstract.Definition.Arrow.RIGHT, pathInfixTerm);
+    PATH_INFIX = new FunctionDefinition(PRELUDE, new Name("=", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixArguments, Universe(0), leaf(pathInfixTerm));
 
     PRELUDE.addDefinition(PATH_INFIX);
 
@@ -100,15 +98,12 @@ public class Prelude {
     atArguments.add(Tele(vars("p"), Apps(DataCall(PATH), Index(2), Index(1), Index(0))));
     atArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
     Expression atResultType = Apps(Index(4), Index(0));
-    List<Clause> atClauses = new ArrayList<>(2);
-    List<Clause> atOtherwiseClauses = new ArrayList<>(1);
-    ElimExpression atOtherwiseElim = Elim(Index(1), atOtherwiseClauses);
-    atOtherwiseClauses.add(new Clause(match(PATH_CON, match("f")), Abstract.Definition.Arrow.RIGHT, Apps(Index(1), Index(0)), atOtherwiseElim));
-    ElimExpression atTerm = Elim(Index(0), atClauses);
-    atClauses.add(new Clause(match(LEFT), Abstract.Definition.Arrow.RIGHT, Index(2), atTerm));
-    atClauses.add(new Clause(match(RIGHT), Abstract.Definition.Arrow.RIGHT, Index(1), atTerm));
-    atClauses.add(new Clause(match(null), Abstract.Definition.Arrow.LEFT, atOtherwiseElim, atTerm));
-    AT = new FunctionDefinition(PRELUDE, new Name("@", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atArguments, atResultType, Abstract.Definition.Arrow.LEFT, atTerm);
+    BranchElimTreeNode atElimTree = branch(0,
+        clause(LEFT, Index(2)),
+        clause(RIGHT, Index(1)),
+        clause(null, branch(1, clause(PATH_CON, Apps(Index(1), Index(0)))))
+    );
+    AT = new FunctionDefinition(PRELUDE, new Name("@", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atArguments, atResultType, atElimTree);
 
     PRELUDE.addDefinition(AT);
   }
