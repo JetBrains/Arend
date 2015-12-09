@@ -81,7 +81,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public static boolean newCompare(Expression expr1, Expression expr2, Equations equations) {
-    return NewCompareVisitor.compare(equations, Equations.CMP.EQ, new ArrayList<Binding>(), expr1, expr2) == NewCompareVisitor.Result.YES;
+    return NewCompareVisitor.compare(equations, Equations.CMP.EQ, new ArrayList<Binding>(), expr1, expr2);
   }
 
   public Expression lamSplitAt(int index, List<Argument> arguments) {
