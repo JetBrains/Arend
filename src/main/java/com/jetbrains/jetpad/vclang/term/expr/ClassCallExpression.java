@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -44,9 +43,13 @@ public class ClassCallExpression extends DefCallExpression {
   public Universe getUniverse() {
     if (myUniverse == null) {
       myUniverse = new Universe.Type(0, Universe.Type.PROP);
+      List<Binding> context = new ArrayList<>(1);
+      context.add(new TypedBinding("\\this", this));
       for (ClassField field : getDefinition().getFields()) {
         if (!myStatements.containsKey(field)) {
-          myUniverse = myUniverse.max(field.getUniverse());
+          Expression expr = field.getBaseType().normalize(NormalizeVisitor.Mode.NF, context).getType(context).normalize(NormalizeVisitor.Mode.WHNF, context);
+          myUniverse = myUniverse.max(expr instanceof UniverseExpression ? ((UniverseExpression) expr).getUniverse() : field.getUniverse());
+          assert expr instanceof UniverseExpression;
         }
       }
     }
