@@ -22,12 +22,12 @@ import java.util.Map;
 
 public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implements ElimTreeNodeVisitor<Void, Void> {
   private int myErrors = 0;
-  private final DefNamesIndicies myDefNamesIndicies;
+  private final DefNamesIndices myDefNamesIndices;
   private final ByteArrayOutputStream myStream;
   private final DataOutputStream myDataStream;
 
-  public SerializeVisitor(DefNamesIndicies definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream) {
-    myDefNamesIndicies = definitionsIndices;
+  public SerializeVisitor(DefNamesIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream) {
+    myDefNamesIndices = definitionsIndices;
     myStream = stream;
     myDataStream = dataStream;
   }
@@ -40,8 +40,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     return myDataStream;
   }
 
-  public DefNamesIndicies getDefinitionsIndices() {
-    return myDefNamesIndicies;
+  public DefNamesIndices getDefinitionsIndices() {
+    return myDefNamesIndices;
   }
 
   @Override
@@ -62,7 +62,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitDefCall(DefCallExpression expr, Void params) {
     myStream.write(2);
     try {
-      myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false));
+      myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName(), false));
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -72,7 +72,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   @Override
   public Void visitConCall(ConCallExpression expr, Void params) {
     myStream.write(3);
-    int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
+    int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
     try {
       myDataStream.writeInt(index);
       myDataStream.writeInt(expr.getParameters().size());
@@ -88,12 +88,12 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
     myStream.write(4);
-    int index = myDefNamesIndicies.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
+    int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
     try {
       myDataStream.writeInt(index);
       myDataStream.writeInt(expr.getImplementStatements().size());
       for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
-        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(elem.getKey().getResolvedName(), true));
+        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(elem.getKey().getResolvedName(), true));
 
         Expression type = elem.getValue().type;
         myDataStream.writeBoolean(type != null);
@@ -220,7 +220,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
           myDataStream.writeUTF(((NamePattern) pattern).getName());
       } else if (pattern instanceof ConstructorPattern) {
         Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
-        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(new ResolvedName(constructor.getParentNamespace(), constructor.getName()), false));
+        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(new ResolvedName(constructor.getParentNamespace(), constructor.getName()), false));
         myDataStream.writeInt(((ConstructorPattern) pattern).getPatterns().size());
         for (Pattern nestedPattern : ((ConstructorPattern) pattern).getPatterns()) {
           visitPattern(nestedPattern);
@@ -286,7 +286,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       myDataStream.writeInt(branchNode.getIndex());
       myDataStream.writeInt(branchNode.getConstructorClauses().size());
       for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-        myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(clause.getConstructor().getResolvedName(), false));
+        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(clause.getConstructor().getResolvedName(), false));
         clause.getChild().accept(this, null);
       }
     } catch (IOException e) {
