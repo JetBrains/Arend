@@ -5,8 +5,6 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +14,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Zero;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
-public class CompareVisitor implements AbstractExpressionVisitor<Expression, CompareVisitor.Result>, ElimTreeNodeVisitor<ElimTreeNode, CompareVisitor.Result> {
+public class CompareVisitor implements AbstractExpressionVisitor<Expression, CompareVisitor.Result> {
   private final List<Equation> myEquations;
 
   public enum CMP { EQUIV, EQUALS, GREATER, LESS, NOT_EQUIV }
@@ -771,7 +769,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         cmp = and(cmp, result.isOK());
 
         try (EquationsLifter ignore = new EquationsLifter(myEquations, letTypeArgs.size())) {
-          result = clauses.get(i).getElimTree().accept(this, otherClauses.get(i).getElimTree());
+          result = new JustResult(CMP.EQUIV); // clauses.get(i).getElimTree().accept(this, otherClauses.get(i).getElimTree());
         }
 
         if (result.isOK() != CMP.EQUIV && result.isOK() != CMP.EQUALS)
@@ -827,61 +825,6 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
   @Override
   public Result visitCase(Abstract.CaseExpression expr, Expression params) {
-    return new JustResult(CMP.NOT_EQUIV);
-  }
-
-  @Override
-  public Result visitBranch(BranchElimTreeNode branchNode, ElimTreeNode node) {
-    if (node == branchNode)
-      return new JustResult(CMP.EQUALS);
-    if (!(node instanceof BranchElimTreeNode))
-      return new JustResult(CMP.NOT_EQUIV);
-    BranchElimTreeNode other = (BranchElimTreeNode) node;
-
-    CMP cmp = CMP.EQUALS;
-    MaybeResult maybeResult = null;
-    if (other.getIndex() != branchNode.getIndex())
-      return new JustResult(CMP.NOT_EQUIV);
-    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      if (other.getChild(clause.getConstructor()) == null)
-        return new JustResult(CMP.NOT_EQUIV);
-      Result result = clause.getChild().accept(this, other.getChild(clause.getConstructor()));
-      if (result.isOK() == CMP.NOT_EQUIV) {
-        if (result instanceof MaybeResult) {
-          if (maybeResult == null) {
-            maybeResult = (MaybeResult) result;
-          }
-        } else {
-          return result;
-        }
-      }
-      cmp = and(cmp, result.isOK());
-    }
-    for (ConstructorClause clause : other.getConstructorClauses()) {
-      if (branchNode.getChild(clause.getConstructor()) == null) {
-        return new JustResult(CMP.NOT_EQUIV);
-      }
-    }
-
-    return maybeResult == null ? new JustResult(cmp) : maybeResult;
-  }
-
-  @Override
-  public Result visitLeaf(LeafElimTreeNode leafNode, ElimTreeNode node) {
-    if (leafNode == node)
-      return new JustResult(CMP.EQUALS);
-    if (node instanceof LeafElimTreeNode) {
-      return leafNode.getExpression().accept(this, ((LeafElimTreeNode) node).getExpression());
-    }
-    return new JustResult(CMP.NOT_EQUIV);
-  }
-
-  @Override
-  public Result visitEmpty(EmptyElimTreeNode emptyNode, ElimTreeNode node) {
-    if (emptyNode == node)
-      return new JustResult(CMP.EQUALS);
-    if (node instanceof EmptyElimTreeNode)
-      return new JustResult(CMP.EQUALS);
     return new JustResult(CMP.NOT_EQUIV);
   }
 }

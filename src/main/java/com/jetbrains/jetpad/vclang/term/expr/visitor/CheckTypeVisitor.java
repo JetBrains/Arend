@@ -21,7 +21,8 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.ContextSaver;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
 

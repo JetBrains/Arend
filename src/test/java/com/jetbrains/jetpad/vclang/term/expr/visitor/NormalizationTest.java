@@ -4,13 +4,11 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
-import org.omg.PortableInterceptor.SUCCESSFUL;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -264,6 +262,6 @@ public class NormalizationTest {
   public void testConCallPartial() {
     initializeBDList();
     Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil));
-    assertEquals(Lam(lamArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+    assertEquals(Lam(teleArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 }

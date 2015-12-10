@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
@@ -198,8 +197,8 @@ public class ExpressionTest {
         clause(Prelude.SUC, Suc(Index(0)))
     );
     Expression expr = Lam(teleArgs(
-                    Tele(vars("F"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
-                    Tele(vars("f"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
+                    Tele(vars("F"), Pi(typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
+                    Tele(vars("f"), Pi(typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
             Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Nat(), elimTree)), Apps(Index(1), Index(0))));
     ListErrorReporter errorReporter = new ListErrorReporter();
     expr.checkType(new ArrayList<Binding>(), null, errorReporter);

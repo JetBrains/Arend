@@ -9,7 +9,10 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.*;
+import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
+import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
+import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsBranch;
 
 import java.util.ArrayList;

@@ -18,9 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {

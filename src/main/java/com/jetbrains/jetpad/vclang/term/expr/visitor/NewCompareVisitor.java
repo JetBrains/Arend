@@ -6,6 +6,8 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
@@ -14,7 +16,7 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
-public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
+public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
   private final List<Binding> myContext;
   private final Equations myEquations;
   private Equations.CMP myCMP;
@@ -35,8 +37,12 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
     }
   }
 
-  public static Boolean compare(Equations equations, Equations.CMP cmp, List<Binding> context, Expression expr1, Expression expr2) {
+  public static boolean compare(Equations equations, Equations.CMP cmp, List<Binding> context, Expression expr1, Expression expr2) {
     return new NewCompareVisitor(equations, cmp, context).compare(expr1, expr2);
+  }
+
+  public static boolean compare(Equations equations, Equations.CMP cmp, List<Binding> context, ElimTreeNode tree1, ElimTreeNode tree2) {
+    return new NewCompareVisitor(equations, cmp, context).compare(tree1, tree2);
   }
 
   private NumberOfLambdas getNumberOfLambdas(Expression expr, boolean modifyContext) {
@@ -92,6 +98,13 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
       }
       return atArgs.get(1).liftIndex(0, -1);
     }
+  }
+
+  private Boolean compare(ElimTreeNode tree1, ElimTreeNode tree2) {
+    if (tree1 == tree2) {
+      return true;
+    }
+    return tree1.accept(this, tree2);
   }
 
   private Boolean compare(Expression expr1, Expression expr2) {
@@ -349,49 +362,11 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
   @Override
   public Boolean visitSigma(SigmaExpression expr1, Expression expr2) {
     if (!(expr2 instanceof SigmaExpression)) return false;
-    List<TypeArgument> args1 = new ArrayList<>();
-    splitArguments(expr1.getArguments(), args1);
-    List<TypeArgument> args2 = new ArrayList<>(args1.size());
-    splitArguments(((SigmaExpression) expr2).getArguments(), args2);
+    List<TypeArgument> args1 = splitArguments(expr1.getArguments());
+    List<TypeArgument> args2 = splitArguments(((SigmaExpression) expr2).getArguments());
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       return compareTypeArguments(args1, args2, new NewCompareVisitor(myEquations.newInstance(), Equations.CMP.EQ, myContext));
     }
-  }
-
-  private Boolean visitClause(Clause clause1, Clause clause2) {
-    if (clause1 == clause2) return true;
-    if (clause1 == null || clause2 == null) return false;
-
-    if (!clause2.getPatterns().equals(clause1.getPatterns()) || clause1.getArrow() != clause2.getArrow()) {
-      return false;
-    }
-
-    return compare(clause1.getExpression(), clause2.getExpression());
-  }
-
-  @Override
-  public Boolean visitElim(ElimExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof ElimExpression)) return false;
-
-    ElimExpression elimExpr2 = (ElimExpression) expr2;
-    if (expr1.getClauses().size() != elimExpr2.getClauses().size() || expr1.getExpressions().size() != elimExpr2.getExpressions().size()) {
-      return false;
-    }
-
-    myCMP = Equations.CMP.EQ;
-    for (int i = 0; i < expr1.getExpressions().size(); i++) {
-      if (!compare(expr1.getExpressions().get(i), elimExpr2.getExpressions().get(i))) {
-        return false;
-      }
-    }
-
-    for (int i = 0; i < expr1.getClauses().size(); i++) {
-      if (!visitClause(expr1.getClauses().get(i), elimExpr2.getClauses().get(i))) {
-        return false;
-      }
-    }
-
-    return true;
   }
 
   @Override
@@ -427,16 +402,14 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
     NewCompareVisitor visitor = new NewCompareVisitor(equations, Equations.CMP.EQ, myContext);
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-        List<TypeArgument> args1 = new ArrayList<>();
-        splitArguments(letExpr1.getClauses().get(i).getArguments(), args1);
-        List<TypeArgument> args2 = new ArrayList<>(args1.size());
-        splitArguments(letExpr1.getClauses().get(i).getArguments(), args2);
+        List<TypeArgument> args1 = splitArguments(letExpr1.getClauses().get(i).getArguments());
+        List<TypeArgument> args2 = splitArguments(letExpr1.getClauses().get(i).getArguments());
 
         if (!compareTypeArguments(args1, args2, visitor)) {
           return false;
         }
 
-        if (!visitor.compare(letExpr1.getClauses().get(i).getTerm(), letExpr2.getClauses().get(i).getTerm())) {
+        if (!visitor.compare(letExpr1.getClauses().get(i).getElimTree(), letExpr2.getClauses().get(i).getElimTree())) {
           return false;
         }
         equations.lift(-(args1.size() + i));
@@ -453,5 +426,42 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
     }
     equations.lift(-letExpr1.getClauses().size());
     return myEquations.add(equations);
+  }
+
+  @Override
+  public Boolean visitBranch(BranchElimTreeNode branchNode, ElimTreeNode node) {
+    if (!(node instanceof BranchElimTreeNode))
+      return false;
+    BranchElimTreeNode other = (BranchElimTreeNode) node;
+
+    if (other.getIndex() != branchNode.getIndex())
+      return false;
+    for (ConstructorClause clause : branchNode.getConstructorClauses()) {
+      if (other.getChild(clause.getConstructor()) == null)
+        return false;
+      if (!clause.getChild().accept(this, other.getChild(clause.getConstructor()))) {
+        return false;
+      }
+    }
+    for (ConstructorClause clause : other.getConstructorClauses()) {
+      if (branchNode.getChild(clause.getConstructor()) == null) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  @Override
+  public Boolean visitLeaf(LeafElimTreeNode leafNode, ElimTreeNode node) {
+    if (node instanceof LeafElimTreeNode) {
+      return leafNode.getExpression().accept(this, ((LeafElimTreeNode) node).getExpression());
+    }
+    return false;
+  }
+
+  @Override
+  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, ElimTreeNode node) {
+    return node instanceof EmptyElimTreeNode;
   }
 }

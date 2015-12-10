@@ -14,7 +14,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.FindDefCallVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
+import com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.SubstituteExpander;

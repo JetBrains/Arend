@@ -172,7 +172,13 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
     final List<TypeArgument> arguments = new ArrayList<>(clause.getArguments().size());
     from = visitTypeArguments(clause.getArguments(), arguments, from);
     if (from == -1) return null;
-    final Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, from);
+    Expression resultType = null;
+    if (clause.getResultType() != null) {
+      resultType = clause.getResultType().accept(this, from);
+      if (resultType == null) {
+        return null;
+      }
+    }
     final ElimTreeNode elimTree = clause.getElimTree().accept(this, from);
     if (elimTree == null)
       return null;

@@ -12,9 +12,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DataCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
