@@ -3,10 +3,8 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -79,20 +77,18 @@ public class ComparisonTest {
 
   @Test
   public void compareLeq() {
-    Expression expr1 = Pi("X", Universe(1), Pi(Index(0), Index(0)));
-    Expression expr2 = Pi("X", Universe(0), Pi(Index(0), Index(0)));
-    List<CompareVisitor.Equation> equations = new ArrayList<>();
-    CompareVisitor.Result result = compare(expr1, expr2, equations);
-    assertTrue(result.isOK() == CompareVisitor.CMP.LESS || result.isOK() == CompareVisitor.CMP.EQUALS);
+    // Expression expr1 = Pi("X", Universe(1), Pi(Index(0), Index(0)));
+    // Expression expr2 = Pi("X", Universe(0), Pi(Index(0), Index(0)));
+    Expression expr1 = Universe(0);
+    Expression expr2 = Universe(1);
+    assertTrue(compare(expr1, expr2, Equations.CMP.LE));
   }
 
-   @Test
+  @Test
   public void compareNotLeq() {
     Expression expr1 = Pi("X", Universe(0), Pi(Index(0), Index(0)));
     Expression expr2 = Pi("X", Universe(1), Pi(Index(0), Index(0)));
-    List<CompareVisitor.Equation> equations = new ArrayList<>();
-    CompareVisitor.Result result = compare(expr1, expr2, equations);
-    assertFalse(result.isOK() == CompareVisitor.CMP.LESS || result.isOK() == CompareVisitor.CMP.EQUALS);
+    assertFalse(compare(expr1, expr2, Equations.CMP.LE));
   }
 
   @Test
@@ -122,18 +118,14 @@ public class ComparisonTest {
   public void letsNotEquiv() {
     Expression expr1 = Let(lets(let("x", Universe(0))), Index(0));
     Expression expr2 = Let(lets(let("x", Universe(1))), Index(0));
-    List<CompareVisitor.Equation> equations = new ArrayList<>();
-    CompareVisitor.Result result = compare(expr1, expr2, equations);
-    assertTrue(result.isOK() == CompareVisitor.CMP.NOT_EQUIV);
+    assertNotEquals(expr1, expr2);
   }
 
   @Test
   public void letsLess() {
     Expression expr1 = Let(lets(let("x", Nat())), Universe(0));
     Expression expr2 = Let(lets(let("x", Nat())), Universe(1));
-    List<CompareVisitor.Equation> equations = new ArrayList<>();
-    CompareVisitor.Result result = compare(expr1, expr2, equations);
-    assertTrue(result.isOK() == CompareVisitor.CMP.LESS);
+    assertTrue(compare(expr1, expr2, Equations.CMP.LE));
   }
 
   @Test

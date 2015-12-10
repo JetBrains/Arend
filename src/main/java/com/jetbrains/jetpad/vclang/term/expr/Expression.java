@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
@@ -32,15 +33,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (!(obj instanceof Expression)) return false;
-    /*
-    Equations equations = new Equations();
-    return newCompare(this, (Expression) obj, equations) && equations.isEmpty();
-    */
-    List<CompareVisitor.Equation> equations = new ArrayList<>(0);
-    CompareVisitor.Result result = compare(this, (Expression) obj, equations);
-    return result.isOK() != CompareVisitor.CMP.NOT_EQUIV && equations.size() == 0;
+    return this == obj || obj instanceof Expression && compare(this, (Expression) obj);
   }
 
   @Override
@@ -76,12 +69,16 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
     return new CheckTypeVisitor.Builder(localContext, errorReporter).build().checkType(this, expectedType);
   }
 
-  public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {
+  public static CompareVisitor.Result oldCompare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {
     return expr1.accept(new CompareVisitor(equations), expr2);
   }
 
-  public static boolean newCompare(Expression expr1, Expression expr2, Equations equations) {
-    return NewCompareVisitor.compare(equations, Equations.CMP.EQ, new ArrayList<Binding>(), expr1, expr2);
+  public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
+    return NewCompareVisitor.compare(DummyEquations.getInstance(), cmp, new ArrayList<Binding>(), expr1, expr2);
+  }
+
+  public static boolean compare(Expression expr1, Expression expr2) {
+    return compare(expr1, expr2, Equations.CMP.EQ);
   }
 
   public Expression lamSplitAt(int index, List<Argument> arguments) {

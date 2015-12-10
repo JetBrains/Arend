@@ -74,7 +74,7 @@ public class GetTypeTest {
   @Test
   public void letTest() {
     Definition def = typeCheckDef("\\function test => \\lam (F : Nat -> \\Type0) (f : \\Pi (x : Nat) -> F x) => \\let | x => 0 \\in f x");
-    assertEquals(Pi(typeArgs(Tele(vars("F"), Pi(Nat(), Universe())), Tele(vars("f"), Pi(typeArgs(Tele(vars("x"), Nat())), Apps(Index(1), Index(0))))), Apps(Index(1), Zero())),
+    assertEquals(Pi(typeArgs(Tele(vars("F"), Pi(Nat(), Universe(0))), Tele(vars("f"), Pi(typeArgs(Tele(vars("x"), Nat())), Apps(Index(1), Index(0))))), Apps(Index(1), Zero())),
         ((LeafElimTreeNode) ((FunctionDefinition) def).getElimTree()).getExpression().getType(new ArrayList<Binding>()));
   }
 

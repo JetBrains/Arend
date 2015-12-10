@@ -18,7 +18,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.OldArgsInference;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.oldCompare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.ContextSaver;
@@ -156,7 +156,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression actualNorm = result.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
     List<CompareVisitor.Equation> equations = new ArrayList<>();
-    CompareVisitor.Result result1 = compare(expectedNorm, actualNorm, equations);
+    CompareVisitor.Result result1 = oldCompare(expectedNorm, actualNorm, equations);
     if (result1 instanceof CompareVisitor.MaybeResult || result1.isOK() == CompareVisitor.CMP.GREATER || result1.isOK() == CompareVisitor.CMP.EQUALS) {
       if (result.equations != null) {
         result.equations.addAll(equations);
@@ -323,7 +323,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           Expression argExpectedType = piArgs.get(i).getType().normalize(NormalizeVisitor.Mode.NF, myLocalContext);
           Expression argActualType = argumentTypes.get(i).getType().normalize(NormalizeVisitor.Mode.NF, myLocalContext);
           List<CompareVisitor.Equation> equations = new ArrayList<>();
-          CompareVisitor.Result result = compare(argExpectedType, argActualType, equations);
+          CompareVisitor.Result result = oldCompare(argExpectedType, argActualType, equations);
           if (result.isOK() != CompareVisitor.CMP.LESS && result.isOK() != CompareVisitor.CMP.EQUALS) {
             errors.add(new TypeMismatchError(piArgs.get(i).getType(), lambdaArgs.get(i).expression, expr, getNames(myLocalContext)));
           } else {

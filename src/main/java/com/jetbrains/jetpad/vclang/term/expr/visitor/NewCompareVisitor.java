@@ -178,7 +178,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
     }
 
     List<Expression> args2 = new ArrayList<>(args1.size());
-    Expression fun2 = expr1.getFunction(args2);
+    Expression fun2 = expr2.getFunction(args2);
     if (checkIsInferVar(fun2, args2, expr1, myCMP.not())) {
       return true;
     }
@@ -263,7 +263,9 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
 
   private Boolean compareIndex(IndexExpression expr1, Expression expr2, Equations.CMP cmp) {
     if (expr2 instanceof IndexExpression && expr1.getIndex() == ((IndexExpression) expr2).getIndex()) return true;
-    assert expr1.getIndex() < myContext.size();
+    if (expr1.getIndex() >= myContext.size()) {
+      return false;
+    }
     Binding binding = myContext.get(myContext.size() - expr1.getIndex() - 1);
     return binding.isInference() && myEquations.add(expr1.getIndex(), expr2, cmp);
   }
@@ -306,9 +308,14 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
   public Boolean visitPi(PiExpression expr1, Expression expr2) {
     if (!(expr2 instanceof PiExpression)) return false;
     List<TypeArgument> args1 = new ArrayList<>();
-    splitArguments(expr1, args1, null);
+    Expression cod1, cod2;
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
+      cod1 = splitArguments(expr1, args1, myContext);
+    }
     List<TypeArgument> args2 = new ArrayList<>(args1.size());
-    splitArguments(expr2, args2, null);
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
+      cod2 = splitArguments(expr2, args2, myContext);
+    }
 
     Equations equations = myEquations.newInstance();
     NewCompareVisitor visitor = new NewCompareVisitor(equations, Equations.CMP.EQ, myContext);
@@ -317,7 +324,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
         return false;
       }
 
-      if (!visitor.compare(expr1.getCodomain(), ((PiExpression) expr2).getCodomain())) {
+      if (!visitor.compare(cod1, cod2)) {
         return false;
       }
       equations.lift(-args1.size());
@@ -334,7 +341,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
 
   @Override
   public Boolean visitInferHole(InferHoleExpression expr1, Expression expr2) {
-    return null;
+    return false;
   }
 
   @Override
@@ -403,7 +410,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (int i = 0; i < letExpr1.getClauses().size(); i++) {
         List<TypeArgument> args1 = splitArguments(letExpr1.getClauses().get(i).getArguments());
-        List<TypeArgument> args2 = splitArguments(letExpr1.getClauses().get(i).getArguments());
+        List<TypeArgument> args2 = splitArguments(letExpr2.getClauses().get(i).getArguments());
 
         if (!compareTypeArguments(args1, args2, visitor)) {
           return false;
