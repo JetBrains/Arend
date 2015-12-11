@@ -167,20 +167,20 @@ public class Utils {
   }
 
   public static List<Pattern> toPatterns(List<PatternArgument> patternArgs)  {
-    List<Pattern> result = new ArrayList<>();
+    List<Pattern> result = new ArrayList<>(patternArgs.size());
     for (PatternArgument patternArg : patternArgs) {
       result.add(patternArg.getPattern());
     }
     return result;
   }
 
-  public static PatternMatchResult patternMatchAll(List<Pattern> patterns, List<Expression> exprs, List<Binding> context) {
+  public static PatternMatchResult patternMatchAll(List<PatternArgument> patterns, List<Expression> exprs, List<Binding> context) {
     List<Expression> result = new ArrayList<>();
     assert patterns.size() == exprs.size();
 
     PatternMatchMaybeResult maybe = null;
     for (int i = 0; i < patterns.size(); i++) {
-      PatternMatchResult subMatch = patterns.get(i).match(exprs.get(i), context);
+      PatternMatchResult subMatch = patterns.get(i).getPattern().match(exprs.get(i), context);
       if (subMatch instanceof PatternMatchFailedResult) {
         return subMatch;
       } else if (subMatch instanceof PatternMatchMaybeResult) {
@@ -226,13 +226,7 @@ public class Utils {
     return expandPatternSubstitute(getNumArguments(pattern), varIndex, what, where);
   }
 
-  public static Expression expandPatternSubstitute(int numBindings, int varIndex, Expression what, Expression where) {
-    Expression expression = what.liftIndex(0, varIndex);
-    if (numBindings > 0) {
-      where = where.liftIndex(varIndex + 1, numBindings).subst(expression, varIndex);
-    } else {
-      where = where.subst(expression, varIndex);
-    }
-    return where;
+  public static Expression expandPatternSubstitute(int numArguments, int varIndex, Expression what, Expression where) {
+    return where.liftIndex(varIndex + 1, numArguments).subst(what.liftIndex(0, varIndex), varIndex);
   }
 }

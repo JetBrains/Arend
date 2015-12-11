@@ -583,12 +583,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           exprs.add(Index(numberOfArguments - 1 - i));
         }
 
-        //TODO: unite with typeCheckElim
         SubstituteExpander.substituteExpand(visitor.getLocalContext(), subst, treeExpansionResult.tree, exprs, new SubstituteExpander.SubstituteExpansionProcessor() {
           @Override
           public void process(List<Expression> exprs, List<Binding> context, List<Expression> subst, LeafElimTreeNode leaf) {
             leaf.setArrow(Abstract.Definition.Arrow.RIGHT);
-            List<Expression> matchedSubst = ((PatternMatchOKResult) patternMatchAll(patterns.get(leaf2cond.get(leaf)), exprs, null)).expressions;
+            List<Pattern> curPatterns = patterns.get(leaf2cond.get(leaf));
+            List<Expression> matchedSubst = new ArrayList<>();
+            for (int i = 0; i < curPatterns.size(); i++) {
+              matchedSubst.addAll(((PatternMatchOKResult) curPatterns.get(i).match(exprs.get(i), null)).expressions);
+            }
             Collections.reverse(matchedSubst);
             leaf.setExpression(expressions.get(leaf2cond.get(leaf)).liftIndex(matchedSubst.size(), subst.size()).subst(matchedSubst, 0));
           }

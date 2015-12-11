@@ -220,7 +220,11 @@ public class TypeCheckingElim {
       @Override
       public void process(List<Expression> exprs, List<Binding> context, List<Expression> subst, LeafElimTreeNode leaf) {
         leaf.setArrow(expr.getClauses().get(leaf2clause.get(leaf)).getArrow());
-        List<Expression> matchedSubst = ((PatternMatchOKResult) patternMatchAll(patterns.get(leaf2clause.get(leaf)), exprs, null)).expressions;
+        List<Pattern> curPatterns = patterns.get(leaf2clause.get(leaf));
+        List<Expression> matchedSubst = new ArrayList<>();
+        for (int i = 0; i < curPatterns.size(); i++) {
+          matchedSubst.addAll(((PatternMatchOKResult) curPatterns.get(i).match(exprs.get(i), null)).expressions);
+        }
         Collections.reverse(matchedSubst);
         leaf.setExpression(expressions.get(leaf2clause.get(leaf)).liftIndex(matchedSubst.size(), subst.size()).subst(matchedSubst, 0));
       }

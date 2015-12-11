@@ -17,7 +17,6 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.DataCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 
 public class DataDefinition extends Definition implements Abstract.DataDefinition {
   private List<Constructor> myConstructors;
@@ -62,7 +61,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
         continue;
       List<Expression> matchedParameters = null;
       if (constructor.getPatterns() != null) {
-        Utils.PatternMatchResult matchResult = patternMatchAll(toPatterns(constructor.getPatterns()), parameters, context);
+        Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, context);
         if (matchResult instanceof Utils.PatternMatchMaybeResult) {
           return null;
         } else if (matchResult instanceof Utils.PatternMatchFailedResult) {

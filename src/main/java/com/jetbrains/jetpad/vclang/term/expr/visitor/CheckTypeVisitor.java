@@ -716,7 +716,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       List<Expression> matchedParameters = null;
       if (constructor.getPatterns() != null) {
-        Utils.PatternMatchResult matchResult = patternMatchAll(toPatterns(constructor.getPatterns()), parameters, myLocalContext);
+        Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, myLocalContext);
         if (matchResult instanceof PatternMatchMaybeResult) {
           throw new IllegalStateException();
         } else if (matchResult instanceof PatternMatchFailedResult) {

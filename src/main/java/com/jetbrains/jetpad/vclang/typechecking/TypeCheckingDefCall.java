@@ -21,7 +21,6 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandConstructorParameters;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
 
 public class TypeCheckingDefCall {
@@ -338,7 +337,7 @@ public class TypeCheckingDefCall {
     }
 
     if (constructor.getPatterns() != null) {
-      Utils.PatternMatchResult matchResult = patternMatchAll(toPatterns(constructor.getPatterns()), arguments, myVisitor.getLocalContext());
+      Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), arguments, myVisitor.getLocalContext());
       TypeCheckingError error = null;
       if (matchResult instanceof Utils.PatternMatchMaybeResult) {
         error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +

@@ -69,7 +69,7 @@ public class PatternExpansion {
 
   private static List<Expression> getMatchedParameters(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters) {
     if (constructorPattern.getConstructor().getPatterns() != null) {
-      return ((Utils.PatternMatchOKResult) patternMatchAll(toPatterns(constructorPattern.getConstructor().getPatterns()), dataTypeParameters, new ArrayList<Binding>())).expressions;
+      return ((Utils.PatternMatchOKResult) patternMatchAll(constructorPattern.getConstructor().getPatterns(), dataTypeParameters, new ArrayList<Binding>())).expressions;
     } else {
       return new ArrayList<>(dataTypeParameters);
     }
