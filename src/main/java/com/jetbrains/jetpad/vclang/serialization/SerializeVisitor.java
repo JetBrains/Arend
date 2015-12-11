@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
@@ -205,9 +206,19 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     return null;
   }
 
+  public void visitPatternArg(PatternArgument patternArg) {
+    try {
+      myDataStream.writeBoolean(patternArg.isExplicit());
+      myDataStream.writeBoolean(patternArg.isHidden());
+      visitPattern(patternArg.getPattern());
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+
+  }
+
   public void visitPattern(Pattern pattern) {
     try {
-      myDataStream.writeBoolean(pattern.getExplicit());
       if (pattern instanceof NamePattern)
         myDataStream.writeInt(0);
       else if (pattern instanceof Abstract.AnyConstructorPattern)
@@ -221,9 +232,9 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       } else if (pattern instanceof ConstructorPattern) {
         Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
         myDataStream.writeInt(myDefNamesIndicies.getDefNameIndex(new ResolvedName(constructor.getParentNamespace(), constructor.getName()), false));
-        myDataStream.writeInt(((ConstructorPattern) pattern).getPatterns().size());
-        for (Pattern nestedPattern : ((ConstructorPattern) pattern).getPatterns()) {
-          visitPattern(nestedPattern);
+        myDataStream.writeInt(((ConstructorPattern) pattern).getArguments().size());
+        for (PatternArgument patternArg : ((ConstructorPattern) pattern).getArguments()) {
+          visitPatternArg(patternArg);
         }
       }
     } catch (IOException e) {

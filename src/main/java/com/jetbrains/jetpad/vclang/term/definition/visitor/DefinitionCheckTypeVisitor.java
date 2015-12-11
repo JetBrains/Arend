@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
@@ -554,17 +555,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         for (Abstract.Condition cond : condMap.get(constructor)) {
           try (Utils.CompleteContextSaver<Binding> saver = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(splitArguments(constructor.getBaseType(), new ArrayList<TypeArgument>(), visitor.getLocalContext())));
-            List<Abstract.Pattern> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), visitor.getLocalContext(), cond.getPatterns());
+            List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), visitor.getLocalContext(), cond.getPatterns());
             if (processedPatterns == null)
               continue;
 
-            List<Pattern> typedPatterns = visitor.visitPatterns(processedPatterns, resultType, CheckTypeVisitor.PatternExpansionMode.CONDITION);
+            List<PatternArgument> typedPatterns = visitor.visitPatternArgs(processedPatterns, resultType, CheckTypeVisitor.PatternExpansionMode.CONDITION);
 
             CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
             if (result == null)
               continue;
 
-            patterns.add(typedPatterns);
+            patterns.add(toPatterns(typedPatterns));
             expressions.add(result.expression);
           }
         }
@@ -666,15 +667,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       int index = 1;
       boolean ok = true;
 
-      List<? extends Abstract.Pattern> patterns = def.getPatterns();
-      List<Pattern> typedPatterns = null;
+      List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
+      List<PatternArgument> typedPatterns = null;
       if (patterns != null) {
 
-        List<Abstract.Pattern> processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), context, patterns);
+        List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), context, patterns);
         if (processedPatterns == null)
           return null;
 
-        typedPatterns = visitor.visitPatterns(processedPatterns, Collections.<Expression>emptyList(), CheckTypeVisitor.PatternExpansionMode.DATATYPE);
+        typedPatterns = visitor.visitPatternArgs(processedPatterns, Collections.<Expression>emptyList(), CheckTypeVisitor.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null)
           return null;
       }
@@ -747,8 +748,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
   }
 
-  private List<Abstract.Pattern> processImplicitPatterns(Abstract.SourceNode expression, List<TypeArgument> arguments, List<Binding> context, List<? extends Abstract.Pattern> patterns) {
-    List<Abstract.Pattern> processedPatterns = null;
+  private List<Abstract.PatternArgument> processImplicitPatterns(Abstract.SourceNode expression, List<TypeArgument> arguments, List<Binding> context, List<? extends Abstract.PatternArgument> patterns) {
+    List<Abstract.PatternArgument> processedPatterns = null;
     ProcessImplicitResult processImplicitResult = processImplicit(patterns, arguments);
     if (processImplicitResult.patterns == null) {
       if (processImplicitResult.numExcessive != 0) {

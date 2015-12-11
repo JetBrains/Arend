@@ -16,56 +16,60 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 
 public class PatternExpansion {
-  public static class Result {
-    public final ArgumentExpression expression;
+  public static class Result<T> {
+    public final T expression;
     public final List<TypeArgument> args;
 
-    private Result(ArgumentExpression expression, List<TypeArgument> args) {
+    private Result(T expression, List<TypeArgument> args) {
       this.expression = expression;
       this.args = args;
     }
   }
 
-  public static Result expandPattern(Pattern pattern, Expression type, List<Binding> context) {
+  public static Result<Expression> expandPattern(Pattern pattern, Expression type, List<Binding> context) {
     if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern) {
-      return new Result(new ArgumentExpression(Index(0), pattern.getExplicit(), !pattern.getExplicit()),
-          Collections.singletonList(pattern instanceof NamePattern ? Tele(pattern.getExplicit(), Collections.singletonList(((NamePattern) pattern).getName()), type) : TypeArg(pattern.getExplicit(), type)));
+      return new Result<Expression>(Index(0), Collections.singletonList(pattern instanceof NamePattern ? Tele(true, Collections.singletonList(((NamePattern) pattern).getName()), type) : TypeArg(true, type)));
     } else if (pattern instanceof ConstructorPattern) {
       ConstructorPattern constructorPattern = (ConstructorPattern) pattern;
 
       List<Expression> parameters = new ArrayList<>();
       type.normalize(NormalizeVisitor.Mode.WHNF, context).getFunction(parameters);
       Collections.reverse(parameters);
-      List<Result> nestedResults = expandPatterns(constructorPattern.getPatterns(), getTypes(getConstructorArguments(constructorPattern, parameters, context)), context);
+      List<Result<ArgumentExpression>> nestedResults = expandPatternArgs(constructorPattern.getArguments(), getTypes(getConstructorArguments(constructorPattern, parameters, context)), context);
 
       Expression resultExpression = ConCall(constructorPattern.getConstructor(), getMatchedParameters(constructorPattern, parameters));
       List<TypeArgument> resultArgs = new ArrayList<>();
-      for (Result res : nestedResults) {
+      for (Result<ArgumentExpression> res : nestedResults) {
         resultExpression = Apps(resultExpression.liftIndex(0, res.args.size()), res.expression);
         resultArgs.addAll(res.args);
       }
 
-      return new Result(new ArgumentExpression(resultExpression, pattern.getExplicit(), !pattern.getExplicit()), resultArgs);
+      return new Result<>(resultExpression, resultArgs);
     } else {
       throw new IllegalStateException();
     }
   }
 
-  public static List<Result> expandPatterns(List<Pattern> patterns, List<Expression> types, List<Binding> context) {
-    List<Result> results = new ArrayList<>();
-    for (int i = 0; i < patterns.size(); i++) {
+  public static List<Result<ArgumentExpression>> expandPatternArgs(List<PatternArgument> patternArgs, List<Expression> types, List<Binding> context) {
+    List<Result<ArgumentExpression>> results = new ArrayList<>();
+    for (int i = 0; i < patternArgs.size(); i++) {
       Expression argumentType = types.get(i);
       for (int j = 0; j < i; j++)
-        argumentType = expandPatternSubstitute(patterns.get(j), i - j - 1, results.get(j).expression.getExpression(), argumentType);
-      Result nestedResult = expandPattern(patterns.get(i), argumentType, context);
+        argumentType = expandPatternSubstitute(patternArgs.get(j).getPattern(), i - j - 1, results.get(j).expression.getExpression(), argumentType);
+      Result<ArgumentExpression> nestedResult = expandPatternArg(patternArgs.get(i), argumentType, context);
       results.add(nestedResult);
     }
     return results;
   }
 
+  private static Result<ArgumentExpression> expandPatternArg(PatternArgument patternArg, Expression type, List<Binding> context) {
+    Result<Expression> result = expandPattern(patternArg.getPattern(), type, context);
+    return new Result<>(new ArgumentExpression(result.expression, patternArg.isExplicit(), patternArg.isHidden()), result.args);
+  }
+
   private static List<Expression> getMatchedParameters(ConstructorPattern constructorPattern, List<Expression> dataTypeParameters) {
     if (constructorPattern.getConstructor().getPatterns() != null) {
-      return ((Utils.PatternMatchOKResult) patternMatchAll(constructorPattern.getConstructor().getPatterns(), dataTypeParameters, new ArrayList<Binding>())).expressions;
+      return ((Utils.PatternMatchOKResult) patternMatchAll(toPatterns(constructorPattern.getConstructor().getPatterns()), dataTypeParameters, new ArrayList<Binding>())).expressions;
     } else {
       return new ArrayList<>(dataTypeParameters);
     }

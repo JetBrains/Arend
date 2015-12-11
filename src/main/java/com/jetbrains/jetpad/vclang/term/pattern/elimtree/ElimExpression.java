@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
@@ -51,11 +51,6 @@ public class ElimExpression implements Abstract.ElimExpression {
     }
 
     @Override
-    public void replacePatternWithConstructor(int index) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
       prettyPrintClause(myElimExpression, this, builder, names, 0);
     }
@@ -68,11 +63,11 @@ public class ElimExpression implements Abstract.ElimExpression {
     myIndex = elimTreeNode.getIndex();
     myClauses = new ArrayList<>(elimTreeNode.getConstructorClauses().size());
     for (ConstructorClause constructorClause : elimTreeNode.getConstructorClauses()) {
-      List<Pattern> patternArgs = new ArrayList<>();
+      List<PatternArgument> patternArgs = new ArrayList<>();
       for (TypeArgument arg : splitArguments(constructorClause.getConstructor().getArguments())) {
         patternArgs.add(match(arg.getExplicit(), null));
       }
-      final ConstructorPattern pattern = new ConstructorPattern(constructorClause.getConstructor(), patternArgs, true);
+      final ConstructorPattern pattern = new ConstructorPattern(constructorClause.getConstructor(), patternArgs);
 
       myClauses.add(constructorClause.getChild().accept(new ElimTreeNodeVisitor<Void, Abstract.Clause>() {
         @Override

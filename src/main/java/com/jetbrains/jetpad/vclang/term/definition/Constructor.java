@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 
 import java.util.List;
 
@@ -20,14 +20,14 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 public class Constructor extends Definition implements Abstract.Constructor {
   private DataDefinition myDataType;
   private List<TypeArgument> myArguments;
-  private List<Pattern> myPatterns;
+  private List<PatternArgument> myPatterns;
 
   public Constructor(Namespace parentNamespace, Name name, Precedence precedence, DataDefinition dataType) {
     super(parentNamespace, name, precedence);
     myDataType = dataType;
   }
 
-  public Constructor(Namespace parentNamespace, Name name, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
+  public Constructor(Namespace parentNamespace, Name name, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
     super(parentNamespace, name, precedence);
     setUniverse(universe);
     hasErrors(false);
@@ -41,17 +41,12 @@ public class Constructor extends Definition implements Abstract.Constructor {
   }
 
   @Override
-  public List<Pattern> getPatterns() {
+  public List<PatternArgument> getPatterns() {
     return myPatterns;
   }
 
-  public void setPatterns(List<Pattern> patterns) {
+  public void setPatterns(List<PatternArgument> patterns) {
     myPatterns = patterns;
-  }
-
-  @Override
-  public void replacePatternWithConstructor(int index) {
-    throw new UnsupportedOperationException();
   }
 
   @Override

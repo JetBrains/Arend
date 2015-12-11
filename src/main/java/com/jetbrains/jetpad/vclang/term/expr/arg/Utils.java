@@ -252,7 +252,7 @@ public class Utils {
       highestCtxIndex = Math.max(0, highestCtxIndex);
       newNames = new ArrayList<>(names.subList(0, highestCtxIndex));
       for (int i = 0; i < clause.getPatterns().size(); i++) {
-        prettyPrintPattern(clause.getPatterns().get(i), builder, newNames, true);
+        prettyPrintPattern(clause.getPatterns().get(i), builder, newNames);
         int exprCtxIndex = names.size() - 1 - ((Abstract.IndexExpression) elimExpr.getExpressions().get(i)).getIndex();
         int nextExprCtxIndex = i == elimExpr.getExpressions().size() - 1 ? names.size() : names.size() - 1 - ((Abstract.IndexExpression) elimExpr.getExpressions().get(i + 1)).getIndex();
         newNames.addAll(names.subList(exprCtxIndex + 1, nextExprCtxIndex));
@@ -260,7 +260,7 @@ public class Utils {
     } else {
       newNames = new ArrayList<>(names);
       for (int i = 0; i < clause.getPatterns().size(); i++) {
-        prettyPrintPattern(clause.getPatterns().get(i), builder, newNames, true);
+        prettyPrintPattern(clause.getPatterns().get(i), builder, newNames);
         if (i != clause.getPatterns().size() - 1) {
           builder.append(", ");
         }

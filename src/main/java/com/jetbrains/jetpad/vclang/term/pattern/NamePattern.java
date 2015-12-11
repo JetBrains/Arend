@@ -7,11 +7,10 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import java.util.Collections;
 import java.util.List;
 
-public class NamePattern extends Pattern implements Abstract.NamePattern{
+public class NamePattern extends Pattern implements Abstract.NamePattern {
   private final String myName;
 
-  public NamePattern(String name, boolean isExplicit) {
-    super(isExplicit);
+  public NamePattern(String name) {
     myName = name;
   }
 
@@ -21,12 +20,17 @@ public class NamePattern extends Pattern implements Abstract.NamePattern{
   }
 
   @Override
-  public Utils.PatternMatchResult match(Expression expr, List<Binding> context) {
-    return new Utils.PatternMatchOKResult(Collections.singletonList(expr));
+  public boolean isConstructor() {
+    return false;
   }
 
   @Override
-  public boolean equals(Object other) {
-    return other == this || other instanceof NamePattern && ((Pattern) other).getExplicit() == getExplicit();
+  public void setConstructor(boolean isConstructor) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Utils.PatternMatchResult match(Expression expr, List<Binding> context) {
+    return new Utils.PatternMatchOKResult(Collections.singletonList(expr));
   }
 }

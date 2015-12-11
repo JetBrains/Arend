@@ -15,6 +15,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.definition.Condition.prettyPrintCondition;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPatternArg;
 
 public final class Concrete {
   private Concrete() {}
@@ -685,14 +686,6 @@ public final class Concrete {
     }
   }
 
-  public static class PatternContainerHelper {
-    public static void replacePatternWithConstructor(List<Pattern> patterns, int index) {
-      Pattern pattern = patterns.get(index);
-      patterns.set(index, new ConstructorPattern(pattern.getPosition(), new Name(pattern.getName()), new ArrayList<Pattern>(0)));
-      patterns.get(index).setExplicit(pattern.getExplicit());
-    }
-  }
-
   public static class Clause extends SourceNode implements Abstract.Clause {
     private final List<Pattern> myPatterns;
     private final Definition.Arrow myArrow;
@@ -723,11 +716,6 @@ public final class Concrete {
     @Override
     public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
       Utils.prettyPrintClause(null, this, builder, names, 0);
-    }
-
-    @Override
-    public void replacePatternWithConstructor(int index) {
-      PatternContainerHelper.replacePatternWithConstructor(myPatterns, index);
     }
   }
 
@@ -926,10 +914,10 @@ public final class Concrete {
 
   public static class Condition extends SourceNode implements Abstract.Condition {
     private final Name myConstructorName;
-    private final List<Pattern> myPatterns;
+    private final List<PatternArgument> myPatterns;
     private final Expression myTerm;
 
-    public Condition(Position position, Name constructorName, List<Pattern> patterns, Expression term) {
+    public Condition(Position position, Name constructorName, List<PatternArgument> patterns, Expression term) {
       super(position);
       myConstructorName = constructorName;
       myPatterns = patterns;
@@ -942,13 +930,8 @@ public final class Concrete {
     }
 
     @Override
-    public List<Pattern> getPatterns() {
+    public List<PatternArgument> getPatterns() {
       return myPatterns;
-    }
-
-    @Override
-    public void replacePatternWithConstructor(int index) {
-      PatternContainerHelper.replacePatternWithConstructor(myPatterns, index);
     }
 
     @Override
@@ -1021,21 +1004,42 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Pattern extends SourceNode implements Abstract.Pattern {
-    private boolean myExplicit;
+  public static class PatternArgument extends SourceNode implements Abstract.PatternArgument {
+    private final boolean myHidden;
+    private final boolean myExplicit;
+    private final Pattern myPattern;
 
-    public Pattern(Position position) {
+    public PatternArgument(Position position, Pattern pattern, boolean explicit, boolean hidden) {
       super(position);
-      myExplicit = true;
+      this.myHidden = hidden;
+      this.myPattern = pattern;
+      this.myExplicit = explicit;
     }
 
     @Override
-    public boolean getExplicit() {
+    public boolean isHidden() {
+      return myHidden;
+    }
+
+    @Override
+    public boolean isExplicit() {
       return myExplicit;
     }
 
-    public void setExplicit(boolean isExplicit) {
-      myExplicit = isExplicit;
+    @Override
+    public Abstract.Pattern getPattern() {
+      return myPattern;
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+      prettyPrintPatternArg(this, builder, names);
+    }
+  }
+
+  public static abstract class Pattern extends SourceNode implements Abstract.Pattern {
+    public Pattern(Position position) {
+      super(position);
     }
 
     @Override
@@ -1053,22 +1057,35 @@ public final class Concrete {
 
   public static class NamePattern extends Pattern implements Abstract.NamePattern {
     private final String myName;
+    private boolean myConstructor;
+
     public NamePattern(Position position, String name) {
       super(position);
       myName = name;
+      myConstructor = false;
     }
 
     @Override
     public String getName() {
       return myName;
     }
+
+    @Override
+    public boolean isConstructor() {
+      return myConstructor;
+    }
+
+    @Override
+    public void setConstructor(boolean isConstructor) {
+      myConstructor = isConstructor;
+    }
   }
 
   public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
     private final Name myConstructorName;
-    private final List<Pattern> myArguments;
+    private final List<PatternArgument> myArguments;
 
-    public ConstructorPattern(Position position, Name constructorName, List<Pattern> arguments) {
+    public ConstructorPattern(Position position, Name constructorName, List<PatternArgument> arguments) {
       super(position);
       myConstructorName = constructorName;
       myArguments = arguments;
@@ -1080,13 +1097,8 @@ public final class Concrete {
     }
 
     @Override
-    public List<Concrete.Pattern> getPatterns() {
+    public List<Concrete.PatternArgument> getArguments() {
       return myArguments;
-    }
-
-    @Override
-    public void replacePatternWithConstructor(int index) {
-      PatternContainerHelper.replacePatternWithConstructor(myArguments, index);
     }
 
     @Override
@@ -1109,9 +1121,9 @@ public final class Concrete {
   public static class Constructor extends Definition implements Abstract.Constructor {
     private final DataDefinition myDataType;
     private final List<TypeArgument> myArguments;
-    private final List<Pattern> myPatterns;
+    private final List<PatternArgument> myPatterns;
 
-    public Constructor(Position position, Name name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<Pattern> patterns) {
+    public Constructor(Position position, Name name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
       super(position, name, precedence);
       myArguments = arguments;
       myDataType = dataType;
@@ -1119,13 +1131,8 @@ public final class Concrete {
     }
 
     @Override
-    public List<Pattern> getPatterns() {
+    public List<PatternArgument> getPatterns() {
       return myPatterns;
-    }
-
-    @Override
-    public void replacePatternWithConstructor(int index) {
-      PatternContainerHelper.replacePatternWithConstructor(myPatterns, index);
     }
 
     @Override

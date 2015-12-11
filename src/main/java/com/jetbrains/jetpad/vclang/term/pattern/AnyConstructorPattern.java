@@ -12,8 +12,8 @@ import java.util.List;
 
 public class AnyConstructorPattern extends ConstructorPattern implements Abstract.AnyConstructorPattern {
 
-  public AnyConstructorPattern(boolean isExplicit) {
-    super(null, null, isExplicit);
+  public AnyConstructorPattern() {
+    super(null, null);
   }
 
   @Override
@@ -24,10 +24,5 @@ public class AnyConstructorPattern extends ConstructorPattern implements Abstrac
     } else {
       return new Utils.PatternMatchOKResult(Collections.singletonList(expr));
     }
-  }
-
-  @Override
-  public boolean equals(Object other) {
-      return other == this || other instanceof AnyConstructorPattern;
   }
 }

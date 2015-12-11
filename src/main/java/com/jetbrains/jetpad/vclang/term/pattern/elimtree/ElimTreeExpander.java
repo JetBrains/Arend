@@ -19,6 +19,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getTypes;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 
 class ElimTreeExpander {
   static class Branch {
@@ -106,10 +107,7 @@ class ElimTreeExpander {
     private final List<List<Pattern>> nestedPatterns = new ArrayList<>();
 
     private MatchingPatterns(List<Pattern> patterns, Constructor constructor, List<TypeArgument> constructorArgs) {
-      List<Pattern> anyPatterns = new ArrayList<>();
-      for (TypeArgument constructorArg : constructorArgs) {
-        anyPatterns.add(match(constructorArg.getExplicit(), null));
-      }
+      List<Pattern> anyPatterns = new ArrayList<>(Collections.<Pattern>nCopies(constructorArgs.size(), new NamePattern(null)));
 
       for (int j = 0; j < patterns.size(); j++) {
         if (patterns.get(j) instanceof NamePattern || patterns.get(j) instanceof AnyConstructorPattern) {
@@ -118,7 +116,7 @@ class ElimTreeExpander {
         } else if (patterns.get(j) instanceof ConstructorPattern &&
             ((ConstructorPattern) patterns.get(j)).getConstructor() == constructor) {
           indices.add(j);
-          nestedPatterns.add(((ConstructorPattern) patterns.get(j)).getPatterns());
+          nestedPatterns.add(toPatterns(((ConstructorPattern) patterns.get(j)).getArguments()));
         }
       }
     }

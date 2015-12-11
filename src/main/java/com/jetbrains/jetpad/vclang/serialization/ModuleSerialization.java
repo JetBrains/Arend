@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -118,8 +119,8 @@ public class ModuleSerialization {
         visitor.getDataStream().writeBoolean(constructor.getPatterns() != null);
         if (constructor.getPatterns() != null) {
           visitor.getDataStream().writeInt(constructor.getPatterns().size());
-          for (Pattern pattern : constructor.getPatterns()) {
-            visitor.visitPattern(pattern);
+          for (PatternArgument patternArg : constructor.getPatterns()) {
+            visitor.visitPatternArg(patternArg);
           }
         }
         writeUniverse(visitor.getDataStream(), constructor.getUniverse());

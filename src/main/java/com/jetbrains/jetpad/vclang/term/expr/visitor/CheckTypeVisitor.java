@@ -635,16 +635,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode) {
-    if (pattern instanceof Abstract.NamePattern) {
+    if (pattern instanceof Abstract.NamePattern && !((Abstract.NamePattern) pattern).isConstructor()) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null) {
         myLocalContext.add(binding);
       } else {
         myLocalContext.add(new TypedBinding(((Abstract.NamePattern) pattern).getName(), binding.getType()));
       }
-      pattern.setWellTyped(new NamePattern(name, pattern.getExplicit()));
-      return new ExpandPatternOKResult(Index(0), new NamePattern(name, pattern.getExplicit()), 1);
-    } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
+      pattern.setWellTyped(new NamePattern(name));
+      return new ExpandPatternOKResult(Index(0), new NamePattern(name), 1);
+    } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern || pattern instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern).isConstructor()) {
       TypeCheckingError error = null;
 
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
@@ -679,23 +679,31 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       if (pattern instanceof Abstract.AnyConstructorPattern) {
-        pattern.setWellTyped(new AnyConstructorPattern(pattern.getExplicit()));
+        pattern.setWellTyped(new AnyConstructorPattern());
         myLocalContext.add(binding);
-        return new ExpandPatternOKResult(Index(0), new AnyConstructorPattern(pattern.getExplicit()), 1);
+        return new ExpandPatternOKResult(Index(0), new AnyConstructorPattern(), 1);
       }
 
-      Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
+      Name constructorName;
+      List<? extends Abstract.PatternArgument> patternArguments;
+      if (pattern instanceof Abstract.ConstructorPattern) {
+        patternArguments = ((Abstract.ConstructorPattern) pattern).getArguments();
+        constructorName = ((Abstract.ConstructorPattern) pattern).getConstructorName();
+      } else {
+        patternArguments = Collections.emptyList();
+        constructorName = new Name(((Abstract.NamePattern) pattern).getName());
+      }
 
       Constructor constructor = null;
       for (int index = 0; index < dataType.getConstructors().size(); ++index) {
-        if (dataType.getConstructors().get(index).getName().equals(constructorPattern.getConstructorName())) {
+        if (dataType.getConstructors().get(index).getName().equals(constructorName)) {
           constructor = dataType.getConstructors().get(index);
           break;
         }
       }
 
       if (constructor == null) {
-        error = new NotInScopeError(pattern, constructorPattern.getConstructorName());
+        error = new NotInScopeError(pattern, constructorName);
         myErrorReporter.report(error);
         return new ExpandPatternErrorResult(error);
       }
@@ -708,7 +716,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       List<Expression> matchedParameters = null;
       if (constructor.getPatterns() != null) {
-        Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, myLocalContext);
+        Utils.PatternMatchResult matchResult = patternMatchAll(toPatterns(constructor.getPatterns()), parameters, myLocalContext);
         if (matchResult instanceof PatternMatchMaybeResult) {
           throw new IllegalStateException();
         } else if (matchResult instanceof PatternMatchFailedResult) {
@@ -732,41 +740,41 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       List<TypeArgument> constructorArguments = new ArrayList<>();
       splitArguments(constructor.getType().subst(matchedParameters, 0), constructorArguments, myLocalContext);
 
-      Utils.ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getPatterns(), constructorArguments);
+      Utils.ProcessImplicitResult implicitResult = processImplicit(patternArguments, constructorArguments);
       if (implicitResult.patterns == null) {
         if (implicitResult.numExcessive != 0) {
-          error = new TypeCheckingError("Too many arguments: " + implicitResult.numExcessive + " excessive", constructorPattern,
+          error = new TypeCheckingError("Too many arguments: " + implicitResult.numExcessive + " excessive", pattern,
               getNames(myLocalContext));
-        } else if (implicitResult.wrongImplicitPosition < constructorPattern.getPatterns().size()) {
-          error = new TypeCheckingError("Unexpected implicit argument", constructorPattern.getPatterns().get(implicitResult.wrongImplicitPosition), getNames(myLocalContext));
+        } else if (implicitResult.wrongImplicitPosition < patternArguments.size()) {
+          error = new TypeCheckingError("Unexpected implicit argument", patternArguments.get(implicitResult.wrongImplicitPosition), getNames(myLocalContext));
         } else {
-          error = new TypeCheckingError("Too few explicit arguments, expected: " + implicitResult.numExplicit, constructorPattern, getNames(myLocalContext));
+          error = new TypeCheckingError("Too few explicit arguments, expected: " + implicitResult.numExplicit, pattern, getNames(myLocalContext));
         }
         myErrorReporter.report(error);
         return new ExpandPatternErrorResult(error);
       }
-      List<Abstract.Pattern> patterns = implicitResult.patterns;
+      List<Abstract.PatternArgument> patterns = implicitResult.patterns;
 
-      List<Pattern> resultPatterns = new ArrayList<>();
+      List<PatternArgument> resultPatterns = new ArrayList<>();
       List<Expression> substituteExpressions = new ArrayList<>();
       int numBindings = 0;
       for (int i = 0; i < constructorArguments.size(); ++i) {
         Expression argumentType = constructorArguments.get(i).getType();
         for (int j = 0; j < i; j++) {
-          argumentType = expandPatternSubstitute(resultPatterns.get(j), i - j - 1, substituteExpressions.get(j), argumentType);
+          argumentType = expandPatternSubstitute(resultPatterns.get(j).getPattern(), i - j - 1, substituteExpressions.get(j), argumentType);
         }
-        ExpandPatternResult result = expandPattern(patterns.get(i), new TypedBinding((Name) null, argumentType), mode);
+        ExpandPatternResult result = expandPattern(patterns.get(i).getPattern(), new TypedBinding((Name) null, argumentType), mode);
         if (result instanceof ExpandPatternErrorResult)
           return result;
         ExpandPatternOKResult okResult  = (ExpandPatternOKResult) result;
         substituteExpressions.add(okResult.expression);
         substExpression = Apps(substExpression.liftIndex(0, okResult.numBindings), okResult.expression);
-        resultPatterns.add(okResult.pattern);
+        resultPatterns.add(new PatternArgument(okResult.pattern, patterns.get(i).isExplicit(), patterns.get(i).isHidden()));
         numBindings += okResult.numBindings;
       }
 
-      pattern.setWellTyped(new ConstructorPattern(constructor, resultPatterns, pattern.getExplicit()));
-      return new ExpandPatternOKResult(substExpression, new ConstructorPattern(constructor, resultPatterns, pattern.getExplicit()), numBindings);
+      pattern.setWellTyped(new ConstructorPattern(constructor, resultPatterns));
+      return new ExpandPatternOKResult(substExpression, new ConstructorPattern(constructor, resultPatterns), numBindings);
     } else {
       throw new IllegalStateException();
     }
@@ -1146,18 +1154,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new OKResult(expression, Nat(), null), expr);
   }
 
-  public List<Pattern> visitPatterns(List<Abstract.Pattern> patterns, List<Expression> substIn, PatternExpansionMode mode) {
-    List<Pattern> typedPatterns;
+  public List<PatternArgument> visitPatternArgs(List<Abstract.PatternArgument> patternArgs, List<Expression> substIn, PatternExpansionMode mode) {
+    List<PatternArgument> typedPatterns;
     typedPatterns = new ArrayList<>();
-    for (int i = 0; i < patterns.size(); i++) {
-      ExpandPatternResult result = expandPatternOn(patterns.get(i), patterns.size() - 1 - i, mode);
+    for (int i = 0; i < patternArgs.size(); i++) {
+      ExpandPatternResult result = expandPatternOn(patternArgs.get(i).getPattern(), patternArgs.size() - 1 - i, mode);
       if (result == null || result instanceof ExpandPatternErrorResult)
         return null;
 
-      typedPatterns.add(((ExpandPatternOKResult) result).pattern);
+      typedPatterns.add(new PatternArgument(((ExpandPatternOKResult) result).pattern, patternArgs.get(i).isExplicit(), patternArgs.get(i).isHidden()));
 
       for (int j = 0; j < substIn.size(); j++) {
-        substIn.set(j, expandPatternSubstitute(((ExpandPatternOKResult) result).pattern, patterns.size() - i - 1, ((ExpandPatternOKResult) result).expression, substIn.get(j)));
+        substIn.set(j, expandPatternSubstitute(((ExpandPatternOKResult) result).pattern, patternArgs.size() - i - 1, ((ExpandPatternOKResult) result).expression, substIn.get(j)));
       }
     }
     return typedPatterns;

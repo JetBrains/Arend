@@ -15,7 +15,7 @@ definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  
 
 conditionDef : '\\with' condition*;
 
-condition : '|' name patternx* '=>' expr;
+condition : '|' name patternArg* '=>' expr;
 
 staticMod : '\\static'                  # staticStatic
           | '\\dynamic'                 # dynamicStatic
@@ -37,23 +37,23 @@ typeTermOpt : ':' expr (arrow expr)?    # withType
             | arrow expr                # withoutType
             ;
 
-constructorDef : '|' name patternx* '=>' constructor ('|' constructor)* ';'? # withPatterns
-               | '|' constructor                                             # noPatterns
+constructorDef : '|' name patternArg* '=>' constructor ('|' constructor)* ';'? # withPatterns
+               | '|' constructor                                               # noPatterns
                ;
 
-specPattern : '_'  # patternAny
-            | '_!' # patternAnyConstructor
-            ;
+anyPattern : '_'  # anyPatternAny
+           | '_!' # anyPatternConstructor
+           ;
 
-pattern : specPattern    # patternSpec
-        | name patternx* # patternConstructor
+pattern : anyPattern       # patternAny
+        | name patternArg* # patternConstructor
         ;
 
-patternx : '(' pattern ')' # patternxExplicit
-         | '{' pattern '}' # patternxImplicit
-         | specPattern     # patternxSpec
-         | ID              # patternxID
-         ;
+patternArg : '(' pattern ')' # patternArgExplicit
+           | '{' pattern '}' # patternArgImplicit
+           | anyPattern      # patternArgAny
+           | ID              # patternArgID
+           ;
 
 constructor : precedence name tele*;
 

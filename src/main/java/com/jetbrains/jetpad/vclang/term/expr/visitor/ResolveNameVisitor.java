@@ -226,8 +226,8 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
     }
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.Clause clause : expr.getClauses()) {
-        for (int i = 0; i < clause.getPatterns().size(); i++) {
-          visitPattern(clause, i);
+        for (Abstract.Pattern pattern : clause.getPatterns()) {
+          visitPattern(pattern);
         }
 
         if (clause.getExpression() != null)
@@ -236,8 +236,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
     }
   }
 
-  public void visitPattern(Abstract.PatternContainer con, int index) {
-    Abstract.Pattern pattern = con.getPatterns().get(index);
+  public void visitPattern(Abstract.Pattern pattern) {
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null)
@@ -252,15 +251,14 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
             hasExplicit = true;
         }
         if (!hasExplicit) {
-          con.replacePatternWithConstructor(index);
+          ((Abstract.NamePattern) pattern).setConstructor(true);
           return;
         }
       }
       myContext.add(name);
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      List<? extends Abstract.Pattern> patterns = ((Abstract.ConstructorPattern) pattern).getPatterns();
-      for (int i = 0; i < patterns.size(); ++i) {
-        visitPattern((Abstract.ConstructorPattern) pattern, i);
+      for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
+        visitPattern(patternArg.getPattern());
       }
     } else if (!(pattern instanceof Abstract.AnyConstructorPattern)) {
       throw new IllegalStateException();

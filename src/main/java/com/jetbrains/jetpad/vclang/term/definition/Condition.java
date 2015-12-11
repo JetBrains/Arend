@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPatternArg;
 
 public class Condition implements Abstract.Condition {
   private final Constructor myConstructor;
@@ -27,17 +27,12 @@ public class Condition implements Abstract.Condition {
   }
 
   @Override
-  public List<Abstract.Pattern> getPatterns() {
+  public List<Abstract.PatternArgument> getPatterns() {
     throw new UnsupportedOperationException();
   }
 
   public ElimTreeNode getElimTree() {
     return myElimTree;
-  }
-
-  @Override
-  public void replacePatternWithConstructor(int index) {
-    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -53,9 +48,11 @@ public class Condition implements Abstract.Condition {
   public static void prettyPrintCondition(Abstract.Condition condition, StringBuilder builder, List<String> names) {
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(names)) {
       builder.append(condition.getConstructorName());
-      for (Abstract.Pattern pattern : condition.getPatterns()) {
-        builder.append(" ");
-        prettyPrintPattern(pattern, builder, names);
+      for (Abstract.PatternArgument patternArg : condition.getPatterns()) {
+        if (!patternArg.isHidden()) {
+          builder.append(" ");
+          prettyPrintPatternArg(patternArg, builder, names);
+        }
       }
       builder.append(" => ");
       condition.getTerm().prettyPrint(builder, names, Abstract.Expression.PREC);

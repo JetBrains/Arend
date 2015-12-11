@@ -10,10 +10,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
@@ -216,9 +213,9 @@ public class ModuleDeserialization {
       if (!constructor.hasErrors()) {
         if (stream.readBoolean()) {
           int numPatterns = stream.readInt();
-          List<Pattern> patterns = new ArrayList<>(numPatterns);
+          List<PatternArgument> patterns = new ArrayList<>(numPatterns);
           for (int j = 0; j < numPatterns; j++) {
-            patterns.add(readPattern(stream, definitionMap));
+            patterns.add(readPatternArg(stream, definitionMap));
           }
           constructor.setPatterns(patterns);
         }
@@ -443,15 +440,20 @@ public class ModuleDeserialization {
     return let(name, arguments, resultType, readElimTree(stream, definitionMap));
   }
 
-  public Pattern readPattern(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public PatternArgument readPatternArg(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     boolean isExplicit = stream.readBoolean();
+    boolean isHidden = stream.readBoolean();
+    return new PatternArgument(readPattern(stream, definitionMap), isExplicit, isHidden);
+  }
+
+  public Pattern readPattern(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     switch (stream.readInt()) {
       case 0: {
         String name = stream.readBoolean() ? stream.readUTF() : null;
-        return new NamePattern(name, isExplicit);
+        return new NamePattern(name);
       }
       case 1: {
-        return new AnyConstructorPattern(isExplicit);
+        return new AnyConstructorPattern();
       }
       case 2: {
         Definition constructor = definitionMap.get(stream.readInt());
@@ -459,11 +461,11 @@ public class ModuleDeserialization {
           throw new IncorrectFormat();
         }
         int size = stream.readInt();
-        List<Pattern> arguments = new ArrayList<>(size);
+        List<PatternArgument> arguments = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
-          arguments.add(readPattern(stream, definitionMap));
+          arguments.add(readPatternArg(stream, definitionMap));
         }
-        return new ConstructorPattern((Constructor) constructor, arguments, isExplicit);
+        return new ConstructorPattern((Constructor) constructor, arguments);
       }
       default: {
         throw new IllegalStateException();

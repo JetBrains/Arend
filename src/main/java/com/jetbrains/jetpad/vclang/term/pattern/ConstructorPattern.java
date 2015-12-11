@@ -18,10 +18,9 @@ import java.util.List;
 
 public class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
   private final Constructor myConstructor;
-  private final List<Pattern> myArguments;
+  private final List<PatternArgument> myArguments;
 
-  public ConstructorPattern(Constructor constructor, List<Pattern> arguments, boolean isExplicit) {
-    super(isExplicit);
+  public ConstructorPattern(Constructor constructor, List<PatternArgument> arguments) {
     myConstructor = constructor;
     myArguments = arguments;
   }
@@ -35,13 +34,8 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   }
 
   @Override
-  public List<Pattern> getPatterns() {
+  public List<PatternArgument> getArguments() {
     return myArguments;
-  }
-
-  @Override
-  public void replacePatternWithConstructor(int index) {
-    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -61,7 +55,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     List<Expression> result = new ArrayList<>();
     PatternMatchMaybeResult maybe = null;
     for (int i  = 0; i < constructorArgs.size(); i++) {
-      PatternMatchResult subMatch = myArguments.get(i).match(constructorArgs.get(i), context);
+      PatternMatchResult subMatch = myArguments.get(i).getPattern().match(constructorArgs.get(i), context);
       if (subMatch instanceof PatternMatchFailedResult)
         return subMatch;
       if (subMatch instanceof PatternMatchMaybeResult) {
@@ -71,16 +65,5 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       result.addAll(((PatternMatchOKResult) subMatch).expressions);
     }
     return maybe != null ? maybe : new PatternMatchOKResult(result);
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    if (other == this)
-      return true;
-    if (!(other instanceof ConstructorPattern))
-      return false;
-    if (((ConstructorPattern) other).getConstructor() != myConstructor)
-      return false;
-    return ((ConstructorPattern) other).getPatterns().equals(myArguments) && ((Pattern) other).getExplicit() == getExplicit();
   }
 }

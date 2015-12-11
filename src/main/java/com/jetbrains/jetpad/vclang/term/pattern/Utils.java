@@ -5,10 +5,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,30 +20,26 @@ public class Utils {
     if (pattern instanceof Abstract.NamePattern || pattern instanceof Abstract.AnyConstructorPattern) {
       return 1;
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      int result = 0;
-      for (Abstract.Pattern nestedPattern : ((Abstract.ConstructorPattern) pattern).getPatterns()) {
-        result += getNumArguments(nestedPattern);
-      }
-      return result;
+      return getNumArguments(((Abstract.ConstructorPattern) pattern).getArguments());
     } else {
       throw new IllegalStateException();
     }
   }
 
-  public static int getNumArguments(List<? extends Abstract.Pattern> patterns) {
+  public static int getNumArguments(List<? extends Abstract.PatternArgument> patternArgs) {
     int result = 0;
-    for (Abstract.Pattern pattern : patterns)
-      result += getNumArguments(pattern);
+    for (Abstract.PatternArgument patternArg : patternArgs)
+      result += getNumArguments(patternArg.getPattern());
     return result;
   }
 
-  public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names) {
-    prettyPrintPattern(pattern, builder, names, false);
+  public static void prettyPrintPatternArg(Abstract.PatternArgument patternArg, StringBuilder builder, List<String> names) {
+    builder.append(patternArg.isExplicit() ? "(" : "{");
+    prettyPrintPattern(patternArg.getPattern(), builder, names);
+    builder.append(patternArg.isExplicit() ? ")" : "}");
   }
 
-  public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names, boolean topLevel) {
-    if (!pattern.getExplicit())
-      builder.append('{');
+  public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names) {
     if (pattern instanceof Abstract.NamePattern) {
       if (((Abstract.NamePattern) pattern).getName() == null) {
         builder.append('_');
@@ -56,27 +50,23 @@ public class Utils {
     } else if (pattern instanceof Abstract.AnyConstructorPattern) {
       builder.append("_!");
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      if (!topLevel && pattern.getExplicit())
-        builder.append('(');
       builder.append(((Abstract.ConstructorPattern) pattern).getConstructorName());
-      for (Abstract.Pattern p : ((Abstract.ConstructorPattern) pattern).getPatterns()) {
-        builder.append(' ');
-        prettyPrintPattern(p, builder, names, false);
+      for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
+        if (!patternArg.isHidden()) {
+          builder.append(' ');
+          prettyPrintPatternArg(patternArg, builder, names);
+        }
       }
-      if (!topLevel && pattern.getExplicit())
-        builder.append(')');
     }
-    if (!pattern.getExplicit())
-      builder.append('}');
   }
 
   public static class ProcessImplicitResult {
-    public final List<Abstract.Pattern> patterns;
+    public final List<Abstract.PatternArgument> patterns;
     public final int wrongImplicitPosition;
     public final int numExplicit;
     public final int numExcessive;
 
-    public ProcessImplicitResult(List<Abstract.Pattern> patterns, int numExplicit) {
+    public ProcessImplicitResult(List<Abstract.PatternArgument> patterns, int numExplicit) {
       this.patterns = patterns;
       this.wrongImplicitPosition = -1;
       this.numExplicit = numExplicit;
@@ -98,7 +88,7 @@ public class Utils {
     }
   }
 
-  public static ProcessImplicitResult processImplicit(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.TypeArgument> arguments) {
+  public static ProcessImplicitResult processImplicit(List<? extends Abstract.PatternArgument> patterns, List<? extends Abstract.TypeArgument> arguments) {
     class Arg {
       String name;
       boolean isExplicit;
@@ -126,16 +116,16 @@ public class Utils {
         numExplicit++;
     }
 
-    List<Abstract.Pattern> result = new ArrayList<>();
-    int indexI = 0, indexArg = 0;
+    List<Abstract.PatternArgument> result = new ArrayList<>();
+    int indexI = 0;
     for (Arg arg : args) {
-      Abstract.Pattern curPattern = indexI < patterns.size() ? patterns.get(indexI) : new NamePattern(arg.name, false);
-      if (curPattern.getExplicit() && !arg.isExplicit) {
-        curPattern = new NamePattern(arg.name, false);
+      Abstract.PatternArgument curPattern = indexI < patterns.size() ? patterns.get(indexI) : new PatternArgument(new NamePattern(arg.name), false, true);
+      if (curPattern.isExplicit() && !arg.isExplicit) {
+        curPattern = new PatternArgument(new NamePattern(arg.name), false, true);
       } else {
         indexI++;
       }
-      if (curPattern.getExplicit() != arg.isExplicit) {
+      if (curPattern.isExplicit() != arg.isExplicit) {
         return new ProcessImplicitResult(indexI, numExplicit);
       }
       result.add(curPattern);
@@ -176,6 +166,14 @@ public class Utils {
     }
   }
 
+  public static List<Pattern> toPatterns(List<PatternArgument> patternArgs)  {
+    List<Pattern> result = new ArrayList<>();
+    for (PatternArgument patternArg : patternArgs) {
+      result.add(patternArg.getPattern());
+    }
+    return result;
+  }
+
   public static PatternMatchResult patternMatchAll(List<Pattern> patterns, List<Expression> exprs, List<Binding> context) {
     List<Expression> result = new ArrayList<>();
     assert patterns.size() == exprs.size();
@@ -197,10 +195,10 @@ public class Utils {
   }
 
   public static List<TypeArgument> expandConstructorParameters(Constructor constructor, List<Binding> context) {
-    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), context);
+    List<PatternExpansion.Result<ArgumentExpression>> results = PatternExpansion.expandPatternArgs(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), context);
 
     List<TypeArgument> result = new ArrayList<>();
-    for (PatternExpansion.Result nestedResult : results) {
+    for (PatternExpansion.Result<ArgumentExpression> nestedResult : results) {
       for (TypeArgument arg : nestedResult.args) {
         result.add(arg.toExplicit(false));
       }
@@ -209,7 +207,7 @@ public class Utils {
   }
 
   public static List<ArgumentExpression> constructorPatternsToExpressions(Constructor constructor) {
-    List<PatternExpansion.Result> results = PatternExpansion.expandPatterns(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), new ArrayList<Binding>());
+    List<PatternExpansion.Result<ArgumentExpression>> results = PatternExpansion.expandPatternArgs(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), new ArrayList<Binding>());
 
     List<ArgumentExpression> result = new ArrayList<>();
     int shift = numberOfVariables(constructor.getArguments());

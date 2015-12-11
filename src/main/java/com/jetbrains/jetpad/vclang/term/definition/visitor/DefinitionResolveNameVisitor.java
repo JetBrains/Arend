@@ -159,8 +159,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       if (def.getConditions() != null) {
         for (Abstract.Condition cond : def.getConditions()) {
           try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
-            for (int i = 0; i < cond.getPatterns().size(); ++i) {
-              visitor.visitPattern(cond, i);
+            for (Abstract.PatternArgument patternArgument : cond.getPatterns()) {
+              visitor.visitPattern(patternArgument.getPattern());
             }
             cond.getTerm().accept(visitor, null);
           }
@@ -181,10 +181,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
     ResolveNameVisitor visitor = new ResolveNameVisitor(myErrorReporter, myNameResolver, myContext, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      List<? extends Abstract.Pattern> patterns = def.getPatterns();
-      if (patterns != null) {
-        for (int i = 0; i < patterns.size(); ++i) {
-          visitor.visitPattern(def, i);
+      if (def.getPatterns() != null) {
+        for (Abstract.PatternArgument patternArg : def.getPatterns()) {
+          visitor.visitPattern(patternArg.getPattern());
         }
       }
 

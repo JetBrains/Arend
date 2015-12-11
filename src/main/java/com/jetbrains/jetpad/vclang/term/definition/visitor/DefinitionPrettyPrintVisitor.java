@@ -172,20 +172,22 @@ public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<V
   public Void visitConstructor(Abstract.Constructor def, Void ignored) {
     List<String> tail = new ArrayList<>();
     int origSize = myNames.size();
-    List<? extends Abstract.Pattern> patterns = def.getPatterns();
-    if (patterns == null) {
+    List<? extends Abstract.PatternArgument> patternArgs = def.getPatterns();
+    if (patternArgs == null) {
       myBuilder.append("_ ");
     } else {
       if (!myNames.isEmpty()) { //Inside data def, so remove previous
-         tail.addAll(myNames.subList(myNames.size() - patterns.size(), myNames.size()));
-         myNames.subList(myNames.size() -  patterns.size(), myNames.size()).clear();
+         tail.addAll(myNames.subList(myNames.size() - patternArgs.size(), myNames.size()));
+         myNames.subList(myNames.size() -  patternArgs.size(), myNames.size()).clear();
          origSize = myNames.size();
       }
 
       myBuilder.append(def.getDataType().getName()).append(' ');
-      for (Abstract.Pattern pattern : patterns) {
-        pattern.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
-        myBuilder.append(' ');
+      for (Abstract.PatternArgument patternArg : patternArgs) {
+        if (!patternArg.isHidden()) {
+          patternArg.prettyPrint(myBuilder, myNames, Abstract.DefCallExpression.PREC);
+          myBuilder.append(' ');
+        }
       }
     }
     myBuilder.append("=> ");

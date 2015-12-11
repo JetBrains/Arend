@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
@@ -240,11 +240,11 @@ public class ExpressionFactory {
     return new ErrorExpression(expr, error);
   }
 
-  public static ConstructorPattern match(boolean isExplicit, Constructor constructor, Pattern... patterns) {
-    return new ConstructorPattern(constructor, Arrays.asList(patterns), isExplicit);
+  public static PatternArgument match(boolean isExplicit, Constructor constructor, PatternArgument... patternArgs) {
+    return new PatternArgument(new ConstructorPattern(constructor, Arrays.asList(patternArgs)), isExplicit, false);
   }
 
-  public static ConstructorPattern match(Constructor constructor, Pattern... patterns) {
+  public static PatternArgument match(Constructor constructor, PatternArgument... patterns) {
     return match(true, constructor, patterns);
   }
 
@@ -286,11 +286,11 @@ public class ExpressionFactory {
     return new ConstructorClausePair(constructor, new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expr));
   }
 
-  public static NamePattern match(boolean isExplicit, String name) {
-    return new NamePattern(name, isExplicit);
+  public static PatternArgument match(boolean isExplicit, String name) {
+    return new PatternArgument(new NamePattern(name), isExplicit, false);
   }
 
-  public static NamePattern match(String name) {
+  public static PatternArgument match(String name) {
     return match(true, name);
   }
 }
