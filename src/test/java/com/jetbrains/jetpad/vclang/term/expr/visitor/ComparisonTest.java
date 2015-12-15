@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -9,6 +10,7 @@ import org.junit.Test;
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static org.junit.Assert.*;
 
 public class ComparisonTest {
@@ -130,8 +132,28 @@ public class ComparisonTest {
 
   @Test
   public void letsNested() {
-    Definition def1 = typeCheckDef("\\function test => \\let | x => 0 \\in \\let  | y => 1 \\in zero");
+    Definition def1 = typeCheckDef("\\function test => \\let x => 0 \\in \\let y => 1 \\in zero");
     Definition def2 = typeCheckDef("\\function test => \\let | x => 0 | y => 1 \\in zero");
     assertEquals(((FunctionDefinition) def1).getTerm(), ((FunctionDefinition) def2).getTerm());
+  }
+
+  @Test
+  public void etaLam() {
+    Expression type = Pi(Nat(), Apps(Prelude.PATH.getDefCall(), Lam("i", Prelude.INTERVAL.getDefCall(), Nat()), Zero(), Zero()));
+    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(type, type));
+    assertTrue(result1 instanceof CheckTypeVisitor.OKResult);
+    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(type, type));
+    assertTrue(result2 instanceof CheckTypeVisitor.OKResult);
+    assertEquals(result2.expression, result1.expression);
+  }
+
+  @Test
+  public void etaPath() {
+    Expression type = Apps(Prelude.PATH.getDefCall(), Lam("i", Prelude.INTERVAL.getDefCall(), Pi(Nat(), Nat())), Lam("x", Nat(), Index(0)), Lam("x", Nat(), Index(0)));
+    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(type, type));
+    assertTrue(result1 instanceof CheckTypeVisitor.OKResult);
+    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(type, type));
+    assertTrue(result2 instanceof CheckTypeVisitor.OKResult);
+    assertEquals(result2.expression, result1.expression);
   }
 }
