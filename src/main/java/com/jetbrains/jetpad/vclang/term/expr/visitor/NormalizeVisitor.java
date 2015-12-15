@@ -259,7 +259,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     int numberOfSubstArgs = numberOfVariables(conCallExpression.getDefinition().getArguments());
     List<TypeArgument> args1 = new ArrayList<>();
-    splitArguments((numberOfSubstArgs == 0 ? conCallExpression : Apps(conCallExpression, args.toArray(new ArgumentExpression[args.size()]))).getType(myContext), args1, myContext);
+    List<ArgumentExpression> argsToSubst = new ArrayList<>(args);
+    Collections.reverse(argsToSubst);
+    splitArguments((numberOfSubstArgs == 0 ? conCallExpression : Apps(conCallExpression, argsToSubst.toArray(new ArgumentExpression[argsToSubst.size()]))).getType(myContext), args1, myContext);
     args1.subList(Math.max(0, numberOfSubstArgs - args.size()), args1.size()).clear();
     if (mode == Mode.WHNF && !args1.isEmpty()) {
       return applyDefCall(conCallExpression, args, mode);
@@ -289,7 +291,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (func.getThisClass() != null ? 1 : 0);
     List<TypeArgument> args1 = new ArrayList<>();
-    splitArguments((numberOfSubstArgs == 0 ? defCallExpr : Apps(defCallExpr, args.toArray(new ArgumentExpression[args.size()]))).getType(myContext), args1, myContext);
+    List<ArgumentExpression> argsToSubst = new ArrayList<>(args);
+    Collections.reverse(argsToSubst);
+    splitArguments((numberOfSubstArgs == 0 ? defCallExpr : Apps(defCallExpr, argsToSubst.toArray(new ArgumentExpression[argsToSubst.size()]))).getType(myContext), args1, myContext);
     args1.subList(Math.max(numberOfSubstArgs - args.size(), 0), args1.size()).clear();
 
     if (mode == Mode.WHNF && !args1.isEmpty() || func.getElimTree() == null) {
