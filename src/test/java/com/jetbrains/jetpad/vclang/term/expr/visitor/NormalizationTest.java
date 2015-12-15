@@ -266,4 +266,13 @@ public class NormalizationTest {
     Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil));
     assertEquals(Lam(lamArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
+
+  @Test
+  public void testFuncNorm() {
+    Expression expr1 = Apps(FunCall(Prelude.PATH_INFIX), Nat(), Zero());
+    assertEquals(
+        Lam(lamArgs(Tele(vars("a'"), Nat())), Apps(FunCall(Prelude.PATH_INFIX), Nat(), Zero(), Index(0))).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()),
+        expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>())
+    );
+  }
 }

@@ -257,38 +257,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     // TODO: what if the list of parameters is still incomplete?
 
-    List<TypeArgument> origArgs = conCallExpression.getDefinition().getArguments();
-
-    List<TypeArgument> arguments;
-    if (!conCallExpression.getParameters().isEmpty()) {
-      List<Expression> substExprs = new ArrayList<>(conCallExpression.getParameters());
-      Collections.reverse(substExprs);
-      arguments = new ArrayList<>(origArgs.size());
-      for (int j = 0; j < conCallExpression.getDefinition().getArguments().size(); ++j) {
-        int num;
-        if (origArgs.get(j) instanceof TelescopeArgument) {
-          arguments.add(Tele(origArgs.get(j).getExplicit(), ((TelescopeArgument) origArgs.get(j)).getNames(), origArgs.get(j).getType().subst(substExprs, 0)));
-          num = ((TelescopeArgument) origArgs.get(j)).getNames().size();
-        } else {
-          arguments.add(TypeArg(origArgs.get(j).getExplicit(), origArgs.get(j).getType().subst(substExprs, j)));
-          num = 1;
-        }
-
-        for (int i = 0; i < substExprs.size(); ++i) {
-          substExprs.set(i, substExprs.get(i).liftIndex(0, num));
-        }
-      }
-    } else {
-      arguments = origArgs;
-    }
-
-    int numberOfArgs = numberOfVariables(arguments);
-
-    if (mode == Mode.WHNF && numberOfArgs > args.size()) {
+    int numberOfSubstArgs = numberOfVariables(conCallExpression.getDefinition().getArguments());
+    List<TypeArgument> args1 = new ArrayList<>();
+    splitArguments((numberOfSubstArgs == 0 ? conCallExpression : Apps(conCallExpression, args.toArray(new ArgumentExpression[args.size()]))).getType(myContext), args1, myContext);
+    args1.subList(Math.max(0, numberOfSubstArgs - args.size()), args1.size()).clear();
+    if (mode == Mode.WHNF && !args1.isEmpty()) {
       return applyDefCall(conCallExpression, args, mode);
     }
 
-    List<Expression> args2 = completeArgs(args, numberOfArgs, numberOfArgs);
+    List<Expression> args2 = completeArgs(args, numberOfSubstArgs);
 
     if (conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()) == null) {
       return applyDefCall(conCallExpression, args, mode);
@@ -297,9 +274,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     LeafElimTreeNode leaf = conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()).getElimTree().accept(this, args2);
     if (leaf == null)
       return applyDefCall(conCallExpression, args, mode);
-    Expression result = leaf.getExpression().liftIndex(0, numberOfArgs - args.size()).subst(args2, 0);
+    Expression result = leaf.getExpression().liftIndex(args2.size(), args2.size() + args1.size()).subst(args2, 0);
 
-    result = bindExcessiveArgs(args, result, arguments, numberOfArgs, numberOfArgs);
+    result = bindExcessiveArgs(args, result, args1, numberOfSubstArgs);
 
     return mode == Mode.TOP ? result : result.accept(this, mode);
   }
@@ -310,24 +287,21 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return mode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this, mode);
     }
 
+    int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (func.getThisClass() != null ? 1 : 0);
     List<TypeArgument> args1 = new ArrayList<>();
-    ClassDefinition thisClass = func.getThisClass();
-    if (thisClass != null) {
-      args1.add(TypeArg(ClassCall(thisClass)));
-    }
-    splitArguments(getFunctionType(func), args1, myContext);
-    int numberOfArgs = numberOfVariables(args1);
-    if (mode == Mode.WHNF && numberOfArgs > args.size() || func.getElimTree() == null) {
+    splitArguments((numberOfSubstArgs == 0 ? defCallExpr : Apps(defCallExpr, args.toArray(new ArgumentExpression[args.size()]))).getType(myContext), args1, myContext);
+    args1.subList(Math.max(numberOfSubstArgs - args.size(), 0), args1.size()).clear();
+
+    if (mode == Mode.WHNF && !args1.isEmpty() || func.getElimTree() == null) {
       return applyDefCall(defCallExpr, args, mode);
     }
 
-    int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (thisClass != null ? 1 : 0);
-    List<Expression> args2 = completeArgs(args, numberOfArgs, numberOfSubstArgs);
+    List<Expression> args2 = completeArgs(args, numberOfSubstArgs);
 
     LeafElimTreeNode leaf = func.getElimTree().accept(this, args2);
     if (leaf == null)
       return applyDefCall(defCallExpr, args, mode);
-    Expression result = leaf.getExpression().liftIndex(0, numberOfSubstArgs > args.size() ? numberOfSubstArgs - args.size() : 0).subst(args2, 0);
+    Expression result = leaf.getExpression().liftIndex(args2.size(), args2.size() + args1.size()).subst(args2, 0);
     if (leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
       try (ContextSaver ignore = new ContextSaver(myContext)) {
         for (TypeArgument arg : args1) {
@@ -340,28 +314,28 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
-    result = bindExcessiveArgs(args, result, args1, numberOfArgs, numberOfSubstArgs);
+    result = bindExcessiveArgs(args, result, args1, numberOfSubstArgs);
 
     return mode == Mode.TOP ? result : result.accept(this, mode);
   }
 
-  private Expression bindExcessiveArgs(List<ArgumentExpression> args, Expression result, List<TypeArgument> argTypes, int numberOfArgs, int numberOfSubstArgs) {
-    for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()) - 1; i >= 0; --i) {
+  private Expression bindExcessiveArgs(List<ArgumentExpression> args, Expression result, List<TypeArgument> argTypes, int numberOfSubstArgs) {
+    for (int i = args.size() - numberOfSubstArgs - 1; i >= 0; --i) {
       result = Apps(result, args.get(i));
     }
 
-    for (int i = numberOfArgs - Math.max(numberOfSubstArgs, args.size()) - 1; i >= 0; --i) {
-      result = Apps(result, Index(i));
+    if (!argTypes.isEmpty()) {
+      List<Argument> arguments = new ArrayList<Argument>(argTypes);
+      Collections.reverse(arguments);
+      return Lam(arguments, result);
     }
-    if (args.size() < numberOfArgs) {
-      result = addLambdas(argTypes, args.size(), result);
-    }
+
     return result;
   }
 
-  private List<Expression> completeArgs(List<ArgumentExpression> args, int numberOfArgs, int numberOfSubstArgs) {
+  private List<Expression> completeArgs(List<ArgumentExpression> args, int numberOfSubstArgs) {
     List<Expression> args2 = new ArrayList<>(numberOfSubstArgs);
-    for (int i = numberOfArgs - numberOfSubstArgs; i < numberOfArgs - args.size(); ++i) {
+    for (int i = 0; i < numberOfSubstArgs - args.size(); ++i) {
       args2.add(Index(i));
     }
     for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()); i < args.size(); ++i) {
