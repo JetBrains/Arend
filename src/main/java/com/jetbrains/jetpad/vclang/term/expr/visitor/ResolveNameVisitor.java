@@ -226,8 +226,10 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
     }
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.Clause clause : expr.getClauses()) {
-        for (Abstract.Pattern pattern : clause.getPatterns()) {
-          visitPattern(pattern);
+        for (int i = 0; i < clause.getPatterns().size(); i++) {
+          if (visitPattern(clause.getPatterns().get(i))) {
+            myResolveListener.replaceWithConstructor(clause, i);
+          }
         }
 
         if (clause.getExpression() != null)
@@ -236,11 +238,11 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
     }
   }
 
-  public void visitPattern(Abstract.Pattern pattern) {
+  public boolean visitPattern(Abstract.Pattern pattern) {
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null)
-        return;
+        return false;
       NamespaceMember namespaceMember = myNameResolver.locateName(name);
       if (namespaceMember != null && (namespaceMember.definition instanceof Constructor || namespaceMember.abstractDefinition instanceof Abstract.Constructor)) {
         List<Abstract.Argument> args = new ArrayList<>();
@@ -251,18 +253,20 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
             hasExplicit = true;
         }
         if (!hasExplicit) {
-          ((Abstract.NamePattern) pattern).setConstructor(true);
-          return;
+          return true;
         }
       }
       myContext.add(name);
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
-        visitPattern(patternArg.getPattern());
+        if (visitPattern(patternArg.getPattern())) {
+          myResolveListener.replaceWithConstructor(patternArg);
+        }
       }
     } else if (!(pattern instanceof Abstract.AnyConstructorPattern)) {
       throw new IllegalStateException();
     }
+    return false;
   }
 
   @Override

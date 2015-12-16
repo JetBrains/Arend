@@ -66,3 +66,4 @@ public class LamExpression extends Expression implements Abstract.LamExpression 
     return visitor.visitLam(this, params);
   }
 }
+//fun-eq-path <3>.3 (<3>.1 (<9> <2>)) *> fun-eq-path <3>.3 <2>

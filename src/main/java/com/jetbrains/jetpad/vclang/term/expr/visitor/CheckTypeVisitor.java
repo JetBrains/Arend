@@ -635,7 +635,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode) {
-    if (pattern instanceof Abstract.NamePattern && !((Abstract.NamePattern) pattern).isConstructor()) {
+    if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null) {
         myLocalContext.add(binding);
@@ -644,7 +644,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       pattern.setWellTyped(new NamePattern(name));
       return new ExpandPatternOKResult(Index(0), new NamePattern(name), 1);
-    } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern || pattern instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern).isConstructor()) {
+    } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       TypeCheckingError error = null;
 
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
@@ -684,26 +684,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return new ExpandPatternOKResult(Index(0), new AnyConstructorPattern(), 1);
       }
 
-      Name constructorName;
-      List<? extends Abstract.PatternArgument> patternArguments;
-      if (pattern instanceof Abstract.ConstructorPattern) {
-        patternArguments = ((Abstract.ConstructorPattern) pattern).getArguments();
-        constructorName = ((Abstract.ConstructorPattern) pattern).getConstructorName();
-      } else {
-        patternArguments = Collections.emptyList();
-        constructorName = new Name(((Abstract.NamePattern) pattern).getName());
-      }
+      Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
 
       Constructor constructor = null;
       for (int index = 0; index < dataType.getConstructors().size(); ++index) {
-        if (dataType.getConstructors().get(index).getName().equals(constructorName)) {
+        if (dataType.getConstructors().get(index).getName().equals(constructorPattern.getConstructorName())) {
           constructor = dataType.getConstructors().get(index);
           break;
         }
       }
 
       if (constructor == null) {
-        error = new NotInScopeError(pattern, constructorName);
+        error = new NotInScopeError(pattern, constructorPattern.getConstructorName());
         myErrorReporter.report(error);
         return new ExpandPatternErrorResult(error);
       }
@@ -740,13 +732,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       List<TypeArgument> constructorArguments = new ArrayList<>();
       splitArguments(constructor.getType().subst(matchedParameters, 0), constructorArguments, myLocalContext);
 
-      Utils.ProcessImplicitResult implicitResult = processImplicit(patternArguments, constructorArguments);
+      Utils.ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getArguments(), constructorArguments);
       if (implicitResult.patterns == null) {
         if (implicitResult.numExcessive != 0) {
           error = new TypeCheckingError("Too many arguments: " + implicitResult.numExcessive + " excessive", pattern,
               getNames(myLocalContext));
-        } else if (implicitResult.wrongImplicitPosition < patternArguments.size()) {
-          error = new TypeCheckingError("Unexpected implicit argument", patternArguments.get(implicitResult.wrongImplicitPosition), getNames(myLocalContext));
+        } else if (implicitResult.wrongImplicitPosition < constructorPattern.getArguments().size()) {
+          error = new TypeCheckingError("Unexpected implicit argument", constructorPattern.getArguments().get(implicitResult.wrongImplicitPosition), getNames(myLocalContext));
         } else {
           error = new TypeCheckingError("Too few explicit arguments, expected: " + implicitResult.numExplicit, pattern, getNames(myLocalContext));
         }

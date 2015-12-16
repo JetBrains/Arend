@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.definition.Condition.prettyPrintCondition;
@@ -686,7 +687,11 @@ public final class Concrete {
     }
   }
 
-  public static class Clause extends SourceNode implements Abstract.Clause {
+  public interface PatternContainer extends Abstract.PatternContainer {
+    void replaceWithConstructor(int index);
+  }
+
+  public static class Clause extends SourceNode implements PatternContainer, Abstract.Clause {
     private final List<Pattern> myPatterns;
     private final Definition.Arrow myArrow;
     private final Expression myExpression;
@@ -716,6 +721,12 @@ public final class Concrete {
     @Override
     public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
       Utils.prettyPrintClause(null, this, builder, names, 0);
+    }
+
+    @Override
+    public void replaceWithConstructor(int index) {
+      Pattern old = myPatterns.get(index);
+      myPatterns.set(index, new ConstructorPattern(old.getPosition(), new Name(old.getName()), Collections.<PatternArgument>emptyList()));
     }
   }
 
@@ -1007,13 +1018,17 @@ public final class Concrete {
   public static class PatternArgument extends SourceNode implements Abstract.PatternArgument {
     private final boolean myHidden;
     private final boolean myExplicit;
-    private final Pattern myPattern;
+    private Pattern myPattern;
 
     public PatternArgument(Position position, Pattern pattern, boolean explicit, boolean hidden) {
       super(position);
       this.myHidden = hidden;
       this.myPattern = pattern;
       this.myExplicit = explicit;
+    }
+
+    public void replaceWithConstructor() {
+      myPattern = new ConstructorPattern(myPattern.getPosition(), new Name(myPattern.getName()), Collections.<PatternArgument>emptyList());
     }
 
     @Override
@@ -1057,27 +1072,15 @@ public final class Concrete {
 
   public static class NamePattern extends Pattern implements Abstract.NamePattern {
     private final String myName;
-    private boolean myConstructor;
 
     public NamePattern(Position position, String name) {
       super(position);
       myName = name;
-      myConstructor = false;
     }
 
     @Override
     public String getName() {
       return myName;
-    }
-
-    @Override
-    public boolean isConstructor() {
-      return myConstructor;
-    }
-
-    @Override
-    public void setConstructor(boolean isConstructor) {
-      myConstructor = isConstructor;
     }
   }
 

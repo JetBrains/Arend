@@ -23,4 +23,14 @@ public class BaseResolveListener implements ResolveListener {
   public void replaceBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression expression) {
 
   }
+
+  @Override
+  public void replaceWithConstructor(Abstract.PatternArgument patternArg) {
+
+  }
+
+  @Override
+  public void replaceWithConstructor(Abstract.PatternContainer container, int index) {
+
+  }
 }

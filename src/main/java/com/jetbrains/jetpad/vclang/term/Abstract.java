@@ -178,8 +178,11 @@ public final class Abstract {
     int getField();
   }
 
-  public interface Clause extends PrettyPrintableSourceNode {
+  public interface PatternContainer {
     List<? extends Pattern> getPatterns();
+  }
+
+  public interface Clause extends PrettyPrintableSourceNode, PatternContainer {
     Definition.Arrow getArrow();
     Expression getExpression();
   }
@@ -283,8 +286,6 @@ public final class Abstract {
 
   public interface NamePattern extends Pattern {
     String getName();
-    boolean isConstructor();
-    void setConstructor(boolean isConstructor);
   }
 
   public interface ConstructorPattern extends Pattern{

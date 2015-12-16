@@ -20,16 +20,6 @@ public class NamePattern extends Pattern implements Abstract.NamePattern {
   }
 
   @Override
-  public boolean isConstructor() {
-    return false;
-  }
-
-  @Override
-  public void setConstructor(boolean isConstructor) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public Utils.PatternMatchResult match(Expression expr, List<Binding> context) {
     return new Utils.PatternMatchOKResult(Collections.singletonList(expr));
   }

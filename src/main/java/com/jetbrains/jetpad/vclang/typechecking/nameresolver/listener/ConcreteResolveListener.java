@@ -24,4 +24,14 @@ public class ConcreteResolveListener implements ResolveListener {
   public void replaceBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression expression) {
     ((Concrete.BinOpSequenceExpression) binOpExpr).replace(expression);
   }
+
+  @Override
+  public void replaceWithConstructor(Abstract.PatternArgument patternArg) {
+    ((Concrete.PatternArgument) patternArg).replaceWithConstructor();
+  }
+
+  @Override
+  public void replaceWithConstructor(Abstract.PatternContainer container, int index) {
+    ((Concrete.PatternContainer) container).replaceWithConstructor(index);
+  }
 }
