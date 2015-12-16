@@ -286,9 +286,13 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression visitFunctionCall(Function func, Expression defCallExpr, List<ArgumentExpression> args, Mode mode) {
-    if (func instanceof FunctionDefinition && func.equals(Prelude.COERCE) && args.size() == 3
-      && Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0)).accept(this, Mode.NF).liftIndex(0, -1) != null) {
-      return mode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this, mode);
+    if (func instanceof FunctionDefinition && func.equals(Prelude.COERCE) && args.size() == 3) {
+      Expression expr = Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0));
+      myContext.add(new TypedBinding("i", DataCall(Prelude.INTERVAL)));
+      expr = expr.accept(this, Mode.NF).liftIndex(0, -1);
+      myContext.remove(myContext.size() - 1);
+      if (expr != null)
+        return mode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this, mode);
     }
 
     int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (func.getThisClass() != null ? 1 : 0);
