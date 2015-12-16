@@ -263,8 +263,8 @@ public class NormalizationTest {
   @Test
   public void testConCallPartial() {
     initializeBDList();
-    Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil));
-    assertEquals(Lam(lamArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+    Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil, Nat()));
+    assertEquals(Lam(lamArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil, Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test

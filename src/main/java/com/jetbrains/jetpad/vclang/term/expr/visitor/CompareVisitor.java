@@ -102,6 +102,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         }
       } else if (arg instanceof Abstract.NameArgument) {
         types.add(null);
+      } else if (arg instanceof Abstract.TypeArgument) {
+        types.add(((Abstract.TypeArgument) arg).getType());
       }
     }
   }

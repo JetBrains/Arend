@@ -268,6 +268,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     List<Expression> args2 = completeArgs(args, numberOfSubstArgs);
+    args2.addAll(conCallExpression.getParameters());
+    Collections.reverse(args2.subList(numberOfSubstArgs, args2.size()));
 
     if (conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()) == null) {
       return applyDefCall(conCallExpression, args, mode);
@@ -276,7 +278,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     LeafElimTreeNode leaf = conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()).getElimTree().accept(this, args2);
     if (leaf == null)
       return applyDefCall(conCallExpression, args, mode);
-    Expression result = leaf.getExpression().liftIndex(args2.size(), args2.size() + args1.size()).subst(args2, 0);
+    Expression result = leaf.getExpression().subst(args2, 0);
 
     result = bindExcessiveArgs(args, result, args1, numberOfSubstArgs);
 
@@ -305,7 +307,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     LeafElimTreeNode leaf = func.getElimTree().accept(this, args2);
     if (leaf == null)
       return applyDefCall(defCallExpr, args, mode);
-    Expression result = leaf.getExpression().liftIndex(args2.size(), args2.size() + args1.size()).subst(args2, 0);
+    Expression result = leaf.getExpression().liftIndex(args2.size(), args1.size()).subst(args2, 0);
     if (leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
       try (ContextSaver ignore = new ContextSaver(myContext)) {
         for (TypeArgument arg : args1) {
@@ -329,9 +331,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (!argTypes.isEmpty()) {
-      List<Argument> arguments = new ArrayList<Argument>(argTypes);
-      Collections.reverse(arguments);
-      return Lam(arguments, result);
+      return Lam(new ArrayList<Argument>(argTypes), result);
     }
 
     return result;

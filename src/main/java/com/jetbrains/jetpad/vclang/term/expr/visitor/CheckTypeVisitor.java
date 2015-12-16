@@ -252,7 +252,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         resultType = null;
         fresultType = null;
       } else {
-        resultType = expectedType.splitAt(lambdaArgs.size(), piArgs, myLocalContext).normalize(NormalizeVisitor.Mode.WHNF, myLocalContext);
+        resultType = expectedType.splitAt(lambdaArgs.size(), piArgs, myLocalContext);
         fresultType = resultType.getFunction(new ArrayList<Expression>());
         actualNumberOfPiArgs = piArgs.size();
         if (fresultType instanceof InferHoleExpression) {

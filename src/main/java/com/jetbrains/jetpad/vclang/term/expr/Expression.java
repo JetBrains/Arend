@@ -148,7 +148,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
               for (; j < teleArg.getNames().size(); ++j) {
                 names.add(teleArg.getNames().get(j));
               }
-              additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType());
+              additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType().liftIndex(0, teleArg.getNames().size() - names.size()));
             }
           } else {
             if (arguments != null) {
