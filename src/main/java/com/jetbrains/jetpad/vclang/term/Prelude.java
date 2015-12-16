@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.term;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +31,8 @@ public class Prelude {
   public static Constructor PATH_CON;
 
   public static FunctionDefinition AT;
+
+  public static FunctionDefinition ISO;
 
   static {
     PRELUDE_CLASS = new ClassDefinition(RootModule.ROOT, new Name("Prelude"));
@@ -99,12 +101,26 @@ public class Prelude {
     atArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
     Expression atResultType = Apps(Index(4), Index(0));
     BranchElimTreeNode atElimTree = branch(0,
-        clause(LEFT, Index(2)),
-        clause(RIGHT, Index(1)),
-        clause(null, branch(1, clause(PATH_CON, Apps(Index(1), Index(0)))))
+      clause(LEFT, Index(2)),
+      clause(RIGHT, Index(1)),
+      clause(null, branch(1, clause(PATH_CON, Apps(Index(1), Index(0)))))
     );
     AT = new FunctionDefinition(PRELUDE, new Name("@", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atArguments, atResultType, atElimTree);
 
     PRELUDE.addDefinition(AT);
+
+    List<Argument> isoArguments = new ArrayList<>(6);
+    isoArguments.add(Tele(false, vars("A", "B"), Universe(Universe.NO_LEVEL, Universe.Type.NOT_TRUNCATED)));
+    isoArguments.add(Tele(vars("f"), Pi(Index(1), Index(0))));
+    isoArguments.add(Tele(vars("g"), Pi(Index(1), Index(2))));
+    isoArguments.add(Tele(vars("linv"), Pi(args(Tele(vars("a"), Index(3))), Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Index(4), false, true)), Apps(Index(1), Apps(Index(2), Index(0)), Index(0))))));
+    isoArguments.add(Tele(vars("rinv"), Pi(args(Tele(vars("b"), Index(3))), Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Index(4), false, true)), Apps(Index(3), Apps(Index(2), Index(0)), Index(0))))));
+    isoArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
+    Expression isoResultType = Universe(0, Universe.Type.NOT_TRUNCATED);
+    BranchElimTreeNode isoElimTree = branch(0,
+      clause(LEFT, Index(5)),
+      clause(RIGHT, Index(4))
+    );
+    ISO = new FunctionDefinition(PRELUDE, new Name("iso"), Abstract.Definition.DEFAULT_PRECEDENCE, isoArguments, isoResultType, isoElimTree);
   }
 }

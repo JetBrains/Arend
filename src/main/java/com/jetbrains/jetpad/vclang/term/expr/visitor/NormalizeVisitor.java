@@ -289,10 +289,28 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (func instanceof FunctionDefinition && func.equals(Prelude.COERCE) && args.size() == 3) {
       Expression expr = Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0));
       myContext.add(new TypedBinding("i", DataCall(Prelude.INTERVAL)));
-      expr = expr.accept(this, Mode.NF).liftIndex(0, -1);
+      expr = expr.accept(this, Mode.NF);
       myContext.remove(myContext.size() - 1);
-      if (expr != null)
+      if (expr.liftIndex(0, -1) != null)
         return mode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this, mode);
+      List<Expression> mbIsoArgs = new ArrayList<>();
+      Expression mbIso = expr.getFunction(mbIsoArgs);
+      if (mbIso instanceof FunCallExpression && ((FunCallExpression) mbIso).getDefinition() == Prelude.ISO && mbIsoArgs.size() == 7) {
+        boolean noFreeVar = true;
+        for (int i = 1; i < mbIsoArgs.size(); i++) {
+          if (mbIsoArgs.get(i).liftIndex(0, -1) == null) {
+            noFreeVar = false;
+            break;
+          }
+        }
+        if (noFreeVar) {
+          Expression normedPt = args.get(0).getExpression().accept(this, Mode.NF);
+          if (normedPt instanceof ConCallExpression && ((ConCallExpression) normedPt).getDefinition() == Prelude.RIGHT) {
+            Expression result = Apps(mbIsoArgs.get(4).liftIndex(0, -1), args.get(1));
+            return mode == Mode.TOP ? result : result.accept(this, mode);
+          }
+        }
+      }
     }
 
     int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (func.getThisClass() != null ? 1 : 0);

@@ -5,12 +5,10 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
-import org.omg.PortableInterceptor.SUCCESSFUL;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -274,5 +272,29 @@ public class NormalizationTest {
         Lam(lamArgs(Tele(vars("a'"), Nat())), Apps(FunCall(Prelude.PATH_INFIX), Nat(), Zero(), Index(0))).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()),
         expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>())
     );
+  }
+
+  @Test
+  public void testIsoleft() {
+    Expression expr = Apps(FunCall(Prelude.ISO), Index(0), Index(1), Index(2), Index(3), Index(4), Index(5), ConCall(Prelude.LEFT));
+    assertEquals(Index(0), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+  }
+
+  @Test
+  public void testIsoRight() {
+    Expression expr = Apps(FunCall(Prelude.ISO), Index(0), Index(1), Index(2), Index(3), Index(4), Index(5), ConCall(Prelude.RIGHT));
+    assertEquals(Index(1), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+  }
+
+  @Test
+  public void testCoeIso() {
+    Expression expr = Apps(FunCall(Prelude.COERCE), Lam("k", Apps(FunCall(Prelude.ISO), Index(1), Index(2), Index(3), Index(4), Index(5), Index(6), Index(0))), Index(6), ConCall(Prelude.RIGHT));
+    assertEquals(Apps(Index(2), Index(6)), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+  }
+
+  @Test
+  public void testCoeIsoFreeVar() {
+    Expression expr = Apps(FunCall(Prelude.COERCE), Lam("k", Apps(FunCall(Prelude.ISO), Apps(DataCall(Prelude.PATH), Lam("i", DataCall(Prelude.INTERVAL)), Index(0), Index(0)), Index(2), Index(3), Index(4), Index(5), Index(6), Index(0))), Index(6), ConCall(Prelude.RIGHT));
+    assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 }
