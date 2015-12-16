@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 
 public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
@@ -162,7 +163,10 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
     }
     int index = ((IndexExpression) fun1).getIndex();
     if (index < myContext.size() && myContext.get(myContext.size() - 1 - index).isInference()) {
-      myEquations.add((IndexExpression) fun1, args1, expr2, cmp);
+      for (Expression arg : args1) {
+        fun1 = Apps(fun1, arg);
+      }
+      myEquations.add(fun1, expr2, cmp);
       return true;
     } else {
       return false;
@@ -267,7 +271,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
       return false;
     }
     Binding binding = myContext.get(myContext.size() - expr1.getIndex() - 1);
-    return binding.isInference() && myEquations.add(expr1.getIndex(), expr2, cmp);
+    return binding.isInference() && myEquations.add(expr1, expr2, cmp);
   }
 
   @Override

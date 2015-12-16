@@ -14,6 +14,8 @@ import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.InferredArgumentsMismatch;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.ListEquations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -155,12 +157,14 @@ public class OldArgsInference extends RowImplicitArgsInference {
         }
       }
 
+      /*
       if (resultArgs[i].equations == null) continue;
       SolveEquationsResult result1 = solveEquations(i, argsImp, resultArgs, resultArgs[i].equations, resultEquations, fun);
       if (result1.index < 0) return false;
       if (result1.index != i) {
         i = result1.index - 1;
       }
+      */
     }
     return true;
   }
@@ -222,6 +226,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
 
       CheckTypeVisitor.Result argResult = myVisitor.typeCheck(args.get(0).getExpression(), argExpectedType);
       if (!(argResult instanceof CheckTypeVisitor.OKResult)) return argResult;
+      /*
       if (argResult.equations != null) {
         for (int k = 0; k < argResult.equations.size(); ++k) {
           if (argResult.equations.get(k).hole.equals(inferHoleExpr)) {
@@ -229,6 +234,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
           }
         }
       }
+      */
       PiExpression piType = (PiExpression) ((CheckTypeVisitor.OKResult) argResult).type;
 
       List<TypeArgument> arguments = new ArrayList<>(piType.getArguments().size());
@@ -247,12 +253,9 @@ public class OldArgsInference extends RowImplicitArgsInference {
       Expression parameter2 = Apps(argResult.expression, ConCall(Prelude.LEFT));
       Expression parameter3 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
       Expression resultType = Apps(DataCall(pathCon.getDataType()), parameter1, parameter2, parameter3);
-      List<CompareVisitor.Equation> resultEquations = argResult.equations;
+      Equations resultEquations = argResult.equations;
       if (holeExpression != null) {
-        if (resultEquations == null) {
-          resultEquations = new ArrayList<>(1);
-        }
-        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(teleArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext()))));
+        resultEquations.add(holeExpression, Lam(teleArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext())), Equations.CMP.EQ);
       }
 
       List<Expression> parameters = new ArrayList<>(3);
@@ -275,11 +278,13 @@ public class OldArgsInference extends RowImplicitArgsInference {
 
     int argsNumber = i;
     CheckTypeVisitor.Result[] resultArgs = new CheckTypeVisitor.Result[argsNumber];
-    List<CompareVisitor.Equation> resultEquations = new ArrayList<>();
+    Equations resultEquations = new ListEquations();
+    /*
     if (!typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, 0, fun)) {
       expression.setWellTyped(myVisitor.getLocalContext(), Error(null, null)); // TODO
       return null;
     }
+    */
 
     Expression resultType;
     if (signatureArguments.size() == argsNumber) {
@@ -324,6 +329,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
         return null;
       }
 
+      /*
       SolveEquationsResult result1 = solveEquations(argsNumber, argsImp, resultArgs, equations, resultEquations, fun);
       if (result1.index < 0 || (result1.index != argsNumber && !typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, result1.index, fun))) {
         Expression resultExpr = okFunction.expression;
@@ -333,6 +339,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
         expression.setWellTyped(myVisitor.getLocalContext(), Error(resultExpr, result1.error));
         return null;
       }
+      */
 
       argIndex = 0;
       for (i = argsNumber - 1; i >= 0; --i) {

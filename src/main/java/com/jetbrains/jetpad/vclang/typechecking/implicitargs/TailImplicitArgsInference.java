@@ -46,9 +46,7 @@ public abstract class TailImplicitArgsInference extends BaseImplicitArgsInferenc
 
     // TODO: add Pi to expectedType and actualType and replace indices with inference variables in actual type, compare them and return result.
     CheckTypeVisitor.Result result = inferTail(fun.expression, argTypes, actualType, expectedType);
-    if (result.equations != null && fun.equations != null) {
-      result.equations.addAll(fun.equations);
-    }
+    result.equations.add(fun.equations);
     return result;
   }
 }

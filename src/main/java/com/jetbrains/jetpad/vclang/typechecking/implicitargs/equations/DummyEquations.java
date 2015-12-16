@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.IndexExpression;
-
-import java.util.List;
 
 public class DummyEquations implements Equations {
   private static final DummyEquations INSTANCE = new DummyEquations();
@@ -25,12 +22,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(int var, Expression expr, CMP cmp) {
-    return false;
-  }
-
-  @Override
-  public boolean add(IndexExpression fun1, List<Expression> args1, Expression expr2, CMP cmp) {
+  public boolean add(Expression expr1, Expression expr2, CMP cmp) {
     return false;
   }
 
