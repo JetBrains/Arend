@@ -64,6 +64,10 @@ public abstract class Expression implements PrettyPrintable {
     return context == null ? this : accept(new NormalizeVisitor(context), mode);
   }
 
+  public final CheckTypeVisitor.Result checkType(List<Binding> localContext, Expression expectedType, ErrorReporter errorReporter) {
+    return new CheckTypeVisitor.Builder(localContext, errorReporter).build().checkType(this, expectedType);
+  }
+
   public static CompareVisitor.Result oldCompare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {
     return expr1.accept(new CompareVisitor(equations), expr2);
   }

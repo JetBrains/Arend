@@ -24,6 +24,10 @@ public class TypeCheckingError extends GeneralError {
     myNames = names;
   }
 
+  protected List<String> getNames() {
+    return myNames;
+  }
+
   public static List<String> getNames(List<? extends Abstract.Binding> context) {
     List<String> names = new ArrayList<>(context.size());
     for (Abstract.Binding binding : context) {

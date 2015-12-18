@@ -29,7 +29,7 @@ public class BaseImplicitArgsInference implements ImplicitArgsInference {
   }
 
   @Override
-  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.OKResult fun, Expression expectedType, Abstract.Expression expr) {
+  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Expression expectedType, Abstract.Expression expr) {
     return null;
   }
 }

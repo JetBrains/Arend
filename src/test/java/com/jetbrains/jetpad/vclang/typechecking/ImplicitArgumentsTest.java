@@ -27,7 +27,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Index(0), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Apps(Index(0), Nat(), false, false), Zero()), result.expression);
     assertEquals(Nat(), result.type);
@@ -90,7 +90,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Apps(Index(0), Nat(), false, false), Suc()), result.expression);
     assertEquals(Nat(), result.type);
@@ -104,7 +104,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Apps(Index(0), Pi(Nat(), Nat()), false, false), Lam("x", Nat(), Suc())), result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
@@ -119,7 +119,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
     Expression arg = Lam(teleArgs(Tele(vars("x"), Nat()), Tele(vars("y"), Pi(Nat(), Nat()))), Apps(Index(0), Index(1)));
     assertEquals(Apps(Apps(Index(0), Pi(Pi(Nat(), Nat()), Nat()), false, false), arg), result.expression);
@@ -134,7 +134,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Index(0), Index(0)), Pi(Pi(Index(0), Nat()), Nat())))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Apps(Index(0), Nat(), false, false), Lam("x", Nat(), Index(0)), Lam("x", Nat(), Index(0))), result.expression);
     assertEquals(Nat(), result.type);
@@ -148,7 +148,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Nat(), Pi(Index(0), Index(0))))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(defs, Pi(Nat(), Nat()), errorReporter);
+    CheckTypeVisitor.Result result = expr.checkType(defs, Pi(Nat(), Nat()), errorReporter);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Apps(Index(0), Nat(), false, false), Zero()), result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
@@ -191,7 +191,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("i", Pi(false, "x", Nat(), Apps(Index(1), Apps(Suc(), Index(0))))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(defs, type, errorReporter);
+    CheckTypeVisitor.Result result = expr.checkType(defs, type, errorReporter);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Index(0), Apps(Suc(), Zero()), false, false), result.expression);
     assertEquals(type, result.type);
@@ -207,7 +207,7 @@ public class ImplicitArgumentsTest {
     defs.add(new TypedBinding("i", type));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(defs, type.liftIndex(0, 1), errorReporter);
+    CheckTypeVisitor.Result result = expr.checkType(defs, type.liftIndex(0, 1), errorReporter);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Index(0), result.expression);
     assertEquals(type.liftIndex(0, 1), result.type);
@@ -235,8 +235,29 @@ public class ImplicitArgumentsTest {
     List<Binding> defs = new ArrayList<Binding>(Collections.singleton(new TypedBinding("f", Pi(typeArgs(Tele(false, vars("A"), Universe(0)), TypeArg(Pi(Index(0), Index(0))), TypeArg(Index(1))), Index(2)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(defs, null, errorReporter);
+    CheckTypeVisitor.Result result = expr.checkType(defs, null, errorReporter);
     assertEquals(0, errorReporter.getErrorList().size());
-    assertEquals(result.type, Pi(Nat(), Nat()));
+    assertEquals(Pi(Nat(), Nat()), result.type);
+  }
+
+  @Test
+  public void untypedLambda() {
+    Concrete.Expression expr = cLam(cargs(cName("x1"), cName("x2"), cName("x3")), cApps(cVar("f"), cVar("x1"), cVar("x2"), cVar("x3")));
+    Expression type = Pi(typeArgs(Tele(vars("A"), Universe()), Tele(vars("B"), Pi(Index(0), Universe())), Tele(vars("a"), Index(1))), Apps(Index(1), Index(0)));
+    List<Binding> context = new ArrayList<Binding>(Collections.singleton(new TypedBinding("f", type)));
+    ListErrorReporter errorReporter = new ListErrorReporter();
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(context, errorReporter).build().checkType(expr, null);
+    assertEquals(0, errorReporter.getErrorList().size());
+    assertEquals(type, result.type);
+  }
+
+  @Test
+  public void untypedLambdaError() {
+    Concrete.Expression expr = cLam(cargs(cName("x1"), cName("x2"), cName("x3")), cApps(cVar("f"), cVar("x2"), cVar("x1"), cVar("x3")));
+    Expression type = Pi(typeArgs(Tele(vars("A"), Universe()), Tele(vars("B"), Pi(Index(0), Universe())), Tele(vars("a"), Index(1))), Apps(Index(1), Index(0)));
+    List<Binding> context = new ArrayList<Binding>(Collections.singleton(new TypedBinding("f", type)));
+    ListErrorReporter errorReporter = new ListErrorReporter();
+    new CheckTypeVisitor.Builder(context, errorReporter).build().checkType(expr, null);
+    assertEquals(1, errorReporter.getErrorList().size());
   }
 }

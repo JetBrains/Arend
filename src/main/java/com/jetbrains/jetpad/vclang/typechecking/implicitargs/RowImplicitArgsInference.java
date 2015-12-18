@@ -13,7 +13,7 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
     super(visitor);
   }
 
-  abstract CheckTypeVisitor.Result inferRow(CheckTypeVisitor.OKResult fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression funExpr, Abstract.Expression expr);
+  abstract CheckTypeVisitor.Result inferRow(CheckTypeVisitor.Result fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression funExpr, Abstract.Expression expr);
 
   private CheckTypeVisitor.Result typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
     CheckTypeVisitor.Result function;
@@ -22,13 +22,10 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
     } else {
       function = myVisitor.typeCheck(fun, null);
     }
-    if (function instanceof CheckTypeVisitor.OKResult) {
-      return inferRow((CheckTypeVisitor.OKResult) function, args, expectedType, fun, expression);
+    if (function != null) {
+      return inferRow(function, args, expectedType, fun, expression);
     }
 
-    if (function instanceof CheckTypeVisitor.InferErrorResult) {
-      myVisitor.getErrorReporter().report(((CheckTypeVisitor.InferErrorResult) function).error);
-    }
     for (Abstract.ArgumentExpression arg : args) {
       myVisitor.typeCheck(arg.getExpression(), null);
     }
@@ -80,7 +77,7 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
   }
 
   @Override
-  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.OKResult fun, Expression expectedType, Abstract.Expression expr) {
+  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Expression expectedType, Abstract.Expression expr) {
     return inferRow(fun, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr, expr);
   }
 }

@@ -9,5 +9,5 @@ public interface ImplicitArgsInference {
   Equations newEquations();
   CheckTypeVisitor.Result infer(Abstract.AppExpression expr, Expression expectedType);
   CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr, Expression expectedType);
-  CheckTypeVisitor.Result inferTail(CheckTypeVisitor.OKResult fun, Expression expectedType, Abstract.Expression expr);
+  CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Expression expectedType, Abstract.Expression expr);
 }

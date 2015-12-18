@@ -4,9 +4,9 @@ import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 public interface Equations {
-  void lift(int on);
-  boolean add(Equations equations);
-  boolean add(Expression expr1, Expression expr2, CMP cmp);
+  void add(Equations equations);
+  void add(Expression expr1, Expression expr2, CMP cmp);
+  void abstractVar(int index, Expression type);
   void clear();
   boolean isEmpty();
   Equations newInstance();

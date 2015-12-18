@@ -132,7 +132,8 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
           return false;
         }
         equations.lift(-diff);
-        return myEquations.add(equations);
+        myEquations.add(equations);
+        return true;
       }
     }
 
@@ -271,7 +272,11 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
       return false;
     }
     Binding binding = myContext.get(myContext.size() - expr1.getIndex() - 1);
-    return binding.isInference() && myEquations.add(expr1, expr2, cmp);
+    if (!binding.isInference()) {
+      return false;
+    }
+    myEquations.add(expr1, expr2, cmp);
+    return true;
   }
 
   @Override
@@ -294,9 +299,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
         return false;
       }
       visitor.myEquations.lift(-i);
-      if (!myEquations.add(visitor.myEquations)) {
-        return false;
-      }
+      myEquations.add(visitor.myEquations);
       visitor.myEquations.clear();
       Name name =
           args1.get(i) instanceof TelescopeArgument ? new Name(((TelescopeArgument) args1.get(i)).getNames().get(0)) :
@@ -332,7 +335,8 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
         return false;
       }
       equations.lift(-args1.size());
-      return myEquations.add(equations);
+      myEquations.add(equations);
+      return true;
     }
   }
 
@@ -424,9 +428,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
           return false;
         }
         equations.lift(-(args1.size() + i));
-        if (!myEquations.add(equations)) {
-          return false;
-        }
+        myEquations.add(equations);
         equations.clear();
       }
 
@@ -436,7 +438,8 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
       }
     }
     equations.lift(-letExpr1.getClauses().size());
-    return myEquations.add(equations);
+    myEquations.add(equations);
+    return true;
   }
 
   @Override
