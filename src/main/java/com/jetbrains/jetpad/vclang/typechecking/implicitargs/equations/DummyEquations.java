@@ -12,18 +12,20 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public void lift(int on) {
-
+  public void add(Equations equations) {
+    if (!equations.isEmpty()) {
+      throw new Exception();
+    }
   }
 
   @Override
-  public boolean add(Equations equations) {
-    return equations.isEmpty();
+  public void add(Expression expr1, Expression expr2, CMP cmp) {
+    throw new Exception();
   }
 
   @Override
-  public boolean add(Expression expr1, Expression expr2, CMP cmp) {
-    return false;
+  public void abstractVar(int index, Expression type) {
+
   }
 
   @Override
@@ -39,5 +41,9 @@ public class DummyEquations implements Equations {
   @Override
   public DummyEquations newInstance() {
     return this;
+  }
+
+  public static class Exception extends RuntimeException {
+
   }
 }

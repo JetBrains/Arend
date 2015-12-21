@@ -1,7 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+
+import java.util.List;
 
 public interface Equations {
   void add(Equations equations);
@@ -10,6 +13,15 @@ public interface Equations {
   void clear();
   boolean isEmpty();
   Equations newInstance();
+
+  class Helper {
+    public static void abstractVars(Equations equations, List<Binding> context, int vars) {
+      assert vars <= context.size();
+      for (int i = 0; i < vars; i++) {
+        equations.abstractVar(0, context.get(context.size() - 1 - i).getType());
+      }
+    }
+  }
 
   enum CMP {
     LE, EQ, GE;

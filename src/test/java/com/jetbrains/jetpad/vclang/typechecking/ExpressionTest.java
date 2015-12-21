@@ -120,7 +120,7 @@ public class ExpressionTest {
     // \x:Nat. x : Nat -> Nat
     Expression expr = Lam(teleArgs(Tele(true, vars("x"), Nat())), Index(0));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), null, errorReporter);
+    CheckTypeVisitor.Result result = expr.checkType(new ArrayList<Binding>(), null, errorReporter);
     assertEquals(Pi(Nat(), Nat()), result.type);
     assertEquals(0, errorReporter.getErrorList().size());
   }
@@ -149,7 +149,7 @@ public class ExpressionTest {
     // \x. x : (Nat -> Nat) -> Nat
     Concrete.Expression expr = cLam("x", cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
     assertEquals(null, result);
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
@@ -160,7 +160,7 @@ public class ExpressionTest {
     // \x. x x : (Nat -> Nat) -> Nat
     Concrete.Expression expr = cLam("x", cApps(cVar("x"), cVar("x")));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
     assertEquals(null, result);
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
@@ -171,7 +171,7 @@ public class ExpressionTest {
     // \x. x 0 : (Nat -> Nat) -> Nat -> Nat
     Concrete.Expression expr = cLam("x", cApps(cVar("x"), cZero()));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())));
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())));
     assertEquals(null, result);
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);

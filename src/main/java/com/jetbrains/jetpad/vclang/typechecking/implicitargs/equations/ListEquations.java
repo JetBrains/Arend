@@ -10,13 +10,31 @@ public class ListEquations implements Equations {
     Expression expr1;
     Expression expr2;
     CMP cmp;
-    int lifted;
   }
 
   private final List<Equation> myEquations = new ArrayList<>();
 
   @Override
-  public void lift(int on) {
+  public void add(Equations equations) {
+    if (equations instanceof ListEquations) {
+      myEquations.addAll(((ListEquations) equations).myEquations);
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
+  @Override
+  public void add(Expression expr1, Expression expr2, CMP cmp) {
+    Equation equation = new Equation();
+    equation.expr1 = expr1;
+    equation.expr2 = expr2;
+    equation.cmp = cmp;
+    myEquations.add(equation);
+  }
+
+  @Override
+  public void abstractVar(int index, Expression type) {
+    /*
     if (on == 0) {
       return;
     }
@@ -36,26 +54,7 @@ public class ListEquations implements Equations {
         }
       }
     }
-  }
-
-  @Override
-  public boolean add(Equations equations) {
-    if (equations instanceof ListEquations) {
-      myEquations.addAll(((ListEquations) equations).myEquations);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  @Override
-  public boolean add(Expression expr1, Expression expr2, CMP cmp) {
-    Equation equation = new Equation();
-    equation.expr1 = expr1;
-    equation.expr2 = expr2;
-    equation.cmp = cmp;
-    myEquations.add(equation);
-    return true;
+    */
   }
 
   @Override

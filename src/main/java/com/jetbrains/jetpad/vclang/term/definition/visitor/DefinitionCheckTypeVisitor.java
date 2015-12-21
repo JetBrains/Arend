@@ -178,7 +178,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     int index = 0;
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
-        CheckTypeVisitor.OKResult result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
+        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
         if (result == null) return typedDef;
 
         // boolean ok = true;
@@ -257,7 +257,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      CheckTypeVisitor.OKResult typeResult = visitor.checkType(resultType, Universe());
+      CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
       if (typeResult != null) {
         expectedType = typeResult.expression;
       /*
@@ -290,7 +290,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (term instanceof Abstract.ElimExpression) {
         typedDef.setElimTree(visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, arrow == Abstract.Definition.Arrow.LEFT ? (thisClass == null ? 0 : 1) : null, expectedType));
       } else {
-        CheckTypeVisitor.OKResult termResult = visitor.checkType(term, expectedType);
+        CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {
           typedDef.setElimTree(new LeafElimTreeNode(def.getArrow(), termResult.expression));
           if (expectedType == null)
@@ -367,7 +367,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     int index = 0;
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
-        CheckTypeVisitor.OKResult result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
+        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
         if (result == null) {
           return null;
         }
@@ -404,7 +404,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     if (resultType == null) {
       return null;
     }
-    CheckTypeVisitor.OKResult typeResult = visitor.checkType(resultType, Universe());
+    CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
     if (typeResult == null) {
       return null;
     }
@@ -443,7 +443,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
 
     for (Abstract.TypeArgument parameter : parameters) {
-      CheckTypeVisitor.OKResult result = visitor.checkType(parameter.getType(), Universe());
+      CheckTypeVisitor.Result result = visitor.checkType(parameter.getType(), Universe());
       if (result == null) return null;
       if (parameter instanceof Abstract.TelescopeArgument) {
         typedParameters.add(Tele(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
@@ -560,7 +560,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
             List<PatternArgument> typedPatterns = visitor.visitPatternArgs(processedPatterns, resultType, CheckTypeVisitor.PatternExpansionMode.CONDITION);
 
-            CheckTypeVisitor.OKResult result = visitor.checkType(cond.getTerm(), resultType.get(0));
+            CheckTypeVisitor.Result result = visitor.checkType(cond.getTerm(), resultType.get(0));
             if (result == null)
               continue;
 
@@ -659,7 +659,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       for (Abstract.TypeArgument argument : arguments) {
-        CheckTypeVisitor.OKResult result = visitor.checkType(argument.getType(), Universe());
+        CheckTypeVisitor.Result result = visitor.checkType(argument.getType(), Universe());
         if (result == null) {
           return null;
         }

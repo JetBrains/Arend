@@ -141,9 +141,9 @@ public class ComparisonTest {
   public void etaLam() {
     Expression type = Pi(Nat(), Apps(Prelude.PATH.getDefCall(), Lam("i", Prelude.INTERVAL.getDefCall(), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(type, type));
-    assertTrue(result1 instanceof CheckTypeVisitor.OKResult);
+    assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(type, type));
-    assertTrue(result2 instanceof CheckTypeVisitor.OKResult);
+    assertNotNull(result2);
     assertEquals(result2.expression, result1.expression);
   }
 
@@ -151,9 +151,9 @@ public class ComparisonTest {
   public void etaPath() {
     Expression type = Apps(Prelude.PATH.getDefCall(), Lam("i", Prelude.INTERVAL.getDefCall(), Pi(Nat(), Nat())), Lam("x", Nat(), Index(0)), Lam("x", Nat(), Index(0)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(type, type));
-    assertTrue(result1 instanceof CheckTypeVisitor.OKResult);
+    assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(type, type));
-    assertTrue(result2 instanceof CheckTypeVisitor.OKResult);
+    assertNotNull(result2);
     assertEquals(result2.expression, result1.expression);
   }
 }

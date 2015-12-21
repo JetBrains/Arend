@@ -144,11 +144,8 @@ public class TypeCheckingElim {
         }
         if (clause.getExpression() != null) {
           CheckTypeVisitor.Result clauseResult = myVisitor.typeCheck(clause.getExpression(), clauseExpectedType);
-          if (!(clauseResult instanceof CheckTypeVisitor.OKResult)) {
+          if (clauseResult == null) {
             wasError = true;
-            if (clauseResult instanceof CheckTypeVisitor.InferErrorResult) {
-              myVisitor.getErrorReporter().report(((CheckTypeVisitor.InferErrorResult) clauseResult).error);
-            }
             continue;
           }
           expressions.add(clauseResult.expression);

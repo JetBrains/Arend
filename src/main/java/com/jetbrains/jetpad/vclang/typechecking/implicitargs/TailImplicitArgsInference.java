@@ -20,7 +20,7 @@ public abstract class TailImplicitArgsInference extends BaseImplicitArgsInferenc
   }
 
   @Override
-  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.OKResult fun, Expression expectedType, Abstract.Expression expr) {
+  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Expression expectedType, Abstract.Expression expr) {
     List<TypeArgument> actualArgs = new ArrayList<>();
     Expression actualType = splitArguments(fun.type, actualArgs, myVisitor.getLocalContext());
     List<TypeArgument> expectedArgs = new ArrayList<>(actualArgs.size());
@@ -46,7 +46,9 @@ public abstract class TailImplicitArgsInference extends BaseImplicitArgsInferenc
 
     // TODO: add Pi to expectedType and actualType and replace indices with inference variables in actual type, compare them and return result.
     CheckTypeVisitor.Result result = inferTail(fun.expression, argTypes, actualType, expectedType);
-    result.equations.add(fun.equations);
+    if (result != null) {
+      result.equations.add(fun.equations);
+    }
     return result;
   }
 }
