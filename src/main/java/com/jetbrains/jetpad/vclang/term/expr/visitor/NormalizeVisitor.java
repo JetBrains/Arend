@@ -90,9 +90,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (mode == Mode.TOP) return null;
-    if (mode == Mode.NF) {
-      expr = expr.accept(this, mode);
+    Expression newExpr = expr.accept(this, Mode.TOP);
+    if (newExpr != null) {
+      return visitApps(newExpr.getFunctionArgs(exprs), exprs, mode);
     }
+
     for (int i = exprs.size() - 1; i >= 0; --i) {
       if (mode == Mode.NF) {
         expr = Apps(expr, new ArgumentExpression(exprs.get(i).getExpression().accept(this, mode), exprs.get(i).isExplicit(), exprs.get(i).isHidden()));

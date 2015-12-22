@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -296,5 +297,11 @@ public class NormalizationTest {
   public void testCoeIsoFreeVar() {
     Expression expr = Apps(FunCall(Prelude.COERCE), Lam("k", Apps(FunCall(Prelude.ISO), Apps(DataCall(Prelude.PATH), Lam("i", DataCall(Prelude.INTERVAL)), Index(0), Index(0)), Index(2), Index(3), Index(4), Index(5), Index(6), Index(0))), Index(6), ConCall(Prelude.RIGHT));
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+  }
+
+  @Test
+  public void testAppProj() {
+    Expression expr = Apps(Proj(Tuple(Sigma(args(TypeArg(Pi(Nat(), Nat())))), Lam("x", Index(0))), 0), Zero());
+    assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 }
