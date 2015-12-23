@@ -54,7 +54,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       if (Prelude.isPath(((Abstract.DefCallExpression) expr).getResolvedName().toDefinition()) && args.size() == 3 && args.get(0).getExpression() instanceof LamExpression && ((LamExpression) args.get(0).getExpression()).getBody().liftIndex(0, -1) != null) {
         if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append('(');
         args.get(1).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
-        char[] eqs = new char[Prelude.getLevel(((Abstract.DefCallExpression) expr).getResolvedName().toDefinition())];
+        char[] eqs = new char[Prelude.getLevel(((Abstract.DefCallExpression) expr).getResolvedName().toDefinition()) + 1];
         Arrays.fill(eqs, '=');
         myBuilder.append(" ").append(eqs).append(" ");
         args.get(2).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));

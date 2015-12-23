@@ -202,7 +202,7 @@ public class Prelude extends Namespace {
     return definition != null && definition == PRELUDE.getDefinition(definition.getName().name) && definition.getName().name.startsWith(prefix);
   }
 
-  public static Integer getLevel(Abstract.Definition definition) {
+  public static int getLevel(Abstract.Definition definition) {
     for (char c : specInfix) {
       if (isSpec(definition, Character.toString(c))) {
         return definition.getName().name.length() - 1;
@@ -214,6 +214,6 @@ public class Prelude extends Namespace {
       }
     }
 
-    return null;
+    throw new IllegalStateException();
   }
 }
