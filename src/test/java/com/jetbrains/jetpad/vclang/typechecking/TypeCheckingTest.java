@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static org.junit.Assert.assertEquals;
 
 public class TypeCheckingTest {
@@ -71,5 +72,32 @@ public class TypeCheckingTest {
         "  | inl _ => Nat\n" +
         "  | inr _ => Nat\n" +
         "\\static \\function test : fun (inl {Nat} {Nat} 0) => 0");
+  }
+
+  @Test
+  public void testPMap1() {
+    typeCheckDef("\\function pmap {A B : \\Type1} {a a' : A} (f : A -> B) (p : a == a') : (f a == f a') => path1 (\\lam i => f (p @@ i))");
+  }
+
+  @Test
+  public void testPMap1Mix() {
+    typeCheckDef("\\function pmap {A : \\Type1} {B : \\Type0} {a a' : A} (f : A -> B) (p : a == a') : (f a = f a') => path (\\lam i => f (p @@ i))");
+  }
+
+   @Test
+  public void testPMap1Error() {
+    typeCheckDef("\\function pmap {A B : \\Type1} {a a' : A} (f : A -> B) (p : a == a') : (f a = f a') => path1 (\\lam i => f (p @@ i))", 1);
+  }
+
+  @Test
+  public void testTransport1() {
+    typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a == a') (b : B a) : B a' =>\n" +
+        "coe (\\lam i => B (p @@ i)) b right");
+  }
+
+  @Test
+  public void testTransport1Error() {
+    typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a == a') (b : B a) : B a' =>\n" +
+        "coe (\\lam i => B (p @ i)) b right", 1);
   }
 }

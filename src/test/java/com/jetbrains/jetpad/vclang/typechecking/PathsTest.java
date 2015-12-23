@@ -23,4 +23,15 @@ public class PathsTest {
   public void pathEtaRightTest() {
     typeCheckDef("\\function test (p : 0 = 0) => (\\lam (x : p = p) => x) (path (\\lam _ => path (\\lam i => p @ i)))");
   }
+
+  @Test
+  public void pathEtaLeftTestLevel() {
+    typeCheckDef("\\function test (p : Nat == Nat) => (\\lam (x : path1 (\\lam i => p @@ i) == p) => x) (path1 (\\lam _ => p))");
+  }
+
+  @Test
+  public void pathEtaRightTestLevel() {
+    typeCheckDef("\\function test (p : Nat == Nat) => (\\lam (x : p == p) => x) (path1 (\\lam _ => path1 (\\lam i => p @@ i)))");
+  }
 }
+

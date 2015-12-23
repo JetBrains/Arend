@@ -53,18 +53,12 @@ public class Namespace {
   }
 
   public Namespace getChild(Name name) {
-    if (myMembers != null) {
-      NamespaceMember member = myMembers.get(name.name);
-      if (member != null) {
-        return member.namespace;
-      }
-    } else {
-      myMembers = new HashMap<>();
+    NamespaceMember member = getMember(name.name);
+    if (member != null) {
+      return member.namespace;
     }
 
-    Namespace child = new Namespace(name, this);
-    myMembers.put(name.name, new NamespaceMember(child, null, null));
-    return child;
+    return addChild(new Namespace(name, this)).namespace;
   }
 
   public Namespace findChild(String name) {

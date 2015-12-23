@@ -297,7 +297,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return mode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this, mode);
       List<Expression> mbIsoArgs = new ArrayList<>();
       Expression mbIso = expr.getFunction(mbIsoArgs);
-      if (mbIso instanceof FunCallExpression && ((FunCallExpression) mbIso).getDefinition() == Prelude.ISO && mbIsoArgs.size() == 7) {
+      if (mbIso instanceof FunCallExpression && Prelude.isIso(((FunCallExpression) mbIso).getDefinition()) && mbIsoArgs.size() == 7) {
         boolean noFreeVar = true;
         for (int i = 1; i < mbIsoArgs.size(); i++) {
           if (mbIsoArgs.get(i).liftIndex(0, -1) == null) {
