@@ -318,7 +318,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
           resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
         }
 
-        TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression, getNames(myVisitor.getLocalContext()));
+        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH, myVisitor.getLocalContext()), resultType.normalize(NormalizeVisitor.Mode.NFH, myVisitor.getLocalContext()), expression, getNames(myVisitor.getLocalContext()));
         expression.setWellTyped(myVisitor.getLocalContext(), Error(resultExpr, error));
         myVisitor.getErrorReporter().report(error);
         return null;

@@ -110,10 +110,14 @@ public class Prelude extends Namespace {
           generateLevel(0);
           return getMember(name);
         }
-        Integer level = Integer.getInteger(name.substring(sname.length()));
-        if (level != null && level > 0) {
-          generateLevel(level);
-          return getMember(name);
+        try {
+          Integer level = Integer.parseInt(name.substring(sname.length()));
+          if (level > 0) {
+            generateLevel(level);
+            return getMember(name);
+          }
+        } catch (NumberFormatException e) {
+          return null;
         }
       }
     }
@@ -166,8 +170,8 @@ public class Prelude extends Namespace {
     isoArguments.add(Tele(false, vars("A", "B"), Universe(i, Universe.Type.NOT_TRUNCATED)));
     isoArguments.add(Tele(vars("f"), Pi(Index(1), Index(0))));
     isoArguments.add(Tele(vars("g"), Pi(Index(1), Index(2))));
-    isoArguments.add(Tele(vars("linv"), Pi(args(Tele(vars("a"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(1), Apps(Index(2), Index(0)), Index(0))))));
-    isoArguments.add(Tele(vars("rinv"), Pi(args(Tele(vars("b"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(3), Apps(Index(2), Index(0)), Index(0))))));
+    isoArguments.add(Tele(vars("linv"), Pi(args(Tele(vars("a"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(1), Apps(Index(2), Index(0))), Index(0)))));
+    isoArguments.add(Tele(vars("rinv"), Pi(args(Tele(vars("b"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(3), Apps(Index(2), Index(0))), Index(0)))));
     isoArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
     Expression isoResultType = Universe(i, Universe.Type.NOT_TRUNCATED);
     BranchElimTreeNode isoElimTree = branch(0,
