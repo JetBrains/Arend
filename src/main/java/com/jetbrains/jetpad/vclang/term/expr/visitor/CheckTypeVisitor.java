@@ -197,8 +197,32 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitLam(Abstract.LamExpression expr, Expression expectedType) {
-    // TODO
-    return null;
+    List<TypeArgument> typeArgs = new ArrayList<>();
+    for (Abstract.Argument arg : expr.getArguments()) {
+      List<String> names;
+      Abstract.Expression argType;
+      boolean isExplicit = arg.getExplicit();
+      if (arg instanceof Abstract.TelescopeArgument) {
+        names = ((Abstract.TelescopeArgument) arg).getNames();
+        argType = ((Abstract.TelescopeArgument) arg).getType();
+        expectedType = splitArguments(expectedType, typeArgs, myLocalContext, names.size() - typeArgs.size());
+      } else
+      if (arg instanceof Abstract.NameArgument) {
+        names = new ArrayList<>(1);
+        names.add(((Abstract.NameArgument) arg).getName());
+        argType = null;
+        if (typeArgs.isEmpty()) {
+          expectedType = splitArguments(expectedType, typeArgs, myLocalContext, 1);
+        }
+      } else {
+        throw new IllegalStateException();
+      }
+    }
+
+    if (!typeArgs.isEmpty()) {
+      expectedType = Pi(typeArgs, expectedType);
+    }
+    return typeCheck(expr.getBody(), expectedType);
   }
 
   /*

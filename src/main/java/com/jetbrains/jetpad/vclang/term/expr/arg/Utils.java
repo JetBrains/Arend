@@ -183,7 +183,6 @@ public class Utils {
     return context.get(context.size() - 1 - index).lift(index + 1);
   }
 
-
   public static Expression splitArguments(Expression type, List<TypeArgument> result, List<Binding> ctx) {
     try (ContextSaver saver = new ContextSaver(ctx)) {
       type = type.normalize(NormalizeVisitor.Mode.WHNF, ctx);
@@ -198,6 +197,37 @@ public class Utils {
       return type;
     }
   }
+
+  public static Expression splitArguments(Expression type, List<TypeArgument> result, List<Binding> ctx, int upTo) {
+    if (upTo <= 0) return type;
+    try (ContextSaver saver = new ContextSaver(ctx)) {
+      type = type.normalize(NormalizeVisitor.Mode.WHNF, ctx);
+      while (type instanceof PiExpression) {
+        PiExpression pi = (PiExpression) type;
+        List<TypeArgument> args = splitArguments(pi.getArguments());
+        result.addAll(args);
+        upTo -= args.size();
+        type = pi.getCodomain();
+        if (upTo <= 0) return type;
+        for (TypeArgument arg : pi.getArguments()) {
+          pushArgument(ctx, arg);
+        }
+        type = type.normalize(NormalizeVisitor.Mode.WHNF, ctx);
+      }
+      return type;
+    }
+  }
+
+  /*
+  public static Expression splitArguments(Expression type, List<TypeArgument> result, List<Binding> ctx, int upTo) {
+    Expression expr = splitArguments(type, result, ctx);
+    if (result.size() > upTo) {
+      expr = Pi(new ArrayList<>(result.subList(upTo, result.size())), expr);
+      result.subList(upTo, result.size()).clear();
+    }
+    return expr;
+  }
+  */
 
   public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, byte prec, int indent) {
     if (argument instanceof Abstract.NameArgument) {
