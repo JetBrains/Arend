@@ -13,9 +13,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.SubstituteExpander;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
@@ -550,6 +548,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getLocalContext())) {
         final List<List<Pattern>> patterns = new ArrayList<>();
         final List<Expression> expressions = new ArrayList<>();
+        final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
         expandConstructorContext(constructor, visitor.getLocalContext());
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
@@ -567,42 +566,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
             patterns.add(toPatterns(typedPatterns));
             expressions.add(result.expression);
+            arrows.add(Abstract.Definition.Arrow.RIGHT);
           }
         }
 
-        ArgsElimTreeExpander.ArgsExpansionResult treeExpansionResult = ArgsElimTreeExpander.expandElimTree(visitor.getLocalContext(), patterns);
-        final Map<LeafElimTreeNode, Integer> leaf2cond = new IdentityHashMap<>();
-        for (ArgsElimTreeExpander.ArgsBranch branch : treeExpansionResult.branches) {
-          leaf2cond.put(branch.leaf, branch.indicies.get(0));
-        }
-        int numberOfArguments = splitArguments(constructor.getArguments()).size();
-        List<Expression> subst = new ArrayList<>(numberOfArguments);
-        final List<Expression> exprs = new ArrayList<>(numberOfArguments);
-        for (int i = 0; i < numberOfArguments; i++) {
-          subst.add(Index(i));
-          exprs.add(Index(numberOfArguments - 1 - i));
-        }
+        TypeCheckingElim.TypeCheckElimTreeOKResult elimTreeResult = (TypeCheckingElim.TypeCheckElimTreeOKResult) visitor.getTypeCheckingElim().typeCheckElimTree(numberOfVariables(constructor.getArguments()), patterns, expressions, arrows);
 
-        SubstituteExpander.substituteExpand(visitor.getLocalContext(), subst, treeExpansionResult.tree, exprs, new SubstituteExpander.SubstituteExpansionProcessor() {
-          @Override
-          public void process(List<Expression> exprs, List<Binding> context, List<Expression> subst, LeafElimTreeNode leaf) {
-            leaf.setArrow(Abstract.Definition.Arrow.RIGHT);
-            List<Pattern> curPatterns = patterns.get(leaf2cond.get(leaf));
-            List<Expression> matchedSubst = new ArrayList<>();
-            for (int i = 0; i < curPatterns.size(); i++) {
-              matchedSubst.addAll(((PatternMatchOKResult) curPatterns.get(i).match(exprs.get(i), null)).expressions);
-            }
-            Collections.reverse(matchedSubst);
-            leaf.setExpression(expressions.get(leaf2cond.get(leaf)).liftIndex(matchedSubst.size(), subst.size()).subst(matchedSubst, 0));
-          }
-        });
-
-        if (!treeExpansionResult.tree.accept(new TerminationCheckVisitor(constructor, numberOfVariables(constructor.getArguments()) + constructor.getNumberOfAllParameters()), null)) {
+        if (!elimTreeResult.elimTree.accept(new TerminationCheckVisitor(constructor, numberOfVariables(constructor.getArguments()) + constructor.getNumberOfAllParameters()), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", dataDefinition, getNames(visitor.getLocalContext())));
           continue;
         }
 
-        dataDefinition.addCondition(new Condition(constructor, treeExpansionResult.tree));
+        dataDefinition.addCondition(new Condition(constructor, elimTreeResult.elimTree));
       }
     }
     return null;

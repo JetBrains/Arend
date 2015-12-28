@@ -183,4 +183,33 @@ public class ConditionsTest {
         "  | loop i => loop' i\n"
     , 1);
   }
+
+  @Test
+  public void cc() {
+    typeCheckClass(
+      "\\static \\data Z | pos Nat | neg Nat \\with neg zero => pos zero\n" +
+      "\\static \\function test (z : Z) : Nat <= \\elim z\n" +
+          " | pos n => 0\n" +
+          " | neg (suc n) => 1\n"
+    );
+  }
+
+  @Test
+  public void ccOtherDirectionError() {
+    typeCheckClass(
+      "\\static \\data Z | pos Nat | neg Nat \\with neg zero => pos zero\n" +
+      "\\static \\function test (z : Z) : Nat <= \\elim z\n" +
+          " | pos (suc n) => 0\n" +
+          " | neg n => 1\n"
+    , 1);
+  }
+
+  @Test
+  public void ccComplexBranch() {
+    typeCheckClass(
+      "\\static \\data D | fst Nat | snd \\with | fst zero => snd | fst (suc _) => snd \n" +
+      "\\static \\function test (d : D) : Nat <= \\elim d\n" +
+          " | snd => zero\n"
+    );
+  }
 }

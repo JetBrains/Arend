@@ -13,9 +13,9 @@ definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  
             | '\\class' ID '{' statement* '}'                                             # defClass
             ;
 
-conditionDef : '\\with' condition*;
+conditionDef : '\\with' '|'? condition ('|' condition)*;
 
-condition : '|' name patternArg* '=>' expr;
+condition : name patternArg* '=>' expr;
 
 staticMod : '\\static'                  # staticStatic
           | '\\dynamic'                 # dynamicStatic

@@ -1148,8 +1148,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   public List<PatternArgument> visitPatternArgs(List<Abstract.PatternArgument> patternArgs, List<Expression> substIn, PatternExpansionMode mode) {
-    List<PatternArgument> typedPatterns;
-    typedPatterns = new ArrayList<>();
+    List<PatternArgument> typedPatterns = new ArrayList<>();
     for (int i = 0; i < patternArgs.size(); i++) {
       ExpandPatternResult result = expandPatternOn(patternArgs.get(i).getPattern(), patternArgs.size() - 1 - i, mode);
       if (result == null || result instanceof ExpandPatternErrorResult)
