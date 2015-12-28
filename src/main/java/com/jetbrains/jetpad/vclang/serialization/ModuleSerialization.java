@@ -45,18 +45,18 @@ public class ModuleSerialization {
     assert module.toAbstractDefinition() != null && module.toDefinition() != null;
     assert module.toAbstractDefinition().getParentStatement() == null;
 
-    DefNamesIndicies defNamesIndicies = new DefNamesIndicies();
+    DefNamesIndices defNamesIndices = new DefNamesIndices();
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
-    SerializeVisitor visitor = new SerializeVisitor(defNamesIndicies, byteArrayStream, dataStream);
+    SerializeVisitor visitor = new SerializeVisitor(defNamesIndices, byteArrayStream, dataStream);
 
     int errors = serializeDefinition(visitor, module.toDefinition());
 
     stream.write(SIGNATURE);
     stream.writeInt(VERSION);
-    defNamesIndicies.serializeHeader(stream, module);
+    defNamesIndices.serializeHeader(stream, module);
     stream.writeInt(errors + visitor.getErrors());
-    defNamesIndicies.serialize(stream, module);
+    defNamesIndices.serialize(stream, module);
     byteArrayStream.writeTo(stream);
     stream.close();
   }

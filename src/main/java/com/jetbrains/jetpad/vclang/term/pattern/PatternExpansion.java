@@ -13,7 +13,8 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getTypes;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
 public class PatternExpansion {
   public static class Result<T> {

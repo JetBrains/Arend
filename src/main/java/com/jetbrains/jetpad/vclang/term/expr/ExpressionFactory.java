@@ -78,13 +78,13 @@ public class ExpressionFactory {
     return new IndexExpression(i);
   }
 
-  public static LamExpression Lam(List<Argument> arguments, Expression body) {
+  public static LamExpression Lam(List<TelescopeArgument> arguments, Expression body) {
     return new LamExpression(arguments, body);
   }
 
-  public static LamExpression Lam(String var, Expression body) {
-    List<Argument> arguments = new ArrayList<>(1);
-    arguments.add(new NameArgument(true, var));
+  public static LamExpression Lam(String var, Expression type, Expression body) {
+    List<TelescopeArgument> arguments = new ArrayList<>(1);
+    arguments.add(new TelescopeArgument(true, vars(var), type));
     return Lam(arguments, body);
   }
 
@@ -105,26 +105,26 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, ElimTreeNode elimTree) {
-    return let(name, lamArgs(), elimTree);
+    return let(name, typeArgs(), elimTree);
   }
 
-  public static LetClause let(String name, List<Argument> args, Expression expr) {
+  public static LetClause let(String name, List<TypeArgument> args, Expression expr) {
     return let(name, args, leaf(expr));
   }
 
-  public static LetClause let(String name, List<Argument> args, ElimTreeNode elimTree) {
+  public static LetClause let(String name, List<TypeArgument> args, ElimTreeNode elimTree) {
     return let(name, args, null, elimTree);
   }
 
-  public static LetClause let(String name, List<Argument> args, Expression resultType, Abstract.Definition.Arrow arrow, Expression expr) {
+  public static LetClause let(String name, List<TypeArgument> args, Expression resultType, Abstract.Definition.Arrow arrow, Expression expr) {
     return let(name, args, resultType, leaf(arrow, expr));
   }
 
-  public static LetClause let(String name, List<Argument> args, Expression resultType, Expression expr) {
+  public static LetClause let(String name, List<TypeArgument> args, Expression resultType, Expression expr) {
     return let(name, args, resultType, leaf(expr));
   }
 
-  public static LetClause let(String name, List<Argument> args, Expression resultType, ElimTreeNode elimTree) {
+  public static LetClause let(String name, List<TypeArgument> args, Expression resultType, ElimTreeNode elimTree) {
     return new LetClause(name, args, resultType, elimTree);
   }
 
@@ -132,7 +132,7 @@ public class ExpressionFactory {
     return Arrays.asList(vars);
   }
 
-  public static List<TypeArgument> args(TypeArgument... args) {
+  public static List<TypeArgument> typeArgs(TypeArgument... args) {
     return Arrays.asList(args);
   }
 
@@ -140,11 +140,7 @@ public class ExpressionFactory {
     return Arrays.asList(args);
   }
 
-  public static List<NameArgument> nameArgs(NameArgument... args) {
-    return Arrays.asList(args);
-  }
-
-  public static List<Argument> lamArgs(Argument... args) {
+  public static List<Argument> args(Argument... args) {
     return Arrays.asList(args);
   }
 

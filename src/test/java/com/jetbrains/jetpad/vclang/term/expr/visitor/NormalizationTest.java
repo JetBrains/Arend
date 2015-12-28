@@ -39,25 +39,25 @@ public class NormalizationTest {
   public NormalizationTest() {
     testNS = new Namespace("test");
     BranchElimTreeNode plusElimTree = branch(1);
-    plus = new FunctionDefinition(testNS, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), plusElimTree);
+    plus = new FunctionDefinition(testNS, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), args(Tele(vars("x", "y"), Nat())), Nat(), plusElimTree);
     testNS.addDefinition(plus);
     plusElimTree.addClause(Prelude.ZERO, leaf(Index(0)));
     plusElimTree.addClause(Prelude.SUC, leaf(Suc(BinOp(Index(0), plus, Index(1)))));
 
     BranchElimTreeNode mulElimTree = branch(1);
-    mul = new FunctionDefinition(testNS, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), lamArgs(Tele(vars("x", "y"), Nat())), Nat(), mulElimTree);
+    mul = new FunctionDefinition(testNS, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), args(Tele(vars("x", "y"), Nat())), Nat(), mulElimTree);
     testNS.addDefinition(mul);
     mulElimTree.addClause(Prelude.ZERO, leaf(Zero()));
     mulElimTree.addClause(Prelude.SUC, leaf(BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0)))));
 
     BranchElimTreeNode facElimTree = branch(0);
-    fac = new FunctionDefinition(testNS, new Name("fac"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("x"), Nat())), Nat(), facElimTree);
+    fac = new FunctionDefinition(testNS, new Name("fac"), Abstract.Definition.DEFAULT_PRECEDENCE, args(Tele(vars("x"), Nat())), Nat(), facElimTree);
     testNS.addDefinition(fac);
     facElimTree.addClause(Prelude.ZERO, leaf(Suc(Zero())));
     facElimTree.addClause(Prelude.SUC, leaf(BinOp(Suc(Index(0)), mul, Apps(FunCall(fac), Index(0)))));
 
     BranchElimTreeNode nelimElimTree = branch(0);
-    nelim = new FunctionDefinition(testNS, new Name("nelim"), Abstract.Definition.DEFAULT_PRECEDENCE, lamArgs(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), nelimElimTree);
+    nelim = new FunctionDefinition(testNS, new Name("nelim"), Abstract.Definition.DEFAULT_PRECEDENCE, args(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), nelimElimTree);
     testNS.addDefinition(nelim);
     nelimElimTree.addClause(Prelude.ZERO, leaf(Index(1)));
     nelimElimTree.addClause(Prelude.SUC, leaf(Apps(Index(1), Index(0), Apps(FunCall(nelim), Index(2), Index(1), Index(0)))));
@@ -77,29 +77,29 @@ public class NormalizationTest {
   @Test
   public void normalizeLamId() {
     // normalize( (\x.x) (suc zero) ) = suc zero
-    Expression expr = Apps(Lam("x", Index(0)), Suc(Zero()));
+    Expression expr = Apps(Lam("x", Nat(), Index(0)), Suc(Zero()));
     assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLamK() {
     // normalize( (\x y. x) (suc zero) ) = \z. suc zero
-    Expression expr = Apps(Lam("x", Lam("y", Index(1))), Suc(Zero()));
-    assertEquals(Lam("z", Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+    Expression expr = Apps(Lam("x", Nat(), Lam("y", Nat(), Index(1))), Suc(Zero()));
+    assertEquals(Lam("z", Nat(), Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLamKstar() {
     // normalize( (\x y. y) (suc zero) ) = \z. z
-    Expression expr = Apps(Lam("x", Lam("y", Index(0))), Suc(Zero()));
-    assertEquals(Lam("z", Index(0)), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+    Expression expr = Apps(Lam("x", Nat(), Lam("y", Nat(), Index(0))), Suc(Zero()));
+    assertEquals(Lam("z", Nat(), Index(0)), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLamKOpen() {
     // normalize( (\x y. x) (suc (var(0))) ) = \z. suc (var(0))
-    Expression expr = Apps(Lam("x", Lam("y", Index(1))), Suc(Index(0)));
-    assertEquals(Lam("z", Suc(Index(1))), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+    Expression expr = Apps(Lam("x", Nat(), Lam("y", Nat(), Index(1))), Suc(Index(0)));
+    assertEquals(Lam("z", Nat(), Suc(Index(1))), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
@@ -112,14 +112,14 @@ public class NormalizationTest {
   @Test
   public void normalizeNelimOne() {
     // normalize( N-elim (suc zero) (\x y. (var(0)) y) (suc zero) ) = var(0) (suc zero)
-    Expression expr = Apps(FunCall(nelim), Suc(Zero()), Lam("x", Lam("y", Apps(Index(2), Index(0)))), Suc(Zero()));
+    Expression expr = Apps(FunCall(nelim), Suc(Zero()), Lam("x", Nat(), Lam("y", Nat(), Apps(Index(2), Index(0)))), Suc(Zero()));
     assertEquals(Apps(Index(0), Suc(Zero())), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeNelimArg() {
     // normalize( N-elim (suc zero) (var(0)) ((\x. x) zero) ) = suc zero
-    Expression arg = Apps(Lam("x", Index(0)), Zero());
+    Expression arg = Apps(Lam("x", Nat(), Index(0)), Zero());
     Expression expr = Apps(FunCall(nelim), Suc(Zero()), Index(0), arg);
     Expression result = expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>());
     assertEquals(Suc(Zero()), result);
@@ -203,15 +203,15 @@ public class NormalizationTest {
   @Test
   public void normalizeLetNo() {
     // normalize (\let | x (y z : N) => zero \in x zero) = \lam (z : N) => zero
-    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y", "z"), Nat())), Zero())), Apps(Index(0), Zero())));
-    assertEquals(Lam("x", Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+    Expression expr = typecheckExpression(Let(lets(let("x", typeArgs(Tele(vars("y", "z"), Nat())), Zero())), Apps(Index(0), Zero())));
+    assertEquals(Lam("x", Nat(), Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLetElimStuck() {
     // normalize (\let | x (y : N) : N <= \elim y | zero => zero | succ _ => zero \in x <1>) = the same
     ElimTreeNode elimTree = branch(0, clause(Prelude.ZERO, Zero()), clause(Prelude.SUC, Zero()));
-    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), elimTree)),
+    Expression expr = typecheckExpression(Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Nat(), elimTree)),
         Apps(Index(0), Index(1))), new ArrayList<Binding>(Collections.singleton(new TypedBinding("n", Nat()))));
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
@@ -223,7 +223,7 @@ public class NormalizationTest {
         clause(Prelude.ZERO, Universe(0)),
         clause(Prelude.SUC, Universe(1))
         );
-    Expression expr = typecheckExpression(Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Universe(2), elimTree)), Apps(Index(0), Zero())));
+    Expression expr = typecheckExpression(Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Universe(2), elimTree)), Apps(Index(0), Zero())));
     assertEquals(Universe(0), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
@@ -239,7 +239,7 @@ public class NormalizationTest {
   @Test
   public void letNormalizationContext() {
     List<Binding> ctx = new ArrayList<>();
-    Let(lets(let("x", lamArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Index(0)).normalize(NormalizeVisitor.Mode.NF, ctx);
+    Let(lets(let("x", typeArgs(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero())), Index(0)).normalize(NormalizeVisitor.Mode.NF, ctx);
     assertTrue(ctx.isEmpty());
   }
 
@@ -262,14 +262,14 @@ public class NormalizationTest {
   public void testConCallPartial() {
     initializeBDList();
     Expression expr1 = Apps(ConCall(bdSnoc, Nat()), ConCall(bdNil, Nat()));
-    assertEquals(Lam(lamArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil, Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+    assertEquals(Lam(teleArgs(Tele(vars("y"), Nat())), Apps(ConCall(bdCons, Nat()), Index(0), ConCall(bdNil, Nat()))), expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void testFuncNorm() {
     Expression expr1 = Apps(FunCall(Prelude.PATH_INFIX), Nat(), Zero());
     assertEquals(
-        Lam(lamArgs(Tele(vars("a'"), Nat())), Apps(FunCall(Prelude.PATH_INFIX), Nat(), Zero(), Index(0))).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()),
+        Lam(teleArgs(Tele(vars("a'"), Nat())), Apps(FunCall(Prelude.PATH_INFIX), Nat(), Zero(), Index(0))).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()),
         expr1.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>())
     );
   }

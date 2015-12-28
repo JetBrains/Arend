@@ -320,6 +320,19 @@ public class ModuleDeserialization {
     return result;
   }
 
+  public List<TelescopeArgument> readTelescopeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    int size = stream.readInt();
+    List<TelescopeArgument> result = new ArrayList<>(size);
+    for (int i = 0; i < size; ++i) {
+      Argument argument = readArgument(stream, definitionMap);
+      if (!(argument instanceof TelescopeArgument)) {
+        throw new IncorrectFormat();
+      }
+      result.add((TelescopeArgument) argument);
+    }
+    return result;
+  }
+
   public Argument readArgument(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     boolean explicit = stream.readBoolean();
     int code = stream.read();
@@ -388,7 +401,7 @@ public class ModuleDeserialization {
       }
       case 6: {
         Expression body = readExpression(stream, definitionMap);
-        return Lam(readArguments(stream, definitionMap), body);
+        return Lam(readTelescopeArguments(stream, definitionMap), body);
       }
       case 7: {
         List<TypeArgument> arguments = readTypeArguments(stream, definitionMap);
@@ -435,7 +448,7 @@ public class ModuleDeserialization {
 
   private LetClause readLetClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     final String name = stream.readUTF();
-    final List<Argument> arguments = readArguments(stream, definitionMap);
+    final List<TypeArgument> arguments = readTypeArguments(stream, definitionMap);
     final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
     return let(name, arguments, resultType, readElimTree(stream, definitionMap));
   }

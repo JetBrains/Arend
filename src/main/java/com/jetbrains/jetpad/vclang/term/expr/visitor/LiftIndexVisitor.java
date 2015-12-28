@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -68,33 +66,24 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
 
   @Override
   public Expression visitLam(LamExpression expr, Integer from) {
-    List<Argument> arguments = new ArrayList<>(expr.getArguments().size());
+    List<TelescopeArgument> arguments = new ArrayList<>(expr.getArguments().size());
     from = visitArguments(expr.getArguments(), arguments, from);
-    if (from == null) return null;
+    if (from == -1) return null;
     Expression body = expr.getBody().accept(this, from);
     return body == null ? null : Lam(arguments, body);
   }
 
-  private Integer visitArguments(List<Argument> arguments, List<Argument> result, Integer from) {
-    for (Argument argument : arguments) {
-      if (argument instanceof NameArgument) {
-        result.add(argument);
-        ++from;
-      } else
-      if (argument instanceof TelescopeArgument) {
-        TelescopeArgument teleArgument = (TelescopeArgument) argument;
-        Expression arg = teleArgument.getType().accept(this, from);
-        if (arg == null) return null;
-        result.add(new TelescopeArgument(argument.getExplicit(), teleArgument.getNames(), arg));
-        from += teleArgument.getNames().size();
-      } else {
-        throw new IllegalStateException();
-      }
+  private int visitArguments(List<TelescopeArgument> arguments, List<TelescopeArgument> result, int from) {
+    for (TelescopeArgument argument : arguments) {
+      Expression arg = argument.getType().accept(this, from);
+      if (arg == null) return -1;
+      result.add(Tele(argument.getExplicit(), argument.getNames(), arg));
+      from += argument.getNames().size();
     }
     return from;
   }
 
-  private int visitTypeArguments(List<TypeArgument> arguments, List<TypeArgument> result, Integer from) {
+  private int visitTypeArguments(List<TypeArgument> arguments, List<TypeArgument> result, int from) {
     for (TypeArgument argument : arguments) {
       if (argument instanceof TelescopeArgument) {
         TelescopeArgument teleArgument = (TelescopeArgument) argument;
@@ -116,7 +105,7 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
   public Expression visitPi(PiExpression expr, Integer from) {
     List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
     from = visitTypeArguments(expr.getArguments(), result, from);
-    if (from < 0) return null;
+    if (from == -1) return null;
     Expression codomain = expr.getCodomain().accept(this, from);
     return codomain == null ? null : Pi(result, codomain);
   }
@@ -152,7 +141,7 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
   @Override
   public Expression visitSigma(SigmaExpression expr, Integer from) {
     List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
-    return visitTypeArguments(expr.getArguments(), result, from) < 0 ? null : Sigma(result);
+    return visitTypeArguments(expr.getArguments(), result, from) == -1 ? null : Sigma(result);
   }
 
   @Override
@@ -180,11 +169,18 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
   }
 
   public LetClause visitLetClause(LetClause clause, Integer from) {
-    final List<Argument> arguments = new ArrayList<>(clause.getArguments().size());
-    from = visitArguments(clause.getArguments(), arguments, from);
-    final Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, from);
+    final List<TypeArgument> arguments = new ArrayList<>(clause.getArguments().size());
+    from = visitTypeArguments(clause.getArguments(), arguments, from);
+    if (from == -1) return null;
+    Expression resultType = null;
+    if (clause.getResultType() != null) {
+      resultType = clause.getResultType().accept(this, from);
+      if (resultType == null) {
+        return null;
+      }
+    }
     final ElimTreeNode elimTree = clause.getElimTree().accept(this, from);
-    if (from == null || elimTree == null)
+    if (elimTree == null)
       return null;
     return new LetClause(clause.getName(), arguments, resultType, elimTree);
   }

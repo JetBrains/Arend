@@ -17,16 +17,16 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
 public class LamExpression extends Expression implements Abstract.LamExpression {
-  private final List<Argument> myArguments;
+  private final List<TelescopeArgument> myArguments;
   private final Expression myBody;
 
-  public LamExpression(List<Argument> arguments, Expression body) {
+  public LamExpression(List<TelescopeArgument> arguments, Expression body) {
     myArguments = arguments;
     myBody = body;
   }
 
   @Override
-  public List<Argument> getArguments() {
+  public List<TelescopeArgument> getArguments() {
     return myArguments;
   }
 

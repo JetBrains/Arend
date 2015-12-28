@@ -17,7 +17,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.oldCompare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
@@ -67,7 +67,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
             if (argsImp[i].expression instanceof Expression) {
               Expression expr1 = ((Expression) argsImp[i].expression).normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext());
               List<CompareVisitor.Equation> equations1 = new ArrayList<>();
-              CompareVisitor.CMP cmp = compare(expr1, equation.expression, equations1).isOK();
+              CompareVisitor.CMP cmp = oldCompare(expr1, equation.expression, equations1).isOK();
               if (cmp != CompareVisitor.CMP.NOT_EQUIV) {
                 if (cmp == CompareVisitor.CMP.GREATER) {
                   argsImp[i] = new Arg(argsImp[i].isExplicit, null, equation.expression);
@@ -80,7 +80,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
                   if (resultArgs[j] instanceof CheckTypeVisitor.InferErrorResult && resultArgs[j].expression == equation.hole) {
                     boolean was = false;
                     for (Abstract.Expression option : options) {
-                      cmp = compare(option, equation.expression, equations1).isOK();
+                      cmp = oldCompare(option, equation.expression, equations1).isOK();
                       if (cmp != CompareVisitor.CMP.NOT_EQUIV) {
                         was = true;
                         break;
@@ -241,7 +241,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
       }
 
       Expression type = arguments.size() > 0 ? Pi(arguments, piType.getCodomain()) : piType.getCodomain();
-      Expression parameter1 = Lam(lamArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type);
+      Expression parameter1 = Lam(teleArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type);
       Expression parameter2 = Apps(argResult.expression, ConCall(Prelude.LEFT));
       Expression parameter3 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
       Expression resultType = Apps(DataCall(Prelude.PATH), parameter1, parameter2, parameter3);
@@ -250,7 +250,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
         if (resultEquations == null) {
           resultEquations = new ArrayList<>(1);
         }
-        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(lamArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext()))));
+        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(teleArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext()))));
       }
 
       List<Expression> parameters = new ArrayList<>(3);
@@ -308,7 +308,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
       Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext());
       Expression actualNorm = resultType.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext());
       List<CompareVisitor.Equation> equations = new ArrayList<>();
-      CompareVisitor.Result result = compare(actualNorm, expectedNorm, equations);
+      CompareVisitor.Result result = oldCompare(actualNorm, expectedNorm, equations);
 
       if (result instanceof CompareVisitor.JustResult && result.isOK() != CompareVisitor.CMP.LESS && result.isOK() != CompareVisitor.CMP.EQUALS) {
         Expression resultExpr = okFunction.expression;

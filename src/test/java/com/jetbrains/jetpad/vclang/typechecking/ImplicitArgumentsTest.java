@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
@@ -20,12 +22,12 @@ public class ImplicitArgumentsTest {
   @Test
   public void inferId() {
     // f : {A : Type0} -> A -> A |- f 0 : N
-    Expression expr = Apps(Index(0), Zero());
+    Concrete.Expression expr = cApps(cVar("f"), cZero());
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Index(0), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(defs, null, errorReporter);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Apps(Index(0), Nat(), false, false), Zero()), result.expression);
     assertEquals(Nat(), result.type);
@@ -34,36 +36,36 @@ public class ImplicitArgumentsTest {
   @Test
   public void unexpectedImplicit() {
     // f : N -> N |- f {0} 0 : N
-    Expression expr = Apps(Apps(Index(0), Zero(), false, false), Zero());
+    Concrete.Expression expr = cApps(cApps(cVar("f"), cZero(), false, false), cZero());
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(Nat(), Nat())));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.checkType(defs, null, errorReporter));
+    assertNull(new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null));
     assertEquals(1, errorReporter.getErrorList().size());
   }
 
   @Test
   public void tooManyArguments() {
     // f : (x : N) {y : N} (z : N) -> N |- f 0 0 0 : N
-    Expression expr = Apps(Index(0), Zero(), Zero(), Zero());
+    Concrete.Expression expr = cApps(cVar("f"), cZero(), cZero(), cZero());
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi("x", Nat(), Pi(false, "y", Nat(), Pi("z", Nat(), Nat())))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.checkType(defs, null, errorReporter));
+    assertNull(new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null));
     assertEquals(1, errorReporter.getErrorList().size());
   }
 
   @Test
   public void cannotInfer() {
     // f : {A B : Type0} -> A -> A |- f 0 : N
-    Expression expr = Apps(Index(0), Zero());
+    Concrete.Expression expr = cApps(cVar("f"), cZero());
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(false, "B", Universe(0), Pi(Index(0), Index(0))))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.checkType(defs, null, errorReporter));
+    assertNull(new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null));
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
   }
@@ -71,24 +73,24 @@ public class ImplicitArgumentsTest {
   @Test
   public void cannotInferLam() {
     // f : {A : Type0} -> ((A -> Nat) -> Nat) -> A |- f (\g. g 0) : Nat
-    Expression expr = Apps(Index(0), Lam("g", Apps(Index(0), Zero())));
+    Concrete.Expression expr = cApps(cVar("f"), cLam("g", cApps(cVar("g"), cZero())));
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Pi(Index(0), Nat()), Nat()), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.checkType(defs, null, errorReporter));
+    assertNull(new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null));
     assertEquals(1, errorReporter.getErrorList().size());
   }
 
   @Test
   public void inferFromFunction() {
     // f : {A : Type0} -> (Nat -> A) -> A |- f S : Nat
-    Expression expr = Apps(Index(0), Suc());
+    Concrete.Expression expr = cApps(cVar("f"), cSuc());
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(defs, null, errorReporter);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Apps(Index(0), Nat(), false, false), Suc()), result.expression);
     assertEquals(Nat(), result.type);
@@ -97,28 +99,29 @@ public class ImplicitArgumentsTest {
   @Test
   public void inferFromLam() {
     // f : {A : Type0} -> (Nat -> A) -> A |- f (\x. S) : Nat -> Nat
-    Expression expr = Apps(Index(0), Lam("x", Suc()));
+    Concrete.Expression expr = cApps(cVar("f"), cLam("x", cSuc()));
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(defs, null, errorReporter);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
-    assertEquals(Apps(Apps(Index(0), Pi(Nat(), Nat()), false, false), Lam("x", Suc())), result.expression);
+    assertEquals(Apps(Apps(Index(0), Pi(Nat(), Nat()), false, false), Lam("x", Nat(), Suc())), result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }
 
   @Test
   public void inferFromLamType() {
     // f : {A : Type0} -> (Nat -> A) -> A |- f (\x (y : Nat -> Nat). y x) : (Nat -> Nat) -> Nat
-    Expression arg = Lam(lamArgs(Name("x"), Tele(vars("y"), Pi(Nat(), Nat()))), Apps(Index(0), Index(1)));
-    Expression expr = Apps(Index(0), arg);
+    Concrete.Expression carg = cLam(cargs(cName("x"), cTele(cvars("y"), cPi(cNat(), cNat()))), cApps(cVar("y"), cVar("x")));
+    Concrete.Expression expr = cApps(cVar("f"), carg);
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Nat(), Index(0)), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(defs, null, errorReporter);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
+    Expression arg = Lam(teleArgs(Tele(vars("x"), Nat()), Tele(vars("y"), Pi(Nat(), Nat()))), Apps(Index(0), Index(1)));
     assertEquals(Apps(Apps(Index(0), Pi(Pi(Nat(), Nat()), Nat()), false, false), arg), result.expression);
     assertEquals(Pi(Pi(Nat(), Nat()), Nat()), result.type);
   }
@@ -126,14 +129,14 @@ public class ImplicitArgumentsTest {
   @Test
   public void inferFromSecondArg() {
     // f : {A : Type0} -> (A -> A) -> (A -> Nat) -> Nat |- f (\x. x) (\x:Nat. x) : Nat
-    Expression expr = Apps(Index(0), Lam("x", Index(0)), Lam(lamArgs(Tele(vars("x"), Nat())), Index(0)));
+    Concrete.Expression expr = cApps(cVar("f"), cLam("x", cVar("x")), cLam(cargs(cTele(cvars("x"), cNat())), cVar("x")));
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Pi(Index(0), Index(0)), Pi(Pi(Index(0), Nat()), Nat())))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(defs, null, errorReporter);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(defs, errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
-    assertEquals(Apps(Apps(Index(0), Nat(), false, false), Lam("x", Index(0)), Lam(lamArgs(Tele(vars("x"), Nat())), Index(0))), result.expression);
+    assertEquals(Apps(Apps(Index(0), Nat(), false, false), Lam("x", Nat(), Index(0)), Lam("x", Nat(), Index(0))), result.expression);
     assertEquals(Nat(), result.type);
   }
 
@@ -227,9 +230,9 @@ public class ImplicitArgumentsTest {
   public void inferUnderLet() {
     // f : {A : Type0} -> (A -> A) -> A -> A |- let | x {A : Type0} (y : A -> A) = f y | z (x : Nat) = x \in x z :
     Expression expr = Let(lets(
-            let("x", lamArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Pi(Index(0), Index(0)))), Apps(Index(2), Index(0))),
-            let("z", lamArgs(Tele(vars("x"), Nat())), Index(0))), Apps(Index(1), Index(0)));
-    List<Binding> defs = new ArrayList<Binding>(Collections.singleton(new TypedBinding("f", Pi(args(Tele(false, vars("A"), Universe(0)), TypeArg(Pi(Index(0), Index(0))), TypeArg(Index(1))), Index(2)))));
+            let("x", typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Pi(Index(0), Index(0)))), Apps(Index(2), Index(0))),
+            let("z", typeArgs(Tele(vars("x"), Nat())), Index(0))), Apps(Index(1), Index(0)));
+    List<Binding> defs = new ArrayList<Binding>(Collections.singleton(new TypedBinding("f", Pi(typeArgs(Tele(false, vars("A"), Universe(0)), TypeArg(Pi(Index(0), Index(0))), TypeArg(Index(1))), Index(2)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.OKResult result = expr.checkType(defs, null, errorReporter);

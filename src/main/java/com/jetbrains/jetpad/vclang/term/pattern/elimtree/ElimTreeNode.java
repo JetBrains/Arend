@@ -1,7 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NewCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,15 +24,11 @@ public abstract class ElimTreeNode {
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (!(obj instanceof ElimTreeNode)) return false;
-    List<CompareVisitor.Equation> equations = new ArrayList<>(0);
-    CompareVisitor.Result result = this.accept(new CompareVisitor(equations), (ElimTreeNode) obj);
-    return result.isOK() != CompareVisitor.CMP.NOT_EQUIV && equations.size() == 0;
+    return this == obj || obj instanceof ElimTreeNode && NewCompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, new ArrayList<Binding>(), this, (ElimTreeNode) obj);
   }
 
-  public static CompareVisitor.Result compare(ElimTreeNode node1, ElimTreeNode node2, List<CompareVisitor.Equation> equations) {
-    return node1.accept(new CompareVisitor(equations), node2);
+  public static boolean compare(ElimTreeNode node1, ElimTreeNode node2, Equations equations, List<Binding> context) {
+    return NewCompareVisitor.compare(equations, Equations.CMP.EQ, context, node1, node2);
   }
 
   @Override

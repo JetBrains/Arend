@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -19,10 +18,11 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.OldArgsInference;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
+import static com.jetbrains.jetpad.vclang.term.expr.Expression.oldCompare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.ContextSaver;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
 
@@ -156,7 +156,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression actualNorm = result.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
     List<CompareVisitor.Equation> equations = new ArrayList<>();
-    CompareVisitor.Result result1 = compare(expectedNorm, actualNorm, equations);
+    CompareVisitor.Result result1 = oldCompare(expectedNorm, actualNorm, equations);
     if (result1 instanceof CompareVisitor.MaybeResult || result1.isOK() == CompareVisitor.CMP.GREATER || result1.isOK() == CompareVisitor.CMP.EQUALS) {
       if (result.equations != null) {
         result.equations.addAll(equations);
@@ -323,7 +323,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           Expression argExpectedType = piArgs.get(i).getType().normalize(NormalizeVisitor.Mode.NF, myLocalContext);
           Expression argActualType = argumentTypes.get(i).getType().normalize(NormalizeVisitor.Mode.NF, myLocalContext);
           List<CompareVisitor.Equation> equations = new ArrayList<>();
-          CompareVisitor.Result result = compare(argExpectedType, argActualType, equations);
+          CompareVisitor.Result result = oldCompare(argExpectedType, argActualType, equations);
           if (result.isOK() != CompareVisitor.CMP.LESS && result.isOK() != CompareVisitor.CMP.EQUALS) {
             errors.add(new TypeMismatchError(piArgs.get(i).getType(), lambdaArgs.get(i).expression, expr, getNames(myLocalContext)));
           } else {
@@ -370,9 +370,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myLocalContext.remove(myLocalContext.size() - 1);
     }
 
-    List<Argument> resultLambdaArgs = new ArrayList<>(argumentTypes.size());
+    List<TelescopeArgument> resultLambdaArgs = new ArrayList<>(argumentTypes.size());
     for (TypeArgument argumentType : argumentTypes) {
-      resultLambdaArgs.add(argumentType);
+      resultLambdaArgs.add((TelescopeArgument) argumentType);
     }
     OKResult result = new OKResult(Lam(resultLambdaArgs, okBodyResult.expression), Pi(argumentTypes, okBodyResult.type), resultEquations);
     expr.setWellTyped(myLocalContext, result.expression);
@@ -479,7 +479,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           return new InferErrorResult((InferHoleExpression) fExpectedTypeNorm, ((InferHoleExpression) fExpectedTypeNorm).getError(), null);
         }
 
-        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(args(TypeArg(Error(null, null)), TypeArg(Error(null, null)))), expr, getNames(myLocalContext));
+        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(typeArgs(TypeArg(Error(null, null)), TypeArg(Error(null, null)))), expr, getNames(myLocalContext));
         expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
@@ -823,7 +823,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<CompareVisitor.Equation> equations = new ArrayList<>();
     Expression letTerm = Index(0);
-    List<Argument> args = new ArrayList<>();
+    List<TypeArgument> args = new ArrayList<>();
     for (int i = 0; i < expr.getExpressions().size(); i++) {
       Result exprResult = typeCheck(expr.getExpressions().get(i), null);
       if (!(exprResult instanceof OKResult)) return exprResult;
@@ -835,7 +835,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       letTerm = Apps(letTerm, exprOKResult.expression.liftIndex(0, 1));
     }
     for (int i = 0; i < args.size(); i++) {
-      myLocalContext.add(new TypedBinding("caseA" + i, ((TelescopeArgument) args.get(i)).getType()));
+      myLocalContext.add(new TypedBinding("caseA" + i, args.get(i).getType()));
     }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
     ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, myLocalContext.size() - args.size(), expectedType.liftIndex(0, 1));
@@ -1026,7 +1026,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private Result typeCheckLetClause(Abstract.LetClause clause) {
-    List<Argument> args = new ArrayList<>();
+    List<TypeArgument> args = new ArrayList<>();
     Expression resultType;
     ElimTreeNode elimTree;
     List<CompareVisitor.Equation> equations = new ArrayList<>();

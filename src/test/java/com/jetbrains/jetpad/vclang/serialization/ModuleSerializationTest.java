@@ -5,16 +5,12 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.ReportingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
-import java.util.ArrayList;
 
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static org.junit.Assert.*;
 
@@ -43,7 +39,7 @@ public class ModuleSerializationTest {
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(CompareVisitor.CMP.EQUALS, ElimTreeNode.compare(((FunctionDefinition) namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
+    assertEquals(((FunctionDefinition) namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree());
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
@@ -68,7 +64,7 @@ public class ModuleSerializationTest {
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(CompareVisitor.CMP.EQUALS, ElimTreeNode.compare(((FunctionDefinition) namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
+    assertEquals(((FunctionDefinition) namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree());
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
@@ -91,7 +87,7 @@ public class ModuleSerializationTest {
     assertEquals(0, result.errorsNumber);
     assertEquals(def.getStatements().size(), ((ClassDefinition) result.namespaceMember.definition).getStatements().size());
     assertEquals(def.getResolvedName().toNamespace().getMembers().size(), result.namespaceMember.namespace.getMembers().size());
-    assertEquals(CompareVisitor.CMP.EQUALS, compare(namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType(), new ArrayList<CompareVisitor.Equation>(0)).isOK());
+    assertEquals(namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType());
     assertEquals(0, errorReporter.getErrorList().size());
   }
 

@@ -113,13 +113,15 @@ public class Utils {
 
     public ContextSaver(List context) {
       myContext = context;
-      myOldContextSize = context.size();
+      myOldContextSize = context != null ? context.size() : 0;
     }
 
 
     @Override
     public void close() {
-      trimToSize(myContext, myOldContextSize);
+      if (myContext != null) {
+        trimToSize(myContext, myOldContextSize);
+      }
     }
   }
 

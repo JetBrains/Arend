@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
@@ -14,6 +15,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
@@ -56,29 +58,29 @@ public class ExpressionTest {
   @Test
   public void typeCheckingAppIndex() {
     // \x y. y (y x) : N -> (N -> N) -> N
-    Expression expr = Lam("x", Lam("y", Apps(Index(0), Apps(Index(0), Index(1)))));
+    Concrete.Expression expr = cLam("x", cLam("y", cApps(cVar("y"), cApps(cVar("y"), cVar("x")))));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())), errorReporter);
+    new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
   public void typeCheckingAppPiIndex() {
     // \f g. g zero (f zero) : (f : (x : N) -> N x) -> ((x : N) -> N x -> N (f x)) -> N (f zero)
-    Expression expr = Lam("f", Lam("g", Apps(Index(0), Zero(), Apps(Index(1), Zero()))));
+    Concrete.Expression expr = cLam("f", cLam("g", cApps(cVar("g"), cZero(), cApps(cVar("f"), cZero()))));
     Expression type = Pi("f", Pi("x", Nat(), Apps(Nat(), Index(0))), Pi(Pi("x", Nat(), Pi(Apps(Nat(), Index(0)), Apps(Nat(), Apps(Index(1), Index(0))))), Apps(Nat(), Apps(Index(0), Zero()))));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    expr.checkType(new ArrayList<Binding>(), type, errorReporter);
+    new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, type);
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
   public void typeCheckingAppLamPiIndex() {
     // \f h. h (\k -> k (suc zero)) : (f : (g : N -> N) -> N (g zero)) -> ((z : (N -> N) -> N) -> N (f (\x. z (\_. x)))) -> N (f (\x. x))
-    Expression expr = Lam("f", Lam("h", Apps(Index(0), Lam("k", Apps(Index(0), Apps(Suc(), Zero()))))));
-    Expression type = Pi("f", Pi("g", Pi(Nat(), Nat()), Apps(Nat(), Apps(Index(0), Zero()))), Pi(Pi("z", Pi(Pi(Nat(), Nat()), Nat()), Apps(Nat(), Apps(Index(1), Lam("x", Apps(Index(1), Lam("_", Index(1))))))), Apps(Nat(), Apps(Index(0), Lam("x", Index(0))))));
+    Concrete.Expression expr = cLam("f", cLam("h", cApps(cVar("h"), cLam("k", cApps(cVar("k"), cApps(cSuc(), cZero()))))));
+    Expression type = Pi("f", Pi("g", Pi(Nat(), Nat()), Apps(Nat(), Apps(Index(0), Zero()))), Pi(Pi("z", Pi(Pi(Nat(), Nat()), Nat()), Apps(Nat(), Apps(Index(1), Lam("x", Nat(), Apps(Index(1), Lam("_", Nat(), Index(1))))))), Apps(Nat(), Apps(Index(0), Lam("x", Nat(), Index(0))))));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    expr.checkType(new ArrayList<Binding>(), type, errorReporter);
+    new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, type);
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
@@ -116,7 +118,7 @@ public class ExpressionTest {
   @Test
   public void typedLambda() {
     // \x:Nat. x : Nat -> Nat
-    Expression expr = Lam(lamArgs(Tele(true, vars("x"), Nat())), Index(0));
+    Expression expr = Lam(teleArgs(Tele(true, vars("x"), Nat())), Index(0));
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), null, errorReporter);
     assertEquals(Pi(Nat(), Nat()), result.type);
@@ -126,27 +128,28 @@ public class ExpressionTest {
   @Test
   public void tooManyLambdasError() {
     // \x y. x : Nat -> Nat
-    Expression expr = Lam(lamArgs(Name("x"), Name("y")), Index(1));
+    Concrete.Expression expr = cLam(cargs(cName("x"), cName("y")), cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Nat()), errorReporter));
+    assertNull(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Nat(), Nat())));
     assertEquals(1, errorReporter.getErrorList().size());
   }
 
   @Test
   public void typedLambdaExpectedType() {
     // \(X : Type1) x. x : (X : Type0) (X) -> X
-    Expression expr = Lam(lamArgs(Tele(vars("X"), Universe(1)), Name("x")), Index(0));
+    Concrete.Expression expr = cLam(cargs(cTele(cvars("X"), cUniverse(1)), cName("x")), cVar("x"));
+    Expression texpr = Lam(teleArgs(Tele(vars("X"), Universe(1)), Tele(vars("x"), Index(0))), Index(0));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(expr, expr.checkType(new ArrayList<Binding>(), Pi(args(Tele(vars("X"), Universe(0)), TypeArg(Index(0))), Index(1)), errorReporter).expression);
+    assertEquals(texpr, new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(typeArgs(Tele(vars("X"), Universe(0)), TypeArg(Index(0))), Index(1))).expression);
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
   public void lambdaExpectedError() {
     // \x. x : (Nat -> Nat) -> Nat
-    Expression expr = Lam("x", Index(0));
+    Concrete.Expression expr = cLam("x", cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), Pi(Pi(Nat(), Nat()), Nat()), errorReporter);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
     assertEquals(null, result);
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
@@ -155,9 +158,9 @@ public class ExpressionTest {
   @Test
   public void lambdaOmegaError() {
     // \x. x x : (Nat -> Nat) -> Nat
-    Expression expr = Lam("x", Apps(Index(0), Index(0)));
+    Concrete.Expression expr = cLam("x", cApps(cVar("x"), cVar("x")));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), Pi(Pi(Nat(), Nat()), Nat()), errorReporter);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Nat()));
     assertEquals(null, result);
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
@@ -166,9 +169,9 @@ public class ExpressionTest {
   @Test
   public void lambdaExpectedError2() {
     // \x. x 0 : (Nat -> Nat) -> Nat -> Nat
-    Expression expr = Lam("x", Apps(Index(0), Zero()));
+    Concrete.Expression expr = cLam("x", cApps(cVar("x"), cZero()));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())), errorReporter);
+    CheckTypeVisitor.OKResult result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())));
     assertEquals(null, result);
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
@@ -177,10 +180,10 @@ public class ExpressionTest {
   @Test
   public void letDependentType() {
     // \lam (F : \Pi N -> \Type0) (f : \Pi (x : N) -> F x) => \\let | x => 0 \\in f x");
-    Expression expr = Lam(lamArgs(Tele(vars("F"), Pi(Nat(), Universe(0))), Tele(vars("f"), Pi(args(Tele(vars("x"), Nat())), Apps(Index(1), Index(0))))),
-            Let(lets(let("x", Zero())), Apps(Index(1), Index(0))));
+    Concrete.Expression expr = cLam(cargs(cTele(cvars("F"), cPi(cNat(), cUniverse(0))), cTele(cvars("f"), cPi(ctypeArgs(cTele(cvars("x"), cNat())), cApps(cVar("F"), cVar("x"))))),
+            cLet(clets(clet("x", cZero())), cApps(cVar("f"), cVar("x"))));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    expr.checkType(new ArrayList<Binding>(), null, errorReporter);
+    new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
@@ -193,10 +196,10 @@ public class ExpressionTest {
         clause(Prelude.ZERO, Zero()),
         clause(Prelude.SUC, Suc(Index(0)))
     );
-    Expression expr = Lam(lamArgs(
-                    Tele(vars("F"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
-                    Tele(vars("f"), Pi(args(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
-            Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Nat(), elimTree)), Apps(Index(1), Index(0))));
+    Expression expr = Lam(teleArgs(
+                    Tele(vars("F"), Pi(typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
+                    Tele(vars("f"), Pi(typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
+            Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Nat(), elimTree)), Apps(Index(1), Index(0))));
     ListErrorReporter errorReporter = new ListErrorReporter();
     expr.checkType(new ArrayList<Binding>(), null, errorReporter);
     assertEquals(1, errorReporter.getErrorList().size());
@@ -205,7 +208,7 @@ public class ExpressionTest {
   @Test
   public void letArrowType() {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
-    Expression expr = Let(lets(let("x", lamArgs(Tele(vars("y"), Nat())), Zero())), Index(0));
+    Expression expr = Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Zero())), Index(0));
     ListErrorReporter errorReporter = new ListErrorReporter();
     assertEquals(Pi(Nat(), Nat()), expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Nat()), errorReporter).type);
     assertEquals(0, errorReporter.getErrorList().size());

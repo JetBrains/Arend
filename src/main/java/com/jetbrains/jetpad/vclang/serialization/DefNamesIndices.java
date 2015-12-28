@@ -8,7 +8,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-public class DefNamesIndicies {
+public class DefNamesIndices {
   private static class Entry {
     ResolvedName defName;
     boolean isNew;

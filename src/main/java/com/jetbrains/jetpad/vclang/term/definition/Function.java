@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface Function extends Abstract.Function {
   ElimTreeNode getElimTree();
-  List<Argument> getArguments();
+  List<? extends Argument> getArguments();
   Expression getResultType();
   ClassDefinition getThisClass();
 }

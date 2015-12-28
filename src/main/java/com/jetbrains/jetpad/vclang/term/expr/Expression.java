@@ -8,6 +8,8 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,11 +33,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (!(obj instanceof Expression)) return false;
-    List<CompareVisitor.Equation> equations = new ArrayList<>(0);
-    CompareVisitor.Result result = compare(this, (Expression) obj, equations);
-    return result.isOK() != CompareVisitor.CMP.NOT_EQUIV && equations.size() == 0;
+    return this == obj || obj instanceof Expression && compare(this, (Expression) obj);
   }
 
   @Override
@@ -64,15 +62,23 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public final Expression normalize(NormalizeVisitor.Mode mode, List<Binding> context) {
-    return accept(new NormalizeVisitor(context), mode);
+    return context == null ? this : accept(new NormalizeVisitor(context), mode);
   }
 
   public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, ErrorReporter errorReporter) {
     return new CheckTypeVisitor.Builder(localContext, errorReporter).build().checkType(this, expectedType);
   }
 
-  public static CompareVisitor.Result compare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {
+  public static CompareVisitor.Result oldCompare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {
     return expr1.accept(new CompareVisitor(equations), expr2);
+  }
+
+  public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
+    return NewCompareVisitor.compare(DummyEquations.getInstance(), cmp, new ArrayList<Binding>(), expr1, expr2);
+  }
+
+  public static boolean compare(Expression expr1, Expression expr2) {
+    return compare(expr1, expr2, Equations.CMP.EQ);
   }
 
   public Expression lamSplitAt(int index, List<Argument> arguments) {
@@ -85,27 +91,23 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
         TelescopeArgument additionalArgument = null;
         int i;
         for (i = 0; i < lamExpr.getArguments().size() && arguments.size() < index; ++i) {
-          if (lamExpr.getArguments().get(i) instanceof TelescopeArgument) {
-            TelescopeArgument teleArg = (TelescopeArgument) lamExpr.getArguments().get(i);
-            int j;
-            for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
-              arguments.add(Tele(lamExpr.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType()));
+          TelescopeArgument teleArg = lamExpr.getArguments().get(i);
+          int j;
+          for (j = 0; j < teleArg.getNames().size() && arguments.size() < index; ++j) {
+            arguments.add(Tele(lamExpr.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType()));
+          }
+          if (j < teleArg.getNames().size()) {
+            List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
+            for (; j < teleArg.getNames().size(); ++j) {
+              names.add(teleArg.getNames().get(j));
             }
-            if (j < teleArg.getNames().size()) {
-              List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
-              for (; j < teleArg.getNames().size(); ++j) {
-                names.add(teleArg.getNames().get(j));
-              }
-              additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType());
-            }
-          } else {
-            arguments.add(lamExpr.getArguments().get(i));
+            additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType());
           }
         }
 
         result = lamExpr.getBody();
         if (i < lamExpr.getArguments().size() || additionalArgument != null) {
-          List<Argument> arguments1 = new ArrayList<>(lamExpr.getArguments().size() - i + (additionalArgument == null ? 0 : 1));
+          List<TelescopeArgument> arguments1 = new ArrayList<>(lamExpr.getArguments().size() - i + (additionalArgument == null ? 0 : 1));
           if (additionalArgument != null) {
             arguments1.add(additionalArgument);
           }
