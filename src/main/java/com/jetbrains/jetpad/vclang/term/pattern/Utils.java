@@ -16,19 +16,19 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getTypes;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 
 public class Utils {
-  public static int getNumArguments(Abstract.Pattern pattern) {
-    if (pattern instanceof Abstract.NamePattern || pattern instanceof Abstract.AnyConstructorPattern) {
+  public static int getNumArguments(Pattern pattern) {
+    if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern) {
       return 1;
-    } else if (pattern instanceof Abstract.ConstructorPattern) {
-      return getNumArguments(((Abstract.ConstructorPattern) pattern).getArguments());
+    } else if (pattern instanceof ConstructorPattern) {
+      return getNumArguments(((ConstructorPattern) pattern).getArguments());
     } else {
       throw new IllegalStateException();
     }
   }
 
-  public static int getNumArguments(List<? extends Abstract.PatternArgument> patternArgs) {
+  public static int getNumArguments(List<? extends PatternArgument> patternArgs) {
     int result = 0;
-    for (Abstract.PatternArgument patternArg : patternArgs)
+    for (PatternArgument patternArg : patternArgs)
       result += getNumArguments(patternArg.getPattern());
     return result;
   }
@@ -157,10 +157,10 @@ public class Utils {
   }
 
   public static class PatternMatchMaybeResult extends PatternMatchResult {
-    public final ConstructorPattern maybePattern;
+    public final Pattern maybePattern;
     public final Expression actualExpression;
 
-    PatternMatchMaybeResult(ConstructorPattern maybePattern, Expression actualExpression) {
+    PatternMatchMaybeResult(Pattern maybePattern, Expression actualExpression) {
       this.maybePattern = maybePattern;
       this.actualExpression = actualExpression;
     }
@@ -195,10 +195,10 @@ public class Utils {
   }
 
   public static List<TypeArgument> expandConstructorParameters(Constructor constructor, List<Binding> context) {
-    List<PatternExpansion.Result<ArgumentExpression>> results = PatternExpansion.expandPatternArgs(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), context);
+    List<PatternToExpression.Result<ArgumentExpression>> results = PatternToExpression.expandPatternArgs(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), context);
 
     List<TypeArgument> result = new ArrayList<>();
-    for (PatternExpansion.Result<ArgumentExpression> nestedResult : results) {
+    for (PatternToExpression.Result<ArgumentExpression> nestedResult : results) {
       for (TypeArgument arg : nestedResult.args) {
         result.add(arg.toExplicit(false));
       }
@@ -207,7 +207,7 @@ public class Utils {
   }
 
   public static List<ArgumentExpression> constructorPatternsToExpressions(Constructor constructor) {
-    List<PatternExpansion.Result<ArgumentExpression>> results = PatternExpansion.expandPatternArgs(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), new ArrayList<Binding>());
+    List<PatternToExpression.Result<ArgumentExpression>> results = PatternToExpression.expandPatternArgs(constructor.getPatterns(), getTypes(constructor.getDataType().getParameters()), new ArrayList<Binding>());
 
     List<ArgumentExpression> result = new ArrayList<>();
     int shift = numberOfVariables(constructor.getArguments());

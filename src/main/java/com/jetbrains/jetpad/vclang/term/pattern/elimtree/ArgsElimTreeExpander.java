@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
-import static com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeExpander.recalcIndicies;
+import static com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeExpander.recalcIndices;
 
 public class ArgsElimTreeExpander {
   public static class ArgsBranch {
@@ -106,7 +106,7 @@ public class ArgsElimTreeExpander {
       try (Utils.MultiContextSaver ignore = new Utils.MultiContextSaver(myLocalContext, currentBranches)) {
         myLocalContext.addAll(branch.context);
         currentBranches.add(branch);
-        resultTree = branch.leaf.replaceWith(resultTree, expandElimTreeRecurse(recalcIndicies(valid, branch.indicies), substituteInTypes(types, branch)));
+        resultTree = branch.leaf.replaceWith(resultTree, expandElimTreeRecurse(recalcIndices(valid, branch.indices), substituteInTypes(types, branch)));
       }
     }
 

@@ -6,10 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
@@ -219,12 +216,13 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
 
   public void visitPattern(Pattern pattern) {
     try {
-      if (pattern instanceof NamePattern)
+      if (pattern instanceof NamePattern) {
         myDataStream.writeInt(0);
-      else if (pattern instanceof Abstract.AnyConstructorPattern)
+      } else if (pattern instanceof AnyConstructorPattern) {
         myDataStream.writeInt(1);
-      else if (pattern instanceof Abstract.ConstructorPattern)
+      } else if (pattern instanceof ConstructorPattern) {
         myDataStream.writeInt(2);
+      }
       if (pattern instanceof NamePattern) {
         myDataStream.writeBoolean(((NamePattern) pattern).getName() != null);
         if (((NamePattern) pattern).getName() != null)

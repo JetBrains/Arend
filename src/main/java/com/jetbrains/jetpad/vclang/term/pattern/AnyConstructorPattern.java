@@ -10,10 +10,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class AnyConstructorPattern extends ConstructorPattern implements Abstract.AnyConstructorPattern {
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
+
+public class AnyConstructorPattern extends Pattern implements Abstract.AnyConstructorPattern {
 
   public AnyConstructorPattern() {
-    super(null, null);
   }
 
   @Override
@@ -24,5 +25,15 @@ public class AnyConstructorPattern extends ConstructorPattern implements Abstrac
     } else {
       return new Utils.PatternMatchOKResult(Collections.singletonList(expr));
     }
+  }
+
+  @Override
+  public void setWellTyped(Pattern pattern) {
+
+  }
+
+  @Override
+  public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+    prettyPrintPattern(this, builder, names);
   }
 }

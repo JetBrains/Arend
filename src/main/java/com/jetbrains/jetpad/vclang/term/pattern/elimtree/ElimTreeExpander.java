@@ -27,22 +27,22 @@ import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 
 class ElimTreeExpander {
   static class Branch {
-    public final LeafElimTreeNode leaf;
-    public final Expression expression;
-    public final List<Binding> context;
-    public final List<Integer> indicies;
+    final LeafElimTreeNode leaf;
+    final Expression expression;
+    final List<Binding> context;
+    final List<Integer> indices;
 
-    private Branch(Expression expression, List<Binding> context, LeafElimTreeNode value, List<Integer> indicies) {
+    private Branch(Expression expression, List<Binding> context, LeafElimTreeNode value, List<Integer> indices) {
       this.leaf = value;
       this.expression = expression;
       this.context = context;
-      this.indicies = indicies;
+      this.indices = indices;
     }
   }
 
   static class ExpansionResult {
-    public final ElimTreeNode result;
-    public final List<Branch> branches;
+    final ElimTreeNode result;
+    final List<Branch> branches;
 
     private ExpansionResult(ElimTreeNode result, List<Branch> branches) {
       this.result = result;
@@ -60,7 +60,7 @@ class ElimTreeExpander {
     List<Integer> namePatternIdxs = new ArrayList<>();
     boolean hasConstructorPattern = false;
     for (int i = 0; i < patterns.size(); i++) {
-      if (patterns.get(i) instanceof ConstructorPattern) {
+      if (patterns.get(i) instanceof ConstructorPattern || patterns.get(i) instanceof AnyConstructorPattern) {
         hasConstructorPattern = true;
       } else if (patterns.get(i) instanceof NamePattern) {
         namePatternIdxs.add(i);
@@ -95,7 +95,7 @@ class ElimTreeExpander {
       for (ArgsBranch branch : nestedResult.branches) {
         Expression expr = conCall.liftIndex(0, branch.context.size());
         expr = Apps(expr, branch.expressions.toArray(new Expression[branch.expressions.size()]));
-        resultBranches.add(new Branch(expr, branch.context, branch.leaf, recalcIndicies(matching.indices, branch.indicies)));
+        resultBranches.add(new Branch(expr, branch.context, branch.leaf, recalcIndices(matching.indices, branch.indicies)));
       }
     }
 
@@ -126,10 +126,10 @@ class ElimTreeExpander {
     }
   }
 
-  static ArrayList<Integer> recalcIndicies(List<Integer> valid, List<Integer> newValid) {
-    ArrayList<Integer> indicies = new ArrayList<>();
+  static ArrayList<Integer> recalcIndices(List<Integer> old, List<Integer> newValid) {
+    ArrayList<Integer> indices = new ArrayList<>();
     for (int i : newValid)
-      indicies.add(valid.get(i));
-    return indicies;
+      indices.add(old.get(i));
+    return indices;
   }
 }

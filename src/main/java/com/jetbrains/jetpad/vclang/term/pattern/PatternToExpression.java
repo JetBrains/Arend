@@ -16,7 +16,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
-public class PatternExpansion {
+public class PatternToExpression {
   public static class Result<T> {
     public final T expression;
     public final List<TypeArgument> args;
