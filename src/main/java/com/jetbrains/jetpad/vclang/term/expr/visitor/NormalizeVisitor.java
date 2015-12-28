@@ -48,7 +48,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return null;
   }
 
-  public enum Mode { WHNF, NF, TOP }
+  public enum Mode { WHNF, NF, NFH, TOP }
 
   private final List<Binding> myContext;
 
@@ -93,11 +93,13 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (mode == Mode.TOP) return null;
-    if (mode == Mode.NF) {
-      expr = expr.accept(this, mode);
+    Expression newExpr = expr.accept(this, Mode.TOP);
+    if (newExpr != null) {
+      return visitApps(newExpr.getFunctionArgs(exprs), exprs, mode);
     }
+
     for (int i = exprs.size() - 1; i >= 0; --i) {
-      if (mode == Mode.NF) {
+      if (mode == Mode.NF || mode == Mode.NFH) {
         expr = Apps(expr, new ArgumentExpression(exprs.get(i).getExpression().accept(this, mode), exprs.get(i).isExplicit(), exprs.get(i).isHidden()));
       } else {
         expr = Apps(expr, exprs.get(i));
@@ -153,7 +155,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     Expression expr = defCallExpr;
     for (int i = args.size() - 1; i >= 0; --i) {
-      if (mode == Mode.NF) {
+      if (mode == Mode.NF || mode == Mode.NFH) {
         expr = Apps(expr, new ArgumentExpression(args.get(i).getExpression().accept(this, mode), args.get(i).isExplicit(), args.get(i).isHidden()));
       } else {
         expr = Apps(expr, args.get(i));
@@ -229,7 +231,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     Expression result = defCallExpr;
     for (int i = args.size() - 1; i >= 0; --i) {
       Expression arg = args.get(i).getExpression();
-      if (mode == Mode.NF) {
+      if (mode == Mode.NF || mode == Mode.NFH) {
         arg = arg.accept(this, mode);
       }
       if (splitArguments.size() > args.size()) {
@@ -298,7 +300,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return mode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this, mode);
       List<Expression> mbIsoArgs = new ArrayList<>();
       Expression mbIso = expr.getFunction(mbIsoArgs);
-      if (mbIso instanceof FunCallExpression && ((FunCallExpression) mbIso).getDefinition() == Prelude.ISO && mbIsoArgs.size() == 7) {
+      if (mbIso instanceof FunCallExpression && Prelude.isIso(((FunCallExpression) mbIso).getDefinition()) && mbIsoArgs.size() == 7) {
         boolean noFreeVar = true;
         for (int i = 1; i < mbIsoArgs.size(); i++) {
           if (mbIsoArgs.get(i).liftIndex(0, -1) == null) {
@@ -333,7 +335,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (leaf == null)
       return applyDefCall(defCallExpr, args, mode);
     Expression result = leaf.getExpression().liftIndex(args2.size(), args1.size()).subst(args2, 0);
-    if (leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
+    if ((mode == Mode.NFH || mode == Mode.TOP) && leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
       try (ContextSaver ignore = new ContextSaver(myContext)) {
         for (TypeArgument arg : args1) {
           pushArgument(myContext, arg);
@@ -406,7 +408,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitLam(LamExpression expr, Mode mode) {
     try (ContextSaver ignore = new ContextSaver(myContext)) {
-      return mode == Mode.TOP ? null : mode == Mode.NF ? Lam(visitArguments(expr.getArguments(), mode), expr.getBody().accept(this, mode)) : expr;
+      return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Lam(visitArguments(expr.getArguments(), mode), expr.getBody().accept(this, mode)) : expr;
     }
   }
 
@@ -435,7 +437,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitPi(PiExpression expr, Mode mode) {
     try (ContextSaver ignore = new ContextSaver(myContext)) {
-      return mode == Mode.TOP ? null : mode == Mode.NF ? Pi(visitTypeArguments(expr.getArguments(), mode), expr.getCodomain().accept(this, mode)) : expr;
+      return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Pi(visitTypeArguments(expr.getArguments(), mode), expr.getCodomain().accept(this, mode)) : expr;
     }
   }
 
@@ -446,7 +448,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitError(ErrorExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : mode != Mode.NF || expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this, mode), expr.getError());
+    return mode == Mode.TOP ? null : mode != Mode.NF && mode != Mode.NFH || expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this, mode), expr.getError());
   }
 
   @Override
@@ -457,7 +459,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitTuple(TupleExpression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
-    if (mode != Mode.NF) return expr;
+    if (mode != Mode.NF && mode != Mode.NFH) return expr;
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, mode));
@@ -468,7 +470,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitSigma(SigmaExpression expr, Mode mode) {
     try (ContextSaver ignore = new ContextSaver(myContext)) {
-      return mode == Mode.TOP ? null : mode == Mode.NF ? Sigma(visitTypeArguments(expr.getArguments(), mode)) : expr;
+      return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Sigma(visitTypeArguments(expr.getArguments(), mode)) : expr;
     }
   }
 
@@ -479,7 +481,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       Expression result = ((TupleExpression) exprNorm).getFields().get(expr.getField());
       return mode == Mode.TOP ? result : result.accept(this, mode);
     } else {
-      return mode == Mode.TOP ? null : mode == Mode.NF ? Proj(expr.getExpression().accept(this, mode), expr.getField()) : expr;
+      return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Proj(expr.getExpression().accept(this, mode), expr.getField()) : expr;
     }
   }
 

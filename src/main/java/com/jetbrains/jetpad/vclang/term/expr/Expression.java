@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.pushArgument;
 
 public abstract class Expression implements PrettyPrintable, Abstract.Expression {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
@@ -125,57 +127,61 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
   }
 
   public Expression splitAt(int index, List<TypeArgument> arguments, List<Binding> context) {
-    int count = 0;
-    Expression type = this;
-    while (count < index) {
-      if (context != null) {
-        type = type.normalize(NormalizeVisitor.Mode.WHNF, context);
-      }
-      if (type instanceof PiExpression) {
-        PiExpression piType = (PiExpression) type;
-        TelescopeArgument additionalArgument = null;
-        int i;
-        for (i = 0; i < piType.getArguments().size() && count < index; ++i) {
-          if (piType.getArguments().get(i) instanceof TelescopeArgument) {
-            TelescopeArgument teleArg = (TelescopeArgument) piType.getArguments().get(i);
-            int j;
-            for (j = 0; j < teleArg.getNames().size() && count < index; ++j) {
+    try (Utils.ContextSaver saver = context == null ? null : new Utils.ContextSaver(context)) {
+      int count = 0;
+      Expression type = this;
+      while (count < index) {
+        if (context != null) {
+          type = type.normalize(NormalizeVisitor.Mode.WHNF, context);
+        }
+        if (type instanceof PiExpression) {
+          PiExpression piType = (PiExpression) type;
+          TelescopeArgument additionalArgument = null;
+          int i;
+          for (i = 0; i < piType.getArguments().size() && count < index; ++i) {
+            if (piType.getArguments().get(i) instanceof TelescopeArgument) {
+              TelescopeArgument teleArg = (TelescopeArgument) piType.getArguments().get(i);
+              int j;
+              for (j = 0; j < teleArg.getNames().size() && count < index; ++j) {
+                if (arguments != null) {
+                  arguments.add(Tele(piType.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType().liftIndex(0, j)));
+                }
+                ++count;
+              }
+              if (j < teleArg.getNames().size()) {
+                List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
+                for (; j < teleArg.getNames().size(); ++j) {
+                  names.add(teleArg.getNames().get(j));
+                }
+                additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType().liftIndex(0, teleArg.getNames().size() - names.size()));
+              }
+            } else {
               if (arguments != null) {
-                arguments.add(Tele(piType.getArguments().get(i).getExplicit(), vars(teleArg.getNames().get(j)), teleArg.getType().liftIndex(0, j)));
+                arguments.add(piType.getArguments().get(i));
               }
               ++count;
             }
-            if (j < teleArg.getNames().size()) {
-              List<String> names = new ArrayList<>(teleArg.getNames().size() - j);
-              for (; j < teleArg.getNames().size(); ++j) {
-                names.add(teleArg.getNames().get(j));
-              }
-              additionalArgument = Tele(teleArg.getExplicit(), names, teleArg.getType().liftIndex(0, teleArg.getNames().size() - names.size()));
-            }
-          } else {
-            if (arguments != null) {
-              arguments.add(piType.getArguments().get(i));
-            }
-            ++count;
+            if (context != null)
+              pushArgument(context, piType.getArguments().get(i));
           }
-        }
 
-        type = piType.getCodomain();
-        if (i < piType.getArguments().size() || additionalArgument != null) {
-          List<TypeArgument> arguments1 = new ArrayList<>(piType.getArguments().size() - i + (additionalArgument == null ? 0 : 1));
-          if (additionalArgument != null) {
-            arguments1.add(additionalArgument);
+          type = piType.getCodomain();
+          if (i < piType.getArguments().size() || additionalArgument != null) {
+            List<TypeArgument> arguments1 = new ArrayList<>(piType.getArguments().size() - i + (additionalArgument == null ? 0 : 1));
+            if (additionalArgument != null) {
+              arguments1.add(additionalArgument);
+            }
+            for (; i < piType.getArguments().size(); ++i) {
+              arguments1.add(piType.getArguments().get(i));
+            }
+            return Pi(arguments1, type);
           }
-          for (; i < piType.getArguments().size(); ++i) {
-            arguments1.add(piType.getArguments().get(i));
-          }
-          return Pi(arguments1, type);
+        } else {
+          break;
         }
-      } else {
-        break;
       }
+      return type;
     }
-    return type;
   }
 
   public Expression getFunction(List<Expression> arguments) {

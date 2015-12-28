@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
@@ -197,13 +198,14 @@ public class OldArgsInference extends RowImplicitArgsInference {
       return null;
     }
 
-    if (okFunction.expression instanceof DefCallExpression && ((DefCallExpression) okFunction.expression).getDefinition() == Prelude.PATH_CON && args.size() == 1 && j == 1) {
+    if (okFunction.expression instanceof DefCallExpression && Prelude.isPathCon(((DefCallExpression) okFunction.expression).getDefinition()) && args.size() == 1 && j == 1) {
+      Constructor pathCon = ((ConCallExpression) okFunction.expression).getDefinition();
       Expression argExpectedType = null;
       InferHoleExpression holeExpression = null;
       if (expectedType != null) {
         List<Expression> argsExpectedType = new ArrayList<>(3);
         Expression fexpectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getLocalContext()).getFunction(argsExpectedType);
-        if (fexpectedType instanceof DefCallExpression && ((DefCallExpression) fexpectedType).getDefinition().equals(Prelude.PATH) && argsExpectedType.size() == 3) {
+        if (fexpectedType instanceof DefCallExpression && ((DefCallExpression) fexpectedType).getDefinition() == pathCon.getDataType() && argsExpectedType.size() == 3) {
           if (argsExpectedType.get(2) instanceof InferHoleExpression) {
             holeExpression = (InferHoleExpression) argsExpectedType.get(2);
           } else {
@@ -244,7 +246,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
       Expression parameter1 = Lam(teleArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type);
       Expression parameter2 = Apps(argResult.expression, ConCall(Prelude.LEFT));
       Expression parameter3 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
-      Expression resultType = Apps(DataCall(Prelude.PATH), parameter1, parameter2, parameter3);
+      Expression resultType = Apps(DataCall(pathCon.getDataType()), parameter1, parameter2, parameter3);
       List<CompareVisitor.Equation> resultEquations = argResult.equations;
       if (holeExpression != null) {
         if (resultEquations == null) {
@@ -257,7 +259,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
       parameters.add(parameter1);
       parameters.add(parameter2);
       parameters.add(parameter3);
-      Expression resultExpr = Apps(ConCall(Prelude.PATH_CON, parameters), new ArgumentExpression(argResult.expression, true, false));
+      Expression resultExpr = Apps(ConCall(pathCon, parameters), new ArgumentExpression(argResult.expression, true, false));
       return new CheckTypeVisitor.OKResult(resultExpr, resultType, resultEquations);
     }
 
@@ -316,7 +318,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
           resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
         }
 
-        TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression, getNames(myVisitor.getLocalContext()));
+        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH, myVisitor.getLocalContext()), resultType.normalize(NormalizeVisitor.Mode.NFH, myVisitor.getLocalContext()), expression, getNames(myVisitor.getLocalContext()));
         expression.setWellTyped(myVisitor.getLocalContext(), Error(resultExpr, error));
         myVisitor.getErrorReporter().report(error);
         return null;

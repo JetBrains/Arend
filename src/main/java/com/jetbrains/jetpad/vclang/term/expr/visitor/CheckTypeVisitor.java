@@ -166,7 +166,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       expression.setWellTyped(myLocalContext, result.expression);
       return result;
     } else {
-      TypeCheckingError error = new TypeMismatchError(expectedNorm, actualNorm, expression, getNames(myLocalContext));
+      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH, myLocalContext), result.type.normalize(NormalizeVisitor.Mode.NFH, myLocalContext), expression, getNames(myLocalContext));
       expression.setWellTyped(myLocalContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return null;
@@ -456,7 +456,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitError(Abstract.ErrorExpression expr, Expression expectedType) {
-    TypeCheckingError error = new GoalError(myLocalContext, expectedType == null ? null : expectedType.normalize(NormalizeVisitor.Mode.NF, myLocalContext), expr);
+    TypeCheckingError error = new GoalError(myLocalContext, expectedType == null ? null : expectedType.normalize(NormalizeVisitor.Mode.NFH, myLocalContext), expr);
     return new InferErrorResult(new InferHoleExpression(error), error, null);
   }
 
@@ -553,6 +553,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Result result = typeCheck(expr.getArguments().get(i).getType(), Universe());
       if (!(result instanceof OKResult)) return result;
       domainResults[i] = (OKResult) result;
+      domainResults[i].type = domainResults[i].type.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
       addLiftedEquations(domainResults[i], equations, numberOfVars);
       if (expr.getArguments().get(i) instanceof Abstract.TelescopeArgument) {
         List<String> names = ((Abstract.TelescopeArgument) expr.getArguments().get(i)).getNames();
