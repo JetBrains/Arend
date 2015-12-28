@@ -10,7 +10,9 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.*;

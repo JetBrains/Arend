@@ -4,12 +4,15 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -143,7 +146,7 @@ public class Prelude extends Namespace {
     List<Argument> pathInfixArguments = new ArrayList<>(3);
     pathInfixArguments.add(Tele(false, vars("A"), Universe(i, Universe.Type.NOT_TRUNCATED)));
     pathInfixArguments.add(Tele(vars("a", "a'"), Index(0)));
-    Expression pathInfixTerm = Apps(DataCall((DataDefinition) PRELUDE.getDefinition("Path" + suffix)), Lam(lamArgs(Tele(vars("_"), DataCall(INTERVAL))), Index(3)), Index(1), Index(0));
+    Expression pathInfixTerm = Apps(DataCall((DataDefinition) PRELUDE.getDefinition("Path" + suffix)), Lam(teleArgs(Tele(vars("_"), DataCall(INTERVAL))), Index(3)), Index(1), Index(0));
     Arrays.fill(chars, '=');
     FunctionDefinition pathInfix = new FunctionDefinition(PRELUDE, new Name(new String(chars), Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixArguments, Universe(i), leaf(pathInfixTerm));
 
@@ -170,8 +173,8 @@ public class Prelude extends Namespace {
     isoArguments.add(Tele(false, vars("A", "B"), Universe(i, Universe.Type.NOT_TRUNCATED)));
     isoArguments.add(Tele(vars("f"), Pi(Index(1), Index(0))));
     isoArguments.add(Tele(vars("g"), Pi(Index(1), Index(2))));
-    isoArguments.add(Tele(vars("linv"), Pi(args(Tele(vars("a"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(1), Apps(Index(2), Index(0))), Index(0)))));
-    isoArguments.add(Tele(vars("rinv"), Pi(args(Tele(vars("b"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(3), Apps(Index(2), Index(0))), Index(0)))));
+    isoArguments.add(Tele(vars("linv"), Pi(typeArgs(Tele(vars("a"), Index(3))), Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Index(4), false, true)), Apps(Index(1), Apps(Index(2), Index(0)), Index(0))))));
+    isoArguments.add(Tele(vars("rinv"), Pi(typeArgs(Tele(vars("b"), Index(3))), Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Index(4), false, true)), Apps(Index(3), Apps(Index(2), Index(0)), Index(0))))));
     isoArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
     Expression isoResultType = Universe(i, Universe.Type.NOT_TRUNCATED);
     BranchElimTreeNode isoElimTree = branch(0,

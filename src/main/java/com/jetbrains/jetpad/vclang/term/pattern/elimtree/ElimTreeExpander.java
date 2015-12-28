@@ -19,7 +19,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getTypes;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;

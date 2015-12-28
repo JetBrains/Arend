@@ -4,9 +4,8 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
@@ -289,19 +288,19 @@ public class NormalizationTest {
 
   @Test
   public void testCoeIso() {
-    Expression expr = Apps(FunCall(Prelude.COERCE), Lam("k", Apps(FunCall(Prelude.ISO), Index(1), Index(2), Index(3), Index(4), Index(5), Index(6), Index(0))), Index(6), ConCall(Prelude.RIGHT));
+    Expression expr = Apps(FunCall(Prelude.COERCE), Lam("k", DataCall(Prelude.INTERVAL), Apps(FunCall(Prelude.ISO), Index(1), Index(2), Index(3), Index(4), Index(5), Index(6), Index(0))), Index(6), ConCall(Prelude.RIGHT));
     assertEquals(Apps(Index(2), Index(6)), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void testCoeIsoFreeVar() {
-    Expression expr = Apps(FunCall(Prelude.COERCE), Lam("k", Apps(FunCall(Prelude.ISO), Apps(DataCall(Prelude.PATH), Lam("i", DataCall(Prelude.INTERVAL)), Index(0), Index(0)), Index(2), Index(3), Index(4), Index(5), Index(6), Index(0))), Index(6), ConCall(Prelude.RIGHT));
+    Expression expr = Apps(FunCall(Prelude.COERCE), Lam("k", DataCall(Prelude.INTERVAL), Apps(FunCall(Prelude.ISO), Apps(DataCall(Prelude.PATH), Lam("i", DataCall(Prelude.INTERVAL), DataCall(Prelude.INTERVAL)), Index(0), Index(0)), Index(2), Index(3), Index(4), Index(5), Index(6), Index(0))), Index(6), ConCall(Prelude.RIGHT));
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void testAppProj() {
-    Expression expr = Apps(Proj(Tuple(Sigma(args(TypeArg(Pi(Nat(), Nat())))), Lam("x", Index(0))), 0), Zero());
+    Expression expr = Apps(Proj(Tuple(Sigma(typeArgs(TypeArg(Pi(Nat(), Nat())))), Lam("x", Nat(), Index(0))), 0), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 }

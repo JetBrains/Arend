@@ -358,7 +358,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (!argTypes.isEmpty()) {
-      return Lam(new ArrayList<Argument>(argTypes), result);
+      List<TelescopeArgument> teleArgTypes = new ArrayList<>(argTypes.size());
+      for (TypeArgument argType : argTypes) {
+        teleArgTypes.add(argType instanceof TelescopeArgument ? (TelescopeArgument) argType : Tele(argType.getExplicit(), vars("_"), argType.getType()));
+      }
+      return Lam(teleArgTypes, result);
     }
 
     return result;

@@ -24,6 +24,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
