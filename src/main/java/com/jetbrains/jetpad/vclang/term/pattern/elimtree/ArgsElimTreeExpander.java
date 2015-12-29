@@ -18,13 +18,13 @@ public class ArgsElimTreeExpander {
     public final LeafElimTreeNode leaf;
     public final List<Expression> expressions;
     public final List<Binding> context;
-    public final List<Integer> indicies;
+    public final List<Integer> indices;
 
-    private ArgsBranch(LeafElimTreeNode leaf, List<Expression> expressions, List<Binding> context, List<Integer> indicies) {
+    private ArgsBranch(LeafElimTreeNode leaf, List<Expression> expressions, List<Binding> context, List<Integer> indices) {
       this.leaf = leaf;
       this.expressions = expressions;
       this.context = context;
-      this.indicies = indicies;
+      this.indices = indices;
     }
   }
 

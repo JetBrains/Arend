@@ -88,22 +88,18 @@ class ElimTreeExpander {
 
       ArgsElimTreeExpander.ArgsExpansionResult nestedResult = new ArgsElimTreeExpander(myLocalContext).expandElimTree(
           index, getTypes(constructorArgs), matching.nestedPatterns);
-      if (nestedResult.branches.isEmpty())
+      if (nestedResult.tree == EmptyElimTreeNode.getInstance())
         continue;
-      resultTree.addClause(conCall.getDefinition(), nestedResult.tree);
 
+      resultTree.addClause(conCall.getDefinition(), nestedResult.tree);
       for (ArgsBranch branch : nestedResult.branches) {
         Expression expr = conCall.liftIndex(0, branch.context.size());
         expr = Apps(expr, branch.expressions.toArray(new Expression[branch.expressions.size()]));
-        resultBranches.add(new Branch(expr, branch.context, branch.leaf, recalcIndices(matching.indices, branch.indicies)));
+        resultBranches.add(new Branch(expr, branch.context, branch.leaf, recalcIndices(matching.indices, branch.indices)));
       }
     }
 
-    if (resultBranches.isEmpty()) {
-      return new ExpansionResult(EmptyElimTreeNode.getInstance(), Collections.<Branch>emptyList());
-    } else {
-      return new ExpansionResult(resultTree, resultBranches);
-    }
+    return new ExpansionResult(resultTree, resultBranches);
   }
 
   private static class MatchingPatterns {

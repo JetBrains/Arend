@@ -22,7 +22,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
@@ -209,24 +208,24 @@ public class TypeCheckingElim {
     for (ArgsElimTreeExpander.ArgsBranch branch : treeExpansionResult.branches) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getLocalContext())) {
         myVisitor.getLocalContext().addAll(branch.context);
-        for (int i : branch.indicies) {
+        for (int i : branch.indices) {
           if (expressions.get(i) == null) {
             emptyReachable.add(i);
           }
         }
 
-        if (expressions.get(branch.indicies.get(0)) == null) {
+        if (expressions.get(branch.indices.get(0)) == null) {
           continue;
         }
 
-        branch.leaf.setArrow(arrows.get(branch.indicies.get(0)));
-        List<Pattern> curPatterns = patterns.get(branch.indicies.get(0));
+        branch.leaf.setArrow(arrows.get(branch.indices.get(0)));
+        List<Pattern> curPatterns = patterns.get(branch.indices.get(0));
         List<Expression> matchedSubst = new ArrayList<>();
         for (int i = 0; i <= matchingDepth - 1; i++) {
           matchedSubst.addAll(((PatternMatchOKResult) curPatterns.get(i).match(branch.expressions.get(i), null)).expressions);
         }
         Collections.reverse(matchedSubst);
-        branch.leaf.setExpression(expressions.get(branch.indicies.get(0)).liftIndex(matchedSubst.size(), branch.context.size()).subst(matchedSubst, 0));
+        branch.leaf.setExpression(expressions.get(branch.indices.get(0)).liftIndex(matchedSubst.size(), branch.context.size()).subst(matchedSubst, 0));
       }
     }
 
