@@ -185,31 +185,31 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(iso);
   }
 
-  public static boolean isAt(Abstract.Definition definition) {
+  public static boolean isAt(Definition definition) {
     return isSpec(definition, "@");
   }
 
-  public static boolean isPathCon(Abstract.Definition definition) {
+  public static boolean isPathCon(Definition definition) {
     return isSpec(definition, "path");
   }
 
-  public static boolean isPath(Abstract.Definition definition) {
+  public static boolean isPath(Definition definition) {
     return isSpec(definition, "Path");
   }
 
-  public static boolean isPathInfix(Abstract.Definition definition) {
+  public static boolean isPathInfix(Definition definition) {
     return isSpec(definition, "=");
   }
 
-  public static boolean isIso(Abstract.Definition definition) {
+  public static boolean isIso(Definition definition) {
     return isSpec(definition, "iso");
   }
 
-  private static boolean isSpec(Abstract.Definition definition, String prefix) {
+  private static boolean isSpec(Definition definition, String prefix) {
     return definition != null && definition == PRELUDE.getDefinition(definition.getName().name) && definition.getName().name.startsWith(prefix);
   }
 
-  public static int getLevel(Abstract.Definition definition) {
+  public static int getLevel(Definition definition) {
     for (char c : specInfix) {
       if (isSpec(definition, Character.toString(c))) {
         return definition.getName().name.length() - 1;

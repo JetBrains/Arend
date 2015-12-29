@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.LamExpression;
 
 import java.util.ArrayList;
@@ -10,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.*;
+
+// TODO: Simplify pretty printer
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void> {
   private final StringBuilder myBuilder;
@@ -43,9 +44,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
             ((Abstract.DefCallExpression) expr).getExpression().accept(this, Abstract.DefCallExpression.PREC);
             myBuilder.append('.');
           }
-          visibleArgs.get(0).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
+          visibleArgs.get(0).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
           myBuilder.append(' ').append(((Abstract.DefCallExpression) expr).getName().name).append(' ');
-          visibleArgs.get(1).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
+          visibleArgs.get(1).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
           if (prec > defPrecedence.priority) myBuilder.append(')');
           return;
         }
@@ -229,9 +230,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Byte prec) {
     if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append('(');
-    expr.getLeft().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
+    expr.getLeft().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
     myBuilder.append(' ').append(expr.getResolvedBinOpName().toNamespace().getName().getInfixName()).append(' ');
-    expr.getRight().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
+    expr.getRight().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
     if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append(')');
     return null;
   }

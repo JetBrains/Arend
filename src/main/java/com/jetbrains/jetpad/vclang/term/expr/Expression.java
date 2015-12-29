@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -19,18 +18,15 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.pushArgument;
 
-public abstract class Expression implements PrettyPrintable, Abstract.Expression {
+public abstract class Expression implements PrettyPrintable {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   public abstract Expression getType(List<Binding> context);
 
   @Override
-  public void setWellTyped(List<Binding> context, Expression wellTyped) {}
-
-  @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
+    prettyPrint(builder, new ArrayList<String>(), (byte) 0);
     return builder.toString();
   }
 
@@ -46,7 +42,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   public String prettyPrint(List<String> names) {
     StringBuilder sb = new StringBuilder();
-    prettyPrint(sb, names, PREC);
+    prettyPrint(sb, names, Abstract.Expression.PREC);
     return sb.toString();
   }
 
@@ -66,10 +62,6 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   public final Expression normalize(NormalizeVisitor.Mode mode, List<Binding> context) {
     return context == null ? this : accept(new NormalizeVisitor(context), mode);
-  }
-
-  public final CheckTypeVisitor.OKResult checkType(List<Binding> localContext, Expression expectedType, ErrorReporter errorReporter) {
-    return new CheckTypeVisitor.Builder(localContext, errorReporter).build().checkType(this, expectedType);
   }
 
   public static CompareVisitor.Result oldCompare(Abstract.Expression expr1, Expression expr2, List<CompareVisitor.Equation> equations) {

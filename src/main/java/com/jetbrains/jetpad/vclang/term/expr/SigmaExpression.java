@@ -1,27 +1,24 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
 
-public class SigmaExpression extends Expression implements Abstract.SigmaExpression {
+public class SigmaExpression extends Expression {
   private final List<TypeArgument> myArguments;
 
   public SigmaExpression(List<TypeArgument> arguments) {
     myArguments = arguments;
   }
 
-  @Override
   public List<TypeArgument> getArguments() {
     return myArguments;
   }
@@ -51,11 +48,6 @@ public class SigmaExpression extends Expression implements Abstract.SigmaExpress
 
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitSigma(this, params);
-  }
-
-  @Override
-  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitSigma(this, params);
   }
 }

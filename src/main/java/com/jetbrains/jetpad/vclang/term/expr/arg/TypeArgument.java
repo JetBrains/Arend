@@ -1,9 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr.arg;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
-public class TypeArgument extends Argument implements Abstract.TypeArgument {
+public class TypeArgument extends Argument {
   private final Expression myType;
 
   public TypeArgument(boolean explicit, Expression type) {
@@ -15,7 +14,6 @@ public class TypeArgument extends Argument implements Abstract.TypeArgument {
     return new TypeArgument(explicit, myType);
   }
 
-  @Override
   public Expression getType() {
     return myType;
   }

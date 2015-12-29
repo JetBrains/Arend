@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -23,10 +22,10 @@ public class BinOpParser {
   public class StackElem {
     public Abstract.Expression argument;
     public ResolvedName name;
-    public Definition.Precedence prec;
+    public Abstract.Definition.Precedence prec;
     public Abstract.DefCallExpression var;
 
-    public StackElem(Abstract.Expression argument, ResolvedName name, Definition.Precedence prec,  Abstract.DefCallExpression var) {
+    public StackElem(Abstract.Expression argument, ResolvedName name, Abstract.Definition.Precedence prec,  Abstract.DefCallExpression var) {
       this.argument = argument;
       this.name = name;
       this.prec = prec;
@@ -34,7 +33,7 @@ public class BinOpParser {
     }
   }
 
-  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, ResolvedName name, Definition.Precedence prec,  Abstract.DefCallExpression var) {
+  public void pushOnStack(List<StackElem> stack, Abstract.Expression argument, ResolvedName name, Abstract.Definition.Precedence prec,  Abstract.DefCallExpression var) {
     StackElem elem = new StackElem(argument, name, prec, var);
     if (stack.isEmpty()) {
       stack.add(elem);
@@ -43,12 +42,12 @@ public class BinOpParser {
 
     StackElem topElem = stack.get(stack.size() - 1);
 
-    if (topElem.prec.priority < elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Definition.Associativity.RIGHT_ASSOC && elem.prec.associativity == Definition.Associativity.RIGHT_ASSOC)) {
+    if (topElem.prec.priority < elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC && elem.prec.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC)) {
       stack.add(elem);
       return;
     }
 
-    if (!(topElem.prec.priority > elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Definition.Associativity.LEFT_ASSOC && elem.prec.associativity == Definition.Associativity.LEFT_ASSOC))) {
+    if (!(topElem.prec.priority > elem.prec.priority || (topElem.prec.priority == elem.prec.priority && topElem.prec.associativity == Abstract.Definition.Associativity.LEFT_ASSOC && elem.prec.associativity == Abstract.Definition.Associativity.LEFT_ASSOC))) {
       String msg = "Precedence parsing error: cannot mix (" + topElem.name.name + ") [" + topElem.prec + "] and (" + elem.name.name + ") [" + elem.prec + "] in the same infix expression";
       myErrorReporter.report(new TypeCheckingError(msg, elem.var, null));
     }

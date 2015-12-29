@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NewCompareVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -36,7 +38,6 @@ public abstract class ElimTreeNode {
 
   @Override
   public String toString() {
-    // TODO: better printing
-    return ElimExpression.toElimExpression(this).toString();
+    return accept(new ToAbstractVisitor(new ConcreteExpressionFactory(), new ArrayList<String>()), null).toString();
   }
 }

@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -17,17 +16,17 @@ import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.constructorPatternsToExpressions;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 
-public class Constructor extends Definition implements Abstract.Constructor {
+public class Constructor extends Definition {
   private DataDefinition myDataType;
   private List<TypeArgument> myArguments;
   private List<PatternArgument> myPatterns;
 
-  public Constructor(Namespace parentNamespace, Name name, Precedence precedence, DataDefinition dataType) {
+  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
     super(parentNamespace, name, precedence);
     myDataType = dataType;
   }
 
-  public Constructor(Namespace parentNamespace, Name name, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
+  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
     super(parentNamespace, name, precedence);
     setUniverse(universe);
     hasErrors(false);
@@ -36,11 +35,10 @@ public class Constructor extends Definition implements Abstract.Constructor {
     myPatterns = patterns;
   }
 
-  public Constructor(Namespace parentNamespace, Name name, Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
+  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
     this(parentNamespace, name, precedence, universe, arguments, dataType, null);
   }
 
-  @Override
   public List<PatternArgument> getPatterns() {
     return myPatterns;
   }
@@ -49,7 +47,6 @@ public class Constructor extends Definition implements Abstract.Constructor {
     myPatterns = patterns;
   }
 
-  @Override
   public List<TypeArgument> getArguments() {
     return myArguments;
   }
@@ -58,7 +55,6 @@ public class Constructor extends Definition implements Abstract.Constructor {
     myArguments = arguments;
   }
 
-  @Override
   public DataDefinition getDataType() {
     return myDataType;
   }
@@ -105,10 +101,5 @@ public class Constructor extends Definition implements Abstract.Constructor {
   @Override
   public ConCallExpression getDefCall() {
     return ConCall(this);
-  }
-
-  @Override
-  public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitConstructor(this, params);
   }
 }

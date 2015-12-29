@@ -1,15 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
 
-public class ProjExpression extends Expression implements Abstract.ProjExpression {
+public class ProjExpression extends Expression {
   private final Expression myExpression;
   private final int myField;
 
@@ -18,12 +16,10 @@ public class ProjExpression extends Expression implements Abstract.ProjExpressio
     myField = field;
   }
 
-  @Override
   public Expression getExpression() {
     return myExpression;
   }
 
-  @Override
   public int getField() {
     return myField;
   }
@@ -52,11 +48,6 @@ public class ProjExpression extends Expression implements Abstract.ProjExpressio
 
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitProj(this, params);
-  }
-
-  @Override
-  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitProj(this, params);
   }
 }

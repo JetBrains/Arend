@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr.arg;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.List;
 
-public class TelescopeArgument extends TypeArgument implements Abstract.TelescopeArgument {
+public class TelescopeArgument extends TypeArgument {
   private final List<String> myNames;
 
   public TelescopeArgument(boolean explicit, List<String> names, Expression type) {
@@ -18,7 +17,6 @@ public class TelescopeArgument extends TypeArgument implements Abstract.Telescop
     return new TelescopeArgument(explicit, myNames, getType());
   }
 
-  @Override
   public List<String> getNames() {
     return myNames;
   }

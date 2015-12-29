@@ -109,7 +109,7 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.LetClause makeLetClause(Name name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Definition.Arrow arrow, Abstract.Expression term) {
+  public Abstract.LetClause makeLetClause(Name name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term) {
     return clet(name.name, (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, arrow, (Concrete.Expression) term);
   }
 

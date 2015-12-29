@@ -184,6 +184,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   }
 
   private Result checkPath(Abstract.Expression expr, Expression other) {
+    /*
     if (!(other instanceof AppExpression)) {
       return null;
     }
@@ -206,6 +207,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
         }
       }
     }
+    */
     return null;
   }
 
@@ -286,13 +288,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
       if (!(other instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
       DefCallExpression otherDefCall = (DefCallExpression) other;
 
-      if (!expr.getResolvedName().equals(otherDefCall.getResolvedName())) {
+      if (!expr.getResolvedName().equals(otherDefCall.getDefinition().getResolvedName())) {
         return new JustResult(CMP.NOT_EQUIV);
       }
 
-      if (expr.getExpression() == null)
-        return new JustResult(otherDefCall.getExpression() == null ? CMP.EQUALS : CMP.NOT_EQUIV);
-      return new JustResult(expr.getExpression().equals(otherDefCall.getExpression()) ? CMP.EQUALS : CMP.NOT_EQUIV);
+      return new JustResult(expr.getExpression() == null ? CMP.EQUALS : CMP.NOT_EQUIV);
     } else {
       if (other instanceof VarExpression) {
         return new JustResult(expr.getExpression() == null && expr.getName().equals(((VarExpression) other).getName())
@@ -307,11 +307,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
       // No dot case
       if (expr.getExpression() == null) {
-        return new JustResult(expr.getName().equals(otherDecCall.getName()) ? CMP.EQUALS : CMP.NOT_EQUIV);
+        return new JustResult(expr.getName().equals(otherDecCall.getDefinition().getName()) ? CMP.EQUALS : CMP.NOT_EQUIV);
       }
 
       // Dot case
-      if (!expr.getName().equals(otherDecCall.getName())) {
+      if (!expr.getName().equals(otherDecCall.getDefinition().getName())) {
         return new JustResult(CMP.NOT_EQUIV);
       }
       return new JustResult(expr.getExpression() == null ? CMP.EQUIV : CMP.NOT_EQUIV);
@@ -399,6 +399,8 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
   }
 
   private Result checkLam(Abstract.Expression expr, Expression other, List<Abstract.Expression> args1, List<Abstract.Expression> args2) {
+    return new JustResult(CMP.EQUALS);
+    /*
     Abstract.Expression body1 = lamArgs(expr, args1);
     Expression body2 = (Expression) lamArgs(other, args2);
 
@@ -474,6 +476,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     }
 
     return maybeResult == null ? new JustResult(cmp) : maybeResult;
+    */
   }
 
   @Override
@@ -667,7 +670,7 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     if (!(otherApp2.getFunction() instanceof DefCallExpression)) return new JustResult(CMP.NOT_EQUIV);
     DefCallExpression otherDefCall = (DefCallExpression) otherApp2.getFunction();
 
-    if (!expr.getResolvedBinOpName().equals(otherDefCall.getResolvedName())) return new JustResult(CMP.NOT_EQUIV);
+    if (!expr.getResolvedBinOpName().equals(otherDefCall.getDefinition().getResolvedName())) return new JustResult(CMP.NOT_EQUIV);
     Result result = expr.getLeft().accept(this, otherApp2.getArgument().getExpression());
     if (result.isOK() == CMP.NOT_EQUIV) return result;
     Result result1 = expr.getRight().accept(this, otherApp1.getArgument().getExpression());
@@ -780,10 +783,13 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
 
         lifter.lift(-1);
       }
+      /*
       Result result = expr.accept(this, other);
       if (result.isOK() == CMP.NOT_EQUIV)
         return result;
       return new JustResult(and(cmp, result.isOK()));
+      */
+      return new JustResult(cmp);
     }
   }
 

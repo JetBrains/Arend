@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 
@@ -30,10 +29,5 @@ public class ClassField extends Definition {
 
   public void setBaseType(Expression type) {
     myType = type;
-  }
-
-  @Override
-  public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-    throw new IllegalStateException();
   }
 }

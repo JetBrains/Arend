@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -16,17 +15,17 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
-public class DataDefinition extends Definition implements Abstract.DataDefinition {
+public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
   private List<TypeArgument> myParameters;
   private Map<Constructor, Condition> myConditions;
 
-  public DataDefinition(Namespace parentNamespace, Name name, Precedence precedence) {
+  public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence) {
     super(parentNamespace, name, precedence);
     myConstructors = new ArrayList<>();
   }
 
-  public DataDefinition(Namespace parentNamespace, Name name, Precedence precedence, Universe universe, List<TypeArgument> parameters) {
+  public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, List<TypeArgument> parameters) {
     super(parentNamespace, name, precedence);
     setUniverse(universe);
     hasErrors(false);
@@ -34,7 +33,6 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
     myConstructors = new ArrayList<>();
   }
 
-  @Override
   public List<TypeArgument> getParameters() {
     return myParameters;
   }
@@ -47,7 +45,6 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
     myParameters = arguments;
   }
 
-  @Override
   public List<Constructor> getConstructors() {
     return myConstructors;
   }
@@ -83,7 +80,6 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
     myConditions.put(condition.getConstructor(), condition);
   }
 
-  @Override
   public Collection<Condition> getConditions() {
     return myConditions == null ? null : myConditions.values();
   }
@@ -115,10 +111,5 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   @Override
   public DataCallExpression getDefCall() {
     return DataCall(this);
-  }
-
-  @Override
-  public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitData(this, params);
   }
 }

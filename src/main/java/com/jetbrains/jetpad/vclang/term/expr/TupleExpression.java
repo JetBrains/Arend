@@ -1,13 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
 
-public class TupleExpression extends Expression implements Abstract.TupleExpression {
+public class TupleExpression extends Expression {
   private final List<Expression> myFields;
   private final SigmaExpression myType;
 
@@ -16,7 +14,6 @@ public class TupleExpression extends Expression implements Abstract.TupleExpress
     myType = type;
   }
 
-  @Override
   public List<Expression> getFields() {
     return myFields;
   }
@@ -32,11 +29,6 @@ public class TupleExpression extends Expression implements Abstract.TupleExpress
 
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitTuple(this, params);
-  }
-
-  @Override
-  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitTuple(this, params);
   }
 }

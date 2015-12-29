@@ -2,20 +2,21 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.List;
 
 public class TypeMismatchError extends TypeCheckingError {
   private final Object myExpected;
-  private final Abstract.Expression myActual;
+  private final Expression myActual;
 
-  public TypeMismatchError(ResolvedName resolvedName, Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
+  public TypeMismatchError(ResolvedName resolvedName, Object expected, Expression actual, Abstract.Expression expression, List<String> names) {
     super(resolvedName, null, expression, names);
     myExpected = expected;
     myActual = actual;
   }
 
-  public TypeMismatchError(Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
+  public TypeMismatchError(Object expected, Expression actual, Abstract.Expression expression, List<String> names) {
     super(null, expression, names);
     myExpected = expected;
     myActual = actual;

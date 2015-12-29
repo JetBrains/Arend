@@ -88,7 +88,7 @@ public class Utils {
     }
   }
 
-  public static ProcessImplicitResult processImplicit(List<? extends Abstract.PatternArgument> patterns, List<? extends Abstract.TypeArgument> arguments) {
+  public static ProcessImplicitResult processImplicit(List<? extends Abstract.PatternArgument> patterns, List<? extends TypeArgument> arguments) {
     class Arg {
       String name;
       boolean isExplicit;
@@ -100,7 +100,7 @@ public class Utils {
     }
 
     ArrayList<Arg> args = new ArrayList<>();
-    for (Abstract.TypeArgument arg : arguments) {
+    for (TypeArgument arg : arguments) {
       if (arg instanceof Abstract.TelescopeArgument) {
         for (String name : ((Abstract.TelescopeArgument) arg).getNames()) {
           args.add(new Arg(name, arg.getExplicit()));

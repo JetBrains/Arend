@@ -1,21 +1,18 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LiftIndexVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getFunctionType;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintLetClause;
 
-public class LetClause extends Binding implements Abstract.LetClause, Function {
+public class LetClause extends Binding implements Function {
   private final List<TypeArgument> myArguments;
   private final ElimTreeNode myElimTree;
   private final Expression myResultType;
@@ -35,23 +32,8 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
   }
 
   @Override
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    prettyPrintLetClause(this, builder, names, 0);
-  }
-
-  @Override
   public ElimTreeNode getElimTree() {
     return myElimTree;
-  }
-
-  @Override
-  public Abstract.Definition.Arrow getArrow() {
-    return myElimTree.getArrow();
-  }
-
-  @Override
-  public Abstract.Expression getTerm() {
-    return ElimExpression.toElimExpression(myElimTree);
   }
 
   @Override

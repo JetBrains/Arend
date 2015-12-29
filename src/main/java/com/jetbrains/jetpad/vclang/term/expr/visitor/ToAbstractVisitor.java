@@ -49,7 +49,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
     }
     if (args.get(2).getExpression() instanceof LamExpression && ((LamExpression) args.get(2).getExpression()).getBody().liftIndex(0, -1) != null) {
-      return myFactory.makeBinOp(args.get(1).getExpression(), Prelude.PATH_INFIX, args.get(0).getExpression());
+      return myFactory.makeBinOp(args.get(1).getExpression().accept(this, null), Prelude.PATH_INFIX, args.get(0).getExpression().accept(this, null));
     } else {
       return null;
     }
@@ -70,7 +70,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         visibleArgs[i--] = arg.getExpression();
       }
     }
-    return i < 0 ? myFactory.makeBinOp(visibleArgs[0], ((DefCallExpression) fun).getDefinition(), visibleArgs[1]) : null;
+    return i < 0 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), ((DefCallExpression) fun).getDefinition(), visibleArgs[1].accept(this, null)) : null;
   }
 
   @Override
@@ -126,7 +126,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     } else {
       List<Abstract.ImplementStatement> statements = new ArrayList<>(expr.getImplementStatements().size());
       for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : expr.getImplementStatements().entrySet()) {
-        statements.add(myFactory.makeImplementStatement(entry.getKey(), entry.getValue().type, entry.getValue().term));
+        statements.add(myFactory.makeImplementStatement(entry.getKey(), entry.getValue().type == null ? null : entry.getValue().type.accept(this, null), entry.getValue().term == null ? null : entry.getValue().term.accept(this, null)));
       }
       return myFactory.makeClassExt(defCallExpr, statements);
     }
