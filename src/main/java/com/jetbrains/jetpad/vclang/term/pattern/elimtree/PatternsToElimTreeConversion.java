@@ -41,18 +41,18 @@ public class PatternsToElimTreeConversion {
 
     Set<Integer> emptyReachable = new HashSet<>();
     for (MultiPatternsExpander.MultiBranch branch : treeExpansionResult.branches) {
-      for (int i : branch.indicies) {
+      for (int i : branch.indices) {
         if (expressions.get(i) == null) {
           emptyReachable.add(i);
         }
       }
 
-      if (expressions.get(branch.indicies.get(0)) == null) {
+      if (expressions.get(branch.indices.get(0)) == null) {
         continue;
       }
 
-      branch.leaf.setArrow(arrows.get(branch.indicies.get(0)));
-      List<Pattern> curPatterns = patterns.get(branch.indicies.get(0));
+      branch.leaf.setArrow(arrows.get(branch.indices.get(0)));
+      List<Pattern> curPatterns = patterns.get(branch.indices.get(0));
       Substitution subst = new Substitution();
       for (int i = 0; i < curPatterns.size(); i++) {
         Substitution curSubst = toSubstitution(curPatterns.get(i).getParameters(), ((Pattern.MatchOKResult)curPatterns.get(i).match(branch.expressions.get(i))).expressions);
@@ -60,7 +60,7 @@ public class PatternsToElimTreeConversion {
           subst.addMapping(binding, curSubst.get(binding));
         }
       }
-      branch.leaf.setExpression(expressions.get(branch.indicies.get(0)).subst(subst));
+      branch.leaf.setExpression(expressions.get(branch.indices.get(0)).subst(subst));
     }
 
     if (!emptyReachable.isEmpty()) {

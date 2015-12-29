@@ -15,13 +15,13 @@ public class MultiPatternsExpander {
   public static class MultiBranch {
     public final LeafElimTreeNode leaf;
     public final List<Expression> expressions;
-    public final List<Integer> indicies;
+    public final List<Integer> indices;
     final List<Binding> newContext;
 
-    private MultiBranch(LeafElimTreeNode leaf, List<Expression> expressions, List<Integer> indicies, List<Binding> newContext) {
+    private MultiBranch(LeafElimTreeNode leaf, List<Expression> expressions, List<Integer> indices, List<Binding> newContext) {
       this.leaf = leaf;
       this.expressions = expressions;
-      this.indicies = indicies;
+      this.indices = indices;
       this.newContext = newContext;
     }
   }

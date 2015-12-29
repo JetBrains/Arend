@@ -81,15 +81,11 @@ class PatternsExpander {
       clause.setChild(nestedResult.tree);
       for (MultiBranch branch : nestedResult.branches) {
         Expression expr = Apps(conCall, branch.expressions.toArray(new Expression[branch.expressions.size()]));
-        resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indicies), branch.newContext));
+        resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
       }
     }
 
-    if (resultBranches.isEmpty()) {
-      return new ExpansionResult(EmptyElimTreeNode.getInstance(), Collections.<Branch>emptyList());
-    } else {
-      return new ExpansionResult(resultTree, resultBranches);
-    }
+    return new ExpansionResult(resultTree, resultBranches);
   }
 
   private static class MatchingPatterns {

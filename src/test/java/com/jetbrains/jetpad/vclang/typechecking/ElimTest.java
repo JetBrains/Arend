@@ -314,4 +314,16 @@ public class ElimTest {
         "\\static \\data D Nat | D zero => d\n" +
         "\\static \\function test (x : Nat) (y : \\Pi(z : Nat) -> x = z) (a : D (suc x)) : Nat <= \\elim x\n");
   }
+
+  @Test
+  public void testElimEmpty1() {
+    typeCheckClass(
+        "\\static \\data D Nat | D zero => d1 | D (suc zero) => d2 \n" +
+        "\\static \\data E (n : Nat) | e (D n)\n" +
+        "\\static \\function test (n : Nat) (e : E n) : Nat <= \\elim n, e\n" +
+            " | zero, _ => 0\n" +
+            " | suc zero, _ => 1\n" +
+            " | suc (suc _), e (_!)"
+    );
+  }
 }
