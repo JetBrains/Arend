@@ -167,6 +167,8 @@ public final class Abstract {
   }
 
   public interface CaseExpression extends ElimCaseExpression {
+    String FUNCTION_NAME = "\\caseF";
+    String ARGUMENT_NAME = "\\caseA";
   }
 
   public interface ElimExpression extends ElimCaseExpression {

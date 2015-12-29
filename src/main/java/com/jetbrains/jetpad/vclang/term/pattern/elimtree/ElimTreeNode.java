@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NewCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -30,6 +31,8 @@ public abstract class ElimTreeNode {
   public static boolean compare(ElimTreeNode node1, ElimTreeNode node2, Equations equations, List<Binding> context) {
     return NewCompareVisitor.compare(equations, Equations.CMP.EQ, context, node1, node2);
   }
+
+  public abstract Abstract.Definition.Arrow getArrow();
 
   @Override
   public String toString() {

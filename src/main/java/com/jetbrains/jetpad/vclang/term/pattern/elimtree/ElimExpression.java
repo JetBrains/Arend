@@ -111,6 +111,7 @@ public class ElimExpression implements Abstract.ElimExpression {
     accept(new PrettyPrintVisitor(builder, names, 0), prec);
   }
 
+  @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
     prettyPrint(builder, new ArrayList<String>(), Definition.DEFAULT_PRECEDENCE.priority);
@@ -122,14 +123,6 @@ public class ElimExpression implements Abstract.ElimExpression {
       return ((LeafElimTreeNode) elimTree).getExpression();
     } else {
       return new ElimExpression((BranchElimTreeNode) elimTree);
-    }
-  }
-
-  public static Abstract.Definition.Arrow toArrow(ElimTreeNode elimTree) {
-    if (elimTree instanceof LeafElimTreeNode) {
-      return ((LeafElimTreeNode) elimTree).getArrow();
-    } else {
-      return Abstract.Definition.Arrow.LEFT;
     }
   }
 }

@@ -25,6 +25,7 @@ public class LeafElimTreeNode extends ElimTreeNode {
     myExpression = expression;
   }
 
+  @Override
   public Abstract.Definition.Arrow getArrow() {
     return myArrow;
   }

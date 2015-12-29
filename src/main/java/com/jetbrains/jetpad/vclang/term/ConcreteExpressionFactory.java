@@ -19,7 +19,19 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.DefCallExpression cVar(String name) {
-    return new Concrete.DefCallExpression(POSITION, null, new Name(name));
+    return new Concrete.DefCallExpression(POSITION, null, name == null ? null : new Name(name));
+  }
+
+  public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition) {
+    return new Concrete.DefCallExpression(POSITION, expr, definition.getName());
+  }
+
+  public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ImplementStatement> definitions) {
+    return new Concrete.ClassExtExpression(POSITION, expr, definitions);
+  }
+
+  public static Concrete.ImplementStatement cImplStatement(Name name, Concrete.Expression expr) {
+    return new Concrete.ImplementStatement(new Concrete.Identifier(POSITION, name.name, name.fixity), expr);
   }
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression... exprs) {
@@ -93,6 +105,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.NameArgument(POSITION, explicit, name);
   }
 
+  public static Concrete.TypeArgument cTypeArg(boolean explicit, Concrete.Expression type) {
+    return new Concrete.TypeArgument(explicit, type);
+  }
+
   public static Concrete.TypeArgument cTypeArg(Concrete.Expression type) {
     return new Concrete.TypeArgument(true, type);
   }
@@ -121,6 +137,46 @@ public class ConcreteExpressionFactory {
     return cPi(true, var, domain, codomain);
   }
 
+  public static Concrete.ErrorExpression cError() {
+    return new Concrete.ErrorExpression(POSITION);
+  }
+
+  public static Concrete.InferHoleExpression cInferHole() {
+    return new Concrete.InferHoleExpression(POSITION);
+  }
+
+  public static Concrete.TupleExpression cTuple(List<Concrete.Expression> fields) {
+    return new Concrete.TupleExpression(POSITION, fields);
+  }
+
+  public static Concrete.SigmaExpression cSigma(List<Concrete.TypeArgument> args) {
+    return new Concrete.SigmaExpression(POSITION, args);
+  }
+
+  public static Concrete.ProjExpression cProj(Concrete.Expression expr, int field) {
+    return new Concrete.ProjExpression(POSITION, expr, field);
+  }
+
+  public static Concrete.NewExpression cNew(Concrete.Expression expr) {
+    return new Concrete.NewExpression(POSITION, expr);
+  }
+
+  public static Concrete.ElimExpression cElim(List<Concrete.Expression> expressions, List<Concrete.Clause> clauses) {
+    return new Concrete.ElimExpression(POSITION, expressions, clauses);
+  }
+
+  public static Concrete.CaseExpression cCase(List<Concrete.Expression> expressions, List<Concrete.Clause> clauses) {
+    return new Concrete.CaseExpression(POSITION, expressions, clauses);
+  }
+
+  public static Concrete.Clause cClause(List<Concrete.Pattern> patterns, Abstract.Definition.Arrow arrow, Concrete.Expression expr) {
+    return new Concrete.Clause(POSITION, patterns, arrow, expr);
+  }
+
+  public static Concrete.UniverseExpression cUniverse(Universe universe) {
+    return new Concrete.UniverseExpression(POSITION, universe);
+  }
+
   public static Concrete.UniverseExpression cUniverse() {
     return new Concrete.UniverseExpression(POSITION, new Universe.Type());
   }
@@ -131,6 +187,18 @@ public class ConcreteExpressionFactory {
 
   public static Concrete.UniverseExpression cUniverse(int level, int truncated) {
     return new Concrete.UniverseExpression(POSITION, new Universe.Type(level, truncated));
+  }
+
+  public static Concrete.ConstructorPattern cConPattern(Name name, List<Concrete.PatternArgument> patternArgs) {
+    return new Concrete.ConstructorPattern(POSITION, name, patternArgs);
+  }
+
+  public static Concrete.NamePattern cNamePattern(String name) {
+    return new Concrete.NamePattern(POSITION, name);
+  }
+
+  public static Concrete.PatternArgument cPatternArg(Concrete.Pattern pattern, boolean isExplicit, boolean isHidden) {
+    return new Concrete.PatternArgument(POSITION, pattern, isExplicit, isHidden);
   }
 
   public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Definition binOp, Concrete.Expression right) {

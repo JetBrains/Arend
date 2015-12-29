@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -40,7 +41,7 @@ public abstract class Expression implements PrettyPrintable, Abstract.Expression
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    accept(new PrettyPrintVisitor(builder, names, 0), prec);
+    accept(new ToAbstractVisitor(new ConcreteExpressionFactory(), names), null).accept(new PrettyPrintVisitor(builder, names, 0), prec);
   }
 
   public String prettyPrint(List<String> names) {

@@ -46,7 +46,7 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
 
   @Override
   public Abstract.Definition.Arrow getArrow() {
-    return ElimExpression.toArrow(myElimTree);
+    return myElimTree.getArrow();
   }
 
   @Override

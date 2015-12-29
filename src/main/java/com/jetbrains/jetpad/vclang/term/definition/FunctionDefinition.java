@@ -45,7 +45,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
 
   @Override
   public Arrow getArrow() {
-    return ElimExpression.toArrow(myElimTree);
+    return myElimTree.getArrow();
   }
 
   @Override

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 public class EmptyElimTreeNode extends ElimTreeNode {
@@ -13,5 +14,10 @@ public class EmptyElimTreeNode extends ElimTreeNode {
   @Override
   public <P, R> R accept(ElimTreeNodeVisitor<P, R> visitor, P params) {
     return visitor.visitEmpty(this, params);
+  }
+
+  @Override
+  public Abstract.Definition.Arrow getArrow() {
+    return null;
   }
 }

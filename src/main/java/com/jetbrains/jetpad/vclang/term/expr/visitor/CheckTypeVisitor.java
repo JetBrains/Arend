@@ -832,18 +832,18 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (exprOKResult.equations != null) {
         equations.addAll(exprOKResult.equations);
       }
-      args.add(Tele(vars("caseA" + i), exprOKResult.type.liftIndex(0, i)));
+      args.add(Tele(vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprOKResult.type.liftIndex(0, i)));
       letTerm = Apps(letTerm, exprOKResult.expression.liftIndex(0, 1));
     }
     for (int i = 0; i < args.size(); i++) {
-      myLocalContext.add(new TypedBinding("caseA" + i, args.get(i).getType()));
+      myLocalContext.add(new TypedBinding(Abstract.CaseExpression.ARGUMENT_NAME + i, args.get(i).getType()));
     }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
     ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, myLocalContext.size() - args.size(), expectedType.liftIndex(0, 1));
     if (elimTree == null) return null;
     myLocalContext.subList(myLocalContext.size() - expr.getExpressions().size(), myLocalContext.size()).clear();
 
-    LetExpression letExpression = Let(lets(let("caseF", args, expectedType.liftIndex(0, 1), elimTree)), letTerm);
+    LetExpression letExpression = Let(lets(let(Abstract.CaseExpression.FUNCTION_NAME, args, expectedType.liftIndex(0, 1), elimTree)), letTerm);
 
     expr.setWellTyped(myLocalContext, letExpression);
     return new OKResult(letExpression, expectedType.liftIndex(0, 1 - expr.getExpressions().size()), equations);

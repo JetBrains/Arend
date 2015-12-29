@@ -6,10 +6,14 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
@@ -19,7 +23,10 @@ import static org.junit.Assert.*;
 public class PrettyPrintingParserTest {
   private void testExpr(Expression expected, Expression expr) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    expr.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+    List<String> context = new ArrayList<>();
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), context);
+    visitor.setFlags(EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS, ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
+    expr.accept(visitor, null).prettyPrint(builder, context, Abstract.Expression.PREC);
     Concrete.Expression result = parseExpr(builder.toString());
     assertTrue(compare(expected, result));
   }
