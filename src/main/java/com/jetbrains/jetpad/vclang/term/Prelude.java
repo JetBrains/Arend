@@ -9,10 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -39,6 +36,27 @@ public class Prelude extends Namespace {
 
   private static char[] specInfix = {'@', '='};
   private static String[] specPrefix = {"iso", "path", "Path"};
+
+  private static Map<Abstract.Definition, Integer> defToLevel = new HashMap<>();
+  private static Map<Integer, LevelPoly> levels = new HashMap<>();
+
+  public static class LevelPoly {
+    public final Definition path;
+    public final Definition pathCon;
+    public final Definition pathInfix;
+    public final Definition at;
+    public final Definition coe;
+    public final Definition iso;
+
+    private LevelPoly(Definition path, Definition pathCon, Definition pathInfix, Definition at, Definition coe, Definition iso) {
+      this.path = path;
+      this.pathCon = pathCon;
+      this.pathInfix = pathInfix;
+      this.at = at;
+      this.coe = coe;
+      this.iso = iso;
+    }
+  }
 
   static {
     PRELUDE_CLASS = new ClassDefinition(RootModule.ROOT, new Name("Prelude"));
@@ -68,20 +86,14 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(LEFT);
     PRELUDE.addDefinition(RIGHT);
 
-    List<Argument> coerceArguments = new ArrayList<>(3);
-    coerceArguments.add(Tele(vars("type"), Pi(DataCall(INTERVAL), Universe(Universe.NO_LEVEL))));
-    coerceArguments.add(Tele(vars("elem"), Apps(Index(0), ConCall(LEFT))));
-    coerceArguments.add(Tele(vars("point"), DataCall(INTERVAL)));
-    BranchElimTreeNode coerceElimTreeNode = branch(0, clause(LEFT, Abstract.Definition.Arrow.RIGHT, Index(0)));
-    COERCE = new FunctionDefinition(PRELUDE, new Name("coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceArguments, Apps(Index(2), Index(0)), coerceElimTreeNode);
 
-    PRELUDE.addDefinition(COERCE);
-
-    PATH = (DataDefinition) PRELUDE.getDefinition("Path");
-    PATH_CON = (Constructor) PRELUDE.getDefinition("path");
-    PATH_INFIX = (FunctionDefinition) PRELUDE.getDefinition("=");
-    AT = (FunctionDefinition) PRELUDE.getDefinition("@");
-    ISO = (FunctionDefinition) PRELUDE.getDefinition("iso");
+    generateLevel(0);
+    PATH = (DataDefinition) levels.get(0).path;
+    PATH_CON = (Constructor) levels.get(0).pathCon;
+    PATH_INFIX = (FunctionDefinition) levels.get(0).pathInfix;
+    AT = (FunctionDefinition) levels.get(0).at;
+    ISO = (FunctionDefinition) levels.get(0).iso;
+    COERCE = (FunctionDefinition) levels.get(0).coe;
  }
 
   private Prelude() {
@@ -128,7 +140,7 @@ public class Prelude extends Namespace {
     return null;
   }
 
-  private void generateLevel(int i) {
+  private static void generateLevel(int i) {
     String suffix = i == 0 ? "" : Integer.toString(i);
     List<TypeArgument> PathParameters = new ArrayList<>(3);
     PathParameters.add(Tele(vars("A"), Pi(DataCall(INTERVAL), Universe(i, Universe.Type.NOT_TRUNCATED))));
@@ -136,11 +148,13 @@ public class Prelude extends Namespace {
     PathParameters.add(TypeArg(Apps(Index(1), ConCall(RIGHT))));
     DataDefinition path = new DataDefinition(PRELUDE, new Name("Path" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), PathParameters);
     PRELUDE.addDefinition(path);
+    defToLevel.put(path, i);
     List<TypeArgument> pathArguments = new ArrayList<>(1);
     pathArguments.add(TypeArg(Pi("i", DataCall(INTERVAL), Apps(Index(3), Index(0)))));
     Constructor pathCon = new Constructor(PRELUDE.getChild(path.getName()), new Name("path" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), pathArguments, path);
     path.addConstructor(pathCon);
     PRELUDE.addDefinition(pathCon);
+    defToLevel.put(pathCon, i);
 
     char[] chars = new char[i + 1];
 
@@ -150,8 +164,8 @@ public class Prelude extends Namespace {
     Expression pathInfixTerm = Apps(DataCall((DataDefinition) PRELUDE.getDefinition("Path" + suffix)), Lam(teleArgs(Tele(vars("_"), DataCall(INTERVAL))), Index(3)), Index(1), Index(0));
     Arrays.fill(chars, '=');
     FunctionDefinition pathInfix = new FunctionDefinition(PRELUDE, new Name(new String(chars), Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixArguments, Universe(i), leaf(pathInfixTerm));
-
     PRELUDE.addDefinition(pathInfix);
+    defToLevel.put(pathInfix, i);
 
     List<Argument> atArguments = new ArrayList<>(5);
     atArguments.add(Tele(false, vars("A"), PathParameters.get(0).getType()));
@@ -167,8 +181,8 @@ public class Prelude extends Namespace {
     );
     Arrays.fill(chars, '@');
     FunctionDefinition at = new FunctionDefinition(PRELUDE, new Name(new String(chars), Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atArguments, atResultType, atElimTree);
-
     PRELUDE.addDefinition(at);
+    defToLevel.put(at, i);
 
     List<Argument> isoArguments = new ArrayList<>(6);
     isoArguments.add(Tele(false, vars("A", "B"), Universe(i, Universe.Type.NOT_TRUNCATED)));
@@ -184,44 +198,54 @@ public class Prelude extends Namespace {
     );
     FunctionDefinition iso = new FunctionDefinition(PRELUDE, new Name("iso" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, isoArguments, isoResultType, isoElimTree);
     PRELUDE.addDefinition(iso);
+    defToLevel.put(iso, i);
+
+    List<Argument> coerceArguments = new ArrayList<>(3);
+    coerceArguments.add(Tele(vars("type"), Pi(DataCall(INTERVAL), Universe(i, Universe.Type.NOT_TRUNCATED))));
+    coerceArguments.add(Tele(vars("elem"), Apps(Index(0), ConCall(LEFT))));
+    coerceArguments.add(Tele(vars("point"), DataCall(INTERVAL)));
+    BranchElimTreeNode coerceElimTreeNode = branch(0, clause(LEFT, Abstract.Definition.Arrow.RIGHT, Index(0)));
+    FunctionDefinition coerce = new FunctionDefinition(PRELUDE, new Name("coe" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, coerceArguments, Apps(Index(2), Index(0)), coerceElimTreeNode);
+
+    PRELUDE.addDefinition(coerce);
+    defToLevel.put(coerce, i);
+
+    levels.put(i, new LevelPoly(path, pathCon, pathInfix, at, coerce, iso));
   }
 
   public static boolean isAt(Abstract.Definition definition) {
-    return isSpec(definition, "@");
+    return defToLevel.containsKey(definition) && levels.get(defToLevel.get(definition)).at == definition;
   }
 
   public static boolean isPathCon(Abstract.Definition definition) {
-    return isSpec(definition, "path");
+    return defToLevel.containsKey(definition) && levels.get(defToLevel.get(definition)).pathCon == definition;
   }
 
   public static boolean isPath(Abstract.Definition definition) {
-    return isSpec(definition, "Path");
+    return defToLevel.containsKey(definition) && levels.get(defToLevel.get(definition)).path == definition;
   }
 
   public static boolean isPathInfix(Abstract.Definition definition) {
-    return isSpec(definition, "=");
+    return defToLevel.containsKey(definition) && levels.get(defToLevel.get(definition)).pathInfix == definition;
   }
 
   public static boolean isIso(Abstract.Definition definition) {
-    return isSpec(definition, "iso");
+    return defToLevel.containsKey(definition) && levels.get(defToLevel.get(definition)).iso == definition;
   }
 
-  private static boolean isSpec(Abstract.Definition definition, String prefix) {
-    return definition != null && definition == PRELUDE.getDefinition(definition.getName().name) && definition.getName().name.startsWith(prefix);
+  public static boolean isCoe(Abstract.Definition definition) {
+    return defToLevel.containsKey(definition) && levels.get(defToLevel.get(definition)).coe == definition;
   }
 
   public static int getLevel(Abstract.Definition definition) {
-    for (char c : specInfix) {
-      if (isSpec(definition, Character.toString(c))) {
-        return definition.getName().name.length() - 1;
-      }
-    }
-    for (String name : specPrefix) {
-      if (isSpec(definition, name)) {
-        return definition.getName().name.length() == name.length() ? 0 : Integer.parseInt(definition.getName().name.substring(name.length()));
-      }
+    if (defToLevel.containsKey(definition)) {
+      return defToLevel.get(definition);
     }
 
     throw new IllegalStateException();
+  }
+
+  public static LevelPoly getLevelDefs(int level) {
+    return levels.get(level);
   }
 }

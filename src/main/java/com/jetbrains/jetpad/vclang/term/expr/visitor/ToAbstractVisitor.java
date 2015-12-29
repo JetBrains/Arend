@@ -40,7 +40,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   private Abstract.Expression checkPath(Expression fun, List<ArgumentExpression> args) {
-    if (!(args.size() == 3 && fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition() == Prelude.PATH)) {
+    if (!(args.size() == 3 && fun instanceof DefCallExpression && Prelude.isPath(((DefCallExpression) fun).getDefinition()))) {
       return null;
     }
     for (ArgumentExpression arg : args) {
@@ -49,7 +49,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
     }
     if (args.get(2).getExpression() instanceof LamExpression && ((LamExpression) args.get(2).getExpression()).getBody().liftIndex(0, -1) != null) {
-      return myFactory.makeBinOp(args.get(1).getExpression(), Prelude.PATH_INFIX, args.get(0).getExpression());
+      return myFactory.makeBinOp(args.get(1).getExpression(), Prelude.getLevelDefs(Prelude.getLevel(((DefCallExpression) fun).getDefinition())).path, args.get(0).getExpression());
     } else {
       return null;
     }

@@ -77,7 +77,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
   }
 
   private Expression pathEtaReduce(AppExpression expr) {
-    if (!(expr.getFunction() instanceof ConCallExpression && ((ConCallExpression) expr.getFunction()).getDefinition() != Prelude.PATH_CON)) {
+    if (!(expr.getFunction() instanceof ConCallExpression && !Prelude.isPathCon(((ConCallExpression) expr.getFunction()).getDefinition()))) {
       return null;
     }
 
@@ -93,7 +93,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
 
       List<Expression> atArgs = new ArrayList<>(5);
       Expression atFun = atExpr.getFunction(atArgs);
-      if (!(atArgs.size() == 5 && atArgs.get(0) instanceof IndexExpression && ((IndexExpression) atArgs.get(0)).getIndex() == 0 && atFun instanceof FunCallExpression && ((FunCallExpression) atFun).getDefinition() == Prelude.AT)) {
+      if (!(atArgs.size() == 5 && atArgs.get(0) instanceof IndexExpression && ((IndexExpression) atArgs.get(0)).getIndex() == 0 && atFun instanceof FunCallExpression && Prelude.isAt(((FunCallExpression) atFun).getDefinition()))) {
         return null;
       }
       return atArgs.get(1).liftIndex(0, -1);

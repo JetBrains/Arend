@@ -291,7 +291,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression visitFunctionCall(Function func, Expression defCallExpr, List<ArgumentExpression> args, Mode mode) {
-    if (func instanceof FunctionDefinition && func.equals(Prelude.COERCE) && args.size() == 3) {
+    if (func instanceof FunctionDefinition && Prelude.isCoe((FunctionDefinition) func) && args.size() == 3) {
       Expression expr = Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0));
       myContext.add(new TypedBinding("i", DataCall(Prelude.INTERVAL)));
       expr = expr.accept(this, Mode.NF);
