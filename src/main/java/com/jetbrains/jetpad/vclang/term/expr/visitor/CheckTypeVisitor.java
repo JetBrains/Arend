@@ -1118,13 +1118,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private Abstract.ElimExpression wrapCaseToElim(final Abstract.CaseExpression expr) {
-    final List<Abstract.Expression> expressions = new ArrayList<>();
-    for (int i = 0; i < expr.getExpressions().size(); i++)
-      expressions.add(Index(expr.getExpressions().size() - 1 - i));
     return new Abstract.ElimExpression() {
       @Override
-      public List<Abstract.Expression> getExpressions() {
-        return expressions;
+      public List<? extends Abstract.Expression> getExpressions() {
+        return expr.getExpressions();
       }
 
       @Override

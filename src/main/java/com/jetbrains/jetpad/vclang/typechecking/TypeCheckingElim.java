@@ -22,7 +22,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
 import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.expandPatternSubstitute;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
@@ -249,33 +248,33 @@ public class TypeCheckingElim {
     TypeCheckingError error;
     final List<IndexExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
     for (Abstract.Expression var : expr.getExpressions()){
-      CheckTypeVisitor.OKResult exprOKResult = myVisitor.lookupLocalVar(var, expr);
-      if (exprOKResult == null) {
+      CheckTypeVisitor.Result exprResult = myVisitor.lookupLocalVar(var, expr);
+      if (exprResult == null) {
         return null;
       }
 
-      if (myVisitor.getLocalContext().size() - 1 - ((IndexExpression) exprOKResult.expression).getIndex() < argsStartCtxIndex) {
+      if (myVisitor.getLocalContext().size() - 1 - ((IndexExpression) exprResult.expression).getIndex() < argsStartCtxIndex) {
         error = new TypeCheckingError("\\elim can be applied only to arguments of the innermost definition", var, getNames(myVisitor.getLocalContext()));
         myVisitor.getErrorReporter().report(error);
         var.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
         return null;
       }
 
-      if (!elimExprs.isEmpty() && ((IndexExpression) exprOKResult.expression).getIndex() >= elimExprs.get(elimExprs.size() - 1).getIndex()) {
+      if (!elimExprs.isEmpty() && ((IndexExpression) exprResult.expression).getIndex() >= elimExprs.get(elimExprs.size() - 1).getIndex()) {
         error = new TypeCheckingError("Variable elimination must be in the order of variable introduction", var, getNames(myVisitor.getLocalContext()));
         myVisitor.getErrorReporter().report(error);
         var.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
         return null;
       }
 
-      Expression ftype = exprOKResult.type.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getLocalContext()).getFunction(new ArrayList<Expression>());
+      Expression ftype = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getLocalContext()).getFunction(new ArrayList<Expression>());
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var, getNames(myVisitor.getLocalContext()));
         myVisitor.getErrorReporter().report(error);
         var.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
         return null;
       }
-      elimExprs.add((IndexExpression) exprOKResult.expression);
+      elimExprs.add((IndexExpression) exprResult.expression);
     }
     return elimExprs;
   }

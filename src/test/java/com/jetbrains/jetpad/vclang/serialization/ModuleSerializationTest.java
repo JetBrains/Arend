@@ -85,7 +85,7 @@ public class ModuleSerializationTest {
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(def.getStatements().size(), ((ClassDefinition) result.namespaceMember.definition).getStatements().size());
+    assertEquals(namespace.getMembers().size(), result.namespaceMember.definition.getResolvedName().toNamespace().getMembers().size());
     assertEquals(def.getResolvedName().toNamespace().getMembers().size(), result.namespaceMember.namespace.getMembers().size());
     assertEquals(namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType());
     assertEquals(0, errorReporter.getErrorList().size());

@@ -143,12 +143,12 @@ public class ImplicitArgumentsTest {
   @Test
   public void inferFromTheGoal() {
     // f : {A : Type0} -> Nat -> A -> A |- f 0 : Nat -> Nat
-    Expression expr = Apps(Index(0), Zero());
+    Concrete.Expression expr = cApps(cVar("f"), cZero());
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Nat(), Pi(Index(0), Index(0))))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.checkType(defs, Pi(Nat(), Nat()), errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), Pi(Nat(), Nat()));
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Apps(Index(0), Nat(), false, false), Zero()), result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
@@ -157,12 +157,12 @@ public class ImplicitArgumentsTest {
   @Test
   public void inferFromTheGoalError() {
     // f : {A : Type0} -> Nat -> A -> A |- f 0 : Nat -> Nat -> Nat
-    Expression expr = Apps(Index(0), Zero());
+    Concrete.Expression expr = cApps(cVar("f"), cZero());
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Nat(), Pi(Index(0), Index(0))))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.checkType(defs, Pi(Nat(), Pi(Nat(), Nat())), errorReporter));
+    assertNull(expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), Pi(Nat(), Pi(Nat(), Nat()))));
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof InferredArgumentsMismatch);
   }
@@ -170,28 +170,28 @@ public class ImplicitArgumentsTest {
   @Test
   public void inferCheckTypeError() {
     // I : Type1 -> Type1, i : I Type0, f : {A : Type0} -> I A -> Nat |- f i : Nat
-    Expression expr = Apps(Index(0), Index(1));
+    Concrete.Expression expr = cApps(cVar("f"), cVar("i"));
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("I", Pi(Universe(1), Universe(1))));
     defs.add(new TypedBinding("i", Apps(Index(0), Universe(0))));
     defs.add(new TypedBinding("f", Pi(false, "A", Universe(0), Pi(Apps(Index(2), Index(0)), Nat()))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.checkType(defs, null, errorReporter));
+    assertNull(expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), null));
     assertEquals(1, errorReporter.getErrorList().size());
   }
 
   @Test
   public void inferTail() {
     // I : Nat -> Type0, i : {x : Nat} -> I (suc x) |- i : I (suc (suc 0))
-    Expression expr = Index(0);
+    Concrete.Expression expr = cVar("i");
     Expression type = Apps(Index(1), Apps(Suc(), Apps(Suc(), Zero())));
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("I", Pi(Nat(), Universe(0))));
     defs.add(new TypedBinding("i", Pi(false, "x", Nat(), Apps(Index(1), Apps(Suc(), Index(0))))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.checkType(defs, type, errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), type);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Apps(Index(0), Apps(Suc(), Zero()), false, false), result.expression);
     assertEquals(type, result.type);
@@ -200,14 +200,14 @@ public class ImplicitArgumentsTest {
   @Test
   public void inferTail2() {
     // I : Nat -> Type0, i : {x : Nat} -> I x |- i : {x : Nat} -> I x
-    Expression expr = Index(0);
+    Concrete.Expression expr = cVar("i");
     Expression type = Pi(false, "x", Nat(), Apps(Index(1), Index(0)));
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("I", Pi(Nat(), Universe(0))));
     defs.add(new TypedBinding("i", type));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.checkType(defs, type.liftIndex(0, 1), errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), type.liftIndex(0, 1));
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Index(0), result.expression);
     assertEquals(type.liftIndex(0, 1), result.type);
@@ -216,26 +216,26 @@ public class ImplicitArgumentsTest {
   @Test
   public void inferTailError() {
     // I : Type1 -> Type1, i : {x : Type0} -> I x |- i : I Type0
-    Expression expr = Index(0);
+    Concrete.Expression expr = cVar("i");
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("I", Pi(Universe(1), Universe(1))));
     defs.add(new TypedBinding("i", Pi(false, "x", Universe(0), Apps(Index(1), Index(0)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.checkType(defs, Apps(Index(1), Universe(0)), errorReporter));
+    assertNull(expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), Apps(Index(1), Universe(0))));
     assertEquals(1, errorReporter.getErrorList().size());
   }
 
   @Test
   public void inferUnderLet() {
     // f : {A : Type0} -> (A -> A) -> A -> A |- let | x {A : Type0} (y : A -> A) = f y | z (x : Nat) = x \in x z :
-    Expression expr = Let(lets(
-            let("x", typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Pi(Index(0), Index(0)))), Apps(Index(2), Index(0))),
-            let("z", typeArgs(Tele(vars("x"), Nat())), Index(0))), Apps(Index(1), Index(0)));
+    Concrete.Expression expr = cLet(clets(
+        clet("x", cargs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("y"), cPi(cVar("A"), cVar("A")))), cApps(cVar("f"), cVar("y"))),
+        clet("z", cargs(cTele(cvars("x"), cNat())), cVar("x"))), cApps(cVar("x"), cVar("z")));
     List<Binding> defs = new ArrayList<Binding>(Collections.singleton(new TypedBinding("f", Pi(typeArgs(Tele(false, vars("A"), Universe(0)), TypeArg(Pi(Index(0), Index(0))), TypeArg(Index(1))), Index(2)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.checkType(defs, null, errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertEquals(Pi(Nat(), Nat()), result.type);
   }

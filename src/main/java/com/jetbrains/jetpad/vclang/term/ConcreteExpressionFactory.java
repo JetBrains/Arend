@@ -165,6 +165,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.ElimExpression(POSITION, expressions, clauses);
   }
 
+  public static Concrete.ElimExpression cElim(List<Concrete.Expression> expressions, Concrete.Clause... clauses) {
+    return cElim(expressions, Arrays.asList(clauses));
+  }
+
   public static Concrete.CaseExpression cCase(List<Concrete.Expression> expressions, List<Concrete.Clause> clauses) {
     return new Concrete.CaseExpression(POSITION, expressions, clauses);
   }
@@ -189,8 +193,16 @@ public class ConcreteExpressionFactory {
     return new Concrete.UniverseExpression(POSITION, new Universe.Type(level, truncated));
   }
 
+  public static List<Concrete.Pattern> cPatterns(Concrete.Pattern... patterns) {
+    return Arrays.asList(patterns);
+  }
+
   public static Concrete.ConstructorPattern cConPattern(Name name, List<Concrete.PatternArgument> patternArgs) {
     return new Concrete.ConstructorPattern(POSITION, name, patternArgs);
+  }
+
+  public static Concrete.ConstructorPattern cConPattern(Name name, Concrete.PatternArgument... patternArgs) {
+    return cConPattern(name, Arrays.asList(patternArgs));
   }
 
   public static Concrete.NamePattern cNamePattern(String name) {

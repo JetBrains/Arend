@@ -134,7 +134,7 @@ public class ComparisonTest {
   public void letsNested() {
     Definition def1 = typeCheckDef("\\function test => \\let x => 0 \\in \\let y => 1 \\in zero");
     Definition def2 = typeCheckDef("\\function test => \\let | x => 0 | y => 1 \\in zero");
-    assertEquals(((FunctionDefinition) def1).getTerm(), ((FunctionDefinition) def2).getTerm());
+    assertEquals(((FunctionDefinition) def1).getElimTree(), ((FunctionDefinition) def2).getElimTree());
   }
 
   @Test

@@ -11,7 +11,7 @@ import static org.junit.Assert.assertNull;
 public class Lambda {
   @Test
   public void id() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => x", Pi(Nat(0), Nat(0)));
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => x", Pi(Nat(), Nat()));
     assertNotNull(result);
   }
 
@@ -23,13 +23,13 @@ public class Lambda {
 
   @Test
   public void constant() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x y => x", Pi(Nat(0), Pi(Nat(0), Nat(0))));
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x y => x", Pi(Nat(), Pi(Nat(), Nat())));
     assertNotNull(result);
   }
 
   @Test
   public void constantSep() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => \\lam y => x", Pi(typeArgs(Tele(vars("x", "y"), Nat(0))), Nat(2)));
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => \\lam y => x", Pi(typeArgs(Tele(vars("x", "y"), Nat())), Nat()));
     assertNotNull(result);
   }
 
@@ -41,31 +41,31 @@ public class Lambda {
 
   @Test
   public void idImplicit() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {x} => x", Pi(false, null, Nat(0), Nat(1)));
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {x} => x", Pi(false, null, Nat(), Nat()));
     assertNotNull(result);
   }
 
   @Test
   public void idImplicitError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {x} => x", Pi(Nat(0), Nat(0)), 1);
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {x} => x", Pi(Nat(), Nat()), 1);
     assertNull(result);
   }
 
   @Test
   public void constantImplicitError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x {y} => x", Pi(Nat(0), Pi(Nat(0), Nat(0))), 1);
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x {y} => x", Pi(Nat(), Pi(Nat(), Nat())), 1);
     assertNull(result);
   }
 
   @Test
   public void constantImplicitTeleError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x {y} => x", Pi(typeArgs(Tele(vars("x", "y"), Nat(0))), Nat(2)), 1);
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x {y} => x", Pi(typeArgs(Tele(vars("x", "y"), Nat())), Nat()), 1);
     assertNull(result);
   }
 
   @Test
   public void constantImplicitTypeError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x y => x", Pi(Nat(0), Pi(false, null, Nat(0), Nat(1))), 1);
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x y => x", Pi(Nat(), Pi(false, null, Nat(), Nat())), 1);
     assertNull(result);
   }
 }

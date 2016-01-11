@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
@@ -7,12 +8,12 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
@@ -87,18 +88,18 @@ public class ExpressionTest {
   @Test
   public void typeCheckingInferPiIndex() {
     // (X : Type1) -> X -> X : Type2
-    Expression expr = Pi("X", Universe(1), Pi(Index(0), Index(0)));
+    Concrete.Expression expr = cPi("X", cUniverse(1), cPi(cVar("X"), cVar("X")));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(Universe(2), expr.checkType(new ArrayList<Binding>(), null, errorReporter).type);
+    assertEquals(Universe(2), expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null).type);
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
   public void typeCheckingUniverse() {
     // (f : Type1 -> Type1) -> f Type1
-    Expression expr = Pi("f", Pi(Universe(1), Universe(1)), Apps(Index(0), Universe(1)));
+    Concrete.Expression expr = cPi("f", cPi(cUniverse(1), cUniverse(1)), cApps(cVar("f"), cUniverse(1)));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(null, expr.checkType(new ArrayList<Binding>(), null, errorReporter));
+    assertEquals(null, expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null));
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof TypeMismatchError);
   }
@@ -106,21 +107,21 @@ public class ExpressionTest {
   @Test
   public void typeCheckingTwoErrors() {
     // f : Nat -> Nat -> Nat |- f S (f 0 S) : Nat
-    Expression expr = Apps(Index(0), Suc(), Apps(Index(0), Zero(), Suc()));
+    Concrete.Expression expr = cApps(cVar("f"), cSuc(), cApps(cVar("f"), cZero(), cSuc()));
     List<Binding> defs = new ArrayList<>();
     defs.add(new TypedBinding("f", Pi(Nat(), Pi(Nat(), Nat()))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(expr.checkType(defs, null, errorReporter));
+    assertNull(expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), null));
     assertEquals(2, errorReporter.getErrorList().size());
   }
 
   @Test
   public void typedLambda() {
     // \x:Nat. x : Nat -> Nat
-    Expression expr = Lam(teleArgs(Tele(true, vars("x"), Nat())), Index(0));
+    Concrete.Expression expr = cLam(cargs(cTele(true, cvars("x"), cNat())), cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.checkType(new ArrayList<Binding>(), null, errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
     assertEquals(Pi(Nat(), Nat()), result.type);
     assertEquals(0, errorReporter.getErrorList().size());
   }
@@ -192,25 +193,24 @@ public class ExpressionTest {
     // \lam (F : \Pi {A : \Type0}  (a : A) -> \Type1) (f : \Pi {A : \Type0} (x : A) -> F x) =>
     //   \let | x (y : Nat) : Nat <= \elim y | zero => zero
     //                                       | suc x' => suc x' \in f x)
-    ElimTreeNode elimTree = branch(0,
-        clause(Prelude.ZERO, Zero()),
-        clause(Prelude.SUC, Suc(Index(0)))
-    );
-    Expression expr = Lam(teleArgs(
-                    Tele(vars("F"), Pi(typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("a"), Index(0))), Universe(1))),
-                    Tele(vars("f"), Pi(typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("x"), Index(0))), Apps(Index(2), Index(0))))),
-            Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Nat(), elimTree)), Apps(Index(1), Index(0))));
+    Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")),
+        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(null, Prelude.ZERO)),
+        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern("x'"), true, false))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar("x'"))));
+    Concrete.Expression expr = cLam(cargs(
+            cTele(cvars("F"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("a"), cVar("A"))), cUniverse(1))),
+            cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),
+        cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("f"), cVar("x"))));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    expr.checkType(new ArrayList<Binding>(), null, errorReporter);
+    expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
     assertEquals(1, errorReporter.getErrorList().size());
   }
 
   @Test
   public void letArrowType() {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
-    Expression expr = Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Zero())), Index(0));
+    Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cZero())), cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(Pi(Nat(), Nat()), expr.checkType(new ArrayList<Binding>(), Pi(Nat(), Nat()), errorReporter).type);
+    assertEquals(Pi(Nat(), Nat()), expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), Pi(Nat(), Nat())).type);
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
@@ -218,7 +218,7 @@ public class ExpressionTest {
   public void caseTranslation() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) : Nat => \\case n, n | zero, _ => 0 | suc y, _ => y");
     FunctionDefinition def2 = (FunctionDefinition) typeCheckDef("\\function test (n : Nat) => \\let | caseF (caseA : Nat) (caseB : Nat) : Nat <= \\elim caseA, caseB | zero, _ => 0 | suc y, _ => y \\in caseF n n");
-    assertEquals(def.getTerm(), def2.getTerm());
+    assertEquals(def.getElimTree(), def2.getElimTree());
   }
 
   @Test

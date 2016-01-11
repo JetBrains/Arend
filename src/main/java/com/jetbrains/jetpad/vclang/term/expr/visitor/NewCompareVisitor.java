@@ -131,7 +131,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
         if (!new NewCompareVisitor(equations, Equations.CMP.EQ, myContext).compare(firstGreater ? maxBody : minNumber.body, firstGreater ? minNumber.body : maxBody)) {
           return false;
         }
-        Equations.Helper.abstractVars(equations, myContext, diff);
+        Equations.Helper.abstractVars(equations, myContext, 0, diff);
         myEquations.add(equations);
         return true;
       }
@@ -298,7 +298,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
       if (!visitor.compare(args1.get(i).getType(), args2.get(i).getType())) {
         return false;
       }
-      Equations.Helper.abstractVars(visitor.myEquations, myContext, i);
+      Equations.Helper.abstractVars(visitor.myEquations, myContext, 0, i);
       myEquations.add(visitor.myEquations);
       visitor.myEquations.clear();
       Name name =
@@ -334,7 +334,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
       if (!visitor.compare(cod1, cod2)) {
         return false;
       }
-      Equations.Helper.abstractVars(equations, myContext, args1.size());
+      Equations.Helper.abstractVars(equations, myContext, 0, args1.size());
       myEquations.add(equations);
       return true;
     }
@@ -427,7 +427,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
         if (!visitor.compare(letExpr1.getClauses().get(i).getElimTree(), letExpr2.getClauses().get(i).getElimTree())) {
           return false;
         }
-        Equations.Helper.abstractVars(equations, myContext, args1.size() + i);
+        Equations.Helper.abstractVars(equations, myContext, 0, args1.size() + i);
         myEquations.add(equations);
         equations.clear();
       }
@@ -437,7 +437,7 @@ public class NewCompareVisitor extends BaseExpressionVisitor<Expression, Boolean
         return false;
       }
     }
-    Equations.Helper.abstractVars(equations, myContext, letExpr1.getClauses().size());
+    Equations.Helper.abstractVars(equations, myContext, 0, letExpr1.getClauses().size());
     myEquations.add(equations);
     return true;
   }

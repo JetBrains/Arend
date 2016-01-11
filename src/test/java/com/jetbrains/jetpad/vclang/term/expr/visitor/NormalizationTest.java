@@ -2,11 +2,11 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
 
@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static org.junit.Assert.assertEquals;
@@ -174,13 +175,13 @@ public class NormalizationTest {
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
-  private static Expression typecheckExpression(Expression expr) {
+  private static Expression typecheckExpression(Abstract.Expression expr) {
     return typecheckExpression(expr, new ArrayList<Binding>());
   }
 
-  private static Expression typecheckExpression(Expression expr, List<Binding> ctx) {
+  private static Expression typecheckExpression(Abstract.Expression expr, List<Binding> ctx) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.checkType(ctx, null, errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(ctx, errorReporter).build(), null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertTrue(result.equations.isEmpty());
     return result.expression;
@@ -188,42 +189,42 @@ public class NormalizationTest {
 
   @Test
   public void normalizeLet1() {
-    // normalize (\let | x => zero \in \let | y = S \in y x) = 1
-    Expression expr = typecheckExpression(Let(lets(let("x", Zero())), Let(lets(let("y", Suc())), Apps(Index(0), Index(1)))));
+    // normalize (\let | x => zero \in \let | y = suc \in y x) = 1
+    Expression expr = typecheckExpression(cLet(clets(clet("x", cZero())), cLet(clets(clet("y", cSuc())), cApps(cVar("y"), cVar("x")))));
     assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLet2() {
-    // normalize (\let | x => zero \in \let | y = S \in y x) = 1
-    Expression expr = typecheckExpression(Let(lets(let("x", Suc())), Let(lets(let("y", Zero())), Apps(Index(1), Index(0)))));
+    // normalize (\let | x => suc \in \let | y = zero \in x y) = 1
+    Expression expr = typecheckExpression(cLet(clets(clet("x", cSuc())), cLet(clets(clet("y", cZero())), cApps(cVar("x"), cVar("y")))));
     assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLetNo() {
     // normalize (\let | x (y z : N) => zero \in x zero) = \lam (z : N) => zero
-    Expression expr = typecheckExpression(Let(lets(let("x", typeArgs(Tele(vars("y", "z"), Nat())), Zero())), Apps(Index(0), Zero())));
+    Expression expr = typecheckExpression(cLet(clets(clet("x", cargs(cTele(cvars("y", "z"), cNat())), cZero())), cApps(cVar("x"), cZero())));
     assertEquals(Lam("x", Nat(), Zero()), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLetElimStuck() {
-    // normalize (\let | x (y : N) : N <= \elim y | zero => zero | succ _ => zero \in x <1>) = the same
-    ElimTreeNode elimTree = branch(0, clause(Prelude.ZERO, Zero()), clause(Prelude.SUC, Zero()));
-    Expression expr = typecheckExpression(Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Nat(), elimTree)),
-        Apps(Index(0), Index(1))), new ArrayList<Binding>(Collections.singleton(new TypedBinding("n", Nat()))));
+    // normalize (\let | x (y : N) : N <= \elim y | zero => zero | suc _ => zero \in x <1>) = the same
+    Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")), cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cZero()), cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cZero()));
+    Expression expr = typecheckExpression(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)),
+        cApps(cVar("x"), cVar("n"))), new ArrayList<Binding>(Collections.singleton(new TypedBinding("n", Nat()))));
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \Type2 <= \elim y | \Type0 => \Type1 | succ _ => \Type1 \in x zero) = \Type0
-    ElimTreeNode elimTree = branch(0,
-        clause(Prelude.ZERO, Universe(0)),
-        clause(Prelude.SUC, Universe(1))
-        );
-    Expression expr = typecheckExpression(Let(lets(let("x", typeArgs(Tele(vars("y"), Nat())), Universe(2), elimTree)), Apps(Index(0), Zero())));
+    Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")),
+        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverse(0)),
+        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverse(1))
+    );
+    Expression expr = typecheckExpression(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverse(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())));
     assertEquals(Universe(0), expr.normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
   }
 

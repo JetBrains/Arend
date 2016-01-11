@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
@@ -114,8 +115,8 @@ public class DefinitionTest {
     Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, typeArgs(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(ConCall(con), Nat(), Zero(), Zero());
-    CheckTypeVisitor.Result result = expr.checkType(new ArrayList<Binding>(), null, errorReporter);
+    Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
     assertEquals(0, errorReporter.getErrorList().size());
     assertNotNull(result);
     assertEquals(Apps(DataCall(def), Nat()), result.type);
@@ -129,11 +130,11 @@ public class DefinitionTest {
     Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, typeArgs(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(Index(0), Apps(ConCall(con), Nat(), Lam("x", Nat(), Index(0)), Zero()));
+    Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con), cNat(), cLam("x", cVar("x")), cZero()));
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DataCall(def), Pi(Nat(), Nat())), Nat())));
 
-    CheckTypeVisitor.Result result = expr.checkType(localContext, null, errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     assertNotNull(result);
     assertEquals(Nat(), result.type);
@@ -147,11 +148,11 @@ public class DefinitionTest {
     Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, typeArgs(TypeArg(Index(0))), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(Index(0), ConCall(con));
+    Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con));
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DataCall(def), Nat())), Pi(Nat(), Nat()))));
 
-    CheckTypeVisitor.Result result = expr.checkType(localContext, null, errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);
