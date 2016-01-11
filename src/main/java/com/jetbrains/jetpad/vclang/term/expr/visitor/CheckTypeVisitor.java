@@ -195,9 +195,108 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return new Result(Index(expr.getIndex()), actualType, null);
   }
 
+  private Result typeCheckLam(List<? extends Abstract.Argument> args, Abstract.Expression body, List<TypeArgument> typeArgs, Expression expectedType, Abstract.LamExpression expr) {
+    if (args.isEmpty()) {
+      if (body instanceof Abstract.LamExpression) {
+        return typeCheckLam(((Abstract.LamExpression) body).getArguments(), ((Abstract.LamExpression) body).getBody(), typeArgs, expectedType, expr);
+      } else {
+        return typeCheck(body, typeArgs != null && !typeArgs.isEmpty() ? Pi(typeArgs, expectedType) : expectedType);
+      }
+    }
+
+    assert expectedType == null || typeArgs != null;
+    List<String> names;
+    Abstract.Expression argType;
+    Abstract.Argument arg = args.get(0);
+    boolean isExplicit = arg.getExplicit();
+    if (arg instanceof Abstract.TelescopeArgument) {
+      names = ((Abstract.TelescopeArgument) arg).getNames();
+      argType = ((Abstract.TelescopeArgument) arg).getType();
+      expectedType = expectedType == null ? null : splitArguments(expectedType, typeArgs, myLocalContext, names.size() - typeArgs.size());
+    } else if (arg instanceof Abstract.NameArgument) {
+      names = new ArrayList<>(1);
+      names.add(((Abstract.NameArgument) arg).getName());
+      argType = null;
+      if (typeArgs != null && typeArgs.isEmpty()) {
+        expectedType = splitArguments(expectedType, typeArgs, myLocalContext, 1);
+      }
+    } else {
+      throw new IllegalStateException();
+    }
+
+    int size = myLocalContext.size();
+    Expression typedArgType;
+    Equations equations;
+    if (argType != null) {
+      Result result = argType.accept(this, Universe(myLocalContext.size()));
+      if (result == null) {
+        return null;
+      }
+      typedArgType = result.expression;
+      equations = result.equations;
+    } else {
+      if (typeArgs != null && typeArgs.size() > 0) {
+        typedArgType = typeArgs.get(0).getType();
+      } else {
+        myLocalContext.add(new InferenceBinding(names.get(0) != null ? "typeOf_" + names.get(0) : "type", Universe(myLocalContext.size())));
+        typedArgType = Index(0);
+      }
+      equations = myArgsInference.newEquations();
+    }
+
+    if (expectedType != null) {
+      int on = myLocalContext.size() - size;
+      if (on != 0) {
+        for (int i = 0; i < typeArgs.size(); i++) {
+          // typeArgs.set(i, typeArgs.get(i).lift(i, on));
+        }
+        expectedType = expectedType.liftIndex(typeArgs.size(), on);
+      }
+
+      for (int i = 0; i < names.size() && i < typeArgs.size(); i++) {
+        myLocalContext.add(new TypedBinding(names.get(i), typeArgs.get(i).getType()));
+      }
+      for (int i = typeArgs.size(); i < names.size(); i++) {
+        myLocalContext.add(new TypedBinding(names.get(i), typedArgType.liftIndex(0, i)));
+      }
+      for (int i = 0; i < names.size() && i < typeArgs.size(); i++) {
+        if (i != 0 || argType != null) {
+          NewCompareVisitor.compare(equations, Equations.CMP.EQ, myLocalContext, typedArgType.liftIndex(0, names.size()), typeArgs.get(i).getType().liftIndex(0, names.size() - i));
+        }
+      }
+      if (names.size() > typeArgs.size()) {
+        typeArgs = null;
+      } else {
+        typeArgs = typeArgs.subList(names.size(), typeArgs.size());
+      }
+    } else {
+      for (int i = 0; i < names.size(); i++) {
+        myLocalContext.add(new TypedBinding(names.get(i), typedArgType.liftIndex(0, i)));
+      }
+    }
+
+    size = myLocalContext.size();
+    Result result = typeCheckLam(args.subList(1, args.size()), body, typeArgs, typeArgs == null ? null : expectedType, expr);
+    if (myLocalContext.size() != size) {
+      TypeCheckingError error = new TypeCheckingError("foobar", expr, getNames(myLocalContext)); // TODO
+      expr.setWellTyped(myLocalContext, Error(null, error));
+      myErrorReporter.report(error);
+      return null;
+    }
+    return null;
+  }
+
   @Override
   public Result visitLam(Abstract.LamExpression expr, Expression expectedType) {
-    List<TypeArgument> typeArgs = new ArrayList<>();
+    return typeCheckLam(expr.getArguments(), expr.getBody(), expectedType == null ? null : new ArrayList<TypeArgument>(3), expectedType, expr);
+  }
+
+  /*
+  @Override
+  public Result visitLam(Abstract.LamExpression expr, Expression expectedType) {
+    Equations equations = myArgsInference.newEquations();
+    List<TypeArgument> typeArgs = expectedType == null ? null : new ArrayList<TypeArgument>(3);
+    List<TypeArgument> actualArgs = null;
     for (Abstract.Argument arg : expr.getArguments()) {
       List<String> names;
       Abstract.Expression argType;
@@ -205,25 +304,50 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (arg instanceof Abstract.TelescopeArgument) {
         names = ((Abstract.TelescopeArgument) arg).getNames();
         argType = ((Abstract.TelescopeArgument) arg).getType();
-        expectedType = splitArguments(expectedType, typeArgs, myLocalContext, names.size() - typeArgs.size());
+        expectedType = expectedType == null ? null : splitArguments(expectedType, typeArgs, myLocalContext, names.size() - typeArgs.size());
       } else
       if (arg instanceof Abstract.NameArgument) {
         names = new ArrayList<>(1);
         names.add(((Abstract.NameArgument) arg).getName());
         argType = null;
-        if (typeArgs.isEmpty()) {
+        if (typeArgs != null && typeArgs.isEmpty()) {
           expectedType = splitArguments(expectedType, typeArgs, myLocalContext, 1);
         }
       } else {
         throw new IllegalStateException();
       }
+
+      if (argType != null) {
+        int size = myLocalContext.size();
+        Result result = argType.accept(this, Universe(myLocalContext.size()));
+        if (result == null) {
+          return null;
+        }
+
+        int on = myLocalContext.size() - size;
+        if (on != 0 && expectedType != null) {
+          for (int i = 0; i < typeArgs.size(); i++) {
+            typeArgs.set(i, typeArgs.get(i).lift(on));
+          }
+          expectedType = expectedType.liftIndex(0, on);
+        }
+
+        for (String name : names) {
+          myLocalContext.add(new TypedBinding());
+        }
+
+        Equations.Helper.abstractVars(result.equations, myLocalContext, names.size());
+        Equations.Helper.abstractVars(equations, myLocalContext, myLocalContext.size() - size);
+        equations.add(result.equations);
+      }
     }
 
-    if (!typeArgs.isEmpty()) {
+    if (typeArgs != null && !typeArgs.isEmpty()) {
       expectedType = Pi(typeArgs, expectedType);
     }
     return typeCheck(expr.getBody(), expectedType);
   }
+  */
 
   /*
   @Override
@@ -992,7 +1116,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     expr.setWellTyped(myLocalContext, letExpression);
     return new Result(letExpression, expectedType.liftIndex(0, 1 - expressions.size()), equations);
   }
-
 
   private Abstract.ElimExpression wrapCaseToElim(final Abstract.CaseExpression expr) {
     final List<Abstract.Expression> expressions = new ArrayList<>();

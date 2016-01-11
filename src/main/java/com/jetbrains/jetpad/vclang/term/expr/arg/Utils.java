@@ -218,17 +218,6 @@ public class Utils {
     }
   }
 
-  /*
-  public static Expression splitArguments(Expression type, List<TypeArgument> result, List<Binding> ctx, int upTo) {
-    Expression expr = splitArguments(type, result, ctx);
-    if (result.size() > upTo) {
-      expr = Pi(new ArrayList<>(result.subList(upTo, result.size())), expr);
-      result.subList(upTo, result.size()).clear();
-    }
-    return expr;
-  }
-  */
-
   public static void prettyPrintArgument(Abstract.Argument argument, StringBuilder builder, List<String> names, byte prec, int indent) {
     if (argument instanceof Abstract.NameArgument) {
       String name = ((Abstract.NameArgument) argument).getName();
