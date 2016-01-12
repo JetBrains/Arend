@@ -248,7 +248,16 @@ public class ModuleDeserialization {
         BranchElimTreeNode elimTree = new BranchElimTreeNode(stream.readInt());
         int size = stream.readInt();
         for (int i = 0; i < size; i++) {
-          elimTree.addClause((Constructor) definitionMap.get(stream.readInt()), readElimTree(stream, definitionMap));
+          Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
+          List<String> names = null;
+          if (stream.readBoolean()) {
+            int numNames = stream.readInt();
+            names = new ArrayList<>(numNames);
+            for (int j = 0; j < numNames; j++) {
+              names.add(stream.readBoolean() ? stream.readUTF() : null);
+            }
+          }
+          elimTree.addClause(constructor, names, readElimTree(stream, definitionMap));
         }
         return elimTree;
       }

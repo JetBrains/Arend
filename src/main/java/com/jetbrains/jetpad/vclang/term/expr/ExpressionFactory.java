@@ -17,6 +17,8 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
+
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
     for (Expression expr1 : exprs) {
@@ -248,10 +250,12 @@ public class ExpressionFactory {
 
   public static class ConstructorClausePair {
     private final Constructor constructor;
+    private final List<String> names;
     private final ElimTreeNode child;
 
-    private ConstructorClausePair(Constructor constructor, ElimTreeNode child) {
+    private ConstructorClausePair(Constructor constructor, List<String> names, ElimTreeNode child) {
       this.constructor = constructor;
+      this.names = names;
       this.child = child;
     }
   }
@@ -259,7 +263,7 @@ public class ExpressionFactory {
   public static BranchElimTreeNode branch(int index, ConstructorClausePair... clauses) {
     BranchElimTreeNode result = new BranchElimTreeNode(index);
     for (ConstructorClausePair pair : clauses) {
-      result.addClause(pair.constructor, pair.child);
+      result.addClause(pair.constructor, pair.names, pair.child);
     }
     return result;
   }
@@ -273,15 +277,15 @@ public class ExpressionFactory {
   }
 
   public static ConstructorClausePair clause(Constructor constructor, BranchElimTreeNode node) {
-    return new ConstructorClausePair(constructor, node);
+    return new ConstructorClausePair(constructor, null, node);
   }
 
   public static ConstructorClausePair clause(Constructor constructor, Abstract.Definition.Arrow arrow, Expression expr) {
-    return new ConstructorClausePair(constructor, leaf(arrow, expr));
+    return new ConstructorClausePair(constructor, null, leaf(arrow, expr));
   }
 
   public static ConstructorClausePair clause(Constructor constructor, Expression expr) {
-    return new ConstructorClausePair(constructor, new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expr));
+    return new ConstructorClausePair(constructor, null, new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expr));
   }
 
   public static PatternArgument match(boolean isExplicit, String name) {

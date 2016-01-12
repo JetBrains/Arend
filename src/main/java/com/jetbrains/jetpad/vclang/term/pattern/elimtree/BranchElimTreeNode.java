@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVis
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BranchElimTreeNode extends ElimTreeNode {
@@ -30,8 +31,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myIndex;
   }
 
-  public void addClause(Constructor constructor, ElimTreeNode node) {
-    myClauses.put(constructor, new ConstructorClause(constructor, node, this));
+  public void addClause(Constructor constructor, List<String> names, ElimTreeNode node) {
+    myClauses.put(constructor, new ConstructorClause(constructor, names, node, this));
   }
 
   public ElimTreeNode getChild(Constructor constructor) {

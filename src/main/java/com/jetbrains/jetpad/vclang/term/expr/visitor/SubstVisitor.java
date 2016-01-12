@@ -84,7 +84,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   public ElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
     BranchElimTreeNode newNode = new BranchElimTreeNode(((IndexExpression) visitIndex(Index(branchNode.getIndex()), null)).getIndex());
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      newNode.addClause(clause.getConstructor(), clause.getChild().accept(new SubstVisitor(
+      newNode.addClause(clause.getConstructor(), clause.getNames(), clause.getChild().accept(new SubstVisitor(
           mySubstExprs, myFrom + splitArguments(clause.getConstructor().getArguments()).size() - 1), null));
     }
     return newNode;

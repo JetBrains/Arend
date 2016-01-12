@@ -64,8 +64,9 @@ public class ElimExpression implements Abstract.ElimExpression {
     myClauses = new ArrayList<>(elimTreeNode.getConstructorClauses().size());
     for (ConstructorClause constructorClause : elimTreeNode.getConstructorClauses()) {
       List<PatternArgument> patternArgs = new ArrayList<>();
-      for (TypeArgument arg : splitArguments(constructorClause.getConstructor().getArguments())) {
-        patternArgs.add(match(arg.getExplicit(), null));
+      List<TypeArgument> constructorArgs = splitArguments(constructorClause.getConstructor().getArguments());
+      for (int i = 0; i < constructorArgs.size(); i++) {
+        patternArgs.add(match(constructorArgs.get(i).getExplicit(), constructorClause.getNames() == null ? null : constructorClause.getNames().get(i)));
       }
       final ConstructorPattern pattern = new ConstructorPattern(constructorClause.getConstructor(), patternArgs);
 
@@ -82,7 +83,7 @@ public class ElimExpression implements Abstract.ElimExpression {
 
         @Override
         public Abstract.Clause visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
-          throw new IllegalStateException();
+          return new Clause(pattern, null, null, ElimExpression.this);
         }
       }, null));
     }

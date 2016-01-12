@@ -36,6 +36,7 @@ public class ModuleSerialization {
       stream.writeUTF(aPath);
     }
   }
+
   public static void serializeResolvedName(DataOutputStream stream, ResolvedName rn) throws IOException {
     serializeRelativeResolvedName(stream, rn, RootModule.ROOT.getResolvedName());
   }

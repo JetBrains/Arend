@@ -7,12 +7,10 @@ import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander.ArgsBranch;
 
 import java.util.ArrayList;
@@ -91,7 +89,21 @@ class ElimTreeExpander {
       if (nestedResult.tree == EmptyElimTreeNode.getInstance())
         continue;
 
-      resultTree.addClause(conCall.getDefinition(), nestedResult.tree);
+      List<String> names = null;
+      for (int i : matching.indices) {
+        if (patterns.get(i) instanceof ConstructorPattern) {
+          names = new ArrayList<>(((ConstructorPattern) patterns.get(i)).getArguments().size());
+          for (PatternArgument patternArg : ((ConstructorPattern) patterns.get(i)).getArguments()) {
+            if (patternArg.getPattern() instanceof NamePattern) {
+              names.add(((NamePattern) patternArg.getPattern()).getName());
+            } else {
+              names.add(null);
+            }
+          }
+        }
+      }
+
+      resultTree.addClause(conCall.getDefinition(), names, nestedResult.tree);
       for (ArgsBranch branch : nestedResult.branches) {
         Expression expr = conCall.liftIndex(0, branch.context.size());
         expr = Apps(expr, branch.expressions.toArray(new Expression[branch.expressions.size()]));

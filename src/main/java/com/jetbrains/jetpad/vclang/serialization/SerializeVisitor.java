@@ -296,6 +296,15 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       myDataStream.writeInt(branchNode.getConstructorClauses().size());
       for (ConstructorClause clause : branchNode.getConstructorClauses()) {
         myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(clause.getConstructor().getResolvedName(), false));
+        myDataStream.writeBoolean(clause.getNames() != null);
+        if (clause.getNames() != null) {
+          myDataStream.writeInt(clause.getNames().size());
+          for (String name : clause.getNames()) {
+            myDataStream.writeBoolean(name != null);
+            if (name != null)
+              myDataStream.writeUTF(name);
+          }
+        }
         clause.getChild().accept(this, null);
       }
     } catch (IOException e) {

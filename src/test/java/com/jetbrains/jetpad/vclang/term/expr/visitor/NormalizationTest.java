@@ -41,26 +41,26 @@ public class NormalizationTest {
     BranchElimTreeNode plusElimTree = branch(1);
     plus = new FunctionDefinition(testNS, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), args(Tele(vars("x", "y"), Nat())), Nat(), plusElimTree);
     testNS.addDefinition(plus);
-    plusElimTree.addClause(Prelude.ZERO, leaf(Index(0)));
-    plusElimTree.addClause(Prelude.SUC, leaf(Suc(BinOp(Index(0), plus, Index(1)))));
+    plusElimTree.addClause(Prelude.ZERO, vars(), leaf(Index(0)));
+    plusElimTree.addClause(Prelude.SUC, vars("x'"), leaf(Suc(BinOp(Index(0), plus, Index(1)))));
 
     BranchElimTreeNode mulElimTree = branch(1);
     mul = new FunctionDefinition(testNS, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), args(Tele(vars("x", "y"), Nat())), Nat(), mulElimTree);
     testNS.addDefinition(mul);
-    mulElimTree.addClause(Prelude.ZERO, leaf(Zero()));
-    mulElimTree.addClause(Prelude.SUC, leaf(BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0)))));
+    mulElimTree.addClause(Prelude.ZERO, vars(), leaf(Zero()));
+    mulElimTree.addClause(Prelude.SUC, vars("x'"), leaf(BinOp(Index(0), plus, BinOp(Index(1), mul, Index(0)))));
 
     BranchElimTreeNode facElimTree = branch(0);
     fac = new FunctionDefinition(testNS, new Name("fac"), Abstract.Definition.DEFAULT_PRECEDENCE, args(Tele(vars("x"), Nat())), Nat(), facElimTree);
     testNS.addDefinition(fac);
-    facElimTree.addClause(Prelude.ZERO, leaf(Suc(Zero())));
-    facElimTree.addClause(Prelude.SUC, leaf(BinOp(Suc(Index(0)), mul, Apps(FunCall(fac), Index(0)))));
+    facElimTree.addClause(Prelude.ZERO, vars(), leaf(Suc(Zero())));
+    facElimTree.addClause(Prelude.SUC, vars("x'"), leaf(BinOp(Suc(Index(0)), mul, Apps(FunCall(fac), Index(0)))));
 
     BranchElimTreeNode nelimElimTree = branch(0);
     nelim = new FunctionDefinition(testNS, new Name("nelim"), Abstract.Definition.DEFAULT_PRECEDENCE, args(Tele(vars("z"), Nat()), Tele(vars("s"), Pi(Nat(), Pi(Nat(), Nat()))), Tele(vars("x"), Nat())), Nat(), nelimElimTree);
     testNS.addDefinition(nelim);
-    nelimElimTree.addClause(Prelude.ZERO, leaf(Index(1)));
-    nelimElimTree.addClause(Prelude.SUC, leaf(Apps(Index(1), Index(0), Apps(FunCall(nelim), Index(2), Index(1), Index(0)))));
+    nelimElimTree.addClause(Prelude.ZERO, vars(), leaf(Index(1)));
+    nelimElimTree.addClause(Prelude.SUC, vars("x'"), leaf(Apps(Index(1), Index(0), Apps(FunCall(nelim), Index(2), Index(1), Index(0)))));
   }
 
   private void initializeBDList() {

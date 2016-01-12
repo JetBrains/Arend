@@ -199,7 +199,7 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
 
       if (node == null)
         return null;
-      result.addClause(clause.getConstructor(), node);
+      result.addClause(clause.getConstructor(), clause.getNames(), node);
     }
     return result;
   }
