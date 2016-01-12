@@ -3,12 +3,10 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.DependentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.expr.param.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
@@ -24,8 +22,8 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.numberOfVariables;
+import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
@@ -696,15 +694,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       for (int j = 0; j < typeArguments.size(); ++j) {
         Expression type = typeArguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF, context);
-        while (type instanceof PiExpression) {
-          for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
+        while (type instanceof DependentExpression) {
+          for (TypeArgument argument1 : ((DependentExpression) type).getArguments()) {
             if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition), null)) {
               String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
               myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context)));
               return null;
             }
           }
-          type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF, context);
+          type = ((DependentExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF, context);
         }
 
         List<Expression> exprs = new ArrayList<>();

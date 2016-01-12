@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils.ContextSaver;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.param.Utils.ContextSaver;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 

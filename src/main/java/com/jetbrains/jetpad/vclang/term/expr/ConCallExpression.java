@@ -1,12 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ConCallExpression extends DefCallExpression {
   private List<Expression> myParameters;
@@ -22,11 +23,13 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   public void setParameters(List<Expression> parameters) {
+    assert parameters != null;
     myParameters = parameters;
   }
 
   @Override
   public Expression applyThis(Expression thisExpr) {
+    assert myParameters.isEmpty();
     myParameters.add(thisExpr);
     return this;
   }
@@ -40,10 +43,17 @@ public class ConCallExpression extends DefCallExpression {
   public Expression getType(List<Binding> context) {
     Expression resultType = super.getType(context);
 
-    if (myParameters != null && !myParameters.isEmpty()) {
-      List<Expression> parameters = new ArrayList<>(myParameters);
-      Collections.reverse(parameters);
-      resultType = resultType.subst(parameters, 0);
+    if (!myParameters.isEmpty()) {
+      Map<Binding, Expression> substs = new HashMap<>();
+      DependentLink link = getDefinition().getDataType().getParameters();
+      for (Expression parameter : myParameters) {
+        if (link == null) {
+          return null;
+        }
+        substs.put(link, parameter);
+        link = link.getNext();
+      }
+      resultType = resultType.subst(substs);
     }
     return resultType;
   }

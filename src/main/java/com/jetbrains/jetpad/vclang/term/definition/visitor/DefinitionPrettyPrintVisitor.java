@@ -10,8 +10,8 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.definition.Condition.prettyPrintCondition;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.removeFromList;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
+import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.removeFromList;
+import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.trimToSize;
 
 public class DefinitionPrettyPrintVisitor implements AbstractDefinitionVisitor<Void, Void> {
   private final StringBuilder myBuilder;

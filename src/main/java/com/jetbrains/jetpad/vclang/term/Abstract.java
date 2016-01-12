@@ -24,7 +24,7 @@ public final class Abstract {
   public interface Expression extends PrettyPrintableSourceNode {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    void setWellTyped(List<com.jetbrains.jetpad.vclang.term.definition.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
+    void setWellTyped(List<com.jetbrains.jetpad.vclang.term.expr.param.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
   public interface Argument extends PrettyPrintableSourceNode {
@@ -85,11 +85,6 @@ public final class Abstract {
   public interface NewExpression extends Expression {
     byte PREC = 11;
     Expression getExpression();
-  }
-
-  public interface IndexExpression extends Expression {
-    byte PREC = 12;
-    int getIndex();
   }
 
   public interface LamExpression extends Expression {
@@ -290,7 +285,7 @@ public final class Abstract {
     String getName();
   }
 
-  public interface ConstructorPattern extends Pattern{
+  public interface ConstructorPattern extends Pattern {
     List<? extends PatternArgument> getArguments();
     Name getConstructorName();
   }

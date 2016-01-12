@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.Collection;
@@ -9,11 +10,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BranchElimTreeNode extends ElimTreeNode {
-  private final int myIndex;
+  private final Binding myReference;
   private final Map<Constructor, ConstructorClause> myClauses = new HashMap<>();
 
-  public BranchElimTreeNode(int index) {
-    myIndex = index;
+  public BranchElimTreeNode(Binding reference) {
+    myReference = reference;
   }
 
   @Override
@@ -26,8 +27,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return Abstract.Definition.Arrow.LEFT;
   }
 
-  public int getIndex() {
-    return myIndex;
+  public Binding getReference() {
+    return myReference;
   }
 
   public void addClause(Constructor constructor, ElimTreeNode node) {

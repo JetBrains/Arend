@@ -3,7 +3,8 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
@@ -296,7 +297,7 @@ public class TypeCheckingDefCall {
         result.baseClassDefinition = ((ClassCallExpression) type).getDefinition();
         result.member = result.baseClassDefinition.getParentNamespace().getMember(result.baseClassDefinition.getName().name);
       } else {
-        if (type instanceof UniverseExpression || type instanceof PiExpression) {
+        if (type instanceof UniverseExpression || type instanceof DependentExpression) {
           List<Expression> arguments = new ArrayList<>();
           Expression function = result.baseResult.expression.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getLocalContext()).getFunction(arguments);
           if (function instanceof DataCallExpression) {

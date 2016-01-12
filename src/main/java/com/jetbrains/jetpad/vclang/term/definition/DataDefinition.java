@@ -6,18 +6,20 @@ import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
+import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
-  private List<TypeArgument> myParameters;
+  private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
 
   public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence) {
@@ -25,7 +27,7 @@ public class DataDefinition extends Definition {
     myConstructors = new ArrayList<>();
   }
 
-  public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, List<TypeArgument> parameters) {
+  public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters) {
     super(parentNamespace, name, precedence);
     setUniverse(universe);
     hasErrors(false);
@@ -33,7 +35,7 @@ public class DataDefinition extends Definition {
     myConstructors = new ArrayList<>();
   }
 
-  public List<TypeArgument> getParameters() {
+  public DependentLink getParameters() {
     return myParameters;
   }
 

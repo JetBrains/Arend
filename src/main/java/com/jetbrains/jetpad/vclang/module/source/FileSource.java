@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.module.FileOperations;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
@@ -46,9 +45,9 @@ public class FileSource extends ParseSource {
     Namespace namespace = null;
 
     if (myDirectory != null && myDirectory.isDirectory()) {
-      namespace = getModule().parent.getChild(getModule().name);
+      namespace = getModule().parent.getChild(getModule().name.name);
       for (String childName : FileOperations.getChildren(myDirectory, FileOperations.EXTENSION)) {
-        namespace.getChild(new Name(childName));
+        namespace.getChild(childName);
       }
     }
 

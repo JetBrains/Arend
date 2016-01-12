@@ -2,29 +2,23 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.util.*;
 
 public class Namespace {
-  final private Name myName;
+  final private String myName;
   private Namespace myParent;
   private Map<String, NamespaceMember> myMembers;
 
-  private Namespace(Name name, Namespace parent) {
+  private Namespace(String name, Namespace parent) {
     myName = name;
     myParent = parent;
   }
 
-  public Namespace(Name name) {
-    myName = name;
-    myParent = null;
-  }
-
   public Namespace(String name) {
-    myName = new Name(name);
+    myName = name;
     myParent = null;
   }
 
@@ -32,12 +26,12 @@ public class Namespace {
     return new ResolvedName(myParent, myName);
   }
 
-  public Name getName() {
+  public String getName() {
     return myName;
   }
 
   public String getFullName() {
-    return myParent == null || myParent == RootModule.ROOT ? myName.name : myParent.getFullName() + "." + myName.name;
+    return myParent == null || myParent == RootModule.ROOT ? myName : myParent.getFullName() + "." + myName;
   }
 
   public Namespace getParent() {
@@ -52,8 +46,8 @@ public class Namespace {
     return myMembers == null ? Collections.<NamespaceMember>emptyList() : myMembers.values();
   }
 
-  public Namespace getChild(Name name) {
-    NamespaceMember member = getMember(name.name);
+  public Namespace getChild(String name) {
+    NamespaceMember member = getMember(name);
     if (member != null) {
       return member.namespace;
     }
@@ -70,15 +64,15 @@ public class Namespace {
     if (myMembers == null) {
       myMembers = new HashMap<>();
       NamespaceMember result = new NamespaceMember(child, null, null);
-      myMembers.put(child.myName.name, result);
+      myMembers.put(child.myName, result);
       return result;
     } else {
-      NamespaceMember oldMember = myMembers.get(child.myName.name);
+      NamespaceMember oldMember = myMembers.get(child.myName);
       if (oldMember != null) {
         return null;
       } else {
         NamespaceMember result = new NamespaceMember(child, null, null);
-        myMembers.put(child.myName.name, result);
+        myMembers.put(child.myName, result);
         return result;
       }
     }
@@ -123,7 +117,7 @@ public class Namespace {
       }
     }
 
-    NamespaceMember result = new NamespaceMember(new Namespace(definition.getName(), this), definition, null);
+    NamespaceMember result = new NamespaceMember(new Namespace(definition.getName().name, this), definition, null);
     myMembers.put(definition.getName().name, result);
     return result;
   }
@@ -132,7 +126,7 @@ public class Namespace {
     if (myMembers == null) {
       myMembers = new HashMap<>();
     } else {
-      NamespaceMember oldMember = myMembers.get(definition.getName().name);
+      NamespaceMember oldMember = myMembers.get(definition.getName());
       if (oldMember != null) {
         if (oldMember.definition != null) {
           return null;
@@ -144,7 +138,7 @@ public class Namespace {
     }
 
     NamespaceMember result = new NamespaceMember(new Namespace(definition.getName(), this), null, definition);
-    myMembers.put(definition.getName().name, result);
+    myMembers.put(definition.getName(), result);
     return result;
   }
 
@@ -152,7 +146,7 @@ public class Namespace {
     if (myMembers == null) {
       myMembers = new HashMap<>();
     } else {
-      NamespaceMember oldMember = myMembers.get(member.namespace.getName().name);
+      NamespaceMember oldMember = myMembers.get(member.namespace.getName());
       if (oldMember != null) {
         if (oldMember.definition != null || oldMember.abstractDefinition != null) {
           return oldMember;
@@ -164,27 +158,27 @@ public class Namespace {
       }
     }
 
-    myMembers.put(member.namespace.getName().name, member);
+    myMembers.put(member.namespace.getName(), member);
     return null;
   }
 
-  public NamespaceMember addMember(Name name) {
+  public NamespaceMember addMember(String name) {
     if (myMembers == null) {
       myMembers = new HashMap<>();
     } else {
-      NamespaceMember oldMember = myMembers.get(name.name);
+      NamespaceMember oldMember = myMembers.get(name);
       if (oldMember != null) {
         return oldMember;
       }
     }
 
     NamespaceMember member = new NamespaceMember(new Namespace(name, this), null, null);
-    myMembers.put(name.name, member);
+    myMembers.put(name, member);
     return member;
   }
 
   public NamespaceMember removeMember(NamespaceMember member) {
-    return myMembers.remove(member.namespace.getName().name);
+    return myMembers.remove(member.namespace.getName());
   }
 
   public void clear() {
@@ -202,11 +196,11 @@ public class Namespace {
     if (!(other instanceof Namespace)) return false;
     if (myParent != ((Namespace) other).myParent) return false;
     if (myName == null) return ((Namespace) other).myName == null;
-    return myName.name.equals(((Namespace) other).myName.name);
+    return myName.equals(((Namespace) other).myName);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(new Object[]{myParent, myName == null ? null : myName.name});
+    return Arrays.hashCode(new Object[]{ myParent, myName });
   }
 }

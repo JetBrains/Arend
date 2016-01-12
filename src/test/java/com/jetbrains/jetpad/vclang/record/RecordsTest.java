@@ -2,8 +2,12 @@ package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.param.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
 
@@ -211,9 +215,9 @@ public class RecordsTest {
     assertEquals(namespace.findChild("A").getDefinition("foo"), ((DefCallExpression) arguments.get(1)).getDefinition());
 
     assertTrue(arguments.get(2) instanceof LamExpression);
-    assertTrue(((LamExpression) arguments.get(2)).getBody() instanceof PiExpression);
+    assertTrue(((LamExpression) arguments.get(2)).getBody() instanceof DependentExpression);
     List<Expression> domArguments = new ArrayList<>(3);
-    Expression domFunction = ((PiExpression) ((LamExpression) arguments.get(2)).getBody()).getArguments().get(0).getType().getFunction(domArguments);
+    Expression domFunction = ((DependentExpression) ((LamExpression) arguments.get(2)).getBody()).getArguments().get(0).getType().getFunction(domArguments);
     assertEquals(3, domArguments.size());
     assertEquals(DataCall(Prelude.PATH), domFunction);
 
@@ -242,10 +246,10 @@ public class RecordsTest {
     Expression resultType = ((FunctionDefinition) namespace.getDefinition("test")).getResultType();
     Expression xCall = namespace.findChild("A").getDefinition("x").getDefCall();
     List<Expression> arguments = new ArrayList<>(3);
-    assertTrue(resultType instanceof PiExpression);
+    assertTrue(resultType instanceof DependentExpression);
     List<Binding> context = new ArrayList<>(1);
     context.add(new TypedBinding("q", ClassCall((ClassDefinition) namespace.getDefinition("A"))));
-    Expression function = ((PiExpression) resultType).getArguments().get(0).getType().normalize(NormalizeVisitor.Mode.NF, context).getFunction(arguments);
+    Expression function = ((DependentExpression) resultType).getArguments().get(0).getType().normalize(NormalizeVisitor.Mode.NF, context).getFunction(arguments);
     assertEquals(3, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 

@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.expr.param.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -63,7 +63,7 @@ public final class Concrete {
     }
 
     @Override
-    public void setWellTyped(List<com.jetbrains.jetpad.vclang.term.definition.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
+    public void setWellTyped(List<com.jetbrains.jetpad.vclang.term.expr.param.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
     }
 
     @Override
@@ -302,7 +302,7 @@ public final class Concrete {
     public DefCallExpression(Position position, com.jetbrains.jetpad.vclang.term.definition.Definition definition) {
       super(position);
       myExpression = null;
-      myName = definition.getName();
+      myName = definition.getIdentifier();
       myResolvedName = new ResolvedName(definition.getParentNamespace(), definition.getName());
     }
 
@@ -596,25 +596,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitUniverse(this, params);
-    }
-  }
-
-  public static class IndexExpression extends Expression implements Abstract.IndexExpression {
-    private final int myIndex;
-
-    public IndexExpression(Position position, int index) {
-      super(position);
-      myIndex = index;
-    }
-
-    @Override
-    public int getIndex() {
-      return myIndex;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitIndex(this, params);
     }
   }
 

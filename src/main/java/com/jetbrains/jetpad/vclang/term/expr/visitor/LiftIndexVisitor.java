@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.splitArguments;
 
 public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression> implements ElimTreeNodeVisitor<Integer, ElimTreeNode> {
   private final int myOn;
@@ -102,7 +102,7 @@ public class LiftIndexVisitor extends BaseExpressionVisitor<Integer, Expression>
   }
 
   @Override
-  public Expression visitPi(PiExpression expr, Integer from) {
+  public Expression visitPi(DependentExpression expr, Integer from) {
     List<TypeArgument> result = new ArrayList<>(expr.getArguments().size());
     from = visitTypeArguments(expr.getArguments(), result, from);
     if (from == -1) return null;

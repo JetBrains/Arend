@@ -135,7 +135,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   }
 
   @Override
-  public Void visitPi(PiExpression expr, Void params) {
+  public Void visitPi(DependentExpression expr, Void params) {
     myStream.write(7);
     try {
       ModuleSerialization.writeArguments(this, expr.getArguments());

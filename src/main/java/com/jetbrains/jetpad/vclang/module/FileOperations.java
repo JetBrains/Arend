@@ -11,7 +11,7 @@ public class FileOperations {
   public static final String SERIALIZED_EXTENSION = ".vcc";
 
   public static File getFile(File dir, Namespace namespace) {
-    return namespace == null || namespace.getParent() == null ? dir : new File(getFile(dir, namespace.getParent()), namespace.getName().name);
+    return namespace == null || namespace.getParent() == null ? dir : new File(getFile(dir, namespace.getParent()), namespace.getName());
   }
 
   public static File getFile(File dir, ResolvedName resolvedName, String ext) {

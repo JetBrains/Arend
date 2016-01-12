@@ -4,11 +4,12 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.param.NamedBinding;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
-public abstract class Definition extends Binding {
+public abstract class Definition extends NamedBinding {
   private Abstract.Definition.Precedence myPrecedence;
   private Universe myUniverse;
   private boolean myHasErrors;
@@ -50,7 +51,7 @@ public abstract class Definition extends Binding {
   }
 
   public ResolvedName getResolvedName() {
-    return new ResolvedName(myParentNamespace, getName().name);
+    return new ResolvedName(myParentNamespace, getName());
   }
 
   public Universe getUniverse() {
@@ -69,12 +70,7 @@ public abstract class Definition extends Binding {
     myHasErrors = has;
   }
 
- public boolean isAbstract() {
+  public boolean isAbstract() {
     return false;
-  }
-
-  @Override
-  public Definition lift(int on) {
-    return this;
   }
 }

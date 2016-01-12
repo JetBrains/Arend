@@ -79,7 +79,7 @@ public abstract class ParseSource implements Source {
     }
 
     if (childrenOnly) {
-      return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), null, null), false, 0);
+      return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name.name), null, null), false, 0);
     }
 
     NameResolver nameResolver = new LoadingNameResolver(myModuleLoader, new DeepNamespaceNameResolver(myModule.parent));
@@ -93,6 +93,6 @@ public abstract class ParseSource implements Source {
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, myModule.parent, nameResolver);
     visitor.setResolveListener(new ConcreteResolveListener());
     visitor.visitClass(classDefinition, null);
-    return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
+    return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
   }
 }

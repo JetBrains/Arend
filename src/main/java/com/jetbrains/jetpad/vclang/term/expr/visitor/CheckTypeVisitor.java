@@ -4,8 +4,10 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.param.TelescopeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -20,7 +22,7 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
 
@@ -129,7 +131,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     Expression actualNorm = result.type.normalize(NormalizeVisitor.Mode.NF, myLocalContext);
     Expression expectedNorm = expectedType.liftIndex(0, liftOn).normalize(NormalizeVisitor.Mode.NF, myLocalContext);
-    if (NewCompareVisitor.compare(result.equations, Equations.CMP.GE, myLocalContext, expectedNorm, actualNorm)) {
+    if (CompareVisitor.compare(result.equations, Equations.CMP.GE, myLocalContext, expectedNorm, actualNorm)) {
       expression.setWellTyped(myLocalContext, result.expression);
       return result;
     } else {
@@ -183,18 +185,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   @Override
-  public Result visitIndex(Abstract.IndexExpression expr, Expression expectedType) {
-    Result result = getIndex(expr);
-    result.type = result.type.liftIndex(0, ((IndexExpression) result.expression).getIndex() + 1);
-    return checkResultImplicit(expectedType, result, expr);
+  public Result visitLam(Abstract.LamExpression expr, Expression expectedType) {
+    // TODO
+    return null;
   }
 
-  private Result getIndex(Abstract.IndexExpression expr) {
-    assert expr.getIndex() < myLocalContext.size();
-    Expression actualType = myLocalContext.get(myLocalContext.size() - 1 - expr.getIndex()).getType();
-    return new Result(Index(expr.getIndex()), actualType, null);
-  }
-
+  /*
   private Result typeCheckLam(List<? extends Abstract.Argument> args, Abstract.Expression body, List<TypeArgument> typeArgs, Expression expectedType, Abstract.LamExpression expr) {
     if (args.isEmpty()) {
       if (body instanceof Abstract.LamExpression) {
@@ -261,7 +257,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       for (int i = 0; i < names.size() && i < typeArgs.size(); i++) {
         if (i != 0 || argType != null) {
-          NewCompareVisitor.compare(equations, Equations.CMP.EQ, myLocalContext, typedArgType.liftIndex(0, names.size()), typeArgs.get(i).getType().liftIndex(0, names.size() - i));
+          CompareVisitor.compare(equations, Equations.CMP.EQ, myLocalContext, typedArgType.liftIndex(0, names.size()), typeArgs.get(i).getType().liftIndex(0, names.size() - i));
         }
       }
       if (names.size() > typeArgs.size()) {
@@ -291,7 +287,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return typeCheckLam(expr.getArguments(), expr.getBody(), expectedType == null ? null : new ArrayList<TypeArgument>(3), expectedType, expr);
   }
 
-  /*
   @Override
   public Result visitLam(Abstract.LamExpression expr, Expression expectedType) {
     Equations equations = myArgsInference.newEquations();
@@ -440,7 +435,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       equations.add(expectedType, Pi(actualPiArgs, result.type), Equations.CMP.EQ);
     }
   }
-  */
 
   private boolean isStuckOnInferVar(Expression expr) {
     int liftOn = 0;
@@ -464,7 +458,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  /*
   private Result typeCheckLam(List<? extends Abstract.Argument> arguments, Abstract.Expression body, Expression expectedType) {
     Equations resultEquations = myArgsInference.newEquations();
 
@@ -697,19 +690,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     equations.add(codomainResult.equations);
     */
 
-    List<TypeArgument> resultArguments = new ArrayList<>(domainResults.length);
+    Expression result = codomainResult.expression;
     for (int i = 0; i < domainResults.length; ++i) {
-      resultArguments.add(argFromArgResult(expr.getArguments().get(i), domainResults[i]));
+      result = Pi(expr.getArguments().get(i), domainResults[i].expression, result);
     }
-    return checkResult(myLocalContext.size() - size, expectedType, new Result(Pi(resultArguments, codomainResult.expression), actualType, equations), expr);
-  }
-
-  private TypeArgument argFromArgResult(Abstract.TypeArgument arg, Result argResult) {
-    if (arg instanceof Abstract.TelescopeArgument) {
-      return new TelescopeArgument(arg.getExplicit(), ((Abstract.TelescopeArgument) arg).getNames(), argResult.expression);
-    } else {
-      return new TypeArgument(arg.getExplicit(), argResult.expression);
-    }
+    return checkResult(myLocalContext.size() - size, expectedType, new Result(result, actualType, equations), expr);
   }
 
   @Override
@@ -903,13 +888,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode) {
     if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
-      if (name == null) {
-        myLocalContext.add(binding);
-      } else {
-        myLocalContext.add(new TypedBinding(((Abstract.NamePattern) pattern).getName(), binding.getType()));
+      if (name != null) {
+        binding = new TypedBinding(((Abstract.NamePattern) pattern).getName(), binding.getType());
       }
-      pattern.setWellTyped(new NamePattern(name));
-      return new ExpandPatternOKResult(Index(0), new NamePattern(name), 1);
+      myLocalContext.add(binding);
+      NamePattern namePattern = new NamePattern(name);
+      pattern.setWellTyped(namePattern);
+      return new ExpandPatternOKResult(Reference(binding), namePattern, 1);
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       TypeCheckingError error = null;
 
@@ -945,16 +930,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       if (pattern instanceof Abstract.AnyConstructorPattern) {
-        pattern.setWellTyped(new AnyConstructorPattern());
+        AnyConstructorPattern pattern1 = new AnyConstructorPattern();
+        pattern.setWellTyped(pattern1);
         myLocalContext.add(binding);
-        return new ExpandPatternOKResult(Index(0), new AnyConstructorPattern(), 1);
+        return new ExpandPatternOKResult(Reference(binding), pattern1, 1);
       }
 
       Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
 
       Constructor constructor = null;
       for (int index = 0; index < dataType.getConstructors().size(); ++index) {
-        if (dataType.getConstructors().get(index).getName().equals(constructorPattern.getConstructorName())) {
+        if (dataType.getConstructors().get(index).getName().equals(constructorPattern.getConstructorName().name)) {
           constructor = dataType.getConstructors().get(index);
           break;
         }
@@ -1060,8 +1046,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result exprOKResult;
     if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getResolvedName() == null) {
       exprOKResult = myTypeCheckingDefCall.getLocalVar(((Abstract.DefCallExpression) expression).getName(), expression);
-    } else if (expression instanceof Abstract.IndexExpression) {
-      exprOKResult = getIndex((Abstract.IndexExpression) expression);
     } else {
       TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expression, getNames(myLocalContext));
       myErrorReporter.report(error);
@@ -1088,18 +1072,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    // TODO: lift expectedType
-
     Equations equations = myArgsInference.newEquations();
-    Expression letTerm = Index(0);
     List<TypeArgument> args = new ArrayList<>();
+    LetClause letBinding = let(Abstract.CaseExpression.FUNCTION_NAME, args, expectedType, (ElimTreeNode) null);
+    Expression letTerm = Reference(letBinding);
     List<? extends Abstract.Expression> expressions = expr.getExpressions();
     for (int i = 0; i < expressions.size(); i++) {
       Result exprResult = typeCheck(expressions.get(i), null);
       if (exprResult == null) return null;
-      if (exprResult.equations != null) {
-        equations.add(exprResult.equations);
-      }
+      equations.add(exprResult.equations);
       args.add(Tele(vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprResult.type.liftIndex(0, i)));
       letTerm = Apps(letTerm, exprResult.expression.liftIndex(0, 1));
     }
@@ -1109,10 +1090,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
     ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, myLocalContext.size() - args.size(), expectedType.liftIndex(0, 1));
     if (elimTree == null) return null;
+    letBinding.setElimTree(elimTree);
     myLocalContext.subList(myLocalContext.size() - expressions.size(), myLocalContext.size()).clear();
 
-    LetExpression letExpression = Let(lets(let(Abstract.CaseExpression.FUNCTION_NAME, args, expectedType.liftIndex(0, 1), elimTree)), letTerm);
-
+    LetExpression letExpression = Let(lets(letBinding), letTerm);
     expr.setWellTyped(myLocalContext, letExpression);
     return new Result(letExpression, expectedType.liftIndex(0, 1 - expressions.size()), equations);
   }

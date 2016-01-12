@@ -1,11 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AppExpression extends Expression {
   private final Expression myFunction;
@@ -34,7 +35,16 @@ public class AppExpression extends Expression {
     List<Expression> arguments = new ArrayList<>();
     Expression function = getFunction(arguments);
     Expression type = function.getType(context);
-    if (!(type instanceof PiExpression)) return null;
-    return type.splitAt(arguments.size(), new ArrayList<TypeArgument>(arguments.size()), context).subst(arguments, 0);
+
+    Map<Binding, Expression> substs = new HashMap<>();
+    for (int i = arguments.size() - 1; i >=0; i--) {
+      if (type instanceof DependentExpression && type instanceof DependentExpression.Pi) {
+        substs.put((DependentExpression) type, arguments.get(i));
+      } else {
+        return null;
+      }
+    }
+
+    return type.subst(substs);
   }
 }

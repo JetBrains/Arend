@@ -1,30 +1,24 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.definition.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.trimToSize;
+import java.util.Map;
 
 public class LamExpression extends Expression {
-  private final List<TelescopeArgument> myArguments;
+  private final DependentLink myLink;
   private final Expression myBody;
 
-  public LamExpression(List<TelescopeArgument> arguments, Expression body) {
-    myArguments = arguments;
+  public LamExpression(DependentLink link, Expression body) {
+    myLink = link;
     myBody = body;
   }
 
-  public List<TelescopeArgument> getArguments() {
-    return myArguments;
+  public DependentLink getLink() {
+    return myLink;
   }
 
   public Expression getBody() {
@@ -32,28 +26,14 @@ public class LamExpression extends Expression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    int origSize = context.size();
-    List<TypeArgument> resultArgs = new ArrayList<>(myArguments.size());
-    for (Argument argument : myArguments) {
-      if (!(argument instanceof TypeArgument)) return null;
-      if (argument instanceof TelescopeArgument) {
-        for (String name : ((TelescopeArgument) argument).getNames()) {
-          context.add(new TypedBinding(name, ((TelescopeArgument) argument).getType()));
-        }
-      } else {
-        context.add(new TypedBinding((Name) null, ((TypeArgument) argument).getType()));
-      }
-      resultArgs.add((TypeArgument) argument);
-    }
-
-    Expression resultCodomain = myBody.getType(context);
-    trimToSize(context, origSize);
-    return Pi(resultArgs, resultCodomain);
+  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitLam(this, params);
   }
 
   @Override
-  public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitLam(this, params);
+  public Expression getType(List<Binding> context) {
+    Map<Binding, Expression> substs = new HashMap<>();
+    DependentLink link = myLink.copy(substs);
+    return new PiExpression(link, myBody.subst(substs).getType(context));
   }
 }

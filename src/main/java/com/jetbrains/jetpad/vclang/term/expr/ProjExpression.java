@@ -1,11 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ProjExpression extends Expression {
   private final Expression myExpression;
@@ -28,22 +29,20 @@ public class ProjExpression extends Expression {
   public Expression getType(List<Binding> context) {
     Expression type = myExpression.getType(context);
     if (!(type instanceof SigmaExpression)) return null;
-    List<TypeArgument> arguments = ((SigmaExpression) type).getArguments();
-    int index = 0;
-    for (TypeArgument argument : arguments) {
-      if (argument instanceof TelescopeArgument) {
-        index += ((TelescopeArgument) argument).getNames().size();
-        if (myField < index) {
-          return argument.getType();
-        }
-      } else {
-        if (myField == index) {
-          return argument.getType();
-        }
-        ++index;
-      }
+    DependentLink params = ((SigmaExpression) type).getLink();
+    if (myField == 0) {
+      return params.getType();
     }
-    return null;
+
+    Map<Binding, Expression> substs = new HashMap<>();
+    for (int i = 0; i < myField; i++) {
+      if (params == null) {
+        return null;
+      }
+      substs.put(params, new ProjExpression(myExpression, i));
+      params = params.getNext();
+    }
+    return params.getType().subst(substs);
   }
 
   @Override

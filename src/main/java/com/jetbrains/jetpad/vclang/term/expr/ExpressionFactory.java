@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.*;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
@@ -76,22 +73,12 @@ public class ExpressionFactory {
     return new NewExpression(expression);
   }
 
-  public static IndexExpression Index(int i) {
-    return new IndexExpression(i);
+  public static ReferenceExpression Reference(Binding binding) {
+    return new ReferenceExpression(binding);
   }
 
-  public static LamExpression Lam(List<TelescopeArgument> arguments, Expression body) {
-    return new LamExpression(arguments, body);
-  }
-
-  public static LamExpression Lam(String var, Expression type, Expression body) {
-    List<TelescopeArgument> arguments = new ArrayList<>(1);
-    arguments.add(new TelescopeArgument(true, vars(var), type));
-    return Lam(arguments, body);
-  }
-
-  public static VarExpression Var(String name) {
-    return new VarExpression(name);
+  public static LamExpression Lam(DependentLink link, Expression body) {
+    return new LamExpression(link, body);
   }
 
   public static LetExpression Let(List<LetClause> clauses, Expression expr) {
@@ -107,91 +94,59 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, ElimTreeNode elimTree) {
-    return let(name, typeArgs(), elimTree);
+    return let(name, null, elimTree);
   }
 
-  public static LetClause let(String name, List<TypeArgument> args, Expression expr) {
-    return let(name, args, leaf(expr));
+  public static LetClause let(String name, DependentLink params, Expression expr) {
+    return let(name, params, leaf(expr));
   }
 
-  public static LetClause let(String name, List<TypeArgument> args, ElimTreeNode elimTree) {
-    return let(name, args, null, elimTree);
+  public static LetClause let(String name, DependentLink params, ElimTreeNode elimTree) {
+    return let(name, params, null, elimTree);
   }
 
-  public static LetClause let(String name, List<TypeArgument> args, Expression resultType, Abstract.Definition.Arrow arrow, Expression expr) {
-    return let(name, args, resultType, leaf(arrow, expr));
+  public static LetClause let(String name, DependentLink params, Expression resultType, Abstract.Definition.Arrow arrow, Expression expr) {
+    return let(name, params, resultType, leaf(arrow, expr));
   }
 
-  public static LetClause let(String name, List<TypeArgument> args, Expression resultType, Expression expr) {
-    return let(name, args, resultType, leaf(expr));
+  public static LetClause let(String name, DependentLink params, Expression resultType, Expression expr) {
+    return let(name, params, resultType, leaf(expr));
   }
 
-  public static LetClause let(String name, List<TypeArgument> args, Expression resultType, ElimTreeNode elimTree) {
-    return new LetClause(name, args, resultType, elimTree);
+  public static LetClause let(String name, DependentLink params, Expression resultType, ElimTreeNode elimTree) {
+    return new LetClause(name, params, resultType, elimTree);
   }
 
-  public static List<String> vars(String... vars) {
-    return Arrays.asList(vars);
+  public static DependentLink param(boolean explicit, String var, Expression type) {
+    return new TypedDependentLink(explicit, var, type, null);
   }
 
-  public static List<TypeArgument> typeArgs(TypeArgument... args) {
-    return Arrays.asList(args);
+  public static DependentLink param(String var, Expression type) {
+    return new TypedDependentLink(true, var, type, null);
   }
 
-  public static List<TelescopeArgument> teleArgs(TelescopeArgument... args) {
-    return Arrays.asList(args);
+  public static DependentLink param(Expression type) {
+    return new NonDependentLink(type, null);
   }
 
-  public static List<Argument> args(Argument... args) {
-    return Arrays.asList(args);
+  public static DependentLink param(boolean explicit, List<String> names, Expression type) {
+    DependentLink link = new TypedDependentLink(explicit, names.get(names.size() - 1), type, null);
+    for (int i = names.size() - 2; i >= 0; i--) {
+      link = new UntypedDependentLink(names.get(i), link);
+    }
+    return link;
   }
 
-  public static NameArgument Name(boolean explicit, String name) {
-    return new NameArgument(explicit, name);
+  public static DependentLink param(Abstract.Argument argument, Expression type) {
+    if (argument instanceof Abstract.TelescopeArgument) {
+      return param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), type);
+    } else {
+      return param(type);
+    }
   }
 
-  public static NameArgument Name(String name) {
-    return new NameArgument(true, name);
-  }
-
-  public static TypeArgument TypeArg(boolean explicit, Expression type) {
-    return new TypeArgument(explicit, type);
-  }
-
-  public static TypeArgument TypeArg(Expression type) {
-    return new TypeArgument(true, type);
-  }
-
-  public static TelescopeArgument Tele(boolean explicit, List<String> names, Expression type) {
-    return new TelescopeArgument(explicit, names, type);
-  }
-
-  public static TelescopeArgument Tele(List<String> names, Expression type) {
-    return new TelescopeArgument(true, names, type);
-  }
-
-  public static Expression Pi(List<TypeArgument> arguments, Expression codomain) {
-    return arguments.isEmpty() ? codomain : new PiExpression(arguments, codomain);
-  }
-
-  public static PiExpression Pi(boolean explicit, String var, Expression domain, Expression codomain) {
-    List<TypeArgument> arguments = new ArrayList<>(1);
-    List<String> vars = new ArrayList<>(1);
-    vars.add(var);
-    arguments.add(new TelescopeArgument(explicit, vars, domain));
-    return new PiExpression(arguments, codomain);
-  }
-
-  public static PiExpression Pi(String var, Expression domain, Expression codomain) {
-    return Pi(true, var, domain, codomain);
-  }
-
-  public static PiExpression Pi(Expression domain, Expression codomain) {
+  public static PiExpression Pi(DependentLink domain, Expression codomain) {
     return new PiExpression(domain, codomain);
-  }
-
-  public static SigmaExpression Sigma(List<TypeArgument> arguments) {
-    return new SigmaExpression(arguments);
   }
 
   public static TupleExpression Tuple(List<Expression> fields, SigmaExpression type) {
@@ -256,8 +211,8 @@ public class ExpressionFactory {
     }
   }
 
-  public static BranchElimTreeNode branch(int index, ConstructorClausePair... clauses) {
-    BranchElimTreeNode result = new BranchElimTreeNode(index);
+  public static BranchElimTreeNode branch(Binding reference, ConstructorClausePair... clauses) {
+    BranchElimTreeNode result = new BranchElimTreeNode(reference);
     for (ConstructorClausePair pair : clauses) {
       result.addClause(pair.constructor, pair.child);
     }

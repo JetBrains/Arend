@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
@@ -65,7 +65,7 @@ public class FindHoleVisitor extends BaseExpressionVisitor<Void, InferHoleExpres
   }
 
   @Override
-  public InferHoleExpression visitPi(PiExpression expr, Void params) {
+  public InferHoleExpression visitPi(DependentExpression expr, Void params) {
     InferHoleExpression result = expr.getCodomain().accept(this, null);
     if (result != null) return result;
     return visitArguments(expr.getArguments());

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,10 +29,10 @@ public class TypeCheckingError extends GeneralError {
     return myNames;
   }
 
-  public static List<String> getNames(List<? extends Abstract.Binding> context) {
+  public static List<String> getNames(List<? extends Binding> context) {
     List<String> names = new ArrayList<>(context.size());
-    for (Abstract.Binding binding : context) {
-      names.add(binding.getName() == null ? null : binding.getName().name);
+    for (Binding binding : context) {
+      names.add(binding.getName() == null ? null : binding.getName());
     }
     return names;
   }

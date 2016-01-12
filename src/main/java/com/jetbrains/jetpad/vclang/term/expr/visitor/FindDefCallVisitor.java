@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.expr.param.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
@@ -69,7 +69,7 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   }
 
   @Override
-  public Boolean visitPi(PiExpression expr, Void params) {
+  public Boolean visitPi(DependentExpression expr, Void params) {
     for (TypeArgument argument : expr.getArguments()) {
       if (argument.getType().accept(this, null)) return true;
     }
