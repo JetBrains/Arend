@@ -1,13 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ConCallExpression extends DefCallExpression {
   private List<Expression> myParameters;
@@ -40,20 +37,11 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    Expression resultType = super.getType(context);
+  public Expression getType() {
+    Expression resultType = super.getType();
 
     if (!myParameters.isEmpty()) {
-      Map<Binding, Expression> substs = new HashMap<>();
-      DependentLink link = getDefinition().getDataType().getParameters();
-      for (Expression parameter : myParameters) {
-        if (link == null) {
-          return null;
-        }
-        substs.put(link, parameter);
-        link = link.getNext();
-      }
-      resultType = resultType.subst(substs);
+      resultType = resultType.subst(Utils.matchParameters(getDefinition().getDataType().getParameters(), myParameters));
     }
     return resultType;
   }

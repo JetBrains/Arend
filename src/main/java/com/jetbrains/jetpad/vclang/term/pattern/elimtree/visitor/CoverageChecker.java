@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -46,7 +46,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Bo
     Collections.reverse(parameters);
 
     boolean result = true;
-    for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getConstructors(parameters, myContext)) {
+    for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getMatchedConstructors(parameters)) {
       try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
         if (branchNode.getChild(conCall.getDefinition()) != null) {
           result &= branchNode.getChild(conCall.getDefinition()).accept(this, expander.substIn(expressions));
@@ -83,7 +83,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Bo
     if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
       return checkEmptyContext(index - 1, expressions);
     }
-    List<ConCallExpression> validConCalls = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getConstructors(parameters, myContext);
+    List<ConCallExpression> validConCalls = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(parameters);
     if (validConCalls == null) {
       return checkEmptyContext(index - 1, expressions);
     }

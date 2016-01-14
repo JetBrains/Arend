@@ -1,16 +1,19 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 
 public class ConstructorClause {
+  private final Constructor myConstructor;
+  private final DependentLink myParameters;
   private ElimTreeNode myChild;
   private final BranchElimTreeNode myParent;
-  private final Constructor myConstructor;
 
-  public ConstructorClause(Constructor constructor, ElimTreeNode child, BranchElimTreeNode parent) {
+  public ConstructorClause(Constructor constructor, DependentLink parameters, ElimTreeNode child, BranchElimTreeNode parent) {
+    myConstructor = constructor;
+    myParameters = parameters;
     setChild(child);
     myParent = parent;
-    myConstructor = constructor;
   }
 
   public BranchElimTreeNode getParent() {
@@ -28,5 +31,9 @@ public class ConstructorClause {
 
   public Constructor getConstructor() {
     return myConstructor;
+  }
+
+  public DependentLink getParameters() {
+    return myParameters;
   }
 }

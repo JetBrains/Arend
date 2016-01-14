@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.param.Utils.ContextSaver;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,11 +35,9 @@ public class LetExpression extends Expression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    try (ContextSaver ignore = new ContextSaver(context)) {
-      context.addAll(myClauses);
-      return myExpression.getType(context).normalize(NormalizeVisitor.Mode.NF, context).liftIndex(0, -myClauses.size());
-    }
+  public Expression getType() {
+    // TODO: check if the type dependents on variables bound by let
+    return myExpression.getType();
   }
 
   @Override

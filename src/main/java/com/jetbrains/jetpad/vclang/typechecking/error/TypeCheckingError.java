@@ -3,8 +3,9 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,12 @@ public class TypeCheckingError extends GeneralError {
   protected String prettyPrint(PrettyPrintable expression) {
     StringBuilder builder = new StringBuilder();
     expression.prettyPrint(builder, myNames, Abstract.Expression.PREC);
+    return builder.toString();
+  }
+
+  protected String prettyPrint(Abstract.Expression expression) {
+    StringBuilder builder = new StringBuilder();
+    expression.accept(new PrettyPrintVisitor(builder, myNames, 0), Abstract.Expression.PREC);
     return builder.toString();
   }
 

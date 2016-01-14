@@ -1,11 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-
-import java.util.List;
 
 public class PiExpression extends DependentTypeExpression {
   private final Expression myCodomain;
@@ -25,9 +22,9 @@ public class PiExpression extends DependentTypeExpression {
   }
 
   @Override
-  public Universe getUniverse(List<Binding> context) {
-    Universe universe = super.getUniverse(context);
-    Expression type = myCodomain.getType(context);
+  public Universe getUniverse() {
+    Universe universe = super.getUniverse();
+    Expression type = myCodomain.getType();
     return !(type instanceof UniverseExpression) || universe == null ? null : universe.max(((UniverseExpression) type).getUniverse());
   }
 }

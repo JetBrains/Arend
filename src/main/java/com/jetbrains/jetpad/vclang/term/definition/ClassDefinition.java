@@ -54,7 +54,7 @@ public class ClassDefinition extends Definition {
     if (myFields == null) {
       myFields = new HashMap<>();
     }
-    myFields.put(field.getName().name, field);
+    myFields.put(field.getName(), field);
     field.setThisClass(this);
   }
 
@@ -64,7 +64,7 @@ public class ClassDefinition extends Definition {
 
   public void removeField(ClassField field) {
     if (myFields != null) {
-      myFields.remove(field.getName().name);
+      myFields.remove(field.getName());
     }
   }
 

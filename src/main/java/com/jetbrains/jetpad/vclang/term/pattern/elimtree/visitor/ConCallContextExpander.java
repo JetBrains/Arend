@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypedBinding;
 
 import java.util.ArrayList;
 import java.util.List;

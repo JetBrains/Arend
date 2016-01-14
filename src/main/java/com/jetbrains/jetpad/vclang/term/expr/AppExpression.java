@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
@@ -31,20 +32,22 @@ public class AppExpression extends Expression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
+  public Expression getType() {
     List<Expression> arguments = new ArrayList<>();
     Expression function = getFunction(arguments);
-    Expression type = function.getType(context);
+    Expression type = function.getType();
 
     Map<Binding, Expression> substs = new HashMap<>();
-    for (int i = arguments.size() - 1; i >=0; i--) {
-      if (type instanceof DependentExpression && type instanceof DependentExpression.Pi) {
-        substs.put((DependentExpression) type, arguments.get(i));
-      } else {
-        return null;
-      }
+    if (!(type instanceof PiExpression)) {
+      return null;
+    }
+    DependentLink link = ((PiExpression) type).getLink();
+    for (int i = arguments.size() - 1; i >= 0; i--, link = link.getNext()) {
+      assert link != null;
+      substs.put(link, arguments.get(i));
     }
 
-    return type.subst(substs);
+    type = type.subst(substs);
+    return link == null ? type : new PiExpression(link.subst(substs), type);
   }
 }

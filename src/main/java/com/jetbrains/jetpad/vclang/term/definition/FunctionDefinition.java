@@ -2,19 +2,16 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.param.Utils;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
-
-import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Function {
   // TODO: myArguments should have type List<TypeArguments>
-  private List<Argument> myArguments;
+  private DependentLink myParameters;
   private Expression myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
@@ -24,11 +21,11 @@ public class FunctionDefinition extends Definition implements Function {
     myTypeHasErrors = true;
   }
 
-  public FunctionDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, List<Argument> arguments, Expression resultType, ElimTreeNode elimTree) {
+  public FunctionDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(parentNamespace, name, precedence);
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);
-    myArguments = arguments;
+    myParameters = parameters;
     myResultType = resultType;
     myTypeHasErrors = false;
     myElimTree = elimTree;
@@ -53,12 +50,12 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public List<Argument> getArguments() {
-    return myArguments;
+  public DependentLink getParameters() {
+    return myParameters;
   }
 
-  public void setArguments(List<Argument> arguments) {
-    myArguments = arguments;
+  public void setParameters(DependentLink parameters) {
+    myParameters = parameters;
   }
 
   @Override
@@ -83,7 +80,7 @@ public class FunctionDefinition extends Definition implements Function {
     if (myTypeHasErrors) {
       return null;
     }
-    return Utils.getFunctionType(this);
+    return Function.Helper.getFunctionType(this);
   }
 
   @Override

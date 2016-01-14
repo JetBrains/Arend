@@ -2,12 +2,12 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.param.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -23,7 +23,7 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.splitArguments;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.*;
+import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
@@ -923,7 +923,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return new ExpandPatternErrorResult(error);
       }
 
-      if (dataType.getConstructors(parameters, myLocalContext) == null) {
+      if (dataType.getMatchedConstructors(parameters) == null) {
         error = new TypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern, getNames(myLocalContext));
         myErrorReporter.report(error);
         return new ExpandPatternErrorResult(error);

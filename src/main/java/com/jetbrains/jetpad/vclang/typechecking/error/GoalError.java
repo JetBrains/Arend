@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +44,7 @@ public class GoalError extends TypeCheckingError {
       builder.append("\n\tExpected type: ");
       List<String> names = new ArrayList<>(myContext.size());
       for (Binding binding : myContext) {
-        names.add(binding.getName() == null ? null : binding.getName().name);
+        names.add(binding.getName() == null ? null : binding.getName());
       }
       myType.prettyPrint(builder, names, Abstract.Expression.PREC);
     }
@@ -60,7 +60,7 @@ public class GoalError extends TypeCheckingError {
         } else {
           builder.append("{!error}");
         }
-        names.add(binding.getName() == null ? null : binding.getName().name);
+        names.add(binding.getName() == null ? null : binding.getName());
       }
     }
 

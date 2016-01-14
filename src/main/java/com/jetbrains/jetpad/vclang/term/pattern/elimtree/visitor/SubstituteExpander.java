@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.IndexExpression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.param.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
@@ -56,7 +56,7 @@ public class SubstituteExpander implements ElimTreeNodeVisitor<List<Expression>,
       Expression ftype = myContext.get(myContext.size() - 1 - varIndex).getType().liftIndex(0, varIndex).
           normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters);
       Collections.reverse(parameters);
-      for (ConCallExpression conCall : ((DataCallExpression) ftype).getDefinition().getConstructors(parameters, myContext)) {
+      for (ConCallExpression conCall : ((DataCallExpression) ftype).getDefinition().getMatchedConstructors(parameters)) {
         try (ConCallContextExpander expander = new ConCallContextExpander(varIndex, conCall, myContext)) {
           List<Expression> oldSubst = mySubst;
           mySubst = expander.substIn(mySubst);

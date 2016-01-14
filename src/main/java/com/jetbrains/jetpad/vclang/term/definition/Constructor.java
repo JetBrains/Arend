@@ -2,57 +2,51 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
-
-import java.util.List;
+import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.numberOfVariables;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.constructorPatternsToExpressions;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.getNumArguments;
 
 public class Constructor extends Definition {
   private DataDefinition myDataType;
-  private List<TypeArgument> myArguments;
-  private List<PatternArgument> myPatterns;
+  private DependentLink myParameters;
+  private Patterns myPatterns;
 
   public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
     super(parentNamespace, name, precedence);
     myDataType = dataType;
   }
 
-  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
+  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
     super(parentNamespace, name, precedence);
     setUniverse(universe);
     hasErrors(false);
     myDataType = dataType;
-    myArguments = arguments;
+    myParameters = parameters;
     myPatterns = patterns;
   }
 
-  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, List<TypeArgument> arguments, DataDefinition dataType) {
-    this(parentNamespace, name, precedence, universe, arguments, dataType, null);
+  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType) {
+    this(parentNamespace, name, precedence, universe, parameters, dataType, null);
   }
 
-  public List<PatternArgument> getPatterns() {
+  public Patterns getPatterns() {
     return myPatterns;
   }
 
-  public void setPatterns(List<PatternArgument> patterns) {
+  public void setPatterns(Patterns patterns) {
     myPatterns = patterns;
   }
 
-  public List<TypeArgument> getArguments() {
-    return myArguments;
+  public DependentLink getParameters() {
+    return myParameters;
   }
 
-  public void setArguments(List<TypeArgument> arguments) {
-    myArguments = arguments;
+  public void setParameters(DependentLink parameters) {
+    myParameters = parameters;
   }
 
   public DataDefinition getDataType() {
@@ -63,39 +57,23 @@ public class Constructor extends Definition {
     myDataType = dataType;
   }
 
-  public int getNumberOfAllParameters() {
-    if (myPatterns == null) {
-      return myDataType.getNumberOfAllParameters();
-    } else {
-      return getNumArguments(myPatterns) + (myDataType.getThisClass() == null ? 0 : 1);
-    }
+  public DependentLink getDataTypeParameters() {
+    return myPatterns == null ? myDataType.getParameters() : myPatterns.getParameters();
   }
 
   @Override
   public Expression getBaseType() {
     Expression resultType = DataCall(myDataType);
-    int numberOfVars = numberOfVariables(myArguments);
-    int numberOfParams = numberOfVariables(myDataType.getParameters());
-    if (myDataType.getThisClass() != null) {
-      resultType = Apps(resultType, new ArgumentExpression(Index(numberOfVars + numberOfParams), true, false));
-    }
     if (myPatterns == null) {
-      for (int i = numberOfParams - 1, j = 0; i >= 0; ++j) {
-        if (myDataType.getParameters().get(j) instanceof TelescopeArgument) {
-          for (String ignored : ((TelescopeArgument) myDataType.getParameters().get(j)).getNames()) {
-            resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameters().get(j).getExplicit(), !myDataType.getParameters().get(j).getExplicit()));
-          }
-        } else {
-          resultType = Apps(resultType, new ArgumentExpression(Index(i-- + numberOfVars), myDataType.getParameters().get(j).getExplicit(), !myDataType.getParameters().get(j).getExplicit()));
-        }
+      for (DependentLink link = myDataType.getParameters(); link != null; link = link.getNext()) {
+        resultType = Apps(resultType, Reference(link), link.isExplicit(), !link.isExplicit());
       }
     } else {
-      List<ArgumentExpression> args = constructorPatternsToExpressions(this);
-      for (ArgumentExpression arg : args) {
+      for (ArgumentExpression arg : myPatterns.toExpressions()) {
         resultType = Apps(resultType, arg);
       }
     }
-    return myArguments.isEmpty() ? resultType : Pi(myArguments, resultType);
+    return myParameters == null ? resultType : Pi(myParameters, resultType);
   }
 
   @Override

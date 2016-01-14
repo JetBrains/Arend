@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 
 import java.util.List;
 

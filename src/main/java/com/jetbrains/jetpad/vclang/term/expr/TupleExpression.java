@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
@@ -19,10 +18,6 @@ public class TupleExpression extends Expression {
   }
 
   @Override
-  public SigmaExpression getType(List<Binding> context) {
-    return myType;
-  }
-
   public SigmaExpression getType() {
     return myType;
   }

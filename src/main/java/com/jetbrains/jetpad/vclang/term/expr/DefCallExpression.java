@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
-
-import java.util.List;
 
 public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
@@ -19,7 +16,7 @@ public abstract class DefCallExpression extends Expression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
+  public Expression getType() {
     return myDefinition.getType();
   }
 }

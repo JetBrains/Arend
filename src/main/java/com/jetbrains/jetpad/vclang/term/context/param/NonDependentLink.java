@@ -1,5 +1,6 @@
-package com.jetbrains.jetpad.vclang.term.expr.param;
+package com.jetbrains.jetpad.vclang.term.context.param;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.Map;
@@ -40,7 +41,7 @@ public class NonDependentLink implements DependentLink {
   }
 
   @Override
-  public NonDependentLink copy(Map<Binding, Expression> substs) {
-    return new NonDependentLink(myType.subst(substs), myNext.copy(substs));
+  public NonDependentLink subst(Map<Binding, Expression> substs) {
+    return new NonDependentLink(myType.subst(substs), myNext.subst(substs));
   }
 }

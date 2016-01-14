@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
@@ -76,7 +76,7 @@ class ElimTreeExpander {
     List<Expression> parameters = new ArrayList<>();
     Expression ftype = type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(parameters);
     Collections.reverse(parameters);
-    List<ConCallExpression> validConstructors = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getConstructors(parameters, myLocalContext);
+    List<ConCallExpression> validConstructors = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(parameters);
 
     BranchElimTreeNode resultTree = new BranchElimTreeNode(index);
     List<Branch> resultBranches = new ArrayList<>();

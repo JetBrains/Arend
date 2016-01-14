@@ -2,6 +2,9 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
@@ -9,7 +12,7 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.param.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -19,46 +22,44 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.*;
 
-public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression> implements ElimTreeNodeVisitor<List<Expression>, LeafElimTreeNode> {
+public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression> implements ElimTreeNodeVisitor<Map<Binding, Expression>, LeafElimTreeNode> {
   @Override
-  public LeafElimTreeNode visitBranch(BranchElimTreeNode branchNode, List<Expression> subst) {
+  public LeafElimTreeNode visitBranch(BranchElimTreeNode branchNode, Map<Binding, Expression> subst) {
     List<Expression> arguments = new ArrayList<>();
-    Expression func = subst.get(branchNode.getIndex()).normalize(Mode.WHNF, myContext).getFunction(arguments);
+    Expression func = subst.get(branchNode.getReference()).normalize(Mode.WHNF, myContext).getFunction(arguments);
     if (func instanceof ConCallExpression) {
-      ElimTreeNode child = branchNode.getChild(((ConCallExpression) func).getDefinition());
-      if (child == null)
+      ConstructorClause clause = branchNode.getClause(((ConCallExpression) func).getDefinition());
+      if (clause == null)
         return null;
-      subst.remove(branchNode.getIndex());
-      subst.addAll(branchNode.getIndex(), arguments);
-      return child.accept(this, subst);
+      subst.remove(branchNode.getReference());
+      int i = 0;
+      for (DependentLink link = clause.getParameters(); link != null; link = link.getNext(), i++) {
+        subst.put(link, arguments.get(i));
+      }
+      assert i == arguments.size();
+      return clause.getChild().accept(this, subst);
     }
     // @
-    ElimTreeNode child = branchNode.getChild(null);
-    if (child != null)
-      return child.accept(this, subst);
+    ConstructorClause clause = branchNode.getClause(null);
+    if (clause != null)
+      return clause.getChild().accept(this, subst);
     return null;
   }
 
   @Override
-  public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, List<Expression> subst) {
+  public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Map<Binding, Expression> subst) {
     return leafNode;
   }
 
   @Override
-  public LeafElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, List<Expression> params) {
+  public LeafElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, Map<Binding, Expression> params) {
     return null;
   }
 
   public enum Mode { WHNF, NF, NFH, TOP }
 
-  private final List<Binding> myContext;
-
-  public NormalizeVisitor(List<Binding> context) {
-    myContext = context;
-  }
-
   private Expression visitApps(Expression expr, List<ArgumentExpression> exprs, Mode mode) {
-    List<Argument> args = new ArrayList<>();
+    List<xArgument> args = new ArrayList<>();
     expr = expr.lamSplitAt(exprs.size(), args);
     int numberOfLambdas = args.size();
 
@@ -86,7 +87,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     if (expr instanceof DefCallExpression) {
       return visitDefCall((DefCallExpression) expr, exprs, mode);
-    } else if (expr instanceof IndexExpression && ((IndexExpression) expr).getIndex() < myContext.size()) {
+    } else
+    if (expr instanceof IndexExpression && ((IndexExpression) expr).getIndex() < myContext.size()) {
       Binding binding = getBinding(myContext, ((IndexExpression) expr).getIndex());
       if (binding != null && binding instanceof Function) {
         return visitFunctionCall((Function) binding, expr, exprs, mode);
@@ -115,13 +117,13 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return visitApps(expr.getFunctionArgs(exprs), exprs, mode);
   }
 
-  private Expression addLambdas(List<? extends TypeArgument> args1, int drop, Expression expr) {
-    List<TelescopeArgument> arguments = new ArrayList<>();
+  private Expression addLambdas(List<? extends xTypeArgument> args1, int drop, Expression expr) {
+    List<xTelescopeArgument> arguments = new ArrayList<>();
     int j = 0, i = 0;
     if (i < drop) {
       for (; j < args1.size(); ++j) {
-        if (args1.get(j) instanceof TelescopeArgument) {
-          List<String> names = ((TelescopeArgument) args1.get(j)).getNames();
+        if (args1.get(j) instanceof xTelescopeArgument) {
+          List<String> names = ((xTelescopeArgument) args1.get(j)).getNames();
           i += names.size();
           if (i > drop) {
             arguments.add(Tele(names.subList(i - drop, names.size()), args1.get(j).getType()));
@@ -141,8 +143,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
     for (; j < args1.size(); ++j) {
-      if (args1.get(j) instanceof TelescopeArgument) {
-        arguments.add((TelescopeArgument) args1.get(j));
+      if (args1.get(j) instanceof xTelescopeArgument) {
+        arguments.add((xTelescopeArgument) args1.get(j));
       } else {
         arguments.add(Tele(args1.get(j).getExplicit(), vars("x"), args1.get(j).getType()));
       }
@@ -210,7 +212,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(defCallExpr, args, mode);
     }
 
-    List<TypeArgument> arguments;
+    List<xTypeArgument> arguments;
     if (defCallExpr instanceof DataCallExpression) {
       DataDefinition dataDefinition = ((DataCallExpression) defCallExpr).getDefinition();
       if (dataDefinition.getThisClass() == null) {
@@ -224,7 +226,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       throw new IllegalStateException();
     }
 
-    List<TypeArgument> splitArguments = splitArguments(arguments);
+    List<xTypeArgument> splitArguments = splitArguments(arguments);
     if (mode == Mode.WHNF && splitArguments.size() >= args.size()) {
       return applyDefCall(defCallExpr, args, mode);
     }
@@ -264,7 +266,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     // TODO: what if the list of parameters is still incomplete?
 
     int numberOfSubstArgs = numberOfVariables(conCallExpression.getDefinition().getArguments());
-    List<TypeArgument> args1 = new ArrayList<>();
+    List<xTypeArgument> args1 = new ArrayList<>();
     List<ArgumentExpression> argsToSubst = new ArrayList<>(args);
     Collections.reverse(argsToSubst);
     splitArguments((numberOfSubstArgs == 0 ? conCallExpression : Apps(conCallExpression, argsToSubst.toArray(new ArgumentExpression[argsToSubst.size()]))).getType(myContext), args1, myContext);
@@ -320,7 +322,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (func.getThisClass() != null ? 1 : 0);
-    List<TypeArgument> args1 = new ArrayList<>();
+    List<xTypeArgument> args1 = new ArrayList<>();
     List<ArgumentExpression> argsToSubst = new ArrayList<>(args);
     Collections.reverse(argsToSubst);
     splitArguments((numberOfSubstArgs == 0 ? defCallExpr : Apps(defCallExpr, argsToSubst.toArray(new ArgumentExpression[argsToSubst.size()]))).getType(myContext), args1, myContext);
@@ -338,7 +340,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     Expression result = leaf.getExpression().liftIndex(args2.size(), args1.size()).subst(args2, 0);
     if ((mode == Mode.NFH || mode == Mode.TOP) && leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
       try (ContextSaver ignore = new ContextSaver(myContext)) {
-        for (TypeArgument arg : args1) {
+        for (xTypeArgument arg : args1) {
           pushArgument(myContext, arg);
         }
         result = result.normalize(Mode.TOP, myContext);
@@ -353,15 +355,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return mode == Mode.TOP ? result : result.accept(this, mode);
   }
 
-  private Expression bindExcessiveArgs(List<ArgumentExpression> args, Expression result, List<TypeArgument> argTypes, int numberOfSubstArgs) {
+  private Expression bindExcessiveArgs(List<ArgumentExpression> args, Expression result, List<xTypeArgument> argTypes, int numberOfSubstArgs) {
     for (int i = args.size() - numberOfSubstArgs - 1; i >= 0; --i) {
       result = Apps(result, args.get(i));
     }
 
     if (!argTypes.isEmpty()) {
-      List<TelescopeArgument> teleArgTypes = new ArrayList<>(argTypes.size());
-      for (TypeArgument argType : argTypes) {
-        teleArgTypes.add(argType instanceof TelescopeArgument ? (TelescopeArgument) argType : Tele(argType.getExplicit(), vars("_"), argType.getType()));
+      List<xTelescopeArgument> teleArgTypes = new ArrayList<>(argTypes.size());
+      for (xTypeArgument argType : argTypes) {
+        teleArgTypes.add(argType instanceof xTelescopeArgument ? (xTelescopeArgument) argType : Tele(argType.getExplicit(), vars("_"), argType.getType()));
       }
       return Lam(teleArgTypes, result);
     }
@@ -399,6 +401,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
+  public Expression visitReference(ReferenceExpression expr, Mode params) {
+    // TODO
+    return null;
+  }
+
+  @Override
   public Expression visitIndex(IndexExpression expr, Mode mode) {
     if (mode == Mode.TOP)
       return null;
@@ -417,22 +425,28 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
   }
 
-  private List<TelescopeArgument> visitArguments(List<TelescopeArgument> arguments, Mode mode) {
-    List<TelescopeArgument> result = new ArrayList<>(arguments.size());
-    for (TelescopeArgument argument : arguments) {
-      result.add(new TelescopeArgument(argument.getExplicit(), argument.getNames(), argument.getType().accept(this, mode)));
+  @Override
+  public Expression visitPi(PiExpression expr, Mode params) {
+    // TODO
+    return null;
+  }
+
+  private List<xTelescopeArgument> visitArguments(List<xTelescopeArgument> arguments, Mode mode) {
+    List<xTelescopeArgument> result = new ArrayList<>(arguments.size());
+    for (xTelescopeArgument argument : arguments) {
+      result.add(new xTelescopeArgument(argument.getExplicit(), argument.getNames(), argument.getType().accept(this, mode)));
       pushArgument(myContext, argument);
     }
     return result;
   }
 
-  private List<TypeArgument> visitTypeArguments(List<TypeArgument> arguments, Mode mode) {
-    List<TypeArgument> result = new ArrayList<>(arguments.size());
-    for (TypeArgument argument : arguments) {
-      if (argument instanceof TelescopeArgument) {
-        result.add(new TelescopeArgument(argument.getExplicit(), ((TelescopeArgument) argument).getNames(), argument.getType().accept(this, mode)));
+  private List<xTypeArgument> visitTypeArguments(List<TypeArgument> arguments, Mode mode) {
+    List<xTypeArgument> result = new ArrayList<>(arguments.size());
+    for (xTypeArgument argument : arguments) {
+      if (argument instanceof xTelescopeArgument) {
+        result.add(new xTelescopeArgument(argument.getExplicit(), ((xTelescopeArgument) argument).getNames(), argument.getType().accept(this, mode)));
       } else {
-        result.add(new TypeArgument(argument.getExplicit(), argument.getType().accept(this, mode)));
+        result.add(new xTypeArgument(argument.getExplicit(), argument.getType().accept(this, mode)));
       }
       pushArgument(myContext, argument);
     }

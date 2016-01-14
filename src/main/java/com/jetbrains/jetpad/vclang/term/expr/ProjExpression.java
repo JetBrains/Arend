@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ProjExpression extends Expression {
@@ -26,8 +25,8 @@ public class ProjExpression extends Expression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    Expression type = myExpression.getType(context);
+  public Expression getType() {
+    Expression type = myExpression.getType();
     if (!(type instanceof SigmaExpression)) return null;
     DependentLink params = ((SigmaExpression) type).getLink();
     if (myField == 0) {

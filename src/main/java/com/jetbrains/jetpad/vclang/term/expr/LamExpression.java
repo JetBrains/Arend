@@ -1,12 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class LamExpression extends Expression {
   private final DependentLink myLink;
@@ -31,9 +26,12 @@ public class LamExpression extends Expression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
+  public Expression getType() {
+    /*
     Map<Binding, Expression> substs = new HashMap<>();
-    DependentLink link = myLink.copy(substs);
-    return new PiExpression(link, myBody.subst(substs).getType(context));
+    DependentLink link = myLink.subst(substs);
+    return new PiExpression(link, myBody.subst(substs).getType());
+    */
+    return new PiExpression(myLink, myBody.getType());
   }
 }

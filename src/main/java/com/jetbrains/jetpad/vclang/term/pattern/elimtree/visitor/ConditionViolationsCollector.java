@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -45,7 +45,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<List<Ex
     Expression type = myContext.get(myContext.size() - 1 - branchNode.getIndex()).getType().liftIndex(0, branchNode.getIndex());
     DataDefinition dataType = ((DataCallExpression) type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters)).getDefinition();
     Collections.reverse(parameters);
-    for (ConCallExpression conCall : dataType.getConstructors(parameters, myContext)) {
+    for (ConCallExpression conCall : dataType.getMatchedConstructors(parameters)) {
       if (branchNode.getChild(conCall.getDefinition()) != null) {
         final int numBindingsBefore = myContext.size() - branchNode.getIndex() - 1;
         try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {

@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.Collection;
@@ -31,12 +32,12 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myReference;
   }
 
-  public void addClause(Constructor constructor, ElimTreeNode node) {
-    myClauses.put(constructor, new ConstructorClause(constructor, node, this));
+  public void addClause(Constructor constructor, DependentLink parameters, ElimTreeNode node) {
+    myClauses.put(constructor, new ConstructorClause(constructor, parameters, node, this));
   }
 
-  public ElimTreeNode getChild(Constructor constructor) {
-    return myClauses.containsKey(constructor) ? myClauses.get(constructor).getChild() : null;
+  public ConstructorClause getClause(Constructor constructor) {
+    return myClauses.get(constructor);
   }
 
   public Collection<ConstructorClause> getConstructorClauses() {

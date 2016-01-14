@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
@@ -59,40 +59,38 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
-  public Expression visitTypedDependent(TypedDependentExpression expr, Void params) {
-    TypedDependentExpression result = expr.newInstance(expr.isExplicit(), expr.getName(), expr.getLeft().accept(this, null));
-    mySubstExprs.put(expr, Reference(result));
-    result.setRight(expr.getRight().accept(this, null));
-    mySubstExprs.remove(expr);
+  public LamExpression visitLam(LamExpression expr, Void params) {
+    LamExpression result = Lam(expr.getLink().subst(mySubstExprs), expr.getBody().accept(this, null));
+    DependentLink.Helper.freeSubsts(expr.getLink(), mySubstExprs);
     return result;
   }
 
   @Override
-  public Expression visitUntypedDependent(UntypedDependentExpression expr, Void params) {
-    UntypedDependentExpression result = expr.newInstance(expr.getName());
-    mySubstExprs.put(expr, Reference(result));
-    result.setRight((DependentExpression) expr.getRight().accept(this, null));
-    mySubstExprs.remove(expr);
+  public Expression visitPi(PiExpression expr, Void params) {
+    PiExpression result = Pi(expr.getLink().subst(mySubstExprs), expr.getCodomain().accept(this, null));
+    DependentLink.Helper.freeSubsts(expr.getLink(), mySubstExprs);
     return result;
   }
 
   @Override
-  public Expression visitNonDependent(NonDependentExpression expr, Void params) {
-    return expr.newInstance(expr.getLeft().accept(this, null), expr.getRight().accept(this, null));
+  public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
+    SigmaExpression result = Sigma(expr.getLink().subst(mySubstExprs));
+    DependentLink.Helper.freeSubsts(expr.getLink(), mySubstExprs);
+    return result;
   }
 
   @Override
-  public ElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
+  public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
     assert !mySubstExprs.containsKey(branchNode.getReference());
     BranchElimTreeNode newNode = new BranchElimTreeNode(branchNode.getReference());
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      newNode.addClause(clause.getConstructor(), clause.getChild().accept(this, null));
+      newNode.addClause(clause.getConstructor(), clause.getParameters().subst(mySubstExprs), clause.getChild().accept(this, null));
     }
     return newNode;
   }
 
   @Override
-  public ElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
+  public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
     return new LeafElimTreeNode(leafNode.getArrow(), leafNode.getExpression().accept(this, null));
   }
 
@@ -122,7 +120,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, null));
     }
-    return Tuple(fields, (DependentExpression) expr.getType().accept(this, null));
+    return Tuple(fields, visitSigma(expr.getType(), null));
   }
 
   @Override
@@ -151,12 +149,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   public LetClause visitLetClause(LetClause clause) {
-    List<TypeArgument> arguments = new ArrayList<>(clause.getArguments().size());
-    for (TypeArgument argument : clause.getArguments()) {
-      arguments.add(argument.newInstance(argument.getType().accept(this, null)));
-    }
+    DependentLink parameters = clause.getParameters().subst(mySubstExprs);
     Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
-    return new LetClause(clause.getName(), arguments, resultType, elimTree);
+    DependentLink.Helper.freeSubsts(clause.getParameters(), mySubstExprs);
+    return new LetClause(clause.getName(), parameters, resultType, elimTree);
   }
 }

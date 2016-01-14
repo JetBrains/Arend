@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.HashMap;
@@ -23,7 +23,7 @@ public interface Function {
         return function.getResultType();
       }
       Map<Binding, Expression> substs = new HashMap<>();
-      DependentLink params = function.getParameters().copy(substs);
+      DependentLink params = function.getParameters().subst(substs);
       return Pi(params, function.getResultType().subst(substs));
     }
   }

@@ -1,10 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-
-import java.util.List;
 
 public class ErrorExpression extends Expression {
   private final Expression myExpr;
@@ -24,7 +21,7 @@ public class ErrorExpression extends Expression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
+  public Expression getType() {
     return null;
   }
 

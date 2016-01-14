@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-
-import java.util.List;
 
 public class NewExpression extends Expression {
   private final Expression myExpression;
@@ -17,7 +14,7 @@ public class NewExpression extends Expression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
+  public Expression getType() {
     return myExpression;
   }
 

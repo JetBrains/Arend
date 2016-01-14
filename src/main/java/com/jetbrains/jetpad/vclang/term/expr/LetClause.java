@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
-import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.param.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 public class LetClause extends NamedBinding implements Function {

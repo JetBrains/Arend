@@ -1,10 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-
-import java.util.List;
 
 public class UniverseExpression extends Expression {
   private final Universe myUniverse;
@@ -18,7 +15,7 @@ public class UniverseExpression extends Expression {
   }
 
   @Override
-  public UniverseExpression getType(List<Binding> context) {
+  public UniverseExpression getType() {
     return new UniverseExpression(myUniverse.succ());
   }
 

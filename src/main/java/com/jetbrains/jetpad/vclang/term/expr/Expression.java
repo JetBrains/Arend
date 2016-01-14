@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -16,7 +16,7 @@ import java.util.Map;
 public abstract class Expression implements PrettyPrintable {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
-  public abstract Expression getType(List<Binding> context);
+  public abstract Expression getType();
 
   @Override
   public String toString() {
@@ -55,8 +55,8 @@ public abstract class Expression implements PrettyPrintable {
     return substExprs.isEmpty() ? this : accept(new SubstVisitor(substExprs), null);
   }
 
-  public final Expression normalize(NormalizeVisitor.Mode mode, List<Binding> context) {
-    return context == null ? this : accept(new NormalizeVisitor(context), mode);
+  public final Expression normalize(NormalizeVisitor.Mode mode) {
+    return accept(new NormalizeVisitor(), mode);
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
@@ -70,7 +70,9 @@ public abstract class Expression implements PrettyPrintable {
   public Expression getFunction(List<Expression> arguments) {
     Expression expr = this;
     while (expr instanceof AppExpression) {
-      arguments.add(((AppExpression) expr).getArgument().getExpression());
+      if (arguments != null) {
+        arguments.add(((AppExpression) expr).getArgument().getExpression());
+      }
       expr = ((AppExpression) expr).getFunction();
     }
     return expr;

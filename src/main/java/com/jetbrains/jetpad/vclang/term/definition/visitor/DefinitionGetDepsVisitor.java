@@ -118,7 +118,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
           if (defineStatement.isStatic() || isFunction) {
             result.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
             result.addAll(defineStatement.getDefinition().accept(
-                new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true
+                new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName().name), myOthers, null), true
             ));
           }
         } else {
@@ -129,7 +129,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
             if (!isFunction && !((Abstract.DefineStatement) statement).isStatic()) {
               nonStatic.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
               nonStatic.addAll(((Abstract.DefineStatement) statement).getDefinition().accept(
-                  new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true
+                  new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName().name), myOthers, null), true
               ));
             }
           }

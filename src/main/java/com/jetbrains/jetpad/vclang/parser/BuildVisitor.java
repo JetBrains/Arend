@@ -240,7 +240,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (identifier == null) {
         return null;
       }
-      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), identifier.getName(), visitPatternArgs(ctx.patternArg()));
+      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), identifier.getName().name, visitPatternArgs(ctx.patternArg()));
     }
   }
 
@@ -370,7 +370,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   public Concrete.Condition visitCondition(ConditionContext ctx) {
     Concrete.Expression term = visitExpr(ctx.expr());
-    return term != null ? new Concrete.Condition(tokenPosition(ctx.start), visitName(ctx.name()).getName(), visitPatternArgs(ctx.patternArg()), term) : null;
+    return term != null ? new Concrete.Condition(tokenPosition(ctx.start), visitName(ctx.name()).getName().name, visitPatternArgs(ctx.patternArg()), term) : null;
   }
 
   private void visitConstructorDef(ConstructorDefContext ctx, Concrete.DataDefinition def) {

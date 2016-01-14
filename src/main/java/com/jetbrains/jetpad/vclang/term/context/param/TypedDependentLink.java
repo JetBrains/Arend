@@ -1,5 +1,6 @@
-package com.jetbrains.jetpad.vclang.term.expr.param;
+package com.jetbrains.jetpad.vclang.term.context.param;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 
@@ -44,11 +45,11 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public TypedDependentLink copy(Map<Binding, Expression> substs) {
+  public TypedDependentLink subst(Map<Binding, Expression> substs) {
     TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, myType.subst(substs), null);
     substs.put(this, new ReferenceExpression(result));
     if (myNext != null) {
-      result.myNext = myNext.copy(substs);
+      result.myNext = myNext.subst(substs);
     }
     return result;
   }

@@ -1,18 +1,17 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.IndexExpression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.param.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils.PatternMatchOKResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ConditionViolationsCollector;
@@ -218,7 +217,7 @@ public class TypeCheckingElim {
         List<Pattern> curPatterns = patterns.get(branch.indicies.get(0));
         List<Expression> matchedSubst = new ArrayList<>();
         for (int i = 0; i <= matchingDepth - 1; i++) {
-          matchedSubst.addAll(((PatternMatchOKResult) curPatterns.get(i).match(branch.expressions.get(i), null)).expressions);
+          matchedSubst.addAll(((Pattern.MatchOKResult) curPatterns.get(i).match(branch.expressions.get(i), null)).expressions);
         }
         Collections.reverse(matchedSubst);
         branch.leaf.setExpression(expressions.get(branch.indicies.get(0)).liftIndex(matchedSubst.size(), branch.context.size()).subst(matchedSubst, 0));

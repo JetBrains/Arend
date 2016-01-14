@@ -2,20 +2,16 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.numberOfVariables;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
@@ -40,31 +36,35 @@ public class DataDefinition extends Definition {
   }
 
   public int getNumberOfAllParameters() {
-    return numberOfVariables(myParameters) + (getThisClass() == null ? 0 : 1);
+    int s = 0;
+    for (DependentLink link = myParameters; link != null; link = link.getNext()) {
+      s++;
+    }
+    return s + (getThisClass() == null ? 0 : 1);
   }
 
-  public void setParameters(List<TypeArgument> arguments) {
-    myParameters = arguments;
+  public void setParameters(DependentLink parameters) {
+    myParameters = parameters;
   }
 
   public List<Constructor> getConstructors() {
     return myConstructors;
   }
 
-  public List<ConCallExpression> getConstructors(List<Expression> parameters, List<Binding> context) {
+  public List<ConCallExpression> getMatchedConstructors(List<Expression> parameters) {
     List<ConCallExpression> result = new ArrayList<>();
     for (Constructor constructor : myConstructors) {
       if (constructor.hasErrors())
         continue;
       List<Expression> matchedParameters = null;
       if (constructor.getPatterns() != null) {
-        Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, context);
-        if (matchResult instanceof Utils.PatternMatchMaybeResult) {
+        Pattern.MatchResult matchResult = constructor.getPatterns().match(parameters);
+        if (matchResult instanceof Pattern.MatchMaybeResult) {
           return null;
-        } else if (matchResult instanceof Utils.PatternMatchFailedResult) {
+        } else if (matchResult instanceof Pattern.MatchFailedResult) {
           continue;
-        } else if (matchResult instanceof Utils.PatternMatchOKResult) {
-          matchedParameters = ((Utils.PatternMatchOKResult) matchResult).expressions;
+        } else if (matchResult instanceof Pattern.MatchOKResult) {
+          matchedParameters = ((Pattern.MatchOKResult) matchResult).expressions;
         }
       } else {
         matchedParameters = parameters;
@@ -92,7 +92,7 @@ public class DataDefinition extends Definition {
 
   public Constructor getConstructor(String name) {
     for (Constructor constructor : myConstructors) {
-      if (constructor.getName().name.equals(name)) {
+      if (constructor.getName().equals(name)) {
         return constructor;
       }
     }
@@ -107,7 +107,7 @@ public class DataDefinition extends Definition {
   @Override
   public Expression getBaseType() {
     Expression resultType = new UniverseExpression(getUniverse());
-    return myParameters.isEmpty() ? resultType : Pi(myParameters, resultType);
+    return myParameters == null ? resultType : Pi(myParameters, resultType);
   }
 
   @Override

@@ -1,9 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.expr.param.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 
-import java.util.List;
+import java.util.HashMap;
 
 public class ReferenceExpression extends Expression {
   private final Binding myBinding;
@@ -22,7 +23,7 @@ public class ReferenceExpression extends Expression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    return myBinding.getType();
+  public Expression getType() {
+    return myBinding.getType().accept(new SubstVisitor(new HashMap<Binding, Expression>()), null);
   }
 }

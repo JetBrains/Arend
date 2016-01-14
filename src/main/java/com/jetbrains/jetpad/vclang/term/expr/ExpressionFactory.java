@@ -2,11 +2,16 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.param.*;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
+import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
@@ -149,6 +154,10 @@ public class ExpressionFactory {
     return new PiExpression(domain, codomain);
   }
 
+  public static SigmaExpression Sigma(DependentLink domain) {
+    return new SigmaExpression(domain);
+  }
+
   public static TupleExpression Tuple(List<Expression> fields, SigmaExpression type) {
     return new TupleExpression(fields, type);
   }
@@ -194,7 +203,7 @@ public class ExpressionFactory {
   }
 
   public static PatternArgument match(boolean isExplicit, Constructor constructor, PatternArgument... patternArgs) {
-    return new PatternArgument(new ConstructorPattern(constructor, Arrays.asList(patternArgs)), isExplicit, false);
+    return new PatternArgument(new ConstructorPattern(constructor, new Patterns(Arrays.asList(patternArgs))), isExplicit, false);
   }
 
   public static PatternArgument match(Constructor constructor, PatternArgument... patterns) {
@@ -203,10 +212,12 @@ public class ExpressionFactory {
 
   public static class ConstructorClausePair {
     private final Constructor constructor;
+    private final DependentLink parameters;
     private final ElimTreeNode child;
 
-    private ConstructorClausePair(Constructor constructor, ElimTreeNode child) {
+    private ConstructorClausePair(Constructor constructor, DependentLink parameters, ElimTreeNode child) {
       this.constructor = constructor;
+      this.parameters = parameters;
       this.child = child;
     }
   }
@@ -214,7 +225,7 @@ public class ExpressionFactory {
   public static BranchElimTreeNode branch(Binding reference, ConstructorClausePair... clauses) {
     BranchElimTreeNode result = new BranchElimTreeNode(reference);
     for (ConstructorClausePair pair : clauses) {
-      result.addClause(pair.constructor, pair.child);
+      result.addClause(pair.constructor, pair.parameters, pair.child);
     }
     return result;
   }
@@ -227,23 +238,23 @@ public class ExpressionFactory {
     return new LeafElimTreeNode(arrow, expression);
   }
 
-  public static ConstructorClausePair clause(Constructor constructor, BranchElimTreeNode node) {
-    return new ConstructorClausePair(constructor, node);
+  public static ConstructorClausePair clause(Constructor constructor, DependentLink parameters, BranchElimTreeNode node) {
+    return new ConstructorClausePair(constructor, parameters, node);
   }
 
-  public static ConstructorClausePair clause(Constructor constructor, Abstract.Definition.Arrow arrow, Expression expr) {
-    return new ConstructorClausePair(constructor, leaf(arrow, expr));
+  public static ConstructorClausePair clause(Constructor constructor, DependentLink parameters, Abstract.Definition.Arrow arrow, Expression expr) {
+    return new ConstructorClausePair(constructor, parameters, leaf(arrow, expr));
   }
 
-  public static ConstructorClausePair clause(Constructor constructor, Expression expr) {
-    return new ConstructorClausePair(constructor, new LeafElimTreeNode(Abstract.Definition.Arrow.RIGHT, expr));
+  public static ConstructorClausePair clause(Constructor constructor, DependentLink parameters, Expression expr) {
+    return new ConstructorClausePair(constructor, parameters, leaf(Abstract.Definition.Arrow.RIGHT, expr));
   }
 
-  public static PatternArgument match(boolean isExplicit, String name) {
-    return new PatternArgument(new NamePattern(name), isExplicit, false);
+  public static PatternArgument match(boolean isExplicit, DependentLink link) {
+    return new PatternArgument(new NamePattern(link), isExplicit, false);
   }
 
-  public static PatternArgument match(String name) {
-    return match(true, name);
+  public static PatternArgument match(DependentLink link) {
+    return match(true, link);
   }
 }
