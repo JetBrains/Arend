@@ -427,7 +427,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.statement() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.statement());
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements, Abstract.ClassDefinition.Kind.Class);
+    Abstract.ClassDefinition.Kind classKind = ctx.classKindMod() instanceof ClassClassModContext ? Abstract.ClassDefinition.Kind.Class : Abstract.ClassDefinition.Kind.Module;
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements, classKind);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);

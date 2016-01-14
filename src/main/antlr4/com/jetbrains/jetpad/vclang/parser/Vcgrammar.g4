@@ -11,12 +11,16 @@ definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?  
             | '\\abstract' precedence name tele* ':' expr                                 # defAbstract
             // | '\\override' name ('\\as' name)? tele* typeTermOpt where?                   # defOverride
             | '\\data' precedence name tele* (':' literal)? constructorDef* conditionDef? # defData
-            | '\\class' ID '{' statement* '}'                                             # defClass
+            | classKindMod ID '{' statement* '}'                                          # defClass
             ;
 
 conditionDef : '\\with' '|'? condition ('|' condition)*;
 
 condition : name patternArg* '=>' expr;
+
+classKindMod : '\\class'                # classClassMod
+             | '\\module'               # moduleClassMod
+             ;
 
 staticMod : '\\static'                  # staticStatic
           | '\\dynamic'                 # dynamicStatic
