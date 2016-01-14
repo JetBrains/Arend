@@ -77,6 +77,12 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     addField(new ClassField(getParentNamespace().getChild(getName()), new Name("\\parent", Fixity.PREFIX), DEFAULT_PRECEDENCE, ClassCall(parentClass), this));
   }
 
+  // To be removed in the future, unless usecases are found
+  @Override
+  public Kind getKind() {
+    throw new IllegalStateException();
+  }
+
   @Override
   public Collection<? extends Abstract.Statement> getStatements() {
     Namespace namespace = getParentNamespace().findChild(getName().name);
@@ -85,13 +91,13 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
 
     List<Abstract.Statement> statements = new ArrayList<>(fields.size() + size);
     for (ClassField field : fields) {
-      statements.add(new DefineStatement(new FunctionDefinition(namespace, field.getName(), field.getPrecedence(), Collections.<Argument>emptyList(), field.getType(), null), false));
+      statements.add(new DefineStatement(new FunctionDefinition(namespace, field.getName(), field.getPrecedence(), Collections.<Argument>emptyList(), field.getType(), null), Abstract.DefineStatement.StaticMod.DYNAMIC));
     }
     if (namespace != null) {
       for (NamespaceMember pair : namespace.getMembers()) {
         Abstract.Definition definition = pair.definition != null ? pair.definition : pair.abstractDefinition;
         if (definition != null) {
-          statements.add(new DefineStatement(definition, true));
+          statements.add(new DefineStatement(definition, Abstract.DefineStatement.StaticMod.STATIC));
         }
       }
     }

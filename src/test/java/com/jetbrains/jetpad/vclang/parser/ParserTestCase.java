@@ -64,7 +64,7 @@ public class ParserTestCase {
     VcgrammarParser.StatementsContext tree = parse(errorReporter, text).statements();
     assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, name, statements);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, name, statements, Abstract.ClassDefinition.Kind.Module);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);

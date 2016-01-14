@@ -5,21 +5,21 @@ import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisit
 
 public class DefineStatement implements Abstract.DefineStatement {
   private final Abstract.Definition myDefinition;
-  private final boolean myStatic;
+  private final Abstract.DefineStatement.StaticMod myStaticMod;
 
-  public DefineStatement(Abstract.Definition definition, boolean isStatic) {
+  public DefineStatement(Abstract.Definition definition, Abstract.DefineStatement.StaticMod staticMod) {
     myDefinition = definition;
-    myStatic = isStatic;
-  }
-
-  @Override
-  public boolean isStatic() {
-    return myStatic;
+    myStaticMod = staticMod;
   }
 
   @Override
   public Abstract.Definition getDefinition() {
     return myDefinition;
+  }
+
+  @Override
+  public StaticMod getStaticMod() {
+    return myStaticMod;
   }
 
   @Override

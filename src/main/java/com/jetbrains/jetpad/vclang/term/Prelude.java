@@ -188,8 +188,8 @@ public class Prelude extends Namespace {
     isoArguments.add(Tele(false, vars("A", "B"), Universe(i, Universe.Type.NOT_TRUNCATED)));
     isoArguments.add(Tele(vars("f"), Pi(Index(1), Index(0))));
     isoArguments.add(Tele(vars("g"), Pi(Index(1), Index(2))));
-    isoArguments.add(Tele(vars("linv"), Pi(typeArgs(Tele(vars("a"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(1), Apps(Index(2), Index(0)), Index(0))))));
-    isoArguments.add(Tele(vars("rinv"), Pi(typeArgs(Tele(vars("b"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(3), Apps(Index(2), Index(0)), Index(0))))));
+    isoArguments.add(Tele(vars("linv"), Pi(typeArgs(Tele(vars("a"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(1), Apps(Index(2), Index(0))), Index(0)))));
+    isoArguments.add(Tele(vars("rinv"), Pi(typeArgs(Tele(vars("b"), Index(3))), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Index(4), false, true)), Apps(Index(3), Apps(Index(2), Index(0))), Index(0)))));
     isoArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
     Expression isoResultType = Universe(i, Universe.Type.NOT_TRUNCATED);
     BranchElimTreeNode isoElimTree = branch(0,

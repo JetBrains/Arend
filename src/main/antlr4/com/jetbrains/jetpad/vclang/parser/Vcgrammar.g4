@@ -4,6 +4,7 @@ statements : statement*;
 
 statement : staticMod definition                              # statDef
           | nsCmd name fieldAcc* ('(' name (',' name)* ')')?  # statCmd
+          | defaultStaticMod                                  # defaultStatic
           ;
 
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
@@ -21,6 +22,10 @@ staticMod : '\\static'                  # staticStatic
           | '\\dynamic'                 # dynamicStatic
           |                             # noStatic
           ;
+
+defaultStaticMod : '\\allstatic'        # staticDefaultStatic
+                 | '\\alldynamic'       # dynamicDefaultStatic
+                 ;
 
 where : '\\where' ('{' statement+ '}' | statement);
 

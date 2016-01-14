@@ -202,7 +202,10 @@ public final class Abstract {
   }
 
   public interface DefineStatement extends Statement {
-    boolean isStatic();
+    enum StaticMod { STATIC, DYNAMIC, DEFAULT }
+
+    //boolean isStatic();
+    StaticMod getStaticMod();
     Definition getParentDefinition();
     Definition getDefinition();
   }
@@ -273,6 +276,9 @@ public final class Abstract {
   }
 
   public interface ClassDefinition extends Definition {
+    enum Kind { Module, Class }
+
+    Kind getKind();
     Collection<? extends Statement> getStatements();
   }
 
@@ -319,5 +325,9 @@ public final class Abstract {
     ResolvedName getResolvedPath();
 
     List<? extends Identifier> getNames();
+  }
+
+  public interface DefaultStaticStatement extends Statement {
+    boolean isStatic();
   }
 }

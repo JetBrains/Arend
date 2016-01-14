@@ -90,7 +90,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       return null;
     }
 
-    if (!statement.isStatic()) {
+    if (statement.getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
       return getParentClass(statement.getParentDefinition(), namespace, statement);
     }
 

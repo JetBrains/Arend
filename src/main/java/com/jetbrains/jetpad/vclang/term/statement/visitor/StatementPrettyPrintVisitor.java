@@ -54,4 +54,14 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
     }
     return null;
   }
+
+  @Override
+  public Void visitDefaultStaticCommand(Abstract.DefaultStaticStatement stat, Void params) {
+    if (stat.isStatic()) {
+      myBuilder.append("\\allstatic");
+    } else {
+      myBuilder.append("\\alldynamic");
+    }
+    return null;
+  }
 }

@@ -6,10 +6,12 @@ import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.CountingErrorReporter;
@@ -19,6 +21,7 @@ import com.jetbrains.jetpad.vclang.typechecking.nameresolver.DeepNamespaceNameRe
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.LoadingNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteResolveListener;
+import com.jetbrains.jetpad.vclang.typechecking.staticmodresolver.ConcreteStaticModListener;
 import org.antlr.v4.runtime.*;
 
 import java.io.IOException;
@@ -84,15 +87,19 @@ public abstract class ParseSource implements Source {
 
     NameResolver nameResolver = new LoadingNameResolver(myModuleLoader, new DeepNamespaceNameResolver(myModule.parent));
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.name.name, statements);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.name.name, statements, Abstract.ClassDefinition.Kind.Module);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
       }
     }
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, myModule.parent, nameResolver);
-    visitor.setResolveListener(new ConcreteResolveListener());
-    visitor.visitClass(classDefinition, null);
+
+    DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
+    rsmVisitor.visitClass(classDefinition, true);
+
+    DefinitionResolveNameVisitor rnVisitor = new DefinitionResolveNameVisitor(errorReporter, myModule.parent, nameResolver);
+    rnVisitor.setResolveListener(new ConcreteResolveListener());
+    rnVisitor.visitClass(classDefinition, null);
     return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
   }
 }
