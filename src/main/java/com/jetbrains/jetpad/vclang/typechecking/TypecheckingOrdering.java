@@ -109,7 +109,7 @@ public class TypecheckingOrdering {
       }
 
       for (ResolvedName trueName = name; trueName.toAbstractDefinition() != null && trueName.toAbstractDefinition().getParentStatement() != null; trueName = trueName.parent.getResolvedName()) {
-        if (!trueName.toAbstractDefinition().getParentStatement().isStatic()) {
+        if (trueName.toAbstractDefinition().getParentStatement().getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
           if (!doOrder(trueName.parent.getResolvedName()))
             return false;
         }

@@ -775,25 +775,32 @@ public final class Concrete {
   }
 
   public static class DefineStatement extends Statement implements Abstract.DefineStatement {
-    private final boolean myStatic;
+    //private final boolean myStatic;
+    private StaticMod myStatic;
     private final Definition myDefinition;
     private Definition myParent;
 
-    public DefineStatement(Position position, boolean isStatic, Definition definition) {
+    public DefineStatement(Position position, StaticMod staticMod, Definition definition) {
       super(position);
-      myStatic = isStatic;
+      myStatic = staticMod;
       myDefinition = definition;
     }
 
+    /*
     @Override
-    public boolean isStatic() {
-      return myStatic;
-    }
+    public boolean isStatic() { return myStatic; } /**/
 
     @Override
     public Definition getDefinition() {
       return myDefinition;
     }
+
+    @Override
+    public StaticMod getStaticMod() {
+      return myStatic;
+    }
+
+    public void setExplicitStaticMod(boolean isStatic) { myStatic = isStatic ? StaticMod.STATIC : StaticMod.DYNAMIC; }
 
     @Override
     public Definition getParentDefinition() {
@@ -998,16 +1005,21 @@ public final class Concrete {
 
   public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
     private final List<Statement> myFields;
+    private final Kind myKind;
 
-    public ClassDefinition(Position position, String name, List<Statement> fields) {
+    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind) {
       super(position, new Name(name, Fixity.PREFIX), DEFAULT_PRECEDENCE);
       myFields = fields;
+      myKind = kind;
     }
 
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClass(this, params);
     }
+
+    @Override
+    public Kind getKind() { return myKind; }
 
     @Override
     public List<Statement> getStatements() {
@@ -1196,6 +1208,23 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitNamespaceCommand(this, params);
+    }
+  }
+
+  public static class DefaultStaticStatement extends Statement implements Abstract.DefaultStaticStatement {
+    private final boolean myIsStatic;
+
+    public DefaultStaticStatement(Position position, boolean isStatic) {
+      super(position);
+      myIsStatic = isStatic;
+    }
+
+    @Override
+    public boolean isStatic() { return myIsStatic; }
+
+    @Override
+    public <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitDefaultStaticCommand(this, params);
     }
   }
 }

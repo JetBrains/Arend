@@ -116,7 +116,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (definition == null) {
       return null;
     }
-    Concrete.DefineStatement statement = new Concrete.DefineStatement(definition.getPosition(), ctx.staticMod() instanceof StaticStaticContext, definition);
+    Concrete.DefineStatement statement = new Concrete.DefineStatement(definition.getPosition(), (Abstract.DefineStatement.StaticMod)ctx.staticMod().accept(this), definition);
     definition.setParentStatement(statement);
     if (definition instanceof Concrete.DataDefinition) {
       for (Concrete.Constructor constructor : ((Concrete.DataDefinition) definition).getConstructors()) {
@@ -154,6 +154,26 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       names = null;
     }
     return new Concrete.NamespaceCommandStatement(tokenPosition(ctx.getStart()), kind, path, names);
+  }
+
+  @Override
+  public Concrete.Statement visitDefaultStatic(DefaultStaticContext ctx) {
+    return new Concrete.DefaultStaticStatement(tokenPosition(ctx.getStart()), ctx.defaultStaticMod() instanceof StaticDefaultStaticContext);
+  }
+
+  @Override
+  public Abstract.DefineStatement.StaticMod visitStaticStatic(StaticStaticContext ctx) {
+    return Abstract.DefineStatement.StaticMod.STATIC;
+  }
+
+  @Override
+  public Abstract.DefineStatement.StaticMod visitDynamicStatic(DynamicStaticContext ctx) {
+    return Abstract.DefineStatement.StaticMod.DYNAMIC;
+  }
+
+  @Override
+  public Abstract.DefineStatement.StaticMod visitNoStatic(NoStaticContext ctx) {
+    return Abstract.DefineStatement.StaticMod.DEFAULT;
   }
 
   @Override
@@ -407,7 +427,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.statement() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.statement());
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements);
+    Abstract.ClassDefinition.Kind classKind = ctx.classKindMod() instanceof ClassClassModContext ? Abstract.ClassDefinition.Kind.Class : Abstract.ClassDefinition.Kind.Module;
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements, classKind);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);

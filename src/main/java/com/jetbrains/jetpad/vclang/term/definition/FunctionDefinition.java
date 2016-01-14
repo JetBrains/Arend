@@ -75,7 +75,7 @@ public class FunctionDefinition extends Definition implements Abstract.FunctionD
     for (NamespaceMember pair : staticNamespace.getMembers()) {
       Abstract.Definition definition = pair.definition != null ? pair.definition : pair.abstractDefinition;
       if (definition != null) {
-        statements.add(new DefineStatement(definition, true));
+        statements.add(new DefineStatement(definition, Abstract.DefineStatement.StaticMod.STATIC));
       }
     }
     return statements;

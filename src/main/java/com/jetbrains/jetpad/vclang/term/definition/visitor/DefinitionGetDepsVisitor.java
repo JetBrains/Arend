@@ -111,11 +111,12 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   public Set<ResolvedName> visitStatements(Collection<? extends Abstract.Statement> statements, boolean isStatic, boolean isFunction) {
     Set<ResolvedName> result = new HashSet<>();
     Set<ResolvedName> nonStatic = !isStatic && !isFunction ? new HashSet<ResolvedName>() : null;
+    //boolean defaultStatic =
     for (Abstract.Statement statement : statements) {
       if (statement instanceof Abstract.DefineStatement) {
         Abstract.DefineStatement defineStatement = (Abstract.DefineStatement) statement;
         if (isStatic) {
-          if (defineStatement.isStatic() || isFunction) {
+          if (defineStatement.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC || isFunction) {
             result.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
             result.addAll(defineStatement.getDefinition().accept(
                 new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true
@@ -126,7 +127,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
             result.addAll(visitAbstract((Abstract.AbstractDefinition) ((Abstract.DefineStatement) statement).getDefinition()));
           } else {
             myOthers.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
-            if (!isFunction && !((Abstract.DefineStatement) statement).isStatic()) {
+            if (!isFunction && ((Abstract.DefineStatement) statement).getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
               nonStatic.add(new ResolvedName(myNamespace, defineStatement.getDefinition().getName()));
               nonStatic.addAll(((Abstract.DefineStatement) statement).getDefinition().accept(
                   new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true

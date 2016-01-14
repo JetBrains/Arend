@@ -45,21 +45,21 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
 
   @Override
   public NamespaceMember visitDefine(Abstract.DefineStatement stat, Flag flag) {
-    if (!stat.isStatic() && flag == Flag.MUST_BE_STATIC) {
+    if (stat.getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC && flag == Flag.MUST_BE_STATIC) {
       myErrorReporter.report(new TypeCheckingError("Non-static definition in a static context", stat, myContext));
       return null;
     } else
-    if (stat.isStatic() && flag == Flag.MUST_BE_DYNAMIC) {
+    if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && flag == Flag.MUST_BE_DYNAMIC) {
       myErrorReporter.report(new TypeCheckingError("Static definitions are not allowed in this context", stat, myContext));
       return null;
     } else
-    if (stat.isStatic() && stat.getDefinition() instanceof Abstract.AbstractDefinition) {
+    if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && stat.getDefinition() instanceof Abstract.AbstractDefinition) {
       myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat, myContext));
       return null;
     } else {
       DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myErrorReporter, myNamespace, myNameResolver, myContext);
       visitor.setResolveListener(myResolveListener);
-      stat.getDefinition().accept(visitor, stat.isStatic());
+      stat.getDefinition().accept(visitor, stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC);
       NamespaceMember namespaceMember = myNamespace.addAbstractDefinition(stat.getDefinition());
       if (namespaceMember == null) {
         myErrorReporter.report(new NameDefinedError(true, stat, stat.getDefinition().getName(), myNamespace.getResolvedName()));
@@ -128,7 +128,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
         } else {
           if (member1.abstractDefinition != null) {
             Abstract.DefineStatement parentStatement = member1.abstractDefinition.getParentStatement();
-            if (parentStatement != null && parentStatement.isStatic()) {
+            if (parentStatement != null && parentStatement.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC) {
               processNamespaceCommand(member1, export, remove, stat);
             } else {
               myErrorReporter.report(new TypeCheckingError("Definition '" + name.getName() + "' is not static", stat, null));
@@ -142,7 +142,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
       for (NamespaceMember member1 : member.namespace.getMembers()) {
         if (member1.abstractDefinition != null) {
           Abstract.DefineStatement parentStatement = member1.abstractDefinition.getParentStatement();
-          if (parentStatement != null && parentStatement.isStatic()) {
+          if (parentStatement != null && parentStatement.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC) {
             processNamespaceCommand(member1, export, remove, stat);
           }
         } else if (member1.definition != null && member1.definition.getThisClass() == null) {
@@ -150,6 +150,11 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
         }
       }
     }
+    return null;
+  }
+
+  @Override
+  public Object visitDefaultStaticCommand(Abstract.DefaultStaticStatement stat, Flag params) {
     return null;
   }
 
