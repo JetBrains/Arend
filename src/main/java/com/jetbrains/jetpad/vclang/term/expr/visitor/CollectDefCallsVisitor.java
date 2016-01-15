@@ -29,11 +29,6 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Boolean
   }
 
   @Override
-  public Set<ResolvedName> visitIndex(Abstract.IndexExpression expr, Boolean countTypeChecked) {
-    return myDependencies;
-  }
-
-  @Override
   public Set<ResolvedName> visitLam(Abstract.LamExpression expr, Boolean countTypeChecked) {
     visitArguments(expr.getArguments(), countTypeChecked);
     expr.getBody().accept(this, countTypeChecked);

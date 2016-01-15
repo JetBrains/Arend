@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,30 @@ public class Utils {
       if (myContext != null) {
         trimToSize(myContext, myOldContextSize);
       }
+    }
+  }
+
+  public static class CompleteContextSaver<T> implements AutoCloseable {
+    private final List<T> myContext;
+    private final List<T> myOldContext;
+
+    public CompleteContextSaver(List<T> context) {
+      myContext = context;
+      myOldContext = new ArrayList<>(context);
+    }
+
+    public List<T> getCurrentContext() {
+      return myContext;
+    }
+
+    public List<T> getOldContext() {
+      return myOldContext;
+    }
+
+    @Override
+    public void close() {
+      myContext.clear();
+      myContext.addAll(myOldContext);
     }
   }
 

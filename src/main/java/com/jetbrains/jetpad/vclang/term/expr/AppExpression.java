@@ -1,13 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class AppExpression extends Expression {
   private final Expression myFunction;
@@ -35,19 +32,12 @@ public class AppExpression extends Expression {
   public Expression getType() {
     List<Expression> arguments = new ArrayList<>();
     Expression function = getFunction(arguments);
-    Expression type = function.getType();
+    Collections.reverse(arguments);
 
-    Map<Binding, Expression> substs = new HashMap<>();
+    Expression type = function.getType();
     if (!(type instanceof PiExpression)) {
       return null;
     }
-    DependentLink link = ((PiExpression) type).getLink();
-    for (int i = arguments.size() - 1; i >= 0; i--, link = link.getNext()) {
-      assert link != null;
-      substs.put(link, arguments.get(i));
-    }
-
-    type = type.subst(substs);
-    return link == null ? type : new PiExpression(link.subst(substs), type);
+    return ((PiExpression) type).applyExpressions(arguments);
   }
 }

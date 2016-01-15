@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.param.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.splitArguments;
 
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
   private final List<Binding> myContext;
@@ -54,7 +53,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     }
     LamExpression lamExpr = (LamExpression) expr;
     NumberOfLambdas result = getNumberOfLambdas(lamExpr.getBody(), modifyContext);
-    for (TelescopeArgument arg : lamExpr.getArguments()) {
+    for (xTelescopeArgument arg : lamExpr.getArguments()) {
       if (modifyContext) {
         for (int i = 0; i < arg.getNames().size(); i++) {
           myContext.add(new TypedBinding(arg.getNames().get(i), arg.getType().liftIndex(0, i)));
@@ -268,6 +267,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return true;
   }
 
+  @Override
+  public Boolean visitReference(ReferenceExpression expr, Expression params) {
+    // TODO
+    return null;
+  }
+
   private Boolean compareIndex(IndexExpression expr1, Expression expr2, Equations.CMP cmp) {
     if (expr2 instanceof IndexExpression && expr1.getIndex() == ((IndexExpression) expr2).getIndex()) return true;
     if (expr1.getIndex() >= myContext.size()) {
@@ -291,37 +296,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     throw new IllegalStateException();
   }
 
-  private Boolean compareTypeArguments(List<TypeArgument> args1, List<TypeArgument> args2, CompareVisitor visitor) {
-    if (args1.size() != args2.size()) {
-      return false;
-    }
-
-    for (int i = 0; i < args1.size(); i++) {
-      if (!visitor.compare(args1.get(i).getType(), args2.get(i).getType())) {
-        return false;
-      }
-      Equations.Helper.abstractVars(visitor.myEquations, myContext, 0, i);
-      myEquations.add(visitor.myEquations);
-      visitor.myEquations.clear();
-      Name name =
-          args1.get(i) instanceof TelescopeArgument ? new Name(((TelescopeArgument) args1.get(i)).getNames().get(0)) :
-          args2.get(i) instanceof TelescopeArgument ? new Name(((TelescopeArgument) args2.get(i)).getNames().get(0)) :
-          null;
-      myContext.add(new TypedBinding(name, args1.get(i).getType()));
-    }
-
-    return true;
-  }
-
   @Override
-  public Boolean visitPi(DependentExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof DependentExpression)) return false;
-    List<TypeArgument> args1 = new ArrayList<>();
+  public Boolean visitPi(PiExpression expr1, Expression expr2) {
+    if (!(expr2 instanceof PiExpression)) return false;
+    List<xTypeArgument> args1 = new ArrayList<>();
     Expression cod1, cod2;
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       cod1 = splitArguments(expr1, args1, myContext);
     }
-    List<TypeArgument> args2 = new ArrayList<>(args1.size());
+    List<xTypeArgument> args2 = new ArrayList<>(args1.size());
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       cod2 = splitArguments(expr2, args2, myContext);
     }
@@ -340,6 +323,28 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       myEquations.add(equations);
       return true;
     }
+  }
+
+  private Boolean compareTypeArguments(List<xTypeArgument> args1, List<xTypeArgument> args2, CompareVisitor visitor) {
+    if (args1.size() != args2.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < args1.size(); i++) {
+      if (!visitor.compare(args1.get(i).getType(), args2.get(i).getType())) {
+        return false;
+      }
+      Equations.Helper.abstractVars(visitor.myEquations, myContext, 0, i);
+      myEquations.add(visitor.myEquations);
+      visitor.myEquations.clear();
+      Name name =
+          args1.get(i) instanceof xTelescopeArgument ? new Name(((xTelescopeArgument) args1.get(i)).getNames().get(0)) :
+          args2.get(i) instanceof xTelescopeArgument ? new Name(((xTelescopeArgument) args2.get(i)).getNames().get(0)) :
+          null;
+      myContext.add(new TypedBinding(name, args1.get(i).getType()));
+    }
+
+    return true;
   }
 
   @Override
@@ -379,8 +384,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitSigma(SigmaExpression expr1, Expression expr2) {
     if (!(expr2 instanceof SigmaExpression)) return false;
-    List<TypeArgument> args1 = splitArguments(expr1.getArguments());
-    List<TypeArgument> args2 = splitArguments(((SigmaExpression) expr2).getArguments());
+    List<xTypeArgument> args1 = splitArguments(expr1.getArguments());
+    List<xTypeArgument> args2 = splitArguments(((SigmaExpression) expr2).getArguments());
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       return compareTypeArguments(args1, args2, new CompareVisitor(myEquations.newInstance(), Equations.CMP.EQ, myContext));
     }
@@ -419,8 +424,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     CompareVisitor visitor = new CompareVisitor(equations, Equations.CMP.EQ, myContext);
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-        List<TypeArgument> args1 = splitArguments(letExpr1.getClauses().get(i).getArguments());
-        List<TypeArgument> args2 = splitArguments(letExpr2.getClauses().get(i).getArguments());
+        List<xTypeArgument> args1 = splitArguments(letExpr1.getClauses().get(i).getArguments());
+        List<xTypeArgument> args2 = splitArguments(letExpr2.getClauses().get(i).getArguments());
 
         if (!compareTypeArguments(args1, args2, visitor)) {
           return false;

@@ -235,7 +235,7 @@ public class TypeCheckingElim {
 
   private static boolean isNF(List<Expression> exprs, List<Binding> context) {
     for (Expression e : exprs) {
-      if (!e.normalize(NormalizeVisitor.Mode.WHNF, context).equals(e)) {
+      if (!e.normalize(NormalizeVisitor.Mode.NF, context).equals(e)) {
         return false;
       }
     }

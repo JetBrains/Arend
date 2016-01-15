@@ -12,7 +12,7 @@ public class LamExpression extends Expression {
     myBody = body;
   }
 
-  public DependentLink getLink() {
+  public DependentLink getParameters() {
     return myLink;
   }
 

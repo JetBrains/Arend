@@ -2,17 +2,23 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.LamExpression;
+import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.*;
+import static com.jetbrains.jetpad.vclang.term.context.Utils.removeFromList;
+import static com.jetbrains.jetpad.vclang.term.context.Utils.trimToSize;
 
 // TODO: Simplify pretty printer
 
-public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void> {
+public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void> {
   private final StringBuilder myBuilder;
   private final List<String> myNames;
   private int myIndent;
@@ -129,15 +135,54 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  @Override
-  public Void visitIndex(Abstract.IndexExpression expr, Byte prec) {
-    if (expr.getIndex() < myNames.size()) {
-      String var = myNames.get(myNames.size() - 1 - expr.getIndex());
-      myBuilder.append(var != null ? var : "_");
-    } else {
-      myBuilder.append('<').append(expr.getIndex()).append('>');
+  private static String renameVar(List<String> names, String var) {
+    while (names.contains(var)) {
+      var += "'";
     }
-    return null;
+    return var;
+  }
+
+  public void prettyPrintArgument(Abstract.Argument argument, byte prec) {
+    if (argument instanceof Abstract.NameArgument) {
+      String name = ((Abstract.NameArgument) argument).getName();
+      String newName = name == null ? null : renameVar(myNames, name);
+      myNames.add(newName);
+      if (newName == null) {
+        newName = "_";
+      }
+      myBuilder.append(argument.getExplicit() ? newName : '{' + newName + '}');
+    } else
+    if (argument instanceof Abstract.TelescopeArgument) {
+      myBuilder.append(argument.getExplicit() ? '(' : '{');
+      List<String> newNames = new ArrayList<>(((Abstract.TelescopeArgument) argument).getNames().size());
+      for (String name : ((Abstract.TelescopeArgument) argument).getNames()) {
+        String newName = name == null ? null : renameVar(myNames, name);
+        myBuilder.append(newName == null ? "_" : newName).append(' ');
+        myNames.add(newName);
+        newNames.add(newName);
+      }
+
+      for (String ignored : newNames) {
+        myNames.remove(myNames.size() - 1);
+      }
+
+      myBuilder.append(": ");
+      ((Abstract.TypeArgument) argument).getType().accept(this, Abstract.Expression.PREC);
+      myBuilder.append(argument.getExplicit() ? ')' : '}');
+
+      myNames.addAll(newNames);
+    } else
+    if (argument instanceof Abstract.TypeArgument) {
+      Abstract.Expression type = ((Abstract.TypeArgument) argument).getType();
+      if (argument.getExplicit()) {
+        type.accept(this, prec);
+      } else {
+        myBuilder.append('{');
+        type.accept(this, Abstract.Expression.PREC);
+        myBuilder.append('}');
+      }
+      myNames.add(null);
+    }
   }
 
   @Override
@@ -145,7 +190,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (prec > Abstract.LamExpression.PREC) myBuilder.append("(");
     myBuilder.append("\\lam ");
     for (Abstract.Argument arg : expr.getArguments()) {
-      prettyPrintArgument(arg, myBuilder, myNames, Abstract.Expression.PREC, myIndent);
+      prettyPrintArgument(arg, Abstract.Expression.PREC);
       myBuilder.append(" ");
     }
     myBuilder.append("=> ");
@@ -168,7 +213,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     } else {
       myBuilder.append("\\Pi ");
       for (Abstract.Argument argument : expr.getArguments()) {
-        prettyPrintArgument(argument, myBuilder, myNames, domPrec, myIndent);
+        prettyPrintArgument(argument, domPrec);
         myBuilder.append(' ');
       }
     }
@@ -220,7 +265,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append("\\Sigma");
     for (Abstract.Argument argument : expr.getArguments()) {
       myBuilder.append(' ');
-      prettyPrintArgument(argument, myBuilder, myNames, (byte) (Abstract.AppExpression.PREC + 1), myIndent);
+      prettyPrintArgument(argument, (byte) (Abstract.AppExpression.PREC + 1));
     }
     removeFromList(myNames, expr.getArguments());
     if (prec > Abstract.SigmaExpression.PREC) myBuilder.append(')');
@@ -231,7 +276,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitBinOp(Abstract.BinOpExpression expr, Byte prec) {
     if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append('(');
     expr.getLeft().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
-    myBuilder.append(' ').append(expr.getResolvedBinOpName().toNamespace().getName().getInfixName()).append(' ');
+    myBuilder.append(' ').append(expr.getResolvedBinOpName().name.getInfixName()).append(' ');
     expr.getRight().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
     if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append(')');
     return null;
@@ -249,6 +294,27 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  public void prettyPrintClause(Abstract.Clause clause) {
+    if (clause == null) return;
+
+    printIndent();
+    myBuilder.append("| ");
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(myNames)) {
+      for (int i = 0; i < clause.getPatterns().size(); i++) {
+        prettyPrintPattern(clause.getPatterns().get(i));
+        if (i != clause.getPatterns().size() - 1) {
+          myBuilder.append(", ");
+        }
+      }
+
+      if (clause.getArrow() != null && clause.getExpression() != null) {
+        myBuilder.append(prettyArrow(clause.getArrow()));
+        clause.getExpression().accept(this, Abstract.Expression.PREC);
+      }
+    }
+    myBuilder.append('\n');
+  }
+
   private void visitElimCaseExpression(Abstract.ElimCaseExpression expr, Byte prec) {
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append('(');
     myBuilder.append(expr instanceof Abstract.ElimExpression ? "\\elim" : "\\case");
@@ -261,10 +327,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append('\n');
     myIndent += INDENT;
     for (Abstract.Clause clause : expr.getClauses()) {
-      prettyPrintClause(expr, clause, myBuilder, myNames, myIndent);
+      prettyPrintClause(clause);
     }
 
-    printIndent(myBuilder, myIndent);
+    printIndent();
     myBuilder.append(';');
     myIndent -= INDENT;
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append(')');
@@ -298,7 +364,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myBuilder.append(" {\n");
     myIndent += INDENT;
     for (Abstract.ImplementStatement statement : expr.getStatements()) {
-      printIndent(myBuilder, myIndent);
+      printIndent();
       myBuilder.append("| ").append(statement.getIdentifier().getName().getPrefixName()).append(" => ");
       statement.getExpression().accept(this, Abstract.Expression.PREC);
       myBuilder.append("\n");
@@ -317,25 +383,46 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  private static String prettyArrow(Abstract.Definition.Arrow arrow) {
+    switch (arrow) {
+      case LEFT: return " <= ";
+      case RIGHT: return " => ";
+      default: return null;
+    }
+  }
+
+  public void prettyPrintLetClause(Abstract.LetClause letClause) {
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(myNames)) {
+      myBuilder.append("| ").append(letClause.getName());
+      for (Abstract.Argument arg : letClause.getArguments()) {
+        myBuilder.append(" ");
+        prettyPrintArgument(arg, Abstract.LetExpression.PREC);
+      }
+
+      myBuilder.append(prettyArrow(letClause.getArrow()));
+      letClause.getTerm().accept(this, Abstract.LetExpression.PREC);
+    }
+  }
+
   @Override
   public Void visitLet(Abstract.LetExpression expr, Byte prec) {
     final int oldNamesSize = myNames.size();
     if (prec > Abstract.LetExpression.PREC) myBuilder.append('(');
     myBuilder.append("\n");
     myIndent += INDENT;
-    printIndent(myBuilder, myIndent);
+    printIndent();
     String let = "\\let ";
     myBuilder.append(let);
 
     final int INDENT0 = let.length();
     myIndent += INDENT0;
     for (int i = 0; i < expr.getClauses().size(); ++i) {
-      prettyPrintLetClause(expr.getClauses().get(i), myBuilder, myNames, myIndent);
+      prettyPrintLetClause(expr.getClauses().get(i));
       myBuilder.append("\n");
       if (i == expr.getClauses().size() - 1) {
         myIndent -= INDENT0;
       }
-      printIndent(myBuilder, myIndent);
+      printIndent();
       myNames.add(expr.getClauses().get(i).getName() == null ? null : expr.getClauses().get(i).getName().name);
     }
 
@@ -357,9 +444,253 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  public static void printIndent(StringBuilder builder, int indent) {
-    for (int i = 0; i < indent; ++i) {
-      builder.append(' ');
+  public void printIndent() {
+    for (int i = 0; i < myIndent; ++i) {
+      myBuilder.append(' ');
     }
+  }
+
+  @Override
+  public Void visitFunction(Abstract.FunctionDefinition def, Void ignored) {
+    myBuilder.append("\\function");
+    Abstract.Definition.Precedence precedence = def.getPrecedence();
+    if (precedence != null && !precedence.equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
+      myBuilder.append(" \\infix");
+      if (precedence.associativity == Abstract.Definition.Associativity.LEFT_ASSOC) myBuilder.append('l');
+      if (precedence.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC) myBuilder.append('r');
+      myBuilder.append(' ');
+      myBuilder.append(precedence.priority);
+    }
+    myBuilder.append('\n');
+    printIndent();
+
+    myBuilder.append(def.getName());
+    List<? extends Abstract.Argument> arguments = def.getArguments();
+    if (arguments != null) {
+      for (Abstract.Argument argument : arguments) {
+        myBuilder.append(' ');
+        prettyPrintArgument(argument, Abstract.DefCallExpression.PREC);
+      }
+    } else {
+      myBuilder.append("{!error}");
+    }
+
+    Abstract.Expression resultType = def.getResultType();
+    if (resultType != null) {
+      myBuilder.append(" : ");
+      resultType.accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
+    }
+    if (!def.isAbstract()) {
+      myBuilder.append(def.getArrow() == Abstract.Definition.Arrow.RIGHT ? " => " : " <= ");
+      Abstract.Expression term = def.getTerm();
+      if (term != null) {
+        term.accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
+      } else {
+        myBuilder.append("{!error}");
+      }
+    }
+
+    if (arguments != null) {
+      removeFromList(myNames, arguments);
+    }
+
+    Collection<? extends Abstract.Statement> statements = def.getStatements();
+    if (!statements.isEmpty()) {
+      myBuilder.append("\n");
+      printIndent();
+      myBuilder.append("\\where ");
+      myIndent += "\\where ".length();
+      boolean isFirst = true;
+      for (Abstract.Statement statement : statements) {
+        if (!isFirst)
+          printIndent();
+        statement.accept(new StatementPrettyPrintVisitor(myBuilder, myNames, myIndent), null);
+        myBuilder.append("\n");
+        isFirst = false;
+      }
+      myIndent -= "\\where ".length();
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitAbstract(Abstract.AbstractDefinition def, Void params) {
+    myBuilder.append("\\abstract ");
+    Abstract.Definition.Precedence precedence = def.getPrecedence();
+    if (precedence != null && !precedence.equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
+      myBuilder.append("\\infix");
+      if (precedence.associativity == Abstract.Definition.Associativity.LEFT_ASSOC) myBuilder.append('l');
+      if (precedence.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC) myBuilder.append('r');
+      myBuilder.append(' ');
+      myBuilder.append(precedence.priority);
+      myBuilder.append(' ');
+    }
+
+    myBuilder.append(def.getName());
+    List<? extends Abstract.Argument> arguments = def.getArguments();
+    if (arguments != null) {
+      for (Abstract.Argument argument : arguments) {
+        myBuilder.append(' ');
+        prettyPrintArgument(argument, Abstract.DefCallExpression.PREC);
+      }
+    } else {
+      myBuilder.append("{!error}");
+    }
+
+    Abstract.Expression resultType = def.getResultType();
+    if (resultType != null) {
+      myBuilder.append(" : ");
+      resultType.accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), Abstract.Expression.PREC);
+    }
+
+    if (arguments != null) {
+      removeFromList(myNames, arguments);
+    }
+    return null;
+  }
+
+  public void prettyPrintCondition(Abstract.Condition condition) {
+    try (Utils.ContextSaver ignore = new Utils.ContextSaver(myNames)) {
+      myBuilder.append(condition.getConstructorName());
+      for (Abstract.PatternArgument patternArg : condition.getPatterns()) {
+        if (!patternArg.isHidden()) {
+          myBuilder.append(" ");
+          prettyPrintPatternArg(patternArg);
+        }
+      }
+      myBuilder.append(" => ");
+      condition.getTerm().accept(this, Abstract.Expression.PREC);
+    }
+  }
+
+  @Override
+  public Void visitData(Abstract.DataDefinition def, Void ignored) {
+    myBuilder.append("\\data ");
+    myBuilder.append(def.getName());
+
+    List<? extends Abstract.TypeArgument> parameters = def.getParameters();
+    if (parameters != null) {
+      for (Abstract.TypeArgument parameter : parameters) {
+        myBuilder.append(' ');
+        prettyPrintArgument(parameter, Abstract.DefCallExpression.PREC);
+      }
+    } else {
+      myBuilder.append("{!error}");
+    }
+
+    Universe universe = def.getUniverse();
+    if (universe != null) {
+      myBuilder.append(" : ").append(universe);
+    }
+    ++myIndent;
+
+    for (Abstract.Constructor constructor : def.getConstructors()) {
+      myBuilder.append('\n');
+      printIndent();
+      myBuilder.append("| ");
+      constructor.accept(this, null);
+    }
+    if (def.getConditions() != null) {
+      myBuilder.append("\n\\with");
+      myIndent++;
+      for (Abstract.Condition condition : def.getConditions()) {
+        myBuilder.append('\n');
+        printIndent();
+        myBuilder.append("| ");
+        prettyPrintCondition(condition);
+      }
+      --myIndent;
+    }
+    --myIndent;
+    if (parameters != null) {
+      removeFromList(myNames, parameters);
+    }
+    return null;
+  }
+
+  public void prettyPrintPatternArg(Abstract.PatternArgument patternArg) {
+    myBuilder.append(patternArg.isExplicit() ? "(" : "{");
+    prettyPrintPattern(patternArg.getPattern());
+    myBuilder.append(patternArg.isExplicit() ? ")" : "}");
+  }
+
+  public void prettyPrintPattern(Abstract.Pattern pattern) {
+    if (pattern instanceof Abstract.NamePattern) {
+      if (((Abstract.NamePattern) pattern).getName() == null) {
+        myBuilder.append('_');
+      } else {
+        myBuilder.append(((Abstract.NamePattern) pattern).getName());
+      }
+      myNames.add(((Abstract.NamePattern) pattern).getName());
+    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
+      myBuilder.append("_!");
+    } else if (pattern instanceof Abstract.ConstructorPattern) {
+      myBuilder.append(((Abstract.ConstructorPattern) pattern).getConstructorName());
+      for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
+        if (!patternArg.isHidden()) {
+          myBuilder.append(' ');
+          prettyPrintPatternArg(patternArg);
+        }
+      }
+    }
+  }
+
+  @Override
+  public Void visitConstructor(Abstract.Constructor def, Void ignored) {
+    List<String> tail = new ArrayList<>();
+    int origSize = myNames.size();
+    List<? extends Abstract.PatternArgument> patternArgs = def.getPatterns();
+    if (patternArgs == null) {
+      myBuilder.append("_ ");
+    } else {
+      if (!myNames.isEmpty()) { //Inside data def, so remove previous
+        tail.addAll(myNames.subList(myNames.size() - patternArgs.size(), myNames.size()));
+        myNames.subList(myNames.size() -  patternArgs.size(), myNames.size()).clear();
+        origSize = myNames.size();
+      }
+
+      myBuilder.append(def.getDataType().getName()).append(' ');
+      for (Abstract.PatternArgument patternArg : patternArgs) {
+        if (!patternArg.isHidden()) {
+          prettyPrintPatternArg(patternArg);
+          myBuilder.append(' ');
+        }
+      }
+    }
+    myBuilder.append("=> ");
+    myBuilder.append(def.getName());
+    List<? extends Abstract.TypeArgument> arguments = def.getArguments();
+    if (arguments == null) {
+      myBuilder.append("{!error}");
+    } else {
+      for (Abstract.TypeArgument argument : arguments) {
+        myBuilder.append(' ');
+        prettyPrintArgument(argument, Abstract.DefCallExpression.PREC);
+      }
+      removeFromList(myNames, arguments);
+    }
+    trimToSize(myNames, origSize);
+    myNames.addAll(tail);
+    return null;
+  }
+
+  @Override
+  public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
+    myBuilder.append("\\class ").append(def.getName()).append(" {");
+    Collection<? extends Abstract.Statement> statements = def.getStatements();
+    if (statements != null) {
+      ++myIndent;
+      StatementPrettyPrintVisitor visitor = new StatementPrettyPrintVisitor(myBuilder, myNames, myIndent);
+      for (Abstract.Statement statement : statements) {
+        myBuilder.append('\n');
+        printIndent();
+        statement.accept(visitor, null);
+        myBuilder.append('\n');
+      }
+      --myIndent;
+    }
+    printIndent();
+    myBuilder.append("}");
+    return null;
   }
 }

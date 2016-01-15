@@ -19,11 +19,6 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     return expr1.getName().name.equals(defCallExpr2.getName().name);
   }
 
-  @Override
-  public Boolean visitIndex(Abstract.IndexExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.IndexExpression && expr1.getIndex() == ((Abstract.IndexExpression) expr2).getIndex();
-  }
-
   private boolean compareArg(Abstract.Argument arg1, Abstract.Argument arg2) {
     if (arg1.getExplicit() != arg2.getExplicit()) {
       return false;
@@ -122,7 +117,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
       return pattern2 instanceof Abstract.NamePattern && ((Abstract.NamePattern) pattern1).getName().equals(((Abstract.NamePattern) pattern2).getName());
     }
     if (pattern1 instanceof Abstract.ConstructorPattern) {
-      return pattern2 instanceof Abstract.ConstructorPattern && ((Abstract.ConstructorPattern) pattern1).getConstructorName().name.equals(((Abstract.ConstructorPattern) pattern2).getConstructorName().name);
+      return pattern2 instanceof Abstract.ConstructorPattern && ((Abstract.ConstructorPattern) pattern1).getConstructorName().equals(((Abstract.ConstructorPattern) pattern2).getConstructorName());
     }
     return pattern1 instanceof Abstract.AnyConstructorPattern && pattern2 instanceof Abstract.AnyConstructorPattern;
   }

@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr.factory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 
 import java.util.List;
@@ -28,11 +27,11 @@ public interface AbstractExpressionFactory {
   Abstract.Expression makeProj(Abstract.Expression expr, int field);
   Abstract.Expression makeNew(Abstract.Expression expr);
   Abstract.Expression makeLet(List<? extends Abstract.LetClause> clauses, Abstract.Expression expr);
-  Abstract.LetClause makeLetClause(Name name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term);
+  Abstract.LetClause makeLetClause(String name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term);
   Abstract.Expression makeElim(String name, List<? extends Abstract.Clause> clauses);
   Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.Clause> clauses);
   Abstract.Clause makeClause(Abstract.Pattern pattern, Abstract.Definition.Arrow arrow, Abstract.Expression expr);
-  Abstract.Pattern makeConPattern(Name name, List<? extends Abstract.PatternArgument> args);
+  Abstract.Pattern makeConPattern(String name, List<? extends Abstract.PatternArgument> args);
   Abstract.Pattern makeNamePattern(String name);
   Abstract.PatternArgument makePatternArgument(Abstract.Pattern pattern, boolean explicit);
 }

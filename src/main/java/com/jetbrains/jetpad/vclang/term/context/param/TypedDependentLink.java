@@ -4,10 +4,11 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 
+import java.util.List;
 import java.util.Map;
 
 public class TypedDependentLink implements DependentLink {
-  private final boolean myExplicit;
+  private boolean myExplicit;
   private final String myName;
   private final Expression myType;
   private DependentLink myNext;
@@ -22,6 +23,11 @@ public class TypedDependentLink implements DependentLink {
   @Override
   public boolean isExplicit() {
     return myExplicit;
+  }
+
+  @Override
+  public void setExplicit(boolean isExplicit) {
+    myExplicit = isExplicit;
   }
 
   @Override
@@ -52,5 +58,13 @@ public class TypedDependentLink implements DependentLink {
       result.myNext = myNext.subst(substs);
     }
     return result;
+  }
+
+  @Override
+  public DependentLink getNextTyped(List<String> names) {
+    if (names != null) {
+      names.add(myName);
+    }
+    return this;
   }
 }

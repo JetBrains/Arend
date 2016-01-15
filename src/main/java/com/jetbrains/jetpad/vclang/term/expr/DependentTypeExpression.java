@@ -11,7 +11,7 @@ public abstract class DependentTypeExpression extends Expression {
     myLink = link;
   }
 
-  public DependentLink getLink() {
+  public DependentLink getParameters() {
     return myLink;
   }
 

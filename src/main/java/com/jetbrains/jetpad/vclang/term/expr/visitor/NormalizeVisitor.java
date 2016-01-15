@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -10,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.param.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
@@ -20,13 +20,12 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVis
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.*;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression> implements ElimTreeNodeVisitor<Map<Binding, Expression>, LeafElimTreeNode> {
   @Override
   public LeafElimTreeNode visitBranch(BranchElimTreeNode branchNode, Map<Binding, Expression> subst) {
     List<Expression> arguments = new ArrayList<>();
-    Expression func = subst.get(branchNode.getReference()).normalize(Mode.WHNF, myContext).getFunction(arguments);
+    Expression func = subst.get(branchNode.getReference()).normalize(Mode.WHNF).getFunction(arguments);
     if (func instanceof ConCallExpression) {
       ConstructorClause clause = branchNode.getClause(((ConCallExpression) func).getDefinition());
       if (clause == null)
@@ -59,38 +58,31 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public enum Mode { WHNF, NF, NFH, TOP }
 
   private Expression visitApps(Expression expr, List<ArgumentExpression> exprs, Mode mode) {
-    List<xArgument> args = new ArrayList<>();
-    expr = expr.lamSplitAt(exprs.size(), args);
-    int numberOfLambdas = args.size();
-
-    if (numberOfLambdas > 0) {
-      if (numberOfLambdas < exprs.size()) {
-        ArgumentExpression[] exprs1 = new ArgumentExpression[exprs.size() - numberOfLambdas];
-        List<Expression> exprs2 = new ArrayList<>(numberOfLambdas);
-        for (int i = 0; i < exprs.size() - numberOfLambdas; ++i) {
-          exprs1[i] = exprs.get(exprs.size() - numberOfLambdas - 1 - i);
-        }
-        for (int i = exprs.size() - numberOfLambdas; i < exprs.size(); ++i) {
-          exprs2.add(exprs.get(i).getExpression());
-        }
-        expr = Apps(expr.subst(exprs2, 0), exprs1);
-        return mode == Mode.TOP ? expr : expr.accept(this, mode);
-      } else {
-        List<Expression> jexprs = new ArrayList<>(exprs.size());
-        for (ArgumentExpression expr1 : exprs) {
-          jexprs.add(expr1.getExpression());
-        }
-        expr = expr.subst(jexprs, 0);
-        return mode == Mode.TOP ? expr : expr.accept(this, mode);
+    if (expr instanceof LamExpression) {
+      int i = 0;
+      DependentLink link = ((LamExpression) expr).getParameters();
+      Map<Binding, Expression> substs = new HashMap<>();
+      while (link != null && i < exprs.size()) {
+        substs.put(link, exprs.get(i++).getExpression());
+        link = link.getNext();
       }
+      expr = ((LamExpression) expr).getBody();
+      if (link != null) {
+        expr = Lam(link, expr);
+      }
+      expr = expr.subst(substs);
+      for (ArgumentExpression argumentExpression : exprs.subList(i, exprs.size())) {
+        expr = Apps(expr, argumentExpression);
+      }
+      return expr;
     }
 
     if (expr instanceof DefCallExpression) {
       return visitDefCall((DefCallExpression) expr, exprs, mode);
     } else
-    if (expr instanceof IndexExpression && ((IndexExpression) expr).getIndex() < myContext.size()) {
-      Binding binding = getBinding(myContext, ((IndexExpression) expr).getIndex());
-      if (binding != null && binding instanceof Function) {
+    if (expr instanceof ReferenceExpression) {
+      Binding binding = ((ReferenceExpression) expr).getBinding();
+      if (binding instanceof Function) {
         return visitFunctionCall((Function) binding, expr, exprs, mode);
       }
     }
@@ -98,7 +90,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (mode == Mode.TOP) return null;
     Expression newExpr = expr.accept(this, Mode.TOP);
     if (newExpr != null) {
-      return visitApps(newExpr.getFunctionArgs(exprs), exprs, mode);
+      newExpr = newExpr.getFunctionArgs(exprs);
+      Collections.reverse(exprs);
+      return visitApps(newExpr, exprs, mode);
     }
 
     for (int i = exprs.size() - 1; i >= 0; --i) {
@@ -114,54 +108,20 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitApp(AppExpression expr, Mode mode) {
     List<ArgumentExpression> exprs = new ArrayList<>();
-    return visitApps(expr.getFunctionArgs(exprs), exprs, mode);
-  }
-
-  private Expression addLambdas(List<? extends xTypeArgument> args1, int drop, Expression expr) {
-    List<xTelescopeArgument> arguments = new ArrayList<>();
-    int j = 0, i = 0;
-    if (i < drop) {
-      for (; j < args1.size(); ++j) {
-        if (args1.get(j) instanceof xTelescopeArgument) {
-          List<String> names = ((xTelescopeArgument) args1.get(j)).getNames();
-          i += names.size();
-          if (i > drop) {
-            arguments.add(Tele(names.subList(i - drop, names.size()), args1.get(j).getType()));
-            ++j;
-            break;
-          }
-          if (i == drop) {
-            ++j;
-            break;
-          }
-        } else {
-          if (++i == drop) {
-            ++j;
-            break;
-          }
-        }
-      }
-    }
-    for (; j < args1.size(); ++j) {
-      if (args1.get(j) instanceof xTelescopeArgument) {
-        arguments.add((xTelescopeArgument) args1.get(j));
-      } else {
-        arguments.add(Tele(args1.get(j).getExplicit(), vars("x"), args1.get(j).getType()));
-      }
-    }
-
-    return arguments.isEmpty() ? expr : Lam(arguments, expr);
+    Expression expr1 = expr.getFunctionArgs(exprs);
+    Collections.reverse(exprs);
+    return visitApps(expr1, exprs, mode);
   }
 
   public Expression applyDefCall(Expression defCallExpr, List<ArgumentExpression> args, Mode mode) {
     if (mode == Mode.TOP) return null;
 
     Expression expr = defCallExpr;
-    for (int i = args.size() - 1; i >= 0; --i) {
+    for (ArgumentExpression arg : args) {
       if (mode == Mode.NF || mode == Mode.NFH) {
-        expr = Apps(expr, new ArgumentExpression(args.get(i).getExpression().accept(this, mode), args.get(i).isExplicit(), args.get(i).isHidden()));
+        expr = Apps(expr, new ArgumentExpression(arg.getExpression().accept(this, mode), arg.isExplicit(), arg.isHidden()));
       } else {
-        expr = Apps(expr, args.get(i));
+        expr = Apps(expr, arg);
       }
     }
     return expr;
@@ -180,20 +140,20 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return FieldCall((ClassField) defCallExpr.getDefinition());
       }
 
-      ArgumentExpression thisArg = args.get(args.size() - 1);
-      Expression thisType = thisArg.getExpression().getType(myContext);
+      ArgumentExpression thisArg = args.get(0);
+      Expression thisType = thisArg.getExpression().getType();
       if (thisType == null) {
         assert false;
       } else {
-        thisType = thisType.normalize(Mode.WHNF, myContext);
+        thisType = thisType.normalize(Mode.WHNF);
         if (thisType instanceof ClassCallExpression) {
           ClassCallExpression.ImplementStatement elem = ((ClassCallExpression) thisType).getImplementStatements().get(defCallExpr.getDefinition());
           if (elem != null && elem.term != null) {
+            args = args.subList(1, args.size());
             if (mode == Mode.TOP) {
-              Collections.reverse(args);
-              return Apps(elem.term, args.subList(1, args.size()).toArray(new ArgumentExpression[args.size() - 1]));
+              return Apps(elem.term, args.toArray(new ArgumentExpression[args.size()]));
             } else {
-              return visitApps(elem.term, args.subList(0, args.size() - 1), mode);
+              return visitApps(elem.term, args, mode);
             }
           }
         }
@@ -212,40 +172,31 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(defCallExpr, args, mode);
     }
 
-    List<xTypeArgument> arguments;
-    if (defCallExpr instanceof DataCallExpression) {
-      DataDefinition dataDefinition = ((DataCallExpression) defCallExpr).getDefinition();
-      if (dataDefinition.getThisClass() == null) {
-        arguments = dataDefinition.getParameters();
-      } else {
-        arguments = new ArrayList<>(dataDefinition.getParameters().size() + 1);
-        arguments.add(TypeArg(ClassCall(dataDefinition.getThisClass())));
-        arguments.addAll(dataDefinition.getParameters());
-      }
-    } else {
+    if (!(defCallExpr instanceof DataCallExpression)) {
       throw new IllegalStateException();
     }
 
-    List<xTypeArgument> splitArguments = splitArguments(arguments);
-    if (mode == Mode.WHNF && splitArguments.size() >= args.size()) {
-      return applyDefCall(defCallExpr, args, mode);
-    }
+    DataDefinition dataDefinition = ((DataCallExpression) defCallExpr).getDefinition();
+    DependentLink parameters = dataDefinition.getParameters();
 
     Expression result = defCallExpr;
-    for (int i = args.size() - 1; i >= 0; --i) {
-      Expression arg = args.get(i).getExpression();
+    for (ArgumentExpression arg : args) {
       if (mode == Mode.NF || mode == Mode.NFH) {
-        arg = arg.accept(this, mode);
+        arg = new ArgumentExpression(arg.getExpression().accept(this, mode), arg.isExplicit(), arg.isHidden());
       }
-      if (splitArguments.size() > args.size()) {
-        arg = arg.liftIndex(0, splitArguments.size() - args.size());
+      result = Apps(result, arg);
+      parameters = parameters.getNext();
+    }
+
+    if (parameters != null) {
+      parameters = parameters.subst(new HashMap<Binding, Expression>());
+      for (DependentLink link = parameters; link != null; link = link.getNext()) {
+        result = Apps(result, Reference(link));
       }
-      result = Apps(result, arg != args.get(i).getExpression() ? new ArgumentExpression(arg, args.get(i).isExplicit(), args.get(i).isHidden()) : args.get(i));
+      return Lam(parameters, result);
+    } else {
+      return result;
     }
-    for (int i = splitArguments.size() - args.size() - 1; i >= 0; --i) {
-      result = Apps(result, new ArgumentExpression(Index(i), splitArguments.get(splitArguments.size() - 1 - i).getExplicit(), !splitArguments.get(splitArguments.size() - 1 - i).getExplicit()));
-    }
-    return addLambdas(arguments, args.size(), result);
   }
 
   private Expression visitConstructorCall(ConCallExpression conCallExpression, List<ArgumentExpression> args, Mode mode) {
@@ -257,10 +208,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
       List<Expression> parameters = new ArrayList<>(conCallExpression.getParameters().size() + args.size() - to);
       parameters.addAll(conCallExpression.getParameters());
-      for (int i = args.size() - 1; i >= to; --i) {
+      for (int i = to; i < args.size(); i++) {
         parameters.add(args.get(i).getExpression());
       }
-      args = args.subList(0, to);
+      args = args.subList(args.size() - to, args.size());
       conCallExpression = ConCall(conCallExpression.getDefinition(), parameters);
     }
     // TODO: what if the list of parameters is still incomplete?
@@ -268,8 +219,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     int numberOfSubstArgs = numberOfVariables(conCallExpression.getDefinition().getArguments());
     List<xTypeArgument> args1 = new ArrayList<>();
     List<ArgumentExpression> argsToSubst = new ArrayList<>(args);
-    Collections.reverse(argsToSubst);
-    splitArguments((numberOfSubstArgs == 0 ? conCallExpression : Apps(conCallExpression, argsToSubst.toArray(new ArgumentExpression[argsToSubst.size()]))).getType(myContext), args1, myContext);
+    splitArguments((numberOfSubstArgs == 0 ? conCallExpression : Apps(conCallExpression, argsToSubst.toArray(new ArgumentExpression[argsToSubst.size()]))).getType(), args1);
     args1.subList(Math.max(0, numberOfSubstArgs - args.size()), args1.size()).clear();
     if (mode == Mode.WHNF && !args1.isEmpty()) {
       return applyDefCall(conCallExpression, args, mode);
@@ -295,7 +245,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression visitFunctionCall(Function func, Expression defCallExpr, List<ArgumentExpression> args, Mode mode) {
     if (func instanceof FunctionDefinition && func.equals(Prelude.COERCE) && args.size() == 3) {
-      Expression expr = Apps(args.get(2).getExpression().liftIndex(0, 1), Index(0));
+      Expression expr = Apps(args.get(0).getExpression().liftIndex(0, 1), Index(0));
       myContext.add(new TypedBinding("i", DataCall(Prelude.INTERVAL)));
       expr = expr.accept(this, Mode.NF);
       myContext.remove(myContext.size() - 1);
@@ -312,7 +262,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
         if (noFreeVar) {
-          Expression normedPt = args.get(0).getExpression().accept(this, Mode.NF);
+          Expression normedPt = args.get(2).getExpression().accept(this, Mode.NF);
           if (normedPt instanceof ConCallExpression && ((ConCallExpression) normedPt).getDefinition() == Prelude.RIGHT) {
             Expression result = Apps(mbIsoArgs.get(4).liftIndex(0, -1), args.get(1));
             return mode == Mode.TOP ? result : result.accept(this, mode);
@@ -324,8 +274,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     int numberOfSubstArgs = numberOfVariables(func.getArguments()) + (func.getThisClass() != null ? 1 : 0);
     List<xTypeArgument> args1 = new ArrayList<>();
     List<ArgumentExpression> argsToSubst = new ArrayList<>(args);
-    Collections.reverse(argsToSubst);
-    splitArguments((numberOfSubstArgs == 0 ? defCallExpr : Apps(defCallExpr, argsToSubst.toArray(new ArgumentExpression[argsToSubst.size()]))).getType(myContext), args1, myContext);
+    splitArguments((numberOfSubstArgs == 0 ? defCallExpr : Apps(defCallExpr, argsToSubst.toArray(new ArgumentExpression[argsToSubst.size()]))).getType(), args1);
     args1.subList(Math.max(numberOfSubstArgs - args.size(), 0), args1.size()).clear();
 
     if (mode == Mode.WHNF && !args1.isEmpty() || func.getElimTree() == null) {
@@ -339,7 +288,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(defCallExpr, args, mode);
     Expression result = leaf.getExpression().liftIndex(args2.size(), args1.size()).subst(args2, 0);
     if ((mode == Mode.NFH || mode == Mode.TOP) && leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
-      try (ContextSaver ignore = new ContextSaver(myContext)) {
+      try (ContextSaver ignore = new Utils.ContextSaver(myContext)) {
         for (xTypeArgument arg : args1) {
           pushArgument(myContext, arg);
         }
@@ -356,7 +305,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression bindExcessiveArgs(List<ArgumentExpression> args, Expression result, List<xTypeArgument> argTypes, int numberOfSubstArgs) {
-    for (int i = args.size() - numberOfSubstArgs - 1; i >= 0; --i) {
+    for (int i = 0; i < args.size() - numberOfSubstArgs; ++i) {
       result = Apps(result, args.get(i));
     }
 
@@ -373,11 +322,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private List<Expression> completeArgs(List<ArgumentExpression> args, int numberOfSubstArgs) {
     List<Expression> args2 = new ArrayList<>(numberOfSubstArgs);
-    for (int i = 0; i < numberOfSubstArgs - args.size(); ++i) {
+    for (int i = 0; i < numberOfSubstArgs - args.size(); i++) {
       args2.add(Index(i));
     }
-    for (int i = args.size() - Math.min(numberOfSubstArgs, args.size()); i < args.size(); ++i) {
-      args2.add(args.get(i).getExpression().liftIndex(0, numberOfSubstArgs > args.size() ? numberOfSubstArgs - args.size() : 0));
+    for (int i = args.size() - 1; i >= args.size() - Math.min(numberOfSubstArgs, args.size()); i--) {
+      args2.add(args.get(i).getExpression());
     }
     return args2;
   }
@@ -401,17 +350,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
-  public Expression visitReference(ReferenceExpression expr, Mode params) {
-    // TODO
-    return null;
-  }
-
-  @Override
-  public Expression visitIndex(IndexExpression expr, Mode mode) {
-    if (mode == Mode.TOP)
+  public Expression visitReference(ReferenceExpression expr, Mode mode) {
+    if (mode == Mode.TOP) {
       return null;
-    Binding binding = getBinding(myContext, expr.getIndex());
-    if (binding != null && binding instanceof Function) {
+    }
+    Binding binding = expr.getBinding();
+    if (binding instanceof Function) {
       return visitFunctionCall((Function) binding, expr, new ArrayList<ArgumentExpression>(), mode);
     } else {
       return expr;
@@ -420,15 +364,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLam(LamExpression expr, Mode mode) {
-    try (ContextSaver ignore = new ContextSaver(myContext)) {
-      return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Lam(visitArguments(expr.getArguments(), mode), expr.getBody().accept(this, mode)) : expr;
-    }
+    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Lam(visitArguments(expr.getArguments(), mode), expr.getBody().accept(this, mode)) : expr;
   }
 
   @Override
-  public Expression visitPi(PiExpression expr, Mode params) {
-    // TODO
-    return null;
+  public Expression visitPi(PiExpression expr, Mode mode) {
+    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Pi(visitTypeArguments(expr.getArguments(), mode), expr.getCodomain().accept(this, mode)) : expr;
   }
 
   private List<xTelescopeArgument> visitArguments(List<xTelescopeArgument> arguments, Mode mode) {
@@ -440,7 +381,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return result;
   }
 
-  private List<xTypeArgument> visitTypeArguments(List<TypeArgument> arguments, Mode mode) {
+  private List<xTypeArgument> visitTypeArguments(List<xTypeArgument> arguments, Mode mode) {
     List<xTypeArgument> result = new ArrayList<>(arguments.size());
     for (xTypeArgument argument : arguments) {
       if (argument instanceof xTelescopeArgument) {
@@ -451,13 +392,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       pushArgument(myContext, argument);
     }
     return result;
-  }
-
-  @Override
-  public Expression visitPi(DependentExpression expr, Mode mode) {
-    try (ContextSaver ignore = new ContextSaver(myContext)) {
-      return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Pi(visitTypeArguments(expr.getArguments(), mode), expr.getCodomain().accept(this, mode)) : expr;
-    }
   }
 
   @Override
@@ -488,14 +422,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Mode mode) {
-    try (ContextSaver ignore = new ContextSaver(myContext)) {
-      return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Sigma(visitTypeArguments(expr.getArguments(), mode)) : expr;
-    }
+    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Sigma(visitTypeArguments(expr.getArguments(), mode)) : expr;
   }
 
   @Override
   public Expression visitProj(ProjExpression expr, Mode mode) {
-    Expression exprNorm = expr.getExpression().normalize(Mode.WHNF, myContext);
+    Expression exprNorm = expr.getExpression().normalize(Mode.WHNF);
     if (exprNorm instanceof TupleExpression) {
       Expression result = ((TupleExpression) exprNorm).getFields().get(expr.getField());
       return mode == Mode.TOP ? result : result.accept(this, mode);
@@ -511,16 +443,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLet(LetExpression letExpression, Mode mode) {
-    try (ContextSaver ignore = new ContextSaver(myContext)) {
-      for (LetClause clause : letExpression.getClauses()) {
-        myContext.add(clause);
-      }
-
-      Expression term = letExpression.getExpression().accept(this, mode);
-      if (term.liftIndex(0, -letExpression.getClauses().size()) != null)
-        return term.liftIndex(0, -letExpression.getClauses().size());
-      else
-        return Let(letExpression.getClauses(), term);
-    }
+    Expression term = letExpression.getExpression().accept(this, mode);
+    if (term.liftIndex(0, -letExpression.getClauses().size()) != null)
+      return term.liftIndex(0, -letExpression.getClauses().size());
+    else
+      return Let(letExpression.getClauses(), term);
   }
 }

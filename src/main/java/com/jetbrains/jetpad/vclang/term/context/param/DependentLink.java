@@ -9,8 +9,10 @@ import java.util.Map;
 
 public interface DependentLink extends Binding {
   boolean isExplicit();
+  void setExplicit(boolean isExplicit);
   DependentLink getNext();
   DependentLink subst(Map<Binding, Expression> substs);
+  DependentLink getNextTyped(List<String> names);
 
   class Helper {
     public static void freeSubsts(DependentLink link, Map<Binding, Expression> substs) {

@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -787,7 +786,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
+      accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
       return builder.toString();
     }
   }

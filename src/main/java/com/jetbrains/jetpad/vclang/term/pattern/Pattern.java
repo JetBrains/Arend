@@ -4,19 +4,18 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
-
 public abstract class Pattern implements Abstract.Pattern {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    prettyPrintPattern(this, builder, new ArrayList<String>());
+    new PrettyPrintVisitor(builder, new ArrayList<String>(), 0).prettyPrintPattern(this);
     return builder.toString();
   }
 

@@ -1,24 +1,22 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.param.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
-import java.util.List;
 import java.util.Map;
 
-public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
-  private final Definition myDef;
+public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
+  private final Binding myBinding;
 
-  public FindDefCallVisitor(Definition def) {
-    myDef = def;
+  public FindBindingVisitor(Binding binding) {
+    myBinding = binding;
   }
 
   @Override
@@ -28,12 +26,12 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr, Void params) {
-    return expr.getDefinition() == myDef;
+    return expr.getDefinition() == myBinding;
   }
 
   @Override
   public Boolean visitConCall(ConCallExpression expr, Void params) {
-    if (expr.getDefinition() == myDef) {
+    if (expr.getDefinition() == myBinding) {
       return true;
     }
     for (Expression parameter : expr.getParameters()) {
@@ -46,11 +44,11 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr, Void params) {
-    if (expr.getDefinition() == myDef) {
+    if (expr.getDefinition() == myBinding) {
       return true;
     }
     for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
-      if (elem.getKey() == myDef || elem.getValue().type != null && elem.getValue().type.accept(this, null) || elem.getValue().term != null && elem.getValue().term.accept(this, null)) {
+      if (elem.getKey() == myBinding || elem.getValue().type != null && elem.getValue().type.accept(this, null) || elem.getValue().term != null && elem.getValue().term.accept(this, null)) {
         return true;
       }
     }
@@ -58,22 +56,18 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   }
 
   @Override
-  public Boolean visitIndex(IndexExpression expr, Void params) {
-    return false;
+  public Boolean visitReference(ReferenceExpression expr, Void params) {
+    return expr.getBinding() == myBinding;
   }
 
   @Override
   public Boolean visitLam(LamExpression expr, Void params) {
-    if (visitArguments(expr.getArguments())) return true;
-    return expr.getBody().accept(this, null);
+    return visitDependentLink(expr.getParameters()) || expr.getBody().accept(this, null);
   }
 
   @Override
-  public Boolean visitPi(DependentExpression expr, Void params) {
-    for (TypeArgument argument : expr.getArguments()) {
-      if (argument.getType().accept(this, null)) return true;
-    }
-    return expr.getCodomain().accept(this, null);
+  public Boolean visitPi(PiExpression expr, Void params) {
+    return visitDependentLink(expr.getParameters()) || expr.getCodomain().accept(this, null);
   }
 
   @Override
@@ -101,10 +95,7 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitSigma(SigmaExpression expr, Void params) {
-    for (TypeArgument argument : expr.getArguments()) {
-      if (argument.getType().accept(this, null)) return true;
-    }
-    return false;
+    return visitDependentLink(expr.getParameters());
   }
 
   @Override
@@ -112,9 +103,12 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> imp
     return expr.getExpression().accept(this, null);
   }
 
-  private boolean visitArguments(List<? extends Argument> arguments) {
-    for (Argument argument : arguments) {
-      if (argument instanceof TypeArgument && ((TypeArgument) argument).getType().accept(this, null)) return true;
+  private boolean visitDependentLink(DependentLink link) {
+    for (; link != null; link = link.getNext()) {
+      link = link.getNextTyped(null);
+      if (link.getType().accept(this, null)) {
+        return true;
+      }
     }
     return false;
   }
@@ -133,7 +127,7 @@ public class FindDefCallVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   }
 
   public boolean visitLetClause(LetClause clause) {
-    if (visitArguments(clause.getArguments())) return true;
+    if (visitDependentLink(clause.getParameters())) return true;
     if (clause.getResultType() != null && clause.getResultType().accept(this, null)) return true;
     return clause.getElimTree().accept(this, null);
   }

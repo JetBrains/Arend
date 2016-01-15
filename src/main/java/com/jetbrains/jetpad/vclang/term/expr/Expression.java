@@ -32,7 +32,7 @@ public abstract class Expression implements PrettyPrintable {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    accept(new ToAbstractVisitor(new ConcreteExpressionFactory(), names), null).accept(new PrettyPrintVisitor(builder, names, 0), prec);
+    accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).accept(new PrettyPrintVisitor(builder, names, 0), prec);
   }
 
   public String prettyPrint(List<String> names) {
@@ -41,8 +41,8 @@ public abstract class Expression implements PrettyPrintable {
     return sb.toString();
   }
 
-  public final Expression liftIndex(int from, int on) {
-    return on == 0 ? this : accept(new LiftIndexVisitor(on), from);
+  public boolean findBinding(Binding binding) {
+    return accept(new FindBindingVisitor(binding), null);
   }
 
   public final Expression subst(Binding binding, Expression substExpr) {

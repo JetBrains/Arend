@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
@@ -20,9 +19,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.getTypes;
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.splitArguments;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 
 class ElimTreeExpander {
@@ -70,11 +66,11 @@ class ElimTreeExpander {
     if (!hasConstructorPattern) {
       LeafElimTreeNode leaf = new LeafElimTreeNode();
       return new ExpansionResult(leaf, Collections.singletonList(new Branch(Index(0),
-          Collections.<Binding>singletonList(new TypedBinding((String) null, type)), leaf, namePatternIdxs)));
+          Collections.<Binding>singletonList(new TypedBinding(null, type)), leaf, namePatternIdxs)));
     }
 
     List<Expression> parameters = new ArrayList<>();
-    Expression ftype = type.normalize(NormalizeVisitor.Mode.WHNF, myLocalContext).getFunction(parameters);
+    Expression ftype = type.normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
     Collections.reverse(parameters);
     List<ConCallExpression> validConstructors = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(parameters);
 
@@ -82,8 +78,8 @@ class ElimTreeExpander {
     List<Branch> resultBranches = new ArrayList<>();
 
     for (ConCallExpression conCall : validConstructors) {
-      List<TypeArgument> constructorArgs = new ArrayList<>();
-      splitArguments(conCall.getType(myLocalContext), constructorArgs, myLocalContext);
+      List<xTypeArgument> constructorArgs = new ArrayList<>();
+      splitArguments(conCall.getType(), constructorArgs, myLocalContext);
       MatchingPatterns matching = new MatchingPatterns(patterns, conCall.getDefinition(), constructorArgs);
 
       ArgsElimTreeExpander.ArgsExpansionResult nestedResult = new ArgsElimTreeExpander(myLocalContext).expandElimTree(
@@ -110,7 +106,7 @@ class ElimTreeExpander {
     private final List<Integer> indices = new ArrayList<>();
     private final List<List<Pattern>> nestedPatterns = new ArrayList<>();
 
-    private MatchingPatterns(List<Pattern> patterns, Constructor constructor, List<TypeArgument> constructorArgs) {
+    private MatchingPatterns(List<Pattern> patterns, Constructor constructor, List<xTypeArgument> constructorArgs) {
       List<Pattern> anyPatterns = new ArrayList<>(Collections.<Pattern>nCopies(constructorArgs.size(), new NamePattern(null)));
 
       for (int j = 0; j < patterns.size(); j++) {

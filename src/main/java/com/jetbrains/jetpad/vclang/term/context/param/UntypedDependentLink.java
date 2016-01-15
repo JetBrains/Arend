@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 
+import java.util.List;
 import java.util.Map;
 
 public class UntypedDependentLink implements DependentLink {
@@ -11,7 +12,7 @@ public class UntypedDependentLink implements DependentLink {
   private DependentLink myNext;
 
   public UntypedDependentLink(String name, DependentLink next) {
-    assert next != null;
+    assert next instanceof UntypedDependentLink || next instanceof TypedDependentLink;
     myName = name;
     myNext = next;
   }
@@ -22,8 +23,27 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
+  public void setExplicit(boolean isExplicit) {
+
+  }
+
+  @Override
   public DependentLink getNext() {
     return myNext;
+  }
+
+  @Override
+  public DependentLink getNextTyped(List<String> names) {
+    DependentLink link = this;
+    for (; link instanceof UntypedDependentLink; link = link.getNext()) {
+      if (names != null) {
+        names.add(link.getName());
+      }
+    }
+    if (names != null) {
+      names.add(link.getName());
+    }
+    return link;
   }
 
   @Override

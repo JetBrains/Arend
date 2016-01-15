@@ -24,33 +24,6 @@ public class Utils {
     return result;
   }
 
-  public static void prettyPrintPatternArg(Abstract.PatternArgument patternArg, StringBuilder builder, List<String> names) {
-    builder.append(patternArg.isExplicit() ? "(" : "{");
-    prettyPrintPattern(patternArg.getPattern(), builder, names);
-    builder.append(patternArg.isExplicit() ? ")" : "}");
-  }
-
-  public static void prettyPrintPattern(Abstract.Pattern pattern, StringBuilder builder, List<String> names) {
-    if (pattern instanceof Abstract.NamePattern) {
-      if (((Abstract.NamePattern) pattern).getName() == null) {
-        builder.append('_');
-      } else {
-        builder.append(((Abstract.NamePattern) pattern).getName());
-      }
-      names.add(((Abstract.NamePattern) pattern).getName());
-    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
-      builder.append("_!");
-    } else if (pattern instanceof Abstract.ConstructorPattern) {
-      builder.append(((Abstract.ConstructorPattern) pattern).getConstructorName());
-      for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
-        if (!patternArg.isHidden()) {
-          builder.append(' ');
-          prettyPrintPatternArg(patternArg, builder, names);
-        }
-      }
-    }
-  }
-
   public static class ProcessImplicitResult {
     public final List<Abstract.PatternArgument> patterns;
     public final int wrongImplicitPosition;

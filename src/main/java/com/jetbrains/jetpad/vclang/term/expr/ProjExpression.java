@@ -28,7 +28,7 @@ public class ProjExpression extends Expression {
   public Expression getType() {
     Expression type = myExpression.getType();
     if (!(type instanceof SigmaExpression)) return null;
-    DependentLink params = ((SigmaExpression) type).getLink();
+    DependentLink params = ((SigmaExpression) type).getParameters();
     if (myField == 0) {
       return params.getType();
     }
