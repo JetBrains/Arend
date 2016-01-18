@@ -10,7 +10,7 @@ import java.util.Map;
 public class TypedDependentLink implements DependentLink {
   private boolean myExplicit;
   private final String myName;
-  private final Expression myType;
+  private Expression myType;
   private DependentLink myNext;
 
   public TypedDependentLink(boolean isExplicit, String name, Expression type, DependentLink next) {
@@ -28,6 +28,11 @@ public class TypedDependentLink implements DependentLink {
   @Override
   public void setExplicit(boolean isExplicit) {
     myExplicit = isExplicit;
+  }
+
+  @Override
+  public void setType(Expression type) {
+    myType = type;
   }
 
   @Override

@@ -83,7 +83,7 @@ public class TypeCheckingDefCall {
     }
 
     if (doSubst && result.expression instanceof ConCallExpression) {
-      List<Expression> args = ((ConCallExpression) result.expression).getParameters();
+      List<Expression> args = ((ConCallExpression) result.expression).getDataTypeArguments();
       if (!args.isEmpty()) {
         assert parameters != null;
         result.type = ((PiExpression) result.type).applyExpressions(args);

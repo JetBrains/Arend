@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class NonDependentLink implements DependentLink {
   private boolean myExplicit;
-  private final Expression myType;
+  private Expression myType;
   private final DependentLink myNext;
 
   public NonDependentLink(Expression type, DependentLink next) {
@@ -26,6 +26,11 @@ public class NonDependentLink implements DependentLink {
   @Override
   public void setExplicit(boolean isExplicit) {
     myExplicit = isExplicit;
+  }
+
+  @Override
+  public void setType(Expression type) {
+    myType = type;
   }
 
   @Override

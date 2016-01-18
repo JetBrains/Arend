@@ -10,6 +10,7 @@ import java.util.Map;
 public interface DependentLink extends Binding {
   boolean isExplicit();
   void setExplicit(boolean isExplicit);
+  void setType(Expression type);
   DependentLink getNext();
   DependentLink subst(Map<Binding, Expression> substs);
   DependentLink getNextTyped(List<String> names);
@@ -26,6 +27,14 @@ public interface DependentLink extends Binding {
       for (Expression expression : expressions) {
         result.put(link, expression);
         link = link.getNext();
+      }
+      return result;
+    }
+
+    public static int size(DependentLink link) {
+      int result = 0;
+      for (; link != null; link = link.getNext()) {
+        result++;
       }
       return result;
     }

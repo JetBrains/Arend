@@ -11,12 +11,13 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.Map;
+import java.util.Set;
 
 public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
-  private final Binding myBinding;
+  private final Set<Binding> myBindings;
 
-  public FindBindingVisitor(Binding binding) {
-    myBinding = binding;
+  public FindBindingVisitor(Set<Binding> binding) {
+    myBindings = binding;
   }
 
   @Override
@@ -26,15 +27,15 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr, Void params) {
-    return expr.getDefinition() == myBinding;
+    return myBindings.contains(expr.getDefinition());
   }
 
   @Override
   public Boolean visitConCall(ConCallExpression expr, Void params) {
-    if (expr.getDefinition() == myBinding) {
+    if (myBindings.contains(expr.getDefinition())) {
       return true;
     }
-    for (Expression parameter : expr.getParameters()) {
+    for (Expression parameter : expr.getDataTypeArguments()) {
       if (parameter.accept(this, null)) {
         return true;
       }
@@ -44,11 +45,11 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr, Void params) {
-    if (expr.getDefinition() == myBinding) {
+    if (myBindings.contains(expr.getDefinition())) {
       return true;
     }
     for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
-      if (elem.getKey() == myBinding || elem.getValue().type != null && elem.getValue().type.accept(this, null) || elem.getValue().term != null && elem.getValue().term.accept(this, null)) {
+      if (elem.getValue().type != null && elem.getValue().type.accept(this, null) || elem.getValue().term != null && elem.getValue().term.accept(this, null)) {
         return true;
       }
     }
@@ -57,7 +58,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitReference(ReferenceExpression expr, Void params) {
-    return expr.getBinding() == myBinding;
+    return myBindings.contains(expr.getBinding());
   }
 
   @Override

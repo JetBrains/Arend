@@ -28,6 +28,11 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
+  public void setType(Expression type) {
+
+  }
+
+  @Override
   public DependentLink getNext() {
     return myNext;
   }

@@ -73,11 +73,11 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
     try {
       myDataStream.writeInt(index);
-      myDataStream.writeInt(expr.getParameters().size());
+      myDataStream.writeInt(expr.getDataTypeArguments().size());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
-    for (Expression parameter : expr.getParameters()) {
+    for (Expression parameter : expr.getDataTypeArguments()) {
       parameter.accept(this, null);
     }
     return null;

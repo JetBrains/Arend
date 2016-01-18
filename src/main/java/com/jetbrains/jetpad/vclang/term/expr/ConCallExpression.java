@@ -7,27 +7,27 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import java.util.List;
 
 public class ConCallExpression extends DefCallExpression {
-  private List<Expression> myParameters;
+  private List<Expression> myDataTypeArguments;
 
-  public ConCallExpression(Constructor definition, List<Expression> parameters) {
+  public ConCallExpression(Constructor definition, List<Expression> dataTypeArguments) {
     super(definition);
-    assert parameters != null;
-    myParameters = parameters;
+    assert dataTypeArguments != null;
+    myDataTypeArguments = dataTypeArguments;
   }
 
-  public List<Expression> getParameters() {
-    return myParameters;
+  public List<Expression> getDataTypeArguments() {
+    return myDataTypeArguments;
   }
 
-  public void setParameters(List<Expression> parameters) {
+  public void setDataTypeArguments(List<Expression> parameters) {
     assert parameters != null;
-    myParameters = parameters;
+    myDataTypeArguments = parameters;
   }
 
   @Override
   public Expression applyThis(Expression thisExpr) {
-    assert myParameters.isEmpty();
-    myParameters.add(thisExpr);
+    assert myDataTypeArguments.isEmpty();
+    myDataTypeArguments.add(thisExpr);
     return this;
   }
 
@@ -40,9 +40,10 @@ public class ConCallExpression extends DefCallExpression {
   public Expression getType() {
     Expression resultType = super.getType();
 
-    if (!myParameters.isEmpty()) {
-      resultType = resultType.subst(Utils.matchParameters(getDefinition().getDataType().getParameters(), myParameters));
+    if (!myDataTypeArguments.isEmpty()) {
+      resultType = resultType.subst(Utils.matchParameters(getDefinition().getDataTypeParameters(), myDataTypeArguments));
     }
+    // TODO: add pi if there are not enough parameters
     return resultType;
   }
 

@@ -93,8 +93,8 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     List<Expression> args = new ArrayList<>();
     Expression fun = expr.getFunction(args);
     if (fun instanceof ConCallExpression) {
-      args.addAll(((ConCallExpression) fun).getParameters());
-      Collections.reverse(args.subList(args.size() - ((ConCallExpression) fun).getParameters().size(), args.size()));
+      args.addAll(((ConCallExpression) fun).getDataTypeArguments());
+      Collections.reverse(args.subList(args.size() - ((ConCallExpression) fun).getDataTypeArguments().size(), args.size()));
     }
     if (fun instanceof DefCallExpression) {
       if (((DefCallExpression) fun).getDefinition().getThisClass() != null && !args.isEmpty()) {
@@ -130,7 +130,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitConCall(ConCallExpression expr, Void params) {
-    for (Expression parameter : expr.getParameters()) {
+    for (Expression parameter : expr.getDataTypeArguments()) {
       if (!parameter.accept(this, null)) {
         return false;
       }

@@ -33,9 +33,9 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
-    if (expr.getParameters().isEmpty()) return expr;
-    List<Expression> parameters = new ArrayList<>(expr.getParameters().size());
-    for (Expression parameter : expr.getParameters()) {
+    if (expr.getDataTypeArguments().isEmpty()) return expr;
+    List<Expression> parameters = new ArrayList<>(expr.getDataTypeArguments().size());
+    for (Expression parameter : expr.getDataTypeArguments()) {
       Expression expr2 = parameter.accept(this, null);
       if (expr2 == null) return null;
       parameters.add(expr2);

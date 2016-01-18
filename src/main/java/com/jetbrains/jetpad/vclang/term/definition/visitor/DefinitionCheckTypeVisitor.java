@@ -8,7 +8,10 @@ import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
@@ -696,7 +699,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         Expression type = typeArguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF, context);
         while (type instanceof DependentExpression) {
           for (xTypeArgument argument1 : ((DependentExpression) type).getArguments()) {
-            if (argument1.getType().accept(new FindBindingVisitor(dataDefinition), null)) {
+            if (argument1.getType().findBinding(dataDefinition)) {
               String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
               myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context)));
               return null;
@@ -708,7 +711,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         List<Expression> exprs = new ArrayList<>();
         type.getFunction(exprs);
         for (Expression expr : exprs) {
-          if (expr.accept(new FindBindingVisitor(dataDefinition), null)) {
+          if (expr.findBinding(dataDefinition)) {
             String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
             myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context)));
             return null;

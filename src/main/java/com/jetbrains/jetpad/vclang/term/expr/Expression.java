@@ -8,10 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class Expression implements PrettyPrintable {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
@@ -42,7 +39,11 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   public boolean findBinding(Binding binding) {
-    return accept(new FindBindingVisitor(binding), null);
+    return accept(new FindBindingVisitor(Collections.singleton(binding)), null);
+  }
+
+  public boolean findBinding(Set<Binding> bindings) {
+    return accept(new FindBindingVisitor(bindings), null);
   }
 
   public final Expression subst(Binding binding, Expression substExpr) {
