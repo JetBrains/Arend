@@ -41,6 +41,11 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
+  public void setNext(DependentLink next) {
+    myNext = next;
+  }
+
+  @Override
   public String getName() {
     return myName;
   }

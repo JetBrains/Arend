@@ -134,6 +134,10 @@ public class ExpressionFactory {
     return new NonDependentLink(type, null);
   }
 
+  public static List<String> vars(String... vars) {
+    return Arrays.asList(vars);
+  }
+
   public static DependentLink param(boolean explicit, List<String> names, Expression type) {
     DependentLink link = new TypedDependentLink(explicit, names.get(names.size() - 1), type, null);
     for (int i = names.size() - 2; i >= 0; i--) {

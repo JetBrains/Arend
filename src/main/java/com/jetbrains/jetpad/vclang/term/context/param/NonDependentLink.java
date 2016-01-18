@@ -9,7 +9,7 @@ import java.util.Map;
 public class NonDependentLink implements DependentLink {
   private boolean myExplicit;
   private Expression myType;
-  private final DependentLink myNext;
+  private DependentLink myNext;
 
   public NonDependentLink(Expression type, DependentLink next) {
     assert next != null;
@@ -36,6 +36,11 @@ public class NonDependentLink implements DependentLink {
   @Override
   public DependentLink getNext() {
     return myNext;
+  }
+
+  @Override
+  public void setNext(DependentLink next) {
+    myNext = next;
   }
 
   @Override

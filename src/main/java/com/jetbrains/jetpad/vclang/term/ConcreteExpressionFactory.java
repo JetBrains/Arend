@@ -23,7 +23,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition) {
-    return new Concrete.DefCallExpression(POSITION, expr, definition.getName());
+    return new Concrete.DefCallExpression(POSITION, expr, new Name(definition.getName(), definition.getFixity()));
   }
 
   public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ImplementStatement> definitions) {
@@ -197,11 +197,11 @@ public class ConcreteExpressionFactory {
     return Arrays.asList(patterns);
   }
 
-  public static Concrete.ConstructorPattern cConPattern(Name name, List<Concrete.PatternArgument> patternArgs) {
+  public static Concrete.ConstructorPattern cConPattern(String name, List<Concrete.PatternArgument> patternArgs) {
     return new Concrete.ConstructorPattern(POSITION, name, patternArgs);
   }
 
-  public static Concrete.ConstructorPattern cConPattern(Name name, Concrete.PatternArgument... patternArgs) {
+  public static Concrete.ConstructorPattern cConPattern(String name, Concrete.PatternArgument... patternArgs) {
     return cConPattern(name, Arrays.asList(patternArgs));
   }
 

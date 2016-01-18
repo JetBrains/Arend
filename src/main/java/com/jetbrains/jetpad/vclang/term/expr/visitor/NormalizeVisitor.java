@@ -212,6 +212,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       conCallExpression = ConCall(conCallExpression.getDefinition(), parameters);
       args = args.subList(take, args.size());
     }
+    if (args.size() == 0) {
+      return applyDefCall(conCallExpression, args, mode);
+    }
 
     DependentLink excessiveParams = conCallExpression.getDefinition().getParameters();
     int i = 0;

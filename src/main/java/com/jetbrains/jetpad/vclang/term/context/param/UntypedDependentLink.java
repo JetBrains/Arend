@@ -38,6 +38,15 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
+  public void setNext(DependentLink next) {
+    DependentLink last = myNext;
+    while (last.getNext() != null) {
+      last = last.getNext();
+    }
+    last.setNext(next);
+  }
+
+  @Override
   public DependentLink getNextTyped(List<String> names) {
     DependentLink link = this;
     for (; link instanceof UntypedDependentLink; link = link.getNext()) {

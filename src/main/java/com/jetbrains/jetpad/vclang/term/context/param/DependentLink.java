@@ -12,6 +12,7 @@ public interface DependentLink extends Binding {
   void setExplicit(boolean isExplicit);
   void setType(Expression type);
   DependentLink getNext();
+  void setNext(DependentLink next);
   DependentLink subst(Map<Binding, Expression> substs);
   DependentLink getNextTyped(List<String> names);
 
