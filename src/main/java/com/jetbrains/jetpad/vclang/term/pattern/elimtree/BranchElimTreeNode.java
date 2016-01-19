@@ -8,14 +8,17 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVis
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BranchElimTreeNode extends ElimTreeNode {
   private final Binding myReference;
   private final Map<Constructor, ConstructorClause> myClauses = new HashMap<>();
+  private final List<Binding> myContextTail;
 
-  public BranchElimTreeNode(Binding reference) {
+  public BranchElimTreeNode(Binding reference, List<Binding> contextTail) {
     myReference = reference;
+    myContextTail = contextTail;
   }
 
   @Override
@@ -32,8 +35,12 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myReference;
   }
 
-  public void addClause(Constructor constructor, DependentLink parameters, ElimTreeNode node) {
-    myClauses.put(constructor, new ConstructorClause(constructor, parameters, node, this));
+  public List<Binding> getContextTail() {
+    return myContextTail;
+  }
+
+  public void addClause(Constructor constructor, DependentLink parameters, List<Binding> tailBindings, ElimTreeNode node) {
+    myClauses.put(constructor, new ConstructorClause(constructor, parameters, tailBindings, node, this));
   }
 
   public ConstructorClause getClause(Constructor constructor) {

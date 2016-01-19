@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -81,10 +82,16 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
-    assert !mySubstExprs.containsKey(branchNode.getReference());
-    BranchElimTreeNode newNode = new BranchElimTreeNode(branchNode.getReference());
+    Binding newReference = ((ReferenceExpression) Reference(branchNode.getReference()).accept(this, null)).getBinding();
+    List<Binding> newContextTail = new ArrayList<>(branchNode.getContextTail().size());
+    for (Binding binding : branchNode.getContextTail()) {
+      newContextTail.add(((ReferenceExpression) Reference(binding).accept(this, null)).getBinding());
+    }
+
+    BranchElimTreeNode newNode = new BranchElimTreeNode(newReference, newContextTail);
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      newNode.addClause(clause.getConstructor(), clause.getParameters().subst(mySubstExprs), clause.getChild().accept(this, null));
+      newNode.addClause(clause.getConstructor(), clause.getParameters().subst(mySubstExprs), substituteInContext(mySubstExprs, clause.getTailBindings()), clause.getChild().accept(this, null));
+      mySubstExprs.keySet().removeAll(clause.getTailBindings());
     }
     return newNode;
   }
@@ -154,5 +161,14 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
     DependentLink.Helper.freeSubsts(clause.getParameters(), mySubstExprs);
     return new LetClause(clause.getName(), parameters, resultType, elimTree);
+  }
+
+  public static List<Binding> substituteInContext(Map<Binding, Expression> substExprs, List<Binding> context) {
+    List<Binding> result = new ArrayList<>();
+    for (Binding binding : context) {
+      result.add(new TypedBinding(binding.getName(), binding.getType().subst(substExprs)));
+      substExprs.put(binding, Reference(result.get(result.size() - 1)));
+    }
+    return result;
   }
 }

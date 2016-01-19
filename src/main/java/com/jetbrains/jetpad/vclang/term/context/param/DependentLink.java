@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,14 @@ public interface DependentLink extends Binding {
       for (Expression expression : expressions) {
         result.put(link, expression);
         link = link.getNext();
+      }
+      return result;
+    }
+
+    public static List<Binding> toContext(DependentLink link) {
+      List<Binding> result = new ArrayList<>();
+      for (; link != null; link = link.getNext()) {
+        result.add(link);
       }
       return result;
     }

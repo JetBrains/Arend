@@ -1,18 +1,19 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.IndexExpression;
-import com.jetbrains.jetpad.vclang.term.expr.param.Utils;
+import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ArgsElimTreeExpander;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.MultiElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ConditionViolationsCollector;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker;
@@ -20,8 +21,9 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubsts;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.numberOfVariables;
 import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
 
 public class TypeCheckingElim {
@@ -31,18 +33,18 @@ public class TypeCheckingElim {
     myVisitor = visitor;
   }
 
-  public static TypeCheckingError checkConditions(final Abstract.Function def, List<Binding> context, ElimTreeNode elimTree) {
-    return checkConditions(def.getName(), def, def.getArguments(), context, elimTree);
+  public static TypeCheckingError checkConditions(final Abstract.Function def, List<Binding> eliminatingArgs, ElimTreeNode elimTree) {
+    return checkConditions(def.getName(), def, def.getArguments(), eli, elimTree);
   }
 
-  public static TypeCheckingError checkConditions(final Name name, final Abstract.SourceNode source, final List<? extends Abstract.Argument> arguments, List<Binding> context, ElimTreeNode elimTree) {
+  public static TypeCheckingError checkConditions(final Name name, final Abstract.SourceNode source, final List<? extends Abstract.Argument> arguments, DependentLink elimminatingArgs, ElimTreeNode elimTree) {
     final StringBuilder errorMsg = new StringBuilder();
 
-    ConditionViolationsCollector.check(context, elimTree, new ConditionViolationsCollector.ConditionViolationChecker() {
+    ConditionViolationsCollector.check(elimminatingArgs, elimTree, new ConditionViolationsCollector.ConditionViolationChecker() {
       @Override
       public void check(List<Binding> context, Expression expr1, List<Expression> subst1, Expression expr2, List<Expression> subst2) {
-        expr1 = expr1.normalize(NormalizeVisitor.Mode.NF, context);
-        expr2 = expr2.normalize(NormalizeVisitor.Mode.NF, context);
+        expr1 = expr1.normalize(NormalizeVisitor.Mode.NF);
+        expr2 = expr2.normalize(NormalizeVisitor.Mode.NF);
 
         if (!expr1.equals(expr2)){
           errorMsg.append("\n").append(name);
@@ -66,7 +68,7 @@ public class TypeCheckingElim {
     CoverageChecker.check(context, elimTree, context.size() - numberOfVariables(def.getArguments()), new CoverageChecker.CoverageCheckerMissingProcessor() {
       @Override
       public void process(List<Binding> missingContext, List<Expression> missing) {
-        if (!isNF(missing, missingContext)) {
+        if (!isNF(missing)) {
           return;
         }
 
@@ -98,12 +100,12 @@ public class TypeCheckingElim {
     }
   }
 
-  public ElimTreeNode typeCheckElim(final Abstract.ElimExpression expr, Integer argsStartCtxIndex, Expression expectedType) {
+  public ElimTreeNode typeCheckElim(final Abstract.ElimExpression expr, DependentLink eliminatingArgs, Expression expectedType) {
     TypeCheckingError error = null;
     if (expectedType == null) {
       error = new TypeCheckingError("Cannot infer type of the expression", expr, getNames(myVisitor.getLocalContext()));
     }
-    if (argsStartCtxIndex == null && error == null) {
+    if (eliminatingArgs == null && error == null) {
       error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr, getNames(myVisitor.getLocalContext()));
     }
 
@@ -113,7 +115,7 @@ public class TypeCheckingElim {
       return null;
     }
 
-    final List<IndexExpression> elimExprs = typecheckElimIndices(expr, argsStartCtxIndex);
+    final List<ReferenceExpression> elimExprs = typecheckElimIndices(expr, eliminatingArgs);
     if (elimExprs == null) return null;
 
     boolean wasError = false;
@@ -158,11 +160,11 @@ public class TypeCheckingElim {
       return null;
     }
 
-    TypeCheckElimTreeResult elimTreeResult = typeCheckElimTree(elimExprs.get(0).getIndex() + 1, patterns, expressions, arrows);
-    if (elimTreeResult instanceof TypeCheckElimTreeOKResult) {
-      return ((TypeCheckElimTreeOKResult) elimTreeResult).elimTree;
-    } else if (elimTreeResult instanceof TypeCheckElimTreeEmptyReachableResult) {
-      for (int i : ((TypeCheckElimTreeEmptyReachableResult) elimTreeResult).reachable) {
+    ElimTreeConversionResult elimTreeResult = patternsToElimTree(eliminatingArgs, patterns, expressions, arrows);
+    if (elimTreeResult instanceof OKElimTreeConversionResult) {
+      return ((OKElimTreeConversionResult) elimTreeResult).elimTree;
+    } else if (elimTreeResult instanceof EmptyReachableElimTreeConversionResult) {
+      for (int i : ((EmptyReachableElimTreeConversionResult) elimTreeResult).reachable) {
         error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i), getNames(myVisitor.getLocalContext()));
         expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
@@ -173,106 +175,101 @@ public class TypeCheckingElim {
     }
   }
 
-  public static abstract class TypeCheckElimTreeResult {}
+  public static abstract class ElimTreeConversionResult {}
 
-  public static class TypeCheckElimTreeOKResult extends TypeCheckElimTreeResult {
+  public static class OKElimTreeConversionResult extends ElimTreeConversionResult {
     public final ElimTreeNode elimTree;
 
-    public TypeCheckElimTreeOKResult(ElimTreeNode elimTree) {
+    public OKElimTreeConversionResult(ElimTreeNode elimTree) {
       this.elimTree = elimTree;
     }
   }
 
-  public static class TypeCheckElimTreeEmptyReachableResult extends TypeCheckElimTreeResult {
+  public static class EmptyReachableElimTreeConversionResult extends ElimTreeConversionResult {
     public final Collection<Integer> reachable;
 
-    public TypeCheckElimTreeEmptyReachableResult(Collection<Integer> reachable) {
+    public EmptyReachableElimTreeConversionResult(Collection<Integer> reachable) {
       this.reachable = reachable;
     }
   }
 
-  public TypeCheckElimTreeResult typeCheckElimTree(int matchingDepth, List<List<Pattern>> patterns, List<Expression> expressions, List<Abstract.Definition.Arrow> arrows) {
-    ArgsElimTreeExpander.ArgsExpansionResult treeExpansionResult = ArgsElimTreeExpander.expandElimTree(myVisitor.getLocalContext(), patterns);
+  public static ElimTreeConversionResult patternsToElimTree(List<Binding> eliminatingArgs, List<List<Pattern>> patterns, List<Expression> expressions, List<Abstract.Definition.Arrow> arrows) {
+    MultiElimTreeExpander.MultiElimTreeExpansionResult treeExpansionResult = MultiElimTreeExpander.expandElimTree(eliminatingArgs, patterns);
     if (treeExpansionResult.branches.isEmpty())
-      return new TypeCheckElimTreeOKResult(treeExpansionResult.tree);
-
-    List<Binding> tail = new ArrayList<>(myVisitor.getLocalContext().subList(myVisitor.getLocalContext().size() - matchingDepth, myVisitor.getLocalContext().size()));
-    myVisitor.getLocalContext().subList(myVisitor.getLocalContext().size() - matchingDepth, myVisitor.getLocalContext().size()).clear();
+      return new OKElimTreeConversionResult(treeExpansionResult.tree);
 
     Set<Integer> emptyReachable = new HashSet<>();
-    for (ArgsElimTreeExpander.ArgsBranch branch : treeExpansionResult.branches) {
-      try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getLocalContext())) {
-        myVisitor.getLocalContext().addAll(branch.context);
-        for (int i : branch.indicies) {
-          if (expressions.get(i) == null) {
-            emptyReachable.add(i);
-          }
+    for (MultiElimTreeExpander.MultiBranch branch : treeExpansionResult.branches) {
+      for (int i : branch.indicies) {
+        if (expressions.get(i) == null) {
+          emptyReachable.add(i);
         }
-
-        if (expressions.get(branch.indicies.get(0)) == null) {
-          continue;
-        }
-
-        branch.leaf.setArrow(arrows.get(branch.indicies.get(0)));
-        List<Pattern> curPatterns = patterns.get(branch.indicies.get(0));
-        List<Expression> matchedSubst = new ArrayList<>();
-        for (int i = 0; i <= matchingDepth - 1; i++) {
-          matchedSubst.addAll(((Pattern.MatchOKResult) curPatterns.get(i).match(branch.expressions.get(i), null)).expressions);
-        }
-        Collections.reverse(matchedSubst);
-        branch.leaf.setExpression(expressions.get(branch.indicies.get(0)).liftIndex(matchedSubst.size(), branch.context.size()).subst(matchedSubst, 0));
       }
+
+      if (expressions.get(branch.indicies.get(0)) == null) {
+        continue;
+      }
+
+      branch.leaf.setArrow(arrows.get(branch.indicies.get(0)));
+      List<Pattern> curPatterns = patterns.get(branch.indicies.get(0));
+      Map<Binding, Expression> substs = new HashMap<>();
+      for (int i = 0; i < curPatterns.size(); i++) {
+        substs.putAll(toSubsts(curPatterns.get(i).getParameters(), ((Pattern.MatchOKResult)curPatterns.get(i).match(branch.expressions.get(i))).expressions);
+      }
+      branch.leaf.setExpression(expressions.get(branch.indicies.get(0)).subst(substs));
     }
 
-    myVisitor.getLocalContext().addAll(tail);
-
     if (!emptyReachable.isEmpty()) {
-      return new TypeCheckElimTreeEmptyReachableResult(emptyReachable);
+      return new EmptyReachableElimTreeConversionResult(emptyReachable);
     } else {
-      return new TypeCheckElimTreeOKResult(treeExpansionResult.tree);
+      return new OKElimTreeConversionResult(treeExpansionResult.tree);
     }
   }
 
-  private static boolean isNF(List<Expression> exprs, List<Binding> context) {
+  private static boolean isNF(List<Expression> exprs) {
     for (Expression e : exprs) {
-      if (!e.normalize(NormalizeVisitor.Mode.NF, context).equals(e)) {
+      if (!e.normalize(NormalizeVisitor.Mode.NF).equals(e)) {
         return false;
       }
     }
     return true;
   }
 
-  private List<IndexExpression> typecheckElimIndices(Abstract.ElimExpression expr, Integer argsStartCtxIndex) {
+  private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimExpression expr, DependentLink eliminatingArgs) {
+    List<Binding> argsBindings = toContext(eliminatingArgs);
+    List<Integer> eliminatingIndicies = new ArrayList<>();
+
     TypeCheckingError error;
-    final List<IndexExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
+    final List<ReferenceExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
     for (Abstract.Expression var : expr.getExpressions()){
       CheckTypeVisitor.Result exprResult = myVisitor.lookupLocalVar(var, expr);
       if (exprResult == null) {
         return null;
       }
 
-      if (myVisitor.getLocalContext().size() - 1 - ((IndexExpression) exprResult.expression).getIndex() < argsStartCtxIndex) {
+      if (!argsBindings.contains(((ReferenceExpression) exprResult.expression).getBinding())) {
         error = new TypeCheckingError("\\elim can be applied only to arguments of the innermost definition", var, getNames(myVisitor.getLocalContext()));
         myVisitor.getErrorReporter().report(error);
         var.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
         return null;
       }
+      eliminatingIndicies.add(argsBindings.indexOf(((ReferenceExpression) exprResult.expression).getBinding()));
 
-      if (!elimExprs.isEmpty() && ((IndexExpression) exprResult.expression).getIndex() >= elimExprs.get(elimExprs.size() - 1).getIndex()) {
+      if (eliminatingIndicies.size() >= 2 && eliminatingIndicies.get(eliminatingIndicies.size() - 2) >= eliminatingIndicies.get(eliminatingIndicies.size() - 1)) {
         error = new TypeCheckingError("Variable elimination must be in the order of variable introduction", var, getNames(myVisitor.getLocalContext()));
         myVisitor.getErrorReporter().report(error);
         var.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
         return null;
       }
 
-      Expression ftype = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getLocalContext()).getFunction(new ArrayList<Expression>());
+      Expression ftype = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF).getFunction(new ArrayList<Expression>());
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var, getNames(myVisitor.getLocalContext()));
         myVisitor.getErrorReporter().report(error);
         var.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
         return null;
       }
-      elimExprs.add((IndexExpression) exprResult.expression);
+      elimExprs.add((ReferenceExpression) exprResult.expression);
     }
     return elimExprs;
   }
