@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.context.param;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
 import java.util.List;
-import java.util.Map;
 
 public class TypedDependentLink implements DependentLink {
   private boolean myExplicit;
@@ -61,11 +60,11 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public TypedDependentLink subst(Map<Binding, Expression> substs) {
-    TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, myType.subst(substs), null);
-    substs.put(this, new ReferenceExpression(result));
+  public TypedDependentLink subst(Substitution subst) {
+    TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, myType.subst(subst), null);
+    subst.addMapping(this, new ReferenceExpression(result));
     if (myNext != null) {
-      result.myNext = myNext.subst(substs);
+      result.myNext = myNext.subst(subst);
     }
     return result;
   }

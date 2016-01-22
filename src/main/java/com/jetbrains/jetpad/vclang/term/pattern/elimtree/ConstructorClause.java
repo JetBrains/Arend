@@ -3,8 +3,15 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
-import java.util.List;
+import java.util.*;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class ConstructorClause {
   private final Constructor myConstructor;
@@ -13,19 +20,19 @@ public class ConstructorClause {
   private final BranchElimTreeNode myParent;
   private final List<Binding> myTailBindings;
 
-  ConstructorClause(Constructor constructor, DependentLink parameters, List<Binding> tailBindings, ElimTreeNode child, BranchElimTreeNode parent) {
+  ConstructorClause(Constructor constructor, DependentLink parameters, List<Binding> tailBindings, BranchElimTreeNode parent) {
     myConstructor = constructor;
     myParameters = parameters;
     myTailBindings = tailBindings;
-    setChild(child);
     myParent = parent;
+    setChild(EmptyElimTreeNode.getInstance());
   }
 
   public BranchElimTreeNode getParent() {
     return myParent;
   }
 
-  void setChild(ElimTreeNode child) {
+  public void setChild(ElimTreeNode child) {
     myChild = child;
     child.setParent(this);
   }
@@ -44,5 +51,26 @@ public class ConstructorClause {
 
   public DependentLink getParameters() {
     return myParameters;
+  }
+
+  public Substitution getSubst() {
+    Substitution result = new Substitution();
+
+    List<Expression> parameters = new ArrayList<>();
+    myParent.getReference().getType().getFunction(parameters);
+    Collections.reverse(parameters);
+    List<Expression> constructorParameters = ((Pattern.MatchOKResult) myConstructor.getPatterns().match(parameters)).expressions;
+
+    Expression substExpr = new ConCallExpression(myConstructor, constructorParameters);
+    for (DependentLink link = myParameters ; link != null; link = link.getNext()) {
+      substExpr = Apps(substExpr, Reference(link));
+    }
+
+    result.addMapping(myParent.getReference(), substExpr);
+    for (int i = 0; i < myParent.getContextTail().size(); i++) {
+      result.addMapping(myParent.getContextTail().get(i), Reference(myTailBindings.get(i)));
+    }
+
+    return result;
   }
 }

@@ -2,11 +2,10 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public interface DependentLink extends Binding {
   boolean isExplicit();
@@ -14,20 +13,20 @@ public interface DependentLink extends Binding {
   void setType(Expression type);
   DependentLink getNext();
   void setNext(DependentLink next);
-  DependentLink subst(Map<Binding, Expression> substs);
+  DependentLink subst(Substitution subst);
   DependentLink getNextTyped(List<String> names);
 
   class Helper {
-    public static void freeSubsts(DependentLink link, Map<Binding, Expression> substs) {
+    public static void freeSubsts(DependentLink link, Substitution substitution) {
       for (; link != null; link = link.getNext()) {
-        substs.remove(link);
+        substitution.getDomain().remove(link);
       }
     }
 
-    public static Map<Binding, Expression> toSubsts(DependentLink link, List<Expression> expressions) {
-      Map<Binding, Expression> result = new HashMap<>();
+    public static Substitution toSubstitution(DependentLink link, List<Expression> expressions) {
+      Substitution result = new Substitution();
       for (Expression expression : expressions) {
-        result.put(link, expression);
+        result.addMapping(link, expression);
         link = link.getNext();
       }
       return result;

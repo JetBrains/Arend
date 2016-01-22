@@ -1,15 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.pattern;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public abstract class Pattern implements Abstract.Pattern {
   @Override
@@ -55,10 +53,10 @@ public abstract class Pattern implements Abstract.Pattern {
   }
 
   public Expression toExpression() {
-    return toExpression(new HashMap<Binding, Expression>());
+    return toExpression(new Substitution());
   }
 
   public abstract DependentLink getParameters();
-  public abstract Expression toExpression(Map<Binding, Expression> substs);
+  public abstract Expression toExpression(Substitution subst);
   public abstract MatchResult match(Expression expr);
 }

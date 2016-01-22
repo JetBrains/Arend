@@ -1,14 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
@@ -20,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubsts;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
@@ -75,23 +72,12 @@ class PatternsExpander {
     List<Branch> resultBranches = new ArrayList<>();
 
     for (ConCallExpression conCall : validConstructors) {
-      DependentLink constructorArgs = conCall.getDefinition().getParameters().subst(toSubsts(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
-
-      Expression substExpr = conCall;
-      for (DependentLink link = constructorArgs; link != null; link = link.getNext()) {
-        substExpr = Apps(substExpr, Reference(link));
-      }
-
-      List<Binding> newContext = SubstVisitor.substituteInContext(Collections.singletonMap(binding, substExpr), context);
-
+      ConstructorClause clause = resultTree.addClause(conCall.getDefinition());
       MatchingPatterns matching = new MatchingPatterns(patterns, conCall.getDefinition(), context.size());
       MultiPatternsExpander.MultiElimTreeExpansionResult nestedResult = MultiPatternsExpander.expandPatterns(
-          toContext(constructorArgs), matching.nestedPatterns, newContext
+        toContext(clause.getParameters()), matching.nestedPatterns, clause.getTailBindings()
       );
-      if (nestedResult.branches.isEmpty())
-        continue;
-      resultTree.addClause(conCall.getDefinition(), constructorArgs, newContext, nestedResult.tree);
-
+      clause.setChild(nestedResult.tree);
       for (MultiBranch branch : nestedResult.branches) {
         Expression expr = Apps(conCall, branch.expressions.toArray(new Expression[branch.expressions.size()]));
         resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indicies), branch.newContext));
@@ -131,5 +117,4 @@ class PatternsExpander {
       indices.add(old.get(i));
     return indices;
   }
-
 }

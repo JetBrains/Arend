@@ -47,13 +47,11 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   public final Expression subst(Binding binding, Expression substExpr) {
-    Map<Binding, Expression> substExprs = new HashMap<>();
-    substExprs.put(binding, substExpr);
-    return accept(new SubstVisitor(substExprs), null);
+    return accept(new SubstVisitor(new Substitution(binding, substExpr)), null);
   }
 
-  public final Expression subst(Map<Binding, Expression> substExprs) {
-    return substExprs.isEmpty() ? this : accept(new SubstVisitor(substExprs), null);
+  public final Expression subst(Substitution subst) {
+    return subst.getDomain().isEmpty() ? this : accept(new SubstVisitor(subst), null);
   }
 
   public final Expression normalize(NormalizeVisitor.Mode mode) {

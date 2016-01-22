@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 public class LeafElimTreeNode extends ElimTreeNode {
@@ -25,7 +26,6 @@ public class LeafElimTreeNode extends ElimTreeNode {
     myExpression = expression;
   }
 
-  @Override
   public Abstract.Definition.Arrow getArrow() {
     return myArrow;
   }
@@ -55,5 +55,10 @@ public class LeafElimTreeNode extends ElimTreeNode {
   @Override
   public <P, R> R accept(ElimTreeNodeVisitor<P, R> visitor, P params) {
     return visitor.visitLeaf(this, params);
+  }
+
+  @Override
+  public ElimTreeNode matchUntilStuck(Substitution subst) {
+    return this;
   }
 }

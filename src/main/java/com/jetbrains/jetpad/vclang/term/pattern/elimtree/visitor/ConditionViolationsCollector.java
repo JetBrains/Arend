@@ -1,103 +1,81 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 
-public class ConditionViolationsCollector implements ElimTreeNodeVisitor<List<Expression>, Void>  {
+public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substitution, Void>  {
   public interface ConditionViolationChecker {
-    void check(List<Binding> context, Expression expr1, List<Expression> subst1, Expression expr2, List<Expression> subst2);
+    void check(Expression expr1, Substitution argSubst1, Expression expr2, Substitution argSubst2);
   }
 
-  private final List<Binding> myContext;
   private final ConditionViolationChecker myChecker;
 
-  private ConditionViolationsCollector(List<Binding> context, ConditionViolationChecker checker) {
-    myContext = context;
+  private ConditionViolationsCollector(ConditionViolationChecker checker) {
     myChecker = checker;
   }
 
-  public static void check(List<Binding> context, ElimTreeNode tree, ConditionViolationChecker checker, int argsStartIndex) {
-    List<Expression> expressions = new ArrayList<>(context.size() - argsStartIndex);
-      for (int i = context.size() - argsStartIndex - 1; i >= 0; i--) {
-        expressions.add(Index(i));
-    }
-    tree.accept(new ConditionViolationsCollector(context, checker), expressions);
+  public static void check(ElimTreeNode tree, ConditionViolationChecker checker, Substitution argSubst) {
+    tree.accept(new ConditionViolationsCollector(checker), argSubst);
   }
 
   @Override
-  public Void visitBranch(final BranchElimTreeNode branchNode, final List<Expression> expressions) {
+  public Void visitBranch(final BranchElimTreeNode branchNode, final Substitution argSubst) {
     List<Expression> parameters = new ArrayList<>();
-    Expression type = myContext.get(myContext.size() - 1 - branchNode.getIndex()).getType().liftIndex(0, branchNode.getIndex());
-    DataDefinition dataType = ((DataCallExpression) type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters)).getDefinition();
+    Expression type = branchNode.getReference().getType();
+    DataDefinition dataType = ((DataCallExpression) type.normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters)).getDefinition();
     Collections.reverse(parameters);
-    for (ConCallExpression conCall : dataType.getMatchedConstructors(parameters)) {
-      if (branchNode.getChild(conCall.getDefinition()) != null) {
-        final int numBindingsBefore = myContext.size() - branchNode.getIndex() - 1;
-        try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
-          branchNode.getChild(conCall.getDefinition()).accept(this, expander.substIn(expressions));
-          if (conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()) != null) {
-            final int numConstructorArguments = splitArguments(conCall.getDefinition().getArguments()).size();
-            List<Expression> subst = new ArrayList<>(numConstructorArguments);
-            for (int i = 0; i < numConstructorArguments; i++) {
-              subst.add(Index(branchNode.getIndex() + i));
-            }
-            SubstituteExpander.substituteExpand(myContext, subst, conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(),
-                new ArrayList<>(Collections.singletonList(expander.substIn(Index(branchNode.getIndex())))), new SubstituteExpander.SubstituteExpansionProcessor() {
-              @Override
-              public void process(List<Expression> newConCall, List<Binding> context, List<Expression> subst, LeafElimTreeNode leaf) {
-                List<Expression> newSubst = new ArrayList<>();
-                for (int i = 0; i < branchNode.getIndex(); i++) {
-                  newSubst.add(Index(i));
-                }
-                newSubst.add(newConCall.get(0));
 
-                List<Expression> newExpressions = new ArrayList<>(expressions.size());
-                for (Expression expr : expressions) {
-                  newExpressions.add(expr.liftIndex(branchNode.getIndex() + 1, subst.size()).subst(newConCall.get(0), branchNode.getIndex()));
-                }
-                for (Expression expr : expressions) {
-                  newExpressions.add(expr.liftIndex(branchNode.getIndex() + 1, subst.size()).subst(leaf.getExpression().liftIndex(0, branchNode.getIndex()), branchNode.getIndex()));
-                }
-                for (int i = 0; i < branchNode.getIndex(); i++) {
-                  newExpressions.add(Index(i));
-                }
-                newExpressions.add(leaf.getExpression().liftIndex(0, branchNode.getIndex()));
-
-                SubstituteExpander.substituteExpand(myContext, newSubst, branchNode, newExpressions, new SubstituteExpander.SubstituteExpansionProcessor() {
+    for (final ConCallExpression conCall : dataType.getMatchedConstructors(parameters)) {
+      if (branchNode.getClause(conCall.getDefinition()) != null) {
+        ConstructorClause clause = branchNode.getClause(conCall.getDefinition());
+        clause.getChild().accept(this, clause.getSubst().subst(argSubst));
+        if (conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()) != null) {
+          Substitution subst = toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments());
+          final DependentLink constructorArgs = conCall.getDefinition().getParameters().subst(subst);
+          SubstituteExpander.substituteExpand(conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(), subst, toContext(constructorArgs), new SubstituteExpander.SubstituteExpansionProcessor() {
+            @Override
+            public void process(Substitution subst, final Substitution toCtxC, List<Binding> ctx, LeafElimTreeNode leaf) {
+              Expression lhs = conCall;
+              for (DependentLink link = constructorArgs; link != null; link = link.getNext()) {
+                lhs = Apps(lhs, toCtxC.get(link));
+              }
+              final Expression rhs = leaf.getExpression().subst(subst);
+              try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
+                final Substitution subst1 = new Substitution(branchNode.getReference(), rhs);
+                ctx.addAll(subst1.extendBy(branchNode.getContextTail()));
+                SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
                   @Override
-                  public void process(List<Expression> expressions, List<Binding> context, final List<Expression> subst, LeafElimTreeNode leaf) {
-                    List<Expression> newSubst = new ArrayList<>(expressions.subList(expressions.size() - 1 - branchNode.getIndex(), expressions.size()));
-                    expressions.subList(expressions.size() - 1 - branchNode.getIndex(), expressions.size()).clear();
-                    expressions.add(leaf.getExpression().liftIndex(subst.size(), context.size() - numBindingsBefore).subst(subst, 0));
-                    SubstituteExpander.substituteExpand(context, newSubst, branchNode, expressions, new SubstituteExpander.SubstituteExpansionProcessor() {
-                      @Override
-                      public void process(List<Expression> expressions, List<Binding> context, List<Expression> subst, LeafElimTreeNode leaf) {
-                        Expression lhs = expressions.get(expressions.size() - 1);
-                        expressions.remove(expressions.size() - 1);
-                        Expression rhs = leaf.getExpression().liftIndex(subst.size(), context.size() - numBindingsBefore).subst(subst, 0);
-                        myChecker.check(context, lhs, new ArrayList<>(expressions.subList(0, expressions.size() / 2)), rhs, new ArrayList<>(expressions.subList(expressions.size() / 2, expressions.size())));
-                      }
-                    });
+                  public void process(Substitution subst, final Substitution toCtx1, List<Binding> ctx, LeafElimTreeNode leaf) {
+                    final Expression lhsVal = leaf.getExpression().subst(subst);
+                    try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
+                      final Substitution subst2 = new Substitution(branchNode.getReference(), rhs.subst(toCtx1));
+                      ctx.addAll(subst2.extendBy(branchNode.getContextTail()));
+                      SubstituteExpander.substituteExpand(branchNode, subst2, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
+                        @Override
+                        public void process(Substitution subst, Substitution toCtx2, List<Binding> ctx, LeafElimTreeNode leaf) {
+                          myChecker.check(lhsVal.subst(toCtx2), toCtx2.subst(toCtx1.subst(subst1.subst(argSubst))),
+                              leaf.getExpression().subst(subst), toCtx2.subst(subst2.subst(argSubst)));
+                        }
+                      });
+                    }
                   }
                 });
               }
-            });
-          }
+            }
+          });
         }
       }
     }
@@ -105,12 +83,12 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<List<Ex
   }
 
   @Override
-  public Void visitLeaf(LeafElimTreeNode leafNode, List<Expression> expressions) {
+  public Void visitLeaf(LeafElimTreeNode leafNode, Substitution argSubst) {
     return null;
   }
 
   @Override
-  public Void visitEmpty(EmptyElimTreeNode emptyNode, List<Expression> params) {
+  public Void visitEmpty(EmptyElimTreeNode emptyNode, Substitution argSubst) {
     return null;
   }
 }

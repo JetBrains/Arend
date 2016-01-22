@@ -1,11 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ProjExpression extends Expression {
   private final Expression myExpression;
@@ -33,15 +29,15 @@ public class ProjExpression extends Expression {
       return params.getType();
     }
 
-    Map<Binding, Expression> substs = new HashMap<>();
+    Substitution subst = new Substitution();
     for (int i = 0; i < myField; i++) {
       if (params == null) {
         return null;
       }
-      substs.put(params, new ProjExpression(myExpression, i));
+      subst.addMapping(params, new ProjExpression(myExpression, i));
       params = params.getNext();
     }
-    return params.getType().subst(substs);
+    return params.getType().subst(subst);
   }
 
   @Override

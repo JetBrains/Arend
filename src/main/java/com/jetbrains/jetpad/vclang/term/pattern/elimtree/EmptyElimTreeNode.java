@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 public class EmptyElimTreeNode extends ElimTreeNode {
@@ -17,6 +18,10 @@ public class EmptyElimTreeNode extends ElimTreeNode {
   }
 
   @Override
+  public ElimTreeNode matchUntilStuck(Substitution subst) {
+    return this;
+  }
+
   public Abstract.Definition.Arrow getArrow() {
     return null;
   }

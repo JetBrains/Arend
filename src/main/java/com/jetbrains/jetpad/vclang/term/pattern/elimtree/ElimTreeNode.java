@@ -2,8 +2,10 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -34,10 +36,12 @@ public abstract class ElimTreeNode {
     return CompareVisitor.compare(equations, Equations.CMP.EQ, context, node1, node2);
   }
 
+  public abstract ElimTreeNode matchUntilStuck(Substitution subst);
+
   public abstract Abstract.Definition.Arrow getArrow();
 
   @Override
   public String toString() {
-    return accept(new ToAbstractVisitor(new ConcreteExpressionFactory(), new ArrayList<String>()), null).toString();
+    return accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).toString();
   }
 }

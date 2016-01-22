@@ -10,66 +10,29 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression> implements ElimTreeNodeVisitor<Map<Binding, Expression>, LeafElimTreeNode> {
-  @Override
-  public LeafElimTreeNode visitBranch(BranchElimTreeNode branchNode, Map<Binding, Expression> subst) {
-    List<Expression> arguments = new ArrayList<>();
-    Expression func = subst.get(branchNode.getReference()).normalize(Mode.WHNF).getFunction(arguments);
-    if (func instanceof ConCallExpression) {
-      ConstructorClause clause = branchNode.getClause(((ConCallExpression) func).getDefinition());
-      if (clause == null)
-        return null;
-      subst.remove(branchNode.getReference());
-      int i = 0;
-      for (DependentLink link = clause.getParameters(); link != null; link = link.getNext(), i++) {
-        subst.put(link, arguments.get(i));
-      }
-      assert i == arguments.size();
-      return clause.getChild().accept(this, subst);
-    }
-    // @
-    ConstructorClause clause = branchNode.getClause(null);
-    if (clause != null)
-      return clause.getChild().accept(this, subst);
-    return null;
-  }
-
-  @Override
-  public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Map<Binding, Expression> subst) {
-    return leafNode;
-  }
-
-  @Override
-  public LeafElimTreeNode visitEmpty(EmptyElimTreeNode emptyNode, Map<Binding, Expression> params) {
-    return null;
-  }
-
+public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
   public enum Mode { WHNF, NF, NFH, TOP }
 
   private Expression visitApps(Expression expr, List<ArgumentExpression> exprs, Mode mode) {
     if (expr instanceof LamExpression) {
       int i = 0;
       DependentLink link = ((LamExpression) expr).getParameters();
-      Map<Binding, Expression> substs = new HashMap<>();
+      Substitution subst = new Substitution();
       while (link != null && i < exprs.size()) {
-        substs.put(link, exprs.get(i++).getExpression());
+        subst.addMapping(link, exprs.get(i++).getExpression());
         link = link.getNext();
       }
       expr = ((LamExpression) expr).getBody();
       if (link != null) {
         expr = Lam(link, expr);
       }
-      expr = expr.subst(substs);
+      expr = expr.subst(subst);
       for (ArgumentExpression argumentExpression : exprs.subList(i, exprs.size())) {
         expr = Apps(expr, argumentExpression);
       }
@@ -188,7 +151,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (parameters != null) {
-      parameters = parameters.subst(new HashMap<Binding, Expression>());
+      parameters = parameters.subst(new Substitution());
       for (DependentLink link = parameters; link != null; link = link.getNext()) {
         result = Apps(result, Reference(link));
       }
@@ -229,11 +192,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(conCallExpression, args, mode);
     }
 
-    excessiveParams = excessiveParams != null ? excessiveParams.subst(new HashMap<Binding, Expression>()) : null;
-    Map<Binding, Expression> args2 = completeArgs(args, conCallExpression.getDefinition().getParameters(), excessiveParams);
+    excessiveParams = excessiveParams != null ? excessiveParams.subst(new Substitution()) : null;
+    Substitution args2subst = completeArgs(args, conCallExpression.getDefinition().getParameters(), excessiveParams);
     DependentLink link = conCallExpression.getDefinition().getDataTypeParameters();
     for (Expression argument : conCallExpression.getDataTypeArguments()) {
-      args2.put(link, argument);
+      args2subst.addMapping(link, argument);
       link = link.getNext();
     }
 
@@ -241,11 +204,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(conCallExpression, args, mode);
     }
 
-    LeafElimTreeNode leaf = conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()).getElimTree().accept(this, args2);
-    if (leaf == null) {
+    ElimTreeNode node = conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()).getElimTree().matchUntilStuck(args2subst);
+    if (!(node instanceof LeafElimTreeNode)) {
       return applyDefCall(conCallExpression, args, mode);
     }
-    Expression result = leaf.getExpression().subst(args2);
+    Expression result = ((LeafElimTreeNode) node).getExpression().subst(args2subst);
     result = excessiveParams != null ? Lam(excessiveParams, result) : result;
     return mode == Mode.TOP ? result : result.accept(this, mode);
   }
@@ -290,14 +253,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(defCallExpr, args, mode);
     }
 
-    excessiveParams = excessiveParams != null ? excessiveParams.subst(new HashMap<Binding, Expression>()) : null;
-    Map<Binding, Expression> args2 = completeArgs(args, func.getParameters(), excessiveParams);
+    excessiveParams = excessiveParams != null ? excessiveParams.subst(new Substitution()) : null;
+    Substitution args2subst = completeArgs(args, func.getParameters(), excessiveParams);
 
-    LeafElimTreeNode leaf = func.getElimTree().accept(this, args2);
-    if (leaf == null) {
+    ElimTreeNode node = func.getElimTree().matchUntilStuck(args2subst);
+    if (!(node instanceof LeafElimTreeNode)) {
       return applyDefCall(defCallExpr, args, mode);
     }
-    Expression result = leaf.getExpression().subst(args2);
+    LeafElimTreeNode leaf = (LeafElimTreeNode) node;
+    Expression result = leaf.getExpression().subst(args2subst);
     if ((mode == Mode.NFH || mode == Mode.TOP) && leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
       result = result.accept(this, Mode.TOP);
       if (result == null) {
@@ -312,17 +276,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return mode == Mode.TOP ? result : result.accept(this, mode);
   }
 
-  private Map<Binding, Expression> completeArgs(List<ArgumentExpression> args, DependentLink params, DependentLink excessiveParams) {
-    Map<Binding, Expression> result = new HashMap<>();
+  private Substitution completeArgs(List<ArgumentExpression> args, DependentLink params, DependentLink excessiveParams) {
+    Substitution result = new Substitution();
     for (ArgumentExpression arg : args) {
       if (params == null) {
         break;
       }
-      result.put(params, arg.getExpression());
+      result.addMapping(params, arg.getExpression());
       params = params.getNext();
     }
     for (; excessiveParams != null; excessiveParams = excessiveParams.getNext()) {
-      result.put(excessiveParams, Reference(excessiveParams));
+      result.addMapping(excessiveParams, Reference(excessiveParams));
     }
     return result;
   }
@@ -369,7 +333,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private DependentLink visitParameters(DependentLink link, Mode mode) {
-    link = link.subst(new HashMap<Binding, Expression>());
+    link = link.subst(new Substitution());
     for (DependentLink link1 = link; link1 != null; link1 = link1.getNext()) {
       link1 = link1.getNextTyped(null);
       link1.setType(link1.getType().accept(this, mode));

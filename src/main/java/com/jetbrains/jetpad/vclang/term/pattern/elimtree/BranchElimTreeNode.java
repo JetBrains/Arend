@@ -4,12 +4,16 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class BranchElimTreeNode extends ElimTreeNode {
   private final Binding myReference;
@@ -26,11 +30,6 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return visitor.visitBranch(this, params);
   }
 
-  @Override
-  public Abstract.Definition.Arrow getArrow() {
-    return Abstract.Definition.Arrow.LEFT;
-  }
-
   public Binding getReference() {
     return myReference;
   }
@@ -39,8 +38,26 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myContextTail;
   }
 
-  public void addClause(Constructor constructor, DependentLink parameters, List<Binding> tailBindings, ElimTreeNode node) {
-    myClauses.put(constructor, new ConstructorClause(constructor, parameters, tailBindings, node, this));
+  public ConstructorClause addClause(Constructor constructor) {
+    List<Expression> dataTypeParameters = new ArrayList<>();
+    myReference.getType().getFunction(dataTypeParameters);
+    Collections.reverse(dataTypeParameters);
+
+    if (constructor.getPatterns() != null) {
+      dataTypeParameters = ((Pattern.MatchOKResult) constructor.getPatterns().match(dataTypeParameters)).expressions;
+    }
+
+    DependentLink constructorArgs = constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), dataTypeParameters));
+
+    Expression substExpr = ConCall(constructor, dataTypeParameters);
+    for (DependentLink link = constructorArgs; link != null; link = link.getNext()) {
+      substExpr = Apps(substExpr, Reference(link));
+    }
+
+    List<Binding> tailBindings = new Substitution(myReference, substExpr).extendBy(myContextTail);
+    myClauses.put(constructor, new ConstructorClause(constructor, constructor.getParameters(), tailBindings, this));
+
+    return null;
   }
 
   public ConstructorClause getClause(Constructor constructor) {
@@ -49,5 +66,32 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
   public Collection<ConstructorClause> getConstructorClauses() {
     return myClauses.values();
+  }
+
+  public ElimTreeNode matchUntilStuck(Substitution subst) {
+    List<Expression> arguments = new ArrayList<>();
+    Expression func = subst.get(myReference).getFunction(arguments);
+    if (!(func instanceof ConCallExpression)) {
+      return this;
+    }
+    ConstructorClause clause = getClause(((ConCallExpression) func).getDefinition());
+    if (clause == null)
+      return this;
+
+    for (DependentLink link = clause.getParameters(); link != null; link = link.getNext()) {
+      subst.addMapping(link, arguments.get(arguments.size() - 1));
+      arguments.remove(arguments.size() - 1);
+    }
+    for (int i = 0; i < myContextTail.size(); i++) {
+      subst.addMapping(clause.getTailBindings().get(i), subst.get(myContextTail.get(i)));
+    }
+    subst.getDomain().remove(myReference);
+    subst.getDomain().removeAll(myContextTail);
+    return clause.getChild().matchUntilStuck(subst);
+  }
+
+  @Override
+  public Abstract.Definition.Arrow getArrow() {
+    return Abstract.Definition.Arrow.LEFT;
   }
 }

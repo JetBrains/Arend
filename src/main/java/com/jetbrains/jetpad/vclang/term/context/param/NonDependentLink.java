@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.context.param;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
 import java.util.List;
-import java.util.Map;
 
 public class NonDependentLink implements DependentLink {
   private boolean myExplicit;
@@ -59,8 +58,8 @@ public class NonDependentLink implements DependentLink {
   }
 
   @Override
-  public NonDependentLink subst(Map<Binding, Expression> substs) {
-    return new NonDependentLink(myType.subst(substs), myNext.subst(substs));
+  public NonDependentLink subst(Substitution subst) {
+    return new NonDependentLink(myType.subst(subst), myNext.subst(subst));
   }
 
   @Override

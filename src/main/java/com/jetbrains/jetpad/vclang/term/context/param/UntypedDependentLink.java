@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.context.param;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
 import java.util.List;
-import java.util.Map;
 
 public class UntypedDependentLink implements DependentLink {
   private final String myName;
@@ -76,10 +75,10 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public UntypedDependentLink subst(Map<Binding, Expression> substs) {
+  public UntypedDependentLink subst(Substitution subst) {
     UntypedDependentLink result = new UntypedDependentLink(myName, null);
-    substs.put(this, new ReferenceExpression(result));
-    result.myNext = myNext.subst(substs);
+    subst.addMapping(this, new ReferenceExpression(result));
+    result.myNext = myNext.subst(subst);
     return result;
   }
 }

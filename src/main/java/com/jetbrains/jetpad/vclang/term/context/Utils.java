@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -94,13 +95,13 @@ public class Utils {
     }
   }
 
-  public static Map<Binding, Expression> matchParameters(DependentLink link, List<Expression> parameters) {
-    Map<Binding, Expression> substs = new HashMap<>();
+  public static Substitution matchParameters(DependentLink link, List<Expression> parameters) {
+    Substitution substs = new Substitution();
     for (Expression parameter : parameters) {
       if (link == null) {
         return null;
       }
-      substs.put(link, parameter);
+      substs.addMapping(link, parameter);
       link = link.getNext();
     }
     return substs;

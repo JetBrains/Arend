@@ -7,12 +7,12 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -45,10 +45,10 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   }
 
   @Override
-  public Expression toExpression(Map<Binding, Expression> substs) {
+  public Expression toExpression(Substitution subst) {
     List<Expression> params = new ArrayList<>();
     for (DependentLink link = myConstructor.getParameters(); link != null; link = link.getNext()) {
-      Expression param = substs.get(link);
+      Expression param = subst.get(link);
       params.add(param == null ? Reference(link) : param);
     }
     Expression result = ConCall(myConstructor, params);
@@ -58,29 +58,32 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       assert link != null;
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         List<Expression> args = new ArrayList<>();
-        Expression type = link.getType().subst(substs).normalize(NormalizeVisitor.Mode.WHNF).getFunction(args);
+        Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getFunction(args);
         assert type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         Collections.reverse(args);
-        substs.putAll(getMatchedArguments(args));
+        Substitution subSubst = getMatchedArguments(args);
+        for (Binding binding : subSubst.getDomain()) {
+          subst.addMapping(binding, subSubst.get(binding));
+        }
       }
-      Expression param = patternArgument.getPattern().toExpression(substs);
+      Expression param = patternArgument.getPattern().toExpression(subst);
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
-        DependentLink.Helper.freeSubsts(getParameters(), substs);
+        DependentLink.Helper.freeSubsts(getParameters(), subst);
       }
 
       result = Apps(result, param);
-      substs.put(link, param);
+      subst.addMapping(link, param);
       link = link.getNext();
     }
-    DependentLink.Helper.freeSubsts(constructorParameters, substs);
+    DependentLink.Helper.freeSubsts(constructorParameters, subst);
     return result;
   }
 
-  private Map<Binding, Expression> getMatchedArguments(List<Expression> dataTypeArguments) {
+  private Substitution getMatchedArguments(List<Expression> dataTypeArguments) {
     if (myConstructor.getPatterns() != null) {
       dataTypeArguments = ((Pattern.MatchOKResult) myConstructor.getPatterns().match(dataTypeArguments)).expressions;
     }
-    return DependentLink.Helper.toSubsts(myConstructor.getDataTypeParameters(), dataTypeArguments);
+    return DependentLink.Helper.toSubstitution(myConstructor.getDataTypeParameters(), dataTypeArguments);
   }
 
   @Override

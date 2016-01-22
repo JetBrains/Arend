@@ -24,6 +24,6 @@ public class ReferenceExpression extends Expression {
 
   @Override
   public Expression getType() {
-    return myBinding.getType().accept(new SubstVisitor(new HashMap<Binding, Expression>()), null);
+    return myBinding.getType().accept(new SubstVisitor(new Substitution()), null);
   }
 }

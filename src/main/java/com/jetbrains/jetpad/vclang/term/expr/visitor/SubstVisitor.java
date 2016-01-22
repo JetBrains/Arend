@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -13,13 +12,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implements ElimTreeNodeVisitor<Void, ElimTreeNode> {
-  private final Map<Binding, Expression> mySubstExprs;
+  private final Substitution mySubstitution;
 
-  public SubstVisitor(Map<Binding, Expression> substExprs) {
-    mySubstExprs = substExprs;
+  public SubstVisitor(Substitution substitution) {
+    mySubstitution = substitution;
   }
 
   @Override
@@ -55,28 +55,28 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    Expression result = mySubstExprs.get(expr.getBinding());
+    Expression result = mySubstitution.get(expr.getBinding());
     return result != null ? result : expr;
   }
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
-    LamExpression result = Lam(expr.getParameters().subst(mySubstExprs), expr.getBody().accept(this, null));
-    DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstExprs);
+    LamExpression result = Lam(expr.getParameters().subst(mySubstitution), expr.getBody().accept(this, null));
+    DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
   }
 
   @Override
   public Expression visitPi(PiExpression expr, Void params) {
-    PiExpression result = Pi(expr.getParameters().subst(mySubstExprs), expr.getCodomain().accept(this, null));
-    DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstExprs);
+    PiExpression result = Pi(expr.getParameters().subst(mySubstitution), expr.getCodomain().accept(this, null));
+    DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
   }
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
-    SigmaExpression result = Sigma(expr.getParameters().subst(mySubstExprs));
-    DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstExprs);
+    SigmaExpression result = Sigma(expr.getParameters().subst(mySubstitution));
+    DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
   }
 
@@ -90,8 +90,18 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
     BranchElimTreeNode newNode = new BranchElimTreeNode(newReference, newContextTail);
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      newNode.addClause(clause.getConstructor(), clause.getParameters().subst(mySubstExprs), substituteInContext(mySubstExprs, clause.getTailBindings()), clause.getChild().accept(this, null));
-      mySubstExprs.keySet().removeAll(clause.getTailBindings());
+      ConstructorClause newClause = newNode.getClause(clause.getConstructor());
+      for (DependentLink linkOld = clause.getParameters(), linkNew = newClause.getParameters(); linkOld != null; linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
+        mySubstitution.addMapping(linkOld, Reference(linkNew));
+      }
+      for (int i = 0; i < clause.getTailBindings().size(); i++) {
+        mySubstitution.addMapping(clause.getTailBindings().get(i), Reference(newClause.getTailBindings().get(i)));
+      }
+
+      newClause.setChild(clause.getChild().accept(this, null));
+
+      mySubstitution.getDomain().removeAll(toContext(clause.getParameters()));
+      mySubstitution.getDomain().removeAll(clause.getTailBindings());
     }
     return newNode;
   }
@@ -146,29 +156,20 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (LetClause clause : letExpression.getClauses()) {
       LetClause newClause = visitLetClause(clause);
       clauses.add(newClause);
-      mySubstExprs.put(clause, Reference(newClause));
+      mySubstitution.addMapping(clause, Reference(newClause));
     }
-    LetExpression result = Let(clauses, letExpression.getExpression().subst(mySubstExprs));
+    LetExpression result = Let(clauses, letExpression.getExpression().subst(mySubstitution));
     for (LetClause clause : letExpression.getClauses()) {
-      mySubstExprs.remove(clause);
+      mySubstitution.getDomain().remove(clause);
     }
     return result;
   }
 
   public LetClause visitLetClause(LetClause clause) {
-    DependentLink parameters = clause.getParameters().subst(mySubstExprs);
+    DependentLink parameters = clause.getParameters().subst(mySubstitution);
     Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
-    DependentLink.Helper.freeSubsts(clause.getParameters(), mySubstExprs);
+    DependentLink.Helper.freeSubsts(clause.getParameters(), mySubstitution);
     return new LetClause(clause.getName(), parameters, resultType, elimTree);
-  }
-
-  public static List<Binding> substituteInContext(Map<Binding, Expression> substExprs, List<Binding> context) {
-    List<Binding> result = new ArrayList<>();
-    for (Binding binding : context) {
-      result.add(new TypedBinding(binding.getName(), binding.getType().subst(substExprs)));
-      substExprs.put(binding, Reference(result.get(result.size() - 1)));
-    }
-    return result;
   }
 }

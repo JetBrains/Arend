@@ -2,58 +2,42 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
-
 public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Boolean> {
   public interface CoverageCheckerMissingProcessor {
-    void process(List<Binding> context, List<Expression> missing);
+    void process(List<Expression> expressions);
   }
 
-  private final List<Binding> myContext;
   private final CoverageCheckerMissingProcessor myProcessor;
 
-  private CoverageChecker(List<Binding> context, CoverageCheckerMissingProcessor processor) {
-    myContext = context;
+  private CoverageChecker(CoverageCheckerMissingProcessor processor) {
     myProcessor = processor;
   }
 
-  public static boolean check(List<Binding> context, ElimTreeNode tree, int argsStartIndex, CoverageCheckerMissingProcessor processor) {
-    List<Expression> expressions = new ArrayList<>(context.size() - argsStartIndex);
-       for (int i = context.size() - argsStartIndex - 1; i >= 0; i--) {
-         expressions.add(Index(i));
-    }
-    return tree.accept(new CoverageChecker(context, processor), expressions);
+  public static boolean check(ElimTreeNode tree, List<Expression> expressions, CoverageCheckerMissingProcessor processor) {
+    return tree.accept(new CoverageChecker(processor), expressions);
   }
 
   @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, List<Expression> expressions) {
-    Expression type = myContext.get(myContext.size() - 1 - branchNode.getIndex()).getType().liftIndex(0, branchNode.getIndex());
     List<Expression> parameters = new ArrayList<>();
-    DefCallExpression ftype = (DefCallExpression) type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters);
+    DefCallExpression ftype = (DefCallExpression) branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
     Collections.reverse(parameters);
 
     boolean result = true;
     for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getMatchedConstructors(parameters)) {
-      try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
-        if (branchNode.getChild(conCall.getDefinition()) != null) {
-          result &= branchNode.getChild(conCall.getDefinition()).accept(this, expander.substIn(expressions));
-        } else {
-          result &= checkEmptyContext(branchNode.getIndex() - 1, expander.substIn(expressions));
-        }
+      if (branchNode.getClause(conCall.getDefinition()) == null) {
+        branchNode.addClause(conCall.getDefinition());
       }
+      ConstructorClause clause = branchNode.getClause(conCall.getDefinition());
+      result &= clause.getChild().accept(this, clause.getSubst().substExprs(expressions));
     }
 
     return result;
@@ -66,33 +50,38 @@ public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Bo
 
   @Override
   public Boolean visitEmpty(EmptyElimTreeNode emptyNode, List<Expression> expressions) {
-    return checkEmptyContext(expressions.size() - 1, expressions);
+    List<Binding> tailContext = new ArrayList<>();
+    for (Expression expression : expressions) {
+      if (expression instanceof ReferenceExpression) {
+        tailContext.add(((ReferenceExpression) expression).getBinding());
+      }
+    }
+    return checkEmptyContext(tailContext, expressions);
   }
 
-  public boolean checkEmptyContext(int index, List<Expression> expressions) {
-    if (index < 0) {
-      myProcessor.process(myContext, expressions);
+  public boolean checkEmptyContext(List<Binding> tailContext, List<Expression> expressions) {
+    if (tailContext.isEmpty()) {
+      myProcessor.process(expressions);
       return false;
     }
 
-    Expression type = myContext.get(myContext.size() - 1 - index).getType().liftIndex(0, index);
     List<Expression> parameters = new ArrayList<>();
-    Expression ftype = type.normalize(NormalizeVisitor.Mode.WHNF, myContext).getFunction(parameters);
+    Expression ftype = tailContext.get(0).getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
     Collections.reverse(parameters);
 
     if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-      return checkEmptyContext(index - 1, expressions);
+      return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), expressions);
     }
     List<ConCallExpression> validConCalls = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(parameters);
     if (validConCalls == null) {
-      return checkEmptyContext(index - 1, expressions);
+      return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), expressions);
     }
 
+    BranchElimTreeNode fakeBranch = new BranchElimTreeNode(tailContext.get(0), tailContext.subList(1, tailContext.size()));
     for (ConCallExpression conCall : validConCalls) {
-      try (ConCallContextExpander expander = new ConCallContextExpander(index, conCall, myContext)) {
-        if (!checkEmptyContext(index - 1, expander.substIn(expressions)))
-          return false;
-      }
+      ConstructorClause clause = fakeBranch.addClause(conCall.getDefinition());
+      if (!checkEmptyContext(clause.getTailBindings(), clause.getSubst().substExprs(expressions)))
+        return false;
     }
     return true;
   }

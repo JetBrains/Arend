@@ -34,14 +34,14 @@ public class PiExpression extends DependentTypeExpression {
   }
 
   public Expression applyExpressions(List<Expression> expressions) {
-    Map<Binding, Expression> substs = new HashMap<>();
+    Substitution subst = new Substitution();
     DependentLink link = getParameters();
     for (Expression expression : expressions) {
       assert link != null;
-      substs.put(link, expression);
+      subst.addMapping(link, expression);
       link = link.getNext();
     }
-    Expression result = myCodomain.subst(substs);
-    return link == null ? result : new PiExpression(link.subst(substs), result);
+    Expression result = myCodomain.subst(subst);
+    return link == null ? result : new PiExpression(link.subst(subst), result);
   }
 }
