@@ -4,12 +4,12 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.param.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.param.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.param.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -42,7 +42,7 @@ public class ModuleDeserialization {
     readHeader(stream);
     stream.readInt();
 
-    module.parent.getChild(module.name);
+    module.parent.getChild(module.name.name);
 
     readDefIndicies(stream, true, module);
   }
@@ -135,7 +135,7 @@ public class ModuleDeserialization {
   private static ResolvedName fullPathToRelativeResolvedName(List<String> path, ResolvedName module) {
     ResolvedName result = module;
     for (String aPath : path) {
-      result = result.toNamespace().getChild(new Name(aPath)).getResolvedName();
+      result = result.toNamespace().getChild(aPath).getResolvedName();
     }
     return result;
   }
@@ -198,7 +198,7 @@ public class ModuleDeserialization {
   private void deserializeDataDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, DataDefinition definition) throws IOException {
     if (!definition.hasErrors()) {
       definition.setUniverse(readUniverse(stream));
-      definition.setParameters(readTypeArguments(stream, definitionMap));
+      definition.setParameters(readParameters(stream, definitionMap));
     }
 
     int constructorsNumber = stream.readInt();
@@ -217,10 +217,10 @@ public class ModuleDeserialization {
           for (int j = 0; j < numPatterns; j++) {
             patterns.add(readPatternArg(stream, definitionMap));
           }
-          constructor.setPatterns(patterns);
+          constructor.setPatterns(new Patterns(patterns));
         }
         constructor.setUniverse(readUniverse(stream));
-        constructor.setArguments(readTypeArguments(stream, definitionMap));
+        constructor.setParameters(readParameters(stream, definitionMap));
       }
 
       definition.addConstructor(constructor);
@@ -233,7 +233,7 @@ public class ModuleDeserialization {
 
     definition.typeHasErrors(stream.readBoolean());
     if (!definition.typeHasErrors()) {
-      definition.setArguments(readArguments(stream, definitionMap));
+      definition.setParameters(readParameters(stream, definitionMap));
       definition.setResultType(readExpression(stream, definitionMap));
     }
 
@@ -298,57 +298,38 @@ public class ModuleDeserialization {
     return new Universe.Type(level, truncated);
   }
 
-  public List<Argument> readArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int size = stream.readInt();
-    List<Argument> result = new ArrayList<>(size);
-    for (int i = 0; i < size; ++i) {
-      result.add(readArgument(stream, definitionMap));
-    }
-    return result;
-  }
+  public DependentLink readParameters(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    DependentLink result = null, link = null;
+    while (true) {
+      int code = stream.read();
+      if (code == 0) {
+        return result;
+      }
 
-  public List<TypeArgument> readTypeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int size = stream.readInt();
-    List<TypeArgument> result = new ArrayList<>(size);
-    for (int i = 0; i < size; ++i) {
-      Argument argument = readArgument(stream, definitionMap);
-      if (!(argument instanceof TypeArgument)) {
+      DependentLink link1;
+      if (code == 1) {
+        boolean isExplicit = stream.readBoolean();
+        String name = stream.readUTF();
+        Expression type = readExpression(stream, definitionMap);
+        link1 = new TypedDependentLink(isExplicit, name, type, null);
+      } else
+      if (code == 2) {
+        String name = stream.readUTF();
+        link1 = new UntypedDependentLink(name, null);
+      } else
+      if (code == 3) {
+        boolean isExplicit = stream.readBoolean();
+        Expression type = readExpression(stream, definitionMap);
+        link1 = new NonDependentLink(type, null);
+        link1.setExplicit(isExplicit);
+      } else {
         throw new IncorrectFormat();
       }
-      result.add((TypeArgument) argument);
-    }
-    return result;
-  }
 
-  public List<TelescopeArgument> readTelescopeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int size = stream.readInt();
-    List<TelescopeArgument> result = new ArrayList<>(size);
-    for (int i = 0; i < size; ++i) {
-      Argument argument = readArgument(stream, definitionMap);
-      if (!(argument instanceof TelescopeArgument)) {
-        throw new IncorrectFormat();
+      link = DependentLink.Helper.append(link, link1);
+      if (result == null) {
+        result = link;
       }
-      result.add((TelescopeArgument) argument);
-    }
-    return result;
-  }
-
-  public Argument readArgument(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    boolean explicit = stream.readBoolean();
-    int code = stream.read();
-    if (code == 0) {
-      int size = stream.readInt();
-      List<String> names = new ArrayList<>(size);
-      for (int i = 0; i < size; ++i) {
-        names.add(stream.readBoolean() ? stream.readUTF() : null);
-      }
-      return new TelescopeArgument(explicit, names, readExpression(stream, definitionMap));
-    } else if (code == 1) {
-      return new TypeArgument(explicit, readExpression(stream, definitionMap));
-    } else if (code == 2) {
-      return new NameArgument(explicit, stream.readBoolean() ? stream.readUTF() : null);
-    } else {
-      throw new IncorrectFormat();
     }
   }
 
@@ -401,11 +382,11 @@ public class ModuleDeserialization {
       }
       case 6: {
         Expression body = readExpression(stream, definitionMap);
-        return Lam(readTelescopeArguments(stream, definitionMap), body);
+        return Lam(readParameters(stream, definitionMap), body);
       }
       case 7: {
-        List<TypeArgument> arguments = readTypeArguments(stream, definitionMap);
-        return Pi(arguments, readExpression(stream, definitionMap));
+        DependentLink parameters = readParameters(stream, definitionMap);
+        return Pi(parameters, readExpression(stream, definitionMap));
       }
       case 8: {
         return new UniverseExpression(readUniverse(stream));
@@ -422,7 +403,7 @@ public class ModuleDeserialization {
         return Tuple(fields, (SigmaExpression) readExpression(stream, definitionMap));
       }
       case 11: {
-        return Sigma(readTypeArguments(stream, definitionMap));
+        return Sigma(readParameters(stream, definitionMap));
       }
       case 13: {
         Expression expr = readExpression(stream, definitionMap);
@@ -448,9 +429,9 @@ public class ModuleDeserialization {
 
   private LetClause readLetClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     final String name = stream.readUTF();
-    final List<TypeArgument> arguments = readTypeArguments(stream, definitionMap);
+    final DependentLink parameters = readParameters(stream, definitionMap);
     final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
-    return let(name, arguments, resultType, readElimTree(stream, definitionMap));
+    return let(name, parameters, resultType, readElimTree(stream, definitionMap));
   }
 
   public PatternArgument readPatternArg(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -478,7 +459,7 @@ public class ModuleDeserialization {
         for (int i = 0; i < size; ++i) {
           arguments.add(readPatternArg(stream, definitionMap));
         }
-        return new ConstructorPattern((Constructor) constructor, arguments);
+        return new ConstructorPattern((Constructor) constructor, new Patterns(arguments));
       }
       default: {
         throw new IllegalStateException();

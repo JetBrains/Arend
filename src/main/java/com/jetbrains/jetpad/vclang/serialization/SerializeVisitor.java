@@ -112,7 +112,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   }
 
   @Override
-  public Void visitIndex(IndexExpression expr, Void params) {
+  public Void visitReference(ReferenceExpression expr, Void params) {
     myStream.write(5);
     try {
       myDataStream.writeInt(expr.getIndex());
@@ -127,7 +127,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     myStream.write(6);
     expr.getBody().accept(this, null);
     try {
-      ModuleSerialization.writeArguments(this, expr.getArguments());
+      ModuleSerialization.writeParameters(this, expr.getParameters());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -135,10 +135,10 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   }
 
   @Override
-  public Void visitPi(DependentExpression expr, Void params) {
+  public Void visitPi(PiExpression expr, Void params) {
     myStream.write(7);
     try {
-      ModuleSerialization.writeArguments(this, expr.getArguments());
+      ModuleSerialization.writeParameters(this, expr.getParameters());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -196,7 +196,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitSigma(SigmaExpression expr, Void params) {
     myStream.write(11);
     try {
-      ModuleSerialization.writeArguments(this, expr.getArguments());
+      ModuleSerialization.writeParameters(this, expr.getParameters());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -276,8 +276,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
 
   private void visitLetClause(LetClause clause) {
     try {
-      myDataStream.writeUTF(clause.getName().name);
-      ModuleSerialization.writeArguments(this, clause.getArguments());
+      myDataStream.writeUTF(clause.getName());
+      ModuleSerialization.writeParameters(this, clause.getParameters());
       myDataStream.writeBoolean(clause.getResultType() != null);
       if (clause.getResultType() != null) {
         clause.getResultType().accept(this, null);

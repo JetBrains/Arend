@@ -177,8 +177,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     // int numberOfArgs = index;
     int index = 0;
-    DependentLink typedParameters = null;
-    DependentLink link = null;
+    DependentLink typedParameters = null, link = null;
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
         CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());

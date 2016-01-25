@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.serialization;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.param.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.param.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.param.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 
 import java.io.*;
@@ -107,7 +107,7 @@ public class ModuleSerialization {
     int errors = definition.hasErrors() ? 1 : 0;
     if (!definition.hasErrors()) {
       writeUniverse(visitor.getDataStream(), definition.getUniverse());
-      writeArguments(visitor, definition.getParameters());
+      writeParameters(visitor, definition.getParameters());
     }
     visitor.getDataStream().writeInt(definition.getConstructors().size());
     for (Constructor constructor : definition.getConstructors()) {
@@ -117,13 +117,13 @@ public class ModuleSerialization {
         // TODO: serialization test for patterns
         visitor.getDataStream().writeBoolean(constructor.getPatterns() != null);
         if (constructor.getPatterns() != null) {
-          visitor.getDataStream().writeInt(constructor.getPatterns().size());
-          for (PatternArgument patternArg : constructor.getPatterns()) {
+          visitor.getDataStream().writeInt(constructor.getPatterns().getPatterns().size());
+          for (PatternArgument patternArg : constructor.getPatterns().getPatterns()) {
             visitor.visitPatternArg(patternArg);
           }
         }
         writeUniverse(visitor.getDataStream(), constructor.getUniverse());
-        writeArguments(visitor, constructor.getArguments());
+        writeParameters(visitor, constructor.getParameters());
       } else {
         errors += 1;
       }
@@ -200,7 +200,7 @@ public class ModuleSerialization {
 
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {
-      writeArguments(visitor, definition.getArguments());
+      writeParameters(visitor, definition.getParameters());
       definition.getResultType().accept(visitor, null);
     }
     visitor.getDataStream().writeBoolean(definition.getElimTree() != null);
@@ -211,18 +211,14 @@ public class ModuleSerialization {
     return errors;
   }
 
-  public static void writeName(DataOutputStream stream, Name name) throws IOException {
-    stream.writeUTF(name.name);
-    stream.write(name.fixity == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
-  }
-
   public static void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
     stream.writeInt(DefinitionCodes.getDefinitionCode(definition).ordinal());
     if (!(definition instanceof ClassDefinition)) {
       stream.write(definition.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 1 : 2);
       stream.writeByte(definition.getPrecedence().priority);
     }
-    writeName(stream, definition.getName());
+    stream.writeUTF(definition.getName());
+    stream.write(definition.getFixity() == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
   }
 
   public static void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {
@@ -234,37 +230,26 @@ public class ModuleSerialization {
     }
   }
 
-  public static void writeArguments(SerializeVisitor visitor, List<? extends Argument> arguments) throws IOException {
-    visitor.getDataStream().writeInt(arguments.size());
-    for (Argument argument : arguments) {
-      writeArgument(visitor, argument);
-    }
-  }
-
-  public static void writeArgument(SerializeVisitor visitor, Argument argument) throws IOException {
-    visitor.getDataStream().writeBoolean(argument.getExplicit());
-    if (argument instanceof TelescopeArgument) {
-      visitor.getDataStream().write(0);
-      visitor.getDataStream().writeInt(((TelescopeArgument) argument).getNames().size());
-      for (String name : ((TelescopeArgument) argument).getNames()) {
-        visitor.getDataStream().writeBoolean(name != null);
-        if (name != null) {
-          visitor.getDataStream().writeUTF(name);
-        }
+  public static void writeParameters(SerializeVisitor visitor, DependentLink link) throws IOException {
+    for (; link != null; link = link.getNext()) {
+      if (link instanceof TypedDependentLink) {
+        visitor.getDataStream().write(1);
+        visitor.getDataStream().writeBoolean(link.isExplicit());
+        visitor.getDataStream().writeUTF(link.getName());
+        link.getType().accept(visitor, null);
+      } else
+      if (link instanceof UntypedDependentLink) {
+        visitor.getDataStream().write(2);
+        visitor.getDataStream().writeUTF(link.getName());
+      } else
+      if (link instanceof NonDependentLink) {
+        visitor.getDataStream().write(3);
+        visitor.getDataStream().writeBoolean(link.isExplicit());
+        link.getType().accept(visitor, null);
+      } else {
+        throw new IllegalStateException();
       }
-      ((TypeArgument) argument).getType().accept(visitor, null);
-    } else if (argument instanceof TypeArgument) {
-      visitor.getDataStream().write(1);
-      ((TypeArgument) argument).getType().accept(visitor, null);
-    } else if (argument instanceof NameArgument) {
-      visitor.getDataStream().write(2);
-      String name = ((NameArgument) argument).getName();
-      visitor.getDataStream().writeBoolean(name != null);
-      if (name != null) {
-        visitor.getDataStream().writeUTF(name);
-      }
-    } else {
-      throw new IllegalStateException();
     }
+    visitor.getDataStream().write(0);
   }
 }
