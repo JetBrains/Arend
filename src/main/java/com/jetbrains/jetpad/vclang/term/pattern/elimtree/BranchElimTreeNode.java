@@ -55,9 +55,10 @@ public class BranchElimTreeNode extends ElimTreeNode {
     }
 
     List<Binding> tailBindings = new Substitution(myReference, substExpr).extendBy(myContextTail);
-    myClauses.put(constructor, new ConstructorClause(constructor, constructor.getParameters(), tailBindings, this));
 
-    return null;
+    ConstructorClause result = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
+    myClauses.put(constructor, result);
+    return result;
   }
 
   public ConstructorClause getClause(Constructor constructor) {

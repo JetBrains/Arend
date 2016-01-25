@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
@@ -231,7 +232,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       */
       } else {
         // if (splitArgs == null) {
-        myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(name)));
+        myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
         return typedDef;
       /*
       } else {
@@ -311,7 +312,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       if (typedDef.getElimTree() != null) {
-        TypeCheckingError error = TypeCheckingElim.checkCoverage(def, context, typedDef.getElimTree());
+        TypeCheckingError error = TypeCheckingElim.checkCoverage(def, typedParameters, typedDef.getElimTree());
         if (error != null) {
           myErrorReporter.report(error);
           typedDef.setElimTree(null);
@@ -320,7 +321,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       if (typedDef.getElimTree() != null) {
         typedDef.hasErrors(false); // we need normalization here
-        TypeCheckingError error = TypeCheckingElim.checkConditions(def, context, typedDef.getElimTree());
+        TypeCheckingError error = TypeCheckingElim.checkConditions(def, typedParameters, typedDef.getElimTree());
         if (error != null) {
           myErrorReporter.report(error);
           typedDef.setElimTree(null);
@@ -403,7 +404,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           universe = maxUniverse;
         }
       } else {
-        myErrorReporter.report(new ArgInferenceError(myNamespace.getResolvedName(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(name)));
+        myErrorReporter.report(new ArgInferenceError(myNamespace.getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
         return null;
       }
     }
@@ -501,7 +502,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (typedUniverse.lessOrEquals(universe)) {
         dataDefinition.setUniverse(universe);
       } else {
-        myErrorReporter.report(new TypeMismatchError(new UniverseExpression(universe), new UniverseExpression(typedUniverse), null, new ArrayList<String>()));
+        myErrorReporter.report(new TypeMismatchError(new UniverseExpression(universe), new UniverseExpression(typedUniverse), null));
         dataDefinition.setUniverse(typedUniverse);
       }
     } else {
@@ -527,7 +528,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       for (Condition condition : dataDefinition.getConditions()) {
         try (Utils.CompleteContextSaver<Binding> ignore = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
           expandConstructorContext(condition.getConstructor(), visitor.getLocalContext());
-          TypeCheckingError error = TypeCheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getParameters(), visitor.getLocalContext(), condition.getElimTree());
+          TypeCheckingError error = TypeCheckingElim.checkConditions(new Name(condition.getConstructor().getName()), def, condition.getConstructor().getParameters(), condition.getElimTree());
           if (error != null) {
             myErrorReporter.report(error);
             failedConditions.add(condition);
@@ -570,7 +571,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
             if (processedPatterns == null)
               continue;
 
-            Patterns typedPatterns = visitor.visitPatternArgs(processedPatterns, resultType, CheckTypeVisitor.PatternExpansionMode.CONDITION);
+            Patterns typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, resultType, TypeCheckingElim.PatternExpansionMode.CONDITION);
 
             CheckTypeVisitor.Result result = visitor.checkType(cond.getTerm(), resultType.get(0));
             if (result == null)
@@ -582,7 +583,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           }
         }
 
-        TypeCheckingElim.TypeCheckElimTreeOKResult elimTreeResult = (TypeCheckingElim.TypeCheckElimTreeOKResult) visitor.getTypeCheckingElim().typeCheckElimTree(numberOfVariables(constructor.getArguments()), patterns, expressions, arrows);
+        PatternsToElimTreeConversion.OKResult elimTreeResult = (PatternsToElimTreeConversion.OKResult) PatternsToElimTreeConversion.convert(constructor.getParameters(), patterns, expressions, arrows);
 
         if (!elimTreeResult.elimTree.accept(new TerminationCheckVisitor(constructor, constructor.getParameters()), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", def));
@@ -664,7 +665,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (processedPatterns == null)
           return null;
 
-        typedPatterns = visitor.visitPatternArgs(processedPatterns, Collections.<Expression>emptyList(), CheckTypeVisitor.PatternExpansionMode.DATATYPE);
+        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null)
           return null;
       }

@@ -27,7 +27,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
     myChecker = checker;
   }
 
-  public static void check(ElimTreeNode tree, ConditionViolationChecker checker, Substitution argSubst) {
+  public static void check(ElimTreeNode tree, Substitution argSubst, ConditionViolationChecker checker) {
     tree.accept(new ConditionViolationsCollector(checker), argSubst);
   }
 
@@ -41,7 +41,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
     for (final ConCallExpression conCall : dataType.getMatchedConstructors(parameters)) {
       if (branchNode.getClause(conCall.getDefinition()) != null) {
         ConstructorClause clause = branchNode.getClause(conCall.getDefinition());
-        clause.getChild().accept(this, clause.getSubst().subst(argSubst));
+        clause.getChild().accept(this, clause.getSubst().compose(argSubst));
         if (conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()) != null) {
           Substitution subst = toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments());
           final DependentLink constructorArgs = conCall.getDefinition().getParameters().subst(subst);
@@ -66,8 +66,8 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
                       SubstituteExpander.substituteExpand(branchNode, subst2, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
                         @Override
                         public void process(Substitution subst, Substitution toCtx2, List<Binding> ctx, LeafElimTreeNode leaf) {
-                          myChecker.check(lhsVal.subst(toCtx2), toCtx2.subst(toCtx1.subst(subst1.subst(argSubst))),
-                              leaf.getExpression().subst(subst), toCtx2.subst(subst2.subst(argSubst)));
+                          myChecker.check(lhsVal.subst(toCtx2), toCtx2.compose(toCtx1.compose(subst1.compose(argSubst))),
+                              leaf.getExpression().subst(subst), toCtx2.compose(subst2.compose(argSubst)));
                         }
                       });
                     }

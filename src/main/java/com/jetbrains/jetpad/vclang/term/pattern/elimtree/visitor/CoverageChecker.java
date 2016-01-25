@@ -10,9 +10,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Boolean> {
+public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolean> {
   public interface CoverageCheckerMissingProcessor {
-    void process(List<Expression> expressions);
+    void process(Substitution argsSubst);
   }
 
   private final CoverageCheckerMissingProcessor myProcessor;
@@ -21,12 +21,12 @@ public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Bo
     myProcessor = processor;
   }
 
-  public static boolean check(ElimTreeNode tree, List<Expression> expressions, CoverageCheckerMissingProcessor processor) {
-    return tree.accept(new CoverageChecker(processor), expressions);
+  public static boolean check(ElimTreeNode tree, Substitution argsSubst, CoverageCheckerMissingProcessor processor) {
+    return tree.accept(new CoverageChecker(processor), argsSubst);
   }
 
   @Override
-  public Boolean visitBranch(BranchElimTreeNode branchNode, List<Expression> expressions) {
+  public Boolean visitBranch(BranchElimTreeNode branchNode, Substitution argsSubst) {
     List<Expression> parameters = new ArrayList<>();
     DefCallExpression ftype = (DefCallExpression) branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
     Collections.reverse(parameters);
@@ -37,31 +37,31 @@ public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Bo
         branchNode.addClause(conCall.getDefinition());
       }
       ConstructorClause clause = branchNode.getClause(conCall.getDefinition());
-      result &= clause.getChild().accept(this, clause.getSubst().substExprs(expressions));
+      result &= clause.getChild().accept(this, clause.getSubst().compose(argsSubst));
     }
 
     return result;
   }
 
   @Override
-  public Boolean visitLeaf(LeafElimTreeNode leafNode, List<Expression> expressions) {
+  public Boolean visitLeaf(LeafElimTreeNode leafNode, Substitution argsSubst) {
     return true;
   }
 
   @Override
-  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, List<Expression> expressions) {
+  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, Substitution argsSubst) {
     List<Binding> tailContext = new ArrayList<>();
-    for (Expression expression : expressions) {
-      if (expression instanceof ReferenceExpression) {
-        tailContext.add(((ReferenceExpression) expression).getBinding());
+    for (Binding binding : argsSubst.getDomain()) {
+      if (argsSubst.get(binding) instanceof ReferenceExpression) {
+        tailContext.add(((ReferenceExpression) argsSubst.get(binding)).getBinding());
       }
     }
-    return checkEmptyContext(tailContext, expressions);
+    return checkEmptyContext(tailContext, argsSubst);
   }
 
-  public boolean checkEmptyContext(List<Binding> tailContext, List<Expression> expressions) {
+  public boolean checkEmptyContext(List<Binding> tailContext, Substitution argsSubst) {
     if (tailContext.isEmpty()) {
-      myProcessor.process(expressions);
+      myProcessor.process(argsSubst);
       return false;
     }
 
@@ -70,17 +70,17 @@ public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Bo
     Collections.reverse(parameters);
 
     if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-      return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), expressions);
+      return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), argsSubst);
     }
     List<ConCallExpression> validConCalls = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(parameters);
     if (validConCalls == null) {
-      return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), expressions);
+      return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), argsSubst);
     }
 
     BranchElimTreeNode fakeBranch = new BranchElimTreeNode(tailContext.get(0), tailContext.subList(1, tailContext.size()));
     for (ConCallExpression conCall : validConCalls) {
       ConstructorClause clause = fakeBranch.addClause(conCall.getDefinition());
-      if (!checkEmptyContext(clause.getTailBindings(), clause.getSubst().substExprs(expressions)))
+      if (!checkEmptyContext(clause.getTailBindings(), clause.getSubst().compose(argsSubst)))
         return false;
     }
     return true;

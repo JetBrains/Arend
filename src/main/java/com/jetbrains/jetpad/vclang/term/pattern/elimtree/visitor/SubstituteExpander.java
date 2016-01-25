@@ -63,7 +63,7 @@ public class SubstituteExpander {
             Substitution currentSubst = new Substitution(binding, substExpr);
             myContext.addAll(toContext(constructorArgs));
             myContext.addAll(currentSubst.extendBy(tail));
-            substituteExpand(tree, currentSubst.subst(subst), currentSubst.subst(toCtx));
+            substituteExpand(tree, currentSubst.compose(subst), currentSubst.compose(toCtx));
           }
           myContext.add(binding);
           myContext.addAll(tail);

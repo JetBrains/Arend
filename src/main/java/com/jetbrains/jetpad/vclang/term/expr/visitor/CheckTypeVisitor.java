@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -21,7 +20,6 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.expression;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 
@@ -130,11 +128,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     Expression actualNorm = result.type.normalize(NormalizeVisitor.Mode.NF);
     Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF);
-    if (CompareVisitor.compare(result.equations, Equations.CMP.GE, myLocalContext, expectedNorm, actualNorm)) {
+    if (CompareVisitor.compare(result.equations, Equations.CMP.GE, expectedNorm, actualNorm)) {
       expression.setWellTyped(myLocalContext, result.expression);
       return result;
     } else {
-      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH), result.type.normalize(NormalizeVisitor.Mode.NFH), expression, getNames(myLocalContext));
+      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH), result.type.normalize(NormalizeVisitor.Mode.NFH), expression);
       expression.setWellTyped(myLocalContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return null;
@@ -665,7 +663,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Universe maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
         String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
-        TypeCheckingError error = new TypeCheckingError(msg, expr, getNames(myLocalContext));
+        TypeCheckingError error = new TypeCheckingError(msg, expr);
         expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
@@ -676,7 +674,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Universe maxUniverse = universe.max(codomainUniverse);
     if (maxUniverse == null) {
       String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
-      TypeCheckingError error = new TypeCheckingError(msg, expr, getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError(msg, expr);
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -711,7 +709,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitInferHole(Abstract.InferHoleExpression expr, Expression expectedType) {
     // TODO
-    TypeCheckingError error = new ArgInferenceError(expression(), expr, getNames(myLocalContext), null);
+    TypeCheckingError error = new ArgInferenceError(expression(), expr, null);
     expr.setWellTyped(myLocalContext, Error(null, error));
     myErrorReporter.report(error);
     return null;
@@ -726,7 +724,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         // TODO
         // Expression fExpectedTypeNorm = expectedTypeNorm.getFunction(new ArrayList<Expression>());
 
-        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(params(param(Error(null, null)), param(Error(null, null)))), expr, getNames(myLocalContext));
+        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(params(param(Error(null, null)), param(Error(null, null)))), expr);
         expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
@@ -737,7 +735,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         int sigmaParamsSize = DependentLink.Helper.size(sigmaParams);
 
         if (expr.getFields().size() != sigmaParamsSize) {
-          TypeCheckingError error = new TypeCheckingError("Expected a tuple with " + sigmaParamsSize + " fields, but given " + expr.getFields().size(), expr, getNames(myLocalContext));
+          TypeCheckingError error = new TypeCheckingError("Expected a tuple with " + sigmaParamsSize + " fields, but given " + expr.getFields().size(), expr);
           expr.setWellTyped(myLocalContext, Error(null, error));
           myErrorReporter.report(error);
           return null;
@@ -828,7 +826,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Universe maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
         String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
-        TypeCheckingError error = new TypeCheckingError(msg, expr, getNames(myLocalContext));
+        TypeCheckingError error = new TypeCheckingError(msg, expr);
         expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
@@ -860,194 +858,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return typeCheck(expr.getLeft(), expectedType);
   }
 
-  public abstract static class ExpandPatternResult {}
 
-  public static class ExpandPatternOKResult extends ExpandPatternResult {
-    public final Expression expression;
-    public final Pattern pattern;
-    public final int numBindings;
 
-    public ExpandPatternOKResult(Expression expression, Pattern pattern, int numBindings) {
-      this.expression = expression;
-      this.pattern = pattern;
-      this.numBindings = numBindings;
-    }
-  }
 
-  public static class ExpandPatternErrorResult extends  ExpandPatternResult {
-    public final TypeCheckingError error;
-
-    public ExpandPatternErrorResult(TypeCheckingError error) {
-      this.error = error;
-    }
-  }
-
-  public enum PatternExpansionMode {
-    FUNCTION, DATATYPE, CONDITION
-  }
-
-  private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode) {
-    if (pattern instanceof Abstract.NamePattern) {
-      String name = ((Abstract.NamePattern) pattern).getName();
-      if (name != null) {
-        binding = new TypedBinding(((Abstract.NamePattern) pattern).getName(), binding.getType());
-      }
-      myLocalContext.add(binding);
-      NamePattern namePattern = new NamePattern(name);
-      pattern.setWellTyped(namePattern);
-      return new ExpandPatternOKResult(Reference(binding), namePattern, 1);
-    } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
-      TypeCheckingError error = null;
-
-      Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
-      List<Expression> parameters = new ArrayList<>();
-      Expression ftype = type.getFunction(parameters);
-      Collections.reverse(parameters);
-
-      if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-        error = new TypeCheckingError("Pattern expected a data type, got: " + type.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
-        myErrorReporter.report(error);
-        return new ExpandPatternErrorResult(error);
-      }
-
-      DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
-
-      if (mode == PatternExpansionMode.DATATYPE && dataType.getConditions() != null) {
-        error = new TypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
-        myErrorReporter.report(error);
-        return new ExpandPatternErrorResult(error);
-      }
-
-      if ((mode == PatternExpansionMode.FUNCTION || mode == PatternExpansionMode.DATATYPE) && dataType == Prelude.INTERVAL) {
-        error = new TypeCheckingError("Pattern matching on an interval is not allowed here", pattern, getNames(myLocalContext));
-        myErrorReporter.report(error);
-        return new ExpandPatternErrorResult(error);
-      }
-
-      if (dataType.getMatchedConstructors(parameters) == null) {
-        error = new TypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern, getNames(myLocalContext));
-        myErrorReporter.report(error);
-        return new ExpandPatternErrorResult(error);
-      }
-
-      if (pattern instanceof Abstract.AnyConstructorPattern) {
-        AnyConstructorPattern pattern1 = new AnyConstructorPattern();
-        pattern.setWellTyped(pattern1);
-        myLocalContext.add(binding);
-        return new ExpandPatternOKResult(Reference(binding), pattern1, 1);
-      }
-
-      Abstract.ConstructorPattern constructorPattern = (Abstract.ConstructorPattern) pattern;
-
-      Constructor constructor = null;
-      for (int index = 0; index < dataType.getConstructors().size(); ++index) {
-        if (dataType.getConstructors().get(index).getName().equals(constructorPattern.getConstructorName())) {
-          constructor = dataType.getConstructors().get(index);
-          break;
-        }
-      }
-
-      if (constructor == null) {
-        error = new NotInScopeError(pattern, constructorPattern.getConstructorName());
-        myErrorReporter.report(error);
-        return new ExpandPatternErrorResult(error);
-      }
-
-      if (constructor.hasErrors()) {
-        error = new HasErrors(constructor.getName(), pattern);
-        myErrorReporter.report(error);
-        return new ExpandPatternErrorResult(error);
-      }
-
-      List<Expression> matchedParameters = null;
-      if (constructor.getPatterns() != null) {
-        Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, myLocalContext);
-        if (matchResult instanceof PatternMatchMaybeResult) {
-          throw new IllegalStateException();
-        } else if (matchResult instanceof PatternMatchFailedResult) {
-          error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
-              "Expected " + ((PatternMatchFailedResult) matchResult).failedPattern + ", got " + ((PatternMatchFailedResult) matchResult).actualExpression.prettyPrint(getNames(myLocalContext)), pattern, getNames(myLocalContext));
-        } else if (matchResult instanceof PatternMatchOKResult) {
-          matchedParameters = ((PatternMatchOKResult) matchResult).expressions;
-        } else {
-          throw new IllegalStateException();
-        }
-
-        if (error != null) {
-          myErrorReporter.report(error);
-          return new ExpandPatternErrorResult(error);
-        }
-      } else {
-        matchedParameters = new ArrayList<>(parameters);
-      }
-      Expression substExpression = ConCall(constructor, matchedParameters);
-      Collections.reverse(matchedParameters);
-      List<xTypeArgument> constructorArguments = new ArrayList<>();
-      splitArguments(constructor.getType().subst(matchedParameters, 0), constructorArguments, myLocalContext);
-
-      Utils.ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getArguments(), constructorArguments);
-      if (implicitResult.patterns == null) {
-        if (implicitResult.numExcessive != 0) {
-          error = new TypeCheckingError("Too many arguments: " + implicitResult.numExcessive + " excessive", pattern,
-              getNames(myLocalContext));
-        } else if (implicitResult.wrongImplicitPosition < constructorPattern.getArguments().size()) {
-          error = new TypeCheckingError("Unexpected implicit argument", constructorPattern.getArguments().get(implicitResult.wrongImplicitPosition), getNames(myLocalContext));
-        } else {
-          error = new TypeCheckingError("Too few explicit arguments, expected: " + implicitResult.numExplicit, pattern, getNames(myLocalContext));
-        }
-        myErrorReporter.report(error);
-        return new ExpandPatternErrorResult(error);
-      }
-      List<Abstract.PatternArgument> patterns = implicitResult.patterns;
-
-      List<PatternArgument> resultPatterns = new ArrayList<>();
-      List<Expression> substituteExpressions = new ArrayList<>();
-      int numBindings = 0;
-      for (int i = 0; i < constructorArguments.size(); ++i) {
-        Expression argumentType = constructorArguments.get(i).getType();
-        for (int j = 0; j < i; j++) {
-          argumentType = expandPatternSubstitute(resultPatterns.get(j).getPattern(), i - j - 1, substituteExpressions.get(j), argumentType);
-        }
-        ExpandPatternResult result = expandPattern(patterns.get(i).getPattern(), new TypedBinding(null, argumentType), mode);
-        if (result instanceof ExpandPatternErrorResult)
-          return result;
-        ExpandPatternOKResult okResult  = (ExpandPatternOKResult) result;
-        substituteExpressions.add(okResult.expression);
-        substExpression = Apps(substExpression.liftIndex(0, okResult.numBindings), okResult.expression);
-        resultPatterns.add(new PatternArgument(okResult.pattern, patterns.get(i).isExplicit(), patterns.get(i).isHidden()));
-        numBindings += okResult.numBindings;
-      }
-
-      pattern.setWellTyped(new ConstructorPattern(constructor, resultPatterns));
-      return new ExpandPatternOKResult(substExpression, new ConstructorPattern(constructor, resultPatterns), numBindings);
-    } else {
-      throw new IllegalStateException();
-    }
-  }
-
-  public ExpandPatternResult expandPatternOn(Abstract.Pattern pattern, int varIndex, PatternExpansionMode mode) {
-    int varContextIndex = myLocalContext.size() - 1 - varIndex;
-
-    Binding binding = myLocalContext.get(varContextIndex);
-    List<Binding> tail = new ArrayList<>(myLocalContext.subList(varContextIndex + 1, myLocalContext.size()));
-    myLocalContext.subList(varContextIndex, myLocalContext.size()).clear();
-
-    ExpandPatternResult result = expandPattern(pattern, binding, mode);
-    if (result instanceof ExpandPatternErrorResult)
-      return result;
-    ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
-    for (int i = 0; i < tail.size(); i++) {
-      myLocalContext.add(new TypedBinding(tail.get(i).getName(), expandPatternSubstitute(okResult.pattern, i, okResult.expression, tail.get(i).getType())));
-    }
-
-    return result;
-  }
 
   public Result lookupLocalVar(Abstract.Expression expression, Abstract.Expression expr) {
     if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getResolvedName() == null) {
       return myTypeCheckingDefCall.getLocalVar(((Abstract.DefCallExpression) expression).getName(), expression);
     } else {
-      TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expression, getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expression);
       myErrorReporter.report(error);
       expr.setWellTyped(myLocalContext, Error(null, error));
       return null;
@@ -1056,7 +875,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression expectedType) {
-    TypeCheckingError error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr, getNames(myLocalContext));
+    TypeCheckingError error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr);
     myErrorReporter.report(error);
     expr.setWellTyped(myLocalContext, Error(null, error));
     return null;
@@ -1065,7 +884,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitCase(Abstract.CaseExpression expr, Expression expectedType) {
     if (expectedType == null) {
-      TypeCheckingError error = new TypeCheckingError("Cannot infer type of the type", expr, getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("Cannot infer type of the type", expr);
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -1095,14 +914,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myLocalContext.add(new TypedBinding(Abstract.CaseExpression.ARGUMENT_NAME + i++, link.getType()));
     }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
-    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, myLocalContext.size() - params.size() /* TODO: what is expected here? */, expectedType);
+    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, params /* TODO: what is expected here? */, expectedType);
     if (elimTree == null) return null;
     letBinding.setElimTree(elimTree);
     myLocalContext.subList(myLocalContext.size() - expressions.size(), myLocalContext.size()).clear();
 
     LetExpression letExpression = Let(lets(letBinding), letTerm);
     expr.setWellTyped(myLocalContext, letExpression);
-    return new Result(letExpression, expectedType.liftIndex(0, 1 - expressions.size()) /* TODO: should we check for unbound references? */, equations);
+    return new Result(letExpression, expectedType /* TODO: should we check for unbound references? */, equations);
   }
 
   private Abstract.ElimExpression wrapCaseToElim(final Abstract.CaseExpression expr) {
@@ -1135,7 +954,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (exprResult == null) return null;
     Expression type = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
     if (!(type instanceof SigmaExpression)) {
-      TypeCheckingError error = new TypeCheckingError("Expected an type of a sigma type", expr, getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("Expected an type of a sigma type", expr);
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -1144,7 +963,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     DependentLink sigmaParams = ((SigmaExpression) type).getParameters();
     DependentLink fieldLink = DependentLink.Helper.get(sigmaParams, expr.getField());
     if (fieldLink == null) {
-      TypeCheckingError error = new TypeCheckingError("Index " + (expr.getField() + 1) + " out of range", expr, getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("Index " + (expr.getField() + 1) + " out of range", expr);
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -1166,7 +985,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     Expression normalizedBaseClassExpr = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
     if (!(normalizedBaseClassExpr instanceof ClassCallExpression)) {
-      TypeCheckingError error = new TypeCheckingError("Expected a class", baseClassExpr, getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("Expected a class", baseClassExpr);
       expr.setWellTyped(myLocalContext, Error(normalizedBaseClassExpr, error));
       myErrorReporter.report(error);
       return null;
@@ -1237,7 +1056,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (exprResult == null) return null;
     Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
     if (!(normExpr instanceof ClassCallExpression)) {
-      TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getExpression(), getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("Expected a class", expr.getExpression());
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -1247,7 +1066,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (classCall.getImplementStatements().size() == classCall.getDefinition().getFields().size()) {
       return checkResult(expectedType, new Result(New(normExpr), normExpr, exprResult.equations), expr);
     } else {
-      TypeCheckingError error = new TypeCheckingError("Class '" + classCall.getDefinition().getName() + "' has " + classCall.getDefinition().getNumberOfVisibleFields() + " fields", expr, getNames(myLocalContext));
+      TypeCheckingError error = new TypeCheckingError("Class '" + classCall.getDefinition().getName() + "' has " + classCall.getDefinition().getNumberOfVisibleFields() + " fields", expr);
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -1371,19 +1190,4 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new Result(expression, Nat(), null), expr);
   }
 
-  public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, List<Expression> substIn, PatternExpansionMode mode) {
-    List<PatternArgument> typedPatterns = new ArrayList<>();
-    for (int i = 0; i < patternArgs.size(); i++) {
-      ExpandPatternResult result = expandPatternOn(patternArgs.get(i).getPattern(), patternArgs.size() - 1 - i, mode);
-      if (result == null || result instanceof ExpandPatternErrorResult)
-        return null;
-
-      typedPatterns.add(new PatternArgument(((ExpandPatternOKResult) result).pattern, patternArgs.get(i).isExplicit(), patternArgs.get(i).isHidden()));
-
-      for (int j = 0; j < substIn.size(); j++) {
-        substIn.set(j, expandPatternSubstitute(((ExpandPatternOKResult) result).pattern, patternArgs.size() - i - 1, ((ExpandPatternOKResult) result).expression, substIn.get(j)));
-      }
-    }
-    return new Patterns(typedPatterns);
-  }
 }

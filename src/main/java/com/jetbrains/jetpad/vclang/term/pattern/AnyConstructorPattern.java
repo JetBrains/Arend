@@ -14,13 +14,13 @@ import java.util.Collections;
 import java.util.Map;
 
 public class AnyConstructorPattern extends Pattern implements Abstract.AnyConstructorPattern {
-  private final NonDependentLink myLink;
+  private final DependentLink myLink;
 
-  public AnyConstructorPattern(NonDependentLink link) {
+  public AnyConstructorPattern(DependentLink link) {
     myLink = link;
   }
 
-  public NonDependentLink getLink() {
+  public DependentLink getLink() {
     return myLink;
   }
 

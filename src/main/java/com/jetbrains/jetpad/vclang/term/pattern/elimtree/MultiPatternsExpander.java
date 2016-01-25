@@ -1,12 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsExpander.Branch;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsExpander.recalcIndices;
 
 public class MultiPatternsExpander {
@@ -42,7 +44,11 @@ public class MultiPatternsExpander {
     myNestedPatterns = patterns;
   }
 
-  public static MultiElimTreeExpansionResult expandPatterns(List<Binding> patternBindings, List<List<Pattern>> patterns, List<Binding> context) {
+  public static MultiElimTreeExpansionResult expandPatterns(DependentLink eliminatingArgs, List<List<Pattern>> patterns) {
+    return expandPatterns(toContext(eliminatingArgs), patterns, new ArrayList<Binding>());
+  }
+
+  static MultiElimTreeExpansionResult expandPatterns(List<Binding> patternBindings, List<List<Pattern>> patterns, List<Binding> context) {
     return new MultiPatternsExpander(patterns).expandPatterns(patternBindings, context);
   }
 

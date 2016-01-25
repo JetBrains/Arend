@@ -39,7 +39,7 @@ public class Substitution {
     return result;
   }
 
-  public Substitution subst(Substitution subst) {
+  public Substitution compose(Substitution subst) {
     Substitution result = new Substitution();
     for (Binding binding : subst.getDomain()) {
       result.addMapping(binding, subst.get(binding).subst(this));
@@ -52,6 +52,14 @@ public class Substitution {
     for (Binding binding : context) {
       result.add(new TypedBinding(binding.getName(), binding.getType().subst(this)));
       addMapping(binding, Reference(result.get(result.size() - 1)));
+    }
+    return result;
+  }
+
+  public static Substitution getIdentity(List<Binding> bindings) {
+    Substitution result = new Substitution();
+    for (Binding binding : bindings) {
+      result.addMapping(binding, new ReferenceExpression(binding));
     }
     return result;
   }
