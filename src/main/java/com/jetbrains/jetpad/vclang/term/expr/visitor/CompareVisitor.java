@@ -24,16 +24,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     myCMP = cmp;
   }
 
-  private class NumberOfLambdas {
-    int number;
-    Expression body;
-
-    public NumberOfLambdas(int number, Expression body) {
-      this.number = number;
-      this.body = body;
-    }
-  }
-
   public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2) {
     return new CompareVisitor(equations, cmp).compare(expr1, expr2);
   }
@@ -280,22 +270,21 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   public Boolean visitPi(PiExpression expr1, Expression expr2) {
     if (!(expr2 instanceof PiExpression)) return false;
 
-    List<DependentLink> params1 = new ArrayList<>();
-    Expression cod1 = expr1;
-    while (cod1 instanceof PiExpression) {
-      params1.add(((PiExpression) cod1).getParameters());
-      cod1 = ((PiExpression) cod1).getCodomain();
-    }
-    List<DependentLink> params2 = new ArrayList<>();
-    Expression cod2 = expr2;
-    while (cod2 instanceof PiExpression) {
-      params2.add(((PiExpression) cod2).getParameters());
-      cod2 = ((PiExpression) cod2).getCodomain();
+    List<DependentLink> params1 = new ArrayList<>(), params2 = new ArrayList<>();
+    Expression cod1 = expr1.getPiParameters(params1);
+    Expression cod2 = expr2.getPiParameters(params2);
+    if (params1.size() != params2.size()) {
+      return false;
     }
 
     Equations.CMP oldCMP = myCMP;
     myCMP = Equations.CMP.EQ;
-    if (!compareTypeArguments(params1, params2) && compare(cod1, cod2)) {
+    for (int i = 0; i < params1.size(); i++) {
+      if (!compare(params1.get(i).getType(), params2.get(i).getType())) {
+        return false;
+      }
+    }
+    if (!compare(cod1, cod2)) {
       return false;
     }
     myCMP = oldCMP;
@@ -309,34 +298,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
     }
     return params1 == null && params2 == null;
-  }
-
-  private boolean compareTypeArguments(List<DependentLink> params1, List<DependentLink> params2) {
-    DependentLink link1 = null, link2 = null;
-    int i1 = 0, i2 = 0;
-    while (true) {
-      while (link1 == null) {
-        if (i1 == params1.size()) {
-          break;
-        }
-        link1 = params1.get(i1++);
-      }
-      while (link2 == null) {
-        if (i2 == params2.size()) {
-          break;
-        }
-        link2 = params2.get(i2++);
-      }
-      if (link1 == null || link2 == null) {
-        return link1 == null && link2 == null;
-      }
-
-      if (!compare(link1.getType(), link2.getType())) {
-        return false;
-      }
-      link1 = link1.getNext();
-      link2 = link2.getNext();
-    }
   }
 
   @Override

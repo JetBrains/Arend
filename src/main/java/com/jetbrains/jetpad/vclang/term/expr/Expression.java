@@ -3,12 +3,16 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public abstract class Expression implements PrettyPrintable {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
@@ -59,7 +63,7 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
-    return CompareVisitor.compare(DummyEquations.getInstance(), cmp, new ArrayList<Binding>(), expr1, expr2);
+    return CompareVisitor.compare(DummyEquations.getInstance(), cmp, expr1, expr2);
   }
 
   public static boolean compare(Expression expr1, Expression expr2) {
@@ -84,5 +88,16 @@ public abstract class Expression implements PrettyPrintable {
       expr = ((AppExpression) expr).getFunction();
     }
     return expr;
+  }
+
+  public Expression getPiParameters(List<DependentLink> params) {
+    Expression cod = this;
+    while (cod instanceof PiExpression) {
+      for (DependentLink link = ((PiExpression) cod).getParameters(); link != null; link = link.getNext()) {
+        params.add(link);
+      }
+      cod = ((PiExpression) cod).getCodomain();
+    }
+    return cod;
   }
 }

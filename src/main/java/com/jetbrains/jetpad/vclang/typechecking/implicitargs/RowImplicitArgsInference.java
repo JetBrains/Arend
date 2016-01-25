@@ -61,11 +61,6 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
       public boolean isHidden() {
         return false;
       }
-
-      @Override
-      public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-        expression.prettyPrint(builder, names, prec);
-      }
     }
 
     List<Abstract.ArgumentExpression> args = new ArrayList<>(2);

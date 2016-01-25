@@ -1,14 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.param.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.term.expr.param.Utils.splitArguments;
 
 public abstract class TailImplicitArgsInference extends BaseImplicitArgsInference {
   protected TailImplicitArgsInference(CheckTypeVisitor visitor) {
@@ -21,27 +19,27 @@ public abstract class TailImplicitArgsInference extends BaseImplicitArgsInferenc
 
   @Override
   public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Expression expectedType, Abstract.Expression expr) {
-    List<TypeArgument> actualArgs = new ArrayList<>();
-    Expression actualType = splitArguments(fun.type, actualArgs, myVisitor.getLocalContext());
-    List<TypeArgument> expectedArgs = new ArrayList<>(actualArgs.size());
-    expectedType = splitArguments(expectedType, expectedArgs, myVisitor.getLocalContext());
-    if (expectedArgs.size() > actualArgs.size()) {
+    List<DependentLink> actualParams = new ArrayList<>();
+    Expression actualType = fun.type.getPiParameters(actualParams);
+    List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
+    expectedType = expectedType.getPiParameters(expectedParams);
+    if (expectedParams.size() > actualParams.size()) {
       return null;
     }
 
-    int argsNumber = actualArgs.size() - expectedArgs.size();
-    for (int i = 0; i < expectedArgs.size(); ++i) {
-      if (expectedArgs.get(i).getExplicit() != actualArgs.get(argsNumber + i).getExplicit()) {
+    int argsNumber = actualParams.size() - expectedParams.size();
+    for (int i = 0; i < expectedParams.size(); ++i) {
+      if (expectedParams.get(i).isExplicit() != actualParams.get(argsNumber + i).isExplicit()) {
         return null;
       }
     }
 
     List<Expression> argTypes = new ArrayList<>(argsNumber);
     for (int i = 0; i < argsNumber; ++i) {
-      if (actualArgs.get(i).getExplicit()) {
+      if (actualParams.get(i).isExplicit()) {
         return null;
       }
-      argTypes.add(actualArgs.get(i).getType());
+      argTypes.add(actualParams.get(i).getType());
     }
 
     // TODO: add Pi to expectedType and actualType and replace indices with inference variables in actual type, compare them and return result.
