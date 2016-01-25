@@ -22,7 +22,8 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.*;
+import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.expression;
+import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
   private final List<Binding> myLocalContext;
@@ -1200,7 +1201,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Name name = identifier.getName();
       ClassField field = baseClass.removeField(name.name);
       if (field == null) {
-        TypeCheckingError error = new TypeCheckingError("Class '" + baseClass.getName() + "' does not have field '" + name + "'", identifier, null);
+        TypeCheckingError error = new TypeCheckingError("Class '" + baseClass.getName() + "' does not have field '" + name + "'", identifier);
         myErrorReporter.report(error);
       } else {
         fields.add(new ImplementStatement(field, statement.getExpression()));
@@ -1370,7 +1371,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new Result(expression, Nat(), null), expr);
   }
 
-  public List<PatternArgument> visitPatternArgs(List<Abstract.PatternArgument> patternArgs, List<Expression> substIn, PatternExpansionMode mode) {
+  public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, List<Expression> substIn, PatternExpansionMode mode) {
     List<PatternArgument> typedPatterns = new ArrayList<>();
     for (int i = 0; i < patternArgs.size(); i++) {
       ExpandPatternResult result = expandPatternOn(patternArgs.get(i).getPattern(), patternArgs.size() - 1 - i, mode);
@@ -1383,6 +1384,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         substIn.set(j, expandPatternSubstitute(((ExpandPatternOKResult) result).pattern, patternArgs.size() - i - 1, ((ExpandPatternOKResult) result).expression, substIn.get(j)));
       }
     }
-    return typedPatterns;
+    return new Patterns(typedPatterns);
   }
 }

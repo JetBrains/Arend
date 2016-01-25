@@ -46,15 +46,15 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
   @Override
   public NamespaceMember visitDefine(Abstract.DefineStatement stat, Flag flag) {
     if (!stat.isStatic() && flag == Flag.MUST_BE_STATIC) {
-      myErrorReporter.report(new TypeCheckingError("Non-static definition in a static context", stat, myContext));
+      myErrorReporter.report(new TypeCheckingError("Non-static definition in a static context", stat));
       return null;
     } else
     if (stat.isStatic() && flag == Flag.MUST_BE_DYNAMIC) {
-      myErrorReporter.report(new TypeCheckingError("Static definitions are not allowed in this context", stat, myContext));
+      myErrorReporter.report(new TypeCheckingError("Static definitions are not allowed in this context", stat));
       return null;
     } else
     if (stat.isStatic() && stat.getDefinition() instanceof Abstract.AbstractDefinition) {
-      myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat, myContext));
+      myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat));
       return null;
     } else {
       DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myErrorReporter, myNamespace, myNameResolver, myContext);
@@ -80,7 +80,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
   @Override
   public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Flag flag) {
     if (flag == Flag.MUST_BE_DYNAMIC) {
-      myErrorReporter.report(new TypeCheckingError("Namespace commands are not allowed in this context", stat, myContext));
+      myErrorReporter.report(new TypeCheckingError("Namespace commands are not allowed in this context", stat));
       return null;
     }
 
@@ -131,7 +131,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
             if (parentStatement != null && parentStatement.isStatic()) {
               processNamespaceCommand(member1, export, remove, stat);
             } else {
-              myErrorReporter.report(new TypeCheckingError("Definition '" + name.getName() + "' is not static", stat, null));
+              myErrorReporter.report(new TypeCheckingError("Definition '" + name.getName() + "' is not static", stat));
             }
           } else if (member1.definition != null && member1.definition.getThisClass() == null) {
             processNamespaceCommand(member1, export, remove, stat);

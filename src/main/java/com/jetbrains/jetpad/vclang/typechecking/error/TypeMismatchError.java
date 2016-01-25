@@ -11,13 +11,13 @@ public class TypeMismatchError extends TypeCheckingError {
   private final Expression myActual;
 
   public TypeMismatchError(ResolvedName resolvedName, Object expected, Expression actual, Abstract.Expression expression, List<String> names) {
-    super(resolvedName, null, expression, names);
+    super(resolvedName, null, expression);
     myExpected = expected;
     myActual = actual;
   }
 
   public TypeMismatchError(Object expected, Expression actual, Abstract.Expression expression, List<String> names) {
-    super(null, expression, names);
+    super(null, expression);
     myExpected = expected;
     myActual = actual;
   }

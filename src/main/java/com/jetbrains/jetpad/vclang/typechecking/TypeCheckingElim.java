@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
@@ -13,8 +12,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.MultiElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.MultiElimTreeExpander;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ConditionViolationsCollector;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -37,7 +36,7 @@ public class TypeCheckingElim {
     return checkConditions(def.getName(), def, def.getArguments(), eli, elimTree);
   }
 
-  public static TypeCheckingError checkConditions(final Name name, final Abstract.SourceNode source, final List<? extends Abstract.Argument> arguments, DependentLink elimminatingArgs, ElimTreeNode elimTree) {
+  public static TypeCheckingError checkConditions(final String name, final Abstract.SourceNode source, final List<? extends Abstract.Argument> arguments, DependentLink elimminatingArgs, ElimTreeNode elimTree) {
     final StringBuilder errorMsg = new StringBuilder();
 
     ConditionViolationsCollector.check(elimminatingArgs, elimTree, new ConditionViolationsCollector.ConditionViolationChecker() {

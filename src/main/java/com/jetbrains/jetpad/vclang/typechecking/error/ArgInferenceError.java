@@ -11,12 +11,12 @@ public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
 
   public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, List<String> names, PrettyPrintable where) {
-    super(resolvedName, message, expression, names);
+    super(resolvedName, message, expression);
     myWhere = where;
   }
 
   public ArgInferenceError(String message, Abstract.SourceNode expression, List<String> names, PrettyPrintable where) {
-    super(message, expression, names);
+    super(message, expression);
     myWhere = where;
   }
 

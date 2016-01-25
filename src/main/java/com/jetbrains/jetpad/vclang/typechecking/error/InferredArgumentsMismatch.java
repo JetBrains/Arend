@@ -12,13 +12,13 @@ public class InferredArgumentsMismatch extends TypeCheckingError {
   private final List<Abstract.Expression> myOptions;
 
   public InferredArgumentsMismatch(ResolvedName resolvedName, int argument, List<Abstract.Expression> options, Abstract.Expression expression, List<String> names) {
-    super(resolvedName, null, expression, names);
+    super(resolvedName, null, expression);
     myArgument = argument;
     myOptions = options;
   }
 
   public InferredArgumentsMismatch(int argument, List<Abstract.Expression> options, Abstract.Expression expression, List<String> names) {
-    super(null, expression, names);
+    super(null, expression);
     myArgument = argument;
     myOptions = options;
   }

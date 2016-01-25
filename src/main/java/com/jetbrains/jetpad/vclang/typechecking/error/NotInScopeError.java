@@ -8,12 +8,12 @@ public class NotInScopeError extends TypeCheckingError {
   private final String myName;
 
   public NotInScopeError(ResolvedName resolvedName, Abstract.SourceNode expression, String name) {
-    super(resolvedName, "Not in scope", expression, null);
+    super(resolvedName, "Not in scope", expression);
     myName = name;
   }
 
   public NotInScopeError(Abstract.SourceNode expression, String name) {
-    super("Not in scope", expression, null);
+    super("Not in scope", expression);
     myName = name;
   }
 

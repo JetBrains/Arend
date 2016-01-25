@@ -9,13 +9,13 @@ public class NameDefinedError extends TypeCheckingError {
   private final ResolvedName myResolvedName;
 
   public NameDefinedError(boolean alreadyDefined, ResolvedName resolvedName, Abstract.SourceNode expression, String name, ResolvedName where) {
-    super(resolvedName, alreadyDefined ? "is already defined" : "is not defined", expression, null);
+    super(resolvedName, alreadyDefined ? "is already defined" : "is not defined", expression);
     myName = name;
     myResolvedName = where;
   }
 
   public NameDefinedError(boolean alreadyDefined, Abstract.SourceNode expression, String name, ResolvedName where) {
-    super(alreadyDefined ? "is already defined" : "is not defined", expression, null);
+    super(alreadyDefined ? "is already defined" : "is not defined", expression);
     myName = name;
     myResolvedName = where;
   }

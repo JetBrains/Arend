@@ -17,6 +17,7 @@ import static com.jetbrains.jetpad.vclang.term.context.Utils.removeFromList;
 import static com.jetbrains.jetpad.vclang.term.context.Utils.trimToSize;
 
 // TODO: Simplify pretty printer
+// TODO: move myNames to ToAbstractVisitor
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void> {
   private final StringBuilder myBuilder;

@@ -51,11 +51,20 @@ public interface DependentLink extends Binding {
     public static DependentLink get(DependentLink link, int index) {
       for (int i = 0; i < index; i++) {
         if (link == null) {
-          return link;
+          return null;
         }
         link = link.getNext();
       }
       return link;
+    }
+
+    public static int getIndex(DependentLink begin, DependentLink link) {
+      for (int index = 0; begin != null; begin = begin.getNext(), index++) {
+        if (begin == link) {
+          return index;
+        }
+      }
+      return -1;
     }
 
     public static DependentLink append(DependentLink link, DependentLink next) {
