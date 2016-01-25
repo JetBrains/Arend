@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 public class LetClause extends NamedBinding implements Function {
-  private final DependentLink myParameters;
+  private DependentLink myParameters;
   private ElimTreeNode myElimTree;
   private final Expression myResultType;
 
@@ -30,6 +30,10 @@ public class LetClause extends NamedBinding implements Function {
   @Override
   public DependentLink getParameters() {
     return myParameters;
+  }
+
+  public void setParameters(DependentLink parameters) {
+    myParameters = parameters;
   }
 
   @Override

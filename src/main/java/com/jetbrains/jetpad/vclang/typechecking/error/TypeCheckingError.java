@@ -49,10 +49,9 @@ public class TypeCheckingError extends GeneralError {
     return builder.toString();
   }
 
-  protected String prettyPrint(Abstract.Expression expression) {
+  protected String prettyPrint(Abstract.SourceNode node) {
     StringBuilder builder = new StringBuilder();
-    expression.accept(new PrettyPrintVisitor(builder, myNames, 0), Abstract.Expression.PREC);
-    return builder.toString();
+    return new PrettyPrintVisitor(builder, myNames, 0).prettyPrint(node, Abstract.Expression.PREC) ? builder.toString() : null;
   }
 
   @Override
@@ -70,10 +69,7 @@ public class TypeCheckingError extends GeneralError {
   @Override
   public String toString() {
     String msg = super.toString();
-    if (myExpression instanceof Abstract.PrettyPrintableSourceNode) {
-      return msg + " in " + prettyPrint((Abstract.PrettyPrintableSourceNode) myExpression);
-    } else {
-      return msg;
-    }
+    String ppExpr = prettyPrint(myExpression);
+    return ppExpr != null ? msg + " in " + ppExpr : msg;
   }
 }

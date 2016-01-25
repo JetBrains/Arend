@@ -15,7 +15,6 @@ public final class Abstract {
   private Abstract() {}
 
   public interface SourceNode {}
-  public interface PrettyPrintableSourceNode extends SourceNode, PrettyPrintable {}
 
   public interface Identifier extends SourceNode {
     Name getName();

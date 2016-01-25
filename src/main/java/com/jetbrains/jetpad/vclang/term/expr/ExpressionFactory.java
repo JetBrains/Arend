@@ -122,6 +122,14 @@ public class ExpressionFactory {
     return new LetClause(name, params, resultType, elimTree);
   }
 
+  public static DependentLink params(DependentLink... links) {
+    for (int i = 0; i < links.length - 1; i++) {
+      assert links[i].getNext() == null;
+      links[i].setNext(links[i + 1]);
+    }
+    return links[0];
+  }
+
   public static DependentLink param(boolean explicit, String var, Expression type) {
     return new TypedDependentLink(explicit, var, type, null);
   }

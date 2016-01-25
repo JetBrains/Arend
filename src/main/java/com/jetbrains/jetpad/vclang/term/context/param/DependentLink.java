@@ -47,5 +47,24 @@ public interface DependentLink extends Binding {
       }
       return result;
     }
+
+    public static DependentLink get(DependentLink link, int index) {
+      for (int i = 0; i < index; i++) {
+        if (link == null) {
+          return link;
+        }
+        link = link.getNext();
+      }
+      return link;
+    }
+
+    public static DependentLink append(DependentLink link, DependentLink next) {
+      if (link == null) {
+        return next;
+      }
+      assert link.getNext() == null;
+      link.setNext(next);
+      return next;
+    }
   }
 }

@@ -12,13 +12,13 @@ public class GoalError extends TypeCheckingError {
   private final List<Binding> myContext;
   private final Expression myType;
 
-  public GoalError(ResolvedName resolvedName, List<Binding> context, Expression type, Abstract.PrettyPrintableSourceNode expression) {
+  public GoalError(ResolvedName resolvedName, List<Binding> context, Expression type, Abstract.SourceNode expression) {
     super(resolvedName, "Goal", expression, getNames(context));
     myContext = new ArrayList<>(context);
     myType = type;
   }
 
-  public GoalError(List<Binding> context, Expression type, Abstract.PrettyPrintableSourceNode expression) {
+  public GoalError(List<Binding> context, Expression type, Abstract.SourceNode expression) {
     super("Goal", expression, getNames(context));
     myContext = new ArrayList<>(context);
     myType = type;

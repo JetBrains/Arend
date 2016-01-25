@@ -30,6 +30,42 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myIndent = indent;
   }
 
+  public boolean prettyPrint(Abstract.SourceNode node, byte prec) {
+    if (node instanceof Abstract.Expression) {
+      ((Abstract.Expression) node).accept(this, prec);
+      return true;
+    }
+    if (node instanceof Abstract.Argument) {
+      prettyPrintArgument((Abstract.Argument) node, prec);
+      return true;
+    }
+    if (node instanceof Abstract.Definition) {
+      ((Abstract.Definition) node).accept(this, null);
+      return true;
+    }
+    if (node instanceof Abstract.Clause) {
+      prettyPrintClause((Abstract.Clause) node);
+      return true;
+    }
+    if (node instanceof Abstract.LetClause) {
+      prettyPrintLetClause((Abstract.LetClause) node);
+      return true;
+    }
+    if (node instanceof Abstract.Condition) {
+      prettyPrintCondition((Abstract.Condition) node);
+      return true;
+    }
+    if (node instanceof Abstract.Pattern) {
+      prettyPrintPattern((Abstract.Pattern) node);
+      return true;
+    }
+    if (node instanceof Abstract.PatternArgument) {
+      prettyPrintPatternArg((Abstract.PatternArgument) node);
+      return true;
+    }
+    return false;
+  }
+
   private void visitApps(Abstract.Expression expr, List<Abstract.ArgumentExpression> args, byte prec) {
     if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getResolvedName() != null) {
       if (((Abstract.DefCallExpression) expr).getName().fixity == Abstract.Definition.Fixity.INFIX) {
@@ -58,7 +94,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         }
       }
 
-      if (Prelude.isPath(((Abstract.DefCallExpression) expr).getResolvedName().toDefinition()) && args.size() == 3 && args.get(0).getExpression() instanceof LamExpression && ((LamExpression) args.get(0).getExpression()).getBody().liftIndex(0, -1) != null) {
+      if (Prelude.isPath(((Abstract.DefCallExpression) expr).getResolvedName().toDefinition()) && args.size() == 3 && args.get(0).getExpression() instanceof LamExpression && !((LamExpression) args.get(0).getExpression()).getBody().findBinding(((LamExpression) args.get(0).getExpression()).getParameters())) {
         if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append('(');
         args.get(1).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
         char[] eqs = new char[Prelude.getLevel(((Abstract.DefCallExpression) expr).getResolvedName().toDefinition()) + 1];

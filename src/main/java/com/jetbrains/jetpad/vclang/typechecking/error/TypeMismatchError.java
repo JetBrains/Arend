@@ -25,12 +25,18 @@ public class TypeMismatchError extends TypeCheckingError {
   @Override
   public String toString() {
     String message = printHeader();
+    String ppExpected = myExpected instanceof Abstract.SourceNode ? prettyPrint((Abstract.SourceNode) myExpected) : null;
+    if (ppExpected == null) {
+      ppExpected = myExpected.toString();
+    }
     message += "Type mismatch:\n" +
-        "\tExpected type: " + (myExpected instanceof Abstract.Expression ? prettyPrint((Abstract.Expression) myExpected) : myExpected.toString()) + "\n" +
+        "\tExpected type: " + ppExpected + "\n" +
         "\t  Actual type: " + prettyPrint(myActual);
-    if (getCause() instanceof Abstract.PrettyPrintableSourceNode) {
+
+    String ppClause = prettyPrint(getCause());
+    if (ppClause != null) {
       message += "\n" +
-          "\tIn expression: " + prettyPrint((Abstract.PrettyPrintableSourceNode) getCause());
+          "\tIn expression: " + ppClause;
     }
     return message;
   }

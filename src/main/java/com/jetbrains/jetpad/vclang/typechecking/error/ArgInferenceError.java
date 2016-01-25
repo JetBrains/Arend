@@ -10,12 +10,12 @@ import java.util.List;
 public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
 
-  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, PrettyPrintable where) {
+  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, List<String> names, PrettyPrintable where) {
     super(resolvedName, message, expression, names);
     myWhere = where;
   }
 
-  public ArgInferenceError(String message, Abstract.PrettyPrintableSourceNode expression, List<String> names, PrettyPrintable where) {
+  public ArgInferenceError(String message, Abstract.SourceNode expression, List<String> names, PrettyPrintable where) {
     super(message, expression, names);
     myWhere = where;
   }
