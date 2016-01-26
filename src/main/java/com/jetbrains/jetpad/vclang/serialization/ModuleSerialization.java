@@ -230,25 +230,38 @@ public class ModuleSerialization {
     }
   }
 
+  private static void writeParameter(SerializeVisitor visitor, DependentLink link) throws IOException {
+    if (link instanceof TypedDependentLink) {
+      visitor.getDataStream().write(1);
+      visitor.getDataStream().writeBoolean(link.isExplicit());
+      visitor.getDataStream().writeUTF(link.getName());
+      link.getType().accept(visitor, null);
+    } else
+    if (link instanceof UntypedDependentLink) {
+      visitor.getDataStream().write(2);
+      visitor.getDataStream().writeUTF(link.getName());
+    } else
+    if (link instanceof NonDependentLink) {
+      visitor.getDataStream().write(3);
+      visitor.getDataStream().writeBoolean(link.isExplicit());
+      link.getType().accept(visitor, null);
+    } else {
+      throw new IllegalStateException();
+    }
+    visitor.addDependentLink(link);
+  }
+
+  public static void writeParameter1(SerializeVisitor visitor, DependentLink link) throws IOException {
+    if (link != null) {
+      writeParameter(visitor, link);
+    } else {
+      visitor.getDataStream().write(0);
+    }
+  }
+
   public static void writeParameters(SerializeVisitor visitor, DependentLink link) throws IOException {
     for (; link != null; link = link.getNext()) {
-      if (link instanceof TypedDependentLink) {
-        visitor.getDataStream().write(1);
-        visitor.getDataStream().writeBoolean(link.isExplicit());
-        visitor.getDataStream().writeUTF(link.getName());
-        link.getType().accept(visitor, null);
-      } else
-      if (link instanceof UntypedDependentLink) {
-        visitor.getDataStream().write(2);
-        visitor.getDataStream().writeUTF(link.getName());
-      } else
-      if (link instanceof NonDependentLink) {
-        visitor.getDataStream().write(3);
-        visitor.getDataStream().writeBoolean(link.isExplicit());
-        link.getType().accept(visitor, null);
-      } else {
-        throw new IllegalStateException();
-      }
+      writeParameter(visitor, link);
     }
     visitor.getDataStream().write(0);
   }

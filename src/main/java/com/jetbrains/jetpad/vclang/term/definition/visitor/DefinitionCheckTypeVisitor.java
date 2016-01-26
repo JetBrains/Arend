@@ -566,12 +566,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
           try (Utils.CompleteContextSaver<Binding> saver = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
-            List<Expression> resultType = new ArrayList<>(Collections.singletonList(splitArguments(constructor.getBaseType(), new ArrayList<xTypeArgument>(), visitor.getLocalContext())));
-            List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, constructor.getArguments(), cond.getPatterns());
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getBaseType().getPiParameters(null)));
+            List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, constructor.getParameters(), cond.getPatterns());
             if (processedPatterns == null)
               continue;
 
-            Patterns typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, resultType, TypeCheckingElim.PatternExpansionMode.CONDITION);
+            Patterns typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, constructor.getParameters(), resultType, TypeCheckingElim.PatternExpansionMode.CONDITION);
 
             CheckTypeVisitor.Result result = visitor.checkType(cond.getTerm(), resultType.get(0));
             if (result == null)
@@ -631,17 +631,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   }
 
   private void expandConstructorContext(Constructor constructor, List<Binding> context) {
-    if (constructor.getPatterns() != null) {
-      for (xTypeArgument arg : expandConstructorParameters(constructor, context)) {
-        Utils.pushArgument(context, arg);
-      }
-    } else {
-      for (xTypeArgument arg : constructor.getDataType().getParameters()) {
-        Utils.pushArgument(context, arg);
-      }
+    for (DependentLink link = constructor.getDataTypeParameters(); link != null; link = link.getNext()) {
+      context.add(new TypedBinding(link.getName(), link.getType()));
     }
-    for (xTypeArgument arg : constructor.getArguments()) {
-      Utils.pushArgument(context, arg);
+    for (DependentLink link = constructor.getParameters(); link != null; link = link.getNext()) {
+      context.add(new TypedBinding(link.getName(), link.getType()));
     }
   }
 

@@ -93,8 +93,10 @@ public abstract class Expression implements PrettyPrintable {
   public Expression getPiParameters(List<DependentLink> params) {
     Expression cod = this;
     while (cod instanceof PiExpression) {
-      for (DependentLink link = ((PiExpression) cod).getParameters(); link != null; link = link.getNext()) {
-        params.add(link);
+      if (params != null) {
+        for (DependentLink link = ((PiExpression) cod).getParameters(); link != null; link = link.getNext()) {
+          params.add(link);
+        }
       }
       cod = ((PiExpression) cod).getCodomain();
     }

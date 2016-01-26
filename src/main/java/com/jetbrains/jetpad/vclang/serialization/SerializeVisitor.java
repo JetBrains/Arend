@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
@@ -16,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVis
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implements ElimTreeNodeVisitor<Void, Void> {
@@ -23,6 +26,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   private final DefNamesIndices myDefNamesIndices;
   private final ByteArrayOutputStream myStream;
   private final DataOutputStream myDataStream;
+  private int myCounter = 0;
+  private final Map<Binding, Integer> myBindingMap = new HashMap<>();
 
   public SerializeVisitor(DefNamesIndices definitionsIndices, ByteArrayOutputStream stream, DataOutputStream dataStream) {
     myDefNamesIndices = definitionsIndices;
@@ -111,11 +116,25 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     return null;
   }
 
+  public void addDependentLink(DependentLink link) {
+    for (; link != null; link = link.getNext()) {
+      myBindingMap.put(link, myCounter++);
+    }
+  }
+
+  private int getIndex(Binding binding) {
+    Integer index = myBindingMap.get(binding);
+    if (index == null) {
+      throw new IllegalStateException();
+    }
+    return index;
+  }
+
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
     myStream.write(5);
     try {
-      myDataStream.writeInt(expr.getIndex());
+      myDataStream.writeInt(getIndex(expr.getBinding()));
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -223,10 +242,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       } else if (pattern instanceof ConstructorPattern) {
         myDataStream.writeInt(2);
       }
-      if (pattern instanceof NamePattern) {
-        myDataStream.writeBoolean(((NamePattern) pattern).getName() != null);
-        if (((NamePattern) pattern).getName() != null)
-          myDataStream.writeUTF(((NamePattern) pattern).getName());
+      if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern) {
+        ModuleSerialization.writeParameter1(this, pattern.getParameters());
       } else if (pattern instanceof ConstructorPattern) {
         Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
         myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(new ResolvedName(constructor.getParentNamespace(), constructor.getName()), false));
@@ -292,7 +309,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
     try {
       myDataStream.writeInt(0);
-      myDataStream.writeInt(branchNode.getIndex());
+      myDataStream.writeInt(getIndex(branchNode.getReference()));
       myDataStream.writeInt(branchNode.getConstructorClauses().size());
       for (ConstructorClause clause : branchNode.getConstructorClauses()) {
         myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(clause.getConstructor().getResolvedName(), false));
