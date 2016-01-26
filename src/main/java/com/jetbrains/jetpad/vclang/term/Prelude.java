@@ -71,7 +71,7 @@ public class Prelude extends Namespace {
     coerceParameter1.setNext(coerceParameter2);
     coerceParameter2.setNext(coerceParameter3);
     BranchElimTreeNode coerceElimTreeNode = branch(coerceParameter3, tail(),
-        clause(LEFT, params(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2)));
+        clause(LEFT, null, Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2)));
     COERCE = new FunctionDefinition(PRELUDE, new Name("coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode);
 
     PRELUDE.addDefinition(COERCE);
@@ -164,9 +164,9 @@ public class Prelude extends Namespace {
     atParameter4.setNext(atParameter5);
     Expression atResultType = Apps(Reference(atParameter1), Reference(atParameter5));
     BranchElimTreeNode atElimTree = branch(atParameter5, tail(),
-      clause(LEFT, params(), Reference(atParameter2)),
-      clause(RIGHT, params(), Reference(atParameter3)),
-      clause(null, params(), branch(atParameter4, tail(),
+      clause(LEFT, null, Reference(atParameter2)),
+      clause(RIGHT, null, Reference(atParameter3)),
+      clause(null, null, branch(atParameter4, tail(),
           clause((Constructor) PRELUDE.getDefinition("path" + suffix), null, Apps(Reference(atParameter4), Reference(atParameter5)))))
     );
     Arrays.fill(chars, '@');
@@ -189,8 +189,8 @@ public class Prelude extends Namespace {
     isoParameter5.setNext(isoParameter6);
     Expression isoResultType = Universe(i, Universe.Type.NOT_TRUNCATED);
     BranchElimTreeNode isoElimTree = branch(isoParameter6, tail(),
-      clause(LEFT, params(), Reference(isoParameter1)),
-      clause(RIGHT, params(), Reference(isoParameter1.getNext()))
+      clause(LEFT, null, Reference(isoParameter1)),
+      clause(RIGHT, null, Reference(isoParameter1.getNext()))
     );
     FunctionDefinition iso = new FunctionDefinition(PRELUDE, new Name("iso" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree);
     PRELUDE.addDefinition(iso);

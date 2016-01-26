@@ -167,6 +167,10 @@ public class ExpressionFactory {
     return new PiExpression(domain, codomain);
   }
 
+  public static PiExpression Pi(Expression domain, Expression codomain) {
+    return new PiExpression(param(domain), codomain);
+  }
+
   public static SigmaExpression Sigma(DependentLink domain) {
     return new SigmaExpression(domain);
   }

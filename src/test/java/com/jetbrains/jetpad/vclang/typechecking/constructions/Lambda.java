@@ -29,7 +29,7 @@ public class Lambda {
 
   @Test
   public void constantSep() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => \\lam y => x", Pi(typeArgs(Tele(vars("x", "y"), Nat())), Nat()));
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => \\lam y => x", Pi(param(true, vars("x", "y"), Nat()), Nat()));
     assertNotNull(result);
   }
 
@@ -41,7 +41,7 @@ public class Lambda {
 
   @Test
   public void idImplicit() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {x} => x", Pi(false, null, Nat(), Nat()));
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {x} => x", Pi(param(false, (String) null, Nat()), Nat()));
     assertNotNull(result);
   }
 
@@ -59,13 +59,13 @@ public class Lambda {
 
   @Test
   public void constantImplicitTeleError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x {y} => x", Pi(typeArgs(Tele(vars("x", "y"), Nat())), Nat()), 1);
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x {y} => x", Pi(param(true, vars("x", "y"), Nat()), Nat()), 1);
     assertNull(result);
   }
 
   @Test
   public void constantImplicitTypeError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x y => x", Pi(Nat(), Pi(false, null, Nat(), Nat())), 1);
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x y => x", Pi(Nat(), Pi(param(false, (String) null, Nat()), Nat())), 1);
     assertNull(result);
   }
 }

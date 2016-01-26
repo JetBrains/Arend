@@ -3,14 +3,13 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
-
-import java.util.ArrayList;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
@@ -140,13 +139,14 @@ public class ElimTest {
     ClassDefinition defs = typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | d zero zero => 0 | d _ _ => 1");
-    Namespace namespace = defs.getParentNamespace().findChild(defs.getName().name);
+    Namespace namespace = defs.getParentNamespace().findChild(defs.getName());
     FunctionDefinition test = (FunctionDefinition) namespace.getDefinition("test");
     Constructor d = (Constructor) namespace.getDefinition("d");
-    Expression call1 = Apps(ConCall(d), Zero(), Index(0));
-    Expression call2 = Apps(ConCall(d), Suc(Zero()), Index(0));
-    assertEquals(Apps(FunCall(test), call1), Apps(FunCall(test), call1).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
-    assertEquals(Suc(Zero()), Apps(FunCall(test), call2).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+    Binding binding = new TypedBinding("y", Nat());
+    Expression call1 = Apps(ConCall(d), Zero(), Reference(binding));
+    Expression call2 = Apps(ConCall(d), Suc(Zero()), Reference(binding));
+    assertEquals(Apps(FunCall(test), call1), Apps(FunCall(test), call1).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), Apps(FunCall(test), call2).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -294,7 +294,7 @@ public class ElimTest {
       " | zero => n\n" +
       " | _ => n\n"
     );
-    assertEquals(def.getElimTree(), branch(0, clause(Prelude.ZERO, Index(0)), clause(Prelude.SUC, Index(1))));
+    assertEquals(def.getElimTree(), branch(def.getParameters().getNext(), tail(), clause(Prelude.ZERO, null, Reference(def.getParameters())), clause(Prelude.SUC, param(true, "x", Nat()), Reference(def.getParameters()))));
   }
 
   @Test

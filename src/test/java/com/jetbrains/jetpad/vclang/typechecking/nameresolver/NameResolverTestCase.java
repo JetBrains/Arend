@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
@@ -50,7 +49,7 @@ public class NameResolverTestCase {
 
   public static Collection<? extends GeneralError> resolveNamesDef(Concrete.Definition definition) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT.getChild(new Name("test")), DummyNameResolver.getInstance());
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT.getChild("test"), DummyNameResolver.getInstance());
     visitor.setResolveListener(new ConcreteResolveListener());
     definition.accept(visitor, null);
     return errorReporter.getErrorList();
