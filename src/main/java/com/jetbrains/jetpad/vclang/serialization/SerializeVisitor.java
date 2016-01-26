@@ -122,6 +122,10 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     }
   }
 
+  public void addBinding(Binding binding) {
+    myBindingMap.put(binding, myCounter++);
+  }
+
   private int getIndex(Binding binding) {
     Integer index = myBindingMap.get(binding);
     if (index == null) {
@@ -310,9 +314,17 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     try {
       myDataStream.writeInt(0);
       myDataStream.writeInt(getIndex(branchNode.getReference()));
+      myDataStream.writeInt(branchNode.getContextTail().size());
+      for (Binding binding : branchNode.getContextTail()) {
+        myDataStream.writeInt(getIndex(binding));
+      }
       myDataStream.writeInt(branchNode.getConstructorClauses().size());
       for (ConstructorClause clause : branchNode.getConstructorClauses()) {
         myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(clause.getConstructor().getResolvedName(), false));
+        ModuleSerialization.writeParameters(this, clause.getParameters());
+        for (Binding binding : clause.getTailBindings()) {
+          ModuleSerialization.writeTypedBinding(this, binding);
+        }
         clause.getChild().accept(this, null);
       }
     } catch (IOException e) {

@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
@@ -248,10 +249,22 @@ public class ModuleDeserialization {
   private ElimTreeNode readElimTree(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     switch (stream.readInt()) {
       case 0: {
-        BranchElimTreeNode elimTree = new BranchElimTreeNode(myBindingMap.get(stream.readInt()));
+        Binding binding = myBindingMap.get(stream.readInt());
+        int contextTailSize = stream.readInt();
+        List<Binding> contextTail = new ArrayList<>(contextTailSize);
+        for (int i = 0; i < contextTailSize; i++) {
+          contextTail.add(myBindingMap.get(stream.readInt()));
+        }
+        BranchElimTreeNode elimTree = new BranchElimTreeNode(binding, contextTail);
         int size = stream.readInt();
         for (int i = 0; i < size; i++) {
-          elimTree.addClause((Constructor) definitionMap.get(stream.readInt()), readElimTree(stream, definitionMap));
+          Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
+          DependentLink parameters = readParameters(stream, definitionMap);
+          List<Binding> tailBindings = new ArrayList<>(contextTailSize);
+          for (int j = 0; j < contextTailSize; j++) {
+            tailBindings.add(readTypedBinding(stream, definitionMap));
+          }
+          elimTree.addClause(constructor, parameters, tailBindings, readElimTree(stream, definitionMap));
         }
         return elimTree;
       }
@@ -299,6 +312,16 @@ public class ModuleDeserialization {
     int level = stream.readInt();
     int truncated = stream.readInt();
     return new Universe.Type(level, truncated);
+  }
+
+  private TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    String name = null;
+    if (stream.readBoolean()) {
+      name = stream.readUTF();
+    }
+    TypedBinding result = new TypedBinding(name, readExpression(stream, definitionMap));
+    myBindingMap.add(result);
+    return result;
   }
 
   private DependentLink readParameter(DataInputStream stream, Map<Integer, Definition> definitionMap, int code) throws IOException {

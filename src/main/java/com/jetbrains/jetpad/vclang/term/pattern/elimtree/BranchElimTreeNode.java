@@ -61,6 +61,12 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return result;
   }
 
+  public void addClause(Constructor constructor, DependentLink constructorArgs, List<Binding> tailBindings, ElimTreeNode child) {
+    ConstructorClause clause = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
+    myClauses.put(constructor, clause);
+    clause.setChild(child);
+  }
+
   public ConstructorClause getClause(Constructor constructor) {
     return myClauses.get(constructor);
   }

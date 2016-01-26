@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.serialization;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
@@ -264,5 +265,13 @@ public class ModuleSerialization {
       writeParameter(visitor, link);
     }
     visitor.getDataStream().write(0);
+  }
+
+  public static void writeTypedBinding(SerializeVisitor visitor, Binding binding) throws IOException {
+    visitor.getDataStream().writeBoolean(binding.getName() != null);
+    if (binding.getName() != null)
+      visitor.getDataStream().writeUTF(binding.getName());
+    binding.getType().accept(visitor, null);
+    visitor.addBinding(binding);
   }
 }
