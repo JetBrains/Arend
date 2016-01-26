@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
@@ -335,17 +336,13 @@ public class ModuleDeserialization {
   }
 
   public DependentLink readParameters(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    DependentLink result = null, link = null;
+    LinkList list = new LinkList();
     while (true) {
       int code = stream.read();
       if (code == 0) {
-        return result;
+        return list.getFirst();
       }
-
-      link = DependentLink.Helper.append(link, readParameter(stream, definitionMap, code));
-      if (result == null) {
-        result = link;
-      }
+      list.append(readParameter(stream, definitionMap, code));
     }
   }
 

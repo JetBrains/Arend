@@ -1,15 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.context;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Utils {
   public static void removeFromList(List<?> list, Abstract.Argument argument) {
@@ -31,25 +28,6 @@ public class Utils {
   public static void trimToSize(List<?> list, int size) {
     while (list.size() > size) {
       list.remove(list.size() - 1);
-    }
-  }
-
-  public static class MultiContextSaver implements AutoCloseable {
-    private final List[] myContexts;
-    private final int[] myOldContextSizes;
-
-    public MultiContextSaver(List... contexts) {
-      myContexts = contexts;
-      myOldContextSizes = new int[contexts.length];
-      for (int i = 0; i < contexts.length; i++) {
-        myOldContextSizes[i] = contexts[i].size();
-      }
-    }
-
-    @Override
-    public void close() {
-      for (int i = 0; i < myContexts.length; i++)
-        trimToSize(myContexts[i], myOldContextSizes[i]);
     }
   }
 

@@ -1,10 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -764,23 +768,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
-    DependentLink parameters = null;
-    DependentLink link = null;
+    LinkList list = new LinkList();
     Equations equations = myArgsInference.newEquations();
     for (int i = 0; i < expr.getFields().size(); ++i) {
       Result result = typeCheck(expr.getFields().get(i), null);
       if (result == null) return null;
       fields.add(result.expression);
-      link = DependentLink.Helper.append(link, param(result.type));
-      if (parameters == null) {
-        parameters = link;
-      }
+      list.append(param(result.type));
       if (result.equations != null) {
         equations.add(result.equations);
       }
     }
 
-    SigmaExpression type = Sigma(parameters);
+    SigmaExpression type = Sigma(list.getFirst());
     /* TODO
     if (expectedTypeNorm instanceof InferHoleExpression) {
       equations.add(new CompareVisitor.Equation((InferHoleExpression) expectedTypeNorm, type));
@@ -885,19 +885,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression letTerm = Reference(letBinding);
     List<? extends Abstract.Expression> expressions = expr.getExpressions();
 
-    DependentLink params = null;
-    DependentLink link = null;
+    LinkList list = new LinkList();
     for (int i = 0; i < expressions.size(); i++) {
       Result exprResult = typeCheck(expressions.get(i), null);
       if (exprResult == null) return null;
       equations.add(exprResult.equations);
-      link = DependentLink.Helper.append(link, param(true, vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprResult.type));
-      if (params == null) {
-        params = link;
-      }
+      list.append(param(true, vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprResult.type));
       letTerm = Apps(letTerm, exprResult.expression);
     }
-    letBinding.setParameters(params);
+    letBinding.setParameters(list.getFirst());
 
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
     ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, params, expectedType);

@@ -66,14 +66,5 @@ public interface DependentLink extends Binding {
       }
       return -1;
     }
-
-    public static DependentLink append(DependentLink link, DependentLink next) {
-      if (link == null) {
-        return next;
-      }
-      assert link.getNext() == null;
-      link.setNext(next);
-      return next;
-    }
   }
 }
