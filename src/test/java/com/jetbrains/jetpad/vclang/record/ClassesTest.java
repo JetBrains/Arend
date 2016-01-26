@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Index;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -319,7 +319,7 @@ public class ClassesTest {
     assertTrue(appType.getArgument().getExpression() instanceof AppExpression);
     AppExpression appArg = (AppExpression) appType.getArgument().getExpression();
     assertEquals(FieldCall(aField), appArg.getFunction());
-    assertEquals(Index(0), appArg.getArgument().getExpression());
+    assertEquals(Reference(aClass), appArg.getArgument().getExpression());
   }
 
   @Test
