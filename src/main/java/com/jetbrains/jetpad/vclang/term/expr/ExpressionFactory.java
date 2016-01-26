@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -234,10 +235,21 @@ public class ExpressionFactory {
     }
   }
 
-  public static BranchElimTreeNode branch(Binding reference, ConstructorClausePair... clauses) {
-    BranchElimTreeNode result = new BranchElimTreeNode(reference);
+  public static List<Binding> tail(Binding... bindings) {
+    return Arrays.asList(bindings);
+  }
+
+  public static BranchElimTreeNode branch(Binding reference, List<Binding> tail, ConstructorClausePair... clauses) {
+    BranchElimTreeNode result = new BranchElimTreeNode(reference, tail);
     for (ConstructorClausePair pair : clauses) {
-      result.addClause(pair.constructor, pair.parameters, pair.child);
+      ConstructorClause clause = result.addClause(pair.constructor);
+      Substitution subst = clause.getSubst();
+      subst.getDomain().remove(reference);
+      for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
+           linkFake != null; linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {
+        subst.addMapping(linkFake, Reference(linkTrue));
+      }
+      clause.setChild(pair.child.subst(subst));
     }
     return result;
   }

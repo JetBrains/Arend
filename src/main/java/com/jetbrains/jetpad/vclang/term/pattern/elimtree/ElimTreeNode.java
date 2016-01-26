@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVis
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public abstract class ElimTreeNode {
@@ -34,6 +33,10 @@ public abstract class ElimTreeNode {
 
   public static boolean compare(ElimTreeNode node1, ElimTreeNode node2, Equations equations, List<Binding> context) {
     return CompareVisitor.compare(equations, Equations.CMP.EQ, node1, node2);
+  }
+
+  public ElimTreeNode subst(Substitution subst) {
+    return accept(new SubstVisitor(subst), null);
   }
 
   public abstract ElimTreeNode matchUntilStuck(Substitution subst);
