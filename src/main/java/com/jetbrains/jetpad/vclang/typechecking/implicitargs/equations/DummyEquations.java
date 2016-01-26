@@ -24,11 +24,6 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public void abstractVar(int index, Expression type) {
-
-  }
-
-  @Override
   public void clear() {
 
   }

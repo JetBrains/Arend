@@ -109,9 +109,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, Void params) {
-    Name name = def.getName();
+    String name = def.getName();
     Abstract.Definition.Arrow arrow = def.getArrow();
-    final FunctionDefinition typedDef = new FunctionDefinition(myNamespace, name, def.getPrecedence());
+    final FunctionDefinition typedDef = new FunctionDefinition(myNamespace, new Name(name), def.getPrecedence());
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -361,7 +361,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   }
 
   public ClassField visitAbstract(Abstract.AbstractDefinition def, ClassDefinition thisClass) {
-    Name name = def.getName();
+    String name = def.getName();
     List<? extends Abstract.Argument> arguments = def.getArguments();
     Expression typedResultType;
     List<Binding> context = new ArrayList<>();
@@ -426,7 +426,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       universe = maxUniverse;
     }
 
-    ClassField typedDef = new ClassField(myNamespace, name, def.getPrecedence(), Pi(list.getFirst(), typedResultType), thisClass);
+    ClassField typedDef = new ClassField(myNamespace, new Name(name), def.getPrecedence(), Pi(list.getFirst(), typedResultType), thisClass);
     typedDef.setUniverse(universe);
     typedDef.setThisClass(thisClass);
     myNamespaceMember.definition = typedDef;
@@ -463,19 +463,19 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
     }
 
-    Name name = def.getName();
-    DataDefinition dataDefinition = new DataDefinition(myNamespace, name, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), list.getFirst());
+    String name = def.getName();
+    DataDefinition dataDefinition = new DataDefinition(myNamespace, new Name(name), def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), list.getFirst());
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
-    myNamespace = myNamespace.getChild(name.name);
+    myNamespace = myNamespace.getChild(name);
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, context, visitor);
       if (typedConstructor == null) {
         continue;
       }
 
-      NamespaceMember member = myNamespace.getMember(constructor.getName().name);
+      NamespaceMember member = myNamespace.getMember(constructor.getName());
       if (member == null) {
         continue;
       }
@@ -521,7 +521,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       for (Condition condition : dataDefinition.getConditions()) {
         try (Utils.CompleteContextSaver<Binding> ignore = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
           expandConstructorContext(condition.getConstructor(), visitor.getLocalContext());
-          TypeCheckingError error = TypeCheckingElim.checkConditions(new Name(condition.getConstructor().getName()), def, condition.getConstructor().getParameters(), condition.getElimTree());
+          TypeCheckingError error = TypeCheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getParameters(), condition.getElimTree());
           if (error != null) {
             myErrorReporter.report(error);
             failedConditions.add(condition);
@@ -692,7 +692,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         return null;
       }
 
-      Name name = def.getName();
+      String name = def.getName();
 
       for (DependentLink link = list.getFirst(); link != null; link = link.getNext()) {
         Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
@@ -716,7 +716,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         }
       }
 
-      Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name, def.getPrecedence(), universe, list.getFirst(), dataDefinition, typedPatterns);
+      Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), new Name(name), def.getPrecedence(), universe, list.getFirst(), dataDefinition, typedPatterns);
       constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
       dataDefinition.getParentNamespace().addDefinition(constructor);
@@ -724,7 +724,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
   }
 
-  private void nonPositiveError(DataDefinition dataDefinition, Name name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor) {
+  private void nonPositiveError(DataDefinition dataDefinition, String name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor) {
     int index = DependentLink.Helper.getIndex(params, param);
     int i = 0;
     Abstract.Argument argument = null;
@@ -766,7 +766,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (statement instanceof Abstract.DefineStatement) {
         Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
         if (definition instanceof Abstract.AbstractDefinition) {
-          NamespaceMember member = namespace.getMember(definition.getName().name);
+          NamespaceMember member = namespace.getMember(definition.getName());
           if (member != null) {
             if (!member.isTypeChecked()) {
               DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(member, namespace, myErrorReporter);
@@ -794,13 +794,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
-    Name name = def.getName();
-    ClassDefinition typedDef = new ClassDefinition(myNamespace, name);
+    String name = def.getName();
+    ClassDefinition typedDef = new ClassDefinition(myNamespace, new Name(name));
     ClassDefinition thisClass = getThisClass(def, myNamespace);
     if (thisClass != null) {
       typedDef.addParentField(thisClass);
     }
-    typeCheckStatements(typedDef, def.getStatements(), myNamespace.getChild(name.name));
+    typeCheckStatements(typedDef, def.getStatements(), myNamespace.getChild(name));
     return typedDef;
   }
 }

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -15,10 +14,6 @@ public final class Abstract {
   private Abstract() {}
 
   public interface SourceNode {}
-
-  public interface Identifier extends SourceNode {
-    Name getName();
-  }
 
   public interface Expression extends SourceNode {
     byte PREC = -12;
@@ -65,7 +60,7 @@ public final class Abstract {
 
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
-    Name getName();
+    String getName();
     Expression getExpression();
     ResolvedName getResolvedName();
   }
@@ -77,7 +72,7 @@ public final class Abstract {
   }
 
   public interface ImplementStatement extends SourceNode {
-    Identifier getIdentifier();
+    String getName();
     Expression getExpression();
   }
 
@@ -188,7 +183,7 @@ public final class Abstract {
   }
 
   public interface Binding extends SourceNode {
-    Name getName();
+    String getName();
   }
 
   public interface Statement extends SourceNode {
@@ -255,7 +250,7 @@ public final class Abstract {
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
     boolean isOverridden();
-    Name getOriginalName();
+    String getOriginalName();
     Collection<? extends Statement> getStatements();
   }
 
@@ -307,11 +302,11 @@ public final class Abstract {
     enum Kind { OPEN, CLOSE, EXPORT }
 
     Kind getKind();
-    List<? extends Identifier> getPath();
+    List<String> getPath();
 
     void setResolvedPath(ResolvedName path);
     ResolvedName getResolvedPath();
 
-    List<? extends Identifier> getNames();
+    List<String> getNames();
   }
 }

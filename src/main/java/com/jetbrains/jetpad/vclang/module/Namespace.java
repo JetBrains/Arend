@@ -106,7 +106,7 @@ public class Namespace {
     if (myMembers == null) {
       myMembers = new HashMap<>();
     } else {
-      NamespaceMember oldMember = myMembers.get(definition.getName().name);
+      NamespaceMember oldMember = myMembers.get(definition.getName());
       if (oldMember != null) {
         if (oldMember.abstractDefinition != null) {
           return null;
@@ -117,8 +117,8 @@ public class Namespace {
       }
     }
 
-    NamespaceMember result = new NamespaceMember(new Namespace(definition.getName().name, this), definition, null);
-    myMembers.put(definition.getName().name, result);
+    NamespaceMember result = new NamespaceMember(new Namespace(definition.getName(), this), definition, null);
+    myMembers.put(definition.getName(), result);
     return result;
   }
 

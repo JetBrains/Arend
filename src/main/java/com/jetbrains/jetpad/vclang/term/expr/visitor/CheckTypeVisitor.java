@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -896,7 +895,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     letBinding.setParameters(list.getFirst());
 
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
-    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, params, expectedType);
+    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, list.getFirst(), expectedType);
     if (elimTree == null) return null;
     letBinding.setElimTree(elimTree);
 
@@ -997,11 +996,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<ImplementStatement> fields = new ArrayList<>(statements.size());
     for (Abstract.ImplementStatement statement : statements) {
-      Abstract.Identifier identifier = statement.getIdentifier();
-      Name name = identifier.getName();
-      ClassField field = baseClass.removeField(name.name);
+      String name = statement.getName();
+      ClassField field = baseClass.removeField(name);
       if (field == null) {
-        TypeCheckingError error = new TypeCheckingError("Class '" + baseClass.getName() + "' does not have field '" + name + "'", identifier);
+        TypeCheckingError error = new TypeCheckingError("Class '" + baseClass.getName() + "' does not have field '" + name + "'", statement);
         myErrorReporter.report(error);
       } else {
         fields.add(new ImplementStatement(field, statement.getExpression()));

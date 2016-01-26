@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.LamExpression;
@@ -69,7 +70,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   private void visitApps(Abstract.Expression expr, List<Abstract.ArgumentExpression> args, byte prec) {
     if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getResolvedName() != null) {
-      if (((Abstract.DefCallExpression) expr).getName().fixity == Abstract.Definition.Fixity.INFIX) {
+      if (new Name(((Abstract.DefCallExpression) expr).getName()).fixity == Abstract.Definition.Fixity.INFIX) {
         int numberOfVisibleArgs = 0;
         List<Abstract.Expression> visibleArgs = new ArrayList<>(2);
         for (Abstract.ArgumentExpression arg : args) {
@@ -88,7 +89,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
             myBuilder.append('.');
           }
           visibleArgs.get(0).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
-          myBuilder.append(' ').append(((Abstract.DefCallExpression) expr).getName().name).append(' ');
+          myBuilder.append(' ').append(((Abstract.DefCallExpression) expr).getName()).append(' ');
           visibleArgs.get(1).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
           if (prec > defPrecedence.priority) myBuilder.append(')');
           return;
@@ -324,7 +325,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (prec > Abstract.BinOpSequenceExpression.PREC) myBuilder.append('(');
     expr.getLeft().accept(this, (byte) 10);
     for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
-      myBuilder.append(' ').append(elem.binOp.getName().getInfixName()).append(' ');
+      myBuilder.append(' ').append(new Name(elem.binOp.getName()).getInfixName()).append(' ');
       elem.argument.accept(this, (byte) 10);
     }
     if (prec > Abstract.BinOpSequenceExpression.PREC) myBuilder.append(')');
@@ -402,7 +403,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myIndent += INDENT;
     for (Abstract.ImplementStatement statement : expr.getStatements()) {
       printIndent();
-      myBuilder.append("| ").append(statement.getIdentifier().getName().getPrefixName()).append(" => ");
+      myBuilder.append("| ").append(new Name(statement.getName()).getPrefixName()).append(" => ");
       statement.getExpression().accept(this, Abstract.Expression.PREC);
       myBuilder.append("\n");
     }
@@ -460,7 +461,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         myIndent -= INDENT0;
       }
       printIndent();
-      myNames.add(expr.getClauses().get(i).getName() == null ? null : expr.getClauses().get(i).getName().name);
+      myNames.add(expr.getClauses().get(i).getName() == null ? null : expr.getClauses().get(i).getName());
     }
 
     String in = "\\in ";

@@ -63,15 +63,15 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
             return null;
           }
           
-          NamespaceMember member = myNameResolver.getMember(parentNamespace, expr.getName().name);
+          NamespaceMember member = myNameResolver.getMember(parentNamespace, expr.getName());
           if (member != null) {
             myResolveListener.nameResolved(expr, member.getResolvedName());
           }
         }
       } else {
-        Name name = expr.getName();
-        if (name.fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(name.name)) {
-          NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name.name, false);
+        String name = expr.getName();
+        if (new Name(name).fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(name)) {
+          NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, false);
           if (member != null) {
             myResolveListener.nameResolved(expr, member.getResolvedName());
           }
@@ -184,8 +184,8 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       expression.accept(this, null);
       NotInScopeError error = null;
       for (Abstract.BinOpSequenceElem elem : sequence) {
-        Name name = elem.binOp.getName();
-        NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name.name, true);
+        String name = elem.binOp.getName();
+        NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, true);
         if (member != null) {
           parser.pushOnStack(stack, expression, member.getResolvedName(), member.getPrecedence(), elem.binOp);
           expression = elem.argument;
@@ -313,7 +313,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
           clause.getResultType().accept(this, null);
         }
         clause.getTerm().accept(this, null);
-        myContext.add(clause.getName().name);
+        myContext.add(clause.getName());
       }
 
       expr.getExpression().accept(this, null);

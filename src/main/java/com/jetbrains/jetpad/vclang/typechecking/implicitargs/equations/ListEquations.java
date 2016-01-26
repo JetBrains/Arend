@@ -33,31 +33,6 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public void abstractVar(int index, Expression type) {
-    /*
-    if (on == 0) {
-      return;
-    }
-    assert on < 0;
-
-    for (Equation equation : myEquations) {
-      if (equation.lifted < 0) {
-        equation.lifted += on;
-      } else {
-        Expression expr1 = equation.expr1.liftIndex(0, on);
-        Expression expr2 = equation.expr2.liftIndex(0, on);
-        if (expr1 == null || expr2 == null) {
-          equation.lifted += on;
-        } else {
-          equation.expr1 = expr1;
-          equation.expr2 = expr2;
-        }
-      }
-    }
-    */
-  }
-
-  @Override
   public void clear() {
     myEquations.clear();
   }

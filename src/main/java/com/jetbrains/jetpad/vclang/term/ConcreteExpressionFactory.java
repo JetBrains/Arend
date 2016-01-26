@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 
 import java.util.Arrays;
@@ -19,19 +18,19 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.DefCallExpression cVar(String name) {
-    return new Concrete.DefCallExpression(POSITION, null, name == null ? null : new Name(name));
+    return new Concrete.DefCallExpression(POSITION, null, name == null ? null : name);
   }
 
   public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition) {
-    return new Concrete.DefCallExpression(POSITION, expr, new Name(definition.getName(), definition.getFixity()));
+    return new Concrete.DefCallExpression(POSITION, expr, definition.getName());
   }
 
   public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ImplementStatement> definitions) {
     return new Concrete.ClassExtExpression(POSITION, expr, definitions);
   }
 
-  public static Concrete.ImplementStatement cImplStatement(Name name, Concrete.Expression expr) {
-    return new Concrete.ImplementStatement(new Concrete.Identifier(POSITION, name.name, name.fixity), expr);
+  public static Concrete.ImplementStatement cImplStatement(String name, Concrete.Expression expr) {
+    return new Concrete.ImplementStatement(POSITION, name, expr);
   }
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression... exprs) {

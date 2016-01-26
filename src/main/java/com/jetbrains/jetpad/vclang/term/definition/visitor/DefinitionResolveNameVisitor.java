@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementResolveNameVisitor;
@@ -50,7 +49,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       visitFunction(def);
       return null;
     } else {
-      try (StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, myNamespace.getChild(def.getName().name), myNameResolver, myContext)) {
+      try (StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, myNamespace.getChild(def.getName()), myNameResolver, myContext)) {
         visitor.setResolveListener(myResolveListener);
         for (Abstract.Statement statement : statements) {
           statement.accept(visitor, isStatic ? StatementResolveNameVisitor.Flag.MUST_BE_STATIC : null);
@@ -115,8 +114,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
       Abstract.Expression term = def.getTerm();
       if (term != null) {
-        Name name = def.getName();
-        myNameResolver.pushNameResolver(new SingleNameResolver(name.name, new NamespaceMember(myNamespace.getChild(name.name), def, null)));
+        String name = def.getName();
+        myNameResolver.pushNameResolver(new SingleNameResolver(name, new NamespaceMember(myNamespace.getChild(name), def, null)));
         term.accept(visitor, null);
         myNameResolver.popNameResolver();
       }
@@ -138,14 +137,14 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
         }
       }
 
-      Name name = def.getName();
+      String name = def.getName();
 
       MultiNameResolver conditionsResolver = new MultiNameResolver();
-      conditionsResolver.add(new NamespaceMember(myNamespace.getChild(name.name), def, null));
-      myNameResolver.pushNameResolver(new SingleNameResolver(name.name, new NamespaceMember(myNamespace.getChild(name.name), def, null)));
+      conditionsResolver.add(new NamespaceMember(myNamespace.getChild(name), def, null));
+      myNameResolver.pushNameResolver(new SingleNameResolver(name, new NamespaceMember(myNamespace.getChild(name), def, null)));
 
       for (Abstract.Constructor constructor : def.getConstructors()) {
-        conditionsResolver.add(new NamespaceMember(myNamespace.getChild(name.name).getChild(constructor.getName().name), constructor, null));
+        conditionsResolver.add(new NamespaceMember(myNamespace.getChild(name).getChild(constructor.getName()), constructor, null));
         if (constructor.getPatterns() == null) {
           visitConstructor(constructor, null);
         } else {
@@ -204,7 +203,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
-    try (StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, myNamespace.getChild(def.getName().name), myNameResolver, myContext)) {
+    try (StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, myNamespace.getChild(def.getName()), myNameResolver, myContext)) {
       visitor.setResolveListener(myResolveListener);
       for (Abstract.Statement statement : def.getStatements()) {
         statement.accept(visitor, null);

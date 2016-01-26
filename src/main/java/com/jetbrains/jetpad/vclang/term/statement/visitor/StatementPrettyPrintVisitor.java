@@ -38,16 +38,16 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
         throw new IllegalStateException();
     }
 
-    myBuilder.append(stat.getPath().get(0).getName());
+    myBuilder.append(stat.getPath().get(0));
     for (int i = 1; i < stat.getPath().size(); i++) {
-      myBuilder.append('.').append(stat.getPath().get(0).getName());
+      myBuilder.append('.').append(stat.getPath().get(0));
     }
     if (stat.getNames() != null) {
       myBuilder.append('(');
       if (!stat.getNames().isEmpty()) {
-        myBuilder.append(stat.getNames().get(0).getName());
+        myBuilder.append(stat.getNames().get(0));
         for (int i = 1; i < stat.getNames().size(); i++) {
-          myBuilder.append(", ").append(stat.getNames().get(0).getName());
+          myBuilder.append(", ").append(stat.getNames().get(0));
         }
       }
       myBuilder.append(')');

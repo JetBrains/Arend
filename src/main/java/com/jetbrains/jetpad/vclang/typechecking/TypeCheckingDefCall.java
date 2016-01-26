@@ -104,11 +104,11 @@ public class TypeCheckingDefCall {
     return findParent(((ClassCallExpression) parentField.getBaseType()).getDefinition(), parent, Apps(FieldCall(parentField), expr));
   }
 
-  public CheckTypeVisitor.Result getLocalVar(Name name, Abstract.Expression expr) {
+  public CheckTypeVisitor.Result getLocalVar(String name, Abstract.Expression expr) {
     ListIterator<Binding> it = myVisitor.getLocalContext().listIterator(myVisitor.getLocalContext().size());
     while (it.hasPrevious()) {
       Binding def = it.previous();
-      if (name.name.equals(def.getName())) {
+      if (name.equals(def.getName())) {
         return new CheckTypeVisitor.Result(Reference(def), def.getType(), null);
       }
     }
@@ -132,7 +132,7 @@ public class TypeCheckingDefCall {
   }
 
   private DefCallResult typeCheckName(Abstract.DefCallExpression expr, String next) {
-    Name name = expr.getName();
+    String name = expr.getName();
     ResolvedName resolvedName = expr.getResolvedName();
     if (resolvedName == null) {
       CheckTypeVisitor.Result result = getLocalVar(name, expr);
@@ -211,8 +211,8 @@ public class TypeCheckingDefCall {
         return null;
       }
     } else {
-      Name name = expr.getName();
-      member = result.member.namespace.getMember(name.name);
+      String name = expr.getName();
+      member = result.member.namespace.getMember(name);
       if (member == null) {
         TypeCheckingError error = new NameDefinedError(false, expr, name, new ResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
         expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
@@ -258,7 +258,7 @@ public class TypeCheckingDefCall {
   }
 
   private DefCallResult typeCheckNamespace(Abstract.DefCallExpression expr, String next) {
-    Name name = expr.getName();
+    String name = expr.getName();
     Abstract.Expression left = expr.getExpression();
     if (left == null) {
       return typeCheckName(expr, next);
@@ -266,7 +266,7 @@ public class TypeCheckingDefCall {
 
     DefCallResult result;
     if (left instanceof Abstract.DefCallExpression) {
-      result = typeCheckNamespace((Abstract.DefCallExpression) left, name.name);
+      result = typeCheckNamespace((Abstract.DefCallExpression) left, name);
       if (result == null) {
         return null;
       }
@@ -308,9 +308,9 @@ public class TypeCheckingDefCall {
     return nextResult(result, expr, next);
   }
 
-  private CheckTypeVisitor.Result typeCheckConstructor(DataDefinition dataDefinition, List<Expression> arguments, Name conName, Abstract.Expression expr) {
+  private CheckTypeVisitor.Result typeCheckConstructor(DataDefinition dataDefinition, List<Expression> arguments, String conName, Abstract.Expression expr) {
     Collections.reverse(arguments);
-    Constructor constructor = dataDefinition.getConstructor(conName.name);
+    Constructor constructor = dataDefinition.getConstructor(conName);
     if (constructor == null) {
       TypeCheckingError error = new TypeCheckingError("Constructor '" + conName + "' is not defined in data type '" + dataDefinition.getName() + "'", expr);
       expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));

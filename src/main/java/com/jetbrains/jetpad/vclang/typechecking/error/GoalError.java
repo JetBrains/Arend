@@ -19,7 +19,7 @@ public class GoalError extends TypeCheckingError {
   }
 
   public GoalError(List<Binding> context, Expression type, Abstract.SourceNode expression) {
-    super("Goal", expression, getNames(context));
+    super("Goal", expression);
     myContext = new ArrayList<>(context);
     myType = type;
   }

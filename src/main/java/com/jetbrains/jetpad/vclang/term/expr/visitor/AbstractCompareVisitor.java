@@ -16,7 +16,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   public Boolean visitDefCall(Abstract.DefCallExpression expr1, Abstract.Expression expr2) {
     if (!(expr2 instanceof Abstract.DefCallExpression)) return false;
     Abstract.DefCallExpression defCallExpr2 = (Abstract.DefCallExpression) expr2;
-    return expr1.getName().name.equals(defCallExpr2.getName().name);
+    return expr1.getName().equals(defCallExpr2.getName());
   }
 
   private boolean compareArg(Abstract.Argument arg1, Abstract.Argument arg2) {
@@ -163,7 +163,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
   }
 
   private boolean compareImplementStatement(Abstract.ImplementStatement implStat1, Abstract.ImplementStatement implStat2) {
-    return implStat1.getExpression().accept(this, implStat2.getExpression()) && implStat1.getIdentifier().getName().name.equals(implStat2.getIdentifier().getName().name);
+    return implStat1.getExpression().accept(this, implStat2.getExpression()) && implStat1.getName().equals(implStat2.getName());
   }
 
   @Override
