@@ -22,7 +22,7 @@ public abstract class Expression implements PrettyPrintable {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    prettyPrint(builder, new ArrayList<String>(), (byte) 0);
+    prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     return builder.toString();
   }
 
@@ -34,12 +34,6 @@ public abstract class Expression implements PrettyPrintable {
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
     accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).accept(new PrettyPrintVisitor(builder, names, 0), prec);
-  }
-
-  public String prettyPrint(List<String> names) {
-    StringBuilder sb = new StringBuilder();
-    prettyPrint(sb, names, Abstract.Expression.PREC);
-    return sb.toString();
   }
 
   public boolean findBinding(Binding binding) {

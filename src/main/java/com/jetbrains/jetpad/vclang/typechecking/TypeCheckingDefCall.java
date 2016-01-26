@@ -13,11 +13,13 @@ import com.jetbrains.jetpad.vclang.typechecking.error.NameDefinedError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
 
 public class TypeCheckingDefCall {
   private final CheckTypeVisitor myVisitor;
@@ -51,7 +53,7 @@ public class TypeCheckingDefCall {
       return null;
     }
     if (result.baseResult == null) {
-      TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not available here or not a definition", expr, getNames(myVisitor.getLocalContext()));
+      TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not available here or not a definition", expr);
       expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -74,12 +76,12 @@ public class TypeCheckingDefCall {
   private void fixConstructorParameters(Constructor constructor, CheckTypeVisitor.Result result, boolean doSubst) {
     DependentLink parameters = constructor.getDataTypeParameters();
     if (parameters != null) {
-      Map<Binding, Expression> substs = new HashMap<>();
-      parameters = parameters.subst(substs);
+      Substitution substitution = new Substitution();
+      parameters = parameters.subst(substitution);
       for (DependentLink link = parameters; link != null; link = link.getNext()) {
         parameters.setExplicit(false);
       }
-      result.type = Pi(parameters, result.type.subst(substs));
+      result.type = Pi(parameters, result.type.subst(substitution));
     }
 
     if (doSubst && result.expression instanceof ConCallExpression) {
@@ -140,7 +142,7 @@ public class TypeCheckingDefCall {
     NamespaceMember member = resolvedName.toNamespaceMember();
     if (member == null) {
       assert false;
-      TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + name + "' is not available yet", expr, getNames(myVisitor.getLocalContext()));
+      TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + name + "' is not available yet", expr);
       expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -162,7 +164,7 @@ public class TypeCheckingDefCall {
         Expression thisExpr = Reference(myVisitor.getLocalContext().get(myVisitor.getLocalContext().size() - 1));
         thisExpr = findParent(myThisClass, definition.getThisClass(), thisExpr);
         if (thisExpr == null) {
-          TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr, getNames(myVisitor.getLocalContext()));
+          TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr);
           expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
@@ -180,7 +182,7 @@ public class TypeCheckingDefCall {
         // result.type = result.type.subst(thisExpr, 0);
         return new DefCallResult(result, null, null);
       } else {
-        TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr, getNames(myVisitor.getLocalContext()));
+        TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr);
         expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -238,7 +240,7 @@ public class TypeCheckingDefCall {
           result.member = null;
           return result;
         } else {
-          TypeCheckingError error = new TypeCheckingError("Definition '" + member.definition.getName() + "' cannot be called from here", expr, getNames(myVisitor.getLocalContext()));
+          TypeCheckingError error = new TypeCheckingError("Definition '" + member.definition.getName() + "' cannot be called from here", expr);
           expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult.expression, error));
           myVisitor.getErrorReporter().report(error);
           return null;
@@ -296,7 +298,7 @@ public class TypeCheckingDefCall {
           }
         }
 
-        TypeCheckingError error = new TypeCheckingError("Expected an expression of a class type or a data type", expr, getNames(myVisitor.getLocalContext()));
+        TypeCheckingError error = new TypeCheckingError("Expected an expression of a class type or a data type", expr);
         expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -310,7 +312,7 @@ public class TypeCheckingDefCall {
     Collections.reverse(arguments);
     Constructor constructor = dataDefinition.getConstructor(conName.name);
     if (constructor == null) {
-      TypeCheckingError error = new TypeCheckingError("Constructor '" + conName + "' is not defined in data type '" + dataDefinition.getName() + "'", expr, getNames(myVisitor.getLocalContext()));
+      TypeCheckingError error = new TypeCheckingError("Constructor '" + conName + "' is not defined in data type '" + dataDefinition.getName() + "'", expr);
       expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -321,10 +323,10 @@ public class TypeCheckingDefCall {
       TypeCheckingError error = null;
       if (matchResult instanceof Pattern.MatchMaybeResult) {
         error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
-            "Expected " + ((Pattern.MatchMaybeResult) matchResult).maybePattern + ", got " + ((Pattern.MatchMaybeResult) matchResult).actualExpression.prettyPrint(getNames(myVisitor.getLocalContext())), expr, getNames(myVisitor.getLocalContext()));
+            "Expected " + ((Pattern.MatchMaybeResult) matchResult).maybePattern + ", got " + ((Pattern.MatchMaybeResult) matchResult).actualExpression, expr);
       } else if (matchResult instanceof Pattern.MatchFailedResult) {
         error = new TypeCheckingError("Constructor is not appropriate, failed to match data type parameters. " +
-            "Expected " + ((Pattern.MatchFailedResult) matchResult).failedPattern + ", got " + ((Pattern.MatchFailedResult) matchResult).actualExpression.prettyPrint(getNames(myVisitor.getLocalContext())), expr, getNames(myVisitor.getLocalContext()));
+            "Expected " + ((Pattern.MatchFailedResult) matchResult).failedPattern + ", got " + ((Pattern.MatchFailedResult) matchResult).actualExpression, expr);
       } else if (matchResult instanceof Pattern.MatchOKResult) {
         arguments = ((Pattern.MatchOKResult) matchResult).expressions;
       }
