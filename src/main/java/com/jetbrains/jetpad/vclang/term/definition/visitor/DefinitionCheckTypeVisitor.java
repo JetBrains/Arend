@@ -179,16 +179,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     // int numberOfArgs = index;
     int index = 0;
     DependentLink typedParameters = null, link = null;
-    for (Abstract.Argument argument : arguments) {
-      if (argument instanceof Abstract.TypeArgument) {
-        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
-        if (result == null) return typedDef;
+    try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
+      for (Abstract.Argument argument : arguments) {
+        if (argument instanceof Abstract.TypeArgument) {
+          CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
+          if (result == null) return typedDef;
 
-        // boolean ok = true;
-        if (argument instanceof Abstract.TelescopeArgument) {
-          List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          link = DependentLink.Helper.append(link, param(argument.getExplicit(), names, result.expression));
-          for (String name1 : names) {
+          // boolean ok = true;
+          if (argument instanceof Abstract.TelescopeArgument) {
+            List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
+            link = DependentLink.Helper.append(link, param(argument.getExplicit(), names, result.expression));
+            for (String name1 : names) {
           /*
           if (splitArgs != null) {
             List<CompareVisitor.Equation> equations = new ArrayList<>(0);
@@ -200,10 +201,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           }
           */
 
-            context.add(new TypedBinding(name1, result.expression));
-            index++;
-          }
-        } else {
+              context.add(new TypedBinding(name1, result.expression));
+              index++;
+            }
+          } else {
         /*
         if (splitArgs != null) {
           List<CompareVisitor.Equation> equations = new ArrayList<>(0);
@@ -214,15 +215,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         }
         */
 
-          // if (ok) {
-          link = DependentLink.Helper.append(link, param(argument.getExplicit(), (String) null, result.expression));
-          context.add(new TypedBinding(null, result.expression));
-          ++index;
-          // }
-        }
-        if (typedParameters == null) {
-          typedParameters = link;
-        }
+            // if (ok) {
+            link = DependentLink.Helper.append(link, param(argument.getExplicit(), (String) null, result.expression));
+            context.add(new TypedBinding(null, result.expression));
+            ++index;
+            // }
+          }
+          if (typedParameters == null) {
+            typedParameters = link;
+          }
 
       /*
       if (!ok) {
@@ -230,10 +231,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         return null;
       }
       */
-      } else {
-        // if (splitArgs == null) {
-        myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
-        return typedDef;
+        } else {
+          // if (splitArgs == null) {
+          myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
+          return typedDef;
       /*
       } else {
         List<String> names = new ArrayList<>(1);
@@ -242,6 +243,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         myContext.add(new TypedBinding(names.get(0), splitArgs.get(index).getType()));
       }
       */
+        }
       }
     }
 

@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
@@ -862,16 +861,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
 
 
-  public Result lookupLocalVar(Abstract.Expression expression, Abstract.Expression expr) {
-    if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getResolvedName() == null) {
-      return myTypeCheckingDefCall.getLocalVar(((Abstract.DefCallExpression) expression).getName(), expression);
-    } else {
-      TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expression);
-      myErrorReporter.report(error);
-      expr.setWellTyped(myLocalContext, Error(null, error));
-      return null;
-    }
-  }
+
 
   @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression expectedType) {
@@ -909,15 +899,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     letBinding.setParameters(params);
 
-    link = params;
-    for (int i = 0; link != null; link = link.getNext()) {
-      myLocalContext.add(new TypedBinding(Abstract.CaseExpression.ARGUMENT_NAME + i++, link.getType()));
-    }
     Abstract.ElimExpression elim = wrapCaseToElim(expr);
-    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, params /* TODO: what is expected here? */, expectedType);
+    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, params, expectedType);
     if (elimTree == null) return null;
     letBinding.setElimTree(elimTree);
-    myLocalContext.subList(myLocalContext.size() - expressions.size(), myLocalContext.size()).clear();
 
     LetExpression letExpression = Let(lets(letBinding), letTerm);
     expr.setWellTyped(myLocalContext, letExpression);

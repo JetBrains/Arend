@@ -46,24 +46,255 @@ public class TypeCheckingElim {
     FUNCTION, DATATYPE, CONDITION
   }
 
-  public abstract static class ExpandPatternResult {}
+  public static TypeCheckingError checkConditions(final Abstract.Function def, DependentLink eliminatingArgs, ElimTreeNode elimTree) {
+    return checkConditions(def.getName(), def, eliminatingArgs, elimTree);
+  }
 
-  public static class ExpandPatternOKResult extends ExpandPatternResult {
-    public final DependentLink last;
-    public final Expression expression;
-    public final Pattern pattern;
+  public static TypeCheckingError checkConditions(final Name name, final Abstract.SourceNode source, final DependentLink eliminatingArgs, ElimTreeNode elimTree) {
+    final StringBuilder errorMsg = new StringBuilder();
 
-    public ExpandPatternOKResult(DependentLink last, Expression expression, Pattern pattern) {
+    ConditionViolationsCollector.check(elimTree, Substitution.getIdentity(toContext(eliminatingArgs)), new ConditionViolationsCollector.ConditionViolationChecker() {
+      @Override
+      public void check(Expression expr1, Substitution argsSubst1, Expression expr2, Substitution argsSubst2) {
+        expr1 = expr1.normalize(NormalizeVisitor.Mode.NF);
+        expr2 = expr2.normalize(NormalizeVisitor.Mode.NF);
+
+        if (!expr1.equals(expr2)){
+          errorMsg.append("\n").append(name);
+          printArgs(eliminatingArgs, argsSubst1, errorMsg);
+          errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(name);
+          printArgs(eliminatingArgs, argsSubst2, errorMsg);
+       }
+      }
+    });
+
+    if (errorMsg.length() != 0) {
+      return new TypeCheckingError("Condition check failed: " + errorMsg.toString(), source);
+    }
+    return null;
+  }
+
+  public static TypeCheckingError checkCoverage(final Abstract.Function def, final DependentLink eliminatingArgs, ElimTreeNode elimTree) {
+    final StringBuilder incompleteCoverageMessage = new StringBuilder();
+
+    CoverageChecker.check(elimTree, Substitution.getIdentity(toContext(eliminatingArgs)), new CoverageChecker.CoverageCheckerMissingProcessor() {
+      @Override
+      public void process(Substitution argsSubst) {
+        for (Binding binding : argsSubst.getDomain()) {
+          if (!argsSubst.get(binding).normalize(NormalizeVisitor.Mode.NF).equals(argsSubst.get(binding)))
+            return;
+        }
+
+        incompleteCoverageMessage.append("\n ").append(def.getName());
+        printArgs(eliminatingArgs, argsSubst, incompleteCoverageMessage);
+      }
+    });
+
+    if (incompleteCoverageMessage.length() != 0) {
+      return new TypeCheckingError("Coverage check failed for: " + incompleteCoverageMessage.toString(), def);
+    } else {
+      return null;
+    }
+  }
+
+  public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
+    List<PatternArgument> typedPatterns = new ArrayList<>();
+    DependentLink last = null;
+    for (Abstract.PatternArgument patternArg : patternArgs) {
+      ExpandPatternResult result = expandPattern(patternArg.getPattern(), eliminatingArgs, mode);
+      if (result == null || result instanceof ExpandPatternErrorResult)
+        return null;
+
+      typedPatterns.add(new PatternArgument(((ExpandPatternOKResult) result).pattern, patternArg.isExplicit(), patternArg.isHidden()));
+
+      for (int j = 0; j < substIn.size(); j++) {
+        substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
+      }
+
+      if (last != null)
+        last.setNext(((ExpandPatternOKResult) result).pattern.getParameters());
+      eliminatingArgs = eliminatingArgs.getNext().subst(new Substitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
+      last = ((ExpandPatternOKResult) result).last;
+    }
+    return new Patterns(typedPatterns);
+  }
+
+  public ElimTreeNode typeCheckElim(final Abstract.ElimExpression expr, DependentLink eliminatingArgs, Expression expectedType) {
+    TypeCheckingError error = null;
+    if (expectedType == null) {
+      error = new TypeCheckingError("Cannot infer type of the expression", expr);
+    }
+    if (eliminatingArgs == null && error == null) {
+      error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr);
+    }
+
+    if (error != null) {
+      myVisitor.getErrorReporter().report(error);
+      expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      return null;
+    }
+
+    final List<ReferenceExpression> elimExprs = typecheckElimIndices(expr, eliminatingArgs);
+    if (elimExprs == null) return null;
+
+    boolean wasError = false;
+
+    List<Binding> argsBindings = toContext(eliminatingArgs);
+
+    final List<List<Pattern>> patterns = new ArrayList<>();
+    final List<Expression> expressions = new ArrayList<>();
+    final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
+    clause_loop:
+    for (Abstract.Clause clause : expr.getClauses()) {
+      try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getLocalContext())) {
+        List<Pattern> clausePatterns = new ArrayList<>();
+        Expression clauseExpectedType = expectedType;
+
+        DependentLink tailArgs = eliminatingArgs;
+        DependentLink last = null;
+        for (int i = 0, j = 0; tailArgs != null && i < argsBindings.size(); i++) {
+          ExpandPatternResult result;
+          if (j < elimExprs.size() && elimExprs.get(j) == argsBindings.get(i)) {
+            result = expandPattern(clause.getPatterns().get(j), tailArgs, PatternExpansionMode.FUNCTION);
+            j++;
+          } else {
+            result = expandPattern(null, tailArgs, PatternExpansionMode.FUNCTION);
+          }
+
+          if (result instanceof ExpandPatternErrorResult) {
+            expr.getExpressions().get(i).setWellTyped(myVisitor.getLocalContext(), Error(null, ((ExpandPatternErrorResult) result).error));
+            wasError = true;
+            continue clause_loop;
+          }
+
+          ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
+          clausePatterns.add(okResult.pattern);
+          clauseExpectedType = clauseExpectedType.subst(tailArgs, okResult.expression);
+          tailArgs = tailArgs.getNext() == null ? null : tailArgs.getNext().subst(new Substitution(tailArgs, okResult.expression));
+          if (last != null)
+            last.setNext(okResult.pattern.getParameters());
+          last = okResult.last;
+        }
+
+        if (clause.getExpression() != null) {
+          CheckTypeVisitor.Result clauseResult = myVisitor.typeCheck(clause.getExpression(), clauseExpectedType);
+          if (clauseResult == null) {
+            wasError = true;
+            continue;
+          }
+          expressions.add(clauseResult.expression);
+        } else {
+          expressions.add(null);
+        }
+        patterns.add(clausePatterns);
+        arrows.add(clause.getArrow());
+      }
+    }
+
+    if (wasError) {
+      return null;
+    }
+
+    PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(eliminatingArgs, patterns, expressions, arrows);
+
+    if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
+      return ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
+    } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
+      for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
+        error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));
+        expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+        myVisitor.getErrorReporter().report(error);
+      }
+      return null;
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
+  private ReferenceExpression lookupLocalVar(Abstract.Expression expression) {
+    if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getResolvedName() == null) {
+      CheckTypeVisitor.Result exprResult = myVisitor.getTypeCheckingDefCall().getLocalVar(((Abstract.DefCallExpression) expression).getName(), expression);
+      if (exprResult == null)
+        return null;
+      return (ReferenceExpression) exprResult.expression;
+    } else {
+      TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expression);
+      myVisitor.getErrorReporter().report(error);
+      expression.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      return null;
+    }
+  }
+
+  private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimExpression expr, DependentLink eliminatingArgs) {
+    try (Utils.ContextSaver saver = new Utils.ContextSaver(myVisitor.getLocalContext())) {
+      List<Binding> argsBindings = toContext(eliminatingArgs);
+      myVisitor.getLocalContext().addAll(argsBindings);
+
+      List<Integer> eliminatingIndicies = new ArrayList<>();
+
+      TypeCheckingError error;
+      final List<ReferenceExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
+      for (Abstract.Expression var : expr.getExpressions()) {
+        ReferenceExpression refExpr = lookupLocalVar(var);
+
+        if (refExpr == null) {
+          return null;
+        }
+
+        if (!argsBindings.contains(refExpr.getBinding())) {
+          error = new TypeCheckingError("\\elim can be applied only to arguments of the innermost definition", var);
+          myVisitor.getErrorReporter().report(error);
+          var.setWellTyped(argsBindings, Error(null, error));
+          return null;
+        }
+        eliminatingIndicies.add(argsBindings.indexOf(refExpr.getBinding()));
+
+        if (eliminatingIndicies.size() >= 2 && eliminatingIndicies.get(eliminatingIndicies.size() - 2) >= eliminatingIndicies.get(eliminatingIndicies.size() - 1)) {
+          error = new TypeCheckingError("Variable elimination must be in the order of variable introduction", var);
+          myVisitor.getErrorReporter().report(error);
+          var.setWellTyped(argsBindings, Error(null, error));
+          return null;
+        }
+
+        Expression ftype = refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(new ArrayList<Expression>());
+        if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
+          error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var);
+          myVisitor.getErrorReporter().report(error);
+          var.setWellTyped(argsBindings, Error(null, error));
+          return null;
+        }
+        elimExprs.add(refExpr);
+      }
+      return elimExprs;
+    }
+  }
+
+  private static void printArgs(DependentLink eliminatingArgs, Substitution argsSubst, StringBuilder errorMsg) {
+    for (DependentLink link = eliminatingArgs; link != null; link = link.getNext()) {
+      errorMsg.append(" ").append(link.isExplicit() ? "(" : "{");
+      errorMsg.append(argsSubst.get(link));
+      errorMsg.append(link.isExplicit() ? ")" : "}");
+    }
+  }
+
+  private abstract static class ExpandPatternResult {}
+
+  private static class ExpandPatternOKResult extends ExpandPatternResult {
+    private final DependentLink last;
+    private final Expression expression;
+    private final Pattern pattern;
+
+    private ExpandPatternOKResult(DependentLink last, Expression expression, Pattern pattern) {
       this.last = last;
       this.expression = expression;
       this.pattern = pattern;
     }
   }
 
-  public static class ExpandPatternErrorResult extends  ExpandPatternResult {
-    public final TypeCheckingError error;
+  private static class ExpandPatternErrorResult extends  ExpandPatternResult {
+    private final TypeCheckingError error;
 
-    public ExpandPatternErrorResult(TypeCheckingError error) {
+    private ExpandPatternErrorResult(TypeCheckingError error) {
       this.error = error;
     }
   }
@@ -202,218 +433,6 @@ public class TypeCheckingElim {
       return new ExpandPatternOKResult(last, substExpression, result);
     } else {
       throw new IllegalStateException();
-    }
-  }
-
-  public static TypeCheckingError checkConditions(final Abstract.Function def, DependentLink eliminatingArgs, ElimTreeNode elimTree) {
-    return checkConditions(def.getName(), def, eliminatingArgs, elimTree);
-  }
-
-  public static TypeCheckingError checkConditions(final Name name, final Abstract.SourceNode source, final DependentLink eliminatingArgs, ElimTreeNode elimTree) {
-    final StringBuilder errorMsg = new StringBuilder();
-
-    ConditionViolationsCollector.check(elimTree, Substitution.getIdentity(toContext(eliminatingArgs)), new ConditionViolationsCollector.ConditionViolationChecker() {
-      @Override
-      public void check(Expression expr1, Substitution argsSubst1, Expression expr2, Substitution argsSubst2) {
-        expr1 = expr1.normalize(NormalizeVisitor.Mode.NF);
-        expr2 = expr2.normalize(NormalizeVisitor.Mode.NF);
-
-        if (!expr1.equals(expr2)){
-          errorMsg.append("\n").append(name);
-          printArgs(eliminatingArgs, argsSubst1, errorMsg);
-          errorMsg.append(" = ").append(expr1).append(" =/= ").append(expr2).append(" = ").append(name);
-          printArgs(eliminatingArgs, argsSubst2, errorMsg);
-       }
-      }
-    });
-
-    if (errorMsg.length() != 0) {
-      return new TypeCheckingError("Condition check failed: " + errorMsg.toString(), source);
-    }
-    return null;
-  }
-
-  public Patterns visitPatternArgs(List<Abstract.PatternArgument> patternArgs, DependentLink eliminatingArgs, List<Expression> substIn, PatternExpansionMode mode) {
-    List<PatternArgument> typedPatterns = new ArrayList<>();
-    DependentLink last = null;
-    for (int i = 0; i < patternArgs.size(); i++) {
-      ExpandPatternResult result = expandPattern(patternArgs.get(i).getPattern(), eliminatingArgs, mode);
-      if (result == null || result instanceof ExpandPatternErrorResult)
-        return null;
-
-      typedPatterns.add(new PatternArgument(((ExpandPatternOKResult) result).pattern, patternArgs.get(i).isExplicit(), patternArgs.get(i).isHidden()));
-
-      for (int j = 0; j < substIn.size(); j++) {
-        substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
-      }
-
-      if (last != null)
-        last.setNext(((ExpandPatternOKResult) result).pattern.getParameters());
-      eliminatingArgs = eliminatingArgs.getNext().subst(new Substitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
-      last = ((ExpandPatternOKResult) result).last;
-    }
-    return new Patterns(typedPatterns);
-  }
-
-  public static TypeCheckingError checkCoverage(final Abstract.Function def, final DependentLink eliminatingArgs, ElimTreeNode elimTree) {
-    final StringBuilder incompleteCoverageMessage = new StringBuilder();
-
-    CoverageChecker.check(elimTree, Substitution.getIdentity(toContext(eliminatingArgs)), new CoverageChecker.CoverageCheckerMissingProcessor() {
-      @Override
-      public void process(Substitution argsSubst) {
-        for (Binding binding : argsSubst.getDomain()) {
-          if (!argsSubst.get(binding).normalize(NormalizeVisitor.Mode.NF).equals(argsSubst.get(binding)))
-            return;
-        }
-
-        incompleteCoverageMessage.append("\n ").append(def.getName());
-        printArgs(eliminatingArgs, argsSubst, incompleteCoverageMessage);
-      }
-    });
-
-    if (incompleteCoverageMessage.length() != 0) {
-      return new TypeCheckingError("Coverage check failed for: " + incompleteCoverageMessage.toString(), def);
-    } else {
-      return null;
-    }
-  }
-
-  public ElimTreeNode typeCheckElim(final Abstract.ElimExpression expr, DependentLink eliminatingArgs, Expression expectedType) {
-    TypeCheckingError error = null;
-    if (expectedType == null) {
-      error = new TypeCheckingError("Cannot infer type of the expression", expr);
-    }
-    if (eliminatingArgs == null && error == null) {
-      error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr);
-    }
-
-    if (error != null) {
-      myVisitor.getErrorReporter().report(error);
-      expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
-      return null;
-    }
-
-    final List<ReferenceExpression> elimExprs = typecheckElimIndices(expr, eliminatingArgs);
-    if (elimExprs == null) return null;
-
-    boolean wasError = false;
-
-    List<Binding> argsBindings = toContext(eliminatingArgs);
-
-    final List<List<Pattern>> patterns = new ArrayList<>();
-    final List<Expression> expressions = new ArrayList<>();
-    final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
-    clause_loop:
-    for (Abstract.Clause clause : expr.getClauses()) {
-      try (Utils.CompleteContextSaver ignore = new Utils.CompleteContextSaver<>(myVisitor.getLocalContext())) {
-        List<Pattern> clausePatterns = new ArrayList<>();
-        Expression clauseExpectedType = expectedType;
-
-        DependentLink tailArgs = eliminatingArgs;
-        DependentLink last = null;
-        for (int i = 0, j = 0; tailArgs != null && i < argsBindings.size(); i++) {
-          ExpandPatternResult result;
-          if (j < elimExprs.size() && elimExprs.get(j) == argsBindings.get(i)) {
-            result = expandPattern(clause.getPatterns().get(j), tailArgs, PatternExpansionMode.FUNCTION);
-            j++;
-          } else {
-            result = expandPattern(null, tailArgs, PatternExpansionMode.FUNCTION);
-          }
-
-          if (result instanceof ExpandPatternErrorResult) {
-            expr.getExpressions().get(i).setWellTyped(myVisitor.getLocalContext(), Error(null, ((ExpandPatternErrorResult) result).error));
-            wasError = true;
-            continue clause_loop;
-          }
-
-          ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
-          clausePatterns.add(okResult.pattern);
-          clauseExpectedType = clauseExpectedType.subst(tailArgs, okResult.expression);
-          tailArgs = tailArgs.getNext() == null ? null : tailArgs.getNext().subst(new Substitution(tailArgs, okResult.expression));
-          if (last != null)
-            last.setNext(okResult.pattern.getParameters());
-          last = okResult.last;
-        }
-
-        if (clause.getExpression() != null) {
-          CheckTypeVisitor.Result clauseResult = myVisitor.typeCheck(clause.getExpression(), clauseExpectedType);
-          if (clauseResult == null) {
-            wasError = true;
-            continue;
-          }
-          expressions.add(clauseResult.expression);
-        } else {
-          expressions.add(null);
-        }
-        patterns.add(clausePatterns);
-        arrows.add(clause.getArrow());
-      }
-    }
-
-    if (wasError) {
-      return null;
-    }
-
-    PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(eliminatingArgs, patterns, expressions, arrows);
-
-    if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
-      return ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
-    } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
-      for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
-        error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));
-        expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
-        myVisitor.getErrorReporter().report(error);
-      }
-      return null;
-    } else {
-      throw new IllegalStateException();
-    }
-  }
-
-  private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimExpression expr, DependentLink eliminatingArgs) {
-    List<Binding> argsBindings = toContext(eliminatingArgs);
-    List<Integer> eliminatingIndicies = new ArrayList<>();
-
-    TypeCheckingError error;
-    final List<ReferenceExpression> elimExprs = new ArrayList<>(expr.getExpressions().size());
-    for (Abstract.Expression var : expr.getExpressions()){
-      CheckTypeVisitor.Result exprResult = myVisitor.lookupLocalVar(var, expr);
-      if (exprResult == null) {
-        return null;
-      }
-
-      if (!argsBindings.contains(((ReferenceExpression) exprResult.expression).getBinding())) {
-        error = new TypeCheckingError("\\elim can be applied only to arguments of the innermost definition", var);
-        myVisitor.getErrorReporter().report(error);
-        var.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
-        return null;
-      }
-      eliminatingIndicies.add(argsBindings.indexOf(((ReferenceExpression) exprResult.expression).getBinding()));
-
-      if (eliminatingIndicies.size() >= 2 && eliminatingIndicies.get(eliminatingIndicies.size() - 2) >= eliminatingIndicies.get(eliminatingIndicies.size() - 1)) {
-        error = new TypeCheckingError("Variable elimination must be in the order of variable introduction", var);
-        myVisitor.getErrorReporter().report(error);
-        var.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
-        return null;
-      }
-
-      Expression ftype = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF).getFunction(new ArrayList<Expression>());
-      if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
-        error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var);
-        myVisitor.getErrorReporter().report(error);
-        var.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
-        return null;
-      }
-      elimExprs.add((ReferenceExpression) exprResult.expression);
-    }
-    return elimExprs;
-  }
-
-  private static void printArgs(DependentLink eliminatingArgs, Substitution argsSubst, StringBuilder errorMsg) {
-    for (DependentLink link = eliminatingArgs; link != null; link = link.getNext()) {
-      errorMsg.append(" ").append(link.isExplicit() ? "(" : "{");
-      errorMsg.append(argsSubst.get(link));
-      errorMsg.append(link.isExplicit() ? ")" : "}");
     }
   }
 }
