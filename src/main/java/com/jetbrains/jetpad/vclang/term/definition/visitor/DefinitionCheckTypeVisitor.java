@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
@@ -178,7 +179,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     // int numberOfArgs = index;
     int index = 0;
-    DependentLink typedParameters = null, link = null;
+    LinkList list = new LinkList();
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
       for (Abstract.Argument argument : arguments) {
         if (argument instanceof Abstract.TypeArgument) {
@@ -188,7 +189,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           // boolean ok = true;
           if (argument instanceof Abstract.TelescopeArgument) {
             List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-            link = DependentLink.Helper.append(link, param(argument.getExplicit(), names, result.expression));
+            list.append(param(argument.getExplicit(), names, result.expression));
             for (String name1 : names) {
           /*
           if (splitArgs != null) {
@@ -216,13 +217,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         */
 
             // if (ok) {
-            link = DependentLink.Helper.append(link, param(argument.getExplicit(), (String) null, result.expression));
+            list.append(param(argument.getExplicit(), (String) null, result.expression));
             context.add(new TypedBinding(null, result.expression));
             ++index;
             // }
-          }
-          if (typedParameters == null) {
-            typedParameters = link;
           }
 
       /*
@@ -287,7 +285,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     */
 
-    typedDef.setParameters(typedParameters);
+    typedDef.setParameters(list.getFirst());
     typedDef.setResultType(expectedType);
     typedDef.typeHasErrors(typedDef.getResultType() == null);
 
@@ -296,7 +294,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
-        typedDef.setElimTree(visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, typedParameters, expectedType));
+        typedDef.setElimTree(visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, list.getFirst(), expectedType));
       } else {
         CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {
@@ -314,7 +312,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       if (typedDef.getElimTree() != null) {
-        TypeCheckingError error = TypeCheckingElim.checkCoverage(def, typedParameters, typedDef.getElimTree());
+        TypeCheckingError error = TypeCheckingElim.checkCoverage(def, list.getFirst(), typedDef.getElimTree());
         if (error != null) {
           myErrorReporter.report(error);
           typedDef.setElimTree(null);
@@ -323,7 +321,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       if (typedDef.getElimTree() != null) {
         typedDef.hasErrors(false); // we need normalization here
-        TypeCheckingError error = TypeCheckingElim.checkConditions(def, typedParameters, typedDef.getElimTree());
+        TypeCheckingError error = TypeCheckingElim.checkConditions(def, list.getFirst(), typedDef.getElimTree());
         if (error != null) {
           myErrorReporter.report(error);
           typedDef.setElimTree(null);
@@ -372,7 +370,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
 
     int index = 0;
-    DependentLink typedArguments = null, link = null;
+    LinkList list = new LinkList();
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
         CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
@@ -382,18 +380,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          link = DependentLink.Helper.append(link, param(argument.getExplicit(), names, result.expression));
+          list.append(param(argument.getExplicit(), names, result.expression));
           for (String name1 : names) {
             context.add(new TypedBinding(name1, result.expression));
             ++index;
           }
         } else {
-          link = DependentLink.Helper.append(link, param(argument.getExplicit(), (String) null, result.expression));
+          list.append(param(argument.getExplicit(), (String) null, result.expression));
           context.add(new TypedBinding(null, result.expression));
           ++index;
-        }
-        if (typedArguments == null) {
-          typedArguments = link;
         }
 
         Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
@@ -431,7 +426,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       universe = maxUniverse;
     }
 
-    ClassField typedDef = new ClassField(myNamespace, name, def.getPrecedence(), Pi(typedArguments, typedResultType), thisClass);
+    ClassField typedDef = new ClassField(myNamespace, name, def.getPrecedence(), Pi(list.getFirst(), typedResultType), thisClass);
     typedDef.setUniverse(universe);
     typedDef.setThisClass(thisClass);
     myNamespaceMember.definition = typedDef;
@@ -452,28 +447,24 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass);
     }
 
-    DependentLink typedParameters = null, link = null;
+    LinkList list = new LinkList();
     for (Abstract.TypeArgument parameter : parameters) {
       CheckTypeVisitor.Result result = visitor.checkType(parameter.getType(), Universe());
       if (result == null) return null;
       if (parameter instanceof Abstract.TelescopeArgument) {
-        link = DependentLink.Helper.append(link, param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
+        list.append(param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
         List<String> names = ((Abstract.TelescopeArgument) parameter).getNames();
         for (String name : names) {
           context.add(new TypedBinding(name, result.expression));
         }
       } else {
-        link = DependentLink.Helper.append(link, param(parameter.getExplicit(), (String) null, result.expression));
+        list.append(param(parameter.getExplicit(), (String) null, result.expression));
         context.add(new TypedBinding(null, result.expression));
-      }
-
-      if (typedParameters == null) {
-        typedParameters = link;
       }
     }
 
     Name name = def.getName();
-    DataDefinition dataDefinition = new DataDefinition(myNamespace, name, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), typedParameters);
+    DataDefinition dataDefinition = new DataDefinition(myNamespace, name, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), list.getFirst());
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
@@ -666,7 +657,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           return null;
       }
 
-      DependentLink typeParameters = null, link = null;
+      LinkList list = new LinkList();
       for (Abstract.TypeArgument argument : arguments) {
         CheckTypeVisitor.Result result = visitor.checkType(argument.getType(), Universe());
         if (result == null) {
@@ -684,20 +675,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         }
 
         if (argument instanceof Abstract.TelescopeArgument) {
-          link = DependentLink.Helper.append(link, param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
+          list.append(param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
           for (String name : names) {
             context.add(new TypedBinding(name, result.expression));
           }
           index += ((Abstract.TelescopeArgument) argument).getNames().size();
         } else {
-          link = DependentLink.Helper.append(link, param(argument.getExplicit(), (String) null, result.expression));
+          list.append(param(argument.getExplicit(), (String) null, result.expression));
           context.add(new TypedBinding(null, result.expression));
           ++index;
-        }
-
-        if (typeParameters == null) {
-          typeParameters = link;
         }
       }
 
@@ -707,12 +694,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       Name name = def.getName();
 
-      for (link = typeParameters; link != null; link = link.getNext()) {
+      for (DependentLink link = list.getFirst(); link != null; link = link.getNext()) {
         Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {
           for (DependentLink link1 = ((PiExpression) type).getParameters(); link1 != null; link1 = link1.getNext()) {
             if (link1.getType().findBinding(dataDefinition)) {
-              nonPositiveError(dataDefinition, name, typeParameters, link, arguments, def);
+              nonPositiveError(dataDefinition, name, list.getFirst(), link, arguments, def);
               return null;
             }
           }
@@ -723,13 +710,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         type.getFunction(exprs);
         for (Expression expr : exprs) {
           if (expr.findBinding(dataDefinition)) {
-            nonPositiveError(dataDefinition, name, typeParameters, link, arguments, def);
+            nonPositiveError(dataDefinition, name, list.getFirst(), link, arguments, def);
             return null;
           }
         }
       }
 
-      Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name, def.getPrecedence(), universe, typeParameters, dataDefinition, typedPatterns);
+      Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name, def.getPrecedence(), universe, list.getFirst(), dataDefinition, typedPatterns);
       constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
       dataDefinition.getParentNamespace().addDefinition(constructor);
