@@ -7,10 +7,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.*;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -48,7 +45,7 @@ public class ModuleDeserialization {
 
     module.parent.getChild(module.name.name);
 
-    readDefIndicies(stream, true, module);
+    readDefIndices(stream, true, module);
   }
 
   public static Output.Header readHeaderFromFile(File file) throws IOException {
@@ -148,7 +145,7 @@ public class ModuleDeserialization {
     return fullPathToRelativeResolvedName(path, RootModule.ROOT.getResolvedName());
   }
 
-  private static Map<Integer, Definition> readDefIndicies(DataInputStream stream, boolean createStubs, ResolvedName module) throws IOException {
+  private static Map<Integer, Definition> readDefIndices(DataInputStream stream, boolean createStubs, ResolvedName module) throws IOException {
     Map<Integer, Definition> result = new HashMap<>();
 
     int size = stream.readInt();
@@ -175,7 +172,7 @@ public class ModuleDeserialization {
     verifySignature(stream);
     readHeader(stream);
     int errorsNumber = stream.readInt();
-    Map<Integer, Definition> definitionMap = readDefIndicies(stream, false, module);
+    Map<Integer, Definition> definitionMap = readDefIndices(stream, false, module);
     Definition moduleRoot = definitionMap.get(0);
     deserializeDefinition(stream, definitionMap);
     return new ModuleLoadingResult(new NamespaceMember(moduleRoot.getResolvedName().toNamespace(), null, moduleRoot), false, errorsNumber);
@@ -331,16 +328,16 @@ public class ModuleDeserialization {
       boolean isExplicit = stream.readBoolean();
       String name = stream.readUTF();
       Expression type = readExpression(stream, definitionMap);
-      link = new TypedDependentLink(isExplicit, name, type, null);
+      link = new TypedDependentLink(isExplicit, name, type, EmptyDependentLink.getInstance());
     } else
     if (code == 2) {
       String name = stream.readUTF();
-      link = new UntypedDependentLink(name, null);
+      link = new UntypedDependentLink(name, EmptyDependentLink.getInstance());
     } else
     if (code == 3) {
       boolean isExplicit = stream.readBoolean();
       Expression type = readExpression(stream, definitionMap);
-      link = new NonDependentLink(type, null);
+      link = new NonDependentLink(type, EmptyDependentLink.getInstance());
       link.setExplicit(isExplicit);
     } else {
       throw new IncorrectFormat();
@@ -353,7 +350,7 @@ public class ModuleDeserialization {
   public DependentLink readParameter1(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int code = stream.read();
     if (code == 0) {
-      return null;
+      return EmptyDependentLink.getInstance();
     }
     return readParameter(stream, definitionMap, code);
   }

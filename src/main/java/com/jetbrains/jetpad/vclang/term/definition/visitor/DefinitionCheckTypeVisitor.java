@@ -426,7 +426,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       universe = maxUniverse;
     }
 
-    ClassField typedDef = new ClassField(myNamespace, new Name(name), def.getPrecedence(), Pi(list.getFirst(), typedResultType), thisClass);
+    ClassField typedDef = new ClassField(myNamespace, new Name(name), def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass);
     typedDef.setUniverse(universe);
     typedDef.setThisClass(thisClass);
     myNamespaceMember.definition = typedDef;

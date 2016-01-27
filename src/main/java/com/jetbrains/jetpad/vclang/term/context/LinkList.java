@@ -43,4 +43,8 @@ public class LinkList {
       myLast = link;
     }
   }
+
+  public boolean isEmpty() {
+    return !myFirst.hasNext();
+  }
 }

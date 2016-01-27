@@ -158,6 +158,7 @@ public class ExpressionFactory {
   }
 
   public static PiExpression Pi(DependentLink domain, Expression codomain) {
+    assert domain.hasNext();
     return new PiExpression(domain, codomain);
   }
 
