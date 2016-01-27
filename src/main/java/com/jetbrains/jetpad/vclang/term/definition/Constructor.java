@@ -84,7 +84,7 @@ public class Constructor extends Definition {
         resultType = Apps(resultType, arg);
       }
     }
-    return myParameters == null ? resultType : Pi(myParameters, resultType);
+    return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
   }
 
   @Override

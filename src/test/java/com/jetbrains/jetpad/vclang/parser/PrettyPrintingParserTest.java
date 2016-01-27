@@ -27,7 +27,7 @@ public class PrettyPrintingParserTest {
     visitor.setFlags(EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS, ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
     expr.accept(visitor, null).accept(new PrettyPrintVisitor(builder, context, 0), Abstract.Expression.PREC);
     Concrete.Expression result = parseExpr(builder.toString());
-    assertTrue(compare(expected, result));
+    assertEquals(expected, result);
   }
 
   private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) throws UnsupportedEncodingException {
@@ -41,8 +41,7 @@ public class PrettyPrintingParserTest {
     }
     assertTrue(compare(expected.getResultType(), result.getResultType()));
     assertNotNull(result.getTerm());
-    // TODO: fix
-    //assertTrue(compare(expected.getElimTree(), result.getElimTree()));
+    assertEquals(expected.getTerm(), result.getTerm());
     assertEquals(expected.getArrow(), result.getArrow());
   }
 
@@ -71,12 +70,10 @@ public class PrettyPrintingParserTest {
     // (x : Nat) {y z : Nat} -> Nat -> (t z' : Nat) {x' : Nat -> Nat} -> Nat x' y z' t
     Concrete.Expression expected = cPi("x", cNat(), cPi(ctypeArgs(cTele(false, cvars("y", "z"), cNat())), cPi(cNat(), cPi(ctypeArgs(cTele(cvars("t", "z'"), cNat())), cPi(false, "x'", cPi(cNat(), cNat()), cApps(cNat(), cVar("x'"), cVar("y"), cVar("z'"), cVar("t")))))));
     DependentLink x = param("x", Nat());
-    DependentLink y = param(false, "y", Nat());
-    DependentLink z = param(false, "y", Nat());
-    DependentLink z_ = param("z'", Nat());
-    DependentLink t = param("t", Nat());
-    DependentLink x_ = param(false, "t", Pi(param(Nat()), Nat()));
-    Expression expr = Pi(params(x, y, z), Pi(param(Nat()), Pi(params(t, z_), Pi(x_, Apps(Nat(), Reference(x_), Reference(y), Reference(z_), Reference(t))))));
+    DependentLink yz = param(false, vars("y", "z"), Nat());
+    DependentLink tz_ = param(true, vars("t", "z'"), Nat());
+    DependentLink x_ = param(false, "x'", Pi(param(Nat()), Nat()));
+    Expression expr = Pi(x, Pi(yz, Pi(Nat(), Pi(tz_, Pi(x_, Apps(Nat(), Reference(x_), Reference(yz), Reference(tz_.getNext()), Reference(tz_)))))));
     testExpr(expected, expr);
   }
 

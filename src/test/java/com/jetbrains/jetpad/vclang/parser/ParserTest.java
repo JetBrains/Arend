@@ -111,4 +111,9 @@ public class ParserTest {
         "\\static \\function tests (n : Nat) (d : D n) : Nat <= \\elim n d\n" +
           "| suc n => 0", 1);
   }
+
+  @Test
+  public void parseIncorrectPi() {
+    parseExpr("\\Pi (: Nat) -> Nat", -1);
+  }
 }

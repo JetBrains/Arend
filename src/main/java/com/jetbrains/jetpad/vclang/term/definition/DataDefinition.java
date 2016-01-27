@@ -111,7 +111,7 @@ public class DataDefinition extends Definition {
   @Override
   public Expression getBaseType() {
     Expression resultType = new UniverseExpression(getUniverse());
-    return myParameters == null ? resultType : Pi(myParameters, resultType);
+    return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
   }
 
   @Override

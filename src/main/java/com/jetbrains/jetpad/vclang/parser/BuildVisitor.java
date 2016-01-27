@@ -572,13 +572,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (explicit) {
         if (tele instanceof ExplicitContext) {
           typedExpr = ((ExplicitContext) tele).typedExpr();
-        } else {
+        } else
+        if (tele instanceof TeleLiteralContext) {
           Concrete.Expression expr = visitExpr(((TeleLiteralContext) tele).literal());
           if (expr == null) {
             return null;
           }
           arguments.add(new Concrete.TypeArgument(true, expr));
           continue;
+        } else {
+          return null;
         }
       } else {
         typedExpr = ((ImplicitContext) tele).typedExpr();

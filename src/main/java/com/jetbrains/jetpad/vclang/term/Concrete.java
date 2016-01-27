@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -50,6 +51,13 @@ public final class Concrete {
       StringBuilder builder = new StringBuilder();
       accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
       return builder.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) return true;
+      if (!(obj instanceof Expression)) return false;
+      return accept(new AbstractCompareVisitor(), (Expression) obj);
     }
   }
 

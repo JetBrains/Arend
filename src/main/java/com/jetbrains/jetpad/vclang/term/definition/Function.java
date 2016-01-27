@@ -16,7 +16,7 @@ public interface Function {
   class Helper {
     public static Expression getFunctionType(Function function) {
       assert function.getResultType() != null;
-      if (function.getParameters() == null) {
+      if (!function.getParameters().hasNext()) {
         return function.getResultType();
       }
       Substitution subst = new Substitution();

@@ -64,9 +64,6 @@ public class NonDependentLink implements DependentLink {
 
   @Override
   public DependentLink getNextTyped(List<String> names) {
-    if (names != null) {
-      names.add(null);
-    }
     return this;
   }
 

@@ -143,6 +143,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       List<String> names = new ArrayList<>(3);
       for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
         link = link.getNextTyped(names);
+        if (names.isEmpty()) {
+          names.add(null);
+        }
         arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), names, link.getType().accept(this, null)));
         names.clear();
       }
@@ -164,8 +167,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<String> names = new ArrayList<>(3);
     for (DependentLink link = arguments; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(names);
-      args.add(myFactory.makeTelescopeArgument(link.isExplicit(), names, link.getType().accept(this, null)));
-      names.clear();
+      if (names.isEmpty()) {
+        args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().accept(this, null)));
+      } else {
+        args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
+        names.clear();
+      }
     }
     return args;
   }

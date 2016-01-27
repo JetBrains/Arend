@@ -11,6 +11,7 @@ public class PiExpression extends DependentTypeExpression {
 
   public PiExpression(DependentLink link, Expression codomain) {
     super(link);
+    assert link.hasNext();
     myCodomain = codomain;
   }
 
