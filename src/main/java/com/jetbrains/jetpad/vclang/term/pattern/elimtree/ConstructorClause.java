@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,17 +57,18 @@ public class ConstructorClause {
   public Substitution getSubst() {
     Substitution result = new Substitution();
 
-    List<Expression> parameters = new ArrayList<>();
-    myParent.getReference().getType().getFunction(parameters);
-    Collections.reverse(parameters);
-    List<Expression> constructorParameters = ((Pattern.MatchOKResult) myConstructor.getPatterns().match(parameters)).expressions;
+    List<Expression> arguments = new ArrayList<>();
+    myParent.getReference().getType().getFunction(arguments);
+    Collections.reverse(arguments);
 
-    Expression substExpr = new ConCallExpression(myConstructor, constructorParameters);
-    for (DependentLink link = myParameters ; link.hasNext(); link = link.getNext()) {
-      substExpr = Apps(substExpr, Reference(link));
+    if (myConstructor != null) {
+      Expression substExpr = new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(arguments));
+      for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
+        substExpr = Apps(substExpr, Reference(link));
+      }
+      result.addMapping(myParent.getReference(), substExpr);
     }
 
-    result.addMapping(myParent.getReference(), substExpr);
     for (int i = 0; i < myParent.getContextTail().size(); i++) {
       result.addMapping(myParent.getContextTail().get(i), Reference(myTailBindings.get(i)));
     }

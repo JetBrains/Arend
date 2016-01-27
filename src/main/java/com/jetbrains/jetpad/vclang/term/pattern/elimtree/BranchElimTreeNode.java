@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.*;
@@ -39,17 +38,14 @@ public class BranchElimTreeNode extends ElimTreeNode {
   }
 
   public ConstructorClause addClause(Constructor constructor) {
-    List<Expression> dataTypeParameters = new ArrayList<>();
-    myReference.getType().getFunction(dataTypeParameters);
-    Collections.reverse(dataTypeParameters);
+    List<Expression> dataTypeArguments = new ArrayList<>();
+    myReference.getType().getFunction(dataTypeArguments);
+    Collections.reverse(dataTypeArguments);
 
-    if (constructor.getPatterns() != null) {
-      dataTypeParameters = ((Pattern.MatchOKResult) constructor.getPatterns().match(dataTypeParameters)).expressions;
-    }
+    dataTypeArguments = constructor.matchDataTypeArguments(dataTypeArguments);
+    DependentLink constructorArgs = constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments));
 
-    DependentLink constructorArgs = constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), dataTypeParameters));
-
-    Expression substExpr = ConCall(constructor, dataTypeParameters);
+    Expression substExpr = ConCall(constructor, dataTypeArguments);
     for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
       substExpr = Apps(substExpr, Reference(link));
     }
@@ -61,10 +57,11 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return result;
   }
 
-  public void addClause(Constructor constructor, DependentLink constructorArgs, List<Binding> tailBindings, ElimTreeNode child) {
+  public ConstructorClause addClause(Constructor constructor, DependentLink constructorArgs, List<Binding> tailBindings, ElimTreeNode child) {
     ConstructorClause clause = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
     myClauses.put(constructor, clause);
     clause.setChild(child);
+    return clause;
   }
 
   public ConstructorClause getClause(Constructor constructor) {

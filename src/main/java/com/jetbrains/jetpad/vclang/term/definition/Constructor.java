@@ -7,7 +7,10 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
+
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -63,6 +66,10 @@ public class Constructor extends Definition {
 
   public DependentLink getDataTypeParameters() {
     return myPatterns == null ? myDataType.getParameters() : myPatterns.getParameters();
+  }
+
+  public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
+    return myPatterns == null ? arguments : ((Pattern.MatchOKResult) myPatterns.match(arguments)).expressions;
   }
 
   @Override

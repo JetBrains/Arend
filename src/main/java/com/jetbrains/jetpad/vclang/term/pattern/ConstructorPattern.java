@@ -80,10 +80,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   }
 
   private Substitution getMatchedArguments(List<Expression> dataTypeArguments) {
-    if (myConstructor.getPatterns() != null) {
-      dataTypeArguments = ((Pattern.MatchOKResult) myConstructor.getPatterns().match(dataTypeArguments)).expressions;
-    }
-    return DependentLink.Helper.toSubstitution(myConstructor.getDataTypeParameters(), dataTypeArguments);
+    return DependentLink.Helper.toSubstitution(myConstructor.getDataTypeParameters(), myConstructor.matchDataTypeArguments(dataTypeArguments));
   }
 
   @Override

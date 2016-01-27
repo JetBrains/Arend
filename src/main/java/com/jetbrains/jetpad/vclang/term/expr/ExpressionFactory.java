@@ -9,10 +9,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.*;
@@ -243,7 +240,7 @@ public class ExpressionFactory {
   public static BranchElimTreeNode branch(Binding reference, List<Binding> tail, ConstructorClausePair... clauses) {
     BranchElimTreeNode result = new BranchElimTreeNode(reference, tail);
     for (ConstructorClausePair pair : clauses) {
-      ConstructorClause clause = result.addClause(pair.constructor);
+      ConstructorClause clause = pair.constructor != null ? result.addClause(pair.constructor) : result.addClause(null, pair.parameters, result.getContextTail(), EmptyElimTreeNode.getInstance());
       Substitution subst = clause.getSubst();
       subst.getDomain().remove(reference);
       for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
