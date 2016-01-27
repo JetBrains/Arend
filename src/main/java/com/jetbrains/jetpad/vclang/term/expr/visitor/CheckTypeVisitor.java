@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
@@ -147,7 +148,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       expression.setWellTyped(myLocalContext, result.expression);
       return result;
     }
-    int size = myLocalContext.size();
     result = myArgsInference.inferTail(result, expectedType, expression);
     return checkResult(expectedType, result, expression);
   }
@@ -833,15 +833,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     Expression actualType = new UniverseExpression(universe);
 
-    DependentLink sigmaParams = null;
-    for (int i = domainResults.length - 1; i >= 0; --i) {
+    LinkList list = new LinkList();
+    for (int i = 0; i < domainResults.length; i++) {
       if (expr.getArguments().get(i) instanceof Abstract.TelescopeArgument) {
-        sigmaParams = params(param(expr.getArguments().get(i).getExplicit(), ((Abstract.TelescopeArgument) expr.getArguments().get(i)).getNames(), domainResults[i].expression), sigmaParams);
+        list.append(param(expr.getArguments().get(i).getExplicit(), ((Abstract.TelescopeArgument) expr.getArguments().get(i)).getNames(), domainResults[i].expression));
       } else {
-        sigmaParams = params(param(expr.getArguments().get(i).getExplicit(), (String) null, domainResults[i].expression), sigmaParams);
+        list.append(param(expr.getArguments().get(i).getExplicit(), (String) null, domainResults[i].expression));
       }
     }
-    return checkResult(expectedType, new Result(Sigma(sigmaParams), actualType, equations), expr);
+    return checkResult(expectedType, new Result(Sigma(list.getFirst()), actualType, equations), expr);
   }
 
   @Override
@@ -855,12 +855,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     assert expr.getSequence().isEmpty();
     return typeCheck(expr.getLeft(), expectedType);
   }
-
-
-
-
-
-
 
   @Override
   public Result visitElim(Abstract.ElimExpression expr, Expression expectedType) {
@@ -880,7 +874,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     Equations equations = myArgsInference.newEquations();
-    LetClause letBinding = let(Abstract.CaseExpression.FUNCTION_NAME, null, expectedType, (ElimTreeNode) null);
+    LetClause letBinding = let(Abstract.CaseExpression.FUNCTION_NAME, EmptyDependentLink.getInstance(), expectedType, (ElimTreeNode) null);
     Expression letTerm = Reference(letBinding);
     List<? extends Abstract.Expression> expressions = expr.getExpressions();
 
@@ -942,7 +936,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     DependentLink sigmaParams = ((SigmaExpression) type).getParameters();
     DependentLink fieldLink = DependentLink.Helper.get(sigmaParams, expr.getField());
-    if (fieldLink == null) {
+    if (!fieldLink.hasNext()) {
       TypeCheckingError error = new TypeCheckingError("Index " + (expr.getField() + 1) + " out of range", expr);
       expr.setWellTyped(myLocalContext, Error(null, error));
       myErrorReporter.report(error);

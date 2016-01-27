@@ -1,13 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class PiExpression extends DependentTypeExpression {
   private final Expression myCodomain;
@@ -37,11 +34,10 @@ public class PiExpression extends DependentTypeExpression {
     Substitution subst = new Substitution();
     DependentLink link = getParameters();
     for (Expression expression : expressions) {
-      assert link != null;
       subst.addMapping(link, expression);
       link = link.getNext();
     }
     Expression result = myCodomain.subst(subst);
-    return link == null ? result : new PiExpression(link.subst(subst), result);
+    return link.hasNext() ? new PiExpression(link.subst(subst), result) : result;
   }
 }

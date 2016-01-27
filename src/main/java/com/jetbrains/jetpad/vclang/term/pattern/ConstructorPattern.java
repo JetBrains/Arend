@@ -47,7 +47,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   @Override
   public Expression toExpression(Substitution subst) {
     List<Expression> params = new ArrayList<>();
-    for (DependentLink link = myConstructor.getParameters(); link != null; link = link.getNext()) {
+    for (DependentLink link = myConstructor.getParameters(); link.hasNext(); link = link.getNext()) {
       Expression param = subst.get(link);
       params.add(param == null ? Reference(link) : param);
     }
@@ -55,7 +55,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     DependentLink constructorParameters = myConstructor.getParameters();
     DependentLink link = constructorParameters;
     for (PatternArgument patternArgument : myArguments.getPatterns()) {
-      assert link != null;
+      assert link.hasNext();
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
         List<Expression> args = new ArrayList<>();
         Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getFunction(args);

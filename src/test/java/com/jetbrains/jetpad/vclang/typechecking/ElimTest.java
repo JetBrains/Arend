@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
@@ -294,7 +295,7 @@ public class ElimTest {
       " | zero => n\n" +
       " | _ => n\n"
     );
-    assertEquals(def.getElimTree(), branch(def.getParameters().getNext(), tail(), clause(Prelude.ZERO, null, Reference(def.getParameters())), clause(Prelude.SUC, param(true, "x", Nat()), Reference(def.getParameters()))));
+    assertEquals(def.getElimTree(), branch(def.getParameters().getNext(), tail(), clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(def.getParameters())), clause(Prelude.SUC, param(true, "x", Nat()), Reference(def.getParameters()))));
   }
 
   @Test

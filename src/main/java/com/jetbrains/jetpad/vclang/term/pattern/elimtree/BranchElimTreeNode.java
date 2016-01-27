@@ -50,7 +50,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     DependentLink constructorArgs = constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), dataTypeParameters));
 
     Expression substExpr = ConCall(constructor, dataTypeParameters);
-    for (DependentLink link = constructorArgs; link != null; link = link.getNext()) {
+    for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
       substExpr = Apps(substExpr, Reference(link));
     }
 
@@ -85,7 +85,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     if (clause == null)
       return this;
 
-    for (DependentLink link = clause.getParameters(); link != null; link = link.getNext()) {
+    for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
       subst.addMapping(link, arguments.get(arguments.size() - 1));
       arguments.remove(arguments.size() - 1);
     }

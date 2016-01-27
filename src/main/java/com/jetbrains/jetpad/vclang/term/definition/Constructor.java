@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -18,10 +19,12 @@ public class Constructor extends Definition {
   public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
     super(parentNamespace, name, precedence);
     myDataType = dataType;
+    myParameters = EmptyDependentLink.getInstance();
   }
 
   public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
     super(parentNamespace, name, precedence);
+    assert parameters != null;
     setUniverse(universe);
     hasErrors(false);
     myDataType = dataType;
@@ -46,6 +49,7 @@ public class Constructor extends Definition {
   }
 
   public void setParameters(DependentLink parameters) {
+    assert parameters != null;
     myParameters = parameters;
   }
 
@@ -65,7 +69,7 @@ public class Constructor extends Definition {
   public Expression getBaseType() {
     Expression resultType = DataCall(myDataType);
     if (myPatterns == null) {
-      for (DependentLink link = myDataType.getParameters(); link != null; link = link.getNext()) {
+      for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {
         resultType = Apps(resultType, Reference(link), link.isExplicit(), !link.isExplicit());
       }
     } else {

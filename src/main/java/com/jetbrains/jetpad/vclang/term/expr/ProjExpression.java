@@ -31,7 +31,7 @@ public class ProjExpression extends Expression {
 
     Substitution subst = new Substitution();
     for (int i = 0; i < myField; i++) {
-      if (params == null) {
+      if (!params.hasNext()) {
         return null;
       }
       subst.addMapping(params, new ProjExpression(myExpression, i));

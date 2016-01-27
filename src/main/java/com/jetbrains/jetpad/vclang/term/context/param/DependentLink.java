@@ -15,10 +15,11 @@ public interface DependentLink extends Binding {
   void setNext(DependentLink next);
   DependentLink subst(Substitution subst);
   DependentLink getNextTyped(List<String> names);
+  boolean hasNext();
 
   class Helper {
     public static void freeSubsts(DependentLink link, Substitution substitution) {
-      for (; link != null; link = link.getNext()) {
+      for (; link.hasNext(); link = link.getNext()) {
         substitution.getDomain().remove(link);
       }
     }
@@ -34,7 +35,7 @@ public interface DependentLink extends Binding {
 
     public static List<Binding> toContext(DependentLink link) {
       List<Binding> result = new ArrayList<>();
-      for (; link != null; link = link.getNext()) {
+      for (; link.hasNext(); link = link.getNext()) {
         result.add(link);
       }
       return result;
@@ -42,7 +43,7 @@ public interface DependentLink extends Binding {
 
     public static int size(DependentLink link) {
       int result = 0;
-      for (; link != null; link = link.getNext()) {
+      for (; link.hasNext(); link = link.getNext()) {
         result++;
       }
       return result;
@@ -50,8 +51,8 @@ public interface DependentLink extends Binding {
 
     public static DependentLink get(DependentLink link, int index) {
       for (int i = 0; i < index; i++) {
-        if (link == null) {
-          return null;
+        if (!link.hasNext()) {
+          return EmptyDependentLink.getInstance();
         }
         link = link.getNext();
       }
@@ -59,7 +60,7 @@ public interface DependentLink extends Binding {
     }
 
     public static int getIndex(DependentLink begin, DependentLink link) {
-      for (int index = 0; begin != null; begin = begin.getNext(), index++) {
+      for (int index = 0; begin.hasNext(); begin = begin.getNext(), index++) {
         if (begin == link) {
           return index;
         }

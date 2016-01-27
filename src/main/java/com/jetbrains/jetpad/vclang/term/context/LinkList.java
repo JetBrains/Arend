@@ -1,10 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.context;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 
 public class LinkList {
-  private DependentLink myFirst;
-  private DependentLink myLast;
+  private DependentLink myFirst = EmptyDependentLink.getInstance();
+  private DependentLink myLast = EmptyDependentLink.getInstance();
 
   public DependentLink getFirst() {
     return myFirst;
@@ -15,23 +16,31 @@ public class LinkList {
   }
 
   public void append(DependentLink link) {
-    if (myLast == null) {
-      myFirst = link;
+    if (!link.hasNext()) {
+      return;
+    }
+
+    if (myLast.hasNext()) {
+      myLast.setNext(link);
       myLast = link;
     } else {
-      myLast.setNext(link);
+      myFirst = link;
       myLast = link;
     }
   }
 
   public void prepend(DependentLink link) {
-    if (myFirst == null) {
-      myFirst = link;
-      myLast = link;
-    } else {
-      assert link.getNext() == null;
+    if (!link.hasNext()) {
+      return;
+    }
+
+    if (myFirst.hasNext()) {
+      assert !link.getNext().hasNext();
       link.setNext(myFirst);
       myFirst = link;
+    } else {
+      myFirst = link;
+      myLast = link;
     }
   }
 }

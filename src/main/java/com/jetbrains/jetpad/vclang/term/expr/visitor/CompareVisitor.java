@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -40,12 +41,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       expr = ((LamExpression) expr).getBody();
     }
 
-    DependentLink link = null;
+    DependentLink link = EmptyDependentLink.getInstance();
     for (int i = 0; i < links.size(); link = link.getNext()) {
       if (!(expr instanceof AppExpression)) {
         return null;
       }
-      if (link == null) {
+      if (!link.hasNext()) {
         link = links.get(i++);
       }
 
@@ -292,12 +293,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   private boolean compareTypeArguments(DependentLink params1, DependentLink params2) {
-    for (; params1 != null && params2 != null; params1 = params1.getNext(), params2 = params2.getNext()) {
+    for (; params1.hasNext() && params2.hasNext(); params1 = params1.getNext(), params2 = params2.getNext()) {
       if (!compare(params1.getType(), params2.getType())) {
         return false;
       }
     }
-    return params1 == null && params2 == null;
+    return !params1.hasNext() && !params2.hasNext();
   }
 
   @Override

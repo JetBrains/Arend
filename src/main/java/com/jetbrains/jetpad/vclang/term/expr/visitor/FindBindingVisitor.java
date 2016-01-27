@@ -105,7 +105,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   }
 
   private boolean visitDependentLink(DependentLink link) {
-    for (; link != null; link = link.getNext()) {
+    for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       if (link.getType().accept(this, null)) {
         return true;

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
@@ -96,7 +97,7 @@ class PatternsExpander {
     private final List<List<Pattern>> nestedPatterns = new ArrayList<>();
 
     private MatchingPatterns(List<Pattern> patterns, Constructor constructor, int numConstructorArgs) {
-      List<Pattern> anyPatterns = new ArrayList<>(Collections.<Pattern>nCopies(numConstructorArgs, new NamePattern(null)));
+      List<Pattern> anyPatterns = new ArrayList<>(Collections.<Pattern>nCopies(numConstructorArgs, new NamePattern(EmptyDependentLink.getInstance())));
 
       for (int j = 0; j < patterns.size(); j++) {
         if (patterns.get(j) instanceof NamePattern || patterns.get(j) instanceof AnyConstructorPattern) {

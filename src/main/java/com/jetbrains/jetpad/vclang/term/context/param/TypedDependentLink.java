@@ -13,6 +13,7 @@ public class TypedDependentLink implements DependentLink {
   private DependentLink myNext;
 
   public TypedDependentLink(boolean isExplicit, String name, Expression type, DependentLink next) {
+    assert next != null;
     myExplicit = isExplicit;
     myName = name;
     myType = type;
@@ -75,5 +76,10 @@ public class TypedDependentLink implements DependentLink {
       names.add(myName);
     }
     return this;
+  }
+
+  @Override
+  public boolean hasNext() {
+    return true;
   }
 }

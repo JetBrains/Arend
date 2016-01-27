@@ -27,11 +27,6 @@ public class LamExpression extends Expression {
 
   @Override
   public Expression getType() {
-    /*
-    Map<Binding, Expression> substs = new HashMap<>();
-    DependentLink link = myLink.subst(substs);
-    return new PiExpression(link, myBody.subst(substs).getType());
-    */
     return new PiExpression(myLink, myBody.getType());
   }
 }

@@ -76,7 +76,7 @@ public class Utils {
   public static Substitution matchParameters(DependentLink link, List<Expression> parameters) {
     Substitution substs = new Substitution();
     for (Expression parameter : parameters) {
-      if (link == null) {
+      if (!link.hasNext()) {
         return null;
       }
       substs.addMapping(link, parameter);

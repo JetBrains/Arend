@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.*;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
@@ -100,7 +97,7 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, ElimTreeNode elimTree) {
-    return let(name, null, elimTree);
+    return let(name, EmptyDependentLink.getInstance(), elimTree);
   }
 
   public static LetClause let(String name, DependentLink params, Expression expr) {
@@ -125,22 +122,22 @@ public class ExpressionFactory {
 
   public static DependentLink params(DependentLink... links) {
     for (int i = 0; i < links.length - 1; i++) {
-      assert links[i].getNext() == null;
+      assert !links[i].getNext().hasNext();
       links[i].setNext(links[i + 1]);
     }
     return links[0];
   }
 
   public static DependentLink param(boolean explicit, String var, Expression type) {
-    return new TypedDependentLink(explicit, var, type, null);
+    return new TypedDependentLink(explicit, var, type, EmptyDependentLink.getInstance());
   }
 
   public static DependentLink param(String var, Expression type) {
-    return new TypedDependentLink(true, var, type, null);
+    return new TypedDependentLink(true, var, type, EmptyDependentLink.getInstance());
   }
 
   public static DependentLink param(Expression type) {
-    return new NonDependentLink(type, null);
+    return new NonDependentLink(type, EmptyDependentLink.getInstance());
   }
 
   public static List<String> vars(String... vars) {
@@ -148,7 +145,7 @@ public class ExpressionFactory {
   }
 
   public static DependentLink param(boolean explicit, List<String> names, Expression type) {
-    DependentLink link = new TypedDependentLink(explicit, names.get(names.size() - 1), type, null);
+    DependentLink link = new TypedDependentLink(explicit, names.get(names.size() - 1), type, EmptyDependentLink.getInstance());
     for (int i = names.size() - 2; i >= 0; i--) {
       link = new UntypedDependentLink(names.get(i), link);
     }
@@ -250,7 +247,7 @@ public class ExpressionFactory {
       Substitution subst = clause.getSubst();
       subst.getDomain().remove(reference);
       for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
-           linkFake != null; linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {
+           linkFake.hasNext(); linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {
         subst.addMapping(linkFake, Reference(linkTrue));
       }
       clause.setChild(pair.child.subst(subst));

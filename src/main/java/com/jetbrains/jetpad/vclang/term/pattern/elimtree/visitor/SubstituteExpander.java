@@ -5,7 +5,10 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,7 +56,7 @@ public class SubstituteExpander {
         for (ConCallExpression conCall : ((DataCallExpression) ftype).getDefinition().getMatchedConstructors(parameters)) {
           DependentLink constructorArgs = conCall.getDefinition().getParameters().subst(toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
           Expression substExpr = conCall;
-          for (DependentLink link = constructorArgs; link != null; link = link.getNext()) {
+          for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
             substExpr = Apps(substExpr, Reference(link));
           }
 

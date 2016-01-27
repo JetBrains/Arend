@@ -4,7 +4,10 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
@@ -49,7 +52,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
             @Override
             public void process(Substitution subst, final Substitution toCtxC, List<Binding> ctx, LeafElimTreeNode leaf) {
               Expression lhs = conCall;
-              for (DependentLink link = constructorArgs; link != null; link = link.getNext()) {
+              for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
                 lhs = Apps(lhs, toCtxC.get(link));
               }
               final Expression rhs = leaf.getExpression().subst(subst);

@@ -117,7 +117,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   }
 
   public void addDependentLink(DependentLink link) {
-    for (; link != null; link = link.getNext()) {
+    for (; link.hasNext(); link = link.getNext()) {
       myBindingMap.put(link, myCounter++);
     }
   }

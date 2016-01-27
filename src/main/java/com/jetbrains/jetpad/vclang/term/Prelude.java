@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -41,9 +42,9 @@ public class Prelude extends Namespace {
     PRELUDE_CLASS = new ClassDefinition(RootModule.ROOT, new Name("Prelude"));
     RootModule.ROOT.addDefinition(PRELUDE_CLASS);
 
-    NAT = new DataDefinition(PRELUDE, new Name("Nat"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), null);
+    NAT = new DataDefinition(PRELUDE, new Name("Nat"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), EmptyDependentLink.getInstance());
     Namespace natNamespace = PRELUDE.getChild(NAT.getName());
-    ZERO = new Constructor(natNamespace, new Name("zero"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), null, NAT);
+    ZERO = new Constructor(natNamespace, new Name("zero"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), NAT);
     SUC = new Constructor(natNamespace, new Name("suc"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), param(DataCall(NAT)), NAT);
     NAT.addConstructor(ZERO);
     NAT.addConstructor(SUC);
@@ -52,11 +53,11 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(ZERO);
     PRELUDE.addDefinition(SUC);
 
-    INTERVAL = new DataDefinition(PRELUDE, new Name("I"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), null);
+    INTERVAL = new DataDefinition(PRELUDE, new Name("I"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance());
     Namespace intervalNamespace = PRELUDE.getChild(INTERVAL.getName());
-    LEFT = new Constructor(intervalNamespace, new Name("left"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), null, INTERVAL);
-    RIGHT = new Constructor(intervalNamespace, new Name("right"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), null, INTERVAL);
-    Constructor abstractConstructor = new Constructor(intervalNamespace, new Name("<abstract>"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), null, INTERVAL);
+    LEFT = new Constructor(intervalNamespace, new Name("left"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
+    RIGHT = new Constructor(intervalNamespace, new Name("right"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
+    Constructor abstractConstructor = new Constructor(intervalNamespace, new Name("<abstract>"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
     INTERVAL.addConstructor(LEFT);
     INTERVAL.addConstructor(RIGHT);
     INTERVAL.addConstructor(abstractConstructor);
@@ -71,7 +72,7 @@ public class Prelude extends Namespace {
     coerceParameter1.setNext(coerceParameter2);
     coerceParameter2.setNext(coerceParameter3);
     BranchElimTreeNode coerceElimTreeNode = branch(coerceParameter3, tail(),
-        clause(LEFT, null, Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2)));
+        clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2)));
     COERCE = new FunctionDefinition(PRELUDE, new Name("coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode);
 
     PRELUDE.addDefinition(COERCE);
@@ -81,7 +82,7 @@ public class Prelude extends Namespace {
     PATH_INFIX = (FunctionDefinition) PRELUDE.getDefinition("=");
     AT = (FunctionDefinition) PRELUDE.getDefinition("@");
     ISO = (FunctionDefinition) PRELUDE.getDefinition("iso");
- }
+  }
 
   private Prelude() {
     super("Prelude");
@@ -164,10 +165,10 @@ public class Prelude extends Namespace {
     atParameter4.setNext(atParameter5);
     Expression atResultType = Apps(Reference(atParameter1), Reference(atParameter5));
     BranchElimTreeNode atElimTree = branch(atParameter5, tail(),
-      clause(LEFT, null, Reference(atParameter2)),
-      clause(RIGHT, null, Reference(atParameter3)),
-      clause(null, null, branch(atParameter4, tail(),
-          clause((Constructor) PRELUDE.getDefinition("path" + suffix), null, Apps(Reference(atParameter4), Reference(atParameter5)))))
+      clause(LEFT, EmptyDependentLink.getInstance(), Reference(atParameter2)),
+      clause(RIGHT, EmptyDependentLink.getInstance(), Reference(atParameter3)),
+      clause(null, EmptyDependentLink.getInstance(), branch(atParameter4, tail(),
+          clause((Constructor) PRELUDE.getDefinition("path" + suffix), EmptyDependentLink.getInstance(), Apps(Reference(atParameter4), Reference(atParameter5)))))
     );
     Arrays.fill(chars, '@');
     FunctionDefinition at = new FunctionDefinition(PRELUDE, new Name(new String(chars), Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree);
@@ -189,8 +190,8 @@ public class Prelude extends Namespace {
     isoParameter5.setNext(isoParameter6);
     Expression isoResultType = Universe(i, Universe.Type.NOT_TRUNCATED);
     BranchElimTreeNode isoElimTree = branch(isoParameter6, tail(),
-      clause(LEFT, null, Reference(isoParameter1)),
-      clause(RIGHT, null, Reference(isoParameter1.getNext()))
+      clause(LEFT, EmptyDependentLink.getInstance(), Reference(isoParameter1)),
+      clause(RIGHT, EmptyDependentLink.getInstance(), Reference(isoParameter1.getNext()))
     );
     FunctionDefinition iso = new FunctionDefinition(PRELUDE, new Name("iso" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree);
     PRELUDE.addDefinition(iso);

@@ -19,7 +19,7 @@ public abstract class DependentTypeExpression extends Expression {
     DependentLink link = myLink;
     Universe universe = null;
 
-    while (link != null) {
+    while (link.hasNext()) {
       if (!(link instanceof UntypedDependentLink)) {
         Expression type = link.getType().getType();
         if (!(type instanceof UniverseExpression)) return null;

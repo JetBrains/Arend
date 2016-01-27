@@ -69,4 +69,9 @@ public class NonDependentLink implements DependentLink {
     }
     return this;
   }
+
+  @Override
+  public boolean hasNext() {
+    return true;
+  }
 }

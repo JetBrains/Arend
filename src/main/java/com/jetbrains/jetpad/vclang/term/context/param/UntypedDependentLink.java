@@ -39,7 +39,7 @@ public class UntypedDependentLink implements DependentLink {
   @Override
   public void setNext(DependentLink next) {
     DependentLink last = myNext;
-    while (last.getNext() != null) {
+    while (last.getNext().hasNext()) {
       last = last.getNext();
     }
     last.setNext(next);
@@ -60,6 +60,11 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
+  public boolean hasNext() {
+    return true;
+  }
+
+  @Override
   public String getName() {
     return myName;
   }
@@ -76,7 +81,7 @@ public class UntypedDependentLink implements DependentLink {
 
   @Override
   public UntypedDependentLink subst(Substitution subst) {
-    UntypedDependentLink result = new UntypedDependentLink(myName, null);
+    UntypedDependentLink result = new UntypedDependentLink(myName, EmptyDependentLink.getInstance());
     subst.addMapping(this, new ReferenceExpression(result));
     result.myNext = myNext.subst(subst);
     return result;

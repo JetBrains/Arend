@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -21,10 +22,12 @@ public class DataDefinition extends Definition {
   public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence) {
     super(parentNamespace, name, precedence);
     myConstructors = new ArrayList<>();
+    myParameters = EmptyDependentLink.getInstance();
   }
 
   public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters) {
     super(parentNamespace, name, precedence);
+    assert parameters != null;
     setUniverse(universe);
     hasErrors(false);
     myParameters = parameters;
@@ -37,13 +40,14 @@ public class DataDefinition extends Definition {
 
   public int getNumberOfAllParameters() {
     int s = 0;
-    for (DependentLink link = myParameters; link != null; link = link.getNext()) {
+    for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
       s++;
     }
     return s + (getThisClass() == null ? 0 : 1);
   }
 
   public void setParameters(DependentLink parameters) {
+    assert parameters != null;
     myParameters = parameters;
   }
 

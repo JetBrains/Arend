@@ -91,7 +91,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     BranchElimTreeNode newNode = new BranchElimTreeNode(newReference, newContextTail);
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       ConstructorClause newClause = newNode.getClause(clause.getConstructor());
-      for (DependentLink linkOld = clause.getParameters(), linkNew = newClause.getParameters(); linkOld != null; linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
+      for (DependentLink linkOld = clause.getParameters(), linkNew = newClause.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
         mySubstitution.addMapping(linkOld, Reference(linkNew));
       }
       for (int i = 0; i < clause.getTailBindings().size(); i++) {

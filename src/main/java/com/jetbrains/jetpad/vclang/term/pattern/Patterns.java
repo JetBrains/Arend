@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.pattern;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
@@ -21,11 +22,11 @@ public class Patterns {
   public DependentLink getParameters() {
     for (PatternArgument pattern : myPatterns) {
       DependentLink result = pattern.getPattern().getParameters();
-      if (result != null) {
+      if (result.hasNext()) {
         return result;
       }
     }
-    return null;
+    return EmptyDependentLink.getInstance();
   }
 
   public Pattern.MatchResult match(List<Expression> exprs) {

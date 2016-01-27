@@ -13,6 +13,7 @@ public class LetClause extends NamedBinding implements Function {
 
   public LetClause(String name, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(name);
+    assert parameters != null;
     myParameters = parameters;
     myResultType = resultType;
     myElimTree = elimTree;
@@ -33,6 +34,7 @@ public class LetClause extends NamedBinding implements Function {
   }
 
   public void setParameters(DependentLink parameters) {
+    assert parameters != null;
     myParameters = parameters;
   }
 

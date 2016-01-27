@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
@@ -121,7 +122,7 @@ public class TypeCheckingElim {
     if (expectedType == null) {
       error = new TypeCheckingError("Cannot infer type of the expression", expr);
     }
-    if (eliminatingArgs == null && error == null) {
+    if (!eliminatingArgs.hasNext() && error == null) {
       error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr);
     }
 
@@ -149,7 +150,7 @@ public class TypeCheckingElim {
 
         DependentLink tailArgs = eliminatingArgs;
         LinkList links = new LinkList();
-        for (int i = 0, j = 0; tailArgs != null && i < argsBindings.size(); i++) {
+        for (int i = 0, j = 0; tailArgs.hasNext() && i < argsBindings.size(); i++) {
           ExpandPatternResult result;
           if (j < elimExprs.size() && elimExprs.get(j) == argsBindings.get(i)) {
             result = expandPattern(clause.getPatterns().get(j), tailArgs, PatternExpansionMode.FUNCTION, links);
@@ -167,7 +168,7 @@ public class TypeCheckingElim {
           ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
           clausePatterns.add(okResult.pattern);
           clauseExpectedType = clauseExpectedType.subst(tailArgs, okResult.expression);
-          tailArgs = tailArgs.getNext() == null ? null : tailArgs.getNext().subst(new Substitution(tailArgs, okResult.expression));
+          tailArgs = tailArgs.getNext().subst(new Substitution(tailArgs, okResult.expression));
         }
 
         if (clause.getExpression() != null) {
@@ -264,7 +265,7 @@ public class TypeCheckingElim {
   }
 
   private static void printArgs(DependentLink eliminatingArgs, Substitution argsSubst, StringBuilder errorMsg) {
-    for (DependentLink link = eliminatingArgs; link != null; link = link.getNext()) {
+    for (DependentLink link = eliminatingArgs; link.hasNext(); link = link.getNext()) {
       errorMsg.append(" ").append(link.isExplicit() ? "(" : "{");
       errorMsg.append(argsSubst.get(link));
       errorMsg.append(link.isExplicit() ? ")" : "}");
@@ -294,7 +295,7 @@ public class TypeCheckingElim {
   private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode, LinkList links) {
     if (pattern instanceof Abstract.NamePattern || pattern == null) {
       String name = pattern == null || ((NamePattern) pattern).getName() == null ? null : ((NamePattern) pattern).getName();
-      links.append(new TypedDependentLink(true, name, binding.getType(), null));
+      links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
       myVisitor.getLocalContext().add(links.getLast());
       if (pattern != null)
@@ -335,7 +336,7 @@ public class TypeCheckingElim {
       }
 
       if (pattern instanceof Abstract.AnyConstructorPattern) {
-        links.append(new TypedDependentLink(true, null, binding.getType(), null));
+        links.append(new TypedDependentLink(true, null, binding.getType(), EmptyDependentLink.getInstance()));
         AnyConstructorPattern newPattern = new AnyConstructorPattern(links.getLast());
         pattern.setWellTyped(newPattern);
         myVisitor.getLocalContext().add(links.getLast());

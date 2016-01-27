@@ -108,8 +108,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       conParams = myFactory.makeDefCall(null, expr.getDefinition().getDataType());
       DependentLink link = expr.getDefinition().getDataTypeParameters();
       for (int i = 0; i < expr.getDataTypeArguments().size(); i++) {
-        conParams = myFactory.makeApp(conParams, link == null || link.isExplicit(), expr.getDataTypeArguments().get(i).accept(this, null));
-        if (link != null) {
+        conParams = myFactory.makeApp(conParams, link.isExplicit(), expr.getDataTypeArguments().get(i).accept(this, null));
+        if (link.hasNext()) {
           link = link.getNext();
         }
       }
@@ -141,13 +141,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<Abstract.Argument> arguments = new ArrayList<>();
     if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM)) {
       List<String> names = new ArrayList<>(3);
-      for (DependentLink link = expr.getParameters(); link != null; link = link.getNext()) {
+      for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
         link = link.getNextTyped(names);
         arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), names, link.getType().accept(this, null)));
         names.clear();
       }
     } else {
-      for (DependentLink link = expr.getParameters(); link != null; link = link.getNext()) {
+      for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
         arguments.add(myFactory.makeNameArgument(link.isExplicit(), link.getName()));
       }
     }
@@ -162,7 +162,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   private List<Abstract.TypeArgument> visitTypeArguments(DependentLink arguments) {
     List<Abstract.TypeArgument> args = new ArrayList<>();
     List<String> names = new ArrayList<>(3);
-    for (DependentLink link = arguments; link != null; link = link.getNext()) {
+    for (DependentLink link = arguments; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(names);
       args.add(myFactory.makeTelescopeArgument(link.isExplicit(), names, link.getType().accept(this, null)));
       names.clear();
@@ -247,7 +247,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<Abstract.Clause> clauses = new ArrayList<>(branchNode.getConstructorClauses().size());
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       List<Abstract.PatternArgument> args = new ArrayList<>();
-      for (DependentLink link = clause.getConstructor().getParameters(); link != null; link = link.getNext()) {
+      for (DependentLink link = clause.getConstructor().getParameters(); link.hasNext(); link = link.getNext()) {
         args.add(myFactory.makePatternArgument(myFactory.makeNamePattern(link.getName()), link.isExplicit()));
       }
       clauses.add(myFactory.makeClause(myFactory.makeConPattern(clause.getConstructor().getName(), args), clause.getChild().getArrow(), clause.getChild().accept(this, null)));

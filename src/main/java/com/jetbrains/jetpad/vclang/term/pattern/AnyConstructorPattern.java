@@ -14,6 +14,7 @@ public class AnyConstructorPattern extends Pattern implements Abstract.AnyConstr
   private final DependentLink myLink;
 
   public AnyConstructorPattern(DependentLink link) {
+    assert link != null;
     myLink = link;
   }
 

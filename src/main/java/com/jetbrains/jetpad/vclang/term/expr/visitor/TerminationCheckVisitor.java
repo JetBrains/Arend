@@ -25,7 +25,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     myDef = def;
 
     myPatterns = new ArrayList<>();
-    for (; parameters != null; parameters = parameters.getNext()) {
+    for (; parameters.hasNext(); parameters = parameters.getNext()) {
       myPatterns.add(Reference(parameters));
     }
   }
@@ -40,7 +40,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       List<Expression> patterns = new ArrayList<>(myPatterns);
       Expression expr = ConCall(clause.getConstructor());
-      for (DependentLink link = clause.getConstructor().getParameters(); link != null; link = link.getNext()) {
+      for (DependentLink link = clause.getConstructor().getParameters(); link.hasNext(); link = link.getNext()) {
         expr = Apps(expr, Reference(link));
       }
       for (int j = 0; j < patterns.size(); j++) {
@@ -164,7 +164,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   }
 
   private boolean visitArguments(DependentLink parameters) {
-    for (; parameters != null; parameters = parameters.getNext()) {
+    for (; parameters.hasNext(); parameters = parameters.getNext()) {
       if (!parameters.getType().accept(this, null)) {
         return false;
       }

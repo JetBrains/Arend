@@ -12,6 +12,7 @@ public class NamePattern extends Pattern implements Abstract.NamePattern {
   private final DependentLink myLink;
 
   public NamePattern(DependentLink link) {
+    assert link != null;
     myLink = link;
   }
 

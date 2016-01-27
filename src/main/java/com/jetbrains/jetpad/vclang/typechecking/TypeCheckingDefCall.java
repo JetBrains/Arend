@@ -75,10 +75,10 @@ public class TypeCheckingDefCall {
 
   private void fixConstructorParameters(Constructor constructor, CheckTypeVisitor.Result result, boolean doSubst) {
     DependentLink parameters = constructor.getDataTypeParameters();
-    if (parameters != null) {
+    if (parameters.hasNext()) {
       Substitution substitution = new Substitution();
       parameters = parameters.subst(substitution);
-      for (DependentLink link = parameters; link != null; link = link.getNext()) {
+      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         parameters.setExplicit(false);
       }
       result.type = Pi(parameters, result.type.subst(substitution));
@@ -87,7 +87,7 @@ public class TypeCheckingDefCall {
     if (doSubst && result.expression instanceof ConCallExpression) {
       List<Expression> args = ((ConCallExpression) result.expression).getDataTypeArguments();
       if (!args.isEmpty()) {
-        assert parameters != null;
+        assert parameters.hasNext();
         result.type = ((PiExpression) result.type).applyExpressions(args);
       }
     }

@@ -8,7 +8,9 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
@@ -62,7 +64,7 @@ public class ConstructorClause {
     List<Expression> constructorParameters = ((Pattern.MatchOKResult) myConstructor.getPatterns().match(parameters)).expressions;
 
     Expression substExpr = new ConCallExpression(myConstructor, constructorParameters);
-    for (DependentLink link = myParameters ; link != null; link = link.getNext()) {
+    for (DependentLink link = myParameters ; link.hasNext(); link = link.getNext()) {
       substExpr = Apps(substExpr, Reference(link));
     }
 

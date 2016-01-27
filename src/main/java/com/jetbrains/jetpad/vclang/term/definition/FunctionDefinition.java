@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -10,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Function {
-  // TODO: myArguments should have type List<TypeArguments>
   private DependentLink myParameters;
   private Expression myResultType;
   private ElimTreeNode myElimTree;
@@ -19,10 +19,12 @@ public class FunctionDefinition extends Definition implements Function {
   public FunctionDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence) {
     super(parentNamespace, name, precedence);
     myTypeHasErrors = true;
+    myParameters = EmptyDependentLink.getInstance();
   }
 
   public FunctionDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(parentNamespace, name, precedence);
+    assert parameters != null;
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);
     myParameters = parameters;
@@ -55,6 +57,7 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   public void setParameters(DependentLink parameters) {
+    assert parameters != null;
     myParameters = parameters;
   }
 

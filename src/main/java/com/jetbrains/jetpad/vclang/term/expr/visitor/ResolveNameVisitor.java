@@ -243,7 +243,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       if (namespaceMember != null && (namespaceMember.definition instanceof Constructor || namespaceMember.abstractDefinition instanceof Abstract.Constructor)) {
         boolean hasExplicit = false;
         if (namespaceMember.definition instanceof Constructor) {
-          for (DependentLink link = ((Constructor) namespaceMember.definition).getParameters(); link != null; link = link.getNext()) {
+          for (DependentLink link = ((Constructor) namespaceMember.definition).getParameters(); link.hasNext(); link = link.getNext()) {
             if (link.isExplicit()) {
               hasExplicit = true;
             }

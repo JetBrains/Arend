@@ -54,7 +54,7 @@ public class Utils {
 
   public static ProcessImplicitResult processImplicit(List<? extends Abstract.PatternArgument> patterns, DependentLink params) {
     int numExplicit = 0;
-    for (DependentLink link = params; link != null; link = link.getNext()) {
+    for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
       if (link.isExplicit()) {
         numExplicit++;
       }
@@ -62,7 +62,7 @@ public class Utils {
 
     List<Abstract.PatternArgument> result = new ArrayList<>();
     int indexI = 0;
-    for (DependentLink link = params; link != null; link = link.getNext()) {
+    for (DependentLink link = params; link.hasNext(); link = link.getNext()) {
       Abstract.PatternArgument curPattern = indexI < patterns.size() ? patterns.get(indexI) : new PatternArgument(new NamePattern(link), false, true);
       if (curPattern.isExplicit() && !link.isExplicit()) {
         curPattern = new PatternArgument(new NamePattern(link), false, true);

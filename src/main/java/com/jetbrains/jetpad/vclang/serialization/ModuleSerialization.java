@@ -253,7 +253,7 @@ public class ModuleSerialization {
   }
 
   public static void writeParameter1(SerializeVisitor visitor, DependentLink link) throws IOException {
-    if (link != null) {
+    if (link.hasNext()) {
       writeParameter(visitor, link);
     } else {
       visitor.getDataStream().write(0);
@@ -261,7 +261,7 @@ public class ModuleSerialization {
   }
 
   public static void writeParameters(SerializeVisitor visitor, DependentLink link) throws IOException {
-    for (; link != null; link = link.getNext()) {
+    for (; link.hasNext(); link = link.getNext()) {
       writeParameter(visitor, link);
     }
     visitor.getDataStream().write(0);

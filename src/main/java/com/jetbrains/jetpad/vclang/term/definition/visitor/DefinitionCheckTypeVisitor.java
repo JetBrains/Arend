@@ -624,10 +624,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   }
 
   private void expandConstructorContext(Constructor constructor, List<Binding> context) {
-    for (DependentLink link = constructor.getDataTypeParameters(); link != null; link = link.getNext()) {
+    for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
       context.add(new TypedBinding(link.getName(), link.getType()));
     }
-    for (DependentLink link = constructor.getParameters(); link != null; link = link.getNext()) {
+    for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
       context.add(new TypedBinding(link.getName(), link.getType()));
     }
   }
@@ -694,10 +694,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       String name = def.getName();
 
-      for (DependentLink link = list.getFirst(); link != null; link = link.getNext()) {
+      for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
         Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {
-          for (DependentLink link1 = ((PiExpression) type).getParameters(); link1 != null; link1 = link1.getNext()) {
+          for (DependentLink link1 = ((PiExpression) type).getParameters(); link1.hasNext(); link1 = link1.getNext()) {
             if (link1.getType().findBinding(dataDefinition)) {
               nonPositiveError(dataDefinition, name, list.getFirst(), link, arguments, def);
               return null;

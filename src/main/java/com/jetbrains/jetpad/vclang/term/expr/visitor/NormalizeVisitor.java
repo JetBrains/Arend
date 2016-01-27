@@ -10,7 +10,8 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.*;
 
@@ -24,12 +25,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       int i = 0;
       DependentLink link = ((LamExpression) expr).getParameters();
       Substitution subst = new Substitution();
-      while (link != null && i < exprs.size()) {
+      while (link.hasNext() && i < exprs.size()) {
         subst.addMapping(link, exprs.get(i++).getExpression());
         link = link.getNext();
       }
       expr = ((LamExpression) expr).getBody();
-      if (link != null) {
+      if (link.hasNext()) {
         expr = Lam(link, expr);
       }
       expr = expr.subst(subst);
@@ -150,9 +151,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       parameters = parameters.getNext();
     }
 
-    if (parameters != null) {
+    if (parameters.hasNext()) {
       parameters = parameters.subst(new Substitution());
-      for (DependentLink link = parameters; link != null; link = link.getNext()) {
+      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         result = Apps(result, Reference(link));
       }
       return Lam(parameters, result);
@@ -182,17 +183,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     DependentLink excessiveParams = conCallExpression.getDefinition().getParameters();
     int i = 0;
     for (; i < args.size(); i++) {
-      if (excessiveParams == null) {
+      if (!excessiveParams.hasNext()) {
         break;
       }
       excessiveParams = excessiveParams.getNext();
     }
 
-    if (mode == Mode.WHNF && excessiveParams != null) {
+    if (mode == Mode.WHNF && excessiveParams.hasNext()) {
       return applyDefCall(conCallExpression, args, mode);
     }
 
-    excessiveParams = excessiveParams != null ? excessiveParams.subst(new Substitution()) : null;
+    excessiveParams = excessiveParams.subst(new Substitution());
     Substitution args2subst = completeArgs(args, conCallExpression.getDefinition().getParameters(), excessiveParams);
     DependentLink link = conCallExpression.getDefinition().getDataTypeParameters();
     for (Expression argument : conCallExpression.getDataTypeArguments()) {
@@ -209,7 +210,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(conCallExpression, args, mode);
     }
     Expression result = ((LeafElimTreeNode) node).getExpression().subst(args2subst);
-    result = excessiveParams != null ? Lam(excessiveParams, result) : result;
+    result = excessiveParams.hasNext() ? Lam(excessiveParams, result) : result;
     return mode == Mode.TOP ? result : result.accept(this, mode);
   }
 
@@ -243,17 +244,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     DependentLink excessiveParams = func.getParameters();
     int i = 0;
     for (; i < args.size(); i++) {
-      if (excessiveParams == null) {
+      if (!excessiveParams.hasNext()) {
         break;
       }
       excessiveParams = excessiveParams.getNext();
     }
 
-    if (mode == Mode.WHNF && excessiveParams != null || func.getElimTree() == null) {
+    if (mode == Mode.WHNF && excessiveParams.hasNext() || func.getElimTree() == null) {
       return applyDefCall(defCallExpr, args, mode);
     }
 
-    excessiveParams = excessiveParams != null ? excessiveParams.subst(new Substitution()) : null;
+    excessiveParams = excessiveParams.subst(new Substitution());
     Substitution args2subst = completeArgs(args, func.getParameters(), excessiveParams);
 
     ElimTreeNode node = func.getElimTree().matchUntilStuck(args2subst);
@@ -272,20 +273,20 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     for (ArgumentExpression arg : args.subList(i, args.size())) {
       result = Apps(result, arg);
     }
-    result = excessiveParams != null ? Lam(excessiveParams, result) : result;
+    result = excessiveParams.hasNext() ? Lam(excessiveParams, result) : result;
     return mode == Mode.TOP ? result : result.accept(this, mode);
   }
 
   private Substitution completeArgs(List<ArgumentExpression> args, DependentLink params, DependentLink excessiveParams) {
     Substitution result = new Substitution();
     for (ArgumentExpression arg : args) {
-      if (params == null) {
+      if (!params.hasNext()) {
         break;
       }
       result.addMapping(params, arg.getExpression());
       params = params.getNext();
     }
-    for (; excessiveParams != null; excessiveParams = excessiveParams.getNext()) {
+    for (; excessiveParams.hasNext(); excessiveParams = excessiveParams.getNext()) {
       result.addMapping(excessiveParams, Reference(excessiveParams));
     }
     return result;
@@ -334,7 +335,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private DependentLink visitParameters(DependentLink link, Mode mode) {
     link = link.subst(new Substitution());
-    for (DependentLink link1 = link; link1 != null; link1 = link1.getNext()) {
+    for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
       link1 = link1.getNextTyped(null);
       link1.setType(link1.getType().accept(this, mode));
     }
