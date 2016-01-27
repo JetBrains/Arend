@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -11,12 +13,14 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVis
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
+  private final Map<Binding, Binding> mySubstitution = new HashMap<>();
   private final Equations myEquations;
   private Equations.CMP myCMP;
 
@@ -105,17 +109,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
         expr2 = ((LamExpression) expr2).getBody();
       }
 
-      if (lamEtaReduce(number1 >= number2 ? expr1 : expr2) == null) {
+      Expression reduced = lamEtaReduce(number1 >= number2 ? expr1 : expr2);
+      if (reduced == null) {
         return false;
       }
 
-      Equations.CMP oldCMP = myCMP;
       myCMP = Equations.CMP.EQ;
-      if (!compare(expr1, expr2)) {
-        return false;
-      }
-      myCMP = oldCMP;
-      return true;
+      return compare(number1 >= number2 ? reduced : expr1, number1 >= number2 ? expr2 : reduced);
     }
 
     if (expr1 instanceof AppExpression) {
@@ -247,7 +247,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   private Boolean compareReference(ReferenceExpression expr1, Expression expr2, Equations.CMP cmp) {
-    if (expr2 instanceof ReferenceExpression && expr1.getBinding() == ((ReferenceExpression) expr2).getBinding()) {
+    Binding binding1 = mySubstitution.get(expr1.getBinding());
+    if (binding1 == null) {
+      binding1 = expr1.getBinding();
+    }
+    if (expr2 instanceof ReferenceExpression && binding1 == ((ReferenceExpression) expr2).getBinding()) {
       return true;
     }
     if (!expr1.getBinding().isInference()) {
@@ -264,7 +268,18 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitLam(LamExpression expr1, Expression expr2) {
-    throw new IllegalStateException();
+    List<DependentLink> params1 = new ArrayList<>();
+    List<DependentLink> params2 = new ArrayList<>();
+    Expression body1 = expr1.getLamParameters(params1);
+    Expression body2 = expr2.getLamParameters(params2);
+    if (params1.size() != params2.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < params1.size(); i++) {
+      mySubstitution.put(params1.get(i), params2.get(i));
+    }
+    return compare(body1, body2);
   }
 
   @Override
@@ -278,25 +293,25 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    Equations.CMP oldCMP = myCMP;
     myCMP = Equations.CMP.EQ;
     for (int i = 0; i < params1.size(); i++) {
+      if (params1.get(i) instanceof UntypedDependentLink && params2.get(i) instanceof UntypedDependentLink) {
+        continue;
+      }
       if (!compare(params1.get(i).getType(), params2.get(i).getType())) {
         return false;
       }
+      mySubstitution.put(params1.get(i), params2.get(i));
     }
-    if (!compare(cod1, cod2)) {
-      return false;
-    }
-    myCMP = oldCMP;
-    return true;
+    return compare(cod1, cod2);
   }
 
-  private boolean compareTypeArguments(DependentLink params1, DependentLink params2) {
+  private boolean compareParameters(DependentLink params1, DependentLink params2) {
     for (; params1.hasNext() && params2.hasNext(); params1 = params1.getNext(), params2 = params2.getNext()) {
       if (!compare(params1.getType(), params2.getType())) {
         return false;
       }
+      mySubstitution.put(params1, params2);
     }
     return !params1.hasNext() && !params2.hasNext();
   }
@@ -338,13 +353,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitSigma(SigmaExpression expr1, Expression expr2) {
     if (!(expr2 instanceof SigmaExpression)) return false;
-    Equations.CMP oldCMP = myCMP;
     myCMP = Equations.CMP.EQ;
-    if (!compareTypeArguments(expr1.getParameters(), ((SigmaExpression) expr2).getParameters())) {
-      return false;
-    }
-    myCMP = oldCMP;
-    return true;
+    return compareParameters(expr1.getParameters(), ((SigmaExpression) expr2).getParameters());
   }
 
   @Override
@@ -376,18 +386,17 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    Equations.CMP oldCMP = myCMP;
     myCMP = Equations.CMP.EQ;
     for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      if (!compareTypeArguments(letExpr1.getClauses().get(i).getParameters(), letExpr2.getClauses().get(i).getParameters())) {
+      if (!compareParameters(letExpr1.getClauses().get(i).getParameters(), letExpr2.getClauses().get(i).getParameters())) {
         return false;
       }
       if (!compare(letExpr1.getClauses().get(i).getElimTree(), letExpr2.getClauses().get(i).getElimTree())) {
         return false;
       }
+      mySubstitution.put(letExpr1.getClauses().get(i), letExpr2.getClauses().get(i));
     }
 
-    myCMP = oldCMP;
     return compare(letExpr1.getExpression(), letExpr2.getExpression());
   }
 
@@ -397,7 +406,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     BranchElimTreeNode other = (BranchElimTreeNode) node;
 
-    if (other.getReference() != branchNode.getReference())
+    Binding binding1 = mySubstitution.get(branchNode.getReference());
+    if (binding1 == null) {
+      binding1 = branchNode.getReference();
+    }
+    if (other.getReference() != binding1)
       return false;
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       ConstructorClause otherClause = other.getClause(clause.getConstructor());

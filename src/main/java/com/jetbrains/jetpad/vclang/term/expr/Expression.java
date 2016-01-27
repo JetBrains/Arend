@@ -96,4 +96,17 @@ public abstract class Expression implements PrettyPrintable {
     }
     return cod;
   }
+
+  public Expression getLamParameters(List<DependentLink> params) {
+    Expression body = this;
+    while (body instanceof LamExpression) {
+      if (params != null) {
+        for (DependentLink link = ((LamExpression) body).getParameters(); link.hasNext(); link = link.getNext()) {
+          params.add(link);
+        }
+      }
+      body = ((LamExpression) body).getBody();
+    }
+    return body;
+  }
 }
