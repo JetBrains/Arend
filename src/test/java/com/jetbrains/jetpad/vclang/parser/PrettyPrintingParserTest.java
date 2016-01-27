@@ -48,10 +48,10 @@ public class PrettyPrintingParserTest {
   @Test
   public void prettyPrintingParserLamApp() throws UnsupportedEncodingException {
     // (\x y. x (x y)) (\x y. x) ((\x. x) (\x. x))
-    Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars("x", "y"), cNat())), cApps(cVar("x"), cApps(cVar("x"), cVar("y")))), cLam(cargs(cTele(cvars("x"), cNat()), cTele(cvars("y"), cNat())), cVar("x")), cApps(cLam("x", cVar("x")), cLam("x", cVar("x"))));
+    Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars("x", "y"), cNat())), cApps(cVar("x"), cApps(cVar("x"), cVar("y")))), cLam(cargs(cTele(cvars("x", "y"), cNat())), cVar("x")), cApps(cLam(cargs(cTele(cvars("x"), cNat())), cVar("x")), cLam(cargs(cTele(cvars("x"), cNat())), cVar("x"))));
     DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    Expression expr = Apps(Lam(params(x, y), Apps(Reference(x), Apps(Reference(x), Reference(y)))), Lam(params(x, y), Reference(x)), Apps(Lam(x, Reference(x)), Lam(x, Reference(x))));
+    DependentLink xy = param(true, vars("x", "y"), Nat());
+    Expression expr = Apps(Lam(xy, Apps(Reference(xy), Apps(Reference(xy), Reference(xy.getNext())))), Lam(xy, Reference(xy)), Apps(Lam(x, Reference(x)), Lam(x, Reference(x))));
     testExpr(expected, expr);
   }
 
@@ -59,9 +59,8 @@ public class PrettyPrintingParserTest {
   public void prettyPrintingParserPi() throws UnsupportedEncodingException {
     // (x y : Nat) -> Nat -> Nat -> (x y -> y x) -> Nat x y
     Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars("x", "y"), cNat())), cPi(cNat(), cPi(cNat(), cPi(cPi(cApps(cVar("x"), cVar("y")), cApps(cVar("y"), cVar("x"))), cApps(cNat(), cVar("x"), cVar("y"))))));
-    DependentLink x = param("x", Nat());
-    DependentLink y = param("y", Nat());
-    Expression expr = Pi(params(x, y), Pi(param(Nat()), Pi(param(Nat()), Pi(param(Pi(param(Apps(Reference(x), Reference(y))), Apps(Reference(y), Reference(x)))), Apps(Nat(), Reference(x), Reference(y))))));
+    DependentLink xy = param(true, vars("x", "y"), Nat());
+    Expression expr = Pi(xy, Pi(Nat(), Pi(Nat(), Pi(Pi(Apps(Reference(xy), Reference(xy.getNext())), Apps(Reference(xy.getNext()), Reference(xy))), Apps(Nat(), Reference(xy), Reference(xy.getNext()))))));
     testExpr(expected, expr);
   }
 

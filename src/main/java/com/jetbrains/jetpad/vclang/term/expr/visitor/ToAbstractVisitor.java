@@ -146,7 +146,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         if (names.isEmpty()) {
           names.add(null);
         }
-        arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), names, link.getType().accept(this, null)));
+        arguments.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
         names.clear();
       }
     } else {
