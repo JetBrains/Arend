@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
@@ -40,6 +41,11 @@ public class ListEquations implements Equations {
   @Override
   public boolean isEmpty() {
     return myEquations.isEmpty();
+  }
+
+  @Override
+  public void abstractBinding(Binding binding) {
+
   }
 
   @Override

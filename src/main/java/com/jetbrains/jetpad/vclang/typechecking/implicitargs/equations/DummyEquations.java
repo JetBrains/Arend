@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 public class DummyEquations implements Equations {
@@ -31,6 +32,11 @@ public class DummyEquations implements Equations {
   @Override
   public boolean isEmpty() {
     return true;
+  }
+
+  @Override
+  public void abstractBinding(Binding binding) {
+
   }
 
   @Override

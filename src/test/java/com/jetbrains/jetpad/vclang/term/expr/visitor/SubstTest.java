@@ -29,7 +29,7 @@ public class SubstTest {
   @Test
   public void substLam() {
     // \x y. y x [y := suc zero] = \x y. y x
-    DependentLink xy = param(true, vars("x", "Y"), Nat());
+    DependentLink xy = param(true, vars("x", "y"), Nat());
     Expression expr = Lam(xy, Apps(Reference(xy.getNext()), Reference(xy)));
     assertEquals(expr, expr.subst(xy.getNext(), Suc(Zero())));
   }
@@ -37,7 +37,7 @@ public class SubstTest {
   @Test
   public void substLamConst() {
     // \x y. z y x [x := suc zero] = \x. suc zero
-    DependentLink xy = param(true, vars("x", "Y"), Nat());
+    DependentLink xy = param(true, vars("x", "y"), Nat());
     Binding z = new TypedBinding("z", Nat());
     Expression expr = Lam(xy, Apps(Reference(z), Reference(xy.getNext()), Reference(xy)));
     assertEquals(Lam(xy, Apps(Suc(Zero()), Reference(xy.getNext()), Reference(xy))), expr.subst(z, Suc(Zero())));

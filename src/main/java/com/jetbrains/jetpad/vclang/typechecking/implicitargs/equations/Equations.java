@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
@@ -8,6 +9,7 @@ public interface Equations {
   void add(Expression expr1, Expression expr2, CMP cmp);
   void clear();
   boolean isEmpty();
+  void abstractBinding(Binding binding);
   Equations newInstance();
 
   enum CMP {

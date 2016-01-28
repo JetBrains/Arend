@@ -35,7 +35,6 @@ public class LinkList {
     }
 
     if (myFirst.hasNext()) {
-      assert !link.getNext().hasNext();
       link.setNext(myFirst);
       myFirst = link;
     } else {

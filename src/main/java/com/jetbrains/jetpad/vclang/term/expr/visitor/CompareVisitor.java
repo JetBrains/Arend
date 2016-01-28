@@ -20,11 +20,18 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
-  private final Map<Binding, Binding> mySubstitution = new HashMap<>();
+  private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
   private Equations.CMP myCMP;
 
   private CompareVisitor(Equations equations, Equations.CMP cmp) {
+    mySubstitution = new HashMap<>();
+    myEquations = equations;
+    myCMP = cmp;
+  }
+
+  private CompareVisitor(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp) {
+    mySubstitution = substitution;
     myEquations = equations;
     myCMP = cmp;
   }
@@ -98,25 +105,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return true;
     }
 
-    if (expr1 instanceof LamExpression || expr2 instanceof LamExpression) {
-      int number1 = 0, number2 = 0;
-      while (expr1 instanceof LamExpression) {
-        number1 += DependentLink.Helper.size(((LamExpression) expr1).getParameters());
-        expr1 = ((LamExpression) expr1).getBody();
-      }
-      while (expr2 instanceof LamExpression) {
-        number2 += DependentLink.Helper.size(((LamExpression) expr2).getParameters());
-        expr2 = ((LamExpression) expr2).getBody();
-      }
-
-      Expression reduced = lamEtaReduce(number1 >= number2 ? expr1 : expr2);
-      if (reduced == null) {
-        return false;
-      }
-
-      myCMP = Equations.CMP.EQ;
-      return compare(number1 >= number2 ? reduced : expr1, number1 >= number2 ? expr2 : reduced);
-    }
+    // TODO
+    // expr1 = lamEtaReduce(expr1);
+    // expr2 = lamEtaReduce(expr2);
 
     if (expr1 instanceof AppExpression) {
       Expression expr = pathEtaReduce((AppExpression) expr1);
@@ -134,7 +125,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     }
 
     if (expr2 instanceof ReferenceExpression) {
-      return compareReference((ReferenceExpression) expr2, expr1, myCMP.not());
+      return compareReference((ReferenceExpression) expr2, expr1, false);
     }
     return expr1.accept(this, expr2);
   }
@@ -246,24 +237,28 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return true;
   }
 
-  private Boolean compareReference(ReferenceExpression expr1, Expression expr2, Equations.CMP cmp) {
-    Binding binding1 = mySubstitution.get(expr1.getBinding());
-    if (binding1 == null) {
-      binding1 = expr1.getBinding();
-    }
-    if (expr2 instanceof ReferenceExpression && binding1 == ((ReferenceExpression) expr2).getBinding()) {
-      return true;
+  private Boolean compareReference(ReferenceExpression expr1, Expression expr2, boolean first) {
+    if (expr2 instanceof ReferenceExpression) {
+      Binding binding1 = first ? expr1.getBinding() : ((ReferenceExpression) expr2).getBinding();
+      Binding subst1 = mySubstitution.get(binding1);
+      if (subst1 != null) {
+        binding1 = subst1;
+      }
+      Binding binding2 = first ? ((ReferenceExpression) expr2).getBinding() : expr1.getBinding();
+      if (binding1 == binding2) {
+        return true;
+      }
     }
     if (!expr1.getBinding().isInference()) {
       return false;
     }
-    myEquations.add(expr1, expr2, cmp);
+    myEquations.add(expr1, expr2, first ? myCMP : myCMP.not());
     return true;
   }
 
   @Override
   public Boolean visitReference(ReferenceExpression expr1, Expression expr2) {
-    return compareReference(expr1, expr2, myCMP);
+    return compareReference(expr1, expr2, true);
   }
 
   @Override
@@ -279,7 +274,16 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     for (int i = 0; i < params1.size(); i++) {
       mySubstitution.put(params1.get(i), params2.get(i));
     }
-    return compare(body1, body2);
+    Equations equations = myEquations.newInstance();
+    if (!new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ).compare(body1, body2)) {
+      return false;
+    }
+    for (int i = 0; i < params1.size(); i++) {
+      mySubstitution.remove(params1.get(i));
+      equations.abstractBinding(params2.get(i));
+    }
+    myEquations.add(equations);
+    return true;
   }
 
   @Override
@@ -293,17 +297,27 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    myCMP = Equations.CMP.EQ;
+    Equations equations = myEquations.newInstance();
+    CompareVisitor visitor = new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ);
     for (int i = 0; i < params1.size(); i++) {
       if (params1.get(i) instanceof UntypedDependentLink && params2.get(i) instanceof UntypedDependentLink) {
         continue;
       }
-      if (!compare(params1.get(i).getType(), params2.get(i).getType())) {
+      if (!visitor.compare(params1.get(i).getType(), params2.get(i).getType())) {
         return false;
       }
       mySubstitution.put(params1.get(i), params2.get(i));
     }
-    return compare(cod1, cod2);
+
+    if (!visitor.compare(cod1, cod2)) {
+      return false;
+    }
+    for (int i = 0; i < params1.size(); i++) {
+      mySubstitution.remove(params1.get(i));
+      equations.abstractBinding(params2.get(i));
+    }
+    myEquations.add(equations);
+    return true;
   }
 
   private boolean compareParameters(DependentLink params1, DependentLink params2) {
@@ -353,8 +367,19 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitSigma(SigmaExpression expr1, Expression expr2) {
     if (!(expr2 instanceof SigmaExpression)) return false;
-    myCMP = Equations.CMP.EQ;
-    return compareParameters(expr1.getParameters(), ((SigmaExpression) expr2).getParameters());
+    Equations equations = myEquations.newInstance();
+    CompareVisitor visitor = new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ);
+    if (!visitor.compareParameters(expr1.getParameters(), ((SigmaExpression) expr2).getParameters())) {
+      return false;
+    }
+    for (DependentLink link = expr1.getParameters(); link.hasNext(); link = link.getNext()) {
+      mySubstitution.remove(link);
+    }
+    for (DependentLink link = ((SigmaExpression) expr2).getParameters(); link.hasNext(); link = link.getNext()) {
+      equations.abstractBinding(link);
+    }
+    myEquations.add(equations);
+    return true;
   }
 
   @Override
@@ -386,18 +411,33 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    myCMP = Equations.CMP.EQ;
+    Equations equations = myEquations.newInstance();
+    CompareVisitor visitor = new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ);
     for (int i = 0; i < letExpr1.getClauses().size(); i++) {
-      if (!compareParameters(letExpr1.getClauses().get(i).getParameters(), letExpr2.getClauses().get(i).getParameters())) {
+      if (!visitor.compareParameters(letExpr1.getClauses().get(i).getParameters(), letExpr2.getClauses().get(i).getParameters())) {
         return false;
       }
-      if (!compare(letExpr1.getClauses().get(i).getElimTree(), letExpr2.getClauses().get(i).getElimTree())) {
+      if (!visitor.compare(letExpr1.getClauses().get(i).getElimTree(), letExpr2.getClauses().get(i).getElimTree())) {
         return false;
       }
       mySubstitution.put(letExpr1.getClauses().get(i), letExpr2.getClauses().get(i));
     }
 
-    return compare(letExpr1.getExpression(), letExpr2.getExpression());
+    if (!visitor.compare(letExpr1.getExpression(), letExpr2.getExpression())) {
+      return false;
+    }
+    for (int i = 0; i < letExpr1.getClauses().size(); i++) {
+      for (DependentLink link = letExpr1.getClauses().get(i).getParameters(); link.hasNext(); link = link.getNext()) {
+        mySubstitution.remove(link);
+      }
+      for (DependentLink link = letExpr2.getClauses().get(i).getParameters(); link.hasNext(); link = link.getNext()) {
+        equations.abstractBinding(link);
+      }
+      mySubstitution.remove(letExpr1.getClauses().get(i));
+      equations.abstractBinding(letExpr2.getClauses().get(i));
+    }
+    myEquations.add(equations);
+    return true;
   }
 
   @Override
@@ -410,15 +450,51 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (binding1 == null) {
       binding1 = branchNode.getReference();
     }
-    if (other.getReference() != binding1)
+    if (other.getReference() != binding1) {
       return false;
+    }
+
+    if (branchNode.getContextTail().size() != other.getContextTail().size()) {
+      return false;
+    }
+    for (int i = 0; i < branchNode.getContextTail().size(); i++) {
+      binding1 = mySubstitution.get(branchNode.getContextTail().get(i));
+      if (binding1 == null) {
+        binding1 = branchNode.getContextTail().get(i);
+      }
+      if (binding1 != other.getContextTail().get(i)) {
+        return false;
+      }
+    }
+
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       Clause otherClause = other.getClause(clause.getConstructor());
       if (otherClause == null || !(otherClause instanceof ConstructorClause))
         return false;
-      if (!clause.getChild().accept(this, otherClause.getChild())) {
+
+      for (DependentLink link1 = clause.getParameters(), link2 = otherClause.getParameters(); link1.hasNext() && link2.hasNext(); link1 = link1.getNext(), link2 = link2.getNext()) {
+        mySubstitution.put(link1, link2);
+      }
+      for (int i = 0; i < clause.getTailBindings().size() && i < otherClause.getTailBindings().size(); i++) {
+        mySubstitution.put(clause.getTailBindings().get(i), otherClause.getTailBindings().get(i));
+      }
+
+      Equations equations = myEquations.newInstance();
+      if (!new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ).compare(clause.getChild(), otherClause.getChild())) {
         return false;
       }
+
+      for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
+        mySubstitution.remove(link);
+      }
+      for (DependentLink link = otherClause.getParameters(); link.hasNext(); link = link.getNext()) {
+        equations.abstractBinding(link);
+      }
+      for (int i = 0; i < clause.getTailBindings().size() && i < otherClause.getTailBindings().size(); i++) {
+        mySubstitution.remove(clause.getTailBindings().get(i));
+        equations.abstractBinding(otherClause.getTailBindings().get(i));
+      }
+      myEquations.add(equations);
     }
     for (ConstructorClause clause : other.getConstructorClauses()) {
       if (branchNode.getClause(clause.getConstructor()) == null) {
@@ -440,7 +516,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitLeaf(LeafElimTreeNode leafNode, ElimTreeNode node) {
     if (node instanceof LeafElimTreeNode) {
-      return leafNode.getExpression().accept(this, ((LeafElimTreeNode) node).getExpression());
+      return compare(leafNode.getExpression(), ((LeafElimTreeNode) node).getExpression());
     }
     return false;
   }

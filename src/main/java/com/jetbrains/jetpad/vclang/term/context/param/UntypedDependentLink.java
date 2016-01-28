@@ -16,6 +16,10 @@ public class UntypedDependentLink implements DependentLink {
     myNext = next;
   }
 
+  private UntypedDependentLink(String name) {
+    myName = name;
+  }
+
   @Override
   public boolean isExplicit() {
     return myNext.isExplicit();
@@ -81,7 +85,7 @@ public class UntypedDependentLink implements DependentLink {
 
   @Override
   public UntypedDependentLink subst(Substitution subst) {
-    UntypedDependentLink result = new UntypedDependentLink(myName, EmptyDependentLink.getInstance());
+    UntypedDependentLink result = new UntypedDependentLink(myName);
     subst.addMapping(this, new ReferenceExpression(result));
     result.myNext = myNext.subst(subst);
     return result;
