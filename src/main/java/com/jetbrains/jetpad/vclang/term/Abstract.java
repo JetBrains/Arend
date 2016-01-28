@@ -313,6 +313,7 @@ public final class Abstract {
     List<? extends PatternArgument> getPatterns();
     Name getConstructorName();
     Expression getTerm();
+    void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition);
   }
 
   public interface NamespaceCommandStatement extends Statement {

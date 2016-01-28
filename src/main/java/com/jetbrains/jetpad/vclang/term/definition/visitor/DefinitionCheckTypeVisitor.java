@@ -577,7 +577,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           continue;
         }
 
-        dataDefinition.addCondition(new Condition(constructor, elimTreeResult.elimTree));
+        Condition typedCond = new Condition(constructor, elimTreeResult.elimTree);
+        dataDefinition.addCondition(typedCond);
+        for (Abstract.Condition cond : condMap.get(constructor)) {
+          cond.setWellTyped(typedCond);
+        }
       }
     }
     return null;
