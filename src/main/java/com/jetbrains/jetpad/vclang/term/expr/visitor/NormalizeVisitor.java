@@ -37,7 +37,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (ArgumentExpression argumentExpression : exprs.subList(i, exprs.size())) {
         expr = Apps(expr, argumentExpression);
       }
-      return expr;
+      return mode == Mode.TOP ? expr : expr.accept(this, mode);
     }
 
     if (expr instanceof DefCallExpression) {

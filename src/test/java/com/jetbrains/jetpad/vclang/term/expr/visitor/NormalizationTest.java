@@ -59,13 +59,13 @@ public class NormalizationTest {
     DependentLink xMul = param("x", Nat());
     DependentLink yMul = param("y", Nat());
     mul = new FunctionDefinition(testNS, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), params(xMul, yMul), Nat(), null);
-    testNS.addDefinition(mul);
     DependentLink xMulMinusOne = param("x'", Nat());
     BranchElimTreeNode mulElimTree = branch(xMul, tail(yMul),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
-        clause(Prelude.SUC, xPlusMinusOne, BinOp(Reference(yMul), plus, BinOp(Reference(xMulMinusOne), mul, Reference(yMul))))
+        clause(Prelude.SUC, xMulMinusOne, BinOp(Reference(yMul), plus, BinOp(Reference(xMulMinusOne), mul, Reference(yMul))))
     );
     mul.setElimTree(mulElimTree);
+    testNS.addDefinition(mul);
 
     DependentLink xFac = param("x", Nat());
     fac = new FunctionDefinition(testNS, new Name("fac"), Abstract.Definition.DEFAULT_PRECEDENCE, xFac, Nat(), null);
@@ -384,7 +384,7 @@ public class NormalizationTest {
   @Test
   public void testAppProj() {
     DependentLink x = param("x", Nat());
-    Expression expr = Apps(Proj(Tuple(Sigma(params(param(Pi(param(Nat()), Nat())), param(Lam(x, Reference(x)))))), 0), Zero());
+    Expression expr = Apps(Proj(Tuple(Sigma(param(Pi(param(Nat()), Nat()))), Lam(x, Reference(x))), 0), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 }

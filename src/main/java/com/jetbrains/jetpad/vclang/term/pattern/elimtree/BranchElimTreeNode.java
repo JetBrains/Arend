@@ -96,7 +96,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
   public ElimTreeNode matchUntilStuck(Substitution subst) {
     List<Expression> arguments = new ArrayList<>();
-    Expression func = subst.get(myReference).getFunction(arguments);
+    Expression func = subst.get(myReference).normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
     if (!(func instanceof ConCallExpression)) {
       if (myIsInterval && myOtherwiseClause != null) {
         return myOtherwiseClause.getChild().matchUntilStuck(subst);
