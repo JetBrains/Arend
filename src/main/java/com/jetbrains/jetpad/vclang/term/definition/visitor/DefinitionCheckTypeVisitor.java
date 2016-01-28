@@ -540,6 +540,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName());
       if (constructor == null) {
         myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
+        continue;
       }
       if (!condMap.containsKey(constructor)) {
         condMap.put(constructor, new ArrayList<Abstract.Condition>());
