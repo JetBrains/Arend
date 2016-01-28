@@ -21,7 +21,7 @@ public class ComparisonTest {
   public void lambdas() {
     DependentLink x = param("x", Nat());
     DependentLink y = param("y", Nat());
-    Expression expr1 = Lam(params(x, y), Reference(x));
+    Expression expr1 = Lam(params(param("x", Nat()), y), Reference(x));
     Expression expr2 = Lam(x, Lam(y, Reference(x)));
     assertEquals(expr1, expr2);
   }

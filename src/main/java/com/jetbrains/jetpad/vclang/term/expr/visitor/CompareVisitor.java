@@ -423,6 +423,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       mySubstitution.put(letExpr1.getClauses().get(i), letExpr2.getClauses().get(i));
     }
 
+    visitor.myCMP = myCMP;
     if (!visitor.compare(letExpr1.getExpression(), letExpr2.getExpression())) {
       return false;
     }

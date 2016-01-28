@@ -23,7 +23,7 @@ public class SubstTest {
     // zero -> N x [x := S] = zero -> N S
     Binding x = new TypedBinding("x", Nat());
     Expression expr = Pi(Zero(), Apps(DataCall(Prelude.NAT), Reference(x)));
-    assertEquals(expr, expr.subst(x, Suc()));
+    assertEquals(Pi(Zero(), Apps(DataCall(Prelude.NAT), Suc())), expr.subst(x, Suc()));
   }
 
   @Test

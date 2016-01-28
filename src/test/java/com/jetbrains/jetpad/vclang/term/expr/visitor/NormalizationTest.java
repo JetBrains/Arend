@@ -137,7 +137,7 @@ public class NormalizationTest {
     DependentLink y = param("y", Nat());
     DependentLink z = param("z", Nat());
     Expression expr = Apps(Lam(params(x, y), Reference(x)), Suc(Reference(var0)));
-    assertEquals(Lam(z, Suc(Reference(z))), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Lam(z, Suc(Reference(var0))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
