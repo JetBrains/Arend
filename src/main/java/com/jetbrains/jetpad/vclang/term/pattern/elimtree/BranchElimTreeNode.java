@@ -17,6 +17,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 public class BranchElimTreeNode extends ElimTreeNode {
   private final Binding myReference;
   private final Map<Constructor, ConstructorClause> myClauses = new HashMap<>();
+  private OtherwiseClause myOtherwiseClause;
   private final List<Binding> myContextTail;
 
   public BranchElimTreeNode(Binding reference, List<Binding> contextTail) {
@@ -57,19 +58,33 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return result;
   }
 
-  public ConstructorClause addClause(Constructor constructor, DependentLink constructorArgs, List<Binding> tailBindings, ElimTreeNode child) {
+  public OtherwiseClause addOtherwiseClause() {
+    myOtherwiseClause = new OtherwiseClause(this);
+    return myOtherwiseClause;
+  }
+
+  void addClause(Constructor constructor, DependentLink constructorArgs, List<Binding> tailBindings, ElimTreeNode child) {
     ConstructorClause clause = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
     myClauses.put(constructor, clause);
     clause.setChild(child);
-    return clause;
   }
 
-  public ConstructorClause getClause(Constructor constructor) {
-    return myClauses.get(constructor);
+  void addOtherwiseClause(ElimTreeNode child) {
+    myOtherwiseClause = new OtherwiseClause(this);
+    myOtherwiseClause.setChild(child);
+  }
+
+  public Clause getClause(Constructor constructor) {
+    Clause result = myClauses.get(constructor);
+    return result != null ? result : myOtherwiseClause;
   }
 
   public Collection<ConstructorClause> getConstructorClauses() {
     return myClauses.values();
+  }
+
+  public OtherwiseClause getOtherwiseClause() {
+    return myOtherwiseClause;
   }
 
   public ElimTreeNode matchUntilStuck(Substitution subst) {
@@ -78,9 +93,11 @@ public class BranchElimTreeNode extends ElimTreeNode {
     if (!(func instanceof ConCallExpression)) {
       return this;
     }
-    ConstructorClause clause = getClause(((ConCallExpression) func).getDefinition());
-    if (clause == null)
-      return this;
+
+    ConstructorClause clause = myClauses.get(((ConCallExpression) func).getDefinition());
+    if (clause == null) {
+      return myOtherwiseClause == null ? null : myOtherwiseClause.getChild().matchUntilStuck(subst);
+    }
 
     for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
       subst.addMapping(link, arguments.get(arguments.size() - 1));

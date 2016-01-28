@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
@@ -49,19 +50,19 @@ class PatternsExpander {
   }
 
   ExpansionResult expandPatterns(List<Pattern> patterns, Binding binding, List<Binding> context) {
-    List<Integer> namePatternIdxs = new ArrayList<>();
+    List<Integer> anyPatternIdxs = new ArrayList<>();
     boolean hasConstructorPattern = false;
     for (int i = 0; i < patterns.size(); i++) {
       if (patterns.get(i) instanceof ConstructorPattern || patterns.get(i) instanceof AnyConstructorPattern) {
         hasConstructorPattern = true;
       } else if (patterns.get(i) instanceof NamePattern) {
-        namePatternIdxs.add(i);
+        anyPatternIdxs.add(i);
       }
     }
 
     if (!hasConstructorPattern) {
       LeafElimTreeNode leaf = new LeafElimTreeNode();
-      return new ExpansionResult(leaf, Collections.singletonList(new Branch(Reference(binding), leaf, namePatternIdxs, context)));
+      return new ExpansionResult(leaf, Collections.singletonList(new Branch(Reference(binding), leaf, anyPatternIdxs, context)));
     }
 
     List<Expression> parameters = new ArrayList<>();
@@ -73,8 +74,12 @@ class PatternsExpander {
     List<Branch> resultBranches = new ArrayList<>();
 
     for (ConCallExpression conCall : validConstructors) {
+      MatchingPatterns matching = new MatchingPatterns(patterns, conCall.getDefinition());
+      if (!matching.hasConstructor) {
+        continue;
+      }
+
       ConstructorClause clause = resultTree.addClause(conCall.getDefinition());
-      MatchingPatterns matching = new MatchingPatterns(patterns, conCall.getDefinition(), context.size());
       MultiPatternsExpander.MultiElimTreeExpansionResult nestedResult = MultiPatternsExpander.expandPatterns(
         toContext(clause.getParameters()), matching.nestedPatterns, clause.getTailBindings()
       );
@@ -84,6 +89,12 @@ class PatternsExpander {
         resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
       }
     }
+    if (!anyPatternIdxs.isEmpty()) {
+      OtherwiseClause clause = resultTree.addOtherwiseClause();
+      LeafElimTreeNode leaf = new LeafElimTreeNode();
+      clause.setChild(leaf);
+      resultBranches.add(new Branch(Reference(binding), leaf, anyPatternIdxs, context));
+    }
 
     return new ExpansionResult(resultTree, resultBranches);
   }
@@ -91,9 +102,11 @@ class PatternsExpander {
   private static class MatchingPatterns {
     private final List<Integer> indices = new ArrayList<>();
     private final List<List<Pattern>> nestedPatterns = new ArrayList<>();
+    private boolean hasConstructor;
 
-    private MatchingPatterns(List<Pattern> patterns, Constructor constructor, int numConstructorArgs) {
-      List<Pattern> anyPatterns = new ArrayList<>(Collections.<Pattern>nCopies(numConstructorArgs, new NamePattern(EmptyDependentLink.getInstance())));
+    private MatchingPatterns(List<Pattern> patterns, Constructor constructor) {
+      hasConstructor = false;
+      List<Pattern> anyPatterns = new ArrayList<>(Collections.<Pattern>nCopies(size(constructor.getParameters()), new NamePattern(EmptyDependentLink.getInstance())));
 
       for (int j = 0; j < patterns.size(); j++) {
         if (patterns.get(j) instanceof NamePattern || patterns.get(j) instanceof AnyConstructorPattern) {
@@ -101,6 +114,7 @@ class PatternsExpander {
           nestedPatterns.add(anyPatterns);
         } else if (patterns.get(j) instanceof ConstructorPattern &&
             ((ConstructorPattern) patterns.get(j)).getConstructor() == constructor) {
+          hasConstructor = true;
           indices.add(j);
           nestedPatterns.add(toPatterns(((ConstructorPattern) patterns.get(j)).getArguments()));
         }

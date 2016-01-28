@@ -11,10 +11,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.*;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.io.*;
@@ -25,9 +22,15 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
   private ResolvedName myResolvedName;
+  private final ElimTreeDeserialization myElimTreeDeserialization;
   private final List<Binding> myBindingMap = new ArrayList<>();
 
   public ModuleDeserialization() {
+    myElimTreeDeserialization = new ElimTreeDeserialization(this);
+  }
+
+  public Binding getBinding(int bindingIdx) {
+    return myBindingMap.get(bindingIdx);
   }
 
   public ModuleLoadingResult readFile(File file, ResolvedName module) throws IOException {
@@ -239,42 +242,11 @@ public class ModuleDeserialization {
     }
 
     if (stream.readBoolean()) {
-      definition.setElimTree(readElimTree(stream, definitionMap));
+      definition.setElimTree(myElimTreeDeserialization.readElimTree(stream, definitionMap));
     }
   }
 
-  private ElimTreeNode readElimTree(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    switch (stream.readInt()) {
-      case 0: {
-        Binding binding = myBindingMap.get(stream.readInt());
-        int contextTailSize = stream.readInt();
-        List<Binding> contextTail = new ArrayList<>(contextTailSize);
-        for (int i = 0; i < contextTailSize; i++) {
-          contextTail.add(myBindingMap.get(stream.readInt()));
-        }
-        BranchElimTreeNode elimTree = new BranchElimTreeNode(binding, contextTail);
-        int size = stream.readInt();
-        for (int i = 0; i < size; i++) {
-          Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
-          DependentLink parameters = readParameters(stream, definitionMap);
-          List<Binding> tailBindings = new ArrayList<>(contextTailSize);
-          for (int j = 0; j < contextTailSize; j++) {
-            tailBindings.add(readTypedBinding(stream, definitionMap));
-          }
-          elimTree.addClause(constructor, parameters, tailBindings, readElimTree(stream, definitionMap));
-        }
-        return elimTree;
-      }
-      case 1: {
-        return new LeafElimTreeNode(stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT, readExpression(stream, definitionMap));
-      }
-      case 2: {
-        return EmptyElimTreeNode.getInstance();
-      }
-      default:
-        throw new IllegalStateException();
-    }
-  }
+
 
   private void deserializeNamespace(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition parent) throws IOException {
     int size = stream.readInt();
@@ -311,7 +283,7 @@ public class ModuleDeserialization {
     return new Universe.Type(level, truncated);
   }
 
-  private TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     String name = null;
     if (stream.readBoolean()) {
       name = stream.readUTF();
@@ -464,7 +436,7 @@ public class ModuleDeserialization {
     final String name = stream.readUTF();
     final DependentLink parameters = readParameters(stream, definitionMap);
     final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
-    return let(name, parameters, resultType, readElimTree(stream, definitionMap));
+    return let(name, parameters, resultType, myElimTreeDeserialization.readElimTree(stream, definitionMap));
   }
 
   public PatternArgument readPatternArg(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {

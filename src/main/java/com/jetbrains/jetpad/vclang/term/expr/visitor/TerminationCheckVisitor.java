@@ -38,17 +38,13 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, Void params) {
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      List<Expression> patterns = new ArrayList<>(myPatterns);
-      Expression expr = ConCall(clause.getConstructor());
-      for (DependentLink link = clause.getConstructor().getParameters(); link.hasNext(); link = link.getNext()) {
-        expr = Apps(expr, Reference(link));
-      }
-      for (int j = 0; j < patterns.size(); j++) {
-        patterns.set(j, patterns.get(j).subst(branchNode.getReference(), expr));
-      }
-      if (!clause.getChild().accept(new TerminationCheckVisitor(myDef, patterns), null)) {
+      if (!clause.getChild().accept(new TerminationCheckVisitor(myDef, clause.getSubst().substExprs(myPatterns)), null)) {
         return false;
       }
+    }
+
+    if (branchNode.getOtherwiseClause() != null && !branchNode.getOtherwiseClause().getChild().accept(this, null)) {
+      return false;
     }
     return true;
   }

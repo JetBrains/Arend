@@ -43,7 +43,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
 
     for (final ConCallExpression conCall : dataType.getMatchedConstructors(parameters)) {
       if (branchNode.getClause(conCall.getDefinition()) != null) {
-        ConstructorClause clause = branchNode.getClause(conCall.getDefinition());
+        Clause clause = branchNode.getClause(conCall.getDefinition());
         clause.getChild().accept(this, clause.getSubst().compose(argSubst));
         if (conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()) != null) {
           Substitution subst = toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments());

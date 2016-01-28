@@ -14,14 +14,10 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import java.util.List;
 
 public abstract class ElimTreeNode {
-  private ConstructorClause myParent = null;
+  private Clause myParent = null;
 
-  public ConstructorClause getParent() {
+  Clause getParent() {
     return myParent;
-  }
-
-  void setParent(ConstructorClause parent) {
-    myParent = parent;
   }
 
   public abstract <P, R> R accept(ElimTreeNodeVisitor<P, R> visitor, P params);
@@ -46,5 +42,9 @@ public abstract class ElimTreeNode {
   @Override
   public String toString() {
     return accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).toString();
+  }
+
+  void setParent(Clause parent) {
+    myParent = parent;
   }
 }

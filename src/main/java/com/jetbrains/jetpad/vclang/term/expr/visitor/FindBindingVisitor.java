@@ -139,6 +139,10 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
       if (clause.getChild().accept(this, null))
         return true;
     }
+    if (branchNode.getOtherwiseClause() != null) {
+      if (branchNode.getOtherwiseClause().getChild().accept(this, null))
+        return true;
+    }
     return false;
   }
 

@@ -259,6 +259,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       }
       clauses.add(myFactory.makeClause(myFactory.makeConPattern(clause.getConstructor().getName(), args), clause.getChild().getArrow(), clause.getChild().accept(this, null)));
     }
+    if (branchNode.getOtherwiseClause() != null) {
+      clauses.add(myFactory.makeClause(myFactory.makeNamePattern(null), branchNode.getOtherwiseClause().getChild().getArrow(), branchNode.getOtherwiseClause().getChild().accept(this, null)));
+    }
     return clauses;
   }
 

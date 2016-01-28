@@ -36,7 +36,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
       if (branchNode.getClause(conCall.getDefinition()) == null) {
         branchNode.addClause(conCall.getDefinition());
       }
-      ConstructorClause clause = branchNode.getClause(conCall.getDefinition());
+      Clause clause = branchNode.getClause(conCall.getDefinition());
       result &= clause.getChild().accept(this, clause.getSubst().compose(argsSubst));
     }
 

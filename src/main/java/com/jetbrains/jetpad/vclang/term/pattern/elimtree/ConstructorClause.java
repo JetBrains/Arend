@@ -14,7 +14,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
-public class ConstructorClause {
+public class ConstructorClause implements Clause {
   private final Constructor myConstructor;
   private final DependentLink myParameters;
   private ElimTreeNode myChild;
@@ -61,13 +61,11 @@ public class ConstructorClause {
     myParent.getReference().getType().getFunction(arguments);
     Collections.reverse(arguments);
 
-    if (myConstructor != null) {
-      Expression substExpr = new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(arguments));
-      for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
-        substExpr = Apps(substExpr, Reference(link));
-      }
-      result.addMapping(myParent.getReference(), substExpr);
+    Expression substExpr = new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(arguments));
+    for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
+      substExpr = Apps(substExpr, Reference(link));
     }
+    result.addMapping(myParent.getReference(), substExpr);
 
     for (int i = 0; i < myParent.getContextTail().size(); i++) {
       result.addMapping(myParent.getContextTail().get(i), Reference(myTailBindings.get(i)));

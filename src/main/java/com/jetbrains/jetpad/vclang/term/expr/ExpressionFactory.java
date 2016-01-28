@@ -241,14 +241,18 @@ public class ExpressionFactory {
   public static BranchElimTreeNode branch(Binding reference, List<Binding> tail, ConstructorClausePair... clauses) {
     BranchElimTreeNode result = new BranchElimTreeNode(reference, tail);
     for (ConstructorClausePair pair : clauses) {
-      ConstructorClause clause = pair.constructor != null ? result.addClause(pair.constructor) : result.addClause(null, pair.parameters, result.getContextTail(), EmptyElimTreeNode.getInstance());
-      Substitution subst = clause.getSubst();
-      subst.getDomain().remove(reference);
-      for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
-           linkFake.hasNext(); linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {
-        subst.addMapping(linkFake, Reference(linkTrue));
+      if (pair.constructor != null) {
+        ConstructorClause clause = result.addClause(pair.constructor);
+        Substitution subst = clause.getSubst();
+        for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
+             linkFake.hasNext(); linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {
+          subst.addMapping(linkFake, Reference(linkTrue));
+        }
+        clause.setChild(pair.child.subst(subst));
+      } else {
+        OtherwiseClause clause = result.addOtherwiseClause();
+        clause.setChild(pair.child);
       }
-      clause.setChild(pair.child.subst(subst));
     }
     return result;
   }

@@ -103,6 +103,12 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       mySubstitution.getDomain().removeAll(toContext(clause.getParameters()));
       mySubstitution.getDomain().removeAll(clause.getTailBindings());
     }
+
+    if (branchNode.getOtherwiseClause() != null) {
+      OtherwiseClause newClause = newNode.addOtherwiseClause();
+      newClause.setChild(branchNode.getOtherwiseClause().getChild().accept(this, null));
+    }
+
     return newNode;
   }
 

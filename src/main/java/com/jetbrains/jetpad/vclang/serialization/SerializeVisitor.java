@@ -327,6 +327,10 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
         }
         clause.getChild().accept(this, null);
       }
+      myDataStream.writeBoolean(branchNode.getOtherwiseClause() != null);
+      if (branchNode.getOtherwiseClause() != null) {
+        branchNode.getOtherwiseClause().getChild().accept(this, null);
+      }
     } catch (IOException e) {
       throw new IllegalStateException();
     }

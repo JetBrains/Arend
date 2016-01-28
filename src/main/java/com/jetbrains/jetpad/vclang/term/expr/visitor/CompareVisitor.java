@@ -413,8 +413,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (other.getReference() != binding1)
       return false;
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      ConstructorClause otherClause = other.getClause(clause.getConstructor());
-      if (otherClause == null)
+      Clause otherClause = other.getClause(clause.getConstructor());
+      if (otherClause == null || !(otherClause instanceof ConstructorClause))
         return false;
       if (!clause.getChild().accept(this, otherClause.getChild())) {
         return false;
@@ -422,6 +422,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     }
     for (ConstructorClause clause : other.getConstructorClauses()) {
       if (branchNode.getClause(clause.getConstructor()) == null) {
+        return false;
+      }
+    }
+    if ((branchNode.getOtherwiseClause() == null) != (((BranchElimTreeNode) node).getOtherwiseClause() == null)) {
+      return false;
+    }
+    if (branchNode.getOtherwiseClause() != null) {
+      if (!branchNode.getOtherwiseClause().getChild().accept(this, ((BranchElimTreeNode) node).getOtherwiseClause().getChild())) {
         return false;
       }
     }
