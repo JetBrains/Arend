@@ -468,9 +468,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     }
 
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      Clause otherClause = other.getClause(clause.getConstructor());
-      if (otherClause == null || !(otherClause instanceof ConstructorClause))
+      Clause clause1 = other.getClause(clause.getConstructor());
+      if (!(clause1 instanceof ConstructorClause))
         return false;
+      ConstructorClause otherClause = (ConstructorClause) clause1;
 
       for (DependentLink link1 = clause.getParameters(), link2 = otherClause.getParameters(); link1.hasNext() && link2.hasNext(); link1 = link1.getNext(), link2 = link2.getNext()) {
         mySubstitution.put(link1, link2);
@@ -496,8 +497,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
       myEquations.add(equations);
     }
+
     for (ConstructorClause clause : other.getConstructorClauses()) {
-      if (branchNode.getClause(clause.getConstructor()) == null) {
+      if (!(branchNode.getClause(clause.getConstructor()) instanceof ConstructorClause)) {
         return false;
       }
     }
@@ -505,7 +507,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
     if (branchNode.getOtherwiseClause() != null) {
-      if (!branchNode.getOtherwiseClause().getChild().accept(this, ((BranchElimTreeNode) node).getOtherwiseClause().getChild())) {
+      if (!compare(branchNode.getOtherwiseClause().getChild(), ((BranchElimTreeNode) node).getOtherwiseClause().getChild())) {
         return false;
       }
     }
