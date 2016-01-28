@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.term.definition.Condition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
@@ -955,6 +956,11 @@ public final class Concrete {
     @Override
     public Expression getTerm() {
       return myTerm;
+    }
+
+    @Override
+    public void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition) {
+
     }
 
     @Override
