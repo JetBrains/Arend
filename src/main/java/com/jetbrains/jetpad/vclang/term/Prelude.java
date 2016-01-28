@@ -23,7 +23,7 @@ public class Prelude extends Namespace {
   public static Constructor ZERO, SUC;
 
   public static DataDefinition INTERVAL;
-  public static Constructor LEFT, RIGHT;
+  public static Constructor LEFT, RIGHT, ABSTRACT;
 
   public static FunctionDefinition COERCE;
 
@@ -57,10 +57,10 @@ public class Prelude extends Namespace {
     Namespace intervalNamespace = PRELUDE.getChild(INTERVAL.getName());
     LEFT = new Constructor(intervalNamespace, new Name("left"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
     RIGHT = new Constructor(intervalNamespace, new Name("right"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
-    Constructor abstractConstructor = new Constructor(intervalNamespace, new Name("<abstract>"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
+    ABSTRACT = new Constructor(intervalNamespace, new Name("<abstract>"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
     INTERVAL.addConstructor(LEFT);
     INTERVAL.addConstructor(RIGHT);
-    INTERVAL.addConstructor(abstractConstructor);
+    INTERVAL.addConstructor(ABSTRACT);
 
     PRELUDE.addDefinition(INTERVAL);
     PRELUDE.addDefinition(LEFT);
@@ -167,7 +167,7 @@ public class Prelude extends Namespace {
     BranchElimTreeNode atElimTree = branch(atParameter5, tail(),
       clause(LEFT, EmptyDependentLink.getInstance(), Reference(atParameter2)),
       clause(RIGHT, EmptyDependentLink.getInstance(), Reference(atParameter3)),
-      clause(null, EmptyDependentLink.getInstance(), branch(atParameter4, tail(),
+      clause(branch(atParameter4, tail(),
           clause((Constructor) PRELUDE.getDefinition("path" + suffix), EmptyDependentLink.getInstance(), Apps(Reference(atParameter4), Reference(atParameter5)))))
     );
     Arrays.fill(chars, '@');

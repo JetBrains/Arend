@@ -1,12 +1,15 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.*;
@@ -19,10 +22,14 @@ public class BranchElimTreeNode extends ElimTreeNode {
   private final Map<Constructor, ConstructorClause> myClauses = new HashMap<>();
   private OtherwiseClause myOtherwiseClause;
   private final List<Binding> myContextTail;
+  private final boolean myIsInterval;
 
   public BranchElimTreeNode(Binding reference, List<Binding> contextTail) {
     myReference = reference;
     myContextTail = contextTail;
+
+    Expression ftype = reference.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(new ArrayList<Expression>());
+    myIsInterval = ftype instanceof DataCallExpression && ((DataCallExpression) ftype).getDefinition() == Prelude.INTERVAL;
   }
 
   @Override
@@ -91,7 +98,11 @@ public class BranchElimTreeNode extends ElimTreeNode {
     List<Expression> arguments = new ArrayList<>();
     Expression func = subst.get(myReference).getFunction(arguments);
     if (!(func instanceof ConCallExpression)) {
-      return this;
+      if (myIsInterval && myOtherwiseClause != null) {
+        return myOtherwiseClause.getChild().matchUntilStuck(subst);
+      } else {
+        return this;
+      }
     }
 
     ConstructorClause clause = myClauses.get(((ConCallExpression) func).getDefinition());

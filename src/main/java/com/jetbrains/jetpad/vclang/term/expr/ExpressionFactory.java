@@ -69,6 +69,14 @@ public class ExpressionFactory {
     return Apps(binOp.getDefCall(), left, right);
   }
 
+  public static ConCallExpression Left() {
+    return ConCall(Prelude.LEFT);
+  }
+
+  public static ConCallExpression Right() {
+    return ConCall(Prelude.RIGHT);
+  }
+
   public static NewExpression New(Expression expression) {
     return new NewExpression(expression);
   }
@@ -266,6 +274,14 @@ public class ExpressionFactory {
 
   public static ConstructorClausePair clause(Constructor constructor, DependentLink parameters, BranchElimTreeNode node) {
     return new ConstructorClausePair(constructor, parameters, node);
+  }
+
+  public static ConstructorClausePair clause(ElimTreeNode node) {
+    return new ConstructorClausePair(null, null, node);
+  }
+
+  public static ConstructorClausePair clause(Expression expr) {
+    return clause(leaf(expr));
   }
 
   public static ConstructorClausePair clause(Constructor constructor, DependentLink parameters, Abstract.Definition.Arrow arrow, Expression expr) {

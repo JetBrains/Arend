@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -18,6 +19,8 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Left;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Right;
 
 public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substitution, Void>  {
   public interface ConditionViolationChecker {
@@ -80,9 +83,39 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
             }
           });
         }
+        if (conCall.getDefinition() == Prelude.ABSTRACT) {
+          if (branchNode.getClause(Prelude.LEFT) != branchNode.getOtherwiseClause()) {
+            checkInterval(branchNode, argSubst, Left());
+          }
+          if (branchNode.getClause(Prelude.RIGHT) != branchNode.getOtherwiseClause()) {
+            checkInterval(branchNode, argSubst, Right());
+          }
+        }
       }
     }
     return null;
+  }
+
+  private void checkInterval(final BranchElimTreeNode branchNode, final Substitution argSubst, final ConCallExpression conCall) {
+    final Substitution subst1 = new Substitution(branchNode.getReference(), conCall);
+    List<Binding> ctx = subst1.extendBy(branchNode.getContextTail());
+    SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
+      @Override
+      public void process(Substitution subst, final Substitution toCtx1, List<Binding> ctx, LeafElimTreeNode leaf) {
+        final Expression lhsVal = leaf.getExpression().subst(subst);
+        try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
+          final Substitution subst2 = new Substitution(branchNode.getReference(), conCall);
+          ctx.addAll(subst2.extendBy(branchNode.getContextTail()));
+          SubstituteExpander.substituteExpand(branchNode.getOtherwiseClause().getChild(), subst2, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
+            @Override
+            public void process(Substitution subst, Substitution toCtx2, List<Binding> ctx, LeafElimTreeNode leaf) {
+              myChecker.check(lhsVal.subst(toCtx2), toCtx2.compose(toCtx1.compose(subst1.compose(argSubst))),
+                  leaf.getExpression().subst(subst), toCtx2.compose(subst2.compose(argSubst)));
+            }
+          });
+        }
+      }
+    });
   }
 
   @Override
