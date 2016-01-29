@@ -286,8 +286,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       result.addMapping(params, arg.getExpression());
       params = params.getNext();
     }
-    for (; excessiveParams.hasNext(); excessiveParams = excessiveParams.getNext()) {
-      result.addMapping(excessiveParams, Reference(excessiveParams));
+    for (; excessiveParams.hasNext(); excessiveParams = excessiveParams.getNext(), params = params.getNext()) {
+      result.addMapping(excessiveParams, Reference(params));
     }
     return result;
   }
