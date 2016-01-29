@@ -59,6 +59,14 @@ public interface DependentLink extends Binding {
       return link;
     }
 
+    public static DependentLink getLast(DependentLink link) {
+      DependentLink last = link;
+      for (; link.hasNext(); link = link.getNext()) {
+        last = link;
+      }
+      return last;
+    }
+
     public static int getIndex(DependentLink begin, DependentLink link) {
       for (int index = 0; begin.hasNext(); begin = begin.getNext(), index++) {
         if (begin == link) {

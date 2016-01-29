@@ -54,7 +54,7 @@ public class TypeCheckingDefCall {
     }
     if (result.baseResult == null) {
       TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not available here or not a definition", expr);
-      expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
@@ -65,7 +65,7 @@ public class TypeCheckingDefCall {
   private CheckTypeVisitor.Result checkDefinition(Definition definition, Abstract.Expression expr) {
     if (definition instanceof FunctionDefinition && ((FunctionDefinition) definition).typeHasErrors() || !(definition instanceof FunctionDefinition) && definition.hasErrors()) {
       TypeCheckingError error = new HasErrors(definition.getName(), expr);
-      expr.setWellTyped(myVisitor.getLocalContext(), Error(definition.getDefCall(), error));
+      expr.setWellTyped(myVisitor.getContext(), Error(definition.getDefCall(), error));
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
@@ -105,7 +105,7 @@ public class TypeCheckingDefCall {
   }
 
   public CheckTypeVisitor.Result getLocalVar(String name, Abstract.Expression expr) {
-    ListIterator<Binding> it = myVisitor.getLocalContext().listIterator(myVisitor.getLocalContext().size());
+    ListIterator<Binding> it = myVisitor.getContext().listIterator(myVisitor.getContext().size());
     while (it.hasPrevious()) {
       Binding def = it.previous();
       if (name.equals(def.getName())) {
@@ -114,7 +114,7 @@ public class TypeCheckingDefCall {
     }
 
     TypeCheckingError error = new NotInScopeError(expr, name);
-    expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+    expr.setWellTyped(myVisitor.getContext(), Error(null, error));
     myVisitor.getErrorReporter().report(error);
     return null;
   }
@@ -143,7 +143,7 @@ public class TypeCheckingDefCall {
     if (member == null) {
       assert false;
       TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + name + "' is not available yet", expr);
-      expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
@@ -159,13 +159,13 @@ public class TypeCheckingDefCall {
 
     if (definition.getThisClass() != null) {
       if (myThisClass != null) {
-        assert myVisitor.getLocalContext().size() > 0;
-        assert myVisitor.getLocalContext().get(0).getName().equals("\\this");
-        Expression thisExpr = Reference(myVisitor.getLocalContext().get(myVisitor.getLocalContext().size() - 1));
+        assert myVisitor.getContext().size() > 0;
+        assert myVisitor.getContext().get(0).getName().equals("\\this");
+        Expression thisExpr = Reference(myVisitor.getContext().get(myVisitor.getContext().size() - 1));
         thisExpr = findParent(myThisClass, definition.getThisClass(), thisExpr);
         if (thisExpr == null) {
           TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr);
-          expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
@@ -183,7 +183,7 @@ public class TypeCheckingDefCall {
         return new DefCallResult(result, null, null);
       } else {
         TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr);
-        expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
@@ -206,7 +206,7 @@ public class TypeCheckingDefCall {
       member = result.member.namespace.getMember(resolvedName.name.name);
       if (member == null || resolvedName.parent != member.namespace.getParent()) {
         TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, resolvedName.parent.getResolvedName());
-        expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
+        expr.setWellTyped(myVisitor.getContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
@@ -215,7 +215,7 @@ public class TypeCheckingDefCall {
       member = result.member.namespace.getMember(name);
       if (member == null) {
         TypeCheckingError error = new NameDefinedError(false, expr, name, new ResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
-        expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
+        expr.setWellTyped(myVisitor.getContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
@@ -241,7 +241,7 @@ public class TypeCheckingDefCall {
           return result;
         } else {
           TypeCheckingError error = new TypeCheckingError("Definition '" + member.definition.getName() + "' cannot be called from here", expr);
-          expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult.expression, error));
+          expr.setWellTyped(myVisitor.getContext(), Error(result.baseResult.expression, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
@@ -299,7 +299,7 @@ public class TypeCheckingDefCall {
         }
 
         TypeCheckingError error = new TypeCheckingError("Expected an expression of a class type or a data type", expr);
-        expr.setWellTyped(myVisitor.getLocalContext(), Error(result.baseResult.expression, error));
+        expr.setWellTyped(myVisitor.getContext(), Error(result.baseResult.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
@@ -313,7 +313,7 @@ public class TypeCheckingDefCall {
     Constructor constructor = dataDefinition.getConstructor(conName);
     if (constructor == null) {
       TypeCheckingError error = new TypeCheckingError("Constructor '" + conName + "' is not defined in data type '" + dataDefinition.getName() + "'", expr);
-      expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
@@ -332,7 +332,7 @@ public class TypeCheckingDefCall {
       }
 
       if (error != null) {
-        expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }

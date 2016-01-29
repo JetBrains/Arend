@@ -20,9 +20,9 @@ public abstract class TailImplicitArgsInference extends BaseImplicitArgsInferenc
   @Override
   public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Expression expectedType, Abstract.Expression expr) {
     List<DependentLink> actualParams = new ArrayList<>();
-    Expression actualType = fun.type.getPiParameters(actualParams);
+    Expression actualType = fun.type.getPiParameters(actualParams, false);
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
-    expectedType = expectedType.getPiParameters(expectedParams);
+    expectedType = expectedType.getPiParameters(expectedParams, false);
     if (expectedParams.size() > actualParams.size()) {
       return null;
     }

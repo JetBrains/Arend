@@ -21,19 +21,19 @@ public class ArgInferenceError extends TypeCheckingError {
   }
 
   public static String functionArg(int index) {
-    return "Cannot infer " + index + suffix(index) + " argument to function";
+    return "Cannot infer " + ordinal(index) + " argument to function";
   }
 
   public static String typeOfFunctionArg(int index) {
-    return "Cannot infer type of " + index + suffix(index) + " argument of function";
+    return "Cannot infer type of " + ordinal(index) + " argument of function";
   }
 
   public static String lambdaArg(int index) {
-    return "Cannot infer type of the " + index + suffix(index) + " argument of lambda";
+    return "Cannot infer type of the " + ordinal(index) + " argument of lambda";
   }
 
   public static String parameter(int index) {
-    return "Cannot infer " + index + suffix(index) + " parameter to constructor";
+    return "Cannot infer " + ordinal(index) + " parameter to constructor";
   }
 
   public static String expression() {
@@ -45,12 +45,19 @@ public class ArgInferenceError extends TypeCheckingError {
   }
 
   public static String suffix(int n) {
-    switch (n) {
+    if (n >= 10 || n < 20) {
+      return "th";
+    }
+    switch (n % 10) {
       case 1: return "st";
       case 2: return "nd";
       case 3: return "rd";
       default: return "th";
     }
+  }
+
+  public static String ordinal(int n) {
+    return n + suffix(n);
   }
 
   @Override

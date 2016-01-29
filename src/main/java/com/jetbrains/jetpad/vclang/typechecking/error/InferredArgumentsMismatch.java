@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
+import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.ordinal;
 
 public class InferredArgumentsMismatch extends TypeCheckingError {
   private final int myArgument;
@@ -26,7 +26,7 @@ public class InferredArgumentsMismatch extends TypeCheckingError {
   @Override
   public String toString() {
     String msg = printHeader();
-    msg += "Cannot infer " + myArgument + suffix(myArgument) + " argument";
+    msg += "Cannot infer " + ordinal(myArgument) + " argument";
     String ppClause = prettyPrint(getCause());
     msg += ppClause != null ? " to function " + ppClause : "";
     msg += "\nPossible options are:";

@@ -32,7 +32,7 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.suffix;
+import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.ordinal;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Void, Definition> {
@@ -394,7 +394,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
-          String error = "Universe " + argUniverse + " of " + index + suffix(index) + " argument is not compatible with universe " + universe + " of previous arguments";
+          String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
           myErrorReporter.report(new TypeCheckingError(myNamespace.getResolvedName(), error, def));
           return null;
         } else {
@@ -519,8 +519,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     if (dataDefinition.getConditions() != null) {
       List<Condition> failedConditions = new ArrayList<>();
       for (Condition condition : dataDefinition.getConditions()) {
-        try (Utils.CompleteContextSaver<Binding> ignore = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
-          expandConstructorContext(condition.getConstructor(), visitor.getLocalContext());
+        try (Utils.CompleteContextSaver<Binding> ignore = new Utils.CompleteContextSaver<>(visitor.getContext())) {
+          expandConstructorContext(condition.getConstructor(), visitor.getContext());
           TypeCheckingError error = TypeCheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getParameters(), condition.getElimTree());
           if (error != null) {
             myErrorReporter.report(error);
@@ -552,15 +552,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       return cycle;
     }
     for (Constructor constructor : condMap.keySet()) {
-      try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getLocalContext())) {
+      try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
         final List<List<Pattern>> patterns = new ArrayList<>();
         final List<Expression> expressions = new ArrayList<>();
         final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
-        expandConstructorContext(constructor, visitor.getLocalContext());
+        expandConstructorContext(constructor, visitor.getContext());
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
-          try (Utils.CompleteContextSaver<Binding> saver = new Utils.CompleteContextSaver<>(visitor.getLocalContext())) {
-            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getBaseType().getPiParameters(null)));
+          try (Utils.CompleteContextSaver<Binding> saver = new Utils.CompleteContextSaver<>(visitor.getContext())) {
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getBaseType().getPiParameters(null, false)));
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, constructor.getParameters(), cond.getPatterns());
             if (processedPatterns == null)
               continue;
@@ -668,7 +668,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
-          String error = "Universe " + argUniverse + " of " + index + suffix(index) + " argument is not compatible with universe " + universe + " of previous arguments";
+          String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
           myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), error, def));
           ok = false;
         } else {

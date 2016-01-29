@@ -84,8 +84,8 @@ public abstract class Expression implements PrettyPrintable {
     return expr;
   }
 
-  public Expression getPiParameters(List<DependentLink> params) {
-    Expression cod = this;
+  public Expression getPiParameters(List<DependentLink> params, boolean normalize) {
+    Expression cod = normalize ? normalize(NormalizeVisitor.Mode.WHNF) : this;
     while (cod instanceof PiExpression) {
       if (params != null) {
         for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
@@ -93,8 +93,21 @@ public abstract class Expression implements PrettyPrintable {
         }
       }
       cod = ((PiExpression) cod).getCodomain();
+      if (normalize) {
+        cod = cod.normalize(NormalizeVisitor.Mode.WHNF);
+      }
     }
     return cod;
+  }
+
+  public Expression fromPiParameters(List<DependentLink> params) {
+    Expression result = this;
+    for (int i = params.size() - 1; i >= 0; i--) {
+      if (i == 0 || !params.get(i - 1).getNext().hasNext()) {
+        result = new PiExpression(params.get(i), result);
+      }
+    }
+    return result;
   }
 
   public Expression getLamParameters(List<DependentLink> params) {

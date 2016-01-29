@@ -26,8 +26,8 @@ public class Utils {
   }
 
   public static void trimToSize(List<?> list, int size) {
-    while (list.size() > size) {
-      list.remove(list.size() - 1);
+    if (size < list.size()) {
+      list.subList(size, list.size()).clear();
     }
   }
 
@@ -40,6 +40,9 @@ public class Utils {
       myOldContextSize = context != null ? context.size() : 0;
     }
 
+    public int getOriginalSize() {
+      return myOldContextSize;
+    }
 
     @Override
     public void close() {

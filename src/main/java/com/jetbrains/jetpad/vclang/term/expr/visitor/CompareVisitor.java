@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
   private final Map<Binding, Binding> mySubstitution;
@@ -138,7 +139,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       for (Expression arg : args1) {
         fun1 = Apps(fun1, arg);
       }
-      myEquations.add(fun1, expr2, cmp);
+      Substitution substitution = new Substitution();
+      for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
+        substitution.addMapping(entry.getKey(), Reference(entry.getValue()));
+      }
+      myEquations.add(fun1.subst(substitution), expr2, cmp);
       return true;
     } else {
       return false;
@@ -238,6 +243,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   private Boolean compareReference(ReferenceExpression expr1, Expression expr2, boolean first) {
+    // TODO
     if (expr2 instanceof ReferenceExpression) {
       Binding binding1 = first ? expr1.getBinding() : ((ReferenceExpression) expr2).getBinding();
       Binding subst1 = mySubstitution.get(binding1);
@@ -248,9 +254,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       if (binding1 == binding2) {
         return true;
       }
-    }
-    if (!expr1.getBinding().isInference()) {
-      return false;
+      if (!expr1.getBinding().isInference() && !((ReferenceExpression) expr2).getBinding().isInference()) {
+        return false;
+      }
+    } else {
+      if (!expr1.getBinding().isInference()) {
+        return false;
+      }
     }
     myEquations.add(expr1, expr2, first ? myCMP : myCMP.not());
     return true;
@@ -291,8 +301,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (!(expr2 instanceof PiExpression)) return false;
 
     List<DependentLink> params1 = new ArrayList<>(), params2 = new ArrayList<>();
-    Expression cod1 = expr1.getPiParameters(params1);
-    Expression cod2 = expr2.getPiParameters(params2);
+    Expression cod1 = expr1.getPiParameters(params1, false);
+    Expression cod2 = expr2.getPiParameters(params2, false);
     if (params1.size() != params2.size()) {
       return false;
     }

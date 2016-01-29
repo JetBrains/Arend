@@ -22,11 +22,10 @@ public class LinkList {
 
     if (myLast.hasNext()) {
       myLast.setNext(link);
-      myLast = link;
     } else {
       myFirst = link;
-      myLast = link;
     }
+    myLast = DependentLink.Helper.getLast(link);
   }
 
   public void prepend(DependentLink link) {
@@ -36,11 +35,10 @@ public class LinkList {
 
     if (myFirst.hasNext()) {
       link.setNext(myFirst);
-      myFirst = link;
     } else {
-      myFirst = link;
-      myLast = link;
+      myLast = DependentLink.Helper.getLast(link);
     }
+    myFirst = link;
   }
 
   public boolean isEmpty() {

@@ -128,7 +128,7 @@ public class TypeCheckingElim {
 
     if (error != null) {
       myVisitor.getErrorReporter().report(error);
-      expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       return null;
     }
 
@@ -144,7 +144,7 @@ public class TypeCheckingElim {
     final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
     clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
-      try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getLocalContext())) {
+      try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
         List<Pattern> clausePatterns = new ArrayList<>();
         Expression clauseExpectedType = expectedType;
 
@@ -160,7 +160,7 @@ public class TypeCheckingElim {
           }
 
           if (result instanceof ExpandPatternErrorResult) {
-            expr.getExpressions().get(i).setWellTyped(myVisitor.getLocalContext(), Error(null, ((ExpandPatternErrorResult) result).error));
+            expr.getExpressions().get(i).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) result).error));
             wasError = true;
             continue clause_loop;
           }
@@ -197,7 +197,7 @@ public class TypeCheckingElim {
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
         error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));
-        expr.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
       }
       return null;
@@ -215,15 +215,15 @@ public class TypeCheckingElim {
     } else {
       TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expression);
       myVisitor.getErrorReporter().report(error);
-      expression.setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+      expression.setWellTyped(myVisitor.getContext(), Error(null, error));
       return null;
     }
   }
 
   private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimExpression expr, DependentLink eliminatingArgs) {
-    try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getLocalContext())) {
+    try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
       List<Binding> argsBindings = toContext(eliminatingArgs);
-      myVisitor.getLocalContext().addAll(argsBindings);
+      myVisitor.getContext().addAll(argsBindings);
 
       List<Integer> eliminatingIndicies = new ArrayList<>();
 
@@ -297,7 +297,7 @@ public class TypeCheckingElim {
       String name = pattern == null || ((NamePattern) pattern).getName() == null ? null : ((NamePattern) pattern).getName();
       links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
-      myVisitor.getLocalContext().add(links.getLast());
+      myVisitor.getContext().add(links.getLast());
       if (pattern != null)
         pattern.setWellTyped(namePattern);
       return new ExpandPatternOKResult(Reference(binding), namePattern);
@@ -339,7 +339,7 @@ public class TypeCheckingElim {
         links.append(new TypedDependentLink(true, null, binding.getType(), EmptyDependentLink.getInstance()));
         AnyConstructorPattern newPattern = new AnyConstructorPattern(links.getLast());
         pattern.setWellTyped(newPattern);
-        myVisitor.getLocalContext().add(links.getLast());
+        myVisitor.getContext().add(links.getLast());
         return new ExpandPatternOKResult(Reference(links.getLast()), newPattern);
       }
 
