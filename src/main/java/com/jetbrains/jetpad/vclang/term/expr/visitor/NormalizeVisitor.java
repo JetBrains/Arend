@@ -325,16 +325,35 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLam(LamExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Lam(visitParameters(expr.getParameters(), mode), expr.getBody().accept(this, mode)) : expr;
+    if (mode == Mode.TOP) {
+      return null;
+    }
+    if (mode == Mode.NFH) {
+      Substitution substitution = new Substitution();
+      return Lam(visitParameters(expr.getParameters(), substitution, mode), expr.getBody().subst(substitution).accept(this, mode));
+    }
+    if (mode == Mode.NF) {
+      return Lam(expr.getParameters(), expr.getBody().accept(this, mode));
+    } else {
+      return expr;
+    }
   }
 
   @Override
   public Expression visitPi(PiExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Pi(visitParameters(expr.getParameters(), mode), expr.getCodomain().accept(this, mode)) : expr;
+    if (mode == Mode.TOP) {
+      return null;
+    }
+    if (mode == Mode.NFH) {
+      Substitution substitution = new Substitution();
+      return Pi(visitParameters(expr.getParameters(), substitution, mode), expr.getCodomain().subst(substitution).accept(this, mode));
+    } else {
+      return expr;
+    }
   }
 
-  private DependentLink visitParameters(DependentLink link, Mode mode) {
-    link = link.subst(new Substitution());
+  private DependentLink visitParameters(DependentLink link, Substitution substitution, Mode mode) {
+    link = link.subst(substitution);
     for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
       link1 = link1.getNextTyped(null);
       link1.setType(link1.getType().accept(this, mode));
@@ -370,7 +389,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Sigma(visitParameters(expr.getParameters(), mode)) : expr;
+    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.NFH ? Sigma(visitParameters(expr.getParameters(), new Substitution(), mode)) : expr;
   }
 
   @Override
