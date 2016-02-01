@@ -41,6 +41,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     public Equations equations;
 
     public Result(Expression expression, Expression type, Equations equations) {
+      assert equations != null;
       this.expression = expression;
       this.type = type;
       this.equations = equations;
@@ -132,7 +133,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return result;
     }
 
-    if (compare(result.equations, Equations.CMP.GE, expectedType, result.type, expression, result.expression)) {
+    if (compare(result, expectedType, Equations.CMP.GE, expression)) {
       expression.setWellTyped(myContext, result.expression);
       return result;
     } else {
@@ -140,25 +141,24 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Abstract.Expression expr, Expression exprResult) {
-    if (CompareVisitor.compare(equations, cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF))) {
+  public boolean compare(Result result, Expression expectedType, Equations.CMP cmp, Abstract.Expression expr) {
+    if (CompareVisitor.compare(result.equations, cmp, expectedType.normalize(NormalizeVisitor.Mode.NF), result.type.normalize(NormalizeVisitor.Mode.NF))) {
       return true;
     } else {
-      TypeCheckingError error = new TypeMismatchError(expr1.normalize(NormalizeVisitor.Mode.NFH), expr2.normalize(NormalizeVisitor.Mode.NFH), expr);
-      expr.setWellTyped(myContext, Error(exprResult, error));
+      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH), result.type.normalize(NormalizeVisitor.Mode.NFH), expr);
+      expr.setWellTyped(myContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return false;
     }
   }
 
-  private Result checkResultImplicit(Expression expectedType, Result result, Abstract.Expression expression) {
+  public Result checkResultImplicit(Expression expectedType, Result result, Abstract.Expression expression) {
     if (result == null) return null;
     if (expectedType == null) {
       expression.setWellTyped(myContext, result.expression);
       return result;
     }
-    result = myArgsInference.inferTail(result, expectedType, expression);
-    return checkResult(expectedType, result, expression);
+    return myArgsInference.inferTail(result, expectedType, expression);
   }
 
   public Result typeCheck(Abstract.Expression expr, Expression expectedType) {
@@ -182,8 +182,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
-    Result result = myArgsInference.infer(expr, expectedType);
-    return checkResult(expectedType, result, expr);
+    return checkResultImplicit(expectedType, myArgsInference.infer(expr), expr);
   }
 
   @Override
@@ -194,7 +193,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitLam(Abstract.LamExpression expr, Expression expectedType) {
     List<DependentLink> piParams = new ArrayList<>();
-    Expression expectedCodomain = expectedType == null ? null : expectedType.getPiParameters(piParams, true);
+    Expression expectedCodomain = expectedType == null ? null : expectedType.getPiParameters(piParams, true, false);
     LinkList list = new LinkList();
     DependentLink actualPiLink = null;
     Equations equations = myArgsInference.newEquations();
@@ -232,7 +231,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               link.setExplicit(piLink.isExplicit());
             }
             if (argResult != null) {
-              if (!compare(equations, Equations.CMP.EQ, piLink.getType(), argResult.expression, argType, argResult.expression)) {
+              argResult.equations = equations;
+              if (!compare(argResult, piLink.getType(), Equations.CMP.EQ, argType)) {
                 return null;
               }
             } else {
@@ -262,7 +262,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       bodyResult = typeCheck(body, expectedBodyType);
       if (bodyResult == null) return null;
       equations.add(bodyResult.equations);
-      if (actualPiLink != null && (expectedCodomain == null || !compare(equations, Equations.CMP.EQ, expectedCodomain, Pi(actualPiLink, bodyResult.type), body, bodyResult.expression))) {
+      if (actualPiLink != null && (expectedCodomain == null || !compare(new Result(bodyResult.expression, Pi(actualPiLink, bodyResult.type), equations), expectedCodomain, Equations.CMP.EQ, body))) {
         return null;
       }
 
@@ -449,8 +449,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
-    Result result = myArgsInference.infer(expr, expectedType);
-    return checkResult(expectedType, result, expr);
+    return checkResultImplicit(expectedType, myArgsInference.infer(expr), expr);
   }
 
   @Override

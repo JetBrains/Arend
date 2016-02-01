@@ -84,9 +84,24 @@ public abstract class Expression implements PrettyPrintable {
     return expr;
   }
 
-  public Expression getPiParameters(List<DependentLink> params, boolean normalize) {
+  public Expression getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
     Expression cod = normalize ? normalize(NormalizeVisitor.Mode.WHNF) : this;
     while (cod instanceof PiExpression) {
+      if (implicitOnly) {
+        if (((PiExpression) cod).getParameters().isExplicit()) {
+          break;
+        }
+        for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
+          if (link.isExplicit()) {
+            cod = new PiExpression(link, ((PiExpression) cod).getCodomain());
+            break;
+          }
+          if (params != null) {
+            params.add(link);
+          }
+        }
+      }
+
       if (params != null) {
         for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
           params.add(link);
@@ -97,10 +112,20 @@ public abstract class Expression implements PrettyPrintable {
         cod = cod.normalize(NormalizeVisitor.Mode.WHNF);
       }
     }
+    if (params != null) {
+      Collections.reverse(params);
+    }
     return cod;
   }
 
   public Expression fromPiParameters(List<DependentLink> params) {
+    if (params.size() > 0 && !params.get(0).hasNext()) {
+      params = params.subList(1, params.size());
+    }
+    if (params.isEmpty()) {
+      return this;
+    }
+
     Expression result = this;
     for (int i = params.size() - 1; i >= 0; i--) {
       if (i == 0 || !params.get(i - 1).getNext().hasNext()) {

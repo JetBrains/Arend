@@ -560,7 +560,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
           try (Utils.CompleteContextSaver<Binding> saver = new Utils.CompleteContextSaver<>(visitor.getContext())) {
-            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getBaseType().getPiParameters(null, false)));
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getBaseType().getPiParameters(null, false, false)));
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, constructor.getParameters(), cond.getPatterns());
             if (processedPatterns == null)
               continue;

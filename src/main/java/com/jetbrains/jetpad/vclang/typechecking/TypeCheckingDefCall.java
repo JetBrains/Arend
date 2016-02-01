@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
 import com.jetbrains.jetpad.vclang.typechecking.error.NameDefinedError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,7 +37,7 @@ public class TypeCheckingDefCall {
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
     if (expr instanceof ConCallExpression) {
       Constructor constructor = ((ConCallExpression) expr).getDefinition();
-      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor), constructor.getBaseType(), null);
+      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor), constructor.getBaseType(), DummyEquations.getInstance());
       fixConstructorParameters(constructor, result, false);
       if (constructor.getThisClass() != null) {
         result.type = Pi(param("\\this", ClassCall(constructor.getThisClass())), result.type);
@@ -45,7 +46,7 @@ public class TypeCheckingDefCall {
     }
     if (expr instanceof DefCallExpression) {
       Definition definition = ((DefCallExpression) expr).getDefinition();
-      return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType(), null);
+      return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType(), DummyEquations.getInstance());
     }
 
     DefCallResult result = typeCheckNamespace(expr, null);
@@ -69,7 +70,7 @@ public class TypeCheckingDefCall {
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
-      return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getBaseType(), null);
+      return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getBaseType(), DummyEquations.getInstance());
     }
   }
 
@@ -109,7 +110,7 @@ public class TypeCheckingDefCall {
     while (it.hasPrevious()) {
       Binding def = it.previous();
       if (name.equals(def.getName())) {
-        return new CheckTypeVisitor.Result(Reference(def), def.getType(), null);
+        return new CheckTypeVisitor.Result(Reference(def), def.getType(), DummyEquations.getInstance());
       }
     }
 
@@ -178,8 +179,7 @@ public class TypeCheckingDefCall {
         if (definition instanceof Constructor) {
           fixConstructorParameters((Constructor) definition, result, false);
         }
-        // TODO
-        // result.type = result.type.subst(thisExpr, 0);
+        result.type = result.type.subst(myThisClass, thisExpr);
         return new DefCallResult(result, null, null);
       } else {
         TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr);
@@ -233,8 +233,7 @@ public class TypeCheckingDefCall {
           if (member.definition instanceof Constructor) {
             fixConstructorParameters((Constructor) member.definition, okResult, false);
           }
-          // TODO
-          // okResult.type = okResult.type.subst(result.baseResult.expression, 0);
+          okResult.type = okResult.type.subst(result.baseClassDefinition, result.baseResult.expression);
           result.baseResult = okResult;
           result.baseClassDefinition = null;
           result.member = null;
@@ -338,7 +337,7 @@ public class TypeCheckingDefCall {
       }
     }
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getBaseType(), null);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getBaseType(), DummyEquations.getInstance());
     fixConstructorParameters(constructor, result, true);
     return result;
   }

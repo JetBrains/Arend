@@ -301,8 +301,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (!(expr2 instanceof PiExpression)) return false;
 
     List<DependentLink> params1 = new ArrayList<>(), params2 = new ArrayList<>();
-    Expression cod1 = expr1.getPiParameters(params1, false);
-    Expression cod2 = expr2.getPiParameters(params2, false);
+    Expression cod1 = expr1.getPiParameters(params1, false, false);
+    Expression cod2 = expr2.getPiParameters(params2, false, false);
     if (params1.size() != params2.size()) {
       return false;
     }

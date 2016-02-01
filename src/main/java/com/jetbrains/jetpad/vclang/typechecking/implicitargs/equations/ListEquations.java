@@ -17,6 +17,9 @@ public class ListEquations implements Equations {
 
   @Override
   public void add(Equations equations) {
+    if (equations.isEmpty()) {
+      return;
+    }
     if (equations instanceof ListEquations) {
       myEquations.addAll(((ListEquations) equations).myEquations);
     } else {
