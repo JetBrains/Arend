@@ -484,15 +484,26 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (int i = 0; i < expressions.size(); i++) {
       Result exprResult = typeCheck(expressions.get(i), null);
       if (exprResult == null) return null;
-      equations.add(exprResult.equations);
+      if (!exprResult.equations.isEmpty()) {
+        for (DependentLink link = list.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
+          exprResult.equations.abstractBinding(link);
+        }
+        equations.add(exprResult.equations);
+      }
       list.append(param(true, vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprResult.type));
       letTerm = Apps(letTerm, exprResult.expression);
     }
     letBinding.setParameters(list.getFirst());
 
-    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, list.getFirst(), expectedType);
-    if (elimTree == null) return null;
-    letBinding.setElimTree(elimTree);
+    TypeCheckingElim.Result elimResult = myTypeCheckingElim.typeCheckElim(expr, list.getFirst(), expectedType);
+    if (elimResult == null) return null;
+    if (!elimResult.equations.isEmpty()) {
+      for (DependentLink link = list.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
+        elimResult.equations.abstractBinding(link);
+      }
+      equations.add(elimResult.equations);
+    }
+    letBinding.setElimTree(elimResult.elimTree);
 
     LetExpression letExpression = Let(lets(letBinding), letTerm);
     expr.setWellTyped(myContext, letExpression);
@@ -635,7 +646,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
           Result result = typeCheck(teleArg.getType(), Universe());
           if (result == null) return null;
-          equations.add(result.equations);
+          if (!result.equations.isEmpty()) {
+            for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
+              result.equations.abstractBinding(link);
+            }
+            equations.add(result.equations);
+          }
           links.append(param(teleArg.getExplicit(), teleArg.getNames(), result.type));
           for (DependentLink link = links.getLast(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
             myContext.add(link);
@@ -649,19 +665,36 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (clause.getResultType() != null) {
         Result result = typeCheck(clause.getResultType(), null);
         if (result == null) return null;
-        equations.add(result.equations);
+        if (!result.equations.isEmpty()) {
+          for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
+            result.equations.abstractBinding(link);
+          }
+          equations.add(result.equations);
+        }
         expectedType = result.expression;
       }
 
       if (clause.getTerm() instanceof Abstract.ElimExpression)  {
-        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), clause.getArrow() == Abstract.Definition.Arrow.LEFT ? links.getFirst() : null, expectedType);
-        if (elimTree == null)
+        TypeCheckingElim.Result elimResult = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), clause.getArrow() == Abstract.Definition.Arrow.LEFT ? links.getFirst() : null, expectedType);
+        if (elimResult == null)
           return null;
+        if (!elimResult.equations.isEmpty()) {
+          for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
+            elimResult.equations.abstractBinding(link);
+          }
+          equations.add(elimResult.equations);
+        }
+        elimTree = elimResult.elimTree;
         resultType = expectedType;
       } else {
         Result termResult = typeCheck(clause.getTerm(), expectedType);
         if (termResult == null) return null;
-        equations.add(termResult.equations);
+        if (!termResult.equations.isEmpty()) {
+          for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
+            termResult.equations.abstractBinding(link);
+          }
+          equations.add(termResult.equations);
+        }
         elimTree = new LeafElimTreeNode(clause.getArrow(), termResult.expression);
         resultType = termResult.type;
       }
@@ -691,11 +724,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       for (int i = 0; i < expr.getClauses().size(); i++) {
         LetClauseResult clauseResult = typeCheckLetClause(expr.getClauses().get(i));
         if (clauseResult == null) return null;
+        for (Binding binding : clauses) {
+          clauseResult.equations.abstractBinding(binding);
+        }
         equations.add(clauseResult.equations);
         clauses.add(clauseResult.letClause);
       }
       Result result = typeCheck(expr.getExpression(), expectedType == null ? null : expectedType);
       if (result == null) return null;
+      for (Binding binding : clauses) {
+        result.equations.abstractBinding(binding);
+      }
       equations.add(result.equations);
 
       Expression resultType = result.type.normalize(NormalizeVisitor.Mode.NF);
