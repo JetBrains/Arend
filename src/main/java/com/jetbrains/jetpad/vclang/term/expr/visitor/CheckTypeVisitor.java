@@ -187,7 +187,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, myTypeCheckingDefCall.typeCheckDefCall(expr), expr);
+    Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
+    return checkResultImplicit(expectedType, result, expr);
   }
 
   @Override
@@ -262,7 +263,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       bodyResult = typeCheck(body, expectedBodyType);
       if (bodyResult == null) return null;
       equations.add(bodyResult.equations);
-      if (actualPiLink != null && (expectedCodomain == null || !compare(new Result(bodyResult.expression, Pi(actualPiLink, bodyResult.type), equations), expectedCodomain, Equations.CMP.EQ, body))) {
+      if (actualPiLink != null && expectedCodomain != null && compare(new Result(bodyResult.expression, Pi(actualPiLink, bodyResult.type), equations), expectedCodomain, Equations.CMP.EQ, body)) {
         return null;
       }
 

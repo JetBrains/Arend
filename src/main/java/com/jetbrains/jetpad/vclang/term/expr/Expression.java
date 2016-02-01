@@ -112,9 +112,6 @@ public abstract class Expression implements PrettyPrintable {
         cod = cod.normalize(NormalizeVisitor.Mode.WHNF);
       }
     }
-    if (params != null) {
-      Collections.reverse(params);
-    }
     return cod;
   }
 

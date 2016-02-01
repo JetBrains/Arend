@@ -9,7 +9,7 @@ import static org.junit.Assert.assertNotNull;
 public class Application {
   @Test
   public void idWithoutResultType() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (f : (Nat -> _) -> Nat) => f (\\lam x => x)", null);
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (f : (Nat -> Nat) -> Nat) => f (\\lam x => x)", null);
     assertNotNull(result);
   }
 
@@ -21,7 +21,7 @@ public class Application {
 
   @Test
   public void inferUnderLambdaDependent() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (X : Nat -> \\Type) (Y : (x : Nat) -> X x -> \\Type) (f : (a : Nat) (b : X a) -> Y a b) x y => f x y", null);
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (X : Nat -> \\Type0) (Y : \\Pi (x : Nat) -> X x -> \\Type0) (f : \\Pi (a : Nat) (b : X a) -> Y a b) x y => f x y", null);
     assertNotNull(result);
   }
 }

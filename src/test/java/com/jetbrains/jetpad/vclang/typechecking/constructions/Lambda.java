@@ -6,7 +6,6 @@ import org.junit.Test;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 public class Lambda {
   @Test
@@ -47,25 +46,21 @@ public class Lambda {
 
   @Test
   public void idImplicitError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {x} => x", Pi(Nat(), Nat()), 1);
-    assertNull(result);
+    typeCheckExpr("\\lam {x} => x", Pi(Nat(), Nat()), 1);
   }
 
   @Test
   public void constantImplicitError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x {y} => x", Pi(Nat(), Pi(Nat(), Nat())), 1);
-    assertNull(result);
+    typeCheckExpr("\\lam x {y} => x", Pi(Nat(), Pi(Nat(), Nat())), 1);
   }
 
   @Test
   public void constantImplicitTeleError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x {y} => x", Pi(param(true, vars("x", "y"), Nat()), Nat()), 1);
-    assertNull(result);
+    typeCheckExpr("\\lam x {y} => x", Pi(param(true, vars("x", "y"), Nat()), Nat()), 1);
   }
 
   @Test
   public void constantImplicitTypeError() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x y => x", Pi(Nat(), Pi(param(false, (String) null, Nat()), Nat())), 1);
-    assertNull(result);
+    typeCheckExpr("\\lam x y => x", Pi(Nat(), Pi(param(false, (String) null, Nat()), Nat())), 1);
   }
 }

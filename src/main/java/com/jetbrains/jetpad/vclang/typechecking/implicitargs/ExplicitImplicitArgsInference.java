@@ -84,7 +84,7 @@ public abstract class ExplicitImplicitArgsInference extends BaseImplicitArgsInfe
     List<DependentLink> actualParams = new ArrayList<>();
     Expression actualType = result.type.getPiParameters(actualParams, true, false);
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
-    expectedType = expectedType.getPiParameters(expectedParams, true, false);
+    Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, false);
     if (expectedParams.size() > actualParams.size()) {
       TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH), result.type.normalize(NormalizeVisitor.Mode.NFH), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
@@ -92,7 +92,7 @@ public abstract class ExplicitImplicitArgsInference extends BaseImplicitArgsInfe
       return null;
     }
     if (expectedParams.size() == actualParams.size()) {
-      return myVisitor.checkResult(expectedType, result, expr);
+      return myVisitor.checkResult(expectedType1, result, expr);
     }
 
     int argsNumber = actualParams.size() - expectedParams.size();
@@ -118,6 +118,6 @@ public abstract class ExplicitImplicitArgsInference extends BaseImplicitArgsInfe
     if (!fixImplicitArgs(result, actualParams.subList(0, argsNumber), expr)) {
       return null;
     }
-    return myVisitor.checkResult(expectedType.fromPiParameters(expectedParams), result, expr);
+    return myVisitor.checkResult(expectedType1.fromPiParameters(expectedParams), result, expr);
   }
 }
