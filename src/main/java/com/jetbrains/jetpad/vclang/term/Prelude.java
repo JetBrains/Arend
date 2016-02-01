@@ -34,6 +34,9 @@ public class Prelude extends Namespace {
 
   public static FunctionDefinition ISO;
 
+  public static DataDefinition PROP_TRUNC;
+  public static DataDefinition SET_TRUNC;
+
   private static char[] specInfix = {'@', '='};
   private static String[] specPrefix = {"iso", "path", "Path"};
 
@@ -47,14 +50,18 @@ public class Prelude extends Namespace {
     public final Definition at;
     public final Definition coe;
     public final Definition iso;
+    public final Definition truncP;
+    public final Definition truncS;
 
-    private LevelPoly(Definition path, Definition pathCon, Definition pathInfix, Definition at, Definition coe, Definition iso) {
+    private LevelPoly(Definition path, Definition pathCon, Definition pathInfix, Definition at, Definition coe, Definition iso, Definition truncP, Definition truncS) {
       this.path = path;
       this.pathCon = pathCon;
       this.pathInfix = pathInfix;
       this.at = at;
       this.coe = coe;
       this.iso = iso;
+      this.truncP = truncP;
+      this.truncS = truncS;
     }
   }
 
@@ -210,7 +217,65 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(coerce);
     defToLevel.put(coerce, i);
 
-    levels.put(i, new LevelPoly(path, pathCon, pathInfix, at, coerce, iso));
+
+    List<TypeArgument> truncArguments = new ArrayList<>(1);
+    truncArguments.add(Tele(vars("A"), Universe(i, Universe.Type.NOT_TRUNCATED)));
+    DataDefinition propTrunc = new DataDefinition(PRELUDE, new Name("TrP" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), truncArguments);
+    PRELUDE.addDefinition(propTrunc);
+    defToLevel.put(propTrunc, i);
+
+    Constructor propTruncInCon = new Constructor(PRELUDE.getChild(propTrunc.getName()), new Name("inP" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), typeArgs(TypeArg(Index(0))), propTrunc);
+    List<TypeArgument> propTruncConArguments = new ArrayList<>(3);
+    propTruncConArguments.add(Tele(vars("a"), Apps(DataCall(propTrunc), Index(0))));
+    propTruncConArguments.add(Tele(vars("a'"), Apps(DataCall(propTrunc), Index(1))));
+    propTruncConArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
+    Constructor propTruncPathCon = new Constructor(PRELUDE.getChild(propTrunc.getName()), new Name("truncP" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), propTruncConArguments, propTrunc);
+    propTrunc.addConstructor(propTruncInCon);
+    propTrunc.addConstructor(propTruncPathCon);
+    Condition propTruncPathCond = new Condition(propTruncPathCon, branch(0,
+            clause(LEFT, Index(1)),
+            clause(RIGHT, Index(0))
+    ));
+    propTrunc.addCondition(propTruncPathCond);
+
+    PRELUDE.addDefinition(propTruncInCon);
+    PRELUDE.addDefinition(propTruncPathCon);
+
+    defToLevel.put(propTruncInCon, i);
+    defToLevel.put(propTruncPathCon, i);
+
+     DataDefinition setTrunc = new DataDefinition(PRELUDE, new Name("TrS" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), truncArguments);
+    PRELUDE.addDefinition(setTrunc);
+    defToLevel.put(setTrunc, i);
+
+    Constructor setTruncInCon = new Constructor(PRELUDE.getChild(setTrunc.getName()), new Name("inS" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), typeArgs(TypeArg(Index(0))), setTrunc);
+    List<TypeArgument> setTruncConArguments = new ArrayList<>(6);
+    setTruncConArguments.add(Tele(vars("a"), Apps(DataCall(setTrunc), Index(0))));
+    setTruncConArguments.add(Tele(vars("a'"), Apps(DataCall(setTrunc), Index(1))));
+    setTruncConArguments.add(Tele(vars("p"), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Apps(DataCall(setTrunc), Index(2)), false, true)), Index(1), Index(0))));
+    setTruncConArguments.add(Tele(vars("q"), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Apps(DataCall(setTrunc), Index(3)), false, true)), Index(2), Index(1))));
+    setTruncConArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
+    setTruncConArguments.add(Tele(vars("j"), DataCall(INTERVAL)));
+    Constructor setTruncPathCon = new Constructor(PRELUDE.getChild(setTrunc.getName()), new Name("truncS" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), setTruncConArguments, setTrunc);
+    setTrunc.addConstructor(setTruncInCon);
+    setTrunc.addConstructor(setTruncPathCon);
+    Condition setTruncPathCond = new Condition(setTruncPathCon, branch(0,
+            clause(LEFT, Apps(FunCall(at), Index(2), Index(0))),
+            clause(RIGHT, Apps(FunCall(at), Index(1), Index(0))),
+            clause(null, branch(1,
+                    clause(LEFT, Index(4)),
+                    clause(RIGHT, Index(3))))
+    ));
+
+    setTrunc.addCondition(setTruncPathCond);
+
+    PRELUDE.addDefinition(setTruncInCon);
+    PRELUDE.addDefinition(setTruncPathCon);
+
+    defToLevel.put(setTruncInCon, i);
+    defToLevel.put(setTruncPathCon, i); /**/
+
+    levels.put(i, new LevelPoly(path, pathCon, pathInfix, at, coerce, iso, propTruncPathCon, setTruncPathCon));
   }
 
   public static boolean isAt(Abstract.Definition definition) {
@@ -235,6 +300,14 @@ public class Prelude extends Namespace {
 
   public static boolean isCoe(Abstract.Definition definition) {
     return defToLevel.containsKey(definition) && levels.get(defToLevel.get(definition)).coe == definition;
+  }
+
+  public static boolean isTruncP(Abstract.Definition definition) {
+    return defToLevel.containsKey(definition) && levels.get(defToLevel.get(definition)).truncP == definition;
+  }
+
+  public static boolean isTruncS(Abstract.Definition definition) {
+    return defToLevel.containsKey(definition) && levels.get(defToLevel.get(definition)).truncS == definition;
   }
 
   public static int getLevel(Abstract.Definition definition) {

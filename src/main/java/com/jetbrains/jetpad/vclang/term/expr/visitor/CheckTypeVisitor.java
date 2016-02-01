@@ -407,28 +407,32 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     if (!(codomainResult instanceof OKResult)) return codomainResult;
     OKResult okCodomainResult = (OKResult) codomainResult;
+    Universe maxUniverse = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
 
-    Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
-    for (int i = 0; i < domainResults.length; ++i) {
-      Universe argUniverse = ((UniverseExpression) domainResults[i].type).getUniverse();
-      Universe maxUniverse = universe.max(argUniverse);
+    if (!((UniverseExpression) okCodomainResult.type).getUniverse().lessOrEquals(new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP)) &&
+            !okCodomainResult.type.equals(new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP))) {
+      //Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
+      for (int i = 0; i < domainResults.length; ++i) {
+        Universe argUniverse = ((UniverseExpression) domainResults[i].type).getUniverse();
+        maxUniverse = maxUniverse.max(argUniverse);
+        if (maxUniverse == null) {
+          String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not compatible with universe " + maxUniverse + " of previous arguments";
+          TypeCheckingError error = new TypeCheckingError(msg, expr, getNames(myLocalContext));
+          expr.setWellTyped(myLocalContext, Error(null, error));
+          myErrorReporter.report(error);
+          return null;
+        }
+      //  universe = maxUniverse;
+      }
+      Universe codomainUniverse = ((UniverseExpression) okCodomainResult.type).getUniverse();
+      maxUniverse = maxUniverse.max(codomainUniverse);
       if (maxUniverse == null) {
-        String msg = "Universe " + argUniverse + " of " + (i + 1) + suffix(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
+        String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + maxUniverse + " of arguments";
         TypeCheckingError error = new TypeCheckingError(msg, expr, getNames(myLocalContext));
         expr.setWellTyped(myLocalContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
       }
-      universe = maxUniverse;
-    }
-    Universe codomainUniverse = ((UniverseExpression) okCodomainResult.type).getUniverse();
-    Universe maxUniverse = universe.max(codomainUniverse);
-    if (maxUniverse == null) {
-      String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
-      TypeCheckingError error = new TypeCheckingError(msg, expr, getNames(myLocalContext));
-      expr.setWellTyped(myLocalContext, Error(null, error));
-      myErrorReporter.report(error);
-      return null;
     }
     Expression actualType = new UniverseExpression(maxUniverse);
 
@@ -1078,7 +1082,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         resultType = ((OKResult) termResult).type;
       }
 
-      TypeCheckingError error = TypeCheckingElim.checkCoverage(clause, myLocalContext, elimTree);
+      TypeCheckingError error = TypeCheckingElim.checkCoverage(clause, myLocalContext, elimTree, expectedType);
       if (error != null) {
         myErrorReporter.report(error);
         return null;

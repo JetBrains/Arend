@@ -1,10 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -24,18 +28,20 @@ public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Bo
 
   private final List<Binding> myContext;
   private final CoverageCheckerMissingProcessor myProcessor;
+  private final Expression myResultType;
 
-  private CoverageChecker(List<Binding> context, CoverageCheckerMissingProcessor processor) {
+  private CoverageChecker(List<Binding> context, CoverageCheckerMissingProcessor processor, Expression resultType) {
     myContext = context;
     myProcessor = processor;
+    myResultType = resultType;
   }
 
-  public static boolean check(List<Binding> context, ElimTreeNode tree, int argsStartIndex, CoverageCheckerMissingProcessor processor) {
+  public static boolean check(List<Binding> context, ElimTreeNode tree, int argsStartIndex, CoverageCheckerMissingProcessor processor, Expression resultType) {
     List<Expression> expressions = new ArrayList<>(context.size() - argsStartIndex);
        for (int i = context.size() - argsStartIndex - 1; i >= 0; i--) {
          expressions.add(Index(i));
     }
-    return tree.accept(new CoverageChecker(context, processor), expressions);
+    return tree.accept(new CoverageChecker(context, processor, resultType), expressions);
   }
 
   @Override
@@ -47,6 +53,15 @@ public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Bo
 
     boolean result = true;
     for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getConstructors(parameters, myContext)) {
+      if (((UniverseExpression) myResultType.getType(myContext)).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.PROP))) {
+        if (Prelude.isTruncP(conCall.getDefinition())) {
+          continue;
+        }
+      } else if (((UniverseExpression) myResultType.getType(myContext)).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.SET))) {
+        if (Prelude.isTruncS(conCall.getDefinition())) {
+
+        }
+      }
       try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
         if (branchNode.getChild(conCall.getDefinition()) != null) {
           result &= branchNode.getChild(conCall.getDefinition()).accept(this, expander.substIn(expressions));

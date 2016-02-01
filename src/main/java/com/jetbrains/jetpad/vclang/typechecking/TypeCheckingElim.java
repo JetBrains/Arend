@@ -62,7 +62,7 @@ public class TypeCheckingElim {
     return null;
   }
 
-  public static TypeCheckingError checkCoverage(final Abstract.Function def, List<Binding> context, ElimTreeNode elimTree) {
+  public static TypeCheckingError checkCoverage(final Abstract.Function def, List<Binding> context, ElimTreeNode elimTree, Expression resultType) {
     final StringBuilder incompleteCoverageMessage = new StringBuilder();
 
     CoverageChecker.check(context, elimTree, context.size() - numberOfVariables(def.getArguments()), new CoverageChecker.CoverageCheckerMissingProcessor() {
@@ -75,7 +75,7 @@ public class TypeCheckingElim {
         incompleteCoverageMessage.append("\n ").append(def.getName());
         printArgs(missing, def.getArguments(), incompleteCoverageMessage);
       }
-    });
+    }, resultType);
 
     if (incompleteCoverageMessage.length() != 0) {
       return new TypeCheckingError("Coverage check failed for: " + incompleteCoverageMessage.toString(), def, getNames(context));

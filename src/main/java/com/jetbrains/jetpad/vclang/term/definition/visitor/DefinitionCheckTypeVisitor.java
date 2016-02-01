@@ -2,10 +2,9 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
@@ -306,7 +305,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       if (typedDef.getElimTree() != null) {
-        TypeCheckingError error = TypeCheckingElim.checkCoverage(def, context, typedDef.getElimTree());
+        TypeCheckingError error = TypeCheckingElim.checkCoverage(def, context, typedDef.getElimTree(), expectedType);
         if (error != null) {
           myErrorReporter.report(error);
           typedDef.setElimTree(null);
@@ -458,7 +457,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
 
     Name name = def.getName();
-    DataDefinition dataDefinition = new DataDefinition(myNamespace, name, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), typedParameters);
+    DataDefinition dataDefinition = new DataDefinition(myNamespace, name, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.NOT_TRUNCATED), typedParameters);
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
@@ -493,6 +492,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         dataDefinition.setUniverse(typedUniverse);
       }
     } else {
+      // dataDefinition.setUniverse(typedUniverse.max(new Universe.Type(0, Universe.Type.NOT_TRUNCATED)));
       dataDefinition.setUniverse(typedUniverse);
     }
 
@@ -534,6 +534,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName().name);
       if (constructor == null) {
         myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
+        return null;
       }
       if (!condMap.containsKey(constructor)) {
         condMap.put(constructor, new ArrayList<Abstract.Condition>());
@@ -696,26 +697,67 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       for (int j = 0; j < typeArguments.size(); ++j) {
         Expression type = typeArguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF, context);
-        while (type instanceof PiExpression) {
-          for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
-            if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition), null)) {
-              String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
-              myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context)));
+        String nonPositiveError = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
+        boolean isNontrivPositive = true;
+
+        while (isNontrivPositive) {
+          if (type instanceof PiExpression) {
+            for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
+              if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition), null)) {
+                myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), nonPositiveError, arguments.get(j).getType(), getNames(context)));
+                return null;
+              }
+            }
+            type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF, context);
+          } else {
+            LinkedList<Expression> type_args = new LinkedList<>();
+            Expression type_fun = type.getFunction(type_args);
+
+            type_fun.normalize(NormalizeVisitor.Mode.WHNF, context);
+            if (type_fun instanceof DefCallExpression) {
+              DefCallExpression type_fun_def = (DefCallExpression)type_fun;
+              if (Prelude.isPath(type_fun_def.getDefinition())) {
+                if (type_args.isEmpty()) {
+                  /*
+                  String msg = "Path arguments are missing in constructor " + name + " of data type " + dataDefinition.getName();
+                  myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context))); */
+                  return null;
+                }
+                Expression typeOverInterval = type_args.pollLast();
+                typeOverInterval.normalize(NormalizeVisitor.Mode.WHNF, context);
+                if (typeOverInterval instanceof LamExpression) {
+                  type = ((LamExpression)typeOverInterval).getBody().normalize(NormalizeVisitor.Mode.WHNF, context);
+                } else {
+                  return null;
+                }
+              } else {
+                isNontrivPositive = false;
+              }
+            } else {
+              if (type_fun.accept(new FindDefCallVisitor(dataDefinition), null)) {
+                myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), nonPositiveError, arguments.get(j).getType(), getNames(context)));
+                return null;
+              }
+              isNontrivPositive = false;
+            }
+
+            for (Expression expr : type_args) {
+              if (expr.accept(new FindDefCallVisitor(dataDefinition), null)) {
+                myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), nonPositiveError, arguments.get(j).getType(), getNames(context)));
+                return null;
+              }
+            }
+          }
+        }
+
+        /*if ((type_fun instanceof DefCallExpression) && ((DefCallExpression)type_fun).getDefinition() == dataDefinition) {
+          for (Expression expr : type_args) {
+            if (expr.accept(new FindDefCallVisitor(dataDefinition), null)) {
+              myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), nonPositiveError, arguments.get(j).getType(), getNames(context)));
               return null;
             }
           }
-          type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF, context);
-        }
-
-        List<Expression> exprs = new ArrayList<>();
-        type.getFunction(exprs);
-        for (Expression expr : exprs) {
-          if (expr.accept(new FindDefCallVisitor(dataDefinition), null)) {
-            String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
-            myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context)));
-            return null;
-          }
-        }
+        } */
       }
 
       Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name, def.getPrecedence(), universe, typeArguments, dataDefinition, typedPatterns);
