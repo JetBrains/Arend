@@ -294,7 +294,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
-        typedDef.setElimTree(visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, list.getFirst(), expectedType));
+        typedDef.setElimTree(visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedType));
       } else {
         CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {

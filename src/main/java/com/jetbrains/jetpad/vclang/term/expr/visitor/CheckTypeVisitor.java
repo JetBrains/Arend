@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.definition.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
@@ -490,38 +491,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     letBinding.setParameters(list.getFirst());
 
-    Abstract.ElimExpression elim = wrapCaseToElim(expr);
-    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(elim, list.getFirst(), expectedType);
+    ElimTreeNode elimTree = myTypeCheckingElim.typeCheckElim(expr, list.getFirst(), expectedType);
     if (elimTree == null) return null;
     letBinding.setElimTree(elimTree);
 
     LetExpression letExpression = Let(lets(letBinding), letTerm);
     expr.setWellTyped(myContext, letExpression);
-    return new Result(letExpression, expectedType /* TODO: should we check for unbound references? */, equations);
-  }
-
-  private Abstract.ElimExpression wrapCaseToElim(final Abstract.CaseExpression expr) {
-    return new Abstract.ElimExpression() {
-      @Override
-      public List<? extends Abstract.Expression> getExpressions() {
-        return expr.getExpressions();
-      }
-
-      @Override
-      public List<? extends Abstract.Clause> getClauses() {
-        return expr.getClauses();
-      }
-
-      @Override
-      public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-        return visitor.visitElim(this, params);
-      }
-
-      @Override
-      public void setWellTyped(List<Binding> context, Expression wellTyped) {
-
-      }
-    };
+    return new Result(letExpression, expectedType, equations);
   }
 
   @Override
@@ -649,31 +625,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   private LetClauseResult typeCheckLetClause(Abstract.LetClause clause) {
-    /* TODO
-    List<xTypeArgument> args = new ArrayList<>();
+    LinkList links = new LinkList();
     Expression resultType;
     ElimTreeNode elimTree;
     Equations equations = myArgsInference.newEquations();
 
-    try (ContextSaver ignore = new ContextSaver(myContext)) {
-      int numVarsPassed = 0;
-      for (int i = 0; i < clause.getArguments().size(); i++) {
-        if (clause.getArguments().get(i) instanceof Abstract.TypeArgument) {
-          Abstract.TypeArgument typeArgument = (Abstract.TypeArgument) clause.getArguments().get(i);
-          Result result = typeCheck(typeArgument.getType(), Universe());
+    try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
+      for (Abstract.Argument arg : clause.getArguments()) {
+        if (arg instanceof Abstract.TelescopeArgument) {
+          Abstract.TelescopeArgument teleArg = (Abstract.TelescopeArgument) arg;
+          Result result = typeCheck(teleArg.getType(), Universe());
           if (result == null) return null;
-          args.add(argFromArgResult(typeArgument, result));
-          result.equations.lift(-numVarsPassed);
           equations.add(result.equations);
-          if (typeArgument instanceof Abstract.TelescopeArgument) {
-            List<String> names = ((Abstract.TelescopeArgument) typeArgument).getNames();
-            for (int j = 0; j < names.size(); ++j) {
-              myContext.add(new TypedBinding(names.get(j), result.expression.liftIndex(0, j)));
-              ++numVarsPassed;
-            }
-          } else {
-            myContext.add(new TypedBinding((Name) null, result.expression));
-            ++numVarsPassed;
+          links.append(param(teleArg.getExplicit(), teleArg.getNames(), result.type));
+          for (DependentLink link = links.getLast(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
+            myContext.add(link);
           }
         } else {
           throw new IllegalStateException();
@@ -684,75 +650,61 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (clause.getResultType() != null) {
         Result result = typeCheck(clause.getResultType(), null);
         if (result == null) return null;
-        result.equations.lift(-numVarsPassed);
         equations.add(result.equations);
         expectedType = result.expression;
       }
 
       if (clause.getTerm() instanceof Abstract.ElimExpression)  {
-        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), clause.getArrow() == Abstract.Definition.Arrow.LEFT ? myContext.size() - numVarsPassed : null, expectedType);
+        elimTree = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), clause.getArrow() == Abstract.Definition.Arrow.LEFT ? links.getFirst() : null, expectedType);
         if (elimTree == null)
           return null;
         resultType = expectedType;
       } else {
         Result termResult = typeCheck(clause.getTerm(), expectedType);
         if (termResult == null) return null;
-        termResult.equations.lift(-numVarsPassed);
         equations.add(termResult.equations);
         elimTree = new LeafElimTreeNode(clause.getArrow(), termResult.expression);
         resultType = termResult.type;
       }
 
-      TypeCheckingError error = TypeCheckingElim.checkCoverage(clause, myContext, elimTree);
+      TypeCheckingError error = TypeCheckingElim.checkCoverage(clause, links.getFirst(), elimTree);
       if (error != null) {
         myErrorReporter.report(error);
         return null;
       }
-      error = TypeCheckingElim.checkConditions(clause, myContext, elimTree);
+      error = TypeCheckingElim.checkConditions(clause, links.getFirst(), elimTree);
       if (error != null) {
         myErrorReporter.report(error);
         return null;
       }
     }
 
-    LetClause result = new LetClause(clause.getName(), args, resultType, elimTree);
+    LetClause result = new LetClause(clause.getName(), links.getFirst(), resultType, elimTree);
     myContext.add(result);
     return new LetClauseResult(result, equations);
-    */
-    return null;
   }
 
   @Override
   public Result visitLet(Abstract.LetExpression expr, Expression expectedType) {
-    /* TODO
-    Result finalResult;
-    try (ContextSaver ignore = new ContextSaver(myContext)) {
+    try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
       List<LetClause> clauses = new ArrayList<>();
       Equations equations = myArgsInference.newEquations();
       for (int i = 0; i < expr.getClauses().size(); i++) {
         LetClauseResult clauseResult = typeCheckLetClause(expr.getClauses().get(i));
         if (clauseResult == null) return null;
-        clauseResult.equations.lift(-i);
         equations.add(clauseResult.equations);
         clauses.add(clauseResult.letClause);
       }
-      Result result = typeCheck(expr.getExpression(), expectedType == null ? null : expectedType.liftIndex(0, expr.getClauses().size()));
+      Result result = typeCheck(expr.getExpression(), expectedType == null ? null : expectedType);
       if (result == null) return null;
-      result.equations.lift(-expr.getClauses().size());
       equations.add(result.equations);
 
-      Expression normalizedResultType = result.type.normalize(NormalizeVisitor.Mode.NF, myContext).liftIndex(0, -expr.getClauses().size());
-      if (normalizedResultType == null) {
-        TypeCheckingError error = new TypeCheckingError("Let result type depends on a bound variable.", expr, getNames(myContext));
-        expr.setWellTyped(myContext, Error(null, error));
-        myErrorReporter.report(error);
-        return null;
+      Expression resultType = result.type.normalize(NormalizeVisitor.Mode.NF);
+      if (resultType.findBinding(new HashSet<Binding>(clauses))) {
+        resultType = Let(clauses, resultType);
       }
-      finalResult = new Result(Let(clauses, result.expression), normalizedResultType, equations);
+      return new Result(Let(clauses, result.expression), resultType, equations);
     }
-    return finalResult;
-    */
-    return null;
   }
 
   @Override

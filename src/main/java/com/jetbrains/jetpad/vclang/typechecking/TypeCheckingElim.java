@@ -117,12 +117,12 @@ public class TypeCheckingElim {
     return new Patterns(typedPatterns);
   }
 
-  public ElimTreeNode typeCheckElim(final Abstract.ElimExpression expr, DependentLink eliminatingArgs, Expression expectedType) {
+  public ElimTreeNode typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType) {
     TypeCheckingError error = null;
     if (expectedType == null) {
       error = new TypeCheckingError("Cannot infer type of the expression", expr);
     }
-    if (!eliminatingArgs.hasNext() && error == null) {
+    if (eliminatingArgs == null && error == null) {
       error = new TypeCheckingError("\\elim is allowed only at the root of a definition", expr);
     }
 
@@ -220,7 +220,7 @@ public class TypeCheckingElim {
     }
   }
 
-  private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimExpression expr, DependentLink eliminatingArgs) {
+  private List<ReferenceExpression> typecheckElimIndices(Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs) {
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
       List<Binding> argsBindings = toContext(eliminatingArgs);
       myVisitor.getContext().addAll(argsBindings);
