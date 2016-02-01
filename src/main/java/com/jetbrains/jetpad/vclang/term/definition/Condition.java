@@ -41,6 +41,11 @@ public class Condition implements Abstract.Condition {
   }
 
   @Override
+  public void setWellTyped(Condition condition) {
+
+  }
+
+  @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
     prettyPrintCondition(this, builder, names);
   }
