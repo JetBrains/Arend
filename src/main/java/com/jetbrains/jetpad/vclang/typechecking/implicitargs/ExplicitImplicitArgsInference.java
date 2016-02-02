@@ -19,7 +19,14 @@ public abstract class ExplicitImplicitArgsInference extends BaseImplicitArgsInfe
   }
 
   protected boolean fixImplicitArgs(CheckTypeVisitor.Result result, List<DependentLink> parameters, Abstract.Expression expr) {
-    return parameters.isEmpty();
+    if (parameters.isEmpty()) {
+      return true;
+    } else {
+      TypeCheckingError error = new TypeCheckingError("Cannot infer implicit arguments", expr);
+      expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
+      myVisitor.getErrorReporter().report(error);
+      return false;
+    }
   }
 
   private CheckTypeVisitor.Result inferArg(CheckTypeVisitor.Result result, Abstract.Expression arg, boolean isExplicit, Abstract.Expression fun) {

@@ -186,6 +186,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
+    if (result == null) {
+      return null;
+    }
     result.equations = myArgsInference.newEquations();
     return checkResultImplicit(expectedType, result, expr);
   }
