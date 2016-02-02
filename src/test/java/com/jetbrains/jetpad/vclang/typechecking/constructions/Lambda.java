@@ -4,7 +4,9 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class Lambda {
@@ -62,5 +64,11 @@ public class Lambda {
   @Test
   public void constantImplicitTypeError() {
     typeCheckExpr("\\lam x y => x", Pi(Nat(), Pi(param(false, (String) null, Nat()), Nat())), 1);
+  }
+
+  @Test
+  public void lambdaUniverse() {
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x : \\Type1 -> \\Type2) (y : \\Type0) => x y", null);
+    assertEquals(result.type, Pi(params(param(Pi(Universe(1), Universe(2))), param(Universe(0))), Universe(2)));
   }
 }

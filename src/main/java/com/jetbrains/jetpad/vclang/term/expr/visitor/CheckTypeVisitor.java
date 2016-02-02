@@ -169,13 +169,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   public Result checkType(Abstract.Expression expr, Expression expectedType) {
-    int size = myContext.size();
     Result result = typeCheck(expr, expectedType);
     if (result == null) return null;
 
-    if (myContext.size() > size) {
-      myErrorReporter.report(new InferenceError(expr, myContext, myContext.size() - size));
-    }
+    // TODO: check for unsolved equations.
+    // myErrorReporter.report(new InferenceError(expr, myContext, myContext.size() - size));
 
     return result;
   }
@@ -215,7 +213,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         } else if (argument instanceof Abstract.TypeArgument) {
           names = argument instanceof Abstract.TelescopeArgument ? ((Abstract.TelescopeArgument) argument).getNames() : Collections.<String>singletonList(null);
           argType = ((Abstract.TypeArgument) argument).getType();
-          argResult = typeCheck(argType, Universe(myContext.size()));
+          argResult = typeCheck(argType, Universe());
           if (argResult == null) return null;
           equations.add(argResult.equations);
         } else {
