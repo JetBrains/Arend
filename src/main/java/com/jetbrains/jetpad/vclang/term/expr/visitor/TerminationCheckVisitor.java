@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
   private final Definition myDef;
@@ -43,10 +43,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
       }
     }
 
-    if (branchNode.getOtherwiseClause() != null && !branchNode.getOtherwiseClause().getChild().accept(this, null)) {
-      return false;
-    }
-    return true;
+    return branchNode.getOtherwiseClause() == null || branchNode.getOtherwiseClause().getChild().accept(this, null);
   }
 
   @Override
@@ -93,9 +90,6 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
       Collections.reverse(args.subList(args.size() - ((ConCallExpression) fun).getDataTypeArguments().size(), args.size()));
     }
     if (fun instanceof DefCallExpression) {
-      if (((DefCallExpression) fun).getDefinition().getThisClass() != null && !args.isEmpty()) {
-        args.remove(args.size() - 1);
-      }
       if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
         return false;
       }

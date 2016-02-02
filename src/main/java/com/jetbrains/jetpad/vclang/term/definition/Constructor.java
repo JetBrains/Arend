@@ -73,7 +73,7 @@ public class Constructor extends Definition {
   }
 
   @Override
-  public Expression getBaseType() {
+  public Expression getType() {
     Expression resultType = DataCall(myDataType);
     if (myPatterns == null) {
       for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {

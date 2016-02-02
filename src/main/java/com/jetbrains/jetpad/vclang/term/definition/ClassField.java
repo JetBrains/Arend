@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ClassField extends Definition {
   private Expression myType;
@@ -17,9 +17,14 @@ public class ClassField extends Definition {
     hasErrors(false);
   }
 
-  @Override
   public Expression getBaseType() {
     return myType;
+  }
+
+  @Override
+  public Expression getType() {
+    ClassDefinition thisClass = getThisClass();
+    return thisClass != null && myType != null ? Pi(param("\\this", ClassCall(thisClass)), myType) : myType;
   }
 
   @Override

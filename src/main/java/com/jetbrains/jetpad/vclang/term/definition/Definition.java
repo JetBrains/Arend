@@ -4,9 +4,6 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public abstract class Definition extends NamedBinding {
   private final Abstract.Definition.Fixity myFixity;
@@ -37,15 +34,7 @@ public abstract class Definition extends NamedBinding {
     return myParentNamespace;
   }
 
-  public abstract Expression getBaseType();
-
   public abstract DefCallExpression getDefCall();
-
-  @Override
-  public Expression getType() {
-    Expression baseType = getBaseType();
-    return myThisClass != null && baseType != null ? Pi(param("\\this", ClassCall(myThisClass)), baseType) : baseType;
-  }
 
   public ClassDefinition getThisClass() {
     return myThisClass;

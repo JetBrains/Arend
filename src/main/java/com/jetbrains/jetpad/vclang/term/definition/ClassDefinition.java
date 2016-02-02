@@ -22,7 +22,7 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Expression getBaseType() {
+  public Expression getType() {
     return new UniverseExpression(getUniverse());
   }
 

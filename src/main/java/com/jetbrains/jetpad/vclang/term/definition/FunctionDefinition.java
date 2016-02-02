@@ -79,7 +79,7 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public Expression getBaseType() {
+  public Expression getType() {
     if (myTypeHasErrors) {
       return null;
     }

@@ -38,14 +38,6 @@ public class DataDefinition extends Definition {
     return myParameters;
   }
 
-  public int getNumberOfAllParameters() {
-    int s = 0;
-    for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
-      s++;
-    }
-    return s + (getThisClass() == null ? 0 : 1);
-  }
-
   public void setParameters(DependentLink parameters) {
     assert parameters != null;
     myParameters = parameters;
@@ -109,7 +101,7 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public Expression getBaseType() {
+  public Expression getType() {
     Expression resultType = new UniverseExpression(getUniverse());
     return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
   }

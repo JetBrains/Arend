@@ -180,6 +180,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     // int numberOfArgs = index;
     int index = 0;
     LinkList list = new LinkList();
+    if (thisClass != null) {
+      list.append(param("\\this", ClassCall(thisClass)));
+    }
+
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
         CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
@@ -448,6 +452,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
 
     LinkList list = new LinkList();
+    if (thisClass != null) {
+      list.append(param("\\this", ClassCall(thisClass)));
+    }
+
     for (Abstract.TypeArgument parameter : parameters) {
       CheckTypeVisitor.Result result = visitor.checkType(parameter.getType(), Universe());
       if (result == null) return null;
@@ -560,7 +568,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
           try (Utils.CompleteContextSaver<Binding> saver = new Utils.CompleteContextSaver<>(visitor.getContext())) {
-            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getBaseType().getPiParameters(null, false, false)));
+            List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getType().getPiParameters(null, false, false)));
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, constructor.getParameters(), cond.getPatterns());
             if (processedPatterns == null)
               continue;

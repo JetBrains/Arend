@@ -35,20 +35,6 @@ public class TypeCheckingDefCall {
   }
 
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
-    if (expr instanceof ConCallExpression) {
-      Constructor constructor = ((ConCallExpression) expr).getDefinition();
-      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor), constructor.getBaseType(), DummyEquations.getInstance());
-      fixConstructorParameters(constructor, result, false);
-      if (constructor.getThisClass() != null) {
-        result.type = Pi(param("\\this", ClassCall(constructor.getThisClass())), result.type);
-      }
-      return result;
-    }
-    if (expr instanceof DefCallExpression) {
-      Definition definition = ((DefCallExpression) expr).getDefinition();
-      return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType(), DummyEquations.getInstance());
-    }
-
     DefCallResult result = typeCheckNamespace(expr, null);
     if (result == null) {
       return null;
@@ -70,7 +56,7 @@ public class TypeCheckingDefCall {
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
-      return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getBaseType(), DummyEquations.getInstance());
+      return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType(), DummyEquations.getInstance());
     }
   }
 
@@ -179,7 +165,7 @@ public class TypeCheckingDefCall {
         if (definition instanceof Constructor) {
           fixConstructorParameters((Constructor) definition, result, false);
         }
-        result.type = result.type.subst(myThisClass, thisExpr);
+        result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
         return new DefCallResult(result, null, null);
       } else {
         TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr);
@@ -224,17 +210,17 @@ public class TypeCheckingDefCall {
     if (!(member.definition == null || next != null && (member.definition instanceof ClassDefinition || member.definition instanceof FunctionDefinition && member.namespace.getMember(next) != null))) {
       if (result.baseResult != null) {
         if (result.baseClassDefinition != null && result.baseClassDefinition == member.definition.getThisClass()) {
-          CheckTypeVisitor.Result okResult = checkDefinition(member.definition, expr);
-          if (okResult == null) {
+          CheckTypeVisitor.Result result1 = checkDefinition(member.definition, expr);
+          if (result1 == null) {
             return null;
           }
-          okResult.expression = ((DefCallExpression) okResult.expression).applyThis(result.baseResult.expression);
-          okResult.equations = result.baseResult.equations;
+          result1.expression = ((DefCallExpression) result1.expression).applyThis(result.baseResult.expression);
+          result1.equations = result.baseResult.equations;
           if (member.definition instanceof Constructor) {
-            fixConstructorParameters((Constructor) member.definition, okResult, false);
+            fixConstructorParameters((Constructor) member.definition, result1, false);
           }
-          okResult.type = okResult.type.subst(result.baseClassDefinition, result.baseResult.expression);
-          result.baseResult = okResult;
+          result1.type = result1.type.applyExpressions(Collections.singletonList(result.baseResult.expression));
+          result.baseResult = result1;
           result.baseClassDefinition = null;
           result.member = null;
           return result;
@@ -337,7 +323,7 @@ public class TypeCheckingDefCall {
       }
     }
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getBaseType(), DummyEquations.getInstance());
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType(), DummyEquations.getInstance());
     fixConstructorParameters(constructor, result, true);
     return result;
   }
