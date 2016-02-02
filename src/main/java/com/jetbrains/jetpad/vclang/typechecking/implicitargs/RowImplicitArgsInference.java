@@ -19,6 +19,7 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
     CheckTypeVisitor.Result function;
     if (fun instanceof Abstract.DefCallExpression) {
       function = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
+      function.equations = newEquations();
     } else {
       function = myVisitor.typeCheck(fun, null);
     }

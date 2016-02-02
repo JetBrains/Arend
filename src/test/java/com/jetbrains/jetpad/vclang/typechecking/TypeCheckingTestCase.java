@@ -13,29 +13,50 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
 import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.*;
 import static org.junit.Assert.assertEquals;
 
 public class TypeCheckingTestCase {
+  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
+    return expression.accept(new CheckTypeVisitor.Builder(context, errorReporter).build(), expectedType);
+  }
+
   public static CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
-    return expression.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(0), errorReporter).build(), expectedType);
+    return typeCheckExpr(new ArrayList<Binding>(), expression, expectedType, errorReporter);
+  }
+
+  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
+    ListErrorReporter errorReporter = new ListErrorReporter();
+    CheckTypeVisitor.Result result = typeCheckExpr(context, expression, expectedType, errorReporter);
+    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    return result;
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, int errors) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = typeCheckExpr(expression, expectedType, errorReporter);
-    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
-    return result;
+    return typeCheckExpr(new ArrayList<Binding>(), expression, expectedType, errors);
+  }
+
+  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, ErrorReporter errorReporter) {
+    return typeCheckExpr(context, resolveNamesExpr(text), expectedType, errorReporter);
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType, ErrorReporter errorReporter) {
     return typeCheckExpr(resolveNamesExpr(text), expectedType, errorReporter);
   }
 
+  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, int errors) {
+    return typeCheckExpr(context, resolveNamesExpr(text), expectedType, errors);
+  }
+
   public static CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType, int errors) {
     return typeCheckExpr(resolveNamesExpr(text), expectedType, errors);
+  }
+
+  public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType) {
+    return typeCheckExpr(context, resolveNamesExpr(text), expectedType, 0);
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType) {

@@ -188,6 +188,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
+    result.equations = myArgsInference.newEquations();
     return checkResultImplicit(expectedType, result, expr);
   }
 
@@ -282,7 +283,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new Result(new UniverseExpression(expr.getUniverse()), new UniverseExpression(expr.getUniverse().succ()), null), expr);
+    return checkResult(expectedType, new Result(new UniverseExpression(expr.getUniverse()), new UniverseExpression(expr.getUniverse().succ()), myArgsInference.newEquations()), expr);
   }
 
   @Override
@@ -564,7 +565,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Collection<? extends Abstract.ImplementStatement> statements = expr.getStatements();
     if (statements.isEmpty()) {
-      return checkResult(expectedType, new Result(normalizedBaseClassExpr, baseClass.getType(), null), expr);
+      return checkResult(expectedType, new Result(normalizedBaseClassExpr, baseClass.getType(), myArgsInference.newEquations()), expr);
     }
 
     class ImplementStatement {
@@ -753,7 +754,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (int i = 0; i < number; ++i) {
       expression = Suc(expression);
     }
-    return checkResult(expectedType, new Result(expression, Nat(), null), expr);
+    return checkResult(expectedType, new Result(expression, Nat(), myArgsInference.newEquations()), expr);
   }
 
 }
