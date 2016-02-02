@@ -89,7 +89,7 @@ public class TypeCheckingDefCall {
       List<Expression> args = ((ConCallExpression) result.expression).getDataTypeArguments();
       if (!args.isEmpty()) {
         assert parameters.hasNext();
-        result.type = ((PiExpression) result.type).applyExpressions(args);
+        result.type = result.type.applyExpressions(args);
       }
     }
   }

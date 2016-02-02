@@ -4,8 +4,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import java.util.List;
-
 public class PiExpression extends DependentTypeExpression {
   private final Expression myCodomain;
 
@@ -29,16 +27,5 @@ public class PiExpression extends DependentTypeExpression {
     Universe universe = super.getUniverse();
     Expression type = myCodomain.getType();
     return !(type instanceof UniverseExpression) || universe == null ? null : universe.max(((UniverseExpression) type).getUniverse());
-  }
-
-  public Expression applyExpressions(List<Expression> expressions) {
-    Substitution subst = new Substitution();
-    DependentLink link = getParameters();
-    for (Expression expression : expressions) {
-      subst.addMapping(link, expression);
-      link = link.getNext();
-    }
-    Expression result = myCodomain.subst(subst);
-    return link.hasNext() ? new PiExpression(link.subst(subst), result) : result;
   }
 }

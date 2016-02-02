@@ -180,68 +180,66 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     // int numberOfArgs = index;
     int index = 0;
     LinkList list = new LinkList();
-    try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
-      for (Abstract.Argument argument : arguments) {
-        if (argument instanceof Abstract.TypeArgument) {
-          CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
-          if (result == null) return typedDef;
+    for (Abstract.Argument argument : arguments) {
+      if (argument instanceof Abstract.TypeArgument) {
+        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
+        if (result == null) return typedDef;
 
-          // boolean ok = true;
-          if (argument instanceof Abstract.TelescopeArgument) {
-            List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-            list.append(param(argument.getExplicit(), names, result.expression));
-            for (String name1 : names) {
-          /*
-          if (splitArgs != null) {
-            List<CompareVisitor.Equation> equations = new ArrayList<>(0);
-            CompareVisitor.Result cmpResult = compare(splitArgs.get(index).getType(), result.expression, equations);
-            if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
-              ok = false;
-              break;
-            }
-          }
-          */
-
-              context.add(new TypedBinding(name1, result.expression));
-              index++;
-            }
-          } else {
+        // boolean ok = true;
+        if (argument instanceof Abstract.TelescopeArgument) {
+          List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
+          list.append(param(argument.getExplicit(), names, result.expression));
+          for (String name1 : names) {
         /*
         if (splitArgs != null) {
           List<CompareVisitor.Equation> equations = new ArrayList<>(0);
           CompareVisitor.Result cmpResult = compare(splitArgs.get(index).getType(), result.expression, equations);
           if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
             ok = false;
+            break;
           }
         }
         */
 
-            // if (ok) {
-            list.append(param(argument.getExplicit(), (String) null, result.expression));
-            context.add(new TypedBinding(null, result.expression));
-            ++index;
-            // }
+            context.add(new TypedBinding(name1, result.expression));
+            index++;
           }
-
-      /*
-      if (!ok) {
-        myErrorReporter.report(new ArgInferenceError(typedDef.getNamespace().getParent(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(name)));
-        return null;
-      }
-      */
         } else {
-          // if (splitArgs == null) {
-          myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
-          return typedDef;
       /*
-      } else {
-        List<String> names = new ArrayList<>(1);
-        names.add(((Abstract.NameArgument) argument).getName());
-        typedParameters.add(Tele(argument.getExplicit(), names, splitArgs.get(index).getType()));
-        myContext.add(new TypedBinding(names.get(0), splitArgs.get(index).getType()));
+      if (splitArgs != null) {
+        List<CompareVisitor.Equation> equations = new ArrayList<>(0);
+        CompareVisitor.Result cmpResult = compare(splitArgs.get(index).getType(), result.expression, equations);
+        if (!(cmpResult instanceof CompareVisitor.JustResult && equations.isEmpty() && (cmpResult.isOK() == CompareVisitor.CMP.EQUIV || cmpResult.isOK() == CompareVisitor.CMP.EQUALS || cmpResult.isOK() == CompareVisitor.CMP.LESS))) {
+          ok = false;
+        }
       }
       */
+
+          // if (ok) {
+          list.append(param(argument.getExplicit(), (String) null, result.expression));
+          context.add(new TypedBinding(null, result.expression));
+          ++index;
+          // }
         }
+
+    /*
+    if (!ok) {
+      myErrorReporter.report(new ArgInferenceError(typedDef.getNamespace().getParent(), typeOfFunctionArg(index + 1), argument, null, new ArgInferenceError.StringPrettyPrintable(name)));
+      return null;
+    }
+    */
+      } else {
+        // if (splitArgs == null) {
+        myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
+        return typedDef;
+    /*
+    } else {
+      List<String> names = new ArrayList<>(1);
+      names.add(((Abstract.NameArgument) argument).getName());
+      typedParameters.add(Tele(argument.getExplicit(), names, splitArgs.get(index).getType()));
+      myContext.add(new TypedBinding(names.get(0), splitArgs.get(index).getType()));
+    }
+    */
       }
     }
 

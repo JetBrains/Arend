@@ -33,11 +33,6 @@ public class AppExpression extends Expression {
     List<Expression> arguments = new ArrayList<>();
     Expression function = getFunction(arguments);
     Collections.reverse(arguments);
-
-    Expression type = function.getType();
-    if (!(type instanceof PiExpression)) {
-      return null;
-    }
-    return ((PiExpression) type).applyExpressions(arguments);
+    return function.getType().applyExpressions(arguments);
   }
 }
