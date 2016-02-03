@@ -598,11 +598,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     for (int i = 0; i < fields.size(); i++) {
       ImplementStatement field = fields.get(i);
       Expression thisExpr = New(ClassCall(baseClass, typeCheckedStatements));
-      Result result1 = typeCheck(field.term, field.classField.getBaseType().subst(field.classField.getThisClass(), thisExpr));
+      Result result1 = typeCheck(field.term, field.classField.getBaseType().subst(field.classField.getThisParameter(), thisExpr));
       baseClass.addField(field.classField);
       if (result1 == null) {
         for (i++; i < fields.size(); i++) {
-          typeCheck(fields.get(i).term, fields.get(i).classField.getBaseType().subst(field.classField.getThisClass(), thisExpr));
+          typeCheck(fields.get(i).term, fields.get(i).classField.getBaseType().subst(field.classField.getThisParameter(), thisExpr));
           baseClass.addField(fields.get(i).classField);
         }
         return null;

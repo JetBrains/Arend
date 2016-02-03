@@ -51,14 +51,24 @@ public class TypeCheckingDefCall {
     return result.baseResult;
   }
 
-  private CheckTypeVisitor.Result checkDefinition(Definition definition, Abstract.Expression expr) {
+  private CheckTypeVisitor.Result checkDefinition(Definition definition, Abstract.Expression expr, Expression thisExpr) {
     if (definition instanceof FunctionDefinition && ((FunctionDefinition) definition).typeHasErrors() || !(definition instanceof FunctionDefinition) && definition.hasErrors()) {
       TypeCheckingError error = new HasErrors(definition.getName(), expr);
       expr.setWellTyped(myVisitor.getContext(), Error(definition.getDefCall(), error));
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
-      return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType(), DummyEquations.getInstance());
+      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType(), DummyEquations.getInstance());
+      if (definition instanceof Constructor) {
+        fixConstructorParameters((Constructor) definition, result, false);
+      }
+      if (thisExpr != null) {
+        result.expression = ((DefCallExpression) result.expression).applyThis(thisExpr);
+        if (definition instanceof ClassDefinition) {
+          result.type = result.expression.getType();
+        }
+      }
+      return result;
     }
   }
 
@@ -146,42 +156,27 @@ public class TypeCheckingDefCall {
       return new DefCallResult(null, null, member);
     }
 
+    Expression thisExpr = null;
     if (definition.getThisClass() != null) {
       if (myThisClass != null) {
-        Expression thisExpr = findParent(myThisClass, definition.getThisClass(), myThisExpr);
+        member = null;
+        thisExpr = findParent(myThisClass, definition.getThisClass(), myThisExpr);
         if (thisExpr == null) {
           TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
           myVisitor.getErrorReporter().report(error);
           return null;
         }
-
-        CheckTypeVisitor.Result result = checkDefinition(definition, expr);
-        if (result == null) {
-          return null;
-        }
-        result.expression = ((DefCallExpression) result.expression).applyThis(thisExpr);
-        if (definition instanceof Constructor) {
-          fixConstructorParameters((Constructor) definition, result, false);
-        }
-        result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
-        return new DefCallResult(result, null, null);
       } else {
         TypeCheckingError error = new TypeCheckingError("Non-static definitions are not allowed in static context", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
-    } else {
-      CheckTypeVisitor.Result result = checkDefinition(definition, expr);
-      if (result == null) {
-        return null;
-      }
-      if (definition instanceof Constructor) {
-        fixConstructorParameters((Constructor) definition, result, false);
-      }
-      return new DefCallResult(result, null, member);
     }
+
+    CheckTypeVisitor.Result result = checkDefinition(definition, expr, thisExpr);
+    return result == null ? null : new DefCallResult(result, null, member);
   }
 
   private DefCallResult nextResult(DefCallResult result, Abstract.DefCallExpression expr, String next) {
@@ -209,16 +204,11 @@ public class TypeCheckingDefCall {
     if (!(member.definition == null || next != null && (member.definition instanceof ClassDefinition || member.definition instanceof FunctionDefinition && member.namespace.getMember(next) != null))) {
       if (result.baseResult != null) {
         if (result.baseClassDefinition != null && result.baseClassDefinition == member.definition.getThisClass()) {
-          CheckTypeVisitor.Result result1 = checkDefinition(member.definition, expr);
+          CheckTypeVisitor.Result result1 = checkDefinition(member.definition, expr, result.baseResult.expression);
           if (result1 == null) {
             return null;
           }
-          result1.expression = ((DefCallExpression) result1.expression).applyThis(result.baseResult.expression);
           result1.equations = result.baseResult.equations;
-          if (member.definition instanceof Constructor) {
-            fixConstructorParameters((Constructor) member.definition, result1, false);
-          }
-          result1.type = result1.type.applyExpressions(Collections.singletonList(result.baseResult.expression));
           result.baseResult = result1;
           result.baseClassDefinition = null;
           result.member = null;

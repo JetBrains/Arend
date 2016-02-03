@@ -221,8 +221,9 @@ public class ExpressionTest {
     // \let | x (y : Nat) => Zero \in x : Nat -> Nat
     Concrete.Expression expr = cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cZero())), cVar("x"));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(Pi(Nat(), Nat()), expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), Pi(Nat(), Nat())).type);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
     assertEquals(0, errorReporter.getErrorList().size());
+    assertEquals(Pi(Nat(), Nat()), result.type);
   }
 
   @Test
