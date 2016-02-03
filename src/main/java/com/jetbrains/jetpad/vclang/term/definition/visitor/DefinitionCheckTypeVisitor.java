@@ -572,6 +572,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               continue;
 
             Patterns typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, constructor.getParameters(), resultType, TypeCheckingElim.PatternExpansionMode.CONDITION);
+            if (typedPatterns == null) {
+              continue;
+            }
 
             CheckTypeVisitor.Result result = visitor.checkType(cond.getTerm(), resultType.get(0));
             if (result == null)

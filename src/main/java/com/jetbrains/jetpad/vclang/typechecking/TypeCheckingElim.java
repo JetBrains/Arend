@@ -313,7 +313,7 @@ public class TypeCheckingElim {
 
   private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode, LinkList links) {
     if (pattern instanceof Abstract.NamePattern || pattern == null) {
-      String name = pattern == null || ((NamePattern) pattern).getName() == null ? null : ((NamePattern) pattern).getName();
+      String name = pattern == null || ((Abstract.NamePattern) pattern).getName() == null ? null : ((Abstract.NamePattern) pattern).getName();
       links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
       myVisitor.getContext().add(links.getLast());
@@ -407,7 +407,7 @@ public class TypeCheckingElim {
       }
       Collections.reverse(matchedParameters);
 
-      ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getArguments(), constructor.getDataTypeParameters());
+      ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getArguments(), constructor.getParameters());
       if (implicitResult.patterns == null) {
         if (implicitResult.numExcessive != 0) {
           error = new TypeCheckingError("Too many arguments: " + implicitResult.numExcessive + " excessive", pattern);
@@ -421,7 +421,7 @@ public class TypeCheckingElim {
       }
       List<Abstract.PatternArgument> patterns = implicitResult.patterns;
 
-      DependentLink constructorArgs = constructor.getDataTypeParameters().subst(toSubstitution(constructor.getDataTypeParameters(), matchedParameters));
+      DependentLink constructorArgs = constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), matchedParameters));
       Expression substExpression = ConCall(constructor, matchedParameters);
 
       List<PatternArgument> resultPatterns = new ArrayList<>();
