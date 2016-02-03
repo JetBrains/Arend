@@ -237,7 +237,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
 
   }
 
-  public void visitPattern(Pattern pattern) {
+  private void visitPattern(Pattern pattern) {
     try {
       if (pattern instanceof NamePattern) {
         myDataStream.writeInt(0);
@@ -246,9 +246,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       } else if (pattern instanceof ConstructorPattern) {
         myDataStream.writeInt(2);
       }
-      if (pattern instanceof NamePattern || pattern instanceof AnyConstructorPattern) {
-        ModuleSerialization.writeParameter1(this, pattern.getParameters());
-      } else if (pattern instanceof ConstructorPattern) {
+      if (pattern instanceof ConstructorPattern) {
         Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
         myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(new ResolvedName(constructor.getParentNamespace(), constructor.getName()), false));
         myDataStream.writeInt(((ConstructorPattern) pattern).getArguments().size());

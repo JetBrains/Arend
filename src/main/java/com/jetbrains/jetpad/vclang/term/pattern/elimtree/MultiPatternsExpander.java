@@ -73,7 +73,7 @@ public class MultiPatternsExpander {
 
     List<Pattern> patterns = new ArrayList<>();
     for (int i : valid)
-      patterns.add(myNestedPatterns.get(i).get(myNestedPatterns.size() - patternBindings.size()));
+      patterns.add(myNestedPatterns.get(i).get(myNestedPatterns.get(i).size() - patternBindings.size()));
 
     List<Binding> totalContext = new ArrayList<>(patternBindings.subList(1, patternBindings.size()));
     totalContext.addAll(context);

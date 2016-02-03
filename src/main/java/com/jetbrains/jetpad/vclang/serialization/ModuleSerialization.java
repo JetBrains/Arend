@@ -4,10 +4,7 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.*;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 
@@ -37,6 +34,7 @@ public class ModuleSerialization {
       stream.writeUTF(aPath);
     }
   }
+
   public static void serializeResolvedName(DataOutputStream stream, ResolvedName rn) throws IOException {
     serializeRelativeResolvedName(stream, rn, RootModule.ROOT.getResolvedName());
   }
@@ -118,6 +116,7 @@ public class ModuleSerialization {
         // TODO: serialization test for patterns
         visitor.getDataStream().writeBoolean(constructor.getPatterns() != null);
         if (constructor.getPatterns() != null) {
+          writeParameters(visitor, constructor.getPatterns().getParameters());
           visitor.getDataStream().writeInt(constructor.getPatterns().getPatterns().size());
           for (PatternArgument patternArg : constructor.getPatterns().getPatterns()) {
             visitor.visitPatternArg(patternArg);
@@ -184,7 +183,7 @@ public class ModuleSerialization {
     visitor.getDataStream().writeInt(definition.getFields().size());
     for (ClassField field : definition.getFields()) {
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(field.getResolvedName(), true));
-      writeParameter1(visitor, field.getThisParameter());
+      writeParameters(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());
       if (!field.hasErrors()) {
         writeUniverse(visitor.getDataStream(), field.getUniverse());
@@ -236,7 +235,12 @@ public class ModuleSerialization {
     visitor.getDataStream().writeUTF(str == null ? "" : str);
   }
 
-  private static void writeParameter(SerializeVisitor visitor, DependentLink link) throws IOException {
+  public static void writeParameters(SerializeVisitor visitor, DependentLink link) throws IOException {
+    if (link instanceof EmptyDependentLink) {
+      visitor.getDataStream().write(0);
+      return;
+    }
+
     if (link instanceof TypedDependentLink) {
       visitor.getDataStream().write(1);
       visitor.getDataStream().writeBoolean(link.isExplicit());
@@ -254,22 +258,9 @@ public class ModuleSerialization {
     } else {
       throw new IllegalStateException();
     }
+
     visitor.addDependentLink(link);
-  }
-
-  public static void writeParameter1(SerializeVisitor visitor, DependentLink link) throws IOException {
-    if (link.hasNext()) {
-      writeParameter(visitor, link);
-    } else {
-      visitor.getDataStream().write(0);
-    }
-  }
-
-  public static void writeParameters(SerializeVisitor visitor, DependentLink link) throws IOException {
-    for (; link.hasNext(); link = link.getNext()) {
-      writeParameter(visitor, link);
-    }
-    visitor.getDataStream().write(0);
+    writeParameters(visitor, link.getNext());
   }
 
   public static void writeTypedBinding(SerializeVisitor visitor, Binding binding) throws IOException {
