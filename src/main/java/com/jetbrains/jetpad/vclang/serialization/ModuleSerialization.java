@@ -259,7 +259,7 @@ public class ModuleSerialization {
       throw new IllegalStateException();
     }
 
-    visitor.addDependentLink(link);
+    visitor.addBinding(link);
     writeParameters(visitor, link.getNext());
   }
 

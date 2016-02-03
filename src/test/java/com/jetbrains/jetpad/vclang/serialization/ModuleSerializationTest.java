@@ -70,7 +70,7 @@ public class ModuleSerializationTest {
 
   @Test
   public void serializeDataTest() throws IOException {
-    ClassDefinition def = typeCheckClass("\\data D (A : \\Type0) | con1 A | con2 Nat A");
+    ClassDefinition def = typeCheckClass("\\static \\data D (A : \\Type0) | con1 A | con2 Nat A");
     Namespace namespace = def.getResolvedName().toNamespace();
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);

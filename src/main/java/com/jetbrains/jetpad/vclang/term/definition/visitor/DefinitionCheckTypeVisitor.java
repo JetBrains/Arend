@@ -29,6 +29,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
@@ -453,18 +454,20 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    for (Abstract.TypeArgument parameter : parameters) {
-      CheckTypeVisitor.Result result = visitor.checkType(parameter.getType(), Universe());
-      if (result == null) return null;
-      if (parameter instanceof Abstract.TelescopeArgument) {
-        list.append(param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
-        List<String> names = ((Abstract.TelescopeArgument) parameter).getNames();
-        for (String name : names) {
-          context.add(new TypedBinding(name, result.expression));
+    try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
+      for (Abstract.TypeArgument parameter : parameters) {
+        CheckTypeVisitor.Result result = visitor.checkType(parameter.getType(), Universe());
+        if (result == null) return null;
+        if (parameter instanceof Abstract.TelescopeArgument) {
+          list.append(param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
+          List<String> names = ((Abstract.TelescopeArgument) parameter).getNames();
+          for (String name : names) {
+            context.add(new TypedBinding(name, result.expression));
+          }
+        } else {
+          list.append(param(parameter.getExplicit(), (String) null, result.expression));
+          context.add(new TypedBinding(null, result.expression));
         }
-      } else {
-        list.append(param(parameter.getExplicit(), (String) null, result.expression));
-        context.add(new TypedBinding(null, result.expression));
       }
     }
 
@@ -475,7 +478,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     myNamespace = myNamespace.getChild(name);
     for (Abstract.Constructor constructor : def.getConstructors()) {
-      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, context, visitor);
+      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
       if (typedConstructor == null) {
         continue;
       }
@@ -521,16 +524,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         myErrorReporter.report(error);
       }
     }
+
     if (dataDefinition.getConditions() != null) {
       List<Condition> failedConditions = new ArrayList<>();
       for (Condition condition : dataDefinition.getConditions()) {
-        try (Utils.CompleteContextSaver<Binding> ignore = new Utils.CompleteContextSaver<>(visitor.getContext())) {
-          expandConstructorContext(condition.getConstructor(), visitor.getContext());
-          TypeCheckingError error = TypeCheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getParameters(), condition.getElimTree());
-          if (error != null) {
-            myErrorReporter.report(error);
-            failedConditions.add(condition);
-          }
+        TypeCheckingError error = TypeCheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getParameters(), condition.getElimTree());
+        if (error != null) {
+          myErrorReporter.report(error);
+          failedConditions.add(condition);
         }
       }
       dataDefinition.getConditions().removeAll(failedConditions);
@@ -561,10 +562,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         final List<List<Pattern>> patterns = new ArrayList<>();
         final List<Expression> expressions = new ArrayList<>();
         final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
-        expandConstructorContext(constructor, visitor.getContext());
+        visitor.getContext().addAll(toContext(constructor.getDataTypeParameters()));
 
         for (Abstract.Condition cond : condMap.get(constructor)) {
-          try (Utils.CompleteContextSaver<Binding> saver = new Utils.CompleteContextSaver<>(visitor.getContext())) {
+          try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getType().getPiParameters(null, false, false)));
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, constructor.getParameters(), cond.getPatterns());
             if (processedPatterns == null)
@@ -629,22 +630,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     return null;
   }
 
-  private void expandConstructorContext(Constructor constructor, List<Binding> context) {
-    for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
-      context.add(new TypedBinding(link.getName(), link.getType()));
-    }
-    for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
-      context.add(new TypedBinding(link.getName(), link.getType()));
-    }
-  }
-
   @Override
   public Definition visitConstructor(Abstract.Constructor def, Void params) {
     throw new IllegalStateException();
   }
 
-  public Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, List<Binding> context, CheckTypeVisitor visitor) {
-    try (Utils.CompleteContextSaver ignored = new Utils.CompleteContextSaver<>(context)) {
+  public Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor) {
+    try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       Universe universe = new Universe.Type(0, Universe.Type.PROP);
       int index = 1;
@@ -661,6 +653,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null)
           return null;
+      } else {
+        visitor.getContext().addAll(toContext(dataDefinition.getParameters()));
       }
 
       LinkList list = new LinkList();
@@ -684,12 +678,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           list.append(param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
           for (String name : names) {
-            context.add(new TypedBinding(name, result.expression));
+            visitor.getContext().add(new TypedBinding(name, result.expression));
           }
           index += ((Abstract.TelescopeArgument) argument).getNames().size();
         } else {
           list.append(param(argument.getExplicit(), (String) null, result.expression));
-          context.add(new TypedBinding(null, result.expression));
+          visitor.getContext().add(new TypedBinding(null, result.expression));
           index++;
         }
       }
