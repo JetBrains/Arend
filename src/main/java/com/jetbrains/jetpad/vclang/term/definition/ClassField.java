@@ -2,19 +2,31 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class ClassField extends Definition {
+  private DependentLink myThisParameter;
   private Expression myType;
 
-  public ClassField(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass) {
+  public ClassField(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
     super(parentNamespace, name, precedence);
+    myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
     hasErrors(false);
+  }
+
+  public DependentLink getThisParameter() {
+    return myThisParameter;
+  }
+
+  public void setThisParameter(DependentLink thisParameter) {
+    myThisParameter = thisParameter;
   }
 
   public Expression getBaseType() {
@@ -23,8 +35,7 @@ public class ClassField extends Definition {
 
   @Override
   public Expression getType() {
-    ClassDefinition thisClass = getThisClass();
-    return thisClass != null && myType != null ? Pi(param("\\this", ClassCall(thisClass)), myType) : myType;
+    return Pi(myThisParameter, myType);
   }
 
   @Override

@@ -11,7 +11,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.*;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.io.*;
@@ -246,8 +246,6 @@ public class ModuleDeserialization {
     }
   }
 
-
-
   private void deserializeNamespace(DataInputStream stream, Map<Integer, Definition> definitionMap, Definition parent) throws IOException {
     int size = stream.readInt();
     for (int i = 0; i < size; ++i) {
@@ -267,6 +265,7 @@ public class ModuleDeserialization {
     for (int i = 0; i < numFields; i++) {
       ClassField field = (ClassField) definitionMap.get(stream.readInt());
       definition.addField(field);
+      field.setThisParameter(readParameter1(stream, definitionMap));
       field.hasErrors(stream.readBoolean());
 
       if (!field.hasErrors()) {
@@ -293,17 +292,22 @@ public class ModuleDeserialization {
     return result;
   }
 
+  private String readString(DataInputStream stream) throws IOException {
+    String str = stream.readUTF();
+    return str.isEmpty() ? null : str;
+  }
+
   private DependentLink readParameter(DataInputStream stream, Map<Integer, Definition> definitionMap, int code) throws IOException {
     DependentLink link;
 
     if (code == 1) {
       boolean isExplicit = stream.readBoolean();
-      String name = stream.readUTF();
+      String name = readString(stream);
       Expression type = readExpression(stream, definitionMap);
       link = new TypedDependentLink(isExplicit, name, type, EmptyDependentLink.getInstance());
     } else
     if (code == 2) {
-      String name = stream.readUTF();
+      String name = readString(stream);
       link = new UntypedDependentLink(name, EmptyDependentLink.getInstance());
     } else
     if (code == 3) {

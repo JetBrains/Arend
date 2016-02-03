@@ -312,14 +312,15 @@ public class ClassesTest {
     ClassDefinition bClass = (ClassDefinition) namespace.getDefinition("B");
     ClassField xField = aClass.getField("x");
     ClassField aField = bClass.getField("a");
-    Expression type = bClass.getField("y").getBaseType();
+    ClassField yField = bClass.getField("y");
+    Expression type = yField.getBaseType();
     assertTrue(type instanceof AppExpression);
     AppExpression appType = (AppExpression) type;
     assertEquals(FieldCall(xField), appType.getFunction());
     assertTrue(appType.getArgument().getExpression() instanceof AppExpression);
     AppExpression appArg = (AppExpression) appType.getArgument().getExpression();
     assertEquals(FieldCall(aField), appArg.getFunction());
-    assertEquals(Reference(aClass), appArg.getArgument().getExpression());
+    assertEquals(Reference(yField.getThisParameter()), appArg.getArgument().getExpression());
   }
 
   @Test

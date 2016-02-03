@@ -25,13 +25,15 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 public class TypeCheckingDefCall {
   private final CheckTypeVisitor myVisitor;
   private ClassDefinition myThisClass;
+  private Expression myThisExpr;
 
   public TypeCheckingDefCall(CheckTypeVisitor visitor) {
     myVisitor = visitor;
   }
 
-  public void setThisClass(ClassDefinition thisClass) {
+  public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
     myThisClass = thisClass;
+    myThisExpr = thisExpr;
   }
 
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
@@ -146,10 +148,7 @@ public class TypeCheckingDefCall {
 
     if (definition.getThisClass() != null) {
       if (myThisClass != null) {
-        assert myVisitor.getContext().size() > 0;
-        assert myVisitor.getContext().get(0).getName().equals("\\this");
-        Expression thisExpr = Reference(myVisitor.getContext().get(myVisitor.getContext().size() - 1));
-        thisExpr = findParent(myThisClass, definition.getThisClass(), thisExpr);
+        Expression thisExpr = findParent(myThisClass, definition.getThisClass(), myThisExpr);
         if (thisExpr == null) {
           TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));

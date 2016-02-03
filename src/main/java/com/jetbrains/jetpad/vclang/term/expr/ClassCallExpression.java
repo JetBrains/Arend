@@ -45,7 +45,7 @@ public class ClassCallExpression extends DefCallExpression {
       myUniverse = new Universe.Type(0, Universe.Type.PROP);
       for (ClassField field : getDefinition().getFields()) {
         if (!myStatements.containsKey(field)) {
-          Expression expr = field.getBaseType().normalize(NormalizeVisitor.Mode.NF).getType().normalize(NormalizeVisitor.Mode.WHNF);
+          Expression expr = field.getBaseType().getType().normalize(NormalizeVisitor.Mode.WHNF);
           myUniverse = myUniverse.max(expr instanceof UniverseExpression ? ((UniverseExpression) expr).getUniverse() : field.getUniverse());
           assert expr instanceof UniverseExpression;
         }

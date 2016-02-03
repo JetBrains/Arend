@@ -160,7 +160,7 @@ public class ModuleSerialization {
     CLASS_FIELD_CODE {
       @Override
       ClassField toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
-        return new ClassField(parent, name, precedence, null, null);
+        return new ClassField(parent, name, precedence, null, null, null);
       }
     };
 
@@ -184,6 +184,7 @@ public class ModuleSerialization {
     visitor.getDataStream().writeInt(definition.getFields().size());
     for (ClassField field : definition.getFields()) {
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(field.getResolvedName(), true));
+      writeParameter1(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());
       if (!field.hasErrors()) {
         writeUniverse(visitor.getDataStream(), field.getUniverse());
@@ -231,16 +232,20 @@ public class ModuleSerialization {
     }
   }
 
+  private static void writeString(SerializeVisitor visitor, String str) throws IOException {
+    visitor.getDataStream().writeUTF(str == null ? "" : str);
+  }
+
   private static void writeParameter(SerializeVisitor visitor, DependentLink link) throws IOException {
     if (link instanceof TypedDependentLink) {
       visitor.getDataStream().write(1);
       visitor.getDataStream().writeBoolean(link.isExplicit());
-      visitor.getDataStream().writeUTF(link.getName());
+      writeString(visitor, link.getName());
       link.getType().accept(visitor, null);
     } else
     if (link instanceof UntypedDependentLink) {
       visitor.getDataStream().write(2);
-      visitor.getDataStream().writeUTF(link.getName());
+      writeString(visitor, link.getName());
     } else
     if (link instanceof NonDependentLink) {
       visitor.getDataStream().write(3);

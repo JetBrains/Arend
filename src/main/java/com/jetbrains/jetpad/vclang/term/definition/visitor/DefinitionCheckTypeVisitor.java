@@ -125,9 +125,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     final List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def, myNamespace);
+    LinkList list = new LinkList();
     if (thisClass != null) {
-      context.add(new TypedBinding("\\this", ClassCall(thisClass)));
-      visitor.setThisClass(thisClass);
+      DependentLink thisParam = param("\\this", ClassCall(thisClass));
+      context.add(thisParam);
+      list.append(thisParam);
+      visitor.setThisClass(thisClass, Reference(thisParam));
       typedDef.setThisClass(thisClass);
     }
 
@@ -154,13 +157,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               ok = false;
               break;
             }
-            ++index;
+            index++;
           }
         } else {
           if (splitArgs.get(index).getExplicit() != argument.getExplicit()) {
             ok = false;
           } else {
-            ++index;
+            index++;
           }
         }
 
@@ -179,11 +182,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     // int numberOfArgs = index;
     int index = 0;
-    LinkList list = new LinkList();
-    if (thisClass != null) {
-      list.append(param("\\this", ClassCall(thisClass)));
-    }
-
     for (Abstract.Argument argument : arguments) {
       if (argument instanceof Abstract.TypeArgument) {
         CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
@@ -222,7 +220,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           // if (ok) {
           list.append(param(argument.getExplicit(), (String) null, result.expression));
           context.add(new TypedBinding(null, result.expression));
-          ++index;
+          index++;
           // }
         }
 
@@ -254,7 +252,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       overriddenResultType = splitResult;
     } else {
       List<TypeArgument> args = new ArrayList<>(splitArgs.size() - numberOfArgs);
-      for (; numberOfArgs < splitArgs.size(); ++numberOfArgs) {
+      for (; numberOfArgs < splitArgs.size(); numberOfArgs++) {
         args.add(splitArgs.get(numberOfArgs));
       }
       overriddenResultType = Pi(args, splitResult);
@@ -368,9 +366,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     String name = def.getName();
     List<? extends Abstract.Argument> arguments = def.getArguments();
     Expression typedResultType;
+    DependentLink thisParameter = param("\\this", ClassCall(thisClass));
     List<Binding> context = new ArrayList<>();
-    context.add(new TypedBinding("\\this", ClassCall(thisClass)));
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).thisClass(thisClass).build();
+    context.add(thisParameter);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
 
     int index = 0;
@@ -387,12 +386,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           list.append(param(argument.getExplicit(), names, result.expression));
           for (String name1 : names) {
             context.add(new TypedBinding(name1, result.expression));
-            ++index;
+            index++;
           }
         } else {
           list.append(param(argument.getExplicit(), (String) null, result.expression));
           context.add(new TypedBinding(null, result.expression));
-          ++index;
+          index++;
         }
 
         Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
@@ -430,7 +429,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       universe = maxUniverse;
     }
 
-    ClassField typedDef = new ClassField(myNamespace, new Name(name), def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass);
+    ClassField typedDef = new ClassField(myNamespace, new Name(name), def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass, thisParameter);
     typedDef.setUniverse(universe);
     typedDef.setThisClass(thisClass);
     myNamespaceMember.definition = typedDef;
@@ -446,14 +445,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def, myNamespace);
-    if (thisClass != null) {
-      context.add(new TypedBinding("\\this", ClassCall(thisClass)));
-      visitor.setThisClass(thisClass);
-    }
-
     LinkList list = new LinkList();
     if (thisClass != null) {
-      list.append(param("\\this", ClassCall(thisClass)));
+      DependentLink thisParam = param("\\this", ClassCall(thisClass));
+      context.add(thisParam);
+      list.append(thisParam);
+      visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
     for (Abstract.TypeArgument parameter : parameters) {
@@ -693,7 +690,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         } else {
           list.append(param(argument.getExplicit(), (String) null, result.expression));
           context.add(new TypedBinding(null, result.expression));
-          ++index;
+          index++;
         }
       }
 

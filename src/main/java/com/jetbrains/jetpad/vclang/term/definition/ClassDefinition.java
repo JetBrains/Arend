@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.param;
 
 public class ClassDefinition extends Definition {
   private Map<String, ClassField> myFields = null;
@@ -74,6 +75,6 @@ public class ClassDefinition extends Definition {
 
   public void addParentField(ClassDefinition parentClass) {
     setThisClass(parentClass);
-    addField(new ClassField(getParentNamespace().getChild(getName()), new Name("\\parent", Abstract.Definition.Fixity.PREFIX), Abstract.Definition.DEFAULT_PRECEDENCE, ClassCall(parentClass), this));
+    addField(new ClassField(getParentNamespace().getChild(getName()), new Name("\\parent", Abstract.Definition.Fixity.PREFIX), Abstract.Definition.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this))));
   }
 }
