@@ -1,17 +1,15 @@
 package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ClassesTest {
   @Test
@@ -324,6 +322,59 @@ public class ClassesTest {
   }
 
   @Test
+  public void funCallsTest() {
+    ClassDefinition testClass = typeCheckClass(
+        "\\static \\function (+) (x y : Nat) => x\n" +
+        "\\static \\class A {\n" +
+        "  \\static \\function p => 0\n" +
+        "  \\function q => p\n" +
+        "  \\static \\class B {\n" +
+        "    \\static \\function f : Nat => p\n" +
+        "    \\function g => f + p\n" +
+        "  }\n" +
+        "  \\class C {\n" +
+        "    \\static \\function h => p + q" +
+        "    \\function k => h + (p + q)" +
+        "  }\n" +
+        "}");
+    Namespace namespace = testClass.getParentNamespace().findChild("test");
+    Definition plus = namespace.getDefinition("+");
+
+    NamespaceMember aMember = namespace.getMember("A");
+    ClassDefinition aClass = (ClassDefinition) aMember.definition;
+    assertTrue(aClass.getFields().isEmpty());
+    FunctionDefinition pFun = (FunctionDefinition) aMember.namespace.getDefinition("p");
+    assertEquals(Nat(), pFun.getType());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Zero()), pFun.getElimTree());
+    FunctionDefinition qFun = (FunctionDefinition) aMember.namespace.getDefinition("q");
+    assertEquals(Pi(ClassCall(aClass), Nat()), qFun.getType());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), qFun.getElimTree());
+
+    NamespaceMember bMember = aMember.namespace.getMember("B");
+    ClassDefinition bClass = (ClassDefinition) bMember.definition;
+    assertTrue(bClass.getFields().isEmpty());
+    FunctionDefinition fFun = (FunctionDefinition) bMember.namespace.getDefinition("f");
+    assertEquals(Nat(), fFun.getType());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), fFun.getElimTree());
+    FunctionDefinition gFun = (FunctionDefinition) bMember.namespace.getDefinition("g");
+    assertEquals(Pi(ClassCall(bClass), Nat()), gFun.getType());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
+
+    NamespaceMember cMember = aMember.namespace.getMember("C");
+    ClassDefinition cClass = (ClassDefinition) cMember.definition;
+    assertEquals(1, cClass.getFields().size());
+    ClassField cParent = cClass.getField("\\parent");
+    assertNotNull(cParent);
+    FunctionDefinition hFun = (FunctionDefinition) cMember.namespace.getDefinition("h");
+    assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), FunCall(pFun), Apps(FunCall(qFun), Reference(hFun.getParameters())))), hFun.getElimTree());
+    FunctionDefinition kFun = (FunctionDefinition) cMember.namespace.getDefinition("k");
+    assertEquals(Pi(ClassCall(cClass), Nat()), kFun.getType());
+    Expression aRef = Apps(FieldCall(cParent), Reference(kFun.getParameters()));
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), Apps(FunCall(hFun), aRef), Apps(plus.getDefCall(), FunCall(pFun), Apps(FunCall(qFun), aRef)))), kFun.getElimTree());
+  }
+
+  @Test
   public void fieldCallInClass() {
     typeCheckClass(
         "\\static \\class A {\n" +
@@ -388,12 +439,12 @@ public class ClassesTest {
   public void fieldCallWithArg2() {
     typeCheckClass(
         "\\static \\class A {\n" +
-            "  \\abstract x : Nat\n" +
-            "}\n" +
-            "\\static \\class B {\n" +
-            "  \\abstract a : Nat -> A\n" +
-            "}\n" +
-            "\\static \\function y (b : B) => (b.a 1).x");
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\static \\class B {\n" +
+        "  \\abstract a : Nat -> A\n" +
+        "}\n" +
+        "\\static \\function y (b : B) => (b.a 1).x");
   }
 
   @Test

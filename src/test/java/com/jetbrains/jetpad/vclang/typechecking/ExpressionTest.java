@@ -70,15 +70,20 @@ public class ExpressionTest {
 
   @Test
   public void typeCheckingAppPiIndex() {
-    // \f g. g zero (f zero) : (f : (x : N) -> N x) -> ((x : N) -> N x -> N (f x)) -> N (f zero)
+    // T : Nat -> Type, Q : (x : Nat) -> T x -> Type |- \f g. g zero (f zero) : (f : (x : Nat) -> T x) -> ((x : Nat) -> T x -> Q x (f x)) -> Q zero (f zero)
     Concrete.Expression expr = cLam("f", cLam("g", cApps(cVar("g"), cZero(), cApps(cVar("f"), cZero()))));
+    List<Binding> context = new ArrayList<>();
+    context.add(new TypedBinding("T", Pi(Nat(), Universe(0))));
+    DependentLink x_ = param("x", Nat());
+    context.add(new TypedBinding("Q", Pi(params(x_, param(Apps(Reference(context.get(0)), Reference(x_)))), Universe(0))));
+
     DependentLink x = param("x", Nat());
-    DependentLink f = param("f", Pi(x, Apps(Nat(), Reference(x))));
+    DependentLink f = param("f", Pi(x, Apps(Reference(context.get(0)), Reference(x))));
     DependentLink x2 = param("x", Nat());
-    Expression type = Pi(f, Pi(Pi(x2, Pi(Apps(Nat(), Reference(x2)), Apps(Nat(), Apps(Reference(f), Reference(x2))))), Apps(Nat(), Apps(Reference(f), Zero()))));
+    Expression type = Pi(f, Pi(Pi(x2, Pi(Apps(Reference(context.get(0)), Reference(x2)), Apps(Reference(context.get(1)), Reference(x2), Apps(Reference(f), Reference(x2))))), Apps(Reference(context.get(1)), Zero(), Apps(Reference(f), Zero()))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, type);
+    new CheckTypeVisitor.Builder(context, errorReporter).build().checkType(expr, type);
     assertEquals(0, errorReporter.getErrorList().size());
   }
 

@@ -58,11 +58,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return visitApps(newExpr, exprs, mode);
     }
 
-    for (int i = exprs.size() - 1; i >= 0; --i) {
+    for (ArgumentExpression expr1 : exprs) {
       if (mode == Mode.NF || mode == Mode.NFH) {
-        expr = Apps(expr, new ArgumentExpression(exprs.get(i).getExpression().accept(this, mode), exprs.get(i).isExplicit(), exprs.get(i).isHidden()));
+        expr = Apps(expr, new ArgumentExpression(expr1.getExpression().accept(this, mode), expr1.isExplicit(), expr1.isHidden()));
       } else {
-        expr = Apps(expr, exprs.get(i));
+        expr = Apps(expr, expr1);
       }
     }
     return expr;

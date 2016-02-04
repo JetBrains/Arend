@@ -66,6 +66,8 @@ public class TypeCheckingDefCall {
         result.expression = ((DefCallExpression) result.expression).applyThis(thisExpr);
         if (definition instanceof ClassDefinition) {
           result.type = result.expression.getType();
+        } else {
+          result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
         }
       }
       return result;
