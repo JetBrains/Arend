@@ -109,9 +109,13 @@ class PatternsExpander {
       List<Pattern> anyPatterns = new ArrayList<>(Collections.<Pattern>nCopies(size(constructor.getParameters()), new NamePattern(EmptyDependentLink.getInstance())));
 
       for (int j = 0; j < patterns.size(); j++) {
-        if (patterns.get(j) instanceof NamePattern || patterns.get(j) instanceof AnyConstructorPattern) {
+        if (patterns.get(j) instanceof NamePattern) {
           indices.add(j);
           nestedPatterns.add(anyPatterns);
+        } else if (patterns.get(j) instanceof AnyConstructorPattern) {
+          indices.add(j);
+          nestedPatterns.add(anyPatterns);
+          hasConstructor = true;
         } else if (patterns.get(j) instanceof ConstructorPattern &&
             ((ConstructorPattern) patterns.get(j)).getConstructor() == constructor) {
           hasConstructor = true;

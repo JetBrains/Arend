@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.context.param;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
@@ -90,5 +91,10 @@ public class UntypedDependentLink implements DependentLink {
     subst.addMapping(this, new ReferenceExpression(result));
     result.myNext = myNext.subst(subst);
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return Binding.Helper.toString(this);
   }
 }

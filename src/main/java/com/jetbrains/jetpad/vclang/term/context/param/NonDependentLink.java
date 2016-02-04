@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.context.param;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
@@ -70,5 +71,10 @@ public class NonDependentLink implements DependentLink {
   @Override
   public boolean hasNext() {
     return true;
+  }
+
+  @Override
+  public String toString() {
+    return Binding.Helper.toString(this);
   }
 }

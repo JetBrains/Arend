@@ -45,6 +45,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return new CompareVisitor(equations, cmp).compare(tree1, tree2);
   }
 
+  public static boolean compare(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp, ElimTreeNode tree1, ElimTreeNode tree2) {
+    return new CompareVisitor(substitution, equations, cmp).compare(tree1, tree2);
+  }
+
+  public static boolean compare(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2) {
+    return new CompareVisitor(substitution, equations, cmp).compare(expr1, expr2);
+  }
   private Expression lamEtaReduce(Expression expr) {
     // TODO
     List<DependentLink> links = new ArrayList<>();
