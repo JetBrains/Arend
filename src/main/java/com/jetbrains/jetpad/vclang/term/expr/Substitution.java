@@ -63,4 +63,8 @@ public class Substitution {
     }
     return result;
   }
+
+  public String toString() {
+    return mySubstExprs.toString();
+  }
 }

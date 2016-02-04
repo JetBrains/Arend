@@ -58,5 +58,8 @@ public abstract class Pattern implements Abstract.Pattern {
 
   public abstract DependentLink getParameters();
   public abstract Expression toExpression(Substitution subst);
-  public abstract MatchResult match(Expression expr);
+  public MatchResult match(Expression expr) {
+    return match(expr, true);
+  }
+  public abstract MatchResult match(Expression expr, boolean normalize);
 }

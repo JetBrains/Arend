@@ -272,7 +272,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitLeaf(LeafElimTreeNode leafNode, Void params) {
-    return leafNode.getExpression().accept(this, null);
+    return leafNode.getExpression() != null ? leafNode.getExpression().accept(this, null) : myFactory.makeError(null);
   }
 
   @Override

@@ -165,7 +165,7 @@ public class TypeCheckingElim {
         LinkList links = new LinkList();
         for (int i = 0, j = 0; tailArgs.hasNext() && i < argsBindings.size(); i++) {
           ExpandPatternResult result;
-          if (j < elimExprs.size() && elimExprs.get(j) == argsBindings.get(i)) {
+          if (j < elimExprs.size() && elimExprs.get(j).getBinding() == argsBindings.get(i)) {
             result = expandPattern(clause.getPatterns().get(j), tailArgs, PatternExpansionMode.FUNCTION, links);
             j++;
           } else {
@@ -173,7 +173,8 @@ public class TypeCheckingElim {
           }
 
           if (result instanceof ExpandPatternErrorResult) {
-            expr.getExpressions().get(i).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) result).error));
+            assert j < elimExprs.size();
+            expr.getExpressions().get(j).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) result).error));
             wasError = true;
             continue clause_loop;
           }

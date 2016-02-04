@@ -41,7 +41,7 @@ public class SubstituteExpander {
     new SubstituteExpander(processor, context).substituteExpand(tree, subst, toCtx);
   }
 
-  private void substituteExpand(final ElimTreeNode tree, final Substitution subst, final Substitution toCtx) {
+  private void substituteExpand(ElimTreeNode tree, final Substitution subst, final Substitution toCtx) {
     tree.matchUntilStuck(subst).accept(new ElimTreeNodeVisitor<Void, Void>() {
       @Override
       public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
@@ -66,7 +66,7 @@ public class SubstituteExpander {
             Substitution currentSubst = new Substitution(binding, substExpr);
             myContext.addAll(toContext(constructorArgs));
             myContext.addAll(currentSubst.extendBy(tail));
-            substituteExpand(tree, currentSubst.compose(subst), currentSubst.compose(toCtx));
+            substituteExpand(branchNode, currentSubst.compose(subst), currentSubst.compose(toCtx));
           }
           myContext.add(binding);
           myContext.addAll(tail);

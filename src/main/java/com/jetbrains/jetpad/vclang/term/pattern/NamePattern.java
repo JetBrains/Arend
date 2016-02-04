@@ -28,7 +28,7 @@ public class NamePattern extends Pattern implements Abstract.NamePattern {
   }
 
   @Override
-  public MatchResult match(Expression expr) {
+  public MatchResult match(Expression expr, boolean ignore) {
     return new MatchOKResult(Collections.singletonList(expr));
   }
 

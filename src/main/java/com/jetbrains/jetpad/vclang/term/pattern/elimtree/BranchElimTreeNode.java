@@ -107,7 +107,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
     ConstructorClause clause = myClauses.get(((ConCallExpression) func).getDefinition());
     if (clause == null) {
-      return myOtherwiseClause == null ? null : myOtherwiseClause.getChild().matchUntilStuck(subst);
+      return myOtherwiseClause == null ? this : myOtherwiseClause.getChild().matchUntilStuck(subst);
     }
 
     for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {

@@ -84,9 +84,9 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   }
 
   @Override
-  public MatchResult match(Expression expr) {
+  public MatchResult match(Expression expr, boolean normalize) {
     List<Expression> constructorArgs = new ArrayList<>();
-    expr = expr.normalize(NormalizeVisitor.Mode.WHNF).getFunction(constructorArgs);
+    expr = (normalize ? expr.normalize(NormalizeVisitor.Mode.WHNF) : expr).getFunction(constructorArgs);
     Collections.reverse(constructorArgs);
     if (!(expr instanceof ConCallExpression)) {
       return new MatchMaybeResult(this, expr);

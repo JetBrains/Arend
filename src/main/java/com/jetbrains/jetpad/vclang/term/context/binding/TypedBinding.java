@@ -14,4 +14,8 @@ public class TypedBinding extends NamedBinding {
   public Expression getType() {
     return myType;
   }
+
+  public String toString() {
+    return getName() + " : " + getType();
+  }
 }
