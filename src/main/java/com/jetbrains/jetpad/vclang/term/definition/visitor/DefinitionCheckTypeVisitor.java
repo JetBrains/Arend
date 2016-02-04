@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -184,6 +183,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     // int numberOfArgs = index;
     int index = 0;
     for (Abstract.Argument argument : arguments) {
+      DependentLink param;
       if (argument instanceof Abstract.TypeArgument) {
         CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
         if (result == null) return typedDef;
@@ -191,8 +191,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         // boolean ok = true;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          list.append(param(argument.getExplicit(), names, result.expression));
-          for (String name1 : names) {
+          param = param(argument.getExplicit(), names, result.expression);
+          index += names.size();
         /*
         if (splitArgs != null) {
           List<CompareVisitor.Equation> equations = new ArrayList<>(0);
@@ -204,9 +204,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         }
         */
 
-            context.add(new TypedBinding(name1, result.expression));
-            index++;
-          }
         } else {
       /*
       if (splitArgs != null) {
@@ -219,11 +216,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       */
 
           // if (ok) {
-          list.append(param(argument.getExplicit(), (String) null, result.expression));
-          context.add(new TypedBinding(null, result.expression));
+          param = param(argument.getExplicit(), (String) null, result.expression);
           index++;
           // }
         }
+        list.append(param);
+        context.addAll(toContext(param));
+
 
     /*
     if (!ok) {
@@ -382,18 +381,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           return null;
         }
 
+        DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          list.append(param(argument.getExplicit(), names, result.expression));
-          for (String name1 : names) {
-            context.add(new TypedBinding(name1, result.expression));
-            index++;
-          }
+          param = param(argument.getExplicit(), names, result.expression);
+          index += names.size();
         } else {
-          list.append(param(argument.getExplicit(), (String) null, result.expression));
-          context.add(new TypedBinding(null, result.expression));
+          param = param(argument.getExplicit(), (String) null, result.expression);
           index++;
         }
+        list.append(param);
+        context.addAll(toContext(param));
 
         Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
         Universe maxUniverse = universe.max(argUniverse);
@@ -458,16 +456,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       for (Abstract.TypeArgument parameter : parameters) {
         CheckTypeVisitor.Result result = visitor.checkType(parameter.getType(), Universe());
         if (result == null) return null;
+        DependentLink param;
         if (parameter instanceof Abstract.TelescopeArgument) {
-          list.append(param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression));
-          List<String> names = ((Abstract.TelescopeArgument) parameter).getNames();
-          for (String name : names) {
-            context.add(new TypedBinding(name, result.expression));
-          }
+          param = param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression);
         } else {
-          list.append(param(parameter.getExplicit(), (String) null, result.expression));
-          context.add(new TypedBinding(null, result.expression));
+          param = param(parameter.getExplicit(), (String) null, result.expression);
         }
+        list.append(param);
+        context.addAll(toContext(param));
       }
     }
 
@@ -684,18 +680,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           universe = maxUniverse;
         }
 
+        DependentLink param;
         if (argument instanceof Abstract.TelescopeArgument) {
-          list.append(param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression));
-          List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
-          for (String name : names) {
-            visitor.getContext().add(new TypedBinding(name, result.expression));
-          }
+          param = param(argument.getExplicit(), ((Abstract.TelescopeArgument) argument).getNames(), result.expression);
           index += ((Abstract.TelescopeArgument) argument).getNames().size();
         } else {
-          list.append(param(argument.getExplicit(), (String) null, result.expression));
-          visitor.getContext().add(new TypedBinding(null, result.expression));
+          param = param(argument.getExplicit(), (String) null, result.expression);
           index++;
         }
+        list.append(param);
+        visitor.getContext().addAll(toContext(param));
       }
 
       if (!ok) {
