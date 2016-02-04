@@ -657,7 +657,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             }
             equations.add(result.equations);
           }
-          links.append(param(teleArg.getExplicit(), teleArg.getNames(), result.type));
+          links.append(param(teleArg.getExplicit(), teleArg.getNames(), result.expression));
           for (DependentLink link = links.getLast(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
             myContext.add(link);
           }

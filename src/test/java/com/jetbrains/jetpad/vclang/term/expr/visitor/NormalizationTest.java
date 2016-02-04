@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -23,8 +22,8 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class NormalizationTest {
   Namespace testNS;
@@ -41,7 +40,6 @@ public class NormalizationTest {
   private Constructor bdNil;
   private Constructor bdCons;
   private Constructor bdSnoc;
-
 
   public NormalizationTest() {
     testNS = new Namespace("test");
@@ -217,47 +215,35 @@ public class NormalizationTest {
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
-  private static Expression typecheckExpression(Abstract.Expression expr) {
-    return typecheckExpression(expr, new ArrayList<Binding>());
-  }
-
-  private static Expression typecheckExpression(Abstract.Expression expr, List<Binding> ctx) {
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(ctx, errorReporter).build(), null);
-    assertEquals(0, errorReporter.getErrorList().size());
-    assertTrue(result.equations.isEmpty());
-    return result.expression;
-  }
-
   @Test
   public void normalizeLet1() {
     // normalize (\let | x => zero \in \let | y = suc \in y x) = 1
-    Expression expr = typecheckExpression(cLet(clets(clet("x", cZero())), cLet(clets(clet("y", cSuc())), cApps(cVar("y"), cVar("x")))));
-    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cZero())), cLet(clets(clet("y", cSuc())), cApps(cVar("y"), cVar("x")))), null, 0);
+    assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLet2() {
     // normalize (\let | x => suc \in \let | y = zero \in x y) = 1
-    Expression expr = typecheckExpression(cLet(clets(clet("x", cSuc())), cLet(clets(clet("y", cZero())), cApps(cVar("x"), cVar("y")))));
-    assertEquals(Suc(Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cSuc())), cLet(clets(clet("y", cZero())), cApps(cVar("x"), cVar("y")))), null, 0);
+    assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLetNo() {
     // normalize (\let | x (y z : N) => zero \in x zero) = \lam (z : N) => zero
-    Expression expr = typecheckExpression(cLet(clets(clet("x", cargs(cTele(cvars("y", "z"), cNat())), cZero())), cApps(cVar("x"), cZero())));
+    CheckTypeVisitor.Result result = typeCheckExpr("\\let x (y z : Nat) => 0 \\in x 0", null);
     DependentLink x = param("x", Nat());
-    assertEquals(Lam(x, Zero()), expr.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Lam(x, Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLetElimStuck() {
     // normalize (\let | x (y : N) : N <= \elim y | zero => zero | suc _ => zero \in x <1>) = the same
-    Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")), cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cZero()), cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cZero()));
-    Expression expr = typecheckExpression(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cNat(), Abstract.Definition.Arrow.LEFT, elimTree)),
-        cApps(cVar("x"), cVar("n"))), new ArrayList<Binding>(Collections.singleton(new TypedBinding("n", Nat()))));
-    assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF));
+    List<Binding> context = new ArrayList<>();
+    context.add(new TypedBinding("n", Nat()));
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\let x (y : Nat) : Nat <= \\elim y | zero => zero | suc _ => zero \\in x n", null);
+    assertEquals(result.expression, result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -267,8 +253,8 @@ public class NormalizationTest {
         cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverse(0)),
         cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverse(1))
     );
-    Expression expr = typecheckExpression(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverse(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())));
-    assertEquals(Universe(0), expr.normalize(NormalizeVisitor.Mode.NF));
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverse(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null, 0);
+    assertEquals(Universe(0), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -278,7 +264,7 @@ public class NormalizationTest {
         "\\static \\data D | d Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | _! => 0");
     FunctionDefinition test = (FunctionDefinition) def.getParentNamespace().getChild(def.getName()).getMember("test").definition;
-    assertEquals(Apps(FunCall(test), Reference(var0)).normalize(NormalizeVisitor.Mode.NF), Apps(FunCall(test), Reference(var0)));
+    assertEquals(Apps(FunCall(test), Reference(var0)), Apps(FunCall(test), Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -291,7 +277,7 @@ public class NormalizationTest {
   public void testConditionNormalization() {
     typeCheckClass(
         "\\static \\data Z | pos Nat | neg Nat \\with | pos zero => neg 0\n" +
-            "\\static \\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
+        "\\static \\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
     );
   }
 

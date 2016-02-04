@@ -567,7 +567,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         for (Abstract.Condition cond : condMap.get(constructor)) {
           try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getType().getPiParameters(null, false, false)));
-            List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, constructor.getParameters(), cond.getPatterns());
+            DependentLink params = constructor.getParameters();
+            if (constructor.getThisClass() != null) {
+              params = params.getNext();
+            }
+            List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns());
             if (processedPatterns == null)
               continue;
 
@@ -648,12 +652,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
       if (patterns != null) {
-
-        List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), patterns);
+        DependentLink params = dataDefinition.getParameters();
+        if (dataDefinition.getThisClass() != null) {
+          params = params.getNext();
+        }
+        List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(def, params, patterns);
         if (processedPatterns == null)
           return null;
 
-        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
+        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, params, Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null)
           return null;
       } else {
