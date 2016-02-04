@@ -147,7 +147,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (CompareVisitor.compare(result.equations, cmp, expectedType.normalize(NormalizeVisitor.Mode.NF), result.type.normalize(NormalizeVisitor.Mode.NF))) {
       return true;
     } else {
-      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH), result.type.normalize(NormalizeVisitor.Mode.NFH), expr);
+      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return false;
@@ -742,11 +742,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       equations.add(result.equations);
 
-      Expression resultType = result.type.normalize(NormalizeVisitor.Mode.NF);
-      if (resultType.findBinding(new HashSet<Binding>(clauses))) {
-        resultType = Let(clauses, resultType);
-      }
-      return new Result(Let(clauses, result.expression), resultType, equations);
+      return new Result(Let(clauses, result.expression), Let(clauses, result.type).normalize(NormalizeVisitor.Mode.NF), equations);
     }
   }
 

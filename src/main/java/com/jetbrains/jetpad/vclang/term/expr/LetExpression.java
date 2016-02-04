@@ -36,8 +36,7 @@ public class LetExpression extends Expression {
 
   @Override
   public Expression getType() {
-    // TODO: check if the type dependents on variables bound by let
-    return myExpression.getType();
+    return Let(myClauses, myExpression.getType());
   }
 
   @Override

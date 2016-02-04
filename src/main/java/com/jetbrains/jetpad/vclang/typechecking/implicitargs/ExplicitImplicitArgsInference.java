@@ -93,7 +93,7 @@ public abstract class ExplicitImplicitArgsInference extends BaseImplicitArgsInfe
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, false);
     if (expectedParams.size() > actualParams.size()) {
-      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH), result.type.normalize(NormalizeVisitor.Mode.NFH), expr);
+      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -105,7 +105,7 @@ public abstract class ExplicitImplicitArgsInference extends BaseImplicitArgsInfe
     int argsNumber = actualParams.size() - expectedParams.size();
     for (int i = 0; i < expectedParams.size(); ++i) {
       if (expectedParams.get(i).isExplicit() != actualParams.get(argsNumber + i).isExplicit()) {
-        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH), result.type.normalize(NormalizeVisitor.Mode.NFH), expr);
+        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
         expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -114,7 +114,7 @@ public abstract class ExplicitImplicitArgsInference extends BaseImplicitArgsInfe
 
     for (int i = 0; i < argsNumber; ++i) {
       if (actualParams.get(i).isExplicit()) {
-        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH), result.type.normalize(NormalizeVisitor.Mode.NFH), expr);
+        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
         expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
