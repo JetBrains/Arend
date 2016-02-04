@@ -129,7 +129,7 @@ public class TypeCheckingElim {
     }
   }
 
-  public Result typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType) {
+  public Result typeCheckElim(final Abstract.ElimCaseExpression expr, DependentLink eliminatingArgs, Expression expectedType, boolean isCase) {
     TypeCheckingError error = null;
     if (expectedType == null) {
       error = new TypeCheckingError("Cannot infer type of the expression", expr);
@@ -144,7 +144,15 @@ public class TypeCheckingElim {
       return null;
     }
 
-    final List<ReferenceExpression> elimExprs = typecheckElimIndices(expr, eliminatingArgs);
+    final List<ReferenceExpression> elimExprs;
+    if (!isCase) {
+      elimExprs = typecheckElimIndices(expr, eliminatingArgs);
+    } else {
+      elimExprs = new ArrayList<>();
+      for (DependentLink link = eliminatingArgs; link.hasNext(); link = link.getNext()) {
+        elimExprs.add(Reference(link));
+      }
+    }
     if (elimExprs == null) return null;
 
     boolean wasError = false;
@@ -173,8 +181,8 @@ public class TypeCheckingElim {
           }
 
           if (result instanceof ExpandPatternErrorResult) {
-            assert j < elimExprs.size();
-            expr.getExpressions().get(j).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) result).error));
+            assert j <= elimExprs.size();
+            expr.getExpressions().get(j - 1).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) result).error));
             wasError = true;
             continue clause_loop;
           }
