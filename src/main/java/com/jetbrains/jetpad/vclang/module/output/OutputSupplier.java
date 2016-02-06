@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 public interface OutputSupplier {
-  Output getOutput(ResolvedName module);
-  Output locateOutput(ResolvedName module);
+  Output getOutput(ModuleID module);
+  ModuleID locateModule(ModulePath modulePath);
 }

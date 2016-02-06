@@ -1,16 +1,21 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
 
 public class BaseResolveListener implements ResolveListener {
   @Override
-  public void nameResolved(Abstract.DefCallExpression defCallExpression, ResolvedName resolvedName) {
+  public void nameResolved(Abstract.DefCallExpression defCallExpression, BaseDefinition resolvedDefinition) {
 
   }
 
   @Override
-  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, ResolvedName name, Abstract.DefCallExpression var, Abstract.Expression right) {
+  public void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, BaseDefinition module) {
+
+  }
+
+  @Override
+  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, BaseDefinition definition, Abstract.DefCallExpression var, Abstract.Expression right) {
     return null;
   }
 

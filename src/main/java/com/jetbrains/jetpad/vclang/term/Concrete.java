@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
@@ -198,9 +199,9 @@ public final class Concrete {
       return mySequence;
     }
 
-    public BinOpExpression makeBinOp(Abstract.Expression left, ResolvedName name, Abstract.DefCallExpression var, Abstract.Expression right) {
+    public BinOpExpression makeBinOp(Abstract.Expression left, BaseDefinition binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
       assert left instanceof Expression && right instanceof Expression && var instanceof Expression;
-      return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, name, (Expression) right);
+      return new BinOpExpression(((Expression) var).getPosition(), (Expression) left, binOp, (Expression) right);
     }
 
     public Expression makeError(Abstract.SourceNode node) {
@@ -220,20 +221,20 @@ public final class Concrete {
   }
 
   public static class BinOpExpression extends Expression implements Abstract.BinOpExpression {
-    private final ResolvedName myName;
+    private final BaseDefinition myBinOp;
     private final Expression myLeft;
     private final Expression myRight;
 
-    public BinOpExpression(Position position, Expression left, ResolvedName name, Expression right) {
+    public BinOpExpression(Position position, Expression left, BaseDefinition binOp, Expression right) {
       super(position);
       myLeft = left;
-      myName = name;
+      myBinOp = binOp;
       myRight = right;
     }
 
     @Override
-    public ResolvedName getResolvedBinOpName() {
-      return myName;
+    public BaseDefinition getResolvedBinOp() {
+      return myBinOp;
     }
 
     @Override
@@ -255,27 +256,27 @@ public final class Concrete {
   public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
     private Expression myExpression;
     private String myName;
-    private ResolvedName myResolvedName;
+    private BaseDefinition myDefinition;
 
     public DefCallExpression(Position position, Expression expression, String name) {
       super(position);
       myExpression = expression;
       myName = name;
-      myResolvedName = null;
+      myDefinition = null;
     }
 
-    public DefCallExpression(Position position, ResolvedName resolvedName) {
+    public DefCallExpression(Position position, BaseDefinition definition) {
       super(position);
       myExpression = null;
-      myName = resolvedName.name.name;
-      myResolvedName = resolvedName;
+      myName = definition.getName();
+      myDefinition = definition;
     }
 
     public DefCallExpression(Position position, com.jetbrains.jetpad.vclang.term.definition.Definition definition) {
       super(position);
       myExpression = null;
       myName = definition.getName();
-      myResolvedName = new ResolvedName(definition.getParentNamespace(), definition.getName());
+      myDefinition = definition;
     }
 
     @Override
@@ -284,12 +285,12 @@ public final class Concrete {
     }
 
     @Override
-    public ResolvedName getResolvedName() {
-      return myResolvedName;
+    public BaseDefinition getResolvedDefinition() {
+      return myDefinition;
     }
 
-    public void setResolvedName(ResolvedName name) {
-      myResolvedName = name;
+    public void setResolvedDefinition(BaseDefinition definition) {
+      myDefinition = definition;
     }
 
     @Override
@@ -300,6 +301,35 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitDefCall(this, params);
+    }
+  }
+
+  public static class ModuleCallExpression extends Expression implements Abstract.ModuleCallExpression {
+    private final List<String> myPath;
+    private BaseDefinition myModule;
+
+    public ModuleCallExpression(Position position, List<String> path) {
+      super(position);
+      this.myPath = path;
+    }
+
+    @Override
+    public List<String> getPath() {
+      return myPath;
+    }
+
+    @Override
+    public BaseDefinition getModule() {
+      return myModule;
+    }
+
+    public void setModule(BaseDefinition module) {
+      myModule = module;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitModuleCall(this, params);
     }
   }
 
@@ -931,15 +961,25 @@ public final class Concrete {
 
   public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
     private final List<Statement> myFields;
+    private ModuleID myModule;
 
     public ClassDefinition(Position position, String name, List<Statement> fields) {
       super(position, name, DEFAULT_PRECEDENCE);
       myFields = fields;
     }
 
+    public void setModuleID(ModuleID moduleID) {
+      myModule = moduleID;
+    }
+
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClass(this, params);
+    }
+
+    @Override
+    public ModuleID getModuleID() {
+      return myModule;
     }
 
     @Override
@@ -1079,14 +1119,14 @@ public final class Concrete {
 
   public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
     private final Kind myKind;
-    private ResolvedName myResolvedPath;
+    private BaseDefinition myDefinition;
     private final List<String> myPath;
     private final List<String> myNames;
 
     public NamespaceCommandStatement(Position position, Kind kind, List<String> path, List<String> names) {
       super(position);
       myKind = kind;
-      myResolvedPath = null;
+      myDefinition = null;
       myPath = path;
       myNames = names;
     }
@@ -1102,13 +1142,13 @@ public final class Concrete {
     }
 
     @Override
-    public void setResolvedPath(ResolvedName path) {
-      myResolvedPath = path;
+    public void setResolvedPath(BaseDefinition definition) {
+      myDefinition = definition;
     }
 
     @Override
-    public ResolvedName getResolvedPath() {
-      return myResolvedPath;
+    public BaseDefinition getResolvedPath() {
+      return myDefinition;
     }
 
     @Override

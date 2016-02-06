@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -19,14 +19,14 @@ public class Constructor extends Definition {
   private DependentLink myParameters;
   private Patterns myPatterns;
 
-  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
-    super(parentNamespace, name, precedence);
+  public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
+    super(rn, precedence);
     myDataType = dataType;
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
-    super(parentNamespace, name, precedence);
+  public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
+    super(rn, precedence);
     assert parameters != null;
     setUniverse(universe);
     hasErrors(false);
@@ -35,8 +35,8 @@ public class Constructor extends Definition {
     myPatterns = patterns;
   }
 
-  public Constructor(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType) {
-    this(parentNamespace, name, precedence, universe, parameters, dataType, null);
+  public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType) {
+    this(rn, precedence, universe, parameters, dataType, null);
   }
 
   public Patterns getPatterns() {

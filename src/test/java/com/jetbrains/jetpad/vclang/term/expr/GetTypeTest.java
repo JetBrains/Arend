@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -17,7 +17,7 @@ public class GetTypeTest {
   @Test
   public void constructorTest() {
     ClassDefinition def = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => cons 0 nil");
-    Namespace namespace = def.getParentNamespace().findChild(def.getName());
+    Namespace namespace = def.getResolvedName().toNamespace();
     assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), namespace.getDefinition("test").getType());
     assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType());
   }
@@ -25,7 +25,7 @@ public class GetTypeTest {
   @Test
   public void nilConstructorTest() {
     ClassDefinition def = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => (List Nat).nil");
-    Namespace namespace = def.getParentNamespace().findChild(def.getName());
+    Namespace namespace = def.getResolvedName().toNamespace();
     assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), namespace.getDefinition("test").getType());
     assertEquals(Apps(namespace.getDefinition("List").getDefCall(), Nat()), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType());
   }
@@ -33,7 +33,7 @@ public class GetTypeTest {
   @Test
   public void classExtTest() {
     ClassDefinition def = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
-    Namespace namespace = def.getParentNamespace().findChild(def.getName());
+    Namespace namespace = def.getResolvedName().toNamespace();
     assertEquals(Universe(1), namespace.getDefinition("Test").getType());
     assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("test").getType());
     assertEquals(Universe(0, Universe.Type.SET), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType());
@@ -58,7 +58,7 @@ public class GetTypeTest {
   @Test
   public void fieldAccTest() {
     ClassDefinition def = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
-    Namespace namespace = def.getParentNamespace().findChild(def.getName());
+    Namespace namespace = def.getResolvedName().toNamespace();
     DependentLink p = param("p", Pi(Nat(), namespace.getDefinition("C").getDefCall()));
     Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(FieldCall(((ClassDefinition) namespace.getDefinition("C")).getField("f")), Apps(Reference(p), Zero())));
     assertEquals(Pi(p, Pi(type, type)), namespace.getDefinition("test").getType());
@@ -85,7 +85,7 @@ public class GetTypeTest {
   public void patternConstructor1() {
     ClassDefinition def = typeCheckClass(
         "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
-    Namespace namespace = def.getParentNamespace().findChild(def.getName());
+    Namespace namespace = def.getResolvedName().toNamespace();
     assertEquals(Apps(namespace.getMember("C").definition.getDefCall(), Zero()), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c1").getType());
     DependentLink n = param("n", Nat());
     assertEquals(Pi(n, Apps(namespace.getMember("C").definition.getDefCall(), Suc(Reference(n)))), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
@@ -96,7 +96,7 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass(
         "\\static \\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
         "\\static \\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
-    Namespace namespace = def.getParentNamespace().findChild(def.getName());
+    Namespace namespace = def.getResolvedName().toNamespace();
     DataDefinition vec = (DataDefinition) namespace.getMember("Vec").definition;
     DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
     assertEquals(Apps(DataCall(d), Zero(), Reference(d.getConstructor("dzero").getDataTypeParameters())), d.getConstructor("dzero").getType());
@@ -111,7 +111,7 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass(
         "\\static \\data D | d \\Type0\n" +
         "\\static \\data C D | C (d A) => c A");
-    Namespace namespace = def.getParentNamespace().findChild(def.getName());
+    Namespace namespace = def.getResolvedName().toNamespace();
     DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
     DataDefinition c = (DataDefinition) namespace.getMember("C").definition;
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
@@ -123,7 +123,7 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass(
         "\\static \\data Box (n : Nat) | box\n" +
         "\\static \\data D (n : Nat) (Box n) | D (zero) _ => d");
-    Namespace namespace = def.getParentNamespace().findChild(def.getName());
+    Namespace namespace = def.getResolvedName().toNamespace();
     DataDefinition d = (DataDefinition) namespace.getMember("D").definition;
     assertEquals(Apps(DataCall(d), Zero(), Reference(d.getConstructor("d").getDataTypeParameters())), d.getConstructor("d").getType());
   }

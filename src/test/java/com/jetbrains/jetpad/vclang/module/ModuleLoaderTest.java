@@ -1,5 +1,9 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
@@ -11,35 +15,34 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.module.MemorySourceSupplier.moduleName;
+import static com.jetbrains.jetpad.vclang.module.ModulePath.moduleName;
 import static org.junit.Assert.*;
 
 public class ModuleLoaderTest {
   ListErrorReporter errorReporter;
-  List<ResolvedName> loadedModules;
+  List<Abstract.Definition> loadedModuleRoots;
+  List<ModuleID> loadedModules;
   ReportingModuleLoader moduleLoader;
   MemorySourceSupplier sourceSupplier;
   MemoryOutputSupplier outputSupplier;
 
   void setupSources() {
-    sourceSupplier.add(moduleName("A"), "\\static \\function a => B.C.E.e");
+    sourceSupplier.add(moduleName("A"), "\\static \\function a => ::B::C::E.e");
     sourceSupplier.add(moduleName("B"), "\\static \\function b => 0");
     sourceSupplier.add(moduleName("B", "C"), null);
     sourceSupplier.add(moduleName("B", "C", "D"), "\\static \\function d => 0");
-    sourceSupplier.add(moduleName("B", "C", "E"), "\\static \\function e => F.f");
+    sourceSupplier.add(moduleName("B", "C", "E"), "\\static \\function e => ::B::C::F.f");
     sourceSupplier.add(moduleName("B", "C", "F"), "\\static \\function f => 0");
     sourceSupplier.add(moduleName("All"), "\\export A \\export B.C \\export B.C.E \\export B.C.D \\export B.C.F");
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.setOutputSupplier(outputSupplier);
 
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
+    moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
 
-    TypecheckingOrdering.typecheck(loadedModules, errorReporter);
+    TypecheckingOrdering.typecheck(loadedModuleRoots, errorReporter);
 
-    for (ResolvedName module : loadedModules) {
-      if (module.toAbstractDefinition() != null && module.toDefinition() != null) {
-        moduleLoader.save(module);
-      }
+    for (ModuleID module : loadedModules) {
+      moduleLoader.save(module);
     }
     assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
 
@@ -49,8 +52,9 @@ public class ModuleLoaderTest {
   }
 
   private void initializeModuleLoader() {
-    RootModule.initialize();
+    Root.initialize();
     loadedModules = new ArrayList<>();
+    loadedModuleRoots = new ArrayList<>();
     errorReporter = new ListErrorReporter();
     moduleLoader = new ReportingModuleLoader(new ErrorReporter() {
       @Override
@@ -62,8 +66,9 @@ public class ModuleLoaderTest {
 
     }, false) {
       @Override
-      public void loadingSucceeded(ResolvedName resolvedName, NamespaceMember namespaceMember, boolean compiled) {
-        loadedModules.add(resolvedName);
+      public void loadingSucceeded(ModuleID module, NamespaceMember namespaceMember, boolean compiled) {
+        loadedModules.add(module);
+        loadedModuleRoots.add(namespaceMember.abstractDefinition);
       }
     };
   }
@@ -77,12 +82,12 @@ public class ModuleLoaderTest {
 
   @Test
   public void recursiveTestError() {
-    sourceSupplier.add(moduleName("A"), "\\static \\function f => B.g");
-    sourceSupplier.add(moduleName("B"), "\\static \\function g => A.f");
+    sourceSupplier.add(moduleName("A"), "\\static \\function f => ::B.g");
+    sourceSupplier.add(moduleName("B"), "\\static \\function g => ::A.f");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "A"), false);
-    assertFalse(errorReporter.getErrorList().isEmpty());
+    moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
+    assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
   }
 
   @Test
@@ -91,7 +96,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("B"), "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "A"), false);
+    moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
     assertFalse(errorReporter.getErrorList().isEmpty());
   }
 
@@ -101,7 +106,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("B"), "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "A"), false);
+    moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
     assertFalse(errorReporter.getErrorList().isEmpty());
   }
 
@@ -111,8 +116,8 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("B"), "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    ModuleLoadingResult result = moduleLoader.load(new ResolvedName(RootModule.ROOT, "B"), false);
-    TypecheckingOrdering.typecheck(result.namespaceMember.getResolvedName(), errorReporter);
+    ModuleLoader.Result result = moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
+    TypecheckingOrdering.typecheck(result.namespaceMember.abstractDefinition, errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
 
@@ -121,7 +126,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("A"), "\\static \\abstract f : Nat");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "A"), false).namespaceMember.getResolvedName();
+    moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
 
@@ -130,11 +135,12 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("A"), "\\abstract f : Nat \\static \\class C { \\abstract g : Nat \\function h => g }");
     moduleLoader.setSourceSupplier(sourceSupplier);
 
-    ModuleLoadingResult result = moduleLoader.load(new ResolvedName(RootModule.ROOT, "A"), false);
-    TypecheckingOrdering.typecheck(result.namespaceMember.getResolvedName(), errorReporter);
+    ModuleID moduleID = moduleLoader.locateModule(moduleName("A"));
+    ModuleLoader.Result result = moduleLoader.load(moduleID);
+    TypecheckingOrdering.typecheck(result.namespaceMember.abstractDefinition, errorReporter);
     assertNotNull(result);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
-    assertEquals(2, RootModule.ROOT.getChild("A").getMembers().size());
+    assertEquals(2, Root.getModule(moduleID).namespace.getMembers().size());
     Definition definitionC = result.namespaceMember.namespace.getDefinition("C");
     assertTrue(definitionC instanceof ClassDefinition);
     assertEquals(2, definitionC.getParentNamespace().findChild(definitionC.getName()).getMembers().size());
@@ -146,7 +152,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("B"), "\\static \\function f (p : A.B) => p.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    TypecheckingOrdering.typecheck(moduleLoader.load(new ResolvedName(RootModule.ROOT, "A"), false).namespaceMember.getResolvedName(), errorReporter);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleLoader.locateModule(moduleName("A"))).namespaceMember.abstractDefinition, errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
   }
 
@@ -156,7 +162,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("B"), "\\static \\function f (p : A.B) => p.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    TypecheckingOrdering.typecheck(moduleLoader.load(new ResolvedName(RootModule.ROOT, "B"), false).namespaceMember.getResolvedName(), errorReporter);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleLoader.locateModule(moduleName("B"))).namespaceMember.abstractDefinition, errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
 
@@ -166,25 +172,17 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("B"), "\\function g => A.f");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    TypecheckingOrdering.typecheck(moduleLoader.load(new ResolvedName(RootModule.ROOT, "B"), false).namespaceMember.getResolvedName(), errorReporter);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleLoader.locateModule(moduleName("B"))).namespaceMember.abstractDefinition, errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
 
-  private NamespaceMember findMember(String... path) {
-    Namespace ns = RootModule.ROOT;
-    for (int i = 0; i < path.length - 1; i++) {
-      ns = ns.findChild(path[i]);
-    }
-    return ns.getMember(path[path.length - 1]);
-  }
-
   private void assertLoaded(String... path) {
-    NamespaceMember member = findMember(path);
+    NamespaceMember member = Root.getModule(moduleLoader.locateModule(moduleName(path)));
     assertTrue(member.definition != null && member.abstractDefinition == null);
   }
 
   private void assertNotLoaded(String... path) {
-    NamespaceMember member = findMember(path);
+    NamespaceMember member = Root.getModule(moduleLoader.locateModule(moduleName(path)));
     assertFalse(member.definition != null && member.abstractDefinition == null);
   }
 
@@ -192,7 +190,7 @@ public class ModuleLoaderTest {
   public void testForTestCase() {
     setupSources();
 
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
+    moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
     assertTrue(errorReporter.getErrorList().isEmpty());
     assertLoaded("All");
     assertLoaded("A");
@@ -206,7 +204,7 @@ public class ModuleLoaderTest {
     setupSources();
 
     sourceSupplier.touch(moduleName("B"));
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
+    moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
     assertTrue(errorReporter.getErrorList().isEmpty());
     assertNotLoaded("All");
     assertNotLoaded("A");
@@ -221,7 +219,7 @@ public class ModuleLoaderTest {
     setupSources();
 
     sourceSupplier.touch(moduleName("B", "C", "D"));
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
+    moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
     assertTrue(errorReporter.getErrorList().isEmpty());
     assertNotLoaded("All");
     assertLoaded("A");
@@ -237,10 +235,10 @@ public class ModuleLoaderTest {
     setupSources();
 
     sourceSupplier.add(moduleName("B", "C", "G"), "\\static \\function G => f");
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "B"), false);
-    moduleLoader.load(new ResolvedName(RootModule.ROOT.findChild("B"), "C"), false);
-    moduleLoader.load(new ResolvedName(RootModule.ROOT.findChild("B").findChild("C"), "G"), false);
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
+    moduleLoader.load(moduleLoader.locateModule(moduleName("B")));
+    moduleLoader.load(moduleLoader.locateModule(moduleName("B", "C")));
+    moduleLoader.load(moduleLoader.locateModule(moduleName("B", "C", "G")));
+    moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
     assertTrue(errorReporter.getErrorList().isEmpty());
     assertLoaded("All");
     assertLoaded("A");
@@ -256,7 +254,7 @@ public class ModuleLoaderTest {
     setupSources();
 
     sourceSupplier.add(moduleName("B"), null);
-    moduleLoader.load(new ResolvedName(RootModule.ROOT, "All"), false);
+    moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
     assertTrue(errorReporter.getErrorList().isEmpty());
     assertNotLoaded("All");
     assertNotLoaded("A");

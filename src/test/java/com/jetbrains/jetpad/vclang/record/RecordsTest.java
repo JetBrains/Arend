@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -132,7 +132,7 @@ public class RecordsTest {
 
   @Test
   public void mutualRecursionTestError() {
-    typeCheckClass(
+    typeCheckClass("test",
         "\\static \\class Point {\n" +
         "  \\abstract x : Nat\n" +
         "  \\abstract y : Nat\n" +
@@ -159,7 +159,7 @@ public class RecordsTest {
     ClassDefinition result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
-    Namespace namespace = result.getParentNamespace().findChild(result.getName());
+    Namespace namespace = result.getResolvedName().toNamespace();
     assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
     assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("C").getType());
   }
@@ -169,7 +169,7 @@ public class RecordsTest {
     ClassDefinition result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
-    Namespace namespace = result.getParentNamespace().findChild(result.getName());
+    Namespace namespace = result.getResolvedName().toNamespace();
     assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
     assertEquals(Universe(0, Universe.Type.PROP), namespace.getDefinition("C").getType());
   }
@@ -179,7 +179,7 @@ public class RecordsTest {
     ClassDefinition result = typeCheckClass(
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
-    Namespace namespace = result.getParentNamespace().findChild(result.getName());
+    Namespace namespace = result.getResolvedName().toNamespace();
     assertEquals(new Universe.Type(4, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("Point").getUniverse());
     assertEquals(Universe(2, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("C").getType());
   }
@@ -193,7 +193,7 @@ public class RecordsTest {
         "  \\function y : foo = foo => path (\\lam _ => foo)\n" +
         "}\n" +
         "\\static \\function test (p : A) => p.y");
-    Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName());
+    Namespace namespace = classDef.getResolvedName().toNamespace();
     FunctionDefinition testFun = (FunctionDefinition) namespace.getDefinition("test");
     Expression resultType = testFun.getResultType();
     List<Expression> arguments = new ArrayList<>(3);
@@ -242,7 +242,7 @@ public class RecordsTest {
       "  \\function y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
       "}\n" +
       "\\static \\function test (q : A) => q.y");
-    Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName());
+    Namespace namespace = classDef.getResolvedName().toNamespace();
     FunctionDefinition testFun = (FunctionDefinition) namespace.getDefinition("test");
     Expression resultType = testFun.getResultType();
     Expression xCall = namespace.findChild("A").getDefinition("x").getDefCall();

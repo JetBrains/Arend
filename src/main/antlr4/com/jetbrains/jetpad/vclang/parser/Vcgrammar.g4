@@ -106,7 +106,9 @@ infix : BIN_OP                          # infixBinOp
 atom  : '(' expr (',' expr)* ')'        # tuple
       | literal                         # atomLiteral
       | NUMBER                          # atomNumber
+      | ('::' ID)+                      # moduleCall
       ;
+
 
 atomFieldsAcc : atom fieldAcc* ('{' implementStatement* '}')?;
 

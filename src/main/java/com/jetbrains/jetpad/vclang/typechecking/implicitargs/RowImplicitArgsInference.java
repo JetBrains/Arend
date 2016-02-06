@@ -69,7 +69,7 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
     args.add(new AbstractArgumentExpression(expr.getRight()));
 
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
-    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), args, expr);
+    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getResolvedBinOp()), args, expr);
   }
 
   @Override

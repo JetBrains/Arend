@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.module.NameModuleID;
+import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -25,9 +27,8 @@ public class InferenceTest {
         "  | f => {?})";
     Concrete.ClassDefinition classDefinition = parseClass("test", text);
     resolveNamesClass(classDefinition, 0);
-    RootModule.ROOT.addAbstractDefinition(classDefinition);
     ListErrorReporter errorReporter = new ListErrorReporter();
-    TypecheckingOrdering.typecheck(new ResolvedName(RootModule.ROOT, classDefinition.getName()), errorReporter);
+    TypecheckingOrdering.typecheck(classDefinition, errorReporter);
 
     assertEquals(errorReporter.getErrorList().toString(), 2, errorReporter.getErrorList().size());
     for (GeneralError error : errorReporter.getErrorList()) {

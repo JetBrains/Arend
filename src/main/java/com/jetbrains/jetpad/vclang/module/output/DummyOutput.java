@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
-import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 
 import java.io.IOException;
 
@@ -26,17 +26,12 @@ public class DummyOutput implements Output {
   }
 
   @Override
-  public boolean isContainer() {
-    return false;
-  }
-
-  @Override
   public void readStubs() throws IOException {
 
   }
 
   @Override
-  public ModuleLoadingResult read() throws IOException {
+  public ModuleLoader.Result read() throws IOException {
     return null;
   }
 

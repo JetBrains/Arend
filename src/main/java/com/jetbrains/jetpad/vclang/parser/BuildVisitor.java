@@ -1,10 +1,12 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,6 +84,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   public Concrete.Expression visitExpr(AtomContext expr) {
     return (Concrete.Expression) visit(expr);
+  }
+
+  public Concrete.ModuleCallExpression visitModuleCall(ModuleCallContext ctx) {
+    List<String> path = new ArrayList<>(ctx.ID().size());
+    for (TerminalNode id : ctx.ID()) {
+      path.add(id.getText());
+    }
+    return new Concrete.ModuleCallExpression(tokenPosition(ctx.getStart()), path);
   }
 
   public Concrete.Expression visitExpr(LiteralContext expr) {

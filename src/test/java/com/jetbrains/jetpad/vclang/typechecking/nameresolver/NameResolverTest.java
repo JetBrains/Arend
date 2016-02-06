@@ -1,13 +1,14 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.NameModuleID;
+import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import org.junit.Test;
 
@@ -23,9 +24,10 @@ public class NameResolverTest {
   @Test
   public void parserInfix() {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
-    Namespace namespace = new Namespace("test");
-    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    ModuleID moduleID = new NameModuleID("test");
+    Namespace namespace = new Namespace(moduleID);
+    Definition plus = new FunctionDefinition(namespace.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(namespace.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), parameters, Nat(), EmptyElimTreeNode.getInstance());
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
@@ -37,9 +39,10 @@ public class NameResolverTest {
   @Test
   public void parserInfixError() {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
-    Namespace namespace = new Namespace("test");
-    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.RIGHT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    ModuleID moduleID = new NameModuleID("test");
+    Namespace namespace = new Namespace(moduleID);
+    Definition plus = new FunctionDefinition(namespace.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(namespace.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.RIGHT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
@@ -128,10 +131,10 @@ public class NameResolverTest {
   @Test
   public void numberOfFieldsTest() {
     resolveNamesClass("test", "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat } \\static \\function C => Point { x => 0 }");
-    assertNotNull(RootModule.ROOT.getMember("test"));
-    Namespace namespace = RootModule.ROOT.getMember("test").namespace;
+    assertNotNull(Root.getModule(new NameModuleID("test")));
+    Namespace namespace = Root.getModule(new NameModuleID("test")).namespace;
 
-    assertEquals(2, RootModule.ROOT.getMember("test").namespace.getMembers().size());
+    assertEquals(2, namespace.getMembers().size());
     assertEquals(2, namespace.getChild("Point").getMembers().size());
     assertEquals(2, ((Abstract.ClassDefinition) namespace.getMember("Point").abstractDefinition).getStatements().size());
   }
@@ -143,8 +146,8 @@ public class NameResolverTest {
         "\\static \\function g => 0\n" +
         "\\class B { \\function h => 0 \\static \\function k => 0 }\n" +
         "\\static \\class C { \\function h => 0 \\static \\function k => 0 }");
-    assertNotNull(RootModule.ROOT.getMember("test"));
-    Namespace namespace = RootModule.ROOT.getMember("test").namespace;
+    assertNotNull(Root.getModule(new NameModuleID("test")));
+    Namespace namespace = Root.getModule(new NameModuleID("test")).namespace;
 
     assertEquals(4, namespace.getMembers().size());
     assertNotNull(namespace.getMember("f"));
@@ -175,8 +178,8 @@ public class NameResolverTest {
   @Test
   public void exportPublicFieldsTest() {
     resolveNamesClass("test", "\\static \\class A { \\static \\function x => 0 \\static \\class B { \\static \\function y => x } \\export B } \\static \\function f => A.y");
-    assertNotNull(RootModule.ROOT.getMember("test"));
-    Namespace staticNamespace = RootModule.ROOT.getMember("test").namespace;
+    assertNotNull(Root.getModule(new NameModuleID("test")));
+    Namespace staticNamespace = Root.getModule(new NameModuleID("test")).namespace;
 
     assertEquals(2, staticNamespace.getMembers().size());
     assertNotNull(staticNamespace.getMember("A"));
@@ -201,8 +204,8 @@ public class NameResolverTest {
         "  \\class D { \\export B }\n" +
         "  \\function f (b : B) : b.C.z = b.z => path (\\lam _ => b.w + b.y)\n" +
         "}");
-    assertNotNull(RootModule.ROOT.getMember("test"));
-    Namespace namespace = RootModule.ROOT.getMember("test").namespace;
+    assertNotNull(Root.getModule(new NameModuleID("test")));
+    Namespace namespace = Root.getModule(new NameModuleID("test")).namespace;
 
     assertEquals(namespace.getMembers().toString(), 2, namespace.getMembers().size());
     assertNotNull(namespace.getMember("A"));

@@ -1,22 +1,23 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 
-public abstract class Definition extends NamedBinding {
+public abstract class Definition extends NamedBinding implements BaseDefinition {
   private final Abstract.Definition.Fixity myFixity;
   private Abstract.Definition.Precedence myPrecedence;
   private Universe myUniverse;
   private boolean myHasErrors;
-  private final Namespace myParentNamespace;
+  private final ResolvedName myResolvedName;
   private ClassDefinition myThisClass;
 
-  public Definition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence) {
-    super(name.name);
-    myFixity = name.fixity;
-    myParentNamespace = parentNamespace;
+  public Definition(ResolvedName resolvedName, Abstract.Definition.Precedence precedence) {
+    super(resolvedName.getName());
+    myResolvedName = resolvedName;
+    myFixity = new Name(resolvedName.getName()).fixity;
     myPrecedence = precedence;
     myUniverse = new Universe.Type(0, Universe.Type.PROP);
     myHasErrors = true;
@@ -31,7 +32,7 @@ public abstract class Definition extends NamedBinding {
   }
 
   public Namespace getParentNamespace() {
-    return myParentNamespace;
+    return myResolvedName.getParent() == null ? null : myResolvedName.getParent().toNamespace();
   }
 
   public abstract DefCallExpression getDefCall();
@@ -45,7 +46,7 @@ public abstract class Definition extends NamedBinding {
   }
 
   public ResolvedName getResolvedName() {
-    return new ResolvedName(myParentNamespace, getName());
+    return myResolvedName;
   }
 
   public Universe getUniverse() {

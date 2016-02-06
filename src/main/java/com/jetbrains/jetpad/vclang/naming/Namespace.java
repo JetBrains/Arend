@@ -1,45 +1,35 @@
-package com.jetbrains.jetpad.vclang.module;
+package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.util.*;
 
 public class Namespace {
-  final private String myName;
-  private Namespace myParent;
+  final private ResolvedName myResolvedName;
   private Map<String, NamespaceMember> myMembers;
 
   private Namespace(String name, Namespace parent) {
-    myName = name;
-    myParent = parent;
+    myResolvedName = new DefinitionResolvedName(parent, name);
   }
 
-  public Namespace(String name) {
-    myName = name;
-    myParent = null;
+  public Namespace(ModuleID moduleID) {
+    myResolvedName = new ModuleResolvedName(moduleID);
   }
 
   public ResolvedName getResolvedName() {
-    return new ResolvedName(myParent, myName);
+    return myResolvedName;
   }
 
   public String getName() {
-    return myName;
-  }
-
-  public String getFullName() {
-    return myParent == null || myParent == RootModule.ROOT ? myName : myParent.getFullName() + "." + myName;
+    return myResolvedName.getName();
   }
 
   public Namespace getParent() {
-    return myParent;
-  }
-
-  public void setParent(Namespace parent) {
-    myParent = parent;
+    ResolvedName parentName = myResolvedName.getParent();
+    if (parentName == null) return null;
+    return parentName.toNamespace();
   }
 
   public Collection<NamespaceMember> getMembers() {
@@ -64,15 +54,15 @@ public class Namespace {
     if (myMembers == null) {
       myMembers = new HashMap<>();
       NamespaceMember result = new NamespaceMember(child, null, null);
-      myMembers.put(child.myName, result);
+      myMembers.put(child.getName(), result);
       return result;
     } else {
-      NamespaceMember oldMember = myMembers.get(child.myName);
+      NamespaceMember oldMember = myMembers.get(child.getName());
       if (oldMember != null) {
         return null;
       } else {
         NamespaceMember result = new NamespaceMember(child, null, null);
-        myMembers.put(child.myName, result);
+        myMembers.put(child.getName(), result);
         return result;
       }
     }
@@ -187,20 +177,16 @@ public class Namespace {
 
   @Override
   public String toString() {
-    return getFullName();
+    return myResolvedName.getFullName();
   }
 
   @Override
   public boolean equals(Object other) {
-    if (this == other) return true;
-    if (!(other instanceof Namespace)) return false;
-    if (myParent != ((Namespace) other).myParent) return false;
-    if (myName == null) return ((Namespace) other).myName == null;
-    return myName.equals(((Namespace) other).myName);
+    return this == other || other instanceof NamespaceMember && ((NamespaceMember) other).getResolvedName().equals(myResolvedName);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(new Object[]{ myParent, myName });
+    return myResolvedName.hashCode();
   }
 }

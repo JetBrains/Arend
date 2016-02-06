@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -17,8 +17,8 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.param;
 public class ClassDefinition extends Definition {
   private Map<String, ClassField> myFields = null;
 
-  public ClassDefinition(Namespace parentNamespace, Name name) {
-    super(parentNamespace, name, Abstract.Definition.DEFAULT_PRECEDENCE);
+  public ClassDefinition(ResolvedName rn) {
+    super(rn, Abstract.Definition.DEFAULT_PRECEDENCE);
     super.hasErrors(false);
   }
 
@@ -75,6 +75,8 @@ public class ClassDefinition extends Definition {
 
   public void addParentField(ClassDefinition parentClass) {
     setThisClass(parentClass);
-    addField(new ClassField(getParentNamespace().getChild(getName()), new Name("\\parent", Abstract.Definition.Fixity.PREFIX), Abstract.Definition.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this))));
+    ClassField field = new ClassField(getResolvedName().toNamespace().getChild("\\parent").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this)));
+    addField(field);
+    getResolvedName().toNamespace().addDefinition(field);
   }
 }

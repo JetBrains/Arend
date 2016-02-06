@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -19,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
+import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
@@ -42,7 +45,7 @@ public class TypeCheckingDefCall {
       return null;
     }
     if (result.baseResult == null) {
-      TypeCheckingError error = new TypeCheckingError("'" + result.member.namespace.getFullName() + "' is not available here or not a definition", expr);
+      TypeCheckingError error = new TypeCheckingError("'" + result.member.getResolvedName().getFullName() + "' is not available here or not a definition", expr);
       expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -134,13 +137,13 @@ public class TypeCheckingDefCall {
 
   private DefCallResult typeCheckName(Abstract.DefCallExpression expr, String next) {
     String name = expr.getName();
-    ResolvedName resolvedName = expr.getResolvedName();
-    if (resolvedName == null) {
+    BaseDefinition resolvedDefinition = expr.getResolvedDefinition();
+    if (resolvedDefinition == null) {
       CheckTypeVisitor.Result result = getLocalVar(name, expr);
       return result == null ? null : new DefCallResult(result, null, null);
     }
 
-    NamespaceMember member = resolvedName.toNamespaceMember();
+    NamespaceMember member = toNamespaceMember(resolvedDefinition);
     if (member == null) {
       assert false;
       TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + name + "' is not available yet", expr);
@@ -183,11 +186,12 @@ public class TypeCheckingDefCall {
 
   private DefCallResult nextResult(DefCallResult result, Abstract.DefCallExpression expr, String next) {
     NamespaceMember member;
-    ResolvedName resolvedName = expr.getResolvedName();
-    if (resolvedName != null) {
-      member = result.member.namespace.getMember(resolvedName.name.name);
-      if (member == null || resolvedName.parent != member.namespace.getParent()) {
-        TypeCheckingError error = new NameDefinedError(false, expr, resolvedName.name, resolvedName.parent.getResolvedName());
+    BaseDefinition resolvedDefinition = expr.getResolvedDefinition();
+    if (resolvedDefinition != null) {
+      NamespaceMember actualMember = toNamespaceMember(resolvedDefinition);
+      member = result.member.namespace.getMember(resolvedDefinition.getName());
+      if (member == null || actualMember.namespace.getParent() != member.namespace.getParent()) {
+        TypeCheckingError error = new NameDefinedError(false, expr, resolvedDefinition.getName(), actualMember.namespace.getParent().getResolvedName());
         expr.setWellTyped(myVisitor.getContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -196,7 +200,7 @@ public class TypeCheckingDefCall {
       String name = expr.getName();
       member = result.member.namespace.getMember(name);
       if (member == null) {
-        TypeCheckingError error = new NameDefinedError(false, expr, name, new ResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
+        TypeCheckingError error = new NameDefinedError(false, expr, name, new DefinitionResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
         expr.setWellTyped(myVisitor.getContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;

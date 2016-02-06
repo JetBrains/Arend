@@ -1,24 +1,23 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
-import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
+import com.jetbrains.jetpad.vclang.module.*;
+import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.DeepNamespaceNameResolver;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.LoadingNameResolver;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteResolveListener;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.LoadingModuleResolver;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.ModuleResolver;
 import org.antlr.v4.runtime.*;
 
 import java.io.IOException;
@@ -28,16 +27,16 @@ import java.util.List;
 public abstract class ParseSource implements Source {
   private final ModuleLoader myModuleLoader;
   private final ErrorReporter myErrorReporter;
-  private final ResolvedName myModule;
+  private final ModuleID myModule;
   private InputStream myStream;
 
-  public ParseSource(ModuleLoader moduleLoader, ErrorReporter errorReporter, ResolvedName module) {
+  public ParseSource(ModuleLoader moduleLoader, ErrorReporter errorReporter, ModuleID module) {
     myModuleLoader = moduleLoader;
     myErrorReporter = errorReporter;
     myModule = module;
   }
 
-  protected ResolvedName getModule() {
+  protected ModuleID getModule() {
     return myModule;
   }
 
@@ -49,10 +48,10 @@ public abstract class ParseSource implements Source {
     myStream = stream;
   }
 
-  public ModuleLoadingResult load(boolean childrenOnly) throws IOException {
+  public ModuleLoader.Result load() throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     final CompositeErrorReporter errorReporter = new CompositeErrorReporter();
-    errorReporter.addErrorReporter(new LocalErrorReporter(myModule, myErrorReporter));
+    errorReporter.addErrorReporter(new LocalErrorReporter(new ModuleResolvedName(myModule), myErrorReporter));
     errorReporter.addErrorReporter(countingErrorReporter);
 
     VcgrammarLexer lexer = new VcgrammarLexer(new ANTLRInputStream(myStream));
@@ -60,7 +59,7 @@ public abstract class ParseSource implements Source {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(myModule, new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(new ModuleResolvedName(myModule), new Concrete.Position(line, pos), msg));
       }
     });
 
@@ -69,30 +68,27 @@ public abstract class ParseSource implements Source {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(myModule, new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(new ModuleResolvedName(myModule), new Concrete.Position(line, pos), msg));
       }
     });
 
     VcgrammarParser.StatementsContext tree = parser.statements();
     if (tree == null || countingErrorReporter.getErrorsNumber() != 0) {
-      return new ModuleLoadingResult(null, true, countingErrorReporter.getErrorsNumber());
+      return new ModuleLoader.Result(null, true, countingErrorReporter.getErrorsNumber());
     }
 
-    if (childrenOnly) {
-      return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name.name), null, null), false, 0);
-    }
-
-    NameResolver nameResolver = new LoadingNameResolver(myModuleLoader, new DeepNamespaceNameResolver(myModule.parent));
+    ModuleResolver moduleResolver = new LoadingModuleResolver(myModuleLoader);
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.name.name, statements);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.getModulePath().getName(), statements);
+    classDefinition.setModuleID(myModule);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
       }
     }
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, myModule.parent, nameResolver);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, null, null, moduleResolver);
     visitor.setResolveListener(new ConcreteResolveListener());
-    visitor.visitClass(classDefinition, null);
-    return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
+    visitor.visitModule(classDefinition, myModule);
+    return new ModuleLoader.Result(Root.getModule(myModule), true, countingErrorReporter.getErrorsNumber());
   }
 }

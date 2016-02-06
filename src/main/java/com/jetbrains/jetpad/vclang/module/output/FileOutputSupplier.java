@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
-import com.jetbrains.jetpad.vclang.module.FileOperations;
+import com.jetbrains.jetpad.vclang.module.FileModuleID;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class FileOutputSupplier implements OutputSupplier {
   private final File myDirectory;
@@ -21,37 +21,56 @@ public class FileOutputSupplier implements OutputSupplier {
   }
 
   @Override
-  public FileOutput getOutput(ResolvedName module) {
-    File file = myDirectory == null ? null : FileOperations.getFile(myDirectory, module, FileOperations.SERIALIZED_EXTENSION);
-    File directory = myDirectory == null ? null : FileOperations.getFile(myDirectory, module, "");
-    List<String> children = directory != null && directory.exists() ?
-        FileOperations.getChildren(directory, FileOperations.SERIALIZED_EXTENSION) :
-        file != null && file.exists() ? Collections.<String>emptyList() : null;
-
-    return new FileOutput(myModuleDeserialization, module, file, children);
+  public Output getOutput(ModuleID module) {
+    if (!(module instanceof FileModuleID)) {
+      return null;
+    }
+    String fileName = FileOperations.sha256ToStr(((FileModuleID) module).getSha256()) + FileOperations.SERIALIZED_EXTENSION;
+    for (File dir : myLibDirs) {
+      File file = new File(FileOperations.getFile(dir, module.getModulePath(), ""), fileName);
+      if (file.exists()) {
+        return new FileOutput(myModuleDeserialization, (FileModuleID) module, file, true);
+      }
+    }
+    File file = new File(FileOperations.getFile(myDirectory, module.getModulePath(), ""), fileName);
+    return new FileOutput(myModuleDeserialization, (FileModuleID) module, file, false);
   }
 
-  @Override
-  public FileOutput locateOutput(ResolvedName resolvedName) {
-    List<String> children = null;
-    File file = null;
-    for (File dir : myLibDirs) {
-      File maybeFile = FileOperations.getFile(dir, resolvedName, FileOperations.SERIALIZED_EXTENSION);
-      if (maybeFile.exists()) {
-        if (file != null) {
-          // TODO: ambigous module
-          return new FileOutput(myModuleDeserialization, resolvedName, null, null);
+  private static byte[] getValidOutputHash(File dir) {
+    File[] children = dir.listFiles();
+    if (children == null || children.length == 0) {
+      return null;
+    }
+    for (File file : children) {
+      String fileName = FileOperations.getExtFileName(file, FileOperations.SERIALIZED_EXTENSION);
+      if (fileName != null) {
+        byte[] hash = FileOperations.strToSha256(fileName);
+        if (hash != null) {
+          return hash;
         }
-        file = maybeFile;
-      }
-      File maybeDir = FileOperations.getFile(dir, resolvedName, "");
-      if (maybeDir.exists() && maybeDir.isDirectory()) {
-        if (children == null)
-          children = new ArrayList<>();
-        children.addAll(FileOperations.getChildren(maybeDir, FileOperations.SERIALIZED_EXTENSION));
       }
     }
 
-    return new FileOutput(myModuleDeserialization, resolvedName, file, children != null ? children : file != null ? Collections.<String>emptyList() : null);
+    return null;
+  }
+
+  private byte[] getValidOutputHash(ModulePath modulePath) {
+    byte[] resultHash = getValidOutputHash(FileOperations.getFile(myDirectory, modulePath, ""));
+    if (resultHash != null)
+      return resultHash;
+    for (File dir : myLibDirs) {
+      resultHash= getValidOutputHash(FileOperations.getFile(dir, modulePath, ""));
+      if (resultHash != null) {
+        return resultHash;
+      }
+    }
+    return null;
+  }
+
+
+  @Override
+  public FileModuleID locateModule(ModulePath modulePath) {
+    byte[] resultHash = getValidOutputHash(modulePath);
+    return resultHash == null ? null : new FileModuleID(resultHash, modulePath);
   }
 }

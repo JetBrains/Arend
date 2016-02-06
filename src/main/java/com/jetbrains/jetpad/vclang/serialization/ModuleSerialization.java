@@ -1,7 +1,10 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.*;
@@ -18,15 +21,15 @@ public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
   public static final int VERSION = 1;
 
-  public static void writeFile(ResolvedName resolvedName, File outputFile) throws IOException {
+  public static void writeFile(ModuleID moduleID, File outputFile) throws IOException {
     Files.createDirectories(outputFile.getParentFile().toPath());
-    writeStream(resolvedName, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
+    writeStream(moduleID, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
   }
 
-  public static void serializeRelativeResolvedName(DataOutputStream stream, ResolvedName rn, ResolvedName module) throws IOException {
+  public static void serializeResolvedName(DataOutputStream stream, ResolvedName rn) throws IOException {
    List<String> fPath = new ArrayList<>();
-    for (; !rn.equals(module); rn = rn.parent.getResolvedName()) {
-      fPath.add(rn.name.name);
+    for (; rn.getParent() != null; rn = rn.getParent()) {
+      fPath.add(rn.getName());
     }
     Collections.reverse(fPath);
     stream.writeInt(fPath.size());
@@ -35,26 +38,19 @@ public class ModuleSerialization {
     }
   }
 
-  public static void serializeResolvedName(DataOutputStream stream, ResolvedName rn) throws IOException {
-    serializeRelativeResolvedName(stream, rn, RootModule.ROOT.getResolvedName());
-  }
-
-  public static void writeStream(ResolvedName module, DataOutputStream stream) throws IOException {
-    assert module.toAbstractDefinition() != null && module.toDefinition() != null;
-    assert module.toAbstractDefinition().getParentStatement() == null;
-
+  public static void writeStream(ModuleID curModuleID, DataOutputStream stream) throws IOException {
     DefNamesIndices defNamesIndices = new DefNamesIndices();
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);
     SerializeVisitor visitor = new SerializeVisitor(defNamesIndices, byteArrayStream, dataStream);
 
-    int errors = serializeDefinition(visitor, module.toDefinition());
+    int errors = serializeDefinition(visitor, Root.getModule(curModuleID).definition);
 
     stream.write(SIGNATURE);
     stream.writeInt(VERSION);
-    defNamesIndices.serializeHeader(stream, module);
+    defNamesIndices.serializeHeader(stream, curModuleID);
     stream.writeInt(errors + visitor.getErrors());
-    defNamesIndices.serialize(stream, module);
+    defNamesIndices.serialize(stream, curModuleID);
     byteArrayStream.writeTo(stream);
     stream.close();
   }
@@ -63,30 +59,29 @@ public class ModuleSerialization {
     int errors = 0;
     int size = 0;
     for (NamespaceMember member : namespace.getMembers()) {
-      if (member.definition != null && (member.getResolvedName().parent != namespace || member.abstractDefinition.getParentStatement() != null && !(member.definition instanceof Constructor) && !(member.definition instanceof ClassField)) ) {
+      if (member.getResolvedName().getParent() != namespace.getResolvedName() || !(member.definition instanceof Constructor) && !(member.definition instanceof ClassField) ) {
         ++size;
       }
     }
+
     visitor.getDataStream().writeInt(size);
     for (NamespaceMember member : namespace.getMembers()) {
-      if (member.definition != null) {
-        if (member.getResolvedName().parent != namespace) {
-          visitor.getDataStream().writeBoolean(false);
-          visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(member.definition.getResolvedName(), false));
-        } else if (member.abstractDefinition.getParentStatement() != null && !(member.definition instanceof ClassField) && !(member.definition instanceof Constructor)) {
-          visitor.getDataStream().writeBoolean(true);
-          errors += serializeDefinition(visitor, member.definition);
-        }
+      if (member.getResolvedName().getParent() != namespace.getResolvedName()) {
+        visitor.getDataStream().writeBoolean(false);
+        visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(member.definition.getResolvedName()));
+      } else if (!(member.definition instanceof ClassField) && !(member.definition instanceof Constructor)) {
+        visitor.getDataStream().writeBoolean(true);
+        errors += serializeDefinition(visitor, member.definition);
       }
     }
     return errors;
   }
 
   public static int serializeDefinition(SerializeVisitor visitor, Definition definition) throws IOException {
-    visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(definition.getResolvedName(), true));
+    visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(definition.getResolvedName()));
     visitor.getDataStream().writeBoolean(definition.getThisClass() != null);
     if (definition.getThisClass() != null)
-      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(definition.getThisClass().getResolvedName(), false));
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(definition.getThisClass().getResolvedName()));
     visitor.getDataStream().writeBoolean(definition.hasErrors());
 
     if (definition instanceof FunctionDefinition) {
@@ -110,7 +105,7 @@ public class ModuleSerialization {
     }
     visitor.getDataStream().writeInt(definition.getConstructors().size());
     for (Constructor constructor : definition.getConstructors()) {
-      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(constructor.getResolvedName(), true));
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(constructor.getResolvedName()));
       visitor.getDataStream().writeBoolean(constructor.hasErrors());
       if (!constructor.hasErrors()) {
         // TODO: serialization test for patterns
@@ -134,36 +129,36 @@ public class ModuleSerialization {
   public enum DefinitionCodes {
     FUNCTION_CODE {
       @Override
-      FunctionDefinition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
-        return new FunctionDefinition(parent, name, precedence);
+      FunctionDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
+        return new FunctionDefinition(rn, precedence);
       }
     },
     DATA_CODE {
       @Override
-      DataDefinition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
-        return new DataDefinition(parent, name, precedence);
+      DataDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
+        return new DataDefinition(rn, precedence);
       }
     },
     CLASS_CODE {
       @Override
-      ClassDefinition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
-        return new ClassDefinition(parent, name);
+      ClassDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
+        return new ClassDefinition(rn);
       }
     },
     CONSTRUCTOR_CODE {
       @Override
-      Constructor toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
-        return new Constructor(parent, name, precedence, null);
+      Constructor toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
+        return new Constructor(rn, precedence, null);
       }
     },
     CLASS_FIELD_CODE {
       @Override
-      ClassField toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence) {
-        return new ClassField(parent, name, precedence, null, null, null);
+      ClassField toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
+        return new ClassField(rn, precedence, null, null, null);
       }
     };
 
-    abstract Definition toDefinition(Name name, Namespace parent, Abstract.Definition.Precedence precedence);
+    abstract Definition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence);
 
     public static DefinitionCodes getDefinitionCode(Definition definition) {
       if (definition instanceof FunctionDefinition) return FUNCTION_CODE;
@@ -176,13 +171,13 @@ public class ModuleSerialization {
   }
 
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
-    int errors = serializeNamespace(visitor, definition.getParentNamespace().getChild(definition.getName()));
+    int errors = serializeNamespace(visitor, definition.getResolvedName().toNamespace());
 
     writeUniverse(visitor.getDataStream(), definition.getUniverse());
 
     visitor.getDataStream().writeInt(definition.getFields().size());
     for (ClassField field : definition.getFields()) {
-      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(field.getResolvedName(), true));
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(field.getResolvedName()));
       writeParameters(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());
       if (!field.hasErrors()) {
@@ -218,8 +213,6 @@ public class ModuleSerialization {
       stream.write(definition.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 1 : 2);
       stream.writeByte(definition.getPrecedence().priority);
     }
-    stream.writeUTF(definition.getName());
-    stream.write(definition.getFixity() == Abstract.Definition.Fixity.PREFIX ? 1 : 0);
   }
 
   public static void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {

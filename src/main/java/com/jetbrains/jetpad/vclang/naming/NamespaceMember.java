@@ -1,7 +1,8 @@
-package com.jetbrains.jetpad.vclang.term.definition;
+package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 public class NamespaceMember {
   public Namespace namespace;
@@ -14,15 +15,15 @@ public class NamespaceMember {
     this.definition = definition;
   }
 
-  public Abstract.Definition.Precedence getPrecedence() {
-    return definition != null ? definition.getPrecedence() : abstractDefinition != null ? abstractDefinition.getPrecedence() : null;
+  public ResolvedName getResolvedName() {
+    return namespace.getResolvedName();
   }
 
-  public ResolvedName getResolvedName() {
-    return new ResolvedName(namespace.getParent(), namespace.getName());
+  public BaseDefinition getResolvedDefinition() {
+    return definition == null ? abstractDefinition : definition;
   }
 
   public boolean isTypeChecked() {
-    return abstractDefinition == null || definition != null;
+    return definition != null;
   }
 }

@@ -1,10 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-
-import java.util.List;
 
 public class TypeMismatchError extends TypeCheckingError {
   private final Object myExpected;

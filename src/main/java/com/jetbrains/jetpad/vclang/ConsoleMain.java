@@ -3,9 +3,10 @@ package com.jetbrains.jetpad.vclang;
 import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
+import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
@@ -17,7 +18,11 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 
 public class ConsoleMain {
   public static void main(String[] args) {
@@ -66,8 +71,9 @@ public class ConsoleMain {
       libDirs.add(new File(workingPath, "lib"));
     }
 
-    RootModule.initialize();
-    final List<ResolvedName> loadedModules = new ArrayList<>();
+    Root.initialize();
+    final List<ModuleID> loadedModules = new ArrayList<>();
+    final List<Abstract.Definition> loadedModuleRoots = new ArrayList<>();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
       @Override
       public void savingError(GeneralError error) {
@@ -80,12 +86,13 @@ public class ConsoleMain {
       }
 
       @Override
-      public void loadingSucceeded(ResolvedName resolvedName, NamespaceMember definition, boolean compiled) {
-        loadedModules.add(resolvedName);
+      public void loadingSucceeded(ModuleID module, NamespaceMember nsMember, boolean compiled) {
+        loadedModules.add(module);
+        loadedModuleRoots.add(nsMember.abstractDefinition);
         if (compiled) {
-          System.out.println("[Resolved] " + resolvedName);
+          System.out.println("[Resolved] " + module.getModulePath());
         } else {
-          System.out.println("[Loaded] " + resolvedName);
+          System.out.println("[Loaded] " + module.getModulePath());
         }
       }
     };
@@ -122,29 +129,37 @@ public class ConsoleMain {
       }
     }
 
-    TypecheckingOrdering.typecheck(loadedModules, errorReporter, new TypecheckedReporter() {
+    final Set<ModuleID> failedModules = new HashSet<>();
+
+    TypecheckingOrdering.typecheck(loadedModuleRoots, errorReporter, new TypecheckedReporter() {
       @Override
-      public void typecheckingSucceeded(ResolvedName definitionName) {
-        System.out.println("[OK] " + definitionName);
+      public void typecheckingSucceeded(Abstract.Definition definition) {
       }
 
       @Override
-      public void typecheckingFailed(ResolvedName definitionName) {
-        System.out.println("[FAILED] " + definitionName);
+      public void typecheckingFailed(Abstract.Definition definition) {
+        failedModules.add(toNamespaceMember(definition).getResolvedName().getModuleID());
       }
     });
+
+    for (ModuleID moduleID : failedModules) {
+      if (failedModules.contains(moduleID)) {
+        System.out.println("[FAILED] " + moduleID.getModulePath());
+      } else {
+        System.out.println("[OK] " + moduleID.getModulePath());
+      }
+    }
 
     for (GeneralError error : errorReporter.getErrorList()) {
       System.err.println(error);
     }
 
-   for (ResolvedName rn : loadedModules) {
-      if (rn.toDefinition() != null && rn.toAbstractDefinition() != null)
-        moduleLoader.save(rn);
+    for (ModuleID moduleID : loadedModules) {
+      moduleLoader.save(moduleID);
     }
   }
 
-  static private List<String> getModule(Path file) {
+  static private ModulePath getModule(Path file) {
     int nameCount = file.getNameCount();
     if (nameCount < 1) return null;
     List<String> names = new ArrayList<>(nameCount);
@@ -161,25 +176,22 @@ public class ConsoleMain {
       }
       names.add(name);
     }
-    return names;
+    return new ModulePath(names);
   }
 
   static private void processFile(ModuleLoader moduleLoader, ListErrorReporter errorReporter, Path fileName, File sourceDir) {
     Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName;
-    List<String> moduleNames = getModule(relativePath);
-    if (moduleNames == null) {
+    ModulePath modulePath = getModule(relativePath);
+    if (modulePath == null) {
       System.err.println(fileName + ": incorrect file name");
       return;
     }
 
-    ResolvedName name = RootModule.ROOT.getResolvedName();
-    for (String moduleName : moduleNames) {
-      name = new ResolvedName(name.toNamespace(), moduleName);
-      moduleLoader.load(name, false);
-      if (name.toNamespaceMember() == null) {
-        break;
-      }
+    ModuleID moduleID = moduleLoader.locateModule(modulePath);
+    if (moduleID == null) {
+      throw new IllegalStateException();
     }
+    moduleLoader.load(moduleID);
 
     for (GeneralError error : errorReporter.getErrorList()) {
       System.err.println(error);

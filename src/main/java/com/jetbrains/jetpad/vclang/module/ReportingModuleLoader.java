@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
@@ -28,7 +27,7 @@ public class ReportingModuleLoader extends BaseModuleLoader {
   }
 
   @Override
-  public void loadingSucceeded(ResolvedName resolvedName, NamespaceMember namespaceMember, boolean compiled) {
+  public void loadingSucceeded(ModuleID module, NamespaceMember definition, boolean compiled) {
 
   }
 }

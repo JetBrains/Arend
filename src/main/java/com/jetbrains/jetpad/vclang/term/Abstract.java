@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -58,11 +59,17 @@ public final class Abstract {
     return expr;
   }
 
+  public interface ModuleCallExpression extends Expression {
+    byte PREC = 12;
+    List<String> getPath();
+    BaseDefinition getModule();
+  }
+
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
     String getName();
     Expression getExpression();
-    ResolvedName getResolvedName();
+    BaseDefinition getResolvedDefinition();
   }
 
   public interface ClassExtExpression extends Expression {
@@ -114,7 +121,7 @@ public final class Abstract {
   }
 
   public interface BinOpExpression extends Expression {
-    ResolvedName getResolvedBinOpName();
+    BaseDefinition getResolvedBinOp();
     Expression getLeft();
     Expression getRight();
   }
@@ -196,7 +203,7 @@ public final class Abstract {
     Definition getDefinition();
   }
 
-  public interface Definition extends Binding {
+  public interface Definition extends BaseDefinition, SourceNode {
     enum Arrow { LEFT, RIGHT }
     enum Fixity { PREFIX, INFIX }
     enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
@@ -231,7 +238,6 @@ public final class Abstract {
     Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
 
     DefineStatement getParentStatement();
-    Precedence getPrecedence();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
@@ -263,6 +269,7 @@ public final class Abstract {
 
   public interface ClassDefinition extends Definition {
     Collection<? extends Statement> getStatements();
+    ModuleID getModuleID();
   }
 
   public interface PatternArgument extends SourceNode {
@@ -304,8 +311,8 @@ public final class Abstract {
     Kind getKind();
     List<String> getPath();
 
-    void setResolvedPath(ResolvedName path);
-    ResolvedName getResolvedPath();
+    void setResolvedPath(BaseDefinition path);
+    BaseDefinition getResolvedPath();
 
     List<String> getNames();
   }

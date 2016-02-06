@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 public class DummySourceSupplier implements SourceSupplier {
   private final DummySource mySource = new DummySource();
@@ -9,12 +10,17 @@ public class DummySourceSupplier implements SourceSupplier {
 
   private static DummySourceSupplier INSTANCE = new DummySourceSupplier();
 
-  public static DummySourceSupplier getInstance() {
-    return INSTANCE;
+  public static SourceSupplier getInstance() {
+    return  INSTANCE;
   }
 
   @Override
-  public DummySource getSource(ResolvedName module) {
+  public Source getSource(ModuleID module) {
     return mySource;
+  }
+
+  @Override
+  public ModuleID locateModule(ModulePath modulePath) {
+    return null;
   }
 }
