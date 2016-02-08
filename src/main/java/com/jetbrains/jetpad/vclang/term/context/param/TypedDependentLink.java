@@ -64,7 +64,7 @@ public class TypedDependentLink implements DependentLink {
   @Override
   public TypedDependentLink subst(Substitution subst) {
     TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.subst(subst), EmptyDependentLink.getInstance());
-    subst.addMapping(this, new ReferenceExpression(result));
+    subst.add(this, new ReferenceExpression(result));
     result.myNext = myNext.subst(subst);
     return result;
   }

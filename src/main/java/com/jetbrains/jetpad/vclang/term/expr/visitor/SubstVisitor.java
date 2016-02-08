@@ -92,10 +92,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       ConstructorClause newClause = newNode.addClause(clause.getConstructor());
       for (DependentLink linkOld = clause.getParameters(), linkNew = newClause.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
-        mySubstitution.addMapping(linkOld, Reference(linkNew));
+        mySubstitution.add(linkOld, Reference(linkNew));
       }
       for (int i = 0; i < clause.getTailBindings().size(); i++) {
-        mySubstitution.addMapping(clause.getTailBindings().get(i), Reference(newClause.getTailBindings().get(i)));
+        mySubstitution.add(clause.getTailBindings().get(i), Reference(newClause.getTailBindings().get(i)));
       }
 
       newClause.setChild(clause.getChild().accept(this, null));
@@ -162,7 +162,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (LetClause clause : letExpression.getClauses()) {
       LetClause newClause = visitLetClause(clause);
       clauses.add(newClause);
-      mySubstitution.addMapping(clause, Reference(newClause));
+      mySubstitution.add(clause, Reference(newClause));
     }
     LetExpression result = Let(clauses, letExpression.getExpression().subst(mySubstitution));
     for (LetClause clause : letExpression.getClauses()) {

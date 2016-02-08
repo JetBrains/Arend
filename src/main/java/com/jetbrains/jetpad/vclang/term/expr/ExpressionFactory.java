@@ -254,7 +254,7 @@ public class ExpressionFactory {
         Substitution subst = clause.getSubst();
         for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
              linkFake.hasNext(); linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {
-          subst.addMapping(linkFake, Reference(linkTrue));
+          subst.add(linkFake, Reference(linkTrue));
         }
         clause.setChild(pair.child.subst(subst));
       } else {

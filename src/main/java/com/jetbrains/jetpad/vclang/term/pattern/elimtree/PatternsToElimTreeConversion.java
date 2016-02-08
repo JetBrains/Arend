@@ -58,7 +58,7 @@ public class PatternsToElimTreeConversion {
         Substitution curSubst = toSubstitution(curPatterns.get(i).getParameters(),
             ((Pattern.MatchOKResult)curPatterns.get(i).match(branch.expressions.get(i), false)).expressions);
         for (Binding binding : curSubst.getDomain()) {
-          subst.addMapping(binding, curSubst.get(binding));
+          subst.add(binding, curSubst.get(binding));
         }
       }
       branch.leaf.setExpression(expressions.get(branch.indices.get(0)).subst(subst));

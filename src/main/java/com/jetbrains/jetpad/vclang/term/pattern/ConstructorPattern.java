@@ -63,7 +63,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
         Collections.reverse(args);
         Substitution subSubst = getMatchedArguments(args);
         for (Binding binding : subSubst.getDomain()) {
-          subst.addMapping(binding, subSubst.get(binding));
+          subst.add(binding, subSubst.get(binding));
         }
       }
       Expression param = patternArgument.getPattern().toExpression(subst);
@@ -72,7 +72,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       }
 
       result = Apps(result, param);
-      subst.addMapping(link, param);
+      subst.add(link, param);
       link = link.getNext();
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);

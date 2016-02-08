@@ -151,7 +151,7 @@ public abstract class Expression implements PrettyPrintable {
     Expression cod = getPiParameters(params, true, false);
     assert expressions.size() <= params.size();
     for (int i = 0; i < expressions.size(); i++) {
-      subst.addMapping(params.get(i), expressions.get(i));
+      subst.add(params.get(i), expressions.get(i));
     }
     return cod.fromPiParameters(params.subList(expressions.size(), params.size())).subst(subst);
   }

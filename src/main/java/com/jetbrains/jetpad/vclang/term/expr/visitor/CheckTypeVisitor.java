@@ -18,7 +18,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInference;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdArgsInference;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.*;
@@ -102,7 +102,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
       visitor.myTypeCheckingElim = new TypeCheckingElim(visitor);
       if (myArgsInference == null) {
-        visitor.myArgsInference = new StdArgsInference(visitor);
+        visitor.myArgsInference = new StdImplicitArgsInference(visitor);
       }
       return visitor;
     }
@@ -173,10 +173,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result checkType(Abstract.Expression expr, Expression expectedType) {
     Result result = typeCheck(expr, expectedType);
     if (result == null) return null;
-
-    // TODO: check for unsolved equations.
-    // myErrorReporter.report(new InferenceError(expr, myContext, myContext.size() - size));
-
+    result.equations.reportErrors(myErrorReporter);
     return result;
   }
 
@@ -337,7 +334,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         for (int i = 0; i < sigmaParamsSize; i++) {
           Substitution substitution = new Substitution();
           for (int j = fields.size() - 1; j >= 0; --j) {
-            substitution.addMapping(sigmaParams, fields.get(j));
+            substitution.add(sigmaParams, fields.get(j));
           }
 
           Expression expType = sigmaParams.getType().subst(substitution);
@@ -538,7 +535,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Substitution substitution = new Substitution();
     for (int i = 0; sigmaParams != fieldLink; sigmaParams = sigmaParams.getNext(), i++) {
-      substitution.addMapping(sigmaParams, Proj(exprResult.expression, i));
+      substitution.add(sigmaParams, Proj(exprResult.expression, i));
     }
     return checkResult(expectedType, new Result(Proj(exprResult.expression, expr.getField()), fieldLink.getType().subst(substitution), exprResult.equations), expr);
   }

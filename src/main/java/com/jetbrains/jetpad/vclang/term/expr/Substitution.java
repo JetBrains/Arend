@@ -16,7 +16,7 @@ public class Substitution {
 
   public Substitution(Binding from, Expression to) {
     this();
-    addMapping(from, to);
+    add(from, to);
   }
 
   public Set<Binding> getDomain() {
@@ -27,8 +27,12 @@ public class Substitution {
     return mySubstExprs.get(binding);
   }
 
-  public void addMapping(Binding binding, Expression expression) {
+  public void add(Binding binding, Expression expression) {
     mySubstExprs.put(binding, expression);
+  }
+
+  public void add(Substitution substitution) {
+    mySubstExprs.putAll(substitution.mySubstExprs);
   }
 
   public List<Expression> substExprs(List<Expression> expressions) {
@@ -42,7 +46,7 @@ public class Substitution {
   public Substitution compose(Substitution subst) {
     Substitution result = new Substitution();
     for (Binding binding : subst.getDomain()) {
-      result.addMapping(binding, subst.get(binding).subst(this));
+      result.add(binding, subst.get(binding).subst(this));
     }
     return result;
   }
@@ -51,7 +55,7 @@ public class Substitution {
     List<Binding> result = new ArrayList<>();
     for (Binding binding : context) {
       result.add(new TypedBinding(binding.getName(), binding.getType().subst(this)));
-      addMapping(binding, Reference(result.get(result.size() - 1)));
+      add(binding, Reference(result.get(result.size() - 1)));
     }
     return result;
   }
@@ -59,7 +63,7 @@ public class Substitution {
   public static Substitution getIdentity(List<Binding> bindings) {
     Substitution result = new Substitution();
     for (Binding binding : bindings) {
-      result.addMapping(binding, new ReferenceExpression(binding));
+      result.add(binding, new ReferenceExpression(binding));
     }
     return result;
   }

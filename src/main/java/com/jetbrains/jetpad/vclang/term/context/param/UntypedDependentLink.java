@@ -88,7 +88,7 @@ public class UntypedDependentLink implements DependentLink {
   @Override
   public UntypedDependentLink subst(Substitution subst) {
     UntypedDependentLink result = new UntypedDependentLink(myName);
-    subst.addMapping(this, new ReferenceExpression(result));
+    subst.add(this, new ReferenceExpression(result));
     result.myNext = myNext.subst(subst);
     return result;
   }

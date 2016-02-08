@@ -36,7 +36,7 @@ public class SubstituteExpander {
   public static void substituteExpand(ElimTreeNode tree, final Substitution subst, List<Binding> context, SubstituteExpansionProcessor processor) {
     Substitution toCtx = new Substitution();
     for (Binding binding : context) {
-      toCtx.addMapping(binding, Reference(binding));
+      toCtx.add(binding, Reference(binding));
     }
     new SubstituteExpander(processor, context).substituteExpand(tree, subst, toCtx);
   }

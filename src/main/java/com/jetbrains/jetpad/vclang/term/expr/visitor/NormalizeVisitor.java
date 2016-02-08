@@ -26,7 +26,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       DependentLink link = ((LamExpression) expr).getParameters();
       Substitution subst = new Substitution();
       while (link.hasNext() && i < exprs.size()) {
-        subst.addMapping(link, exprs.get(i++).getExpression());
+        subst.add(link, exprs.get(i++).getExpression());
         link = link.getNext();
       }
       expr = ((LamExpression) expr).getBody();
@@ -197,7 +197,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     Substitution args2subst = completeArgs(args, conCallExpression.getDefinition().getParameters(), excessiveParams);
     DependentLink link = conCallExpression.getDefinition().getDataTypeParameters();
     for (Expression argument : conCallExpression.getDataTypeArguments()) {
-      args2subst.addMapping(link, argument);
+      args2subst.add(link, argument);
       link = link.getNext();
     }
 
@@ -283,11 +283,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       if (!params.hasNext()) {
         break;
       }
-      result.addMapping(params, arg.getExpression());
+      result.add(params, arg.getExpression());
       params = params.getNext();
     }
     for (; excessiveParams.hasNext(); excessiveParams = excessiveParams.getNext(), params = params.getNext()) {
-      result.addMapping(params, Reference(excessiveParams));
+      result.add(params, Reference(excessiveParams));
     }
     return result;
   }

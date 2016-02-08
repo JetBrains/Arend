@@ -148,7 +148,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
       Substitution substitution = new Substitution();
       for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
-        substitution.addMapping(entry.getKey(), Reference(entry.getValue()));
+        substitution.add(entry.getKey(), Reference(entry.getValue()));
       }
       myEquations.add(fun1.subst(substitution), expr2, cmp);
       return true;

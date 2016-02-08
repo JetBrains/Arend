@@ -111,11 +111,11 @@ public class BranchElimTreeNode extends ElimTreeNode {
     }
 
     for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
-      subst.addMapping(link, arguments.get(arguments.size() - 1));
+      subst.add(link, arguments.get(arguments.size() - 1));
       arguments.remove(arguments.size() - 1);
     }
     for (int i = 0; i < myContextTail.size(); i++) {
-      subst.addMapping(clause.getTailBindings().get(i), subst.get(myContextTail.get(i)));
+      subst.add(clause.getTailBindings().get(i), subst.get(myContextTail.get(i)));
     }
     subst.getDomain().remove(myReference);
     subst.getDomain().removeAll(myContextTail);
