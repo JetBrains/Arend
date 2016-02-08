@@ -97,6 +97,6 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     if (constructorArgs.size() != myArguments.getPatterns().size()) {
       throw new IllegalStateException();
     }
-    return myArguments.match(constructorArgs);
+    return myArguments.match(constructorArgs, normalize);
   }
 }

@@ -30,12 +30,16 @@ public class Patterns {
   }
 
   public Pattern.MatchResult match(List<Expression> exprs) {
+    return match(exprs, true);
+  }
+
+  public Pattern.MatchResult match(List<Expression> exprs, boolean normalize) {
     assert myPatterns.size() == exprs.size();
     List<Expression> result = new ArrayList<>();
 
     Pattern.MatchMaybeResult maybe = null;
     for (int i = 0; i < myPatterns.size(); i++) {
-      Pattern.MatchResult subMatch = myPatterns.get(i).getPattern().match(exprs.get(i));
+      Pattern.MatchResult subMatch = myPatterns.get(i).getPattern().match(exprs.get(i), normalize);
       if (subMatch instanceof Pattern.MatchFailedResult) {
         return subMatch;
       } else

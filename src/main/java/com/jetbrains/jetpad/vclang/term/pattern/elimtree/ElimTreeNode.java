@@ -35,7 +35,11 @@ public abstract class ElimTreeNode {
     return accept(new SubstVisitor(subst), null);
   }
 
-  public abstract ElimTreeNode matchUntilStuck(Substitution subst);
+  public abstract ElimTreeNode matchUntilStuck(Substitution subst, boolean normalize);
+
+  public ElimTreeNode matchUntilStuck(Substitution subst) {
+    return matchUntilStuck(subst, true);
+  }
 
   public abstract Abstract.Definition.Arrow getArrow();
 

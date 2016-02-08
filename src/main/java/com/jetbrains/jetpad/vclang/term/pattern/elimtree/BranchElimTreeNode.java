@@ -94,12 +94,12 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myOtherwiseClause;
   }
 
-  public ElimTreeNode matchUntilStuck(Substitution subst) {
+  public ElimTreeNode matchUntilStuck(Substitution subst, boolean normalize) {
     List<Expression> arguments = new ArrayList<>();
-    Expression func = subst.get(myReference).normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
+    Expression func = (normalize ? subst.get(myReference).normalize(NormalizeVisitor.Mode.WHNF) : subst.get(myReference)).getFunction(arguments);
     if (!(func instanceof ConCallExpression)) {
       if (myIsInterval && myOtherwiseClause != null) {
-        return myOtherwiseClause.getChild().matchUntilStuck(subst);
+        return myOtherwiseClause.getChild().matchUntilStuck(subst, normalize);
       } else {
         return this;
       }
@@ -107,7 +107,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
     ConstructorClause clause = myClauses.get(((ConCallExpression) func).getDefinition());
     if (clause == null) {
-      return myOtherwiseClause == null ? this : myOtherwiseClause.getChild().matchUntilStuck(subst);
+      return myOtherwiseClause == null ? this : myOtherwiseClause.getChild().matchUntilStuck(subst, normalize);
     }
 
     for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -119,7 +119,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     }
     subst.getDomain().remove(myReference);
     subst.getDomain().removeAll(myContextTail);
-    return clause.getChild().matchUntilStuck(subst);
+    return clause.getChild().matchUntilStuck(subst, normalize);
   }
 
   @Override

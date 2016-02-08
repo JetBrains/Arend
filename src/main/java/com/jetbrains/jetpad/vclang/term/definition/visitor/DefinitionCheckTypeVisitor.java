@@ -581,7 +581,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               continue;
 
             patterns.add(toPatterns(typedPatterns.getPatterns()));
-            expressions.add(result.expression);
+            expressions.add(result.expression.normalize(NormalizeVisitor.Mode.NF));
             arrows.add(Abstract.Definition.Arrow.RIGHT);
           }
         }

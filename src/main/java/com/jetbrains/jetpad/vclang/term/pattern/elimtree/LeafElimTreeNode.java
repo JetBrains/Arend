@@ -49,7 +49,7 @@ public class LeafElimTreeNode extends ElimTreeNode {
   }
 
   @Override
-  public ElimTreeNode matchUntilStuck(Substitution subst) {
+  public ElimTreeNode matchUntilStuck(Substitution subst, boolean normalize) {
     return this;
   }
 }
