@@ -22,7 +22,9 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition) {
-    return new Concrete.DefCallExpression(POSITION, expr, definition.getName());
+    Concrete.DefCallExpression result = new Concrete.DefCallExpression(POSITION, expr, definition.getName());
+    result.setResolvedName(definition.getResolvedName());
+    return result;
   }
 
   public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ImplementStatement> definitions) {

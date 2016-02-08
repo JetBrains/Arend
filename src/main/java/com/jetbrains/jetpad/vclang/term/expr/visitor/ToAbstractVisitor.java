@@ -133,7 +133,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitReference(ReferenceExpression expr, Void params) {
-    return myFactory.makeVar(expr.getBinding().getName());
+    return myFactory.makeVar(expr.getBinding().getName() == null ? "_" : expr.getBinding().getName());
   }
 
   @Override

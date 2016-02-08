@@ -436,7 +436,7 @@ public class TypeCheckingElim {
       List<PatternArgument> resultPatterns = new ArrayList<>();
       DependentLink tailArgs = constructorArgs;
       for (Abstract.PatternArgument subPattern : patterns) {
-        ExpandPatternResult result = expandPattern(subPattern.getPattern(), constructorArgs, mode, links);
+        ExpandPatternResult result = expandPattern(subPattern.getPattern(), tailArgs, mode, links);
         if (result instanceof ExpandPatternErrorResult)
           return result;
         ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;

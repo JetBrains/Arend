@@ -131,7 +131,7 @@ public class ExpressionTest {
 
     ListErrorReporter errorReporter = new ListErrorReporter();
     assertNull(expr.accept(new CheckTypeVisitor.Builder(defs, errorReporter).build(), null));
-    assertEquals(2, errorReporter.getErrorList().size());
+    assertEquals(errorReporter.getErrorList().toString(), 2, errorReporter.getErrorList().size());
   }
 
   @Test

@@ -28,6 +28,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     for (; parameters.hasNext(); parameters = parameters.getNext()) {
       myPatterns.add(Reference(parameters));
     }
+    Collections.reverse(myPatterns);
   }
 
   private TerminationCheckVisitor(Definition def, List<Expression> patterns) {

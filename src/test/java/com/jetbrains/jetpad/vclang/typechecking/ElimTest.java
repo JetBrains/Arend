@@ -219,7 +219,7 @@ public class ElimTest {
     typeCheckClass(
         "\\static \\data Geq Nat Nat | Geq _ zero => Geq-zero | Geq (suc n) (suc m) => Geq-suc (Geq n m)\n" +
         "\\static \\function test (n m : Nat) (p : Geq n m) : Nat <= \\elim n, m, p\n" +
-        "  | _, zero, Geq-zero => 0\n" +
+        "  | _!, zero, Geq-zero => 0\n" +
         "  | suc n, suc m, Geq-suc p => 1");
   }
 

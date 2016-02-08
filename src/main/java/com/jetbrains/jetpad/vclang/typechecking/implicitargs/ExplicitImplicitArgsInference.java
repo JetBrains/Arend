@@ -99,7 +99,7 @@ public abstract class ExplicitImplicitArgsInference extends BaseImplicitArgsInfe
       return null;
     }
     if (expectedParams.size() == actualParams.size()) {
-      return myVisitor.checkResult(expectedType1, result, expr);
+      return myVisitor.checkResult(expectedType, result, expr);
     }
 
     int argsNumber = actualParams.size() - expectedParams.size();
