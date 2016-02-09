@@ -96,7 +96,8 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(List<InferenceBinding> bindings) {
+  public Substitution getInferenceVariables(List<InferenceBinding> bindings0) {
+    List<InferenceBinding> bindings = new ArrayList<>(bindings0);
     Substitution result = new Substitution();
     if (mySolutions.isEmpty()) {
       return result;

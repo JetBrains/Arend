@@ -100,13 +100,14 @@ public abstract class Expression implements PrettyPrintable {
             params.add(link);
           }
         }
-      }
-
-      if (params != null) {
-        for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
-          params.add(link);
+      } else {
+        if (params != null) {
+          for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
+            params.add(link);
+          }
         }
       }
+
       cod = ((PiExpression) cod).getCodomain();
       if (normalize) {
         cod = cod.normalize(NormalizeVisitor.Mode.WHNF);

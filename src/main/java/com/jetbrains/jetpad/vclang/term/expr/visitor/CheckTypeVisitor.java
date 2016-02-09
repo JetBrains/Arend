@@ -179,7 +179,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, myArgsInference.infer(expr), expr);
+    Result result = checkResultImplicit(expectedType, myArgsInference.infer(expr), expr);
+    updateAppResult(result, expr);
+    return result;
   }
 
   @Override
@@ -203,6 +205,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     int argIndex = 1;
 
     Result bodyResult;
+    List<InferenceBinding> inferenceBindings = new ArrayList<>();
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (Abstract.Argument argument : expr.getArguments()) {
         List<String> names;
@@ -233,8 +236,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               link.setExplicit(piLink.isExplicit());
             }
             if (argResult != null) {
-              argResult.equations = equations;
-              if (!compare(argResult, piLink.getType(), Equations.CMP.EQ, argType)) {
+              if (!CompareVisitor.compare(equations, Equations.CMP.EQ, piLink.getType().normalize(NormalizeVisitor.Mode.NF), argResult.expression.normalize(NormalizeVisitor.Mode.NF))) {
+                TypeCheckingError error = new TypeMismatchError(piLink.getType().normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType);
+                myErrorReporter.report(error);
                 return null;
               }
             } else {
@@ -242,7 +246,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             }
           } else {
             if (argResult == null) {
-              link.setType(Reference(new InferenceBinding("type_of_" + name, Universe()))); // TODO
+              InferenceBinding inferenceBinding = new InferenceBinding("type_of_" + name, Universe());
+              link.setType(Reference(inferenceBinding));
+              inferenceBindings.add(inferenceBinding);
             }
             if (actualPiLink == null) {
               actualPiLink = link;
@@ -264,7 +270,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       bodyResult = typeCheck(body, expectedBodyType);
       if (bodyResult == null) return null;
       equations.add(bodyResult.equations);
-      if (actualPiLink != null && expectedCodomain != null && compare(new Result(bodyResult.expression, Pi(actualPiLink, bodyResult.type), equations), expectedCodomain, Equations.CMP.EQ, body)) {
+      if (actualPiLink != null && expectedCodomain != null && !compare(new Result(bodyResult.expression, Pi(actualPiLink, bodyResult.type), equations), expectedCodomain, Equations.CMP.EQ, body)) {
         return null;
       }
 
@@ -273,7 +279,44 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    return new Result(Lam(list.getFirst(), bodyResult.expression), Pi(list.getFirst(), bodyResult.type), equations);
+    Result result = new Result(Lam(list.getFirst(), bodyResult.expression), Pi(list.getFirst(), bodyResult.type), equations);
+    updateResult(result, inferenceBindings, expr, true);
+    return result;
+  }
+
+  public void updateAppResult(CheckTypeVisitor.Result result, Abstract.SourceNode fun) {
+    if (result == null || result.equations.isEmpty()) {
+      return;
+    }
+    while (fun instanceof Abstract.AppExpression) {
+      fun = ((Abstract.AppExpression) fun).getFunction();
+    }
+
+    List<InferenceBinding> bindings = new ArrayList<>();
+    for (Expression expr = result.expression; expr instanceof AppExpression; expr = ((AppExpression) expr).getFunction()) {
+      Expression argument = ((AppExpression) expr).getArgument().getExpression();
+      if (argument instanceof ReferenceExpression && ((ReferenceExpression) argument).getBinding() instanceof InferenceBinding) {
+        bindings.add((InferenceBinding) ((ReferenceExpression) argument).getBinding());
+      }
+    }
+    if (bindings.isEmpty()) {
+      return;
+    }
+    Collections.reverse(bindings);
+    updateResult(result, bindings, fun, false);
+  }
+
+  public void updateResult(CheckTypeVisitor.Result result, List<InferenceBinding> bindings, Abstract.SourceNode fun, boolean lambda) {
+    Substitution substitution = result.equations.getInferenceVariables(bindings);
+    result.expression = result.expression.subst(substitution);
+    result.type = result.type.subst(substitution);
+
+    for (int i = 0; i < bindings.size(); i++) {
+      if (substitution.get(bindings.get(i)) == null) {
+        TypeCheckingError error = new ArgInferenceError(lambda ? ArgInferenceError.lambdaArg(i + 1) : ArgInferenceError.functionArg(i + 1), fun, null);
+        myErrorReporter.report(error);
+      }
+    }
   }
 
   @Override

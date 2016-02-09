@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
@@ -56,19 +57,22 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", Pi(params, Pi(Reference(params), Reference(params)))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(typeCheckExpr(context, "f 0 0 0", null, errorReporter));
+    typeCheckExpr(context, "f 0", null, errorReporter);
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
   }
 
   @Test
-  public void cannotInferLam() {
+  public void inferLam() {
     // f : {A : Type0} -> ((A -> Nat) -> Nat) -> A |- f (\g. g 0) : Nat
     List<Binding> context = new ArrayList<>();
     DependentLink A = param(false, "A", Universe(0));
     context.add(new TypedBinding("f", Pi(A, Pi(Pi(Pi(Reference(A), Nat()), Nat()), Reference(A)))));
 
-    assertNull(typeCheckExpr(context, "f (\\lam g => g 0)", null, 1));
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam g => g 0)", null);
+    DependentLink g = param("g", Nat());
+    assertEquals(Apps(Reference(context.get(0)), new ArgumentExpression(Nat(), false, true), new ArgumentExpression(Lam(g, Apps(Reference(g), Zero())), true, false)), result.expression);
+    assertEquals(Nat(), result.type);
   }
 
   @Test
@@ -111,7 +115,20 @@ public class ImplicitArgumentsTest {
 
   @Test
   public void inferFromSecondArg() {
-    // f : {A : Type0} -> (A -> A) -> (A -> Nat) -> Nat |- f (\x. x) (\x:Nat. x) : Nat
+    // f : {A : Type0} -> (A -> A) -> (A -> Nat) -> Nat |- f (\x. x) (\x. x) : Nat
+    List<Binding> context = new ArrayList<>();
+    DependentLink A = param(false, "A", Universe(0));
+    context.add(new TypedBinding("f", Pi(A, Pi(Pi(Reference(A), Reference(A)), Pi(Pi(Reference(A), Nat()), Nat())))));
+
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x => x) (\\lam x => x)", null);
+    DependentLink x = param("x", Nat());
+    assertEquals(Apps(Apps(Reference(context.get(0)), Nat(), false, false), Lam(x, Reference(x)), Lam(x, Reference(x))), result.expression);
+    assertEquals(Nat(), result.type);
+  }
+
+  @Test
+  public void inferFromSecondArgLam() {
+    // f : {A : Type0} -> (A -> A) -> (A -> Nat) -> Nat |- f (\x. x) (\(x : Nat). x) : Nat
     List<Binding> context = new ArrayList<>();
     DependentLink A = param(false, "A", Universe(0));
     context.add(new TypedBinding("f", Pi(A, Pi(Pi(Reference(A), Reference(A)), Pi(Pi(Reference(A), Nat()), Nat())))));
@@ -129,7 +146,7 @@ public class ImplicitArgumentsTest {
     DependentLink A = param(false, "A", Universe(0));
     context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Reference(A), Reference(A))))));
 
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x => x) (\\lam (x : Nat) => x)", Pi(Nat(), Nat()));
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "f 0", Pi(Nat(), Nat()));
     assertEquals(Apps(Apps(Reference(context.get(0)), Nat(), false, false), Zero()), result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }
@@ -142,7 +159,7 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Reference(A), Reference(A))))));
 
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertNull(typeCheckExpr(context, "f (\\lam x => x) (\\lam (x : Nat) => x)", Pi(Nat(), Pi(Nat(), Nat())), errorReporter));
+    typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), errorReporter);
     assertEquals(1, errorReporter.getErrorList().size());
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof InferredArgumentsMismatch);
   }
@@ -195,7 +212,7 @@ public class ImplicitArgumentsTest {
     DependentLink x = param(false, "x", Universe(0));
     context.add(new TypedBinding("i", Pi(x, Apps(Reference(context.get(0)), Reference(x)))));
 
-    assertNull(typeCheckExpr(context, "f i", Apps(Reference(context.get(0)), Universe(0)), 1));
+    assertNull(typeCheckExpr(context, "i", Apps(Reference(context.get(0)), Universe(0)), 1));
   }
 
   @Test

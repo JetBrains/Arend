@@ -29,7 +29,7 @@ public class ArgInferenceError extends TypeCheckingError {
   }
 
   public static String lambdaArg(int index) {
-    return "Cannot infer type of the " + ordinal(index) + " argument of lambda";
+    return "Cannot infer type of " + ordinal(index) + " parameter of lambda";
   }
 
   public static String parameter(int index) {

@@ -90,7 +90,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   public CheckTypeVisitor.Result infer(Abstract.AppExpression expr) {
     Abstract.ArgumentExpression arg = expr.getArgument();
     CheckTypeVisitor.Result result = inferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit());
-    updateResult(result);
+    myVisitor.updateAppResult(result, expr);
     return result;
   }
 
@@ -98,38 +98,16 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   public CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr) {
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : ConcreteExpressionFactory.POSITION;
     CheckTypeVisitor.Result result = inferArg(inferArg(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), expr.getLeft(), true), expr.getRight(), true, expr);
-    updateResult(result);
+    myVisitor.updateAppResult(result, expr);
     return result;
-  }
-
-  private void updateResult(CheckTypeVisitor.Result result) {
-    if (result == null || result.equations.isEmpty()) {
-      return;
-    }
-
-    List<InferenceBinding> bindings = new ArrayList<>();
-    for (Expression expr = result.expression; expr instanceof AppExpression; expr = ((AppExpression) expr).getFunction()) {
-      Expression argument = ((AppExpression) expr).getArgument().getExpression();
-      if (argument instanceof ReferenceExpression && ((ReferenceExpression) argument).getBinding() instanceof InferenceBinding) {
-        bindings.add((InferenceBinding) ((ReferenceExpression) argument).getBinding());
-      }
-    }
-    if (bindings.isEmpty()) {
-      return;
-    }
-    Collections.reverse(bindings);
-
-    Substitution substitution = result.equations.getInferenceVariables(bindings);
-    result.expression = result.expression.subst(substitution);
-    result.type = result.type.subst(substitution);
   }
 
   @Override
   public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result result, Expression expectedType, Abstract.Expression expr) {
     List<DependentLink> actualParams = new ArrayList<>();
-    Expression actualType = result.type.getPiParameters(actualParams, true, false);
+    Expression actualType = result.type.getPiParameters(actualParams, true, true);
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
-    Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, false);
+    Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
       TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
@@ -141,24 +119,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     int argsNumber = actualParams.size() - expectedParams.size();
-    for (int i = 0; i < expectedParams.size(); ++i) {
-      if (expectedParams.get(i).isExplicit() != actualParams.get(argsNumber + i).isExplicit()) {
-        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
-        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
-        myVisitor.getErrorReporter().report(error);
-        return null;
-      }
-    }
-
-    for (int i = 0; i < argsNumber; ++i) {
-      if (actualParams.get(i).isExplicit()) {
-        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
-        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
-        myVisitor.getErrorReporter().report(error);
-        return null;
-      }
-    }
-
     result.type = actualType.fromPiParameters(actualParams.subList(argsNumber, actualParams.size()));
     if (!fixImplicitArgs(result, actualParams.subList(0, argsNumber), expr)) {
       return null;
