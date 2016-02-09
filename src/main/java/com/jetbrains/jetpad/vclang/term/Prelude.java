@@ -130,8 +130,8 @@ public class Prelude extends Namespace {
   private void generateLevel(int i) {
     String suffix = i == 0 ? "" : Integer.toString(i);
     DependentLink PathParameter1 = param("A", Pi(param(DataCall(INTERVAL)), Universe(i, Universe.Type.NOT_TRUNCATED)));
-    DependentLink PathParameter2 = param(Apps(Reference(PathParameter1), ConCall(LEFT)));
-    DependentLink PathParameter3 = param(Apps(Reference(PathParameter1), ConCall(RIGHT)));
+    DependentLink PathParameter2 = param("a", Apps(Reference(PathParameter1), ConCall(LEFT)));
+    DependentLink PathParameter3 = param("a'", Apps(Reference(PathParameter1), ConCall(RIGHT)));
     PathParameter1.setNext(PathParameter2);
     PathParameter2.setNext(PathParameter3);
     DataDefinition path = new DataDefinition(PRELUDE, new Name("Path" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), PathParameter1);

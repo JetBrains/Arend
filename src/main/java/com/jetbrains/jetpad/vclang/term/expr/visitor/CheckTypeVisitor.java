@@ -179,7 +179,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
-    Result result = checkResultImplicit(expectedType, myArgsInference.infer(expr), expr);
+    Result result = checkResultImplicit(expectedType, myArgsInference.infer(expr, expectedType), expr);
     updateAppResult(result, expr);
     return result;
   }
@@ -494,7 +494,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, myArgsInference.infer(expr), expr);
+    return checkResultImplicit(expectedType, myArgsInference.infer(expr, expectedType), expr);
   }
 
   @Override

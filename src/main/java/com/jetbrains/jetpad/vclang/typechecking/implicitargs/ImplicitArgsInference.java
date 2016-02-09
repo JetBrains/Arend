@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 public interface ImplicitArgsInference {
   Equations newEquations();
-  CheckTypeVisitor.Result infer(Abstract.AppExpression expr);
-  CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr);
+  CheckTypeVisitor.Result infer(Abstract.AppExpression expr, Expression expectedType);
+  CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr, Expression expectedType);
   CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Expression expectedType, Abstract.Expression expr);
 }

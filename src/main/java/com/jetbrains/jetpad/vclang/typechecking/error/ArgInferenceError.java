@@ -45,7 +45,7 @@ public class ArgInferenceError extends TypeCheckingError {
   }
 
   public static String suffix(int n) {
-    if (n >= 10 || n < 20) {
+    if (n >= 10 && n < 20) {
       return "th";
     }
     switch (n % 10) {
@@ -68,6 +68,11 @@ public class ArgInferenceError extends TypeCheckingError {
     } else {
       if (myWhere != null) {
         msg += " " + prettyPrint(myWhere);
+      } else {
+        String r = prettyPrint(getCause());
+        if (r != null) {
+          msg += " " + r;
+        }
       }
       return msg;
     }

@@ -80,7 +80,7 @@ public class TypeCheckingDefCall {
       Substitution substitution = new Substitution();
       parameters = parameters.subst(substitution);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-        parameters.setExplicit(false);
+        link.setExplicit(false);
       }
       result.type = Pi(parameters, result.type.subst(substitution));
     }

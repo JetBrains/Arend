@@ -3,20 +3,23 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.definition.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   public StdImplicitArgsInference(CheckTypeVisitor visitor) {
@@ -75,29 +78,60 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return result;
   }
 
-  protected CheckTypeVisitor.Result inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit) {
+  protected CheckTypeVisitor.Result inferArg(Abstract.Expression fun, Abstract.Expression arg, boolean isExplicit, Expression expectedType) {
     CheckTypeVisitor.Result result;
     if (fun instanceof Abstract.AppExpression) {
       Abstract.ArgumentExpression argument = ((Abstract.AppExpression) fun).getArgument();
-      result = inferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit());
+      result = inferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), null);
     } else {
       result = myVisitor.typeCheck(fun, null);
     }
+    if (result == null) return null;
+
+    if (result.expression instanceof ConCallExpression && ((ConCallExpression) result.expression).getDefinition() == Prelude.PATH_CON) {
+      Expression interval = DataCall(Prelude.INTERVAL);
+      CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe()))));
+      if (argResult == null) return null;
+      Expression type = argResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+      if (type instanceof PiExpression) {
+        PiExpression piType = (PiExpression) type;
+        DependentLink params = piType.getParameters();
+        Expression domType = params.getType().normalize(NormalizeVisitor.Mode.WHNF);
+        if (CompareVisitor.compare(argResult.equations, Equations.CMP.EQ, interval, domType)) {
+          Expression lamExpr;
+          if (params.getNext().hasNext()) {
+            DependentLink lamParam = param("i", interval);
+            lamExpr = Lam(lamParam, Pi(params.getNext(), piType.getCodomain()).subst(params, Reference(lamParam)));
+          } else {
+            lamExpr = Lam(params, piType.getCodomain());
+          }
+          Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
+          Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
+          return new CheckTypeVisitor.Result(Apps(ConCall(Prelude.PATH_CON, lamExpr, expr1, expr2), argResult.expression), Apps(DataCall(Prelude.PATH), lamExpr, expr1, expr2), argResult.equations);
+        }
+      }
+
+      TypeCheckingError error = new TypeCheckingError("Expected an expression of a type of the form I -> _", arg);
+      arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
+      myVisitor.getErrorReporter().report(error);
+      return null;
+    }
+
     return inferArg(result, arg, isExplicit, fun);
   }
 
   @Override
-  public CheckTypeVisitor.Result infer(Abstract.AppExpression expr) {
+  public CheckTypeVisitor.Result infer(Abstract.AppExpression expr, Expression expectedType) {
     Abstract.ArgumentExpression arg = expr.getArgument();
-    CheckTypeVisitor.Result result = inferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit());
+    CheckTypeVisitor.Result result = inferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
     myVisitor.updateAppResult(result, expr);
     return result;
   }
 
   @Override
-  public CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr) {
+  public CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr, Expression expectedType) {
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : ConcreteExpressionFactory.POSITION;
-    CheckTypeVisitor.Result result = inferArg(inferArg(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), expr.getLeft(), true), expr.getRight(), true, expr);
+    CheckTypeVisitor.Result result = inferArg(inferArg(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), expr.getLeft(), true, null), expr.getRight(), true, expr);
     myVisitor.updateAppResult(result, expr);
     return result;
   }

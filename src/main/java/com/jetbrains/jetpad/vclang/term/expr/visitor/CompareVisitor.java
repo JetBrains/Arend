@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
@@ -132,42 +131,36 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
     }
 
-    if (expr2 instanceof ReferenceExpression) {
+    if (expr2 instanceof ReferenceExpression && ((ReferenceExpression) expr2).getBinding().isInference()) {
       return compareReference((ReferenceExpression) expr2, expr1, false);
     }
     return expr1.accept(this, expr2);
   }
 
-  private boolean checkIsInferVar(Expression fun1, List<Expression> args1, Expression expr2, Equations.CMP cmp) {
-    if (!(fun1 instanceof ReferenceExpression)) {
+  private boolean checkIsInferVar(Expression fun1, Expression expr1, Expression expr2, Equations.CMP cmp) {
+    if (!(fun1 instanceof ReferenceExpression) || !((ReferenceExpression) fun1).getBinding().isInference()) {
       return false;
     }
-    if (((ReferenceExpression) fun1).getBinding().isInference()) {
-      for (Expression arg : args1) {
-        fun1 = Apps(fun1, arg);
-      }
-      Substitution substitution = new Substitution();
-      for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
-        substitution.add(entry.getKey(), Reference(entry.getValue()));
-      }
-      myEquations.add(fun1.subst(substitution), expr2, cmp);
-      return true;
-    } else {
-      return false;
+
+    Substitution substitution = new Substitution();
+    for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
+      substitution.add(entry.getKey(), Reference(entry.getValue()));
     }
+    myEquations.add(expr1.subst(substitution), expr2, cmp);
+    return true;
   }
 
   @Override
   public Boolean visitApp(AppExpression expr1, Expression expr2) {
     List<Expression> args1 = new ArrayList<>();
     Expression fun1 = expr1.getFunction(args1);
-    if (checkIsInferVar(fun1, args1, expr2, myCMP)) {
+    if (checkIsInferVar(fun1, expr1, expr2, myCMP)) {
       return true;
     }
 
     List<Expression> args2 = new ArrayList<>(args1.size());
     Expression fun2 = expr2.getFunction(args2);
-    if (checkIsInferVar(fun2, args2, expr1, myCMP.not())) {
+    if (checkIsInferVar(fun2, expr2, expr1, myCMP.not())) {
       return true;
     }
 
@@ -249,8 +242,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return true;
   }
 
-  private Boolean compareReference(ReferenceExpression expr1, Expression expr2, boolean first) {
-    // TODO
+  private boolean compareReference(ReferenceExpression expr1, Expression expr2, boolean first) {
     if (expr2 instanceof ReferenceExpression) {
       Binding binding1 = first ? expr1.getBinding() : ((ReferenceExpression) expr2).getBinding();
       Binding subst1 = mySubstitution.get(binding1);

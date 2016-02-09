@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.definition.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
@@ -18,6 +19,7 @@ public class ListEquations implements Equations {
     Expression expr1;
     Expression expr2;
     CMP cmp;
+    // TODO: check for abstracted bindings
     List<Binding> bindings = Collections.emptyList();
 
     void abstractBinding(Binding binding) {
@@ -31,6 +33,7 @@ public class ListEquations implements Equations {
   }
 
   private final List<Equation> myEquations = new ArrayList<>();
+  // TODO: add <=, => solutions
   private final Map<InferenceBinding, Expression> mySolutions = new HashMap<>();
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
 
@@ -64,11 +67,17 @@ public class ListEquations implements Equations {
         }
       }
       if (isInf1) {
-        mySolutions.put((InferenceBinding) ((ReferenceExpression) expr1).getBinding(), expr2);
+        addSolution((InferenceBinding) ((ReferenceExpression) expr1).getBinding(), expr2);
       }
       if (isInf2) {
-        mySolutions.put((InferenceBinding) ((ReferenceExpression) expr2).getBinding(), expr1);
+        addSolution((InferenceBinding) ((ReferenceExpression) expr2).getBinding(), expr1);
       }
+    }
+  }
+
+  private void addSolution(InferenceBinding binding, Expression expression) {
+    if (!(binding instanceof IgnoreBinding)) {
+      mySolutions.put(binding, expression);
     }
   }
 
