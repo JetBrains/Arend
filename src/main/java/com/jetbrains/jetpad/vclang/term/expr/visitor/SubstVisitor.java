@@ -61,14 +61,16 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
-    LamExpression result = Lam(expr.getParameters().subst(mySubstitution), expr.getBody().accept(this, null));
+    DependentLink parameters = expr.getParameters().subst(mySubstitution);
+    LamExpression result = Lam(parameters, expr.getBody().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
   }
 
   @Override
   public Expression visitPi(PiExpression expr, Void params) {
-    PiExpression result = Pi(expr.getParameters().subst(mySubstitution), expr.getCodomain().accept(this, null));
+    DependentLink parameters = expr.getParameters().subst(mySubstitution);
+    PiExpression result = Pi(parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
   }

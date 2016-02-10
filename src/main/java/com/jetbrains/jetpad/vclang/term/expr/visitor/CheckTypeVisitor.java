@@ -160,7 +160,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       expression.setWellTyped(myContext, result.expression);
       return result;
     }
-    return myArgsInference.inferTail(result, expectedType, expression);
+    result = myArgsInference.inferTail(result, expectedType, expression);
+    updateAppResult(result, expression);
+    return result;
   }
 
   public Result typeCheck(Abstract.Expression expr, Expression expectedType) {
@@ -179,9 +181,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
-    Result result = checkResultImplicit(expectedType, myArgsInference.infer(expr, expectedType), expr);
-    updateAppResult(result, expr);
-    return result;
+    return checkResultImplicit(expectedType, myArgsInference.infer(expr, expectedType), expr);
   }
 
   @Override

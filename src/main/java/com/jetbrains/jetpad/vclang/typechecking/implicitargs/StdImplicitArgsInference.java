@@ -27,6 +27,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   }
 
   protected boolean fixImplicitArgs(CheckTypeVisitor.Result result, List<DependentLink> parameters, Abstract.Expression expr) {
+    if (parameters.isEmpty()) {
+      return true;
+    }
+
     Substitution substitution = new Substitution();
     for (DependentLink parameter : parameters) {
       Expression binding = Reference(new InferenceBinding(parameter.getName(), parameter.getType()));

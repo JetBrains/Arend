@@ -252,7 +252,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
     CheckTypeVisitor.Result[] resultArgs = new CheckTypeVisitor.Result[argsNumber];
     Equations resultEquations = new ListEquations();
     if (!typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, 0, fun)) {
-      expression.setWellTyped(myVisitor.getContext(), Error(null, null)); // TODO
+      expression.setWellTyped(myVisitor.getContext(), Error(null, null));
       return null;
     }
 
