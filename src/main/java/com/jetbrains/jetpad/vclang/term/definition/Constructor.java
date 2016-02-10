@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
@@ -92,7 +93,7 @@ public class Constructor extends Definition {
 
         if (patternArg.getPattern() instanceof ConstructorPattern) {
           List<Expression> argDataTypeParams = new ArrayList<>();
-          dataTypeParams.getType().subst(subst).getFunction(argDataTypeParams);
+          dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getFunction(argDataTypeParams);
           Collections.reverse(argDataTypeParams);
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(argDataTypeParams);
         }
