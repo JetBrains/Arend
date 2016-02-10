@@ -14,6 +14,8 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
+
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
     for (Expression expr1 : exprs) {
@@ -58,7 +60,7 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression ConCall(Constructor definition) {
-    int size = DependentLink.Helper.size(definition.getDataTypeParameters());
+    int size = size(definition.getDataTypeParameters());
     return new ConCallExpression(definition, size == 0 ? Collections.<Expression>emptyList() : new ArrayList<Expression>(size));
   }
 
@@ -252,6 +254,7 @@ public class ExpressionFactory {
       if (pair.constructor != null) {
         ConstructorClause clause = result.addClause(pair.constructor);
         Substitution subst = clause.getSubst();
+        assert size(pair.constructor.getParameters()) == size(pair.parameters);
         for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
              linkFake.hasNext(); linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {
           subst.add(linkFake, Reference(linkTrue));

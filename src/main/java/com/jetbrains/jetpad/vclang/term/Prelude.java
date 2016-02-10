@@ -163,12 +163,13 @@ public class Prelude extends Namespace {
     atParameter2.setNext(atParameter3);
     atParameter3.setNext(atParameter4);
     atParameter4.setNext(atParameter5);
+    DependentLink atPath = param("f", pathParameters.getType());
     Expression atResultType = Apps(Reference(atParameter1), Reference(atParameter5));
     BranchElimTreeNode atElimTree = branch(atParameter5, tail(),
       clause(LEFT, EmptyDependentLink.getInstance(), Reference(atParameter2)),
       clause(RIGHT, EmptyDependentLink.getInstance(), Reference(atParameter3)),
       clause(branch(atParameter4, tail(),
-          clause((Constructor) PRELUDE.getDefinition("path" + suffix), EmptyDependentLink.getInstance(), Apps(Reference(atParameter4), Reference(atParameter5)))))
+          clause((Constructor) PRELUDE.getDefinition("path" + suffix), atPath, Apps(Reference(atPath), Reference(atParameter5)))))
     );
     Arrays.fill(chars, '@');
     FunctionDefinition at = new FunctionDefinition(PRELUDE, new Name(new String(chars), Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree);
