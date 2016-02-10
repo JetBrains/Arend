@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.definition.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -92,7 +93,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
     if (result == null) return null;
 
-    if (result.expression instanceof ConCallExpression && ((ConCallExpression) result.expression).getDefinition() == Prelude.PATH_CON) {
+    if (result.expression instanceof ConCallExpression && Prelude.isPathCon(((ConCallExpression) result.expression).getDefinition())) {
       Expression interval = DataCall(Prelude.INTERVAL);
       CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe()))));
       if (argResult == null) return null;
@@ -111,7 +112,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           }
           Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
           Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
-          return new CheckTypeVisitor.Result(Apps(ConCall(Prelude.PATH_CON, lamExpr, expr1, expr2), argResult.expression), Apps(DataCall(Prelude.PATH), lamExpr, expr1, expr2), argResult.equations);
+          Constructor pathCon = ((ConCallExpression) result.expression).getDefinition();
+          return new CheckTypeVisitor.Result(Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression), Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2), argResult.equations);
         }
       }
 

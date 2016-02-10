@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Before;
@@ -90,8 +91,19 @@ public class DefinitionTest {
     assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(parameters1.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b))), typedDef.getConstructors().get(0).getType());
-    assertEquals(Pi(parameters2.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b))), typedDef.getConstructors().get(1).getType());
+    Substitution substitution = new Substitution();
+    DependentLink link = typedDef.getParameters();
+    substitution.add(link, Reference(A));
+    link = link.getNext();
+    substitution.add(link, Reference(B));
+    link = link.getNext();
+    substitution.add(link, Reference(I));
+    link = link.getNext();
+    substitution.add(link, Reference(a));
+    link = link.getNext();
+    substitution.add(link, Reference(b));
+    assertEquals(Pi(parameters1.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b))), typedDef.getConstructors().get(0).getType().subst(substitution));
+    assertEquals(Pi(parameters2.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b))), typedDef.getConstructors().get(1).getType().subst(substitution));
   }
 
   @Test

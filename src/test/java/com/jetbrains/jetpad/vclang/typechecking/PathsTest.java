@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -22,8 +22,8 @@ public class PathsTest {
     DependentLink A = param(false, "A", Universe(0));
     A.setNext(param("a", Reference(A)));
     DependentLink C = param((String) null, DataCall(Prelude.INTERVAL));
-    assertEquals(Lam(A, Apps(ConCall(Prelude.PATH_CON), new ArgumentExpression(Lam(C, Reference(A)), false, true), new ArgumentExpression(Reference(A.getNext()), false, true), new ArgumentExpression(Reference(A.getNext()), false, true), new ArgumentExpression(Lam(C, Reference(A.getNext())), true, false))), idp.expression);
-    assertEquals(Pi(A, BinOp(Reference(A.getNext()), Prelude.PATH_INFIX, Reference(A.getNext()))), idp.type);
+    assertEquals(Lam(A, Apps(ConCall(Prelude.PATH_CON, Lam(C, Reference(A)), Reference(A.getNext()), Reference(A.getNext())), Lam(C, Reference(A.getNext())))), idp.expression);
+    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

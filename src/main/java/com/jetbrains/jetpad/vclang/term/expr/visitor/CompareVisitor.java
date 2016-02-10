@@ -314,11 +314,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     Equations equations = myEquations.newInstance();
     CompareVisitor visitor = new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ);
     for (int i = 0; i < params1.size(); i++) {
-      if (params1.get(i) instanceof UntypedDependentLink && params2.get(i) instanceof UntypedDependentLink) {
-        continue;
-      }
-      if (!visitor.compare(params1.get(i).getType(), params2.get(i).getType())) {
-        return false;
+      if (!(params1.get(i) instanceof UntypedDependentLink && params2.get(i) instanceof UntypedDependentLink)) {
+        if (!visitor.compare(params1.get(i).getType(), params2.get(i).getType())) {
+          return false;
+        }
       }
       mySubstitution.put(params1.get(i), params2.get(i));
     }
