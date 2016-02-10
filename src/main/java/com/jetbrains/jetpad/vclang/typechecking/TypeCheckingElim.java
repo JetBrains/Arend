@@ -189,8 +189,9 @@ public class TypeCheckingElim {
 
           ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
           clausePatterns.add(okResult.pattern);
-          clauseExpectedType = clauseExpectedType.subst(tailArgs, okResult.expression);
-          tailArgs = tailArgs.getNext().subst(new Substitution(tailArgs, okResult.expression));
+          Substitution subst = new Substitution(tailArgs, okResult.expression);
+          tailArgs = tailArgs.getNext().subst(subst);
+          clauseExpectedType = clauseExpectedType.subst(subst);
         }
 
         if (clause.getExpression() != null) {
