@@ -47,7 +47,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   @Override
   public Expression toExpression(Substitution subst) {
     List<Expression> params = new ArrayList<>();
-    for (DependentLink link = myConstructor.getParameters(); link.hasNext(); link = link.getNext()) {
+    for (DependentLink link = myConstructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
       Expression param = subst.get(link);
       params.add(param == null ? Reference(link) : param);
     }
@@ -61,7 +61,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
         Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getFunction(args);
         assert type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         Collections.reverse(args);
-        Substitution subSubst = getMatchedArguments(args);
+        Substitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(args);
         for (Binding binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }
@@ -79,7 +79,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     return result;
   }
 
-  private Substitution getMatchedArguments(List<Expression> dataTypeArguments) {
+  public Substitution getMatchedArguments(List<Expression> dataTypeArguments) {
     return DependentLink.Helper.toSubstitution(myConstructor.getDataTypeParameters(), myConstructor.matchDataTypeArguments(dataTypeArguments));
   }
 

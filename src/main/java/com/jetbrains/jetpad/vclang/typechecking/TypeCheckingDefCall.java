@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
@@ -314,7 +315,7 @@ public class TypeCheckingDefCall {
       }
     }
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType(), DummyEquations.getInstance());
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType().subst(toSubstitution(constructor.getDataTypeParameters(), arguments)), DummyEquations.getInstance());
     fixConstructorParameters(constructor, result, true);
     return result;
   }
