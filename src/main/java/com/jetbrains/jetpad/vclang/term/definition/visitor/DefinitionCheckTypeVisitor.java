@@ -588,7 +588,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         PatternsToElimTreeConversion.OKResult elimTreeResult = (PatternsToElimTreeConversion.OKResult) PatternsToElimTreeConversion.convert(constructor.getParameters(), patterns, expressions, arrows);
 
-        if (!elimTreeResult.elimTree.accept(new TerminationCheckVisitor(constructor, constructor.getParameters()), null)) {
+        if (!elimTreeResult.elimTree.accept(new TerminationCheckVisitor(constructor, constructor.getDataTypeParameters(), constructor.getParameters()), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", def));
           continue;
         }
