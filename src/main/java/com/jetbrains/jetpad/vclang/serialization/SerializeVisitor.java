@@ -150,10 +150,10 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     myStream.write(6);
     try {
       ModuleSerialization.writeParameters(this, expr.getParameters());
-      expr.getBody().accept(this, null);
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+    expr.getBody().accept(this, null);
     return null;
   }
 

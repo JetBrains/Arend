@@ -391,8 +391,7 @@ public class ModuleDeserialization {
         return Reference(myBindingMap.get(stream.readInt()));
       }
       case 6: {
-        Expression body = readExpression(stream, definitionMap);
-        return Lam(readParameters(stream, definitionMap), body);
+        return Lam(readParameters(stream, definitionMap), readExpression(stream, definitionMap));
       }
       case 7: {
         DependentLink parameters = readParameters(stream, definitionMap);
