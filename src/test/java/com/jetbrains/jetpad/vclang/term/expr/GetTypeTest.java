@@ -60,9 +60,8 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     Namespace namespace = def.getParentNamespace().findChild(def.getName());
     DependentLink p = param("p", Pi(Nat(), namespace.getDefinition("C").getDefCall()));
-    Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(namespace.getMember("C").namespace.getDefinition("f").getDefCall(), Apps(Reference(p), Zero())));
-    assertEquals(Pi(p, Pi(type, type)), namespace.getDefinition("test").getType());
-    assertEquals(Pi(type, type), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType());
+    Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(namespace.getMember("C").namespace.getDefinition("x").getDefCall(), Apps(Reference(p), Zero())));
+    assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), namespace.getDefinition("test").getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

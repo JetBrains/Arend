@@ -75,7 +75,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<ArgumentExpression> args = new ArrayList<>();
     Expression fun = expr.getFunctionArgs(args);
 
-    if (myFlags.contains(Flag.SHOW_PREFIX_PATH)) {
+    if (!myFlags.contains(Flag.SHOW_PREFIX_PATH)) {
       Abstract.Expression result = checkPath(fun, args);
       if (result != null) {
         return result;
@@ -169,7 +169,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<String> names = new ArrayList<>(3);
     for (DependentLink link = arguments; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(names);
-      if (names.isEmpty()) {
+      if (names.isEmpty() || names.get(0) == null) {
         args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().accept(this, null)));
       } else {
         args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
