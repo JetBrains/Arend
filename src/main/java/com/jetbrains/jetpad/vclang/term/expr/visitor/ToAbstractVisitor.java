@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.factory.AbstractExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
@@ -133,7 +134,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitReference(ReferenceExpression expr, Void params) {
-    return myFactory.makeVar(expr.getBinding().getName() == null ? "_" : expr.getBinding().getName());
+    String name = expr.getBinding().getName() == null ? "_" : expr.getBinding().getName();
+    return myFactory.makeVar((expr.getBinding() instanceof InferenceBinding ? "?" : "") + name);
   }
 
   @Override

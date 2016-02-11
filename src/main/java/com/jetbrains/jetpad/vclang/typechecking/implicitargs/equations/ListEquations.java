@@ -46,7 +46,7 @@ public class ListEquations implements Equations {
     }
     if (equations instanceof ListEquations) {
       myEquations.addAll(((ListEquations) equations).myEquations);
-      mySolutions.putAll(((ListEquations) equations).mySolutions);
+      addSolutions(((ListEquations) equations).mySolutions);
     } else {
       throw new IllegalStateException();
     }
@@ -79,7 +79,27 @@ public class ListEquations implements Equations {
 
   private void addSolution(InferenceBinding binding, Expression expression) {
     if (!(binding instanceof IgnoreBinding)) {
-      mySolutions.put(binding, expression);
+      Expression expr = mySolutions.get(binding);
+      if (expr != null) {
+        if (expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getBinding() instanceof InferenceBinding) {
+          // TODO: Add inference binding cycles
+          mySolutions.put(binding, expression);
+          mySolutions.put((InferenceBinding) ((ReferenceExpression) expr).getBinding(), expression);
+        } else {
+          if (!CompareVisitor.compare(this, CMP.EQ, expression, expr)) {
+            // TODO: Add SourceNode
+            myErrorReporter.report(new TypeCheckingError("Cannot solve equation:\nFirst expression: " + expression + "Second expression: " + expr, null));
+          }
+        }
+      } else {
+        mySolutions.put(binding, expression);
+      }
+    }
+  }
+
+  private void addSolutions(Map<InferenceBinding, Expression> solutions) {
+    for (Map.Entry<InferenceBinding, Expression> entry : solutions.entrySet()) {
+      addSolution(entry.getKey(), entry.getValue());
     }
   }
 
@@ -155,7 +175,7 @@ public class ListEquations implements Equations {
         }
       }
     }
-    mySolutions.putAll(solution);
+    addSolutions(solution);
 
     int size = myEquations.size();
     while (size-- > 0) {
