@@ -6,7 +6,9 @@ import com.jetbrains.jetpad.vclang.term.definition.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 
@@ -120,7 +122,12 @@ public class ListEquations implements Equations {
         Expression subst = mySolutions.get(bindings.get(i));
         if (subst != null) {
           mySolutions.remove(bindings.get(i));
-          substitution.add(bindings.get(i), subst);
+          if (subst.findBinding(bindings.get(i))) {
+            // TODO: Add SourceNode
+            myErrorReporter.report(new TypeCheckingError("Cannot infer variable " + bindings.get(i).getName() + "\nExpected expression: " + subst, null));
+          } else {
+            substitution.add(bindings.get(i), subst);
+          }
           bindings.remove(i--);
           was = true;
         }
@@ -150,15 +157,15 @@ public class ListEquations implements Equations {
     }
     mySolutions.putAll(solution);
 
-    for (int i = 0; i < myEquations.size(); i++) {
-      Equation equation = myEquations.get(i);
-      equation.expr1 = equation.expr1.subst(substitution).normalize(NormalizeVisitor.Mode.NF);
-      equation.expr2 = equation.expr2.subst(substitution).normalize(NormalizeVisitor.Mode.NF);
-      boolean isInf1 = equation.expr1 instanceof ReferenceExpression && ((ReferenceExpression) equation.expr1).getBinding() instanceof InferenceBinding;
-      boolean isInf2 = equation.expr1 instanceof ReferenceExpression && ((ReferenceExpression) equation.expr1).getBinding() instanceof InferenceBinding;
-      if (isInf1 || isInf2) {
-        add(equation.expr1, equation.expr2, equation.cmp);
-        myEquations.remove(i--);
+    int size = myEquations.size();
+    while (size-- > 0) {
+      Equation equation = myEquations.get(0);
+      myEquations.remove(0);
+      Expression expr1 = equation.expr1.subst(substitution);
+      Expression expr2 = equation.expr2.subst(substitution);
+      if (!CompareVisitor.compare(this, equation.cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF))) {
+        // TODO: Add SourceNode
+        myErrorReporter.report(new TypeCheckingError("Cannot solve equation:\nFirst expression: " + expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF) + "Second expression: " + expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), null));
       }
     }
   }

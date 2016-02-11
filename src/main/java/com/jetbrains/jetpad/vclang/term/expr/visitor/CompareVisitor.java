@@ -129,6 +129,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
         myCMP = Equations.CMP.EQ;
         return compare(expr1, expr);
       }
+      if (checkIsInferVar(expr2.getFunction(null), expr1, expr2)) {
+        return true;
+      }
     }
 
     if (expr2 instanceof ReferenceExpression && ((ReferenceExpression) expr2).getBinding().isInference()) {
@@ -137,8 +140,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return expr1.accept(this, expr2);
   }
 
-  private boolean checkIsInferVar(Expression fun1, Expression expr1, Expression expr2, Equations.CMP cmp) {
-    if (!(fun1 instanceof ReferenceExpression) || !((ReferenceExpression) fun1).getBinding().isInference()) {
+  private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
+    if (!(fun instanceof ReferenceExpression) || !((ReferenceExpression) fun).getBinding().isInference()) {
       return false;
     }
 
@@ -146,7 +149,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
       substitution.add(entry.getKey(), Reference(entry.getValue()));
     }
-    myEquations.add(expr1.subst(substitution), expr2, cmp);
+    myEquations.add(expr1.subst(substitution), expr2, myCMP);
     return true;
   }
 
@@ -154,13 +157,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   public Boolean visitApp(AppExpression expr1, Expression expr2) {
     List<Expression> args1 = new ArrayList<>();
     Expression fun1 = expr1.getFunction(args1);
-    if (checkIsInferVar(fun1, expr1, expr2, myCMP)) {
+    if (checkIsInferVar(fun1, expr1, expr2)) {
       return true;
     }
 
     List<Expression> args2 = new ArrayList<>(args1.size());
     Expression fun2 = expr2.getFunction(args2);
-    if (checkIsInferVar(fun2, expr2, expr1, myCMP.not())) {
+    if (checkIsInferVar(fun2, expr1, expr2)) {
       return true;
     }
 

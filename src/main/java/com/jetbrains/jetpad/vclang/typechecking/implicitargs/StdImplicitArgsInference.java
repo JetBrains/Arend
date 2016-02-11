@@ -91,7 +91,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     } else {
       result = myVisitor.typeCheck(fun, null);
     }
-    if (result == null) return null;
+    if (result == null) {
+      myVisitor.typeCheck(arg, null);
+      return null;
+    }
 
     if (result.expression instanceof ConCallExpression && Prelude.isPathCon(((ConCallExpression) result.expression).getDefinition())) {
       Expression interval = DataCall(Prelude.INTERVAL);
@@ -129,17 +132,13 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   @Override
   public CheckTypeVisitor.Result infer(Abstract.AppExpression expr, Expression expectedType) {
     Abstract.ArgumentExpression arg = expr.getArgument();
-    CheckTypeVisitor.Result result = inferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
-    myVisitor.updateAppResult(result, expr);
-    return result;
+    return inferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
   }
 
   @Override
   public CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr, Expression expectedType) {
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : ConcreteExpressionFactory.POSITION;
-    CheckTypeVisitor.Result result = inferArg(inferArg(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), expr.getLeft(), true, null), expr.getRight(), true, expr);
-    myVisitor.updateAppResult(result, expr);
-    return result;
+    return inferArg(inferArg(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), expr.getLeft(), true, null), expr.getRight(), true, expr);
   }
 
   @Override

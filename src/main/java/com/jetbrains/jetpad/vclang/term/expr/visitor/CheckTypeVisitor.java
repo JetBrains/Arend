@@ -181,7 +181,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, myArgsInference.infer(expr, expectedType), expr);
+    Result result = myArgsInference.infer(expr, expectedType);
+    if (expectedType == null) {
+      updateAppResult(result, expr);
+    }
+    return checkResultImplicit(expectedType, result, expr);
   }
 
   @Override
@@ -284,7 +288,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return result;
   }
 
-  public void updateAppResult(CheckTypeVisitor.Result result, Abstract.SourceNode fun) {
+  private void updateAppResult(CheckTypeVisitor.Result result, Abstract.SourceNode fun) {
     if (result == null || result.equations.isEmpty()) {
       return;
     }
@@ -306,7 +310,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     updateResult(result, bindings, fun, false);
   }
 
-  public void updateResult(CheckTypeVisitor.Result result, List<InferenceBinding> bindings, Abstract.SourceNode fun, boolean lambda) {
+  private void updateResult(CheckTypeVisitor.Result result, List<InferenceBinding> bindings, Abstract.SourceNode fun, boolean lambda) {
     Substitution substitution = result.equations.getInferenceVariables(bindings);
     result.expression = result.expression.subst(substitution);
     result.type = result.type.subst(substitution);
@@ -494,7 +498,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, myArgsInference.infer(expr, expectedType), expr);
+    Result result = myArgsInference.infer(expr, expectedType);
+    if (expectedType == null) {
+      updateAppResult(result, expr);
+    }
+    return checkResultImplicit(expectedType, result, expr);
   }
 
   @Override
