@@ -14,7 +14,9 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
@@ -648,15 +650,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
       if (patterns != null) {
-        DependentLink params = dataDefinition.getParameters();
+        List<Abstract.PatternArgument> processedPatterns = new ArrayList<>(patterns);
         if (dataDefinition.getThisClass() != null) {
-          params = params.getNext();
+          processedPatterns.add(0, new PatternArgument(new NamePattern(dataDefinition.getParameters()), true, true));
         }
-        List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(def, params, patterns);
+        processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), processedPatterns);
         if (processedPatterns == null)
           return null;
 
-        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, params, Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
+        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null)
           return null;
       } else {

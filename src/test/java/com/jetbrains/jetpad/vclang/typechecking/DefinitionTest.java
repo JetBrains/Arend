@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -109,7 +108,7 @@ public class DefinitionTest {
   @Test
   public void dataType2() {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D (A : \\7-Type2) | con1 (X : \\1-Type5) X | con2 (Y : \\2-Type3) A Y");
-    DependentLink A = param("A", Universe(2, 7));
+    DependentLink A = typedDef.getParameters();
 
     LinkList parameters1 = new LinkList();
     parameters1.append(param("X", Universe(5, 1)));
@@ -126,9 +125,8 @@ public class DefinitionTest {
     assertEquals(Pi(A, Universe(6, 7)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    Expression expectedType = Pi(parameters1.getFirst(), Apps(DataCall(typedDef), Reference(A)));
-    assertEquals(expectedType, typedDef.getConstructors().get(0).getType());
-    assertEquals(expectedType, typedDef.getConstructors().get(1).getType());
+    assertEquals(Pi(parameters1.getFirst(), Apps(DataCall(typedDef), Reference(A))), typedDef.getConstructors().get(0).getType());
+    assertEquals(Pi(parameters2.getFirst(), Apps(DataCall(typedDef), Reference(A))), typedDef.getConstructors().get(1).getType());
   }
 
   @Test
