@@ -148,9 +148,9 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   @Override
   public Void visitLam(LamExpression expr, Void params) {
     myStream.write(6);
-    expr.getBody().accept(this, null);
     try {
       ModuleSerialization.writeParameters(this, expr.getParameters());
+      expr.getBody().accept(this, null);
     } catch (IOException e) {
       throw new IllegalStateException();
     }

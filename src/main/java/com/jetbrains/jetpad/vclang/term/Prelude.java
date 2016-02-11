@@ -36,7 +36,7 @@ public class Prelude extends Namespace {
   public static FunctionDefinition ISO;
 
   private static char[] specInfix = {'@', '='};
-  private static String[] specPrefix = {"iso", "path", "Path"};
+  private static String[] specPrefix = {"iso", "path", "Path", "coe"};
 
   static {
     PRELUDE_CLASS = new ClassDefinition(RootModule.ROOT, new Name("Prelude"));
@@ -66,22 +66,12 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(LEFT);
     PRELUDE.addDefinition(RIGHT);
 
-    DependentLink coerceParameter1 = param("type", Pi(param(DataCall(INTERVAL)), Universe(Universe.NO_LEVEL)));
-    DependentLink coerceParameter2 = param("elem", Apps(Reference(coerceParameter1), ConCall(LEFT)));
-    DependentLink coerceParameter3 = param("point", DataCall(INTERVAL));
-    coerceParameter1.setNext(coerceParameter2);
-    coerceParameter2.setNext(coerceParameter3);
-    BranchElimTreeNode coerceElimTreeNode = branch(coerceParameter3, tail(),
-        clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2)));
-    COERCE = new FunctionDefinition(PRELUDE, new Name("coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode);
-
-    PRELUDE.addDefinition(COERCE);
-
     PATH = (DataDefinition) PRELUDE.getDefinition("Path");
     PATH_CON = (Constructor) PRELUDE.getDefinition("path");
     PATH_INFIX = (FunctionDefinition) PRELUDE.getDefinition("=");
     AT = (FunctionDefinition) PRELUDE.getDefinition("@");
     ISO = (FunctionDefinition) PRELUDE.getDefinition("iso");
+    COERCE = (FunctionDefinition) PRELUDE.getDefinition("coe");
   }
 
   private Prelude() {
@@ -175,13 +165,24 @@ public class Prelude extends Namespace {
     FunctionDefinition at = new FunctionDefinition(PRELUDE, new Name(new String(chars), Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree);
     PRELUDE.addDefinition(at);
 
+    DependentLink coerceParameter1 = param("type", Pi(param(DataCall(INTERVAL)), Universe(i, Universe.Type.NOT_TRUNCATED)));
+    DependentLink coerceParameter2 = param("elem", Apps(Reference(coerceParameter1), ConCall(LEFT)));
+    DependentLink coerceParameter3 = param("point", DataCall(INTERVAL));
+    coerceParameter1.setNext(coerceParameter2);
+    coerceParameter2.setNext(coerceParameter3);
+    BranchElimTreeNode coerceElimTreeNode = branch(coerceParameter3, tail(),
+        clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2)));
+    FunctionDefinition coe = new FunctionDefinition(PRELUDE, new Name("coe" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode);
+    PRELUDE.addDefinition(coe);
+
+
     DependentLink isoParameter1 = param(false, vars("A", "B"), Universe(i, Universe.Type.NOT_TRUNCATED));
     DependentLink isoParameter2 = param("f", Pi(param(Reference(isoParameter1)), Reference(isoParameter1.getNext())));
     DependentLink isoParameter3 = param("g", Pi(param(Reference(isoParameter1.getNext())), Reference(isoParameter1)));
     DependentLink piParamA = param("a", Reference(isoParameter1));
     DependentLink piParamB = param("b", Reference(isoParameter1.getNext()));
-    DependentLink isoParameter4 = param("linv", Pi(piParamA, Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Reference(isoParameter1), false, true)), Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA)), Reference(piParamA)))));
-    DependentLink isoParameter5 = param("rinv", Pi(piParamB, Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Reference(isoParameter1.getNext()), false, true)), Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB)), Reference(piParamB)))));
+    DependentLink isoParameter4 = param("linv", Pi(piParamA, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1), false, true)), Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA)), Reference(piParamA)))));
+    DependentLink isoParameter5 = param("rinv", Pi(piParamB, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1.getNext()), false, true)), Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB)), Reference(piParamB)))));
     DependentLink isoParameter6 = param("i", DataCall(INTERVAL));
     isoParameter1.setNext(isoParameter2);
     isoParameter2.setNext(isoParameter3);

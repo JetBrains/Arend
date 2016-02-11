@@ -26,7 +26,6 @@ public class DummyEquations implements Equations {
 
   @Override
   public void add(Expression expr1, Expression expr2, CMP cmp) {
-    throw new Exception();
   }
 
   @Override
