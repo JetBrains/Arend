@@ -30,6 +30,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
@@ -296,6 +297,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
+        context.subList(context.size() - size(list.getFirst()), context.size()).clear();
         TypeCheckingElim.Result elimResult = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedType, false);
         if (elimResult != null)
           typedDef.setElimTree(elimResult.elimTree);
@@ -663,6 +665,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           return null;
       } else {
         visitor.getContext().addAll(toContext(dataDefinition.getParameters()));
+      }
+
+      if (dataDefinition.getThisClass() != null && typedPatterns != null) {
+        visitor.setThisClass(dataDefinition.getThisClass(), Reference(typedPatterns.getParameters()));
       }
 
       LinkList list = new LinkList();

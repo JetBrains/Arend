@@ -165,6 +165,7 @@ public class TypeCheckingElim {
     final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
     clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
+      Expression oldThisExpression = myVisitor.getThisClass() == null ? null : myVisitor.getThisExpression();
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
         List<Pattern> clausePatterns = new ArrayList<>();
         Expression clauseExpectedType = expectedType;
@@ -192,6 +193,9 @@ public class TypeCheckingElim {
           Substitution subst = new Substitution(tailArgs, okResult.expression);
           tailArgs = tailArgs.getNext().subst(subst);
           clauseExpectedType = clauseExpectedType.subst(subst);
+          if (oldThisExpression != null) {
+            myVisitor.setThisClass(myVisitor.getThisClass(), myVisitor.getThisExpression().subst(subst));
+          }
         }
 
         if (clause.getExpression() != null) {
@@ -212,6 +216,10 @@ public class TypeCheckingElim {
         }
         patterns.add(clausePatterns);
         arrows.add(clause.getArrow());
+      } finally {
+        if (oldThisExpression != null) {
+          myVisitor.setThisClass(myVisitor.getThisClass(), oldThisExpression);
+        }
       }
     }
 
@@ -322,14 +330,16 @@ public class TypeCheckingElim {
   }
 
   private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode, LinkList links) {
-    if (pattern instanceof Abstract.NamePattern || pattern == null) {
-      String name = pattern == null || ((Abstract.NamePattern) pattern).getName() == null ? null : ((Abstract.NamePattern) pattern).getName();
-      links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
+    if (pattern == null) {
+      links.append(new TypedDependentLink(true, binding.getName(), binding.getType(), EmptyDependentLink.getInstance()));
+      myVisitor.getContext().add(links.getLast());
+      return new ExpandPatternOKResult(Reference(links.getLast()), new NamePattern(links.getLast()));
+    } else if (pattern instanceof Abstract.NamePattern) {
+      links.append(new TypedDependentLink(true, ((Abstract.NamePattern) pattern).getName(), binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
       myVisitor.getContext().add(links.getLast());
-      if (pattern != null)
-        pattern.setWellTyped(namePattern);
-      return new ExpandPatternOKResult(Reference(binding), namePattern);
+      pattern.setWellTyped(namePattern);
+      return new ExpandPatternOKResult(Reference(links.getLast()), namePattern);
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       TypeCheckingError error = null;
 

@@ -86,8 +86,8 @@ public class GetTypeTest {
         "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     Namespace namespace = def.getParentNamespace().findChild(def.getName());
     assertEquals(Apps(namespace.getMember("C").definition.getDefCall(), Zero()), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c1").getType());
-    DependentLink n = param("n", Nat());
-    assertEquals(Pi(n, Apps(namespace.getMember("C").definition.getDefCall(), Suc(Reference(n)))), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
+    assertEquals(Pi(param(Nat()), Apps(namespace.getMember("C").definition.getDefCall(), Suc(Reference(((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getDataTypeParameters())))),
+        ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
   }
 
   @Test

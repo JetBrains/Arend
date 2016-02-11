@@ -23,6 +23,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.expression;
@@ -118,6 +119,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
     myTypeCheckingDefCall.setThisClass(thisClass, thisExpr);
+  }
+
+  public ClassDefinition getThisClass() {
+    return myTypeCheckingDefCall.getThisClass();
+  }
+
+  public Expression getThisExpression() {
+    return myTypeCheckingDefCall.getThisExpression();
   }
 
   public List<Binding> getContext() {
@@ -366,7 +375,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       if (expectedTypeNorm instanceof SigmaExpression) {
         DependentLink sigmaParams = ((SigmaExpression) expectedTypeNorm).getParameters();
-        int sigmaParamsSize = DependentLink.Helper.size(sigmaParams);
+        int sigmaParamsSize = size(sigmaParams);
 
         if (expr.getFields().size() != sigmaParamsSize) {
           TypeCheckingError error = new TypeCheckingError("Expected a tuple with " + sigmaParamsSize + " fields, but given " + expr.getFields().size(), expr);
@@ -728,6 +737,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       if (clause.getTerm() instanceof Abstract.ElimExpression)  {
+        myContext.subList(myContext.size() - size(links.getFirst()), myContext.size()).clear();
         TypeCheckingElim.Result elimResult = myTypeCheckingElim.typeCheckElim((Abstract.ElimExpression) clause.getTerm(), clause.getArrow() == Abstract.Definition.Arrow.LEFT ? links.getFirst() : null, expectedType, false);
         if (elimResult == null)
           return null;
