@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 
 import java.util.ArrayList;
@@ -641,10 +642,11 @@ public class CompareVisitor implements AbstractExpressionVisitor<Expression, Com
     List<Abstract.Expression> args = new ArrayList<>();
     for (Abstract.TypeArgument arg : arguments) {
       if (arg instanceof Abstract.TelescopeArgument) {
-        for (String ignored : ((Abstract.TelescopeArgument) arg).getNames()) {
-          args.add(arg.getType());
+        for (int i = 0; i < ((Abstract.TelescopeArgument) arg).getNames().size(); i++) {
+          //args.add(arg instanceof TelescopeArgument ? ((TelescopeArgument) arg).getType().liftIndex(0, i)  : arg.getType());
+          args.add(((TelescopeArgument) arg).getType().liftIndex(0, i));
         }
-      } else {
+      }  else {
         args.add(arg.getType());
       }
     }

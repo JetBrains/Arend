@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
@@ -34,8 +35,8 @@ public class Prelude extends Namespace {
 
   public static FunctionDefinition ISO;
 
-  public static DataDefinition PROP_TRUNC;
-  public static DataDefinition SET_TRUNC;
+  //public static DataDefinition PROP_TRUNC;
+  //public static DataDefinition SET_TRUNC;
 
   private static char[] specInfix = {'@', '='};
   private static String[] specPrefix = {"iso", "path", "Path"};
@@ -101,6 +102,19 @@ public class Prelude extends Namespace {
     AT = (FunctionDefinition) levels.get(0).at;
     ISO = (FunctionDefinition) levels.get(0).iso;
     COERCE = (FunctionDefinition) levels.get(0).coe;
+
+    List<Argument> isoP_Arguments = new ArrayList<>(6);
+    isoP_Arguments.add(Tele(false, vars("A", "B"), Universe(0, Universe.Type.PROP)));
+    isoP_Arguments.add(Tele(vars("f"), Pi(Index(1), Index(0))));
+    isoP_Arguments.add(Tele(vars("g"), Pi(Index(1), Index(2))));
+    isoP_Arguments.add(Tele(vars("i"), DataCall(INTERVAL)));
+    Expression isoResultType = Universe(0, Universe.Type.PROP);
+    BranchElimTreeNode isoElimTree = branch(0,
+            clause(LEFT, Index(3)),
+            clause(RIGHT, Index(2))
+    );
+    FunctionDefinition isoP = new FunctionDefinition(PRELUDE, new Name("isoP"), Abstract.Definition.DEFAULT_PRECEDENCE, isoP_Arguments, isoResultType, isoElimTree);
+    PRELUDE.addDefinition(isoP);
  }
 
   private Prelude() {
@@ -133,8 +147,9 @@ public class Prelude extends Namespace {
           generateLevel(0);
           return getMember(name);
         }
+        String suffix = name.substring(sname.length());
         try {
-          Integer level = Integer.parseInt(name.substring(sname.length()));
+          Integer level = Integer.parseInt(suffix);
           if (level > 0) {
             generateLevel(level);
             return getMember(name);

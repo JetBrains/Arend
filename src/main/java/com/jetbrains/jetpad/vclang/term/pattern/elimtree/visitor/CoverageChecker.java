@@ -59,7 +59,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<List<Expression>, Bo
         }
       } else if (((UniverseExpression) myResultType.getType(myContext)).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.SET))) {
         if (Prelude.isTruncS(conCall.getDefinition())) {
-
+          continue;
         }
       }
       try (ConCallContextExpander expander = new ConCallContextExpander(branchNode.getIndex(), conCall, myContext)) {
