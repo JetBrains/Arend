@@ -6,10 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
@@ -40,12 +37,25 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     public Expression expression;
     public Expression type;
     public Equations equations;
+    public Set<InferenceBinding> unsolvedVariables;
 
     public Result(Expression expression, Expression type, Equations equations) {
       assert equations != null;
       this.expression = expression;
       this.type = type;
       this.equations = equations;
+      this.unsolvedVariables = Collections.emptySet();
+    }
+
+    public void addUnsolvedVariable(InferenceBinding binding) {
+      if (unsolvedVariables.isEmpty()) {
+        unsolvedVariables = new HashSet<>();
+      }
+      unsolvedVariables.add(binding);
+    }
+
+    public boolean removeUnsolvedVariable(InferenceBinding binding) {
+      return unsolvedVariables.remove(binding);
     }
   }
 
@@ -170,7 +180,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return result;
     }
     result = myArgsInference.inferTail(result, expectedType, expression);
-    updateAppResult(result, expression);
+    updateResult(result);
     return result;
   }
 
@@ -184,7 +194,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result checkType(Abstract.Expression expr, Expression expectedType) {
     Result result = typeCheck(expr, expectedType);
     if (result == null) return null;
+    updateResult(result);
     result.equations.reportErrors(myErrorReporter);
+    for (InferenceBinding unsolvedVariable : result.unsolvedVariables) {
+      unsolvedVariable.reportError(myErrorReporter);
+    }
     return result;
   }
 
@@ -192,7 +206,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
     Result result = myArgsInference.infer(expr, expectedType);
     if (expectedType == null) {
-      updateAppResult(result, expr);
+      updateResult(result);
     }
     return checkResultImplicit(expectedType, result, expr);
   }
@@ -213,12 +227,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression expectedCodomain = expectedType == null ? null : expectedType.getPiParameters(piParams, true, false);
     LinkList list = new LinkList();
     DependentLink actualPiLink = null;
-    Equations equations = myArgsInference.newEquations();
+    Result result = new Result(null, null, myArgsInference.newEquations());
     int piParamsIndex = 0;
     int argIndex = 1;
 
     Result bodyResult;
-    List<InferenceBinding> inferenceBindings = new ArrayList<>();
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
       for (Abstract.Argument argument : expr.getArguments()) {
         List<String> names;
@@ -233,7 +246,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           argType = ((Abstract.TypeArgument) argument).getType();
           argResult = typeCheck(argType, Universe());
           if (argResult == null) return null;
-          equations.add(argResult.equations);
+          result.equations.add(argResult.equations);
         } else {
           throw new IllegalStateException();
         }
@@ -249,7 +262,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               link.setExplicit(piLink.isExplicit());
             }
             if (argResult != null) {
-              if (!CompareVisitor.compare(equations, Equations.CMP.EQ, piLink.getType().normalize(NormalizeVisitor.Mode.NF), argResult.expression.normalize(NormalizeVisitor.Mode.NF))) {
+              if (!CompareVisitor.compare(result.equations, Equations.CMP.EQ, piLink.getType().normalize(NormalizeVisitor.Mode.NF), argResult.expression.normalize(NormalizeVisitor.Mode.NF))) {
                 TypeCheckingError error = new TypeMismatchError(piLink.getType().normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType);
                 myErrorReporter.report(error);
                 return null;
@@ -259,9 +272,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             }
           } else {
             if (argResult == null) {
-              InferenceBinding inferenceBinding = new InferenceBinding("type_of_" + name, Universe());
+              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type_of_" + name, Universe(), argIndex, expr);
               link.setType(Reference(inferenceBinding));
-              inferenceBindings.add(inferenceBinding);
+              result.addUnsolvedVariable(inferenceBinding);
             }
             if (actualPiLink == null) {
               actualPiLink = link;
@@ -282,54 +295,27 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       Abstract.Expression body = expr.getBody();
       bodyResult = typeCheck(body, expectedBodyType);
       if (bodyResult == null) return null;
-      equations.add(bodyResult.equations);
-      if (actualPiLink != null && expectedCodomain != null && !compare(new Result(bodyResult.expression, Pi(actualPiLink, bodyResult.type), equations), expectedCodomain, Equations.CMP.EQ, body)) {
+      result.equations.add(bodyResult.equations);
+      if (actualPiLink != null && expectedCodomain != null && !compare(new Result(bodyResult.expression, Pi(actualPiLink, bodyResult.type), result.equations), expectedCodomain, Equations.CMP.EQ, body)) {
         return null;
       }
 
       for (int i = saver.getOriginalSize(); i < myContext.size(); i++) {
-        equations.abstractBinding(myContext.get(i));
+        result.equations.abstractBinding(myContext.get(i));
       }
     }
 
-    Result result = new Result(Lam(list.getFirst(), bodyResult.expression), Pi(list.getFirst(), bodyResult.type), equations);
-    updateResult(result, inferenceBindings, expr, true);
+    result.expression = Lam(list.getFirst(), bodyResult.expression);
+    result.type = Pi(list.getFirst(), bodyResult.type);
+    updateResult(result);
     return result;
   }
 
-  private void updateAppResult(CheckTypeVisitor.Result result, Abstract.SourceNode fun) {
-    if (result == null || result.equations.isEmpty()) {
-      return;
-    }
-    while (fun instanceof Abstract.AppExpression) {
-      fun = ((Abstract.AppExpression) fun).getFunction();
-    }
-
-    List<InferenceBinding> bindings = new ArrayList<>();
-    for (Expression expr = result.expression; expr instanceof AppExpression; expr = ((AppExpression) expr).getFunction()) {
-      Expression argument = ((AppExpression) expr).getArgument().getExpression();
-      if (argument instanceof ReferenceExpression && ((ReferenceExpression) argument).getBinding() instanceof InferenceBinding) {
-        bindings.add((InferenceBinding) ((ReferenceExpression) argument).getBinding());
-      }
-    }
-    if (bindings.isEmpty()) {
-      return;
-    }
-    Collections.reverse(bindings);
-    updateResult(result, bindings, fun, false);
-  }
-
-  private void updateResult(CheckTypeVisitor.Result result, List<InferenceBinding> bindings, Abstract.SourceNode fun, boolean lambda) {
-    Substitution substitution = result.equations.getInferenceVariables(bindings);
+  private void updateResult(CheckTypeVisitor.Result result) {
+    if (result == null) return;
+    Substitution substitution = result.equations.getInferenceVariables(result.unsolvedVariables);
     result.expression = result.expression.subst(substitution);
     result.type = result.type.subst(substitution);
-
-    for (int i = 0; i < bindings.size(); i++) {
-      if (substitution.get(bindings.get(i)) == null) {
-        TypeCheckingError error = new ArgInferenceError(lambda ? ArgInferenceError.lambdaArg(i + 1) : ArgInferenceError.functionArg(i + 1), fun, null);
-        myErrorReporter.report(error);
-      }
-    }
   }
 
   @Override
@@ -491,7 +477,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result visitBinOp(Abstract.BinOpExpression expr, Expression expectedType) {
     Result result = myArgsInference.infer(expr, expectedType);
     if (expectedType == null) {
-      updateAppResult(result, expr);
+      updateResult(result);
     }
     return checkResultImplicit(expectedType, result, expr);
   }

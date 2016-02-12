@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
-import java.util.List;
+import java.util.Set;
 
 public class DummyEquations implements Equations {
   private static final DummyEquations INSTANCE = new DummyEquations();
@@ -49,7 +49,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(List<InferenceBinding> binding) {
+  public Substitution getInferenceVariables(Set<InferenceBinding> binding) {
     throw new Exception();
   }
 

@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
-import java.util.List;
+import java.util.Set;
 
 public interface Equations {
   void add(Equations equations);
@@ -16,7 +16,7 @@ public interface Equations {
   boolean isEmpty();
   void abstractBinding(Binding binding);
   Equations newInstance();
-  Substitution getInferenceVariables(List<InferenceBinding> binding);
+  Substitution getInferenceVariables(Set<InferenceBinding> binding);
   void reportErrors(ErrorReporter errorReporter);
 
   enum CMP {

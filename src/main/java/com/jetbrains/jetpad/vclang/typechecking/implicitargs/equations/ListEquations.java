@@ -87,8 +87,7 @@ public class ListEquations implements Equations {
           mySolutions.put((InferenceBinding) ((ReferenceExpression) expr).getBinding(), expression);
         } else {
           if (!CompareVisitor.compare(this, CMP.EQ, expression, expr)) {
-            // TODO: Add SourceNode
-            myErrorReporter.report(new TypeCheckingError("Cannot solve equation:\nFirst expression: " + expression + "Second expression: " + expr, null));
+            binding.reportError(myErrorReporter, expression, expr);
           }
         }
       } else {
@@ -127,10 +126,9 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(List<InferenceBinding> bindings0) {
-    List<InferenceBinding> bindings = new ArrayList<>(bindings0);
+  public Substitution getInferenceVariables(Set<InferenceBinding> bindings) {
     Substitution result = new Substitution();
-    if (mySolutions.isEmpty()) {
+    if (mySolutions.isEmpty() || bindings.isEmpty()) {
       return result;
     }
 
@@ -138,20 +136,20 @@ public class ListEquations implements Equations {
     do {
       was = false;
       Substitution substitution = new Substitution();
-      for (int i = 0; i < bindings.size(); i++) {
-        Expression subst = mySolutions.get(bindings.get(i));
-        if (subst != null) {
-          mySolutions.remove(bindings.get(i));
-          if (subst.findBinding(bindings.get(i))) {
-            // TODO: Add SourceNode
-            myErrorReporter.report(new TypeCheckingError("Cannot infer variable " + bindings.get(i).getName() + "\nExpected expression: " + subst, null));
+      for (Iterator<Map.Entry<InferenceBinding, Expression>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
+        Map.Entry<InferenceBinding, Expression> entry = it.next();
+        if (bindings.remove(entry.getKey())) {
+          Expression subst = entry.getValue();
+          if (subst.findBinding(entry.getKey())) {
+            entry.getKey().reportError(myErrorReporter, subst);
           } else {
-            substitution.add(bindings.get(i), subst);
+            substitution.add(entry.getKey(), subst);
           }
-          bindings.remove(i--);
+          it.remove();
           was = true;
         }
       }
+
       result.add(substitution);
       subst(substitution);
     } while (was);

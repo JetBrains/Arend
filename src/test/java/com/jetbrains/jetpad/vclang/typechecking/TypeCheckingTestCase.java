@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 public class TypeCheckingTestCase {
   public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
-    return expression.accept(new CheckTypeVisitor.Builder(context, errorReporter).build(), expectedType);
+    return new CheckTypeVisitor.Builder(context, errorReporter).build().checkType(expression, expectedType);
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {

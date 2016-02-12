@@ -241,10 +241,9 @@ public class ModuleDeserialization {
     if (!definition.typeHasErrors()) {
       definition.setParameters(readParameters(stream, definitionMap));
       definition.setResultType(readExpression(stream, definitionMap));
-    }
-
-    if (stream.readBoolean()) {
-      definition.setElimTree(myElimTreeDeserialization.readElimTree(stream, definitionMap));
+      if (stream.readBoolean()) {
+        definition.setElimTree(myElimTreeDeserialization.readElimTree(stream, definitionMap));
+      }
     }
   }
 

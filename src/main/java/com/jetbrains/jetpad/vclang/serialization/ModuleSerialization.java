@@ -203,10 +203,10 @@ public class ModuleSerialization {
     if (!definition.typeHasErrors()) {
       writeParameters(visitor, definition.getParameters());
       definition.getResultType().accept(visitor, null);
-    }
-    visitor.getDataStream().writeBoolean(definition.getElimTree() != null);
-    if (definition.getElimTree() != null) {
-      definition.getElimTree().accept(visitor, null);
+      visitor.getDataStream().writeBoolean(!definition.hasErrors() && definition.getElimTree() != null);
+      if (definition.getElimTree() != null) {
+        definition.getElimTree().accept(visitor, null);
+      }
     }
 
     return errors;

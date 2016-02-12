@@ -255,4 +255,17 @@ public class ImplicitArgumentsTest {
 
     assertNull(typeCheckExpr(context, "\\lam x1 x2 x3 => f x2 x1 x3", null, 1));
   }
+
+  @Test
+  public void inferLater() {
+    // f : {A : \Type0} (B : \Type1) -> A -> B -> A |- f Nat (\lam x => x) 0 : Nat -> Nat
+    List<Binding> context = new ArrayList<>();
+    DependentLink A = param(false, "A", Universe(0));
+    DependentLink B = param(true, "B", Universe(1));
+    A.setNext(B);
+    B.setNext(params(param(Reference(A)), param(Reference(B))));
+    context.add(new TypedBinding("f", Pi(A, Reference(A))));
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "f Nat (\\lam x => x) 0", Pi(Nat(), Nat()));
+    assertNotNull(result);
+  }
 }
