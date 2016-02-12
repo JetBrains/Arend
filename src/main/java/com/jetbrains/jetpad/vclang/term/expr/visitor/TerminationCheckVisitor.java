@@ -171,11 +171,6 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   }
 
   @Override
-  public Boolean visitInferHole(InferHoleExpression expr, Void params) {
-    return true;
-  }
-
-  @Override
   public Boolean visitError(ErrorExpression expr, Void params) {
     return true;
   }

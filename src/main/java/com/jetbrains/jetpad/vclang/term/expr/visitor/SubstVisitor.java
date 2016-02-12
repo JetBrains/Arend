@@ -135,11 +135,6 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
-  public Expression visitInferHole(InferHoleExpression expr, Void params) {
-    return expr;
-  }
-
-  @Override
   public Expression visitTuple(TupleExpression expr, Void params) {
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {

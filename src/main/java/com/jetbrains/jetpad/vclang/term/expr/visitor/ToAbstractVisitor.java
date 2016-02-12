@@ -185,11 +185,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   @Override
-  public Abstract.Expression visitInferHole(InferHoleExpression expr, Void params) {
-    return myFactory.makeInferHole();
-  }
-
-  @Override
   public Abstract.Expression visitError(ErrorExpression expr, Void params) {
     return myFactory.makeError(expr.getExpr() == null ? null : expr.getExpr().accept(this, null));
   }

@@ -360,19 +360,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitTuple(Abstract.TupleExpression expr, Expression expectedType) {
-    Expression expectedTypeNorm;
+    Expression expectedTypeNorm = null;
     if (expectedType != null) {
       expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
-      if (!(expectedTypeNorm instanceof SigmaExpression || expectedType instanceof InferHoleExpression)) {
-        // TODO
-        // Expression fExpectedTypeNorm = expectedTypeNorm.getFunction(new ArrayList<Expression>());
-
-        TypeCheckingError error = new TypeMismatchError(expectedTypeNorm, Sigma(params(param(Error(null, null)), param(Error(null, null)))), expr);
-        expr.setWellTyped(myContext, Error(null, error));
-        myErrorReporter.report(error);
-        return null;
-      }
-
       if (expectedTypeNorm instanceof SigmaExpression) {
         DependentLink sigmaParams = ((SigmaExpression) expectedTypeNorm).getParameters();
         int sigmaParamsSize = size(sigmaParams);
@@ -387,16 +377,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         List<Expression> fields = new ArrayList<>(expr.getFields().size());
         Expression expression = Tuple(fields, (SigmaExpression) expectedTypeNorm);
         Equations equations = myArgsInference.newEquations();
-        for (int i = 0; i < sigmaParamsSize; i++) {
-          Substitution substitution = new Substitution();
-          for (int j = fields.size() - 1; j >= 0; --j) {
-            substitution.add(sigmaParams, fields.get(j));
-          }
-
+        Substitution substitution = new Substitution();
+        for (Abstract.Expression field : expr.getFields()) {
           Expression expType = sigmaParams.getType().subst(substitution);
-          Result result = typeCheck(expr.getFields().get(i), expType);
+          Result result = typeCheck(field, expType);
           if (result == null) return null;
           fields.add(result.expression);
+          substitution.add(sigmaParams, result.expression);
           if (result.equations != null) {
             equations.add(result.equations);
           }
@@ -421,12 +408,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     SigmaExpression type = Sigma(list.getFirst());
-    /* TODO
-    if (expectedTypeNorm instanceof InferHoleExpression) {
-      equations.add(new CompareVisitor.Equation((InferHoleExpression) expectedTypeNorm, type));
-    }
-    */
-    return new Result(Tuple(fields, type), type, equations);
+    return checkResult(expectedTypeNorm, new Result(Tuple(fields, type), type, equations), expr);
   }
 
   public Result visitArguments(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression codomain, Abstract.Expression expr) {

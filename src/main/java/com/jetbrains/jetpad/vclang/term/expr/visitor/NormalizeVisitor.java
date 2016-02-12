@@ -369,11 +369,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
-  public Expression visitInferHole(InferHoleExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : expr;
-  }
-
-  @Override
   public Expression visitTuple(TupleExpression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
     if (mode != Mode.NF && mode != Mode.HUMAN_NF) return expr;

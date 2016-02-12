@@ -181,11 +181,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   }
 
   @Override
-  public Void visitInferHole(InferHoleExpression expr, Void params) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Void visitError(ErrorExpression expr, Void params) {
     ++myErrors;
     myStream.write(9);

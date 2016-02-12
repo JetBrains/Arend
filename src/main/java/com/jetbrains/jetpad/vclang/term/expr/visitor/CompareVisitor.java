@@ -354,11 +354,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   @Override
-  public Boolean visitInferHole(InferHoleExpression expr1, Expression expr2) {
-    return false;
-  }
-
-  @Override
   public Boolean visitError(ErrorExpression expr1, Expression expr2) {
     return false;
   }
