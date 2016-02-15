@@ -116,7 +116,15 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
-    return new LeafElimTreeNode(leafNode.getArrow(), leafNode.getExpression().accept(this, null));
+    LeafElimTreeNode result = new LeafElimTreeNode(leafNode.getArrow(), leafNode.getExpression().accept(this, null));
+    if (leafNode.getMatched() != null) {
+      List<Binding> matched = new ArrayList<>(leafNode.getMatched().size());
+      for (Binding binding : leafNode.getMatched()) {
+        matched.add(mySubstitution.getDomain().contains (binding) ? ((ReferenceExpression) mySubstitution.get(binding)).getBinding() : binding);
+      }
+      result.setMatched(matched);
+    }
+    return result;
   }
 
   @Override

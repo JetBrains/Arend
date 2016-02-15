@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
@@ -9,6 +12,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+
+import java.util.List;
 
 public abstract class ElimTreeNode {
   private Clause myParent = null;
@@ -36,6 +41,10 @@ public abstract class ElimTreeNode {
   public ElimTreeNode matchUntilStuck(Substitution subst) {
     return matchUntilStuck(subst, true);
   }
+
+  public abstract void updateLeavesMatched(List<Binding> context);
+
+  public abstract LeafElimTreeNode match(List<Expression> expressions);
 
   public abstract Abstract.Definition.Arrow getArrow();
 

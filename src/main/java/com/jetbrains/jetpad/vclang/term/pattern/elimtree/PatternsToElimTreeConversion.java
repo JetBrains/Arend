@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.top;
 
 public class PatternsToElimTreeConversion {
 
@@ -67,7 +68,7 @@ public class PatternsToElimTreeConversion {
     if (!emptyReachable.isEmpty()) {
       return new EmptyReachableResult(emptyReachable);
     } else {
-      return new OKResult(treeExpansionResult.tree);
+      return new OKResult(top(eliminatingArgs, treeExpansionResult.tree));
     }
   }
 }

@@ -5,12 +5,8 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Function;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 
 import java.util.*;
@@ -191,22 +187,29 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     excessiveParams = excessiveParams.subst(new Substitution());
-    Substitution args2subst = completeArgs(args, conCallExpression.getDefinition().getParameters(), excessiveParams);
+    List<Expression> args2 = completeArgs(args, conCallExpression.getDefinition().getParameters(), excessiveParams);
+
+
+    Condition condition = conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition());
+    if (condition == null) {
+      return applyDefCall(conCallExpression, args, mode);
+    }
+
+    LeafElimTreeNode leaf = condition.getElimTree().match(args2);
+    if (leaf == null) {
+      return applyDefCall(conCallExpression, args, mode);
+    }
+
+    Substitution subst = leaf.matchedToSubst(args2);
+
     DependentLink link = conCallExpression.getDefinition().getDataTypeParameters();
     for (Expression argument : conCallExpression.getDataTypeArguments()) {
-      args2subst.add(link, argument);
+      subst.add(link, argument);
       link = link.getNext();
     }
 
-    if (conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()) == null) {
-      return applyDefCall(conCallExpression, args, mode);
-    }
+    Expression result = leaf.getExpression().subst(subst);
 
-    ElimTreeNode node = conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition()).getElimTree().matchUntilStuck(args2subst);
-    if (!(node instanceof LeafElimTreeNode)) {
-      return applyDefCall(conCallExpression, args, mode);
-    }
-    Expression result = ((LeafElimTreeNode) node).getExpression().subst(args2subst);
     result = excessiveParams.hasNext() ? Lam(excessiveParams, result) : result;
     return mode == Mode.TOP ? result : result.accept(this, mode);
   }
@@ -252,14 +255,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     excessiveParams = excessiveParams.subst(new Substitution());
-    Substitution args2subst = completeArgs(args, func.getParameters(), excessiveParams);
+    List<Expression> args2 = completeArgs(args, func.getParameters(), excessiveParams);
 
-    ElimTreeNode node = func.getElimTree().matchUntilStuck(args2subst);
-    if (!(node instanceof LeafElimTreeNode)) {
+    LeafElimTreeNode leaf = func.getElimTree().match(args2);
+    if (leaf == null) {
       return applyDefCall(defCallExpr, args, mode);
     }
-    LeafElimTreeNode leaf = (LeafElimTreeNode) node;
-    Expression result = leaf.getExpression().subst(args2subst);
+
+    Expression result = leaf.getExpression().subst(leaf.matchedToSubst(args2));
     if ((mode == Mode.HUMAN_NF || mode == Mode.TOP) && leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
       result = result.accept(this, Mode.TOP);
       if (result == null) {
@@ -274,17 +277,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return mode == Mode.TOP ? result : result.accept(this, mode);
   }
 
-  private Substitution completeArgs(List<ArgumentExpression> args, DependentLink params, DependentLink excessiveParams) {
-    Substitution result = new Substitution();
+  private List<Expression> completeArgs(List<ArgumentExpression> args, DependentLink params, DependentLink excessiveParams) {
+    List<Expression> result = new ArrayList<>();
     for (ArgumentExpression arg : args) {
       if (!params.hasNext()) {
         break;
       }
-      result.add(params, arg.getExpression());
+      result.add(arg.getExpression());
       params = params.getNext();
     }
     for (; excessiveParams.hasNext(); excessiveParams = excessiveParams.getNext(), params = params.getNext()) {
-      result.add(params, Reference(excessiveParams));
+      result.add(Reference(excessiveParams));
     }
     return result;
   }

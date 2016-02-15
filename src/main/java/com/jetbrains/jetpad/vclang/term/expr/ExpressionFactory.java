@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
@@ -246,6 +247,11 @@ public class ExpressionFactory {
 
   public static List<Binding> tail(Binding... bindings) {
     return Arrays.asList(bindings);
+  }
+
+  public static ElimTreeNode top(DependentLink parameters, ElimTreeNode tree) {
+    tree.updateLeavesMatched(toContext(parameters));
+    return tree;
   }
 
   public static BranchElimTreeNode branch(Binding reference, List<Binding> tail, ConstructorClausePair... clauses) {

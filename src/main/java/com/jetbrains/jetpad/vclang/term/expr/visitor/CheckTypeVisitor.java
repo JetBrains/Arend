@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingResult;
@@ -720,7 +719,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           }
           letResult.add(termResult);
         }
-        elimTree = new LeafElimTreeNode(clause.getArrow(), termResult.expression);
+        elimTree = top(links.getFirst(), leaf(clause.getArrow(), termResult.expression));
         resultType = termResult.type;
       }
 
