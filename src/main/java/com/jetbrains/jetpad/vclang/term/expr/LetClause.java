@@ -52,4 +52,13 @@ public class LetClause extends NamedBinding implements Function {
   public Expression getType() {
     return Function.Helper.getFunctionType(this);
   }
+
+  public LetClause subst(Substitution substitution) {
+    if (substitution.getDomain().isEmpty()) {
+      return this;
+    }
+
+    DependentLink parameters = myParameters.subst(substitution);
+    return new LetClause(getName(), parameters, myResultType.subst(substitution), myElimTree.subst(substitution));
+  }
 }

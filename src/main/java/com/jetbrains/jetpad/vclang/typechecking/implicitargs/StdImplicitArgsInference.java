@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
@@ -83,7 +84,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     result.expression = new AppExpression(result.expression, new ArgumentExpression(argResult.expression, isExplicit, false));
     result.type = actualType.applyExpressions(Collections.singletonList(argResult.expression));
-    result.equations.add(argResult.equations);
+    result.add(argResult);
+    result.update();
     return result;
   }
 
@@ -104,7 +106,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             PiExpression piType = (PiExpression) type;
             DependentLink params = piType.getParameters();
             Expression domType = params.getType().normalize(NormalizeVisitor.Mode.WHNF);
-            if (CompareVisitor.compare(argResult.equations, Equations.CMP.EQ, interval, domType)) {
+
+            if (argResult.getEquations() instanceof DummyEquations) {
+              argResult.setEquations(myVisitor.getImplicitArgsInference().newEquations());
+            }
+            if (CompareVisitor.compare(argResult.getEquations(), Equations.CMP.EQ, interval, domType)) {
               Expression lamExpr;
               if (params.getNext().hasNext()) {
                 DependentLink lamParam = param("i", interval);
@@ -115,7 +121,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
               Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
               Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
               Constructor pathCon = ((ConCallExpression) result.expression).getDefinition();
-              return new CheckTypeVisitor.Result(Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression), Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2), argResult.equations);
+              argResult.expression = Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression);
+              argResult.type = Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2);
+              return argResult;
             }
           }
 
@@ -189,6 +197,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     if (!fixImplicitArgs(result, actualParams.subList(0, argsNumber), expr)) {
       return null;
     }
-    return myVisitor.checkResult(expectedType1.fromPiParameters(expectedParams), result, expr);
+    result = myVisitor.checkResult(expectedType1.fromPiParameters(expectedParams), result, expr);
+    result.update();
+    return result;
   }
 }

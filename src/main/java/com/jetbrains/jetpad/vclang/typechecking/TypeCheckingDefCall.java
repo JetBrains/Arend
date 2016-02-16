@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
 import com.jetbrains.jetpad.vclang.typechecking.error.NameDefinedError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,7 +66,7 @@ public class TypeCheckingDefCall {
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
-      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType(), DummyEquations.getInstance());
+      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType());
       if (definition instanceof Constructor) {
         fixConstructorParameters((Constructor) definition, result, false);
       }
@@ -119,7 +118,7 @@ public class TypeCheckingDefCall {
     while (it.hasPrevious()) {
       Binding def = it.previous();
       if (name.equals(def.getName())) {
-        return new CheckTypeVisitor.Result(Reference(def), def.getType(), DummyEquations.getInstance());
+        return new CheckTypeVisitor.Result(Reference(def), def.getType());
       }
     }
 
@@ -219,7 +218,7 @@ public class TypeCheckingDefCall {
           if (result1 == null) {
             return null;
           }
-          result1.equations = result.baseResult.equations;
+          result1.add(result.baseResult);
           result.baseResult = result1;
           result.baseClassDefinition = null;
           result.member = null;
@@ -278,7 +277,7 @@ public class TypeCheckingDefCall {
             if (conResult == null) {
               return null;
             }
-            conResult.equations = result.baseResult.equations;
+            conResult.add(result.baseResult);
             return new DefCallResult(conResult, null, null);
           }
         }
@@ -323,7 +322,7 @@ public class TypeCheckingDefCall {
       }
     }
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType().subst(toSubstitution(constructor.getDataTypeParameters(), arguments)), DummyEquations.getInstance());
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType().subst(toSubstitution(constructor.getDataTypeParameters(), arguments)));
     fixConstructorParameters(constructor, result, true);
     return result;
   }

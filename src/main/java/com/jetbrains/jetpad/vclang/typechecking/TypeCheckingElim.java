@@ -25,8 +25,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker
 import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.ListEquations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -119,13 +117,16 @@ public class TypeCheckingElim {
     return new Patterns(typedPatterns);
   }
 
-  public static class Result {
-    public final ElimTreeNode elimTree;
-    public final Equations equations;
+  public static class Result extends TypeCheckingResult {
+    public ElimTreeNode elimTree;
 
-    public Result(ElimTreeNode elimTree, Equations equations) {
+    public Result(ElimTreeNode elimTree) {
       this.elimTree = elimTree;
-      this.equations = equations;
+    }
+
+    @Override
+    public void subst(Substitution substitution) {
+      elimTree = elimTree.subst(substitution);
     }
   }
 
@@ -159,7 +160,7 @@ public class TypeCheckingElim {
 
     List<Binding> argsBindings = toContext(eliminatingArgs);
 
-    Equations equations = new ListEquations();
+    Result result = new Result(null);
     final List<List<Pattern>> patterns = new ArrayList<>();
     final List<Expression> expressions = new ArrayList<>();
     final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
@@ -173,22 +174,22 @@ public class TypeCheckingElim {
         DependentLink tailArgs = eliminatingArgs;
         LinkList links = new LinkList();
         for (int i = 0, j = 0; tailArgs.hasNext() && i < argsBindings.size(); i++) {
-          ExpandPatternResult result;
+          ExpandPatternResult patternResult;
           if (j < elimExprs.size() && elimExprs.get(j).getBinding() == argsBindings.get(i)) {
-            result = expandPattern(clause.getPatterns().get(j), tailArgs, PatternExpansionMode.FUNCTION, links);
+            patternResult = expandPattern(clause.getPatterns().get(j), tailArgs, PatternExpansionMode.FUNCTION, links);
             j++;
           } else {
-            result = expandPattern(null, tailArgs, PatternExpansionMode.FUNCTION, links);
+            patternResult = expandPattern(null, tailArgs, PatternExpansionMode.FUNCTION, links);
           }
 
-          if (result instanceof ExpandPatternErrorResult) {
+          if (patternResult instanceof ExpandPatternErrorResult) {
             assert j <= elimExprs.size();
-            expr.getExpressions().get(j - 1).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) result).error));
+            expr.getExpressions().get(j - 1).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) patternResult).error));
             wasError = true;
             continue clause_loop;
           }
 
-          ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
+          ExpandPatternOKResult okResult = (ExpandPatternOKResult) patternResult;
           clausePatterns.add(okResult.pattern);
           Substitution subst = new Substitution(tailArgs, okResult.expression);
           tailArgs = tailArgs.getNext().subst(subst);
@@ -204,11 +205,11 @@ public class TypeCheckingElim {
             wasError = true;
             continue;
           }
-          if (!clauseResult.equations.isEmpty()) {
+          if (!clauseResult.getEquations().isEmpty()) {
             for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
-              clauseResult.equations.abstractBinding(link);
+              clauseResult.getEquations().abstractBinding(link);
             }
-            equations.add(clauseResult.equations);
+            result.add(clauseResult);
           }
           expressions.add(clauseResult.expression);
         } else {
@@ -230,7 +231,9 @@ public class TypeCheckingElim {
     PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(eliminatingArgs, patterns, expressions, arrows);
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
-      return new Result(((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree, equations);
+      result.elimTree = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
+      result.update();
+      return result;
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
         error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));
