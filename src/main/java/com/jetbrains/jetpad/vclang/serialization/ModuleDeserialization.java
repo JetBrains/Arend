@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.UnknownInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.*;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -26,10 +27,6 @@ public class ModuleDeserialization {
 
   public ModuleDeserialization() {
     myElimTreeDeserialization = new ElimTreeDeserialization(this);
-  }
-
-  public Binding getBinding(int bindingIdx) {
-    return myBindingMap.get(bindingIdx);
   }
 
   public ModuleLoadingResult readFile(File file, ResolvedName module) throws IOException {
@@ -298,6 +295,17 @@ public class ModuleDeserialization {
     return str.isEmpty() ? null : str;
   }
 
+  public Binding readBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    int index = stream.readInt();
+    if (index == -1) {
+      String name = stream.readUTF();
+      Expression type = readExpression(stream, definitionMap);
+      return new UnknownInferenceBinding(name, type);
+    } else {
+      return myBindingMap.get(index);
+    }
+  }
+
   public DependentLink readParameters(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int code = stream.read();
     if (code == 0) {
@@ -387,7 +395,7 @@ public class ModuleDeserialization {
         return ClassCall((ClassDefinition) definition, statements);
       }
       case 5: {
-        return Reference(myBindingMap.get(stream.readInt()));
+        return Reference(readBinding(stream, definitionMap));
       }
       case 6: {
         return Lam(readParameters(stream, definitionMap), readExpression(stream, definitionMap));

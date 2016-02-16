@@ -4,11 +4,11 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.IgnoreBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.definition.IgnoreBinding;
-import com.jetbrains.jetpad.vclang.term.definition.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
@@ -188,17 +188,20 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       myVisitor.getErrorReporter().report(error);
       return null;
     }
-    if (expectedParams.size() == actualParams.size()) {
-      return myVisitor.checkResult(expectedType, result, expr);
+
+    if (expectedParams.size() != actualParams.size()) {
+      int argsNumber = actualParams.size() - expectedParams.size();
+      result.type = actualType.fromPiParameters(actualParams.subList(argsNumber, actualParams.size()));
+      if (!fixImplicitArgs(result, actualParams.subList(0, argsNumber), expr)) {
+        return null;
+      }
+      expectedType = expectedType1.fromPiParameters(expectedParams);
     }
 
-    int argsNumber = actualParams.size() - expectedParams.size();
-    result.type = actualType.fromPiParameters(actualParams.subList(argsNumber, actualParams.size()));
-    if (!fixImplicitArgs(result, actualParams.subList(0, argsNumber), expr)) {
-      return null;
+    result = myVisitor.checkResult(expectedType, result, expr);
+    if (result != null) {
+      result.update();
     }
-    result = myVisitor.checkResult(expectedType1.fromPiParameters(expectedParams), result, expr);
-    result.update();
     return result;
   }
 }

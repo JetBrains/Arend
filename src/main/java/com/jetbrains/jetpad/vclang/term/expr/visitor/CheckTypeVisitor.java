@@ -4,9 +4,13 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LambdaInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -291,9 +295,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (bodyResult == null) return null;
       result.add(bodyResult);
       if (actualPiLink != null && expectedCodomain != null) {
-        Result tmpResult = new Result(bodyResult.expression, Pi(actualPiLink, bodyResult.type));
-        tmpResult.setEquations(result.getEquations());
-        if (!compare(tmpResult, expectedCodomain, Equations.CMP.EQ, body)) {
+        result.expression = bodyResult.expression;
+        result.type = Pi(actualPiLink, bodyResult.type);
+        if (!compare(result, expectedCodomain, Equations.CMP.EQ, body)) {
           return null;
         }
       }

@@ -23,11 +23,11 @@ public class ElimTreeDeserialization {
   public ElimTreeNode readElimTree(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     switch (stream.readInt()) {
       case 0: {
-        Binding binding = myModuleDeserialization.getBinding(stream.readInt());
+        Binding binding = myModuleDeserialization.readBinding(stream, definitionMap);
         int contextTailSize = stream.readInt();
         List<Binding> contextTail = new ArrayList<>(contextTailSize);
         for (int i = 0; i < contextTailSize; i++) {
-          contextTail.add(myModuleDeserialization.getBinding(stream.readInt()));
+          contextTail.add(myModuleDeserialization.readBinding(stream, definitionMap));
         }
         BranchElimTreeNode elimTree = new BranchElimTreeNode(binding, contextTail);
         int size = stream.readInt();

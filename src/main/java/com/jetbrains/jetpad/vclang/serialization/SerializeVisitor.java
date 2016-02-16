@@ -126,19 +126,22 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     myBindingMap.put(binding, myCounter++);
   }
 
-  private int getIndex(Binding binding) {
+  private void writeBinding(Binding binding) throws IOException {
     Integer index = myBindingMap.get(binding);
     if (index == null) {
-      throw new IllegalStateException();
+      myDataStream.writeInt(-1);
+      myDataStream.writeUTF("?" + (binding.getName() == null ? "" : binding.getName()));
+      binding.getType().accept(this, null);
+    } else {
+      myDataStream.writeInt(index);
     }
-    return index;
   }
 
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
     myStream.write(5);
     try {
-      myDataStream.writeInt(getIndex(expr.getBinding()));
+      writeBinding(expr.getBinding());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -306,10 +309,10 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
     try {
       myDataStream.writeInt(0);
-      myDataStream.writeInt(getIndex(branchNode.getReference()));
+      writeBinding(branchNode.getReference());
       myDataStream.writeInt(branchNode.getContextTail().size());
       for (Binding binding : branchNode.getContextTail()) {
-        myDataStream.writeInt(getIndex(binding));
+        writeBinding(binding);
       }
       myDataStream.writeInt(branchNode.getConstructorClauses().size());
       for (ConstructorClause clause : branchNode.getConstructorClauses()) {

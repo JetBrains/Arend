@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term.definition;
+package com.jetbrains.jetpad.vclang.term.context.binding;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
