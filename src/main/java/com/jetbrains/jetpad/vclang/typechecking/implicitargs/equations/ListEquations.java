@@ -56,24 +56,21 @@ public class ListEquations implements Equations {
   public void add(Expression expr1, Expression expr2, CMP cmp) {
     boolean isInf1 = expr1 instanceof ReferenceExpression && ((ReferenceExpression) expr1).getBinding() instanceof InferenceBinding;
     boolean isInf2 = expr2 instanceof ReferenceExpression && ((ReferenceExpression) expr2).getBinding() instanceof InferenceBinding;
-    if (!isInf1 && !isInf2) {
+    if (isInf1 && isInf2 && ((ReferenceExpression) expr1).getBinding() == ((ReferenceExpression) expr2).getBinding()) {
+      return;
+    }
+
+    if (isInf1 && !isInf2) {
+      addSolution((InferenceBinding) ((ReferenceExpression) expr1).getBinding(), expr2);
+    } else
+    if (isInf2 && !isInf1) {
+      addSolution((InferenceBinding) ((ReferenceExpression) expr2).getBinding(), expr1);
+    } else {
       Equation equation = new Equation();
       equation.expr1 = expr1;
       equation.expr2 = expr2;
       equation.cmp = cmp;
       myEquations.add(equation);
-    } else {
-      if (isInf1 && isInf2) {
-        if (((ReferenceExpression) expr1).getBinding() == ((ReferenceExpression) expr2).getBinding()) {
-          return;
-        }
-      }
-      if (isInf1) {
-        addSolution((InferenceBinding) ((ReferenceExpression) expr1).getBinding(), expr2);
-      }
-      if (isInf2) {
-        addSolution((InferenceBinding) ((ReferenceExpression) expr2).getBinding(), expr1);
-      }
     }
   }
 
@@ -81,14 +78,8 @@ public class ListEquations implements Equations {
     if (!(binding instanceof IgnoreBinding)) {
       Expression expr = mySolutions.get(binding);
       if (expr != null) {
-        if (expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getBinding() instanceof InferenceBinding) {
-          // TODO: Add inference binding cycles
-          mySolutions.put(binding, expression);
-          mySolutions.put((InferenceBinding) ((ReferenceExpression) expr).getBinding(), expression);
-        } else {
-          if (!CompareVisitor.compare(this, CMP.EQ, expression, expr)) {
-            binding.reportError(myErrorReporter, expression, expr);
-          }
+        if (!CompareVisitor.compare(this, CMP.EQ, expression, expr)) {
+          binding.reportError(myErrorReporter, expression, expr);
         }
       } else {
         mySolutions.put(binding, expression);
@@ -139,14 +130,15 @@ public class ListEquations implements Equations {
       for (Iterator<Map.Entry<InferenceBinding, Expression>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
         Map.Entry<InferenceBinding, Expression> entry = it.next();
         if (bindings.remove(entry.getKey())) {
+          was = true;
+          it.remove();
           Expression subst = entry.getValue();
           if (subst.findBinding(entry.getKey())) {
             entry.getKey().reportError(myErrorReporter, subst);
           } else {
             substitution.add(entry.getKey(), subst);
+            break;
           }
-          it.remove();
-          was = true;
         }
       }
 
@@ -158,22 +150,20 @@ public class ListEquations implements Equations {
   }
 
   public void subst(Substitution substitution) {
-    Map<InferenceBinding, Expression> solution = new HashMap<>();
     for (Iterator<Map.Entry<InferenceBinding, Expression>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
       Map.Entry<InferenceBinding, Expression> entry = it.next();
       Expression expr = entry.getValue().subst(substitution).normalize(NormalizeVisitor.Mode.NF);
       entry.setValue(expr);
       if (expr instanceof ReferenceExpression) {
         Binding binding = ((ReferenceExpression) expr).getBinding();
-        if (binding == entry.getKey()) {
-          it.remove();
-        } else
         if (binding instanceof InferenceBinding) {
-          solution.put((InferenceBinding) binding, Reference(entry.getKey()));
+          it.remove();
+          if (binding != entry.getKey()) {
+            add(Reference(entry.getKey()), expr, CMP.EQ);
+          }
         }
       }
     }
-    addSolutions(solution);
 
     int size = myEquations.size();
     while (size-- > 0) {

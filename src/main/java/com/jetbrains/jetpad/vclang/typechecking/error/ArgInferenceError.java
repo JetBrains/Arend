@@ -4,20 +4,24 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.List;
 
 public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
+  private final Expression[] myCandidates;
 
-  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, PrettyPrintable where) {
+  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
     super(resolvedName, message, expression);
     myWhere = where;
+    myCandidates = candidates;
   }
 
-  public ArgInferenceError(String message, Abstract.SourceNode expression, PrettyPrintable where) {
+  public ArgInferenceError(String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
     super(message, expression);
     myWhere = where;
+    myCandidates = candidates;
   }
 
   public static String functionArg(int index) {
@@ -63,9 +67,7 @@ public class ArgInferenceError extends TypeCheckingError {
   @Override
   public String toString() {
     String msg = printHeader() + getMessage();
-    if (getCause() == null) {
-      return msg;
-    } else {
+    if (getCause() != null) {
       if (myWhere != null) {
         msg += " " + prettyPrint(myWhere);
       } else {
@@ -74,8 +76,16 @@ public class ArgInferenceError extends TypeCheckingError {
           msg += " " + r;
         }
       }
-      return msg;
     }
+
+    if (myCandidates.length > 0) {
+      msg += "\nCandidates are:";
+      for (Expression candidate : myCandidates) {
+        msg += "\n\t" + candidate;
+      }
+    }
+
+    return msg;
   }
 
   public static class StringPrettyPrintable implements PrettyPrintable {

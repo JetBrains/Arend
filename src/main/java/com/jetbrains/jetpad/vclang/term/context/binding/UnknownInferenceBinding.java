@@ -11,6 +11,6 @@ public class UnknownInferenceBinding extends InferenceBinding {
 
   @Override
   public void reportError(ErrorReporter errorReporter, Expression... candidates) {
-    errorReporter.report(new ArgInferenceError("Unknown inference variable '" + getName() + "'", null, null));
+    errorReporter.report(new ArgInferenceError("Unknown inference variable '" + getName() + "'", null, null, candidates));
   }
 }

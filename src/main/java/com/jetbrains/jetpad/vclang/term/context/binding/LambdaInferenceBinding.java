@@ -17,6 +17,6 @@ public class LambdaInferenceBinding extends InferenceBinding {
 
   @Override
   public void reportError(ErrorReporter errorReporter, Expression... candidates) {
-    errorReporter.report(new ArgInferenceError(ArgInferenceError.lambdaArg(myIndex), mySourceNode, null));
+    errorReporter.report(new ArgInferenceError(ArgInferenceError.lambdaArg(myIndex), mySourceNode, null, candidates));
   }
 }
