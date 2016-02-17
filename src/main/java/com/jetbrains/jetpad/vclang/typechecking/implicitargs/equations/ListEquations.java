@@ -40,24 +40,25 @@ public class ListEquations implements Equations {
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
 
   @Override
-  public void add(Equations equations) {
+  public boolean add(Equations equations) {
     if (equations.isEmpty()) {
-      return;
+      return true;
     }
     if (equations instanceof ListEquations) {
       myEquations.addAll(((ListEquations) equations).myEquations);
       addSolutions(((ListEquations) equations).mySolutions);
     } else {
-      throw new IllegalStateException();
+      return false;
     }
+    return true;
   }
 
   @Override
-  public void add(Expression expr1, Expression expr2, CMP cmp) {
+  public boolean add(Expression expr1, Expression expr2, CMP cmp) {
     boolean isInf1 = expr1 instanceof ReferenceExpression && ((ReferenceExpression) expr1).getBinding() instanceof InferenceBinding;
     boolean isInf2 = expr2 instanceof ReferenceExpression && ((ReferenceExpression) expr2).getBinding() instanceof InferenceBinding;
     if (isInf1 && isInf2 && ((ReferenceExpression) expr1).getBinding() == ((ReferenceExpression) expr2).getBinding()) {
-      return;
+      return true;
     }
 
     if (isInf1 && !isInf2) {
@@ -72,6 +73,8 @@ public class ListEquations implements Equations {
       equation.cmp = cmp;
       myEquations.add(equation);
     }
+
+    return true;
   }
 
   private void addSolution(InferenceBinding binding, Expression expression) {

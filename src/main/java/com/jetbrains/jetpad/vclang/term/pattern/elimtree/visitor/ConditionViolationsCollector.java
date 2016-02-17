@@ -18,9 +18,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Left;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Right;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substitution, Void>  {
   public interface ConditionViolationChecker {
@@ -50,7 +48,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
         clause.getChild().accept(this, clause.getSubst().compose(argSubst));
         if (conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()) != null) {
           Substitution subst = toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments());
-          final DependentLink constructorArgs = conCall.getDefinition().getParameters().subst(subst);
+          final DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), subst);
           SubstituteExpander.substituteExpand(conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(), subst, toContext(constructorArgs), new SubstituteExpander.SubstituteExpansionProcessor() {
             @Override
             public void process(Substitution subst, Substitution toCtxC, List<Binding> ctx, LeafElimTreeNode leaf) {

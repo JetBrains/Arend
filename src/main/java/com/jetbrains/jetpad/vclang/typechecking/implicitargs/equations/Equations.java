@@ -10,8 +10,8 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import java.util.Set;
 
 public interface Equations {
-  void add(Equations equations);
-  void add(Expression expr1, Expression expr2, CMP cmp);
+  boolean add(Equations equations);
+  boolean add(Expression expr1, Expression expr2, CMP cmp);
   void clear();
   boolean isEmpty();
   void abstractBinding(Binding binding);

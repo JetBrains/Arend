@@ -13,7 +13,7 @@ public interface DependentLink extends Binding {
   void setType(Expression type);
   DependentLink getNext();
   void setNext(DependentLink next);
-  DependentLink subst(Substitution subst);
+  DependentLink subst(Substitution subst, int size);
   DependentLink getNextTyped(List<String> names);
   boolean hasNext();
 
@@ -74,6 +74,18 @@ public interface DependentLink extends Binding {
         }
       }
       return -1;
+    }
+
+    public static List<DependentLink> toList(DependentLink link) {
+      List<DependentLink> result = new ArrayList<>();
+      for (; link.hasNext(); link = link.getNext()) {
+        result.add(link);
+      }
+      return result;
+    }
+
+    public static DependentLink subst(DependentLink link, Substitution substitution) {
+      return link.subst(substitution, Integer.MAX_VALUE);
     }
   }
 }

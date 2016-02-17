@@ -55,7 +55,7 @@ public class SubstituteExpander {
         Collections.reverse(parameters);
 
         for (ConCallExpression conCall : ((DataCallExpression) ftype).getDefinition().getMatchedConstructors(parameters)) {
-          DependentLink constructorArgs = conCall.getDefinition().getParameters().subst(toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
+          DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
           Expression substExpr = conCall;
           for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
             substExpr = Apps(substExpr, Reference(link));

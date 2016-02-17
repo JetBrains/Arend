@@ -54,7 +54,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     Collections.reverse(dataTypeArguments);
 
     dataTypeArguments = constructor.matchDataTypeArguments(dataTypeArguments);
-    DependentLink constructorArgs = constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments));
+    DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments));
 
     Expression substExpr = ConCall(constructor, dataTypeArguments);
     for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {

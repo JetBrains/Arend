@@ -86,11 +86,20 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public UntypedDependentLink subst(Substitution subst) {
-    UntypedDependentLink result = new UntypedDependentLink(myName);
-    subst.add(this, new ReferenceExpression(result));
-    result.myNext = myNext.subst(subst);
-    return result;
+  public DependentLink subst(Substitution subst, int size) {
+    if (size == 1) {
+      TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, getType(), EmptyDependentLink.getInstance());
+      subst.add(this, new ReferenceExpression(result));
+      return result;
+    } else
+    if (size > 0) {
+      UntypedDependentLink result = new UntypedDependentLink(myName);
+      subst.add(this, new ReferenceExpression(result));
+      result.myNext = myNext.subst(subst, size - 1);
+      return result;
+    } else {
+      return EmptyDependentLink.getInstance();
+    }
   }
 
   @Override

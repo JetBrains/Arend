@@ -148,7 +148,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (parameters.hasNext()) {
-      parameters = parameters.subst(new Substitution());
+      parameters = DependentLink.Helper.subst(parameters, new Substitution());
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         result = Apps(result, Reference(link));
       }
@@ -186,7 +186,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(conCallExpression, args, mode);
     }
 
-    excessiveParams = excessiveParams.subst(new Substitution());
+    excessiveParams = DependentLink.Helper.subst(excessiveParams, new Substitution());
     List<Expression> args2 = completeArgs(args, conCallExpression.getDefinition().getParameters(), excessiveParams);
 
 
@@ -254,7 +254,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(defCallExpr, args, mode);
     }
 
-    excessiveParams = excessiveParams.subst(new Substitution());
+    excessiveParams = DependentLink.Helper.subst(excessiveParams, new Substitution());
     List<Expression> args2 = completeArgs(args, func.getParameters(), excessiveParams);
 
     LeafElimTreeNode leaf = func.getElimTree().match(args2);
@@ -353,7 +353,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private DependentLink visitParameters(DependentLink link, Substitution substitution, Mode mode) {
-    link = link.subst(substitution);
+    link = DependentLink.Helper.subst(link, substitution);
     for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
       link1 = link1.getNextTyped(null);
       link1.setType(link1.getType().accept(this, mode));

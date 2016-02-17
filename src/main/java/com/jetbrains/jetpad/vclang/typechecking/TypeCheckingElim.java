@@ -112,7 +112,7 @@ public class TypeCheckingElim {
         substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
       }
 
-      eliminatingArgs = eliminatingArgs.getNext().subst(new Substitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
+      eliminatingArgs = DependentLink.Helper.subst(eliminatingArgs.getNext(), new Substitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
     }
     return new Patterns(typedPatterns);
   }
@@ -192,7 +192,7 @@ public class TypeCheckingElim {
           ExpandPatternOKResult okResult = (ExpandPatternOKResult) patternResult;
           clausePatterns.add(okResult.pattern);
           Substitution subst = new Substitution(tailArgs, okResult.expression);
-          tailArgs = tailArgs.getNext().subst(subst);
+          tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), subst);
           clauseExpectedType = clauseExpectedType.subst(subst);
           if (oldThisExpression != null) {
             myVisitor.setThisClass(myVisitor.getThisClass(), myVisitor.getThisExpression().subst(subst));
@@ -444,7 +444,7 @@ public class TypeCheckingElim {
       }
       List<Abstract.PatternArgument> patterns = implicitResult.patterns;
 
-      DependentLink constructorArgs = constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), matchedParameters));
+      DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), matchedParameters));
       Expression substExpression = ConCall(constructor, matchedParameters);
 
       List<PatternArgument> resultPatterns = new ArrayList<>();
@@ -455,7 +455,7 @@ public class TypeCheckingElim {
           return result;
         ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
         resultPatterns.add(new PatternArgument(okResult.pattern, subPattern.isExplicit(), subPattern.isHidden()));
-        tailArgs = tailArgs.getNext().subst(new Substitution(tailArgs, okResult.expression));
+        tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), new Substitution(tailArgs, okResult.expression));
         substExpression = Apps(substExpression, okResult.expression);
       }
 

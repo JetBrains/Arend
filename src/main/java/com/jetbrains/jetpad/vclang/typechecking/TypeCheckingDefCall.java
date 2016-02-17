@@ -86,7 +86,7 @@ public class TypeCheckingDefCall {
     DependentLink parameters = constructor.getDataTypeParameters();
     if (parameters.hasNext()) {
       Substitution substitution = new Substitution();
-      parameters = parameters.subst(substitution);
+      parameters = DependentLink.Helper.subst(parameters, substitution);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);
       }

@@ -18,14 +18,13 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public void add(Equations equations) {
-    if (!equations.isEmpty()) {
-      throw new Exception();
-    }
+  public boolean add(Equations equations) {
+    return equations.isEmpty();
   }
 
   @Override
-  public void add(Expression expr1, Expression expr2, CMP cmp) {
+  public boolean add(Expression expr1, Expression expr2, CMP cmp) {
+    return false;
   }
 
   @Override

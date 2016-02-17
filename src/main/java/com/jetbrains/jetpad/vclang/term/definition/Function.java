@@ -20,7 +20,7 @@ public interface Function {
         return function.getResultType();
       }
       Substitution subst = new Substitution();
-      DependentLink params = function.getParameters().subst(subst);
+      DependentLink params = DependentLink.Helper.subst(function.getParameters(), subst);
       return Pi(params, function.getResultType().subst(subst));
     }
   }

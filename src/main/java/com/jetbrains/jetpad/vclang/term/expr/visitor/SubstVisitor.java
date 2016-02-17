@@ -61,7 +61,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
-    DependentLink parameters = expr.getParameters().subst(mySubstitution);
+    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), mySubstitution);
     LamExpression result = Lam(parameters, expr.getBody().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
@@ -69,7 +69,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public Expression visitPi(PiExpression expr, Void params) {
-    DependentLink parameters = expr.getParameters().subst(mySubstitution);
+    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), mySubstitution);
     PiExpression result = Pi(parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
@@ -77,7 +77,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
-    SigmaExpression result = Sigma(expr.getParameters().subst(mySubstitution));
+    SigmaExpression result = Sigma(DependentLink.Helper.subst(expr.getParameters(), mySubstitution));
     DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
   }
@@ -177,7 +177,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   public LetClause visitLetClause(LetClause clause) {
-    DependentLink parameters = clause.getParameters().subst(mySubstitution);
+    DependentLink parameters = DependentLink.Helper.subst(clause.getParameters(), mySubstitution);
     Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
     DependentLink.Helper.freeSubsts(clause.getParameters(), mySubstitution);

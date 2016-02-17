@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> implements ElimTreeNodeVisitor<Void, Abstract.Expression> {
-  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_HIDDEN_ARGS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH }
+  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_HIDDEN_ARGS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
   public static final EnumSet<Flag> DEFAULT = EnumSet.of(Flag.SHOW_IMPLICIT_ARGS);
 
   private final AbstractExpressionFactory myFactory;
@@ -61,11 +61,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (!(fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX)) {
       return null;
     }
+    if (args.size() < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!args.get(0).isExplicit() || !args.get(1).isExplicit())) {
+      return null;
+    }
 
     Expression[] visibleArgs = new Expression[2];
     int i = 1;
     for (ArgumentExpression arg : args) {
-      if ((!arg.isHidden() || myFlags.contains(Flag.SHOW_HIDDEN_ARGS)) && (arg.isExplicit() || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS))) {
+      if (arg.isExplicit() && (!arg.isHidden() || myFlags.contains(Flag.SHOW_HIDDEN_ARGS))) {
         if (i < 0) {
           return null;
         }
