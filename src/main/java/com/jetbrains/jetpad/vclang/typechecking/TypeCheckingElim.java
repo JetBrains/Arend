@@ -158,6 +158,13 @@ public class TypeCheckingElim {
 
     boolean wasError = false;
 
+    DependentLink origEliminatingArgs = eliminatingArgs;
+    List<Pattern> dummyPatterns = new ArrayList<>();
+    for (;eliminatingArgs.hasNext() && eliminatingArgs != elimExprs.get(0).getBinding(); eliminatingArgs = eliminatingArgs.getNext()) {
+      dummyPatterns.add(new NamePattern(eliminatingArgs));
+      myVisitor.getContext().add(eliminatingArgs);
+    }
+
     List<Binding> argsBindings = toContext(eliminatingArgs);
 
     Result result = new Result(null);
@@ -166,9 +173,8 @@ public class TypeCheckingElim {
     final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
     clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
-      Expression oldThisExpression = myVisitor.getThisClass() == null ? null : myVisitor.getThisExpression();
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
-        List<Pattern> clausePatterns = new ArrayList<>();
+        List<Pattern> clausePatterns = new ArrayList<>(dummyPatterns);
         Expression clauseExpectedType = expectedType;
 
         DependentLink tailArgs = eliminatingArgs;
@@ -194,9 +200,6 @@ public class TypeCheckingElim {
           Substitution subst = new Substitution(tailArgs, okResult.expression);
           tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), subst);
           clauseExpectedType = clauseExpectedType.subst(subst);
-          if (oldThisExpression != null) {
-            myVisitor.setThisClass(myVisitor.getThisClass(), myVisitor.getThisExpression().subst(subst));
-          }
         }
 
         if (clause.getExpression() != null) {
@@ -217,10 +220,6 @@ public class TypeCheckingElim {
         }
         patterns.add(clausePatterns);
         arrows.add(clause.getArrow());
-      } finally {
-        if (oldThisExpression != null) {
-          myVisitor.setThisClass(myVisitor.getThisClass(), oldThisExpression);
-        }
       }
     }
 
@@ -228,7 +227,7 @@ public class TypeCheckingElim {
       return null;
     }
 
-    PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(eliminatingArgs, patterns, expressions, arrows);
+    PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(origEliminatingArgs, patterns, expressions, arrows);
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
       result.elimTree = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
