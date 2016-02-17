@@ -313,9 +313,11 @@ public class ModuleDeserialization {
     }
 
     List<String> untypedNames = new ArrayList<>();
+    int untypedBindingIdx = myBindingMap.size();
     while (code == 2) {
       untypedNames.add(stream.readUTF());
       code = stream.read();
+      myBindingMap.add(null);
     }
 
     DependentLink link;
@@ -343,7 +345,11 @@ public class ModuleDeserialization {
       link = new UntypedDependentLink(untypedNames.get(i), link);
     }
     for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
-      myBindingMap.add(link1);
+      if (link1 instanceof UntypedDependentLink) {
+        myBindingMap.set(untypedBindingIdx++, link1);
+      } else {
+        myBindingMap.add(link1);
+      }
     }
 
     link.setNext(readParameters(stream, definitionMap));

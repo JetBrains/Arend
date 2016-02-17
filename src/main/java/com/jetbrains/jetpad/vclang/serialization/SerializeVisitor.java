@@ -340,6 +340,10 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     try {
       myDataStream.writeInt(1);
       myDataStream.writeBoolean(leafNode.getArrow() == Abstract.Definition.Arrow.RIGHT);
+      myDataStream.writeInt(leafNode.getMatched().size());
+      for (Binding binding : leafNode.getMatched()) {
+        writeBinding(binding);
+      }
       leafNode.getExpression().accept(this, null);
     } catch (IOException e) {
       e.printStackTrace();
