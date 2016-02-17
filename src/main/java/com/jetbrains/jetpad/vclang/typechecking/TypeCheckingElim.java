@@ -427,7 +427,6 @@ public class TypeCheckingElim {
       } else {
         matchedParameters = new ArrayList<>(parameters);
       }
-      Collections.reverse(matchedParameters);
 
       ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getArguments(), constructor.getParameters());
       if (implicitResult.patterns == null) {

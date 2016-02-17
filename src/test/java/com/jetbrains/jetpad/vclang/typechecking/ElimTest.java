@@ -326,4 +326,13 @@ public class ElimTest {
             " | suc (suc _), e (_!)"
     );
   }
+
+  @Test
+  public void testMultiArg() {
+    typeCheckClass(
+      "\\static \\data D (A B : \\Type0) | c A B\n" +
+      "\\static \\function test (f : Nat -> Nat) (d : D Nat (Nat -> Nat)) : Nat <= \\elim d\n" +
+          " | c x y => f x"
+    );
+  }
 }
