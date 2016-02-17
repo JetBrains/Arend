@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.ExpressionInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.LambdaInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -338,10 +339,17 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitInferHole(Abstract.InferHoleExpression expr, Expression expectedType) {
-    TypeCheckingError error = new ArgInferenceError(expression(), expr, null);
-    expr.setWellTyped(myContext, Error(null, error));
-    myErrorReporter.report(error);
-    return null;
+    if (expectedType != null) {
+      InferenceBinding binding = new ExpressionInferenceBinding(expectedType, expr);
+      Result result = new Result(Reference(binding), expectedType);
+      result.addUnsolvedVariable(binding);
+      return result;
+    } else {
+      TypeCheckingError error = new ArgInferenceError(expression(), expr, null);
+      expr.setWellTyped(myContext, Error(null, error));
+      myErrorReporter.report(error);
+      return null;
+    }
   }
 
   @Override
