@@ -22,7 +22,9 @@ public abstract class Expression implements PrettyPrintable {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
+    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
+    accept(visitor, null).accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
     return builder.toString();
   }
 

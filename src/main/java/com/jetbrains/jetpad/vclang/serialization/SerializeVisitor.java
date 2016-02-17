@@ -303,6 +303,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+    addBinding(clause);
   }
 
   @Override

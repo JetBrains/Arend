@@ -34,6 +34,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     myFlags = flags;
   }
 
+  public ToAbstractVisitor addFlags(Flag flag) {
+    myFlags.add(flag);
+    return this;
+  }
+
   private Abstract.Expression checkPath(Expression fun, List<ArgumentExpression> args) {
     if (!(args.size() == 3 && fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition() == Prelude.PATH)) {
       return null;

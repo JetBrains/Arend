@@ -49,6 +49,13 @@ public class ExpressionTest {
   }
 
   @Test
+  public void typeCheckingIdSplit() {
+    // \X x. x : (X : Type0) -> X -> X
+    DependentLink param = param("X", Universe(0));
+    typeCheckExpr("\\lam X => \\lam x => x", Pi(param, Pi(Reference(param), Reference(param))));
+  }
+
+  @Test
   public void typeCheckingIdError() {
     // \X x. X : (X : Type0) -> X -> X
     ListErrorReporter errorReporter = new ListErrorReporter();

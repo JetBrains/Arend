@@ -223,6 +223,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     LinkList list = new LinkList();
     DependentLink actualPiLink = null;
     Result result = new Result(null, null);
+    Substitution piLamSubst = new Substitution();
     int piParamsIndex = 0;
     int argIndex = 1;
 
@@ -256,18 +257,22 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               myErrorReporter.report(new TypeCheckingError(ordinal(argIndex) + " argument of the lambda should be " + (piLink.isExplicit() ? "explicit" : "implicit"), expr));
               link.setExplicit(piLink.isExplicit());
             }
+
+            Expression piLinkType = piLink.getType().subst(piLamSubst);
             if (argResult != null) {
               if (result.getEquations() instanceof DummyEquations) {
                 result.setEquations(myArgsInference.newEquations());
               }
-              if (!CompareVisitor.compare(result.getEquations(), Equations.CMP.EQ, piLink.getType().normalize(NormalizeVisitor.Mode.NF), argResult.expression.normalize(NormalizeVisitor.Mode.NF))) {
-                TypeCheckingError error = new TypeMismatchError(piLink.getType().normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType);
+              if (!CompareVisitor.compare(result.getEquations(), Equations.CMP.EQ, piLinkType.normalize(NormalizeVisitor.Mode.NF), argResult.expression.normalize(NormalizeVisitor.Mode.NF))) {
+                TypeCheckingError error = new TypeMismatchError(piLinkType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType);
                 myErrorReporter.report(error);
                 return null;
               }
             } else {
-              link.setType(piLink.getType());
+              link.setType(piLinkType);
             }
+
+            piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
               InferenceBinding inferenceBinding = new LambdaInferenceBinding("type_of_" + name, Universe(), argIndex, expr);
@@ -287,7 +292,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       Expression expectedBodyType = null;
       if (actualPiLink == null && expectedCodomain != null) {
-        expectedBodyType = expectedCodomain.fromPiParameters(piParams.subList(piParamsIndex, piParams.size()));
+        expectedBodyType = expectedCodomain.fromPiParameters(piParams.subList(piParamsIndex, piParams.size())).subst(piLamSubst);
       }
 
       Abstract.Expression body = expr.getBody();
