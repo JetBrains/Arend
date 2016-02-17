@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.UnknownInferenceBinding;
@@ -307,53 +308,50 @@ public class ModuleDeserialization {
   }
 
   public DependentLink readParameters(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int code = stream.read();
-    if (code == 0) {
-      return EmptyDependentLink.getInstance();
-    }
-
-    List<String> untypedNames = new ArrayList<>();
-    int untypedBindingIdx = myBindingMap.size();
-    while (code == 2) {
-      untypedNames.add(stream.readUTF());
-      code = stream.read();
-      myBindingMap.add(null);
-    }
-
-    DependentLink link;
-    switch (code) {
-      case 0: {
-        return EmptyDependentLink.getInstance();
+    LinkList result = new LinkList();
+    for (int code = stream.read(); code != 0; code = stream.read()) {
+      List<String> untypedNames = new ArrayList<>();
+      int untypedBindingIdx = myBindingMap.size();
+      while (code == 2) {
+        untypedNames.add(stream.readUTF());
+        code = stream.read();
+        myBindingMap.add(null);
       }
-      case 1: {
-        boolean isExplicit = stream.readBoolean();
-        String name = readString(stream);
-        Expression type = readExpression(stream, definitionMap);
-        link = new TypedDependentLink(isExplicit, name, type, EmptyDependentLink.getInstance());
-      } break;
-      case 3: {
-         boolean isExplicit = stream.readBoolean();
-         Expression type = readExpression(stream, definitionMap);
-         link = new NonDependentLink(type, EmptyDependentLink.getInstance());
-         link.setExplicit(isExplicit);
-       } break;
-       default:
-         throw new IncorrectFormat();
-    }
 
-    for (int i = untypedNames.size() - 1; i >= 0; i--) {
-      link = new UntypedDependentLink(untypedNames.get(i), link);
-    }
-    for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
-      if (link1 instanceof UntypedDependentLink) {
-        myBindingMap.set(untypedBindingIdx++, link1);
-      } else {
-        myBindingMap.add(link1);
+      DependentLink link;
+      switch (code) {
+        case 1: {
+          boolean isExplicit = stream.readBoolean();
+          String name = readString(stream);
+          Expression type = readExpression(stream, definitionMap);
+          link = new TypedDependentLink(isExplicit, name, type, EmptyDependentLink.getInstance());
+        }
+        break;
+        case 3: {
+          boolean isExplicit = stream.readBoolean();
+          Expression type = readExpression(stream, definitionMap);
+          link = new NonDependentLink(type, EmptyDependentLink.getInstance());
+          link.setExplicit(isExplicit);
+        }
+        break;
+        default:
+          throw new IncorrectFormat();
       }
-    }
 
-    link.setNext(readParameters(stream, definitionMap));
-    return link;
+      for (int i = untypedNames.size() - 1; i >= 0; i--) {
+        link = new UntypedDependentLink(untypedNames.get(i), link);
+      }
+      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
+        if (link1 instanceof UntypedDependentLink) {
+          myBindingMap.set(untypedBindingIdx++, link1);
+        } else {
+          myBindingMap.add(link1);
+        }
+      }
+
+      result.append(link);
+    }
+    return result.getFirst();
   }
 
   public Expression readExpression(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
