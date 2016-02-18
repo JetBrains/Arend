@@ -18,9 +18,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Left;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Right;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substitution, Void>  {
   public interface ConditionViolationChecker {
@@ -50,17 +48,17 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
         clause.getChild().accept(this, clause.getSubst().compose(argSubst));
         if (conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()) != null) {
           Substitution subst = toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments());
-          final DependentLink constructorArgs = conCall.getDefinition().getParameters().subst(subst);
+          final DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), subst);
           SubstituteExpander.substituteExpand(conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(), subst, toContext(constructorArgs), new SubstituteExpander.SubstituteExpansionProcessor() {
             @Override
-            public void process(Substitution subst, final Substitution toCtxC, List<Binding> ctx, LeafElimTreeNode leaf) {
+            public void process(Substitution subst, Substitution toCtxC, List<Binding> ctx, LeafElimTreeNode leaf) {
               Expression lhs = conCall;
               for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
                 lhs = Apps(lhs, toCtxC.get(link));
               }
               final Expression rhs = leaf.getExpression().subst(subst);
               try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
-                final Substitution subst1 = new Substitution(branchNode.getReference(), rhs);
+                final Substitution subst1 = new Substitution(branchNode.getReference(), lhs);
                 ctx.addAll(subst1.extendBy(branchNode.getContextTail()));
                 SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
                   @Override
@@ -68,7 +66,9 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
                     final Expression lhsVal = leaf.getExpression().subst(subst);
                     try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
                       final Substitution subst2 = new Substitution(branchNode.getReference(), rhs.subst(toCtx1));
-                      ctx.addAll(subst2.extendBy(branchNode.getContextTail()));
+                      for (Binding binding : branchNode.getContextTail()) {
+                        subst2.add(binding, subst1.get(binding).subst(toCtx1));
+                      }
                       SubstituteExpander.substituteExpand(branchNode, subst2, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
                         @Override
                         public void process(Substitution subst, Substitution toCtx2, List<Binding> ctx, LeafElimTreeNode leaf) {

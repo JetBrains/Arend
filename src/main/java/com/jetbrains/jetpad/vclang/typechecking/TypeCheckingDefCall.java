@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
 import com.jetbrains.jetpad.vclang.typechecking.error.NameDefinedError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,6 +21,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
@@ -37,6 +37,14 @@ public class TypeCheckingDefCall {
   public void setThisClass(ClassDefinition thisClass, Expression thisExpr) {
     myThisClass = thisClass;
     myThisExpr = thisExpr;
+  }
+
+  public ClassDefinition getThisClass() {
+    return myThisClass;
+  }
+
+  public Expression getThisExpression() {
+    return myThisExpr;
   }
 
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
@@ -61,7 +69,7 @@ public class TypeCheckingDefCall {
       myVisitor.getErrorReporter().report(error);
       return null;
     } else {
-      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType(), DummyEquations.getInstance());
+      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType());
       if (definition instanceof Constructor) {
         fixConstructorParameters((Constructor) definition, result, false);
       }
@@ -81,9 +89,9 @@ public class TypeCheckingDefCall {
     DependentLink parameters = constructor.getDataTypeParameters();
     if (parameters.hasNext()) {
       Substitution substitution = new Substitution();
-      parameters = parameters.subst(substitution);
+      parameters = DependentLink.Helper.subst(parameters, substitution);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-        parameters.setExplicit(false);
+        link.setExplicit(false);
       }
       result.type = Pi(parameters, result.type.subst(substitution));
     }
@@ -113,7 +121,7 @@ public class TypeCheckingDefCall {
     while (it.hasPrevious()) {
       Binding def = it.previous();
       if (name.equals(def.getName())) {
-        return new CheckTypeVisitor.Result(Reference(def), def.getType(), DummyEquations.getInstance());
+        return new CheckTypeVisitor.Result(Reference(def), def.getType());
       }
     }
 
@@ -214,7 +222,7 @@ public class TypeCheckingDefCall {
           if (result1 == null) {
             return null;
           }
-          result1.equations = result.baseResult.equations;
+          result1.add(result.baseResult);
           result.baseResult = result1;
           result.baseClassDefinition = null;
           result.member = null;
@@ -273,7 +281,7 @@ public class TypeCheckingDefCall {
             if (conResult == null) {
               return null;
             }
-            conResult.equations = result.baseResult.equations;
+            conResult.add(result.baseResult);
             return new DefCallResult(conResult, null, null);
           }
         }
@@ -318,7 +326,7 @@ public class TypeCheckingDefCall {
       }
     }
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType(), DummyEquations.getInstance());
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType().subst(toSubstitution(constructor.getDataTypeParameters(), arguments)));
     fixConstructorParameters(constructor, result, true);
     return result;
   }

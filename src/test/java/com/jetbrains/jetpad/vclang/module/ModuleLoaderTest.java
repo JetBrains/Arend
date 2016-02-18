@@ -229,7 +229,6 @@ public class ModuleLoaderTest {
     assertLoaded("B", "C", "F");
   }
 
-
   @Test
   public void testChangeAddNewFile() {
     setupSources();

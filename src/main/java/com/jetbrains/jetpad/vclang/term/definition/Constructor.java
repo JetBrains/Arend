@@ -4,14 +4,20 @@ import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Constructor extends Definition {
@@ -80,8 +86,22 @@ public class Constructor extends Definition {
         resultType = Apps(resultType, Reference(link), link.isExplicit(), !link.isExplicit());
       }
     } else {
-      for (ArgumentExpression arg : myPatterns.toExpressions()) {
-        resultType = Apps(resultType, arg);
+      Substitution subst = new Substitution();
+      DependentLink dataTypeParams = myDataType.getParameters();
+      for (PatternArgument patternArg : myPatterns.getPatterns()) {
+        Substitution innerSubst = new Substitution();
+
+        if (patternArg.getPattern() instanceof ConstructorPattern) {
+          List<Expression> argDataTypeParams = new ArrayList<>();
+          dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getFunction(argDataTypeParams);
+          Collections.reverse(argDataTypeParams);
+          innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(argDataTypeParams);
+        }
+
+        Expression expr = patternArg.getPattern().toExpression(innerSubst);
+        resultType = Apps(resultType, expr);
+        subst.add(dataTypeParams, expr);
+        dataTypeParams = dataTypeParams.getNext();
       }
     }
     return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;

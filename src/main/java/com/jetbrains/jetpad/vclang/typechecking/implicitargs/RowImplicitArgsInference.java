@@ -19,7 +19,6 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
     CheckTypeVisitor.Result function;
     if (fun instanceof Abstract.DefCallExpression) {
       function = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
-      function.equations = newEquations();
     } else {
       function = myVisitor.typeCheck(fun, null);
     }
@@ -34,13 +33,13 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
   }
 
   @Override
-  public CheckTypeVisitor.Result infer(Abstract.AppExpression expr) {
+  public CheckTypeVisitor.Result infer(Abstract.AppExpression expr, Expression expectedType) {
     List<Abstract.ArgumentExpression> args = new ArrayList<>();
     return typeCheckFunctionApps(Abstract.getFunction(expr, args), args, expr);
   }
 
   @Override
-  public CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr) {
+  public CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr, Expression expectedType) {
     class AbstractArgumentExpression implements Abstract.ArgumentExpression {
       Abstract.Expression expression;
 

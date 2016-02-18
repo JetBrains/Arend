@@ -65,10 +65,10 @@ public class ConstructorClause implements Clause {
     for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
       substExpr = Apps(substExpr, Reference(link));
     }
-    result.addMapping(myParent.getReference(), substExpr);
+    result.add(myParent.getReference(), substExpr);
 
     for (int i = 0; i < myParent.getContextTail().size(); i++) {
-      result.addMapping(myParent.getContextTail().get(i), Reference(myTailBindings.get(i)));
+      result.add(myParent.getContextTail().get(i), Reference(myTailBindings.get(i)));
     }
 
     return result;

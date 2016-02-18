@@ -34,7 +34,7 @@ public class ProjExpression extends Expression {
       if (!params.hasNext()) {
         return null;
       }
-      subst.addMapping(params, new ProjExpression(myExpression, i));
+      subst.add(params, new ProjExpression(myExpression, i));
       params = params.getNext();
     }
     return params.getType().subst(subst);

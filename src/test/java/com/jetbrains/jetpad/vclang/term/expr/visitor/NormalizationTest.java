@@ -13,7 +13,7 @@ import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -49,9 +49,9 @@ public class NormalizationTest {
     plus = new FunctionDefinition(testNS.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), params(xPlus, yPlus), Nat(), null);
 
     DependentLink xPlusMinusOne = param("x'", Nat());
-    BranchElimTreeNode plusElimTree = branch(xPlus, tail(yPlus),
+    ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
-        clause(Prelude.SUC, xPlusMinusOne, Suc(BinOp(Reference(xPlusMinusOne), plus, Reference(yPlus)))));
+        clause(Prelude.SUC, xPlusMinusOne, Suc(BinOp(Reference(xPlusMinusOne), plus, Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
     testNS.addDefinition(plus);
 
@@ -59,20 +59,20 @@ public class NormalizationTest {
     DependentLink yMul = param("y", Nat());
     mul = new FunctionDefinition(testNS.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), params(xMul, yMul), Nat(), null);
     DependentLink xMulMinusOne = param("x'", Nat());
-    BranchElimTreeNode mulElimTree = branch(xMul, tail(yMul),
+    ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
         clause(Prelude.SUC, xMulMinusOne, BinOp(Reference(yMul), plus, BinOp(Reference(xMulMinusOne), mul, Reference(yMul))))
-    );
+    ));
     mul.setElimTree(mulElimTree);
     testNS.addDefinition(mul);
 
     DependentLink xFac = param("x", Nat());
     fac = new FunctionDefinition(testNS.getChild("fac").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, xFac, Nat(), null);
     DependentLink xFacMinusOne = param("x'", Nat());
-    BranchElimTreeNode facElimTree = branch(xFac, tail(),
+    ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
         clause(Prelude.SUC, xFacMinusOne, BinOp(Suc(Reference(xFacMinusOne)), mul, Apps(FunCall(fac), Reference(xFacMinusOne))))
-    );
+    ));
     fac.setElimTree(facElimTree);
     testNS.addDefinition(fac);
 
@@ -81,10 +81,10 @@ public class NormalizationTest {
     DependentLink xNElim = param("x", Nat());
     nelim = new FunctionDefinition(testNS.getChild("nelim").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, params(zNElim, sNElim, xNElim), Nat(), null);
     DependentLink xNElimMinusOne = param("x'", Nat());
-    BranchElimTreeNode nelimElimTree = branch(xNElim, tail(),
+    ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
         clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), Apps(FunCall(nelim), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
-    );
+    ));
     nelim.setElimTree(nelimElimTree);
     testNS.addDefinition(nelim);
   }
@@ -270,7 +270,7 @@ public class NormalizationTest {
 
   @Test
   public void letNormalizationContext() {
-    LetClause let = let("x", EmptyDependentLink.getInstance(), Nat(), Abstract.Definition.Arrow.RIGHT, Zero());
+    LetClause let = let("x", EmptyDependentLink.getInstance(), Nat(), top(EmptyDependentLink.getInstance(), leaf(Abstract.Definition.Arrow.RIGHT, Zero())));
     Let(lets(let), Reference(let)).normalize(NormalizeVisitor.Mode.NF);
   }
 

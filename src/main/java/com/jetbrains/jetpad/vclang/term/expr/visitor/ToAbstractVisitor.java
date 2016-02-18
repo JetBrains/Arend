@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -18,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expression> implements ElimTreeNodeVisitor<Void, Abstract.Expression> {
-  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_HIDDEN_ARGS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH }
+  public enum Flag { SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_HIDDEN_ARGS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
   public static final EnumSet<Flag> DEFAULT = EnumSet.of(Flag.SHOW_IMPLICIT_ARGS);
 
   private final AbstractExpressionFactory myFactory;
@@ -31,6 +32,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   public void setFlags(EnumSet<Flag> flags) {
     myFlags = flags;
+  }
+
+  public ToAbstractVisitor addFlags(Flag flag) {
+    myFlags.add(flag);
+    return this;
   }
 
   private Abstract.Expression checkPath(Expression fun, List<ArgumentExpression> args) {
@@ -55,11 +61,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (!(fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX)) {
       return null;
     }
+    if (args.size() < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!args.get(0).isExplicit() || !args.get(1).isExplicit())) {
+      return null;
+    }
 
     Expression[] visibleArgs = new Expression[2];
     int i = 1;
     for (ArgumentExpression arg : args) {
-      if ((!arg.isHidden() || myFlags.contains(Flag.SHOW_HIDDEN_ARGS)) && (arg.isExplicit() || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS))) {
+      if (arg.isExplicit() && (!arg.isHidden() || myFlags.contains(Flag.SHOW_HIDDEN_ARGS))) {
         if (i < 0) {
           return null;
         }
@@ -74,7 +83,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<ArgumentExpression> args = new ArrayList<>();
     Expression fun = expr.getFunctionArgs(args);
 
-    if (myFlags.contains(Flag.SHOW_PREFIX_PATH)) {
+    if (!myFlags.contains(Flag.SHOW_PREFIX_PATH)) {
       Abstract.Expression result = checkPath(fun, args);
       if (result != null) {
         return result;
@@ -133,7 +142,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitReference(ReferenceExpression expr, Void params) {
-    return myFactory.makeVar(expr.getBinding().getName());
+    String name = expr.getBinding().getName() == null ? "_" : expr.getBinding().getName();
+    return myFactory.makeVar((expr.getBinding() instanceof InferenceBinding ? "?" : "") + name);
   }
 
   @Override
@@ -167,7 +177,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<String> names = new ArrayList<>(3);
     for (DependentLink link = arguments; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(names);
-      if (names.isEmpty()) {
+      if (names.isEmpty() || names.get(0) == null) {
         args.add(myFactory.makeTypeArgument(link.isExplicit(), link.getType().accept(this, null)));
       } else {
         args.add(myFactory.makeTelescopeArgument(link.isExplicit(), new ArrayList<>(names), link.getType().accept(this, null)));
@@ -180,11 +190,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
     return myFactory.makeUniverse(expr.getUniverse());
-  }
-
-  @Override
-  public Abstract.Expression visitInferHole(InferHoleExpression expr, Void params) {
-    return myFactory.makeInferHole();
   }
 
   @Override

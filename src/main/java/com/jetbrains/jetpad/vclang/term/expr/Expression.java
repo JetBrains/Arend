@@ -22,7 +22,9 @@ public abstract class Expression implements PrettyPrintable {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
+    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
+    accept(visitor, null).accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
     return builder.toString();
   }
 
@@ -93,20 +95,20 @@ public abstract class Expression implements PrettyPrintable {
         }
         for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
           if (link.isExplicit()) {
-            cod = new PiExpression(link, ((PiExpression) cod).getCodomain());
-            break;
+            return new PiExpression(link, ((PiExpression) cod).getCodomain());
           }
           if (params != null) {
             params.add(link);
           }
         }
-      }
-
-      if (params != null) {
-        for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
-          params.add(link);
+      } else {
+        if (params != null) {
+          for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
+            params.add(link);
+          }
         }
       }
+
       cod = ((PiExpression) cod).getCodomain();
       if (normalize) {
         cod = cod.normalize(NormalizeVisitor.Mode.WHNF);
@@ -151,7 +153,7 @@ public abstract class Expression implements PrettyPrintable {
     Expression cod = getPiParameters(params, true, false);
     assert expressions.size() <= params.size();
     for (int i = 0; i < expressions.size(); i++) {
-      subst.addMapping(params.get(i), expressions.get(i));
+      subst.add(params.get(i), expressions.get(i));
     }
     return cod.fromPiParameters(params.subList(expressions.size(), params.size())).subst(subst);
   }

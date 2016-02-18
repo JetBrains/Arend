@@ -61,21 +61,23 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
-    LamExpression result = Lam(expr.getParameters().subst(mySubstitution), expr.getBody().accept(this, null));
+    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), mySubstitution);
+    LamExpression result = Lam(parameters, expr.getBody().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
   }
 
   @Override
   public Expression visitPi(PiExpression expr, Void params) {
-    PiExpression result = Pi(expr.getParameters().subst(mySubstitution), expr.getCodomain().accept(this, null));
+    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), mySubstitution);
+    PiExpression result = Pi(parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
   }
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
-    SigmaExpression result = Sigma(expr.getParameters().subst(mySubstitution));
+    SigmaExpression result = Sigma(DependentLink.Helper.subst(expr.getParameters(), mySubstitution));
     DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
     return result;
   }
@@ -92,10 +94,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       ConstructorClause newClause = newNode.addClause(clause.getConstructor());
       for (DependentLink linkOld = clause.getParameters(), linkNew = newClause.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
-        mySubstitution.addMapping(linkOld, Reference(linkNew));
+        mySubstitution.add(linkOld, Reference(linkNew));
       }
       for (int i = 0; i < clause.getTailBindings().size(); i++) {
-        mySubstitution.addMapping(clause.getTailBindings().get(i), Reference(newClause.getTailBindings().get(i)));
+        mySubstitution.add(clause.getTailBindings().get(i), Reference(newClause.getTailBindings().get(i)));
       }
 
       newClause.setChild(clause.getChild().accept(this, null));
@@ -114,7 +116,15 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public LeafElimTreeNode visitLeaf(LeafElimTreeNode leafNode, Void params) {
-    return new LeafElimTreeNode(leafNode.getArrow(), leafNode.getExpression().accept(this, null));
+    LeafElimTreeNode result = new LeafElimTreeNode(leafNode.getArrow(), leafNode.getExpression().accept(this, null));
+    if (leafNode.getMatched() != null) {
+      List<Binding> matched = new ArrayList<>(leafNode.getMatched().size());
+      for (Binding binding : leafNode.getMatched()) {
+        matched.add(mySubstitution.getDomain().contains (binding) ? ((ReferenceExpression) mySubstitution.get(binding)).getBinding() : binding);
+      }
+      result.setMatched(matched);
+    }
+    return result;
   }
 
   @Override
@@ -130,11 +140,6 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public Expression visitError(ErrorExpression expr, Void params) {
     return expr.getExpr() == null ? expr : new ErrorExpression(expr.getExpr().accept(this, null), expr.getError());
-  }
-
-  @Override
-  public Expression visitInferHole(InferHoleExpression expr, Void params) {
-    return expr;
   }
 
   @Override
@@ -162,7 +167,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     for (LetClause clause : letExpression.getClauses()) {
       LetClause newClause = visitLetClause(clause);
       clauses.add(newClause);
-      mySubstitution.addMapping(clause, Reference(newClause));
+      mySubstitution.add(clause, Reference(newClause));
     }
     LetExpression result = Let(clauses, letExpression.getExpression().subst(mySubstitution));
     for (LetClause clause : letExpression.getClauses()) {
@@ -172,7 +177,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   public LetClause visitLetClause(LetClause clause) {
-    DependentLink parameters = clause.getParameters().subst(mySubstitution);
+    DependentLink parameters = DependentLink.Helper.subst(clause.getParameters(), mySubstitution);
     Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
     ElimTreeNode elimTree = clause.getElimTree().accept(this, null);
     DependentLink.Helper.freeSubsts(clause.getParameters(), mySubstitution);

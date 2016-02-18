@@ -77,11 +77,6 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
   }
 
   @Override
-  public Boolean visitInferHole(InferHoleExpression expr, Void params) {
-    return false;
-  }
-
-  @Override
   public Boolean visitError(ErrorExpression expr, Void params) {
     return false;
   }

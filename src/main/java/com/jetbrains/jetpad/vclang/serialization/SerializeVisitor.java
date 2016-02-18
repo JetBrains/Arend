@@ -126,19 +126,22 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     myBindingMap.put(binding, myCounter++);
   }
 
-  private int getIndex(Binding binding) {
+  private void writeBinding(Binding binding) throws IOException {
     Integer index = myBindingMap.get(binding);
     if (index == null) {
-      throw new IllegalStateException();
+      myDataStream.writeInt(-1);
+      myDataStream.writeUTF("?" + (binding.getName() == null ? "" : binding.getName()));
+      binding.getType().accept(this, null);
+    } else {
+      myDataStream.writeInt(index);
     }
-    return index;
   }
 
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
     myStream.write(5);
     try {
-      myDataStream.writeInt(getIndex(expr.getBinding()));
+      writeBinding(expr.getBinding());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -148,12 +151,12 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   @Override
   public Void visitLam(LamExpression expr, Void params) {
     myStream.write(6);
-    expr.getBody().accept(this, null);
     try {
       ModuleSerialization.writeParameters(this, expr.getParameters());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+    expr.getBody().accept(this, null);
     return null;
   }
 
@@ -178,11 +181,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       throw new IllegalStateException();
     }
     return null;
-  }
-
-  @Override
-  public Void visitInferHole(InferHoleExpression expr, Void params) {
-    throw new IllegalStateException();
   }
 
   @Override
@@ -305,16 +303,17 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     } catch (IOException e) {
       throw new IllegalStateException();
     }
+    addBinding(clause);
   }
 
   @Override
   public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
     try {
       myDataStream.writeInt(0);
-      myDataStream.writeInt(getIndex(branchNode.getReference()));
+      writeBinding(branchNode.getReference());
       myDataStream.writeInt(branchNode.getContextTail().size());
       for (Binding binding : branchNode.getContextTail()) {
-        myDataStream.writeInt(getIndex(binding));
+        writeBinding(binding);
       }
       myDataStream.writeInt(branchNode.getConstructorClauses().size());
       for (ConstructorClause clause : branchNode.getConstructorClauses()) {
@@ -341,6 +340,10 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     try {
       myDataStream.writeInt(1);
       myDataStream.writeBoolean(leafNode.getArrow() == Abstract.Definition.Arrow.RIGHT);
+      myDataStream.writeInt(leafNode.getMatched().size());
+      for (Binding binding : leafNode.getMatched()) {
+        writeBinding(binding);
+      }
       leafNode.getExpression().accept(this, null);
     } catch (IOException e) {
       e.printStackTrace();

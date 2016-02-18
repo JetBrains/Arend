@@ -16,7 +16,9 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
+import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
@@ -30,6 +32,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -294,13 +297,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
+        context.subList(context.size() - size(list.getFirst()), context.size()).clear();
         TypeCheckingElim.Result elimResult = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedType, false);
-        if (elimResult != null)
+        if (elimResult != null) {
+          elimResult.update();
+          elimResult.reportErrors(myErrorReporter);
           typedDef.setElimTree(elimResult.elimTree);
+        }
       } else {
         CheckTypeVisitor.Result termResult = visitor.checkType(term, expectedType);
         if (termResult != null) {
-          typedDef.setElimTree(new LeafElimTreeNode(def.getArrow(), termResult.expression));
+          typedDef.setElimTree(top(list.getFirst(), leaf(def.getArrow(), termResult.expression)));
           if (expectedType == null)
             typedDef.setResultType(termResult.type);
         }
@@ -578,14 +585,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               continue;
 
             patterns.add(toPatterns(typedPatterns.getPatterns()));
-            expressions.add(result.expression);
+            expressions.add(result.expression.normalize(NormalizeVisitor.Mode.NF));
             arrows.add(Abstract.Definition.Arrow.RIGHT);
           }
         }
 
         PatternsToElimTreeConversion.OKResult elimTreeResult = (PatternsToElimTreeConversion.OKResult) PatternsToElimTreeConversion.convert(constructor.getParameters(), patterns, expressions, arrows);
 
-        if (!elimTreeResult.elimTree.accept(new TerminationCheckVisitor(constructor, constructor.getParameters()), null)) {
+        if (!elimTreeResult.elimTree.accept(new TerminationCheckVisitor(constructor, constructor.getDataTypeParameters(), constructor.getParameters()), null)) {
           myErrorReporter.report(new TypeCheckingError("Termination check failed", def));
           continue;
         }
@@ -646,19 +653,23 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
       if (patterns != null) {
-        DependentLink params = dataDefinition.getParameters();
+        List<Abstract.PatternArgument> processedPatterns = new ArrayList<>(patterns);
         if (dataDefinition.getThisClass() != null) {
-          params = params.getNext();
+          processedPatterns.add(0, new PatternArgument(new NamePattern(dataDefinition.getParameters()), true, true));
         }
-        List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(def, params, patterns);
+        processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), processedPatterns);
         if (processedPatterns == null)
           return null;
 
-        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, params, Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
+        typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
         if (typedPatterns == null)
           return null;
       } else {
         visitor.getContext().addAll(toContext(dataDefinition.getParameters()));
+      }
+
+      if (dataDefinition.getThisClass() != null && typedPatterns != null) {
+        visitor.setThisClass(dataDefinition.getThisClass(), Reference(typedPatterns.getParameters()));
       }
 
       LinkList list = new LinkList();

@@ -4,20 +4,24 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.List;
 
 public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
+  private final Expression[] myCandidates;
 
-  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, PrettyPrintable where) {
+  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
     super(resolvedName, message, expression);
     myWhere = where;
+    myCandidates = candidates;
   }
 
-  public ArgInferenceError(String message, Abstract.SourceNode expression, PrettyPrintable where) {
+  public ArgInferenceError(String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
     super(message, expression);
     myWhere = where;
+    myCandidates = candidates;
   }
 
   public static String functionArg(int index) {
@@ -29,7 +33,7 @@ public class ArgInferenceError extends TypeCheckingError {
   }
 
   public static String lambdaArg(int index) {
-    return "Cannot infer type of the " + ordinal(index) + " argument of lambda";
+    return "Cannot infer type of " + ordinal(index) + " parameter of lambda";
   }
 
   public static String parameter(int index) {
@@ -45,7 +49,7 @@ public class ArgInferenceError extends TypeCheckingError {
   }
 
   public static String suffix(int n) {
-    if (n >= 10 || n < 20) {
+    if (n >= 10 && n < 20) {
       return "th";
     }
     switch (n % 10) {
@@ -63,14 +67,25 @@ public class ArgInferenceError extends TypeCheckingError {
   @Override
   public String toString() {
     String msg = printHeader() + getMessage();
-    if (getCause() == null) {
-      return msg;
-    } else {
+    if (getCause() != null) {
       if (myWhere != null) {
         msg += " " + prettyPrint(myWhere);
+      } else {
+        String r = prettyPrint(getCause());
+        if (r != null) {
+          msg += " " + r;
+        }
       }
-      return msg;
     }
+
+    if (myCandidates.length > 0) {
+      msg += "\nCandidates are:";
+      for (Expression candidate : myCandidates) {
+        msg += "\n\t" + candidate;
+      }
+    }
+
+    return msg;
   }
 
   public static class StringPrettyPrintable implements PrettyPrintable {

@@ -14,7 +14,6 @@ public interface ExpressionVisitor<P, R> {
   R visitPi(PiExpression expr, P params);
   R visitSigma(SigmaExpression expr, P params);
   R visitUniverse(UniverseExpression expr, P params);
-  R visitInferHole(InferHoleExpression expr, P params);
   R visitError(ErrorExpression expr, P params);
   R visitTuple(TupleExpression expr, P params);
   R visitProj(ProjExpression expr, P params);

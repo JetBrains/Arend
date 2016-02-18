@@ -82,7 +82,7 @@ public class Utils {
       if (!link.hasNext()) {
         return null;
       }
-      substs.addMapping(link, parameter);
+      substs.add(link, parameter);
       link = link.getNext();
     }
     return substs;

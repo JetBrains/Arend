@@ -1,10 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public class ConCallExpression extends DefCallExpression {
   private List<Expression> myDataTypeArguments;
@@ -38,13 +39,7 @@ public class ConCallExpression extends DefCallExpression {
 
   @Override
   public Expression getType() {
-    Expression resultType = super.getType();
-
-    if (!myDataTypeArguments.isEmpty()) {
-      resultType = resultType.subst(Utils.matchParameters(getDefinition().getDataTypeParameters(), myDataTypeArguments));
-    }
-    // TODO: add pi if there are not enough parameters
-    return resultType;
+    return Pi(getDefinition().getDataTypeParameters(), getDefinition().getType()).applyExpressions(myDataTypeArguments);
   }
 
   @Override

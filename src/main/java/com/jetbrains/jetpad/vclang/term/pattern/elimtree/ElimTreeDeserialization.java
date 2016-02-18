@@ -23,11 +23,11 @@ public class ElimTreeDeserialization {
   public ElimTreeNode readElimTree(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     switch (stream.readInt()) {
       case 0: {
-        Binding binding = myModuleDeserialization.getBinding(stream.readInt());
+        Binding binding = myModuleDeserialization.readBinding(stream, definitionMap);
         int contextTailSize = stream.readInt();
         List<Binding> contextTail = new ArrayList<>(contextTailSize);
         for (int i = 0; i < contextTailSize; i++) {
-          contextTail.add(myModuleDeserialization.getBinding(stream.readInt()));
+          contextTail.add(myModuleDeserialization.readBinding(stream, definitionMap));
         }
         BranchElimTreeNode elimTree = new BranchElimTreeNode(binding, contextTail);
         int size = stream.readInt();
@@ -46,7 +46,15 @@ public class ElimTreeDeserialization {
         return elimTree;
       }
       case 1: {
-        return new LeafElimTreeNode(stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT, myModuleDeserialization.readExpression(stream, definitionMap));
+        Abstract.Definition.Arrow arrow = stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT;
+        int numBindings = stream.readInt();
+        List<Binding> matched = new ArrayList<>(numBindings);
+        for (int i = 0; i < numBindings; i++) {
+          matched.add(myModuleDeserialization.readBinding(stream, definitionMap));
+        }
+        LeafElimTreeNode result = new LeafElimTreeNode(arrow, myModuleDeserialization.readExpression(stream, definitionMap));
+        result.setMatched(matched);
+        return result;
       }
       case 2: {
         return EmptyElimTreeNode.getInstance();

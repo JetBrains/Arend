@@ -59,8 +59,8 @@ public class NonDependentLink implements DependentLink {
   }
 
   @Override
-  public NonDependentLink subst(Substitution subst) {
-    return new NonDependentLink(myType.subst(subst), myNext.subst(subst));
+  public DependentLink subst(Substitution subst, int size) {
+    return size > 0 ? new NonDependentLink(myType.subst(subst), myNext.subst(subst, size - 1)) : EmptyDependentLink.getInstance();
   }
 
   @Override

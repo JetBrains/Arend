@@ -92,7 +92,7 @@ public class TypeCheckingTest {
   @Test
   public void testTransport1() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a == a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B (p @@ i)) b right");
+        "coe1 (\\lam i => B (p @@ i)) b right");
   }
 
   @Test

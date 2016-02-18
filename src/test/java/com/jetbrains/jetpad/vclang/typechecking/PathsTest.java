@@ -1,11 +1,31 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
+import static org.junit.Assert.assertEquals;
 
 public class PathsTest {
+  @Test
+  public void idpTest() {
+    typeCheckDef("\\function idp {A : \\Type0} (a : A) : a = a => path (\\lam _ => a)");
+  }
+
+  @Test
+  public void idpUntyped() {
+    CheckTypeVisitor.Result idp = typeCheckExpr("\\lam {A : \\Type0} (a : A) => path (\\lam _ => a)", null);
+    DependentLink A = param(false, "A", Universe(0));
+    A.setNext(param("a", Reference(A)));
+    DependentLink C = param((String) null, DataCall(Prelude.INTERVAL));
+    assertEquals(Lam(A, Apps(ConCall(Prelude.PATH_CON, Lam(C, Reference(A)), Reference(A.getNext()), Reference(A.getNext())), Lam(C, Reference(A.getNext())))), idp.expression);
+    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+  }
+
   @Test
   public void squeezeTest() {
     typeCheckClass(

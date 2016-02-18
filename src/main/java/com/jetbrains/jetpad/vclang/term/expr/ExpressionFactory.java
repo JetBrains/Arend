@@ -14,6 +14,9 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.*;
 
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
+
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
     for (Expression expr1 : exprs) {
@@ -58,7 +61,7 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression ConCall(Constructor definition) {
-    int size = DependentLink.Helper.size(definition.getDataTypeParameters());
+    int size = size(definition.getDataTypeParameters());
     return new ConCallExpression(definition, size == 0 ? Collections.<Expression>emptyList() : new ArrayList<Expression>(size));
   }
 
@@ -246,15 +249,21 @@ public class ExpressionFactory {
     return Arrays.asList(bindings);
   }
 
+  public static ElimTreeNode top(DependentLink parameters, ElimTreeNode tree) {
+    tree.updateLeavesMatched(toContext(parameters));
+    return tree;
+  }
+
   public static BranchElimTreeNode branch(Binding reference, List<Binding> tail, ConstructorClausePair... clauses) {
     BranchElimTreeNode result = new BranchElimTreeNode(reference, tail);
     for (ConstructorClausePair pair : clauses) {
       if (pair.constructor != null) {
         ConstructorClause clause = result.addClause(pair.constructor);
         Substitution subst = clause.getSubst();
+        assert size(pair.constructor.getParameters()) == size(pair.parameters);
         for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
              linkFake.hasNext(); linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {
-          subst.addMapping(linkFake, Reference(linkTrue));
+          subst.add(linkFake, Reference(linkTrue));
         }
         clause.setChild(pair.child.subst(subst));
       } else {

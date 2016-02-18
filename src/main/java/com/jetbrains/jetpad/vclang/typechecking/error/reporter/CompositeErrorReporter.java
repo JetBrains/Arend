@@ -1,6 +1,6 @@
-package com.jetbrains.jetpad.vclang.typechecking.error;
+package com.jetbrains.jetpad.vclang.typechecking.error.reporter;
 
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 import java.util.ArrayList;
 import java.util.List;

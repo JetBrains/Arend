@@ -21,13 +21,16 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   private final Definition myDef;
   private final List<Expression> myPatterns;
 
-  public TerminationCheckVisitor(Definition def, DependentLink parameters) {
+  public TerminationCheckVisitor(Definition def, DependentLink... allParameters) {
     myDef = def;
 
     myPatterns = new ArrayList<>();
-    for (; parameters.hasNext(); parameters = parameters.getNext()) {
-      myPatterns.add(Reference(parameters));
+    for (DependentLink parameter : allParameters) {
+      for (; parameter.hasNext(); parameter = parameter.getNext()) {
+        myPatterns.add(Reference(parameter));
+      }
     }
+    Collections.reverse(myPatterns);
   }
 
   private TerminationCheckVisitor(Definition def, List<Expression> patterns) {
@@ -164,11 +167,6 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitUniverse(UniverseExpression expr, Void params) {
-    return true;
-  }
-
-  @Override
-  public Boolean visitInferHole(InferHoleExpression expr, Void params) {
     return true;
   }
 

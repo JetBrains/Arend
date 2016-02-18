@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -44,7 +44,7 @@ public class Prelude extends Namespace {
   public static FunctionDefinition ISO;
 
   private static char[] specInfix = {'@', '='};
-  private static String[] specPrefix = {"iso", "path", "Path"};
+  private static String[] specPrefix = {"iso", "path", "Path", "coe"};
 
   static {
     PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID));
@@ -73,22 +73,12 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(LEFT);
     PRELUDE.addDefinition(RIGHT);
 
-    DependentLink coerceParameter1 = param("type", Pi(param(DataCall(INTERVAL)), Universe(Universe.NO_LEVEL)));
-    DependentLink coerceParameter2 = param("elem", Apps(Reference(coerceParameter1), ConCall(LEFT)));
-    DependentLink coerceParameter3 = param("point", DataCall(INTERVAL));
-    coerceParameter1.setNext(coerceParameter2);
-    coerceParameter2.setNext(coerceParameter3);
-    BranchElimTreeNode coerceElimTreeNode = branch(coerceParameter3, tail(),
-        clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2)));
-    COERCE = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode);
-
-    PRELUDE.addDefinition(COERCE);
-
     PATH = (DataDefinition) PRELUDE.getDefinition("Path");
     PATH_CON = (Constructor) PRELUDE.getDefinition("path");
     PATH_INFIX = (FunctionDefinition) PRELUDE.getDefinition("=");
     AT = (FunctionDefinition) PRELUDE.getDefinition("@");
     ISO = (FunctionDefinition) PRELUDE.getDefinition("iso");
+    COERCE = (FunctionDefinition) PRELUDE.getDefinition("coe");
   }
 
   private Prelude() {
@@ -137,8 +127,8 @@ public class Prelude extends Namespace {
   private void generateLevel(int i) {
     String suffix = i == 0 ? "" : Integer.toString(i);
     DependentLink PathParameter1 = param("A", Pi(param(DataCall(INTERVAL)), Universe(i, Universe.Type.NOT_TRUNCATED)));
-    DependentLink PathParameter2 = param(Apps(Reference(PathParameter1), ConCall(LEFT)));
-    DependentLink PathParameter3 = param(Apps(Reference(PathParameter1), ConCall(RIGHT)));
+    DependentLink PathParameter2 = param("a", Apps(Reference(PathParameter1), ConCall(LEFT)));
+    DependentLink PathParameter3 = param("a'", Apps(Reference(PathParameter1), ConCall(RIGHT)));
     PathParameter1.setNext(PathParameter2);
     PathParameter2.setNext(PathParameter3);
     DataDefinition path = new DataDefinition(new DefinitionResolvedName(PRELUDE, "Path" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), PathParameter1);
@@ -157,7 +147,7 @@ public class Prelude extends Namespace {
     pathInfixParameter1.setNext(pathInfixParameter2);
     Expression pathInfixTerm = Apps(DataCall((DataDefinition) PRELUDE.getDefinition("Path" + suffix)), Lam(param("_", DataCall(INTERVAL)), Reference(pathInfixParameter1)), Reference(pathInfixParameter2), Reference(pathInfixParameter2.getNext()));
     Arrays.fill(chars, '=');
-    FunctionDefinition pathInfix = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, new String(chars)), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixParameter1, Universe(i), leaf(pathInfixTerm));
+    FunctionDefinition pathInfix = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, new String(chars)), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixParameter1, Universe(i), top(pathInfixParameter1, leaf(pathInfixTerm)));
 
     PRELUDE.addDefinition(pathInfix);
 
@@ -170,24 +160,36 @@ public class Prelude extends Namespace {
     atParameter2.setNext(atParameter3);
     atParameter3.setNext(atParameter4);
     atParameter4.setNext(atParameter5);
+    DependentLink atPath = param("f", pathParameters.getType());
     Expression atResultType = Apps(Reference(atParameter1), Reference(atParameter5));
-    BranchElimTreeNode atElimTree = branch(atParameter5, tail(),
+    ElimTreeNode atElimTree = top(atParameter1, branch(atParameter5, tail(),
       clause(LEFT, EmptyDependentLink.getInstance(), Reference(atParameter2)),
       clause(RIGHT, EmptyDependentLink.getInstance(), Reference(atParameter3)),
-      clause(branch(atParameter4, tail(),
-          clause((Constructor) PRELUDE.getDefinition("path" + suffix), EmptyDependentLink.getInstance(), Apps(Reference(atParameter4), Reference(atParameter5)))))
-    );
+      clause(branch(atParameter4, tail(atParameter5),
+          clause((Constructor) PRELUDE.getDefinition("path" + suffix), atPath, Apps(Reference(atPath), Reference(atParameter5)))))
+    ));
     Arrays.fill(chars, '@');
     FunctionDefinition at = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, new String(chars)), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree);
     PRELUDE.addDefinition(at);
+
+    DependentLink coerceParameter1 = param("type", Pi(param(DataCall(INTERVAL)), Universe(i, Universe.Type.NOT_TRUNCATED)));
+    DependentLink coerceParameter2 = param("elem", Apps(Reference(coerceParameter1), ConCall(LEFT)));
+    DependentLink coerceParameter3 = param("point", DataCall(INTERVAL));
+    coerceParameter1.setNext(coerceParameter2);
+    coerceParameter2.setNext(coerceParameter3);
+    ElimTreeNode coerceElimTreeNode = top(coerceParameter1, branch(coerceParameter3, tail(),
+        clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2))));
+    FunctionDefinition coe = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "coe" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode);
+    PRELUDE.addDefinition(coe);
+
 
     DependentLink isoParameter1 = param(false, vars("A", "B"), Universe(i, Universe.Type.NOT_TRUNCATED));
     DependentLink isoParameter2 = param("f", Pi(param(Reference(isoParameter1)), Reference(isoParameter1.getNext())));
     DependentLink isoParameter3 = param("g", Pi(param(Reference(isoParameter1.getNext())), Reference(isoParameter1)));
     DependentLink piParamA = param("a", Reference(isoParameter1));
     DependentLink piParamB = param("b", Reference(isoParameter1.getNext()));
-    DependentLink isoParameter4 = param("linv", Pi(piParamA, Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Reference(isoParameter1), false, true)), Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA)), Reference(piParamA)))));
-    DependentLink isoParameter5 = param("rinv", Pi(piParamB, Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Reference(isoParameter1.getNext()), false, true)), Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB)), Reference(piParamB)))));
+    DependentLink isoParameter4 = param("linv", Pi(piParamA, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1), false, true)), Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA)), Reference(piParamA)))));
+    DependentLink isoParameter5 = param("rinv", Pi(piParamB, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1.getNext()), false, true)), Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB)), Reference(piParamB)))));
     DependentLink isoParameter6 = param("i", DataCall(INTERVAL));
     isoParameter1.setNext(isoParameter2);
     isoParameter2.setNext(isoParameter3);
@@ -195,10 +197,10 @@ public class Prelude extends Namespace {
     isoParameter4.setNext(isoParameter5);
     isoParameter5.setNext(isoParameter6);
     Expression isoResultType = Universe(i, Universe.Type.NOT_TRUNCATED);
-    BranchElimTreeNode isoElimTree = branch(isoParameter6, tail(),
+    ElimTreeNode isoElimTree = top(isoParameter1, branch(isoParameter6, tail(),
       clause(LEFT, EmptyDependentLink.getInstance(), Reference(isoParameter1)),
       clause(RIGHT, EmptyDependentLink.getInstance(), Reference(isoParameter1.getNext()))
-    );
+    ));
     FunctionDefinition iso = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "iso" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree);
     PRELUDE.addDefinition(iso);
   }

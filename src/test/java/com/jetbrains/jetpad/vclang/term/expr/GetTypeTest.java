@@ -60,9 +60,8 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     Namespace namespace = def.getResolvedName().toNamespace();
     DependentLink p = param("p", Pi(Nat(), namespace.getDefinition("C").getDefCall()));
-    Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(FieldCall(((ClassDefinition) namespace.getDefinition("C")).getField("f")), Apps(Reference(p), Zero())));
-    assertEquals(Pi(p, Pi(type, type)), namespace.getDefinition("test").getType());
-    assertEquals(Pi(type, type), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType());
+    Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(namespace.getMember("C").namespace.getDefinition("x").getDefCall(), Apps(Reference(p), Zero())));
+    assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), namespace.getDefinition("test").getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -87,8 +86,8 @@ public class GetTypeTest {
         "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     Namespace namespace = def.getResolvedName().toNamespace();
     assertEquals(Apps(namespace.getMember("C").definition.getDefCall(), Zero()), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c1").getType());
-    DependentLink n = param("n", Nat());
-    assertEquals(Pi(n, Apps(namespace.getMember("C").definition.getDefCall(), Suc(Reference(n)))), ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
+    assertEquals(Pi(param(Nat()), Apps(namespace.getMember("C").definition.getDefCall(), Suc(Reference(((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getDataTypeParameters())))),
+        ((DataDefinition) namespace.getMember("C").definition).getConstructor("c2").getType());
   }
 
   @Test

@@ -36,25 +36,26 @@ public class SubstituteExpander {
   public static void substituteExpand(ElimTreeNode tree, final Substitution subst, List<Binding> context, SubstituteExpansionProcessor processor) {
     Substitution toCtx = new Substitution();
     for (Binding binding : context) {
-      toCtx.addMapping(binding, Reference(binding));
+      toCtx.add(binding, Reference(binding));
     }
     new SubstituteExpander(processor, context).substituteExpand(tree, subst, toCtx);
   }
 
-  private void substituteExpand(ElimTreeNode tree, final Substitution subst, final Substitution toCtx) {
-    tree.matchUntilStuck(subst).accept(new ElimTreeNodeVisitor<Void, Void>() {
+  private void substituteExpand(ElimTreeNode tree, Substitution subst, final Substitution toCtx) {
+    final Substitution nestedSubstitution = new Substitution().compose(subst);
+    tree.matchUntilStuck(nestedSubstitution, false).accept(new ElimTreeNodeVisitor<Void, Void>() {
       @Override
       public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
-        if (!(subst.get(branchNode.getReference()) instanceof ReferenceExpression)) {
+        if (!(nestedSubstitution.get(branchNode.getReference()) instanceof ReferenceExpression)) {
           return null;
         }
-        Binding binding = ((ReferenceExpression) subst.get(branchNode.getReference())).getBinding();
+        Binding binding = ((ReferenceExpression) nestedSubstitution.get(branchNode.getReference())).getBinding();
         List<Expression> parameters = new ArrayList<>();
         Expression ftype = binding.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
         Collections.reverse(parameters);
 
         for (ConCallExpression conCall : ((DataCallExpression) ftype).getDefinition().getMatchedConstructors(parameters)) {
-          DependentLink constructorArgs = conCall.getDefinition().getParameters().subst(toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
+          DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
           Expression substExpr = conCall;
           for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
             substExpr = Apps(substExpr, Reference(link));
@@ -66,7 +67,7 @@ public class SubstituteExpander {
             Substitution currentSubst = new Substitution(binding, substExpr);
             myContext.addAll(toContext(constructorArgs));
             myContext.addAll(currentSubst.extendBy(tail));
-            substituteExpand(branchNode, currentSubst.compose(subst), currentSubst.compose(toCtx));
+            substituteExpand(branchNode, currentSubst.compose(nestedSubstitution), currentSubst.compose(toCtx));
           }
           myContext.add(binding);
           myContext.addAll(tail);
@@ -77,7 +78,7 @@ public class SubstituteExpander {
 
       @Override
       public Void visitLeaf(LeafElimTreeNode leafNode, Void params) {
-        myProcessor.process(subst, toCtx, myContext, leafNode);
+        myProcessor.process(nestedSubstitution, toCtx, myContext, leafNode);
         return null;
       }
 

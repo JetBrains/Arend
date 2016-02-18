@@ -198,10 +198,10 @@ public class ModuleSerialization {
     if (!definition.typeHasErrors()) {
       writeParameters(visitor, definition.getParameters());
       definition.getResultType().accept(visitor, null);
-    }
-    visitor.getDataStream().writeBoolean(definition.getElimTree() != null);
-    if (definition.getElimTree() != null) {
-      definition.getElimTree().accept(visitor, null);
+      visitor.getDataStream().writeBoolean(!definition.hasErrors() && definition.getElimTree() != null);
+      if (definition.getElimTree() != null) {
+        definition.getElimTree().accept(visitor, null);
+      }
     }
 
     return errors;
@@ -229,31 +229,28 @@ public class ModuleSerialization {
   }
 
   public static void writeParameters(SerializeVisitor visitor, DependentLink link) throws IOException {
-    if (link instanceof EmptyDependentLink) {
-      visitor.getDataStream().write(0);
-      return;
-    }
+    for (; link.hasNext(); link = link.getNext()) {
+      if (link instanceof TypedDependentLink) {
+        visitor.getDataStream().write(1);
+        visitor.getDataStream().writeBoolean(link.isExplicit());
+        writeString(visitor, link.getName());
+        link.getType().accept(visitor, null);
+      } else
+      if (link instanceof UntypedDependentLink) {
+        visitor.getDataStream().write(2);
+        writeString(visitor, link.getName());
+      } else
+      if (link instanceof NonDependentLink) {
+        visitor.getDataStream().write(3);
+        visitor.getDataStream().writeBoolean(link.isExplicit());
+        link.getType().accept(visitor, null);
+      } else {
+        throw new IllegalStateException();
+      }
 
-    if (link instanceof TypedDependentLink) {
-      visitor.getDataStream().write(1);
-      visitor.getDataStream().writeBoolean(link.isExplicit());
-      writeString(visitor, link.getName());
-      link.getType().accept(visitor, null);
-    } else
-    if (link instanceof UntypedDependentLink) {
-      visitor.getDataStream().write(2);
-      writeString(visitor, link.getName());
-    } else
-    if (link instanceof NonDependentLink) {
-      visitor.getDataStream().write(3);
-      visitor.getDataStream().writeBoolean(link.isExplicit());
-      link.getType().accept(visitor, null);
-    } else {
-      throw new IllegalStateException();
+      visitor.addBinding(link);
     }
-
-    visitor.addBinding(link);
-    writeParameters(visitor, link.getNext());
+    visitor.getDataStream().write(0);
   }
 
   public static void writeTypedBinding(SerializeVisitor visitor, Binding binding) throws IOException {

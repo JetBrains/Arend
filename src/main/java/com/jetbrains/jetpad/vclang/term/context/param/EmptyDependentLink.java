@@ -40,7 +40,7 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink subst(Substitution subst) {
+  public DependentLink subst(Substitution subst, int size) {
     return this;
   }
 

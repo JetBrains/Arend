@@ -295,7 +295,7 @@ public class ElimTest {
       " | zero => n\n" +
       " | _ => n\n"
     );
-    assertEquals(def.getElimTree(), branch(def.getParameters().getNext(), tail(), clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(def.getParameters())), clause(Reference(def.getParameters()))));
+    assertEquals(def.getElimTree(), top(def.getParameters(), branch(def.getParameters().getNext(), tail(), clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(def.getParameters())), clause(Reference(def.getParameters())))));
   }
 
   @Test
@@ -324,6 +324,15 @@ public class ElimTest {
             " | zero, _ => 0\n" +
             " | suc zero, _ => 1\n" +
             " | suc (suc _), e (_!)"
+    );
+  }
+
+  @Test
+  public void testMultiArg() {
+    typeCheckClass(
+      "\\static \\data D (A B : \\Type0) | c A B\n" +
+      "\\static \\function test (f : Nat -> Nat) (d : D Nat (Nat -> Nat)) : Nat <= \\elim d\n" +
+          " | c x y => f x"
     );
   }
 }

@@ -25,8 +25,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.CoverageChecker
 import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.ListEquations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -114,18 +112,21 @@ public class TypeCheckingElim {
         substIn.set(j, substIn.get(j).subst(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
       }
 
-      eliminatingArgs = eliminatingArgs.getNext().subst(new Substitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
+      eliminatingArgs = DependentLink.Helper.subst(eliminatingArgs.getNext(), new Substitution(eliminatingArgs, ((ExpandPatternOKResult) result).expression));
     }
     return new Patterns(typedPatterns);
   }
 
-  public static class Result {
-    public final ElimTreeNode elimTree;
-    public final Equations equations;
+  public static class Result extends TypeCheckingResult {
+    public ElimTreeNode elimTree;
 
-    public Result(ElimTreeNode elimTree, Equations equations) {
+    public Result(ElimTreeNode elimTree) {
       this.elimTree = elimTree;
-      this.equations = equations;
+    }
+
+    @Override
+    public void subst(Substitution substitution) {
+      elimTree = elimTree.subst(substitution);
     }
   }
 
@@ -157,40 +158,48 @@ public class TypeCheckingElim {
 
     boolean wasError = false;
 
+    DependentLink origEliminatingArgs = eliminatingArgs;
+    List<Pattern> dummyPatterns = new ArrayList<>();
+    for (;eliminatingArgs.hasNext() && eliminatingArgs != elimExprs.get(0).getBinding(); eliminatingArgs = eliminatingArgs.getNext()) {
+      dummyPatterns.add(new NamePattern(eliminatingArgs));
+      myVisitor.getContext().add(eliminatingArgs);
+    }
+
     List<Binding> argsBindings = toContext(eliminatingArgs);
 
-    Equations equations = new ListEquations();
+    Result result = new Result(null);
     final List<List<Pattern>> patterns = new ArrayList<>();
     final List<Expression> expressions = new ArrayList<>();
     final List<Abstract.Definition.Arrow> arrows = new ArrayList<>();
     clause_loop:
     for (Abstract.Clause clause : expr.getClauses()) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(myVisitor.getContext())) {
-        List<Pattern> clausePatterns = new ArrayList<>();
+        List<Pattern> clausePatterns = new ArrayList<>(dummyPatterns);
         Expression clauseExpectedType = expectedType;
 
         DependentLink tailArgs = eliminatingArgs;
         LinkList links = new LinkList();
         for (int i = 0, j = 0; tailArgs.hasNext() && i < argsBindings.size(); i++) {
-          ExpandPatternResult result;
+          ExpandPatternResult patternResult;
           if (j < elimExprs.size() && elimExprs.get(j).getBinding() == argsBindings.get(i)) {
-            result = expandPattern(clause.getPatterns().get(j), tailArgs, PatternExpansionMode.FUNCTION, links);
+            patternResult = expandPattern(clause.getPatterns().get(j), tailArgs, PatternExpansionMode.FUNCTION, links);
             j++;
           } else {
-            result = expandPattern(null, tailArgs, PatternExpansionMode.FUNCTION, links);
+            patternResult = expandPattern(null, tailArgs, PatternExpansionMode.FUNCTION, links);
           }
 
-          if (result instanceof ExpandPatternErrorResult) {
+          if (patternResult instanceof ExpandPatternErrorResult) {
             assert j <= elimExprs.size();
-            expr.getExpressions().get(j - 1).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) result).error));
+            expr.getExpressions().get(j - 1).setWellTyped(myVisitor.getContext(), Error(null, ((ExpandPatternErrorResult) patternResult).error));
             wasError = true;
             continue clause_loop;
           }
 
-          ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
+          ExpandPatternOKResult okResult = (ExpandPatternOKResult) patternResult;
           clausePatterns.add(okResult.pattern);
-          clauseExpectedType = clauseExpectedType.subst(tailArgs, okResult.expression);
-          tailArgs = tailArgs.getNext().subst(new Substitution(tailArgs, okResult.expression));
+          Substitution subst = new Substitution(tailArgs, okResult.expression);
+          tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), subst);
+          clauseExpectedType = clauseExpectedType.subst(subst);
         }
 
         if (clause.getExpression() != null) {
@@ -199,11 +208,11 @@ public class TypeCheckingElim {
             wasError = true;
             continue;
           }
-          if (!clauseResult.equations.isEmpty()) {
+          if (!clauseResult.getEquations().isEmpty()) {
             for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
-              clauseResult.equations.abstractBinding(link);
+              clauseResult.getEquations().abstractBinding(link);
             }
-            equations.add(clauseResult.equations);
+            result.add(clauseResult);
           }
           expressions.add(clauseResult.expression);
         } else {
@@ -218,10 +227,12 @@ public class TypeCheckingElim {
       return null;
     }
 
-    PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(eliminatingArgs, patterns, expressions, arrows);
+    PatternsToElimTreeConversion.Result elimTreeResult = PatternsToElimTreeConversion.convert(origEliminatingArgs, patterns, expressions, arrows);
 
     if (elimTreeResult instanceof PatternsToElimTreeConversion.OKResult) {
-      return new Result(((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree, equations);
+      result.elimTree = ((PatternsToElimTreeConversion.OKResult) elimTreeResult).elimTree;
+      result.update();
+      return result;
     } else if (elimTreeResult instanceof PatternsToElimTreeConversion.EmptyReachableResult) {
       for (int i : ((PatternsToElimTreeConversion.EmptyReachableResult) elimTreeResult).reachable) {
         error = new TypeCheckingError("Empty clause is reachable", expr.getClauses().get(i));
@@ -321,14 +332,16 @@ public class TypeCheckingElim {
   }
 
   private ExpandPatternResult expandPattern(Abstract.Pattern pattern, Binding binding, PatternExpansionMode mode, LinkList links) {
-    if (pattern instanceof Abstract.NamePattern || pattern == null) {
-      String name = pattern == null || ((Abstract.NamePattern) pattern).getName() == null ? null : ((Abstract.NamePattern) pattern).getName();
-      links.append(new TypedDependentLink(true, name, binding.getType(), EmptyDependentLink.getInstance()));
+    if (pattern == null) {
+      links.append(new TypedDependentLink(true, binding.getName(), binding.getType(), EmptyDependentLink.getInstance()));
+      myVisitor.getContext().add(links.getLast());
+      return new ExpandPatternOKResult(Reference(links.getLast()), new NamePattern(links.getLast()));
+    } else if (pattern instanceof Abstract.NamePattern) {
+      links.append(new TypedDependentLink(true, ((Abstract.NamePattern) pattern).getName(), binding.getType(), EmptyDependentLink.getInstance()));
       NamePattern namePattern = new NamePattern(links.getLast());
       myVisitor.getContext().add(links.getLast());
-      if (pattern != null)
-        pattern.setWellTyped(namePattern);
-      return new ExpandPatternOKResult(Reference(binding), namePattern);
+      pattern.setWellTyped(namePattern);
+      return new ExpandPatternOKResult(Reference(links.getLast()), namePattern);
     } else if (pattern instanceof Abstract.AnyConstructorPattern || pattern instanceof Abstract.ConstructorPattern) {
       TypeCheckingError error = null;
 
@@ -414,7 +427,6 @@ public class TypeCheckingElim {
       } else {
         matchedParameters = new ArrayList<>(parameters);
       }
-      Collections.reverse(matchedParameters);
 
       ProcessImplicitResult implicitResult = processImplicit(constructorPattern.getArguments(), constructor.getParameters());
       if (implicitResult.patterns == null) {
@@ -430,18 +442,18 @@ public class TypeCheckingElim {
       }
       List<Abstract.PatternArgument> patterns = implicitResult.patterns;
 
-      DependentLink constructorArgs = constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), matchedParameters));
+      DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), matchedParameters));
       Expression substExpression = ConCall(constructor, matchedParameters);
 
       List<PatternArgument> resultPatterns = new ArrayList<>();
       DependentLink tailArgs = constructorArgs;
       for (Abstract.PatternArgument subPattern : patterns) {
-        ExpandPatternResult result = expandPattern(subPattern.getPattern(), constructorArgs, mode, links);
+        ExpandPatternResult result = expandPattern(subPattern.getPattern(), tailArgs, mode, links);
         if (result instanceof ExpandPatternErrorResult)
           return result;
         ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
         resultPatterns.add(new PatternArgument(okResult.pattern, subPattern.isExplicit(), subPattern.isHidden()));
-        tailArgs = tailArgs.getNext().subst(new Substitution(tailArgs, okResult.expression));
+        tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), new Substitution(tailArgs, okResult.expression));
         substExpression = Apps(substExpression, okResult.expression);
       }
 
