@@ -166,7 +166,14 @@ public class ListEquations implements Equations {
           if (subst.findBinding(entry.getKey())) {
             entry.getKey().reportError(myErrorReporter, subst);
           } else {
-            substitution.add(entry.getKey(), subst);
+            // TODO: There are a lot of bugs
+            // Expression expectedType = entry.getKey().getType();
+            // Expression actualType = subst.getType();
+            // if (expectedType != null && actualType != null && CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
+              substitution.add(entry.getKey(), subst);
+            // } else {
+            //   entry.getKey().reportError(myErrorReporter, subst);
+            // }
             break;
           }
         }

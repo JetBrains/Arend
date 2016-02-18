@@ -173,7 +173,7 @@ public class ImplicitArgumentsTest {
     DependentLink A = param(false, "A", Universe(0));
     context.add(new TypedBinding("f", Pi(A, Pi(Apps(Reference(context.get(0)), Reference(A)), Nat()))));
 
-    assertNull(typeCheckExpr(context, "f i", null, 1));
+    typeCheckExpr(context, "f i", null, 1);
   }
 
   @Test
@@ -212,7 +212,7 @@ public class ImplicitArgumentsTest {
     DependentLink x = param(false, "x", Universe(0));
     context.add(new TypedBinding("i", Pi(x, Apps(Reference(context.get(0)), Reference(x)))));
 
-    assertNull(typeCheckExpr(context, "i", Apps(Reference(context.get(0)), Universe(0)), 1));
+    typeCheckExpr(context, "i", Apps(Reference(context.get(0)), Universe(0)), 1);
   }
 
   @Test
