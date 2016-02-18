@@ -1,42 +1,22 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.LiftIndexVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimExpression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
-import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.getFunctionType;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.prettyPrintLetClause;
-
-public class LetClause extends Binding implements Abstract.LetClause, Function {
-  private final List<TypeArgument> myArguments;
-  private final ElimTreeNode myElimTree;
+public class LetClause extends NamedBinding implements Function {
+  private DependentLink myParameters;
+  private ElimTreeNode myElimTree;
   private final Expression myResultType;
 
-  public LetClause(Name name, List<TypeArgument> arguments, Expression resultType, ElimTreeNode elimTree) {
+  public LetClause(String name, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(name);
-    myArguments = arguments;
+    assert parameters != null;
+    myParameters = parameters;
     myResultType = resultType;
     myElimTree = elimTree;
-  }
-
-  public LetClause(String name, List<TypeArgument> arguments, Expression resultType, ElimTreeNode elimTree) {
-    super(name);
-    myArguments = arguments;
-    myResultType = resultType;
-    myElimTree = elimTree;
-  }
-
-  @Override
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    prettyPrintLetClause(this, builder, names, 0);
   }
 
   @Override
@@ -44,19 +24,18 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
     return myElimTree;
   }
 
-  @Override
-  public Abstract.Definition.Arrow getArrow() {
-    return myElimTree.getArrow();
+  public void setElimTree(ElimTreeNode elimTree) {
+    myElimTree = elimTree;
   }
 
   @Override
-  public Abstract.Expression getTerm() {
-    return ElimExpression.toElimExpression(myElimTree);
+  public DependentLink getParameters() {
+    return myParameters;
   }
 
-  @Override
-  public List<TypeArgument> getArguments() {
-    return myArguments;
+  public void setParameters(DependentLink parameters) {
+    assert parameters != null;
+    myParameters = parameters;
   }
 
   @Override
@@ -71,11 +50,15 @@ public class LetClause extends Binding implements Abstract.LetClause, Function {
 
   @Override
   public Expression getType() {
-    return getFunctionType(this);
+    return Function.Helper.getFunctionType(this);
   }
 
-  @Override
-  public LetClause lift(int on) {
-    return on == 0 ? this : new LiftIndexVisitor(on).visitLetClause(this, 0);
+  public LetClause subst(Substitution substitution) {
+    if (substitution.getDomain().isEmpty()) {
+      return this;
+    }
+
+    DependentLink parameters = DependentLink.Helper.subst(myParameters, substitution);
+    return new LetClause(getName(), parameters, myResultType.subst(substitution), myElimTree.subst(substitution));
   }
 }

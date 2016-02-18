@@ -6,11 +6,11 @@ import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 public class HasErrors extends TypeCheckingError {
   public HasErrors(ResolvedName resolvedName, String name, Abstract.SourceNode expression) {
-    super(resolvedName, name + " has errors", expression, null);
+    super(resolvedName, name + " has errors", expression);
   }
 
   public HasErrors(String name, Abstract.SourceNode expression) {
-    super(name + " has errors", expression, null);
+    super(name + " has errors", expression);
   }
 
   public HasErrors(ResolvedName resolvedName, Name name, Abstract.SourceNode expression) {

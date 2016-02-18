@@ -4,15 +4,12 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.compare;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.cBinOp;
@@ -25,11 +22,10 @@ import static org.junit.Assert.*;
 public class NameResolverTest {
   @Test
   public void parserInfix() {
-    List<Argument> arguments = new ArrayList<>(1);
-    arguments.add(Tele(true, vars("x", "y"), Nat()));
+    DependentLink parameters = param(true, vars("x", "y"), Nat());
     Namespace namespace = new Namespace("test");
-    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 7), arguments, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), parameters, Nat(), EmptyElimTreeNode.getInstance());
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
@@ -40,11 +36,10 @@ public class NameResolverTest {
 
   @Test
   public void parserInfixError() {
-    List<Argument> arguments = new ArrayList<>(1);
-    arguments.add(Tele(true, vars("x", "y"), Nat()));
+    DependentLink parameters = param(true, vars("x", "y"), Nat());
     Namespace namespace = new Namespace("test");
-    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), new Definition.Precedence(Definition.Associativity.LEFT_ASSOC, (byte) 6), arguments, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), new Definition.Precedence(Definition.Associativity.RIGHT_ASSOC, (byte) 6), arguments, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition(namespace, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(namespace, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.RIGHT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
@@ -137,7 +132,7 @@ public class NameResolverTest {
     Namespace namespace = RootModule.ROOT.getMember("test").namespace;
 
     assertEquals(2, RootModule.ROOT.getMember("test").namespace.getMembers().size());
-    assertEquals(2, namespace.getChild(new Name("Point")).getMembers().size());
+    assertEquals(2, namespace.getChild("Point").getMembers().size());
     assertEquals(2, ((Abstract.ClassDefinition) namespace.getMember("Point").abstractDefinition).getStatements().size());
   }
 
@@ -227,7 +222,7 @@ public class NameResolverTest {
 
   private Abstract.Definition getField(Abstract.ClassDefinition classDefinition, String name) {
     for (Abstract.Statement statement : classDefinition.getStatements()) {
-      if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition().getName().name.equals(name)) {
+      if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition().getName().equals(name)) {
         return ((Abstract.DefineStatement) statement).getDefinition();
       }
     }

@@ -2,27 +2,28 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.statement.DefineStatement;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.param;
 
-public class ClassDefinition extends Definition implements Abstract.ClassDefinition {
+public class ClassDefinition extends Definition {
   private Map<String, ClassField> myFields = null;
 
   public ClassDefinition(Namespace parentNamespace, Name name) {
-    super(parentNamespace, name, DEFAULT_PRECEDENCE);
+    super(parentNamespace, name, Abstract.Definition.DEFAULT_PRECEDENCE);
     super.hasErrors(false);
   }
 
   @Override
-  public Expression getBaseType() {
+  public Expression getType() {
     return new UniverseExpression(getUniverse());
   }
 
@@ -54,7 +55,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
     if (myFields == null) {
       myFields = new HashMap<>();
     }
-    myFields.put(field.getName().name, field);
+    myFields.put(field.getName(), field);
     field.setThisClass(this);
   }
 
@@ -64,7 +65,7 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
 
   public void removeField(ClassField field) {
     if (myFields != null) {
-      myFields.remove(field.getName().name);
+      myFields.remove(field.getName());
     }
   }
 
@@ -74,38 +75,6 @@ public class ClassDefinition extends Definition implements Abstract.ClassDefinit
 
   public void addParentField(ClassDefinition parentClass) {
     setThisClass(parentClass);
-    addField(new ClassField(getParentNamespace().getChild(getName()), new Name("\\parent", Fixity.PREFIX), DEFAULT_PRECEDENCE, ClassCall(parentClass), this));
-  }
-
-  // To be removed in the future, unless usecases are found
-  @Override
-  public Kind getKind() {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public Collection<? extends Abstract.Statement> getStatements() {
-    Namespace namespace = getParentNamespace().findChild(getName().name);
-    int size = namespace == null ? 0 : namespace.getMembers().size();
-    Collection<? extends ClassField> fields = getFields();
-
-    List<Abstract.Statement> statements = new ArrayList<>(fields.size() + size);
-    for (ClassField field : fields) {
-      statements.add(new DefineStatement(new FunctionDefinition(namespace, field.getName(), field.getPrecedence(), Collections.<Argument>emptyList(), field.getType(), null), Abstract.DefineStatement.StaticMod.DYNAMIC));
-    }
-    if (namespace != null) {
-      for (NamespaceMember pair : namespace.getMembers()) {
-        Abstract.Definition definition = pair.definition != null ? pair.definition : pair.abstractDefinition;
-        if (definition != null) {
-          statements.add(new DefineStatement(definition, Abstract.DefineStatement.StaticMod.STATIC));
-        }
-      }
-    }
-    return statements;
-  }
-
-  @Override
-  public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitClass(this, params);
+    addField(new ClassField(getParentNamespace().getChild(getName()), new Name("\\parent", Abstract.Definition.Fixity.PREFIX), Abstract.Definition.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this))));
   }
 }

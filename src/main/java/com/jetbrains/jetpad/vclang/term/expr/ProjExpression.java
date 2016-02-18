@@ -1,15 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import java.util.List;
-
-public class ProjExpression extends Expression implements Abstract.ProjExpression {
+public class ProjExpression extends Expression {
   private final Expression myExpression;
   private final int myField;
 
@@ -18,45 +12,36 @@ public class ProjExpression extends Expression implements Abstract.ProjExpressio
     myField = field;
   }
 
-  @Override
   public Expression getExpression() {
     return myExpression;
   }
 
-  @Override
   public int getField() {
     return myField;
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    Expression type = myExpression.getType(context);
+  public Expression getType() {
+    Expression type = myExpression.getType();
     if (!(type instanceof SigmaExpression)) return null;
-    List<TypeArgument> arguments = ((SigmaExpression) type).getArguments();
-    int index = 0;
-    for (TypeArgument argument : arguments) {
-      if (argument instanceof TelescopeArgument) {
-        index += ((TelescopeArgument) argument).getNames().size();
-        if (myField < index) {
-          return argument.getType();
-        }
-      } else {
-        if (myField == index) {
-          return argument.getType();
-        }
-        ++index;
-      }
+    DependentLink params = ((SigmaExpression) type).getParameters();
+    if (myField == 0) {
+      return params.getType();
     }
-    return null;
+
+    Substitution subst = new Substitution();
+    for (int i = 0; i < myField; i++) {
+      if (!params.hasNext()) {
+        return null;
+      }
+      subst.add(params, new ProjExpression(myExpression, i));
+      params = params.getNext();
+    }
+    return params.getType().subst(subst);
   }
 
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitProj(this, params);
-  }
-
-  @Override
-  public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitProj(this, params);
   }
 }

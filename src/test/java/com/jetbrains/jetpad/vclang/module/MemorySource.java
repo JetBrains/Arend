@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.module.source.ParseSource;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
@@ -34,9 +33,9 @@ public class MemorySource extends ParseSource {
 
   @Override
   public ModuleLoadingResult load(boolean childrenOnly) throws IOException {
-    Namespace namespace = getModule().parent.getChild(getModule().name);
+    Namespace namespace = getModule().parent.getChild(getModule().name.name);
     for (String childName : myEntry.children) {
-      namespace.getChild(new Name(childName));
+      namespace.getChild(childName);
     }
     if (!childrenOnly && getStream() != null) {
       return super.load(false);

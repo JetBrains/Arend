@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.*;
@@ -48,9 +47,9 @@ public class MemoryOutput implements Output {
     if (!isContainer())
       ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(myEntry.data)), myModule);
     else
-      myModule.parent.getChild(myModule.name);
+      myModule.parent.getChild(myModule.name.name);
     for (String childName : myEntry.children) {
-      myModule.toNamespace().getChild(new Name(childName));
+      myModule.toNamespace().getChild(childName);
     }
   }
 

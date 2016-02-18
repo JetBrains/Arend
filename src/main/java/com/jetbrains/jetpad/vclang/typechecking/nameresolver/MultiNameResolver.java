@@ -10,7 +10,7 @@ public class MultiNameResolver implements NameResolver {
   private final Map<String, NamespaceMember> myNames = new HashMap<>();
 
   public void add(NamespaceMember member) {
-    myNames.put(member.namespace.getName().name, member);
+    myNames.put(member.namespace.getName(), member);
   }
 
   public void remove(String name) {

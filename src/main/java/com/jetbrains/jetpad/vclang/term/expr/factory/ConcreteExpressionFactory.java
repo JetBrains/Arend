@@ -4,10 +4,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 
-import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
@@ -109,13 +107,13 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.LetClause makeLetClause(Name name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Definition.Arrow arrow, Abstract.Expression term) {
-    return clet(name.name, (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, arrow, (Concrete.Expression) term);
+  public Abstract.LetClause makeLetClause(String name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term) {
+    return clet(name, (List<Concrete.Argument>) arguments, (Concrete.Expression) resultType, arrow, (Concrete.Expression) term);
   }
 
   @Override
-  public Abstract.Expression makeElim(String name, List<? extends Abstract.Clause> clauses) {
-    return cElim(Collections.<Concrete.Expression>singletonList(cVar(name)), (List<Concrete.Clause>) clauses);
+  public Abstract.Expression makeElim(List<? extends Abstract.Expression> exprs, List<? extends Abstract.Clause> clauses) {
+    return cElim((List<Concrete.Expression>) exprs, (List<Concrete.Clause>) clauses);
   }
 
   @Override
@@ -124,12 +122,12 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Clause makeClause(Abstract.Pattern pattern, Abstract.Definition.Arrow arrow, Abstract.Expression expr) {
-    return cClause(Collections.singletonList((Concrete.Pattern) pattern), arrow, (Concrete.Expression) expr);
+  public Abstract.Clause makeClause(List<? extends Abstract.Pattern> patterns, Abstract.Definition.Arrow arrow, Abstract.Expression expr) {
+    return cClause((List<Concrete.Pattern>) patterns, arrow, (Concrete.Expression) expr);
   }
 
   @Override
-  public Abstract.Pattern makeConPattern(Name name, List<? extends Abstract.PatternArgument> args) {
+  public Abstract.Pattern makeConPattern(String name, List<? extends Abstract.PatternArgument> args) {
     return cConPattern(name, (List<Concrete.PatternArgument>) args);
   }
 

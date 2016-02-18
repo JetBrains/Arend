@@ -34,7 +34,11 @@ public class ParserTestCase {
     RootModule.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
     Concrete.Expression result = new BuildVisitor(errorReporter).visitExpr(parse(errorReporter, text).expr());
-    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    if (errors >= 0) {
+      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    } else {
+      assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().size() > 0);
+    }
     return result;
   }
 

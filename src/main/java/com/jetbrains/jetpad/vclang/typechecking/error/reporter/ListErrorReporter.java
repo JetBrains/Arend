@@ -25,4 +25,10 @@ public class ListErrorReporter implements ErrorReporter {
   public Collection<? extends GeneralError> getErrorList() {
     return myErrorList;
   }
+
+  public void reportTo(ErrorReporter errorReporter) {
+    for (GeneralError error : myErrorList) {
+      errorReporter.report(error);
+    }
+  }
 }

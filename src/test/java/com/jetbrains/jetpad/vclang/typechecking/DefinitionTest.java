@@ -2,9 +2,16 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.context.LinkList;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Before;
@@ -13,6 +20,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
@@ -57,66 +65,84 @@ public class DefinitionTest {
   public void dataType() {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D {A B : \\Type0} (I : A -> B -> \\Type0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)");
 
-    List<TypeArgument> parameters = new ArrayList<>(4);
-    parameters.add(Tele(false, vars("A", "B"), Universe(0)));
-    parameters.add(Tele(vars("I"), Pi(Index(1), Pi(Index(0), Universe(0)))));
-    parameters.add(Tele(vars("a"), Index(2)));
-    parameters.add(Tele(vars("b"), Index(2)));
+    LinkList parameters = new LinkList();
+    parameters.append(param(false, vars("A", "B"), Universe(0)));
+    DependentLink A = parameters.getFirst();
+    DependentLink B = A.getNext();
+    parameters.append(param("I", Pi(Reference(A), Pi(Reference(B), Universe(0)))));
+    DependentLink I = B.getNext();
+    parameters.append(param("a", Reference(A)));
+    parameters.append(param("b", Reference(B)));
+    DependentLink a = I.getNext();
+    DependentLink b = a.getNext();
 
-    List<TypeArgument> arguments1 = new ArrayList<>(6);
-    arguments1.add(Tele(vars("x"), Index(4)));
-    arguments1.add(TypeArg(Apps(Index(3), Index(0), Index(1))));
+    LinkList parameters1 = new LinkList();
+    parameters1.append(param("x", Reference(A)));
+    parameters1.append(param(Apps(Reference(I), Reference(parameters1.getFirst()), Reference(b))));
 
-    List<TypeArgument> arguments2 = new ArrayList<>(6);
-    arguments2.add(Tele(false, vars("y"), Index(3)));
-    arguments2.add(TypeArg(Apps(Index(3), Index(2), Index(0))));
+    LinkList parameters2 = new LinkList();
+    parameters2.append(param(false, "y", Reference(B)));
+    parameters2.append(param(Apps(Reference(I), Reference(a), Reference(parameters2.getFirst()))));
 
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(parameters, Universe(0)), typedDef.getType());
+    assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(arguments1, Apps(Apps(Apps(DataCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(0).getType());
-    assertEquals(Pi(arguments2, Apps(Apps(Apps(DataCall(typedDef), Index(6), false, false), Index(5), false, false), Index(4), Index(3), Index(2))), typedDef.getConstructors().get(1).getType());
+    Substitution substitution = new Substitution();
+    DependentLink link = typedDef.getParameters();
+    substitution.add(link, Reference(A));
+    link = link.getNext();
+    substitution.add(link, Reference(B));
+    link = link.getNext();
+    substitution.add(link, Reference(I));
+    link = link.getNext();
+    substitution.add(link, Reference(a));
+    link = link.getNext();
+    substitution.add(link, Reference(b));
+    assertEquals(Pi(parameters1.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b))), typedDef.getConstructors().get(0).getType().subst(substitution));
+    assertEquals(Pi(parameters2.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b))), typedDef.getConstructors().get(1).getType().subst(substitution));
   }
 
   @Test
   public void dataType2() {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D (A : \\7-Type2) | con1 (X : \\1-Type5) X | con2 (Y : \\2-Type3) A Y");
-    List<TypeArgument> parameters = new ArrayList<>(1);
-    parameters.add(Tele(vars("A"), Universe(2, 7)));
+    DependentLink A = typedDef.getParameters();
 
-    List<TypeArgument> arguments1 = new ArrayList<>(3);
-    arguments1.add(Tele(vars("X"), Universe(5, 1)));
-    arguments1.add(TypeArg(Index(0)));
+    LinkList parameters1 = new LinkList();
+    parameters1.append(param("X", Universe(5, 1)));
+    parameters1.append(param(Reference(parameters1.getFirst())));
 
-    List<TypeArgument> arguments2 = new ArrayList<>(4);
-    arguments2.add(Tele(vars("Y"), Universe(3, 2)));
-    arguments2.add(TypeArg(Index(1)));
-    arguments2.add(TypeArg(Index(1)));
+    LinkList parameters2 = new LinkList();
+    parameters2.append(param("Y", Universe(3, 2)));
+    parameters2.append(param(Reference(A)));
+    parameters2.append(param(Reference(parameters2.getFirst())));
 
     assertNotNull(typedDef);
     assertEquals(0, errorReporter.getErrorList().size());
     assertFalse(typedDef.hasErrors());
-    assertEquals(Pi(parameters, Universe(6, 7)), typedDef.getType());
+    assertEquals(Pi(A, Universe(6, 7)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(arguments1, Apps(DataCall(typedDef), Index(2))), typedDef.getConstructors().get(0).getType());
-    assertEquals(Pi(arguments2, Apps(DataCall(typedDef), Index(3))), typedDef.getConstructors().get(1).getType());
+    assertEquals(Pi(parameters1.getFirst(), Apps(DataCall(typedDef), Reference(A))), typedDef.getConstructors().get(0).getType());
+    assertEquals(Pi(parameters2.getFirst(), Apps(DataCall(typedDef), Reference(A))), typedDef.getConstructors().get(1).getType());
   }
 
   @Test
   public void constructor() {
     // \data D (A : \Type0) = con (B : \Type1) A B |- con Nat zero zero : D Nat
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, typeArgs(Tele(vars("A"), Universe(0))));
-    RootModule.ROOT.getChild(new Name("test")).addDefinition(def);
-    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, typeArgs(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    DependentLink A = param("A", Universe(0));
+    DependentLink B = param("B", Universe(1));
+
+    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild("test"), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
+    RootModule.ROOT.getChild("test").addDefinition(def);
+    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, params(B, param(Reference(A)), param(Reference(B))), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(ConCall(con), Nat(), Zero(), Zero());
-    CheckTypeVisitor.OKResult result = expr.checkType(new ArrayList<Binding>(), null, errorReporter);
-    assertEquals(0, errorReporter.getErrorList().size());
+    Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
+    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     assertNotNull(result);
     assertEquals(Apps(DataCall(def), Nat()), result.type);
   }
@@ -124,16 +150,19 @@ public class DefinitionTest {
   @Test
   public void constructorInfer() {
     // \data D (A : \Type0) = con (B : \Type1) A B, f : D (Nat -> Nat) -> Nat |- f (con Nat (\lam x => x) zero) : Nat
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, typeArgs(Tele(vars("A"), Universe(0))));
-    RootModule.ROOT.getChild(new Name("test")).addDefinition(def);
-    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, typeArgs(Tele(vars("B"), Universe(1)), TypeArg(Index(1)), TypeArg(Index(1))), def);
+    DependentLink A = param("A", Universe(0));
+    DependentLink B = param("B", Universe(1));
+
+    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild("test"), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
+    RootModule.ROOT.getChild("test").addDefinition(def);
+    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, params(B, param(Reference(A)), param(Reference(B))), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(Index(0), Apps(ConCall(con), Nat(), Lam("x", Nat(), Index(0)), Zero()));
+    Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con), cNat(), cLam("x", cVar("x")), cZero()));
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DataCall(def), Pi(Nat(), Nat())), Nat())));
 
-    CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     assertNotNull(result);
     assertEquals(Nat(), result.type);
@@ -142,16 +171,17 @@ public class DefinitionTest {
   @Test
   public void constructorConst() {
     // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild(new Name("test")), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, typeArgs(Tele(vars("A"), Universe(0))));
-    RootModule.ROOT.getChild(new Name("test")).addDefinition(def);
-    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, typeArgs(TypeArg(Index(0))), def);
+    DependentLink A = param("A", Universe(0));
+    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild("test"), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
+    RootModule.ROOT.getChild("test").addDefinition(def);
+    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, param(Reference(A)), def);
     def.addConstructor(con);
 
-    Expression expr = Apps(Index(0), ConCall(con));
+    Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con));
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DataCall(def), Nat())), Pi(Nat(), Nat()))));
 
-    CheckTypeVisitor.OKResult result = expr.checkType(localContext, null, errorReporter);
+    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);

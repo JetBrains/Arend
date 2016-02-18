@@ -12,8 +12,8 @@ import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
+import com.jetbrains.jetpad.vclang.typechecking.error.reporter.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporter;
@@ -82,7 +82,7 @@ public abstract class ParseSource implements Source {
     }
 
     if (childrenOnly) {
-      return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), null, null), false, 0);
+      return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name.name), null, null), false, 0);
     }
 
     NameResolver nameResolver = new LoadingNameResolver(myModuleLoader, new DeepNamespaceNameResolver(myModule.parent));
@@ -100,6 +100,6 @@ public abstract class ParseSource implements Source {
     DefinitionResolveNameVisitor rnVisitor = new DefinitionResolveNameVisitor(errorReporter, myModule.parent, nameResolver);
     rnVisitor.setResolveListener(new ConcreteResolveListener());
     rnVisitor.visitClass(classDefinition, null);
-    return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
+    return new ModuleLoadingResult(new NamespaceMember(myModule.parent.getChild(myModule.name.name), classDefinition, null), true, countingErrorReporter.getErrorsNumber());
   }
 }

@@ -1,12 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ConstructorClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
@@ -18,20 +15,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean> implements ElimTreeNodeVisitor<Void, Boolean> {
   private final Definition myDef;
   private final List<Expression> myPatterns;
 
-  public TerminationCheckVisitor(Definition def, int numberOfArguments) {
+  public TerminationCheckVisitor(Definition def, DependentLink... allParameters) {
     myDef = def;
 
-    myPatterns = new ArrayList<>(numberOfArguments);
-    for (int i = 0; i < numberOfArguments; ++i) {
-      myPatterns.add(Index(i));
+    myPatterns = new ArrayList<>();
+    for (DependentLink parameter : allParameters) {
+      for (; parameter.hasNext(); parameter = parameter.getNext()) {
+        myPatterns.add(Reference(parameter));
+      }
     }
+    Collections.reverse(myPatterns);
   }
 
   private TerminationCheckVisitor(Definition def, List<Expression> patterns) {
@@ -42,21 +41,12 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, Void params) {
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      List<Expression> patterns = new ArrayList<>(myPatterns);
-      Expression expr = ConCall(clause.getConstructor());
-      int numArguments = splitArguments(clause.getConstructor().getArguments()).size();
-      for (int i = 0; i < numArguments; i++) {
-        expr = Apps(expr.liftIndex(0, 1), Index(0));
-      }
-      expr = expr.liftIndex(0, branchNode.getIndex());
-      for (int j = 0; j < patterns.size(); j++) {
-        patterns.set(j, patterns.get(j).liftIndex(branchNode.getIndex() + 1, numArguments).subst(expr, branchNode.getIndex()));
-      }
-      if (!clause.getChild().accept(new TerminationCheckVisitor(myDef, patterns), null)) {
+      if (!clause.getChild().accept(new TerminationCheckVisitor(myDef, clause.getSubst().substExprs(myPatterns)), null)) {
         return false;
       }
     }
-    return true;
+
+    return branchNode.getOtherwiseClause() == null || branchNode.getOtherwiseClause().getChild().accept(this, null);
   }
 
   @Override
@@ -99,13 +89,10 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     List<Expression> args = new ArrayList<>();
     Expression fun = expr.getFunction(args);
     if (fun instanceof ConCallExpression) {
-      args.addAll(((ConCallExpression) fun).getParameters());
-      Collections.reverse(args.subList(args.size() - ((ConCallExpression) fun).getParameters().size(), args.size()));
+      args.addAll(((ConCallExpression) fun).getDataTypeArguments());
+      Collections.reverse(args.subList(args.size() - ((ConCallExpression) fun).getDataTypeArguments().size(), args.size()));
     }
     if (fun instanceof DefCallExpression) {
-      if (((DefCallExpression) fun).getDefinition().getThisClass() != null && !args.isEmpty()) {
-        args.remove(args.size() - 1);
-      }
       if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
         return false;
       }
@@ -136,7 +123,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitConCall(ConCallExpression expr, Void params) {
-    for (Expression parameter : expr.getParameters()) {
+    for (Expression parameter : expr.getDataTypeArguments()) {
       if (!parameter.accept(this, null)) {
         return false;
       }
@@ -155,86 +142,31 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   }
 
   @Override
-  public Boolean visitIndex(IndexExpression expr, Void params) {
+  public Boolean visitReference(ReferenceExpression expr, Void params) {
     return true;
-  }
-
-  private class PatternLifter implements AutoCloseable {
-    private int total = 0;
-
-    void liftPatterns(int on) {
-      total += on;
-      if (on == 0) return;
-      for (int i = 0; i < myPatterns.size(); ++i) {
-        myPatterns.set(i, myPatterns.get(i).liftIndex(0, on));
-      }
-    }
-
-    void liftPatterns() {
-      liftPatterns(1);
-    }
-
-    @Override
-    public void close() {
-      liftPatterns(-total);
-    }
   }
 
   @Override
   public Boolean visitLam(LamExpression expr, Void params) {
-    return visitLamArguments(expr.getArguments(), expr.getBody(), null);
-  }
-
-  private boolean visitLamArguments(List<TelescopeArgument> arguments, Expression body1, Expression body2) {
-    try (PatternLifter lifter = new PatternLifter()) {
-      for (TelescopeArgument argument : arguments) {
-        if (!argument.getType().accept(this, null)) {
-          return false;
-        }
-        lifter.liftPatterns(argument.getNames().size());
-      }
-      return (body1 == null ? true : body1.accept(this, null)) && (body2 == null ? true : body2.accept(this, null));
-    }
-  }
-  
-  private Boolean visitArguments(List<? extends Argument> arguments, Expression codomain, PatternLifter lifter) {
-    for (Argument argument : arguments) {
-      if (argument instanceof NameArgument) {
-        lifter.liftPatterns();
-      } else
-      if (argument instanceof TypeArgument) {
-        if (!((TypeArgument) argument).getType().accept(this, null)) {
-          return false;
-        }
-        if (argument instanceof TelescopeArgument) {
-          lifter.liftPatterns(((TelescopeArgument) argument).getNames().size());
-        } else {
-          lifter.liftPatterns();
-        }
-      }
-    }
-
-    return codomain != null ? codomain.accept(this, null) : true;
-  }
-
-  private Boolean visitArguments(List<? extends Argument> arguments, PatternLifter lifter) {
-    return visitArguments(arguments, null, lifter);
+    return visitArguments(expr.getParameters()) && expr.getBody().accept(this, null);
   }
 
   @Override
   public Boolean visitPi(PiExpression expr, Void params) {
-    try (PatternLifter lifter = new PatternLifter()) {
-      return visitArguments(expr.getArguments(), expr.getCodomain(), lifter);
-    }
+    return visitArguments(expr.getParameters()) && expr.getCodomain().accept(this, null);
   }
 
-  @Override
-  public Boolean visitUniverse(UniverseExpression expr, Void params) {
+  private boolean visitArguments(DependentLink parameters) {
+    for (; parameters.hasNext(); parameters = parameters.getNext()) {
+      if (!parameters.getType().accept(this, null)) {
+        return false;
+      }
+    }
     return true;
   }
 
   @Override
-  public Boolean visitInferHole(InferHoleExpression expr, Void params) {
+  public Boolean visitUniverse(UniverseExpression expr, Void params) {
     return true;
   }
 
@@ -255,9 +187,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitSigma(SigmaExpression expr, Void params) {
-    try (PatternLifter lifter = new PatternLifter()) {
-      return visitArguments(expr.getArguments(), lifter);
-    }
+    return visitArguments(expr.getParameters());
   }
 
   @Override
@@ -272,24 +202,18 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitLet(LetExpression letExpression, Void params) {
-    try (PatternLifter lifter = new PatternLifter()) {
-      for (LetClause clause : letExpression.getClauses()) {
-        if (!visitLetClause(clause)) {
-          return false;
-        }
-        lifter.liftPatterns();
+    for (LetClause clause : letExpression.getClauses()) {
+      if (!visitLetClause(clause)) {
+        return false;
       }
-
-      return letExpression.getExpression().accept(this, null);
     }
+    return letExpression.getExpression().accept(this, null);
   }
 
   private boolean visitLetClause(LetClause clause) {
-    try (PatternLifter lifter1 = new PatternLifter()) {
-      if (!visitArguments(clause.getArguments(), lifter1)) {
-        return false;
-      }
-      return clause.getElimTree().accept(this, null);
+    if (!visitArguments(clause.getParameters())) {
+      return false;
     }
+    return clause.getElimTree().accept(this, null);
   }
 }

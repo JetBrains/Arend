@@ -1,31 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.FindHoleVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
-import com.jetbrains.jetpad.vclang.typechecking.error.InferredArgumentsMismatch;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.term.expr.Expression.oldCompare;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.splitArguments;
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.functionArg;
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.type;
-import static com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError.getNames;
 
 public class OldArgsInference extends RowImplicitArgsInference {
   public OldArgsInference(CheckTypeVisitor visitor) {
@@ -33,10 +11,11 @@ public class OldArgsInference extends RowImplicitArgsInference {
   }
 
   @Override
-  public CheckTypeVisitor.Result inferRow(CheckTypeVisitor.OKResult fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression funExpr, Abstract.Expression expr) {
-    return typeCheckApps(funExpr, 0, fun, args, expectedType, expr);
+  public CheckTypeVisitor.Result inferRow(CheckTypeVisitor.Result fun, List<Abstract.ArgumentExpression> args, Abstract.Expression funExpr, Abstract.Expression expr) {
+    return null; // typeCheckApps(funExpr, 0, fun, args, expectedType, expr);
   }
 
+  /*
   private static class Arg {
     boolean isExplicit;
     String name;
@@ -66,7 +45,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
         if (resultArgs[i] instanceof CheckTypeVisitor.InferErrorResult && resultArgs[i].expression == equation.hole) {
           if (!(argsImp[i].expression instanceof Abstract.InferHoleExpression)) {
             if (argsImp[i].expression instanceof Expression) {
-              Expression expr1 = ((Expression) argsImp[i].expression).normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext());
+              Expression expr1 = ((Expression) argsImp[i].expression).normalize(NormalizeVisitor.Mode.NF, myVisitor.getContext());
               List<CompareVisitor.Equation> equations1 = new ArrayList<>();
               CompareVisitor.CMP cmp = oldCompare(expr1, equation.expression, equations1).isOK();
               if (cmp != CompareVisitor.CMP.NOT_EQUIV) {
@@ -92,7 +71,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
                     }
                   }
                 }
-                TypeCheckingError error = new InferredArgumentsMismatch(i + 1, options, fun, getNames(myVisitor.getLocalContext()));
+                TypeCheckingError error = new InferredArgumentsMismatch(i + 1, options, fun, getNames(myVisitor.getContext()));
                 myVisitor.getErrorReporter().report(error);
                 return new SolveEquationsResult(-1, error);
               }
@@ -114,13 +93,13 @@ public class OldArgsInference extends RowImplicitArgsInference {
   private boolean typeCheckArgs(Arg[] argsImp, CheckTypeVisitor.Result[] resultArgs, List<TypeArgument> signature, List<CompareVisitor.Equation> resultEquations, int startIndex, Abstract.Expression fun) {
     for (int i = startIndex; i < resultArgs.length; ++i) {
       if (resultArgs[i] == null) {
-        TypeCheckingError error = new ArgInferenceError(functionArg(i + 1), fun, getNames(myVisitor.getLocalContext()), fun);
+        TypeCheckingError error = new ArgInferenceError(functionArg(i + 1), fun, getNames(myVisitor.getContext()), fun);
         resultArgs[i] = new CheckTypeVisitor.InferErrorResult(new InferHoleExpression(error), error, null);
       }
     }
 
     for (int i = startIndex; i < resultArgs.length; ++i) {
-      if (resultArgs[i] instanceof CheckTypeVisitor.OKResult || argsImp[i].expression instanceof Abstract.InferHoleExpression) continue;
+      if (resultArgs[i] instanceof CheckTypeVisitor.Result || argsImp[i].expression instanceof Abstract.InferHoleExpression) continue;
 
       List<Expression> substExprs = new ArrayList<>(i);
       for (int j = i - 1; j >= 0; --j) {
@@ -129,11 +108,10 @@ public class OldArgsInference extends RowImplicitArgsInference {
       Expression type = signature.get(i).getType().subst(substExprs, 0);
 
       CheckTypeVisitor.Result result;
-      /* TODO
       if (argsImp[i].expression instanceof Expression) {
-        Expression actualType = ((Expression) argsImp[i].expression).getType(myVisitor.getLocalContext());
+        Expression actualType = ((Expression) argsImp[i].expression).getType(myVisitor.getContext());
         result = myVisitor.checkResult(type, new CheckTypeVisitor.OKResult((Expression) argsImp[i].expression, actualType, null), argsImp[i].expression);
-      } else { */
+      } else {
       result = myVisitor.typeCheck(argsImp[i].expression, type);
       // }
       if (result == null) {
@@ -144,7 +122,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
         }
         return false;
       }
-      if (result instanceof CheckTypeVisitor.OKResult) {
+      if (result instanceof CheckTypeVisitor.Result) {
         resultArgs[i] = result;
         argsImp[i].expression = result.expression;
       } else {
@@ -165,9 +143,9 @@ public class OldArgsInference extends RowImplicitArgsInference {
     return true;
   }
 
-  private CheckTypeVisitor.Result typeCheckApps(Abstract.Expression fun, int argsSkipped, CheckTypeVisitor.OKResult okFunction, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
+  private CheckTypeVisitor.Result typeCheckApps(Abstract.Expression fun, int argsSkipped, CheckTypeVisitor.Result okFunction, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
     List<TypeArgument> signatureArguments = new ArrayList<>();
-    Expression signatureResultType = splitArguments(okFunction.type, signatureArguments, myVisitor.getLocalContext());
+    Expression signatureResultType = splitArguments(okFunction.type, signatureArguments, myVisitor.getContext());
     Arg[] argsImp = new Arg[signatureArguments.size()];
     int i, j;
     for (i = 0, j = 0; i < signatureArguments.size() && j < args.size(); ++i) {
@@ -176,10 +154,10 @@ public class OldArgsInference extends RowImplicitArgsInference {
         ++j;
       } else
       if (args.get(j).isExplicit()) {
-        argsImp[i] = new Arg(true, null, new InferHoleExpression(new ArgInferenceError(functionArg(i + 1), fun, getNames(myVisitor.getLocalContext()), fun)));
+        argsImp[i] = new Arg(true, null, new InferHoleExpression(new ArgInferenceError(functionArg(i + 1), fun, getNames(myVisitor.getContext()), fun)));
       } else {
-        TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args.get(j).getExpression(), getNames(myVisitor.getLocalContext()));
-        args.get(j).getExpression().setWellTyped(myVisitor.getLocalContext(), Error(null, error));
+        TypeCheckingError error = new TypeCheckingError("Unexpected implicit argument", args.get(j).getExpression(), getNames(myVisitor.getContext()));
+        args.get(j).getExpression().setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
         for (Abstract.ArgumentExpression arg : args) {
           myVisitor.typeCheck(arg.getExpression(), null);
@@ -189,8 +167,8 @@ public class OldArgsInference extends RowImplicitArgsInference {
     }
 
     if (j < args.size() && signatureArguments.isEmpty()) {
-      TypeCheckingError error = new TypeCheckingError("Function expects " + (argsSkipped + i) + " arguments, but is applied to " + (argsSkipped + i + args.size() - j), fun, getNames(myVisitor.getLocalContext()));
-      fun.setWellTyped(myVisitor.getLocalContext(), Error(okFunction.expression, error));
+      TypeCheckingError error = new TypeCheckingError("Function expects " + (argsSkipped + i) + " arguments, but is applied to " + (argsSkipped + i + args.size() - j), fun, getNames(myVisitor.getContext()));
+      fun.setWellTyped(myVisitor.getContext(), Error(okFunction.expression, error));
       myVisitor.getErrorReporter().report(error);
       for (Abstract.ArgumentExpression arg : args) {
         myVisitor.typeCheck(arg.getExpression(), null);
@@ -204,7 +182,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
       InferHoleExpression holeExpression = null;
       if (expectedType != null) {
         List<Expression> argsExpectedType = new ArrayList<>(3);
-        Expression fexpectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getLocalContext()).getFunction(argsExpectedType);
+        Expression fexpectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF, myVisitor.getContext()).getFunction(argsExpectedType);
         if (fexpectedType instanceof DefCallExpression && ((DefCallExpression) fexpectedType).getDefinition() == pathCon.getDataType() && argsExpectedType.size() == 3) {
           if (argsExpectedType.get(2) instanceof InferHoleExpression) {
             holeExpression = (InferHoleExpression) argsExpectedType.get(2);
@@ -216,12 +194,12 @@ public class OldArgsInference extends RowImplicitArgsInference {
 
       InferHoleExpression inferHoleExpr = null;
       if (argExpectedType == null) {
-        inferHoleExpr = new InferHoleExpression(new ArgInferenceError(type(), args.get(0).getExpression(), getNames(myVisitor.getLocalContext()), args.get(0).getExpression()));
+        inferHoleExpr = new InferHoleExpression(new ArgInferenceError(type(), args.get(0).getExpression(), getNames(myVisitor.getContext()), args.get(0).getExpression()));
         argExpectedType = Pi("i", DataCall(Prelude.INTERVAL), inferHoleExpr);
       }
 
       CheckTypeVisitor.Result argResult = myVisitor.typeCheck(args.get(0).getExpression(), argExpectedType);
-      if (!(argResult instanceof CheckTypeVisitor.OKResult)) return argResult;
+      if (!(argResult instanceof CheckTypeVisitor.Result)) return argResult;
       if (argResult.equations != null) {
         for (int k = 0; k < argResult.equations.size(); ++k) {
           if (argResult.equations.get(k).hole.equals(inferHoleExpr)) {
@@ -229,7 +207,7 @@ public class OldArgsInference extends RowImplicitArgsInference {
           }
         }
       }
-      PiExpression piType = (PiExpression) ((CheckTypeVisitor.OKResult) argResult).type;
+      PiExpression piType = (PiExpression) ((CheckTypeVisitor.Result) argResult).type;
 
       List<TypeArgument> arguments = new ArrayList<>(piType.getArguments().size());
       if (piType.getArguments().get(0) instanceof TelescopeArgument) {
@@ -247,12 +225,9 @@ public class OldArgsInference extends RowImplicitArgsInference {
       Expression parameter2 = Apps(argResult.expression, ConCall(Prelude.LEFT));
       Expression parameter3 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
       Expression resultType = Apps(DataCall(pathCon.getDataType()), parameter1, parameter2, parameter3);
-      List<CompareVisitor.Equation> resultEquations = argResult.equations;
+      Equations resultEquations = argResult.equations;
       if (holeExpression != null) {
-        if (resultEquations == null) {
-          resultEquations = new ArrayList<>(1);
-        }
-        resultEquations.add(new CompareVisitor.Equation(holeExpression, Lam(teleArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext()))));
+        resultEquations.add(holeExpression, Lam(teleArgs(Tele(vars("i"), DataCall(Prelude.INTERVAL))), type.normalize(NormalizeVisitor.Mode.NF, myVisitor.getContext())), Equations.CMP.EQ);
       }
 
       List<Expression> parameters = new ArrayList<>(3);
@@ -260,24 +235,24 @@ public class OldArgsInference extends RowImplicitArgsInference {
       parameters.add(parameter2);
       parameters.add(parameter3);
       Expression resultExpr = Apps(ConCall(pathCon, parameters), new ArgumentExpression(argResult.expression, true, false));
-      return new CheckTypeVisitor.OKResult(resultExpr, resultType, resultEquations);
+      return new CheckTypeVisitor.Result(resultExpr, resultType, resultEquations);
     }
 
     if (expectedType != null && j == args.size()) {
-      for (; i < signatureArguments.size() - numberOfVariables(expectedType, myVisitor.getLocalContext()); ++i) {
+      for (; i < signatureArguments.size() - numberOfVariables(expectedType, myVisitor.getContext()); ++i) {
         if (signatureArguments.get(i).getExplicit()) {
           break;
         } else {
-          argsImp[i] = new Arg(true, null, new InferHoleExpression(new ArgInferenceError(functionArg(i + 1), fun, getNames(myVisitor.getLocalContext()), fun)));
+          argsImp[i] = new Arg(true, null, new InferHoleExpression(new ArgInferenceError(functionArg(i + 1), fun, getNames(myVisitor.getContext()), fun)));
         }
       }
     }
 
     int argsNumber = i;
     CheckTypeVisitor.Result[] resultArgs = new CheckTypeVisitor.Result[argsNumber];
-    List<CompareVisitor.Equation> resultEquations = new ArrayList<>();
+    Equations resultEquations = new ListEquations();
     if (!typeCheckArgs(argsImp, resultArgs, signatureArguments, resultEquations, 0, fun)) {
-      expression.setWellTyped(myVisitor.getLocalContext(), Error(null, null)); // TODO
+      expression.setWellTyped(myVisitor.getContext(), Error(null, null));
       return null;
     }
 
@@ -300,15 +275,15 @@ public class OldArgsInference extends RowImplicitArgsInference {
 
     int argIndex = 0;
     for (i = argsNumber - 1; i >= 0; --i) {
-      if (!(resultArgs[i] instanceof CheckTypeVisitor.OKResult)) {
+      if (!(resultArgs[i] instanceof CheckTypeVisitor.Result)) {
         argIndex = i + 1;
         break;
       }
     }
 
     if (argIndex != 0 && expectedType != null && j == args.size() && expectedType.accept(new FindHoleVisitor(), null) == null) {
-      Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext());
-      Expression actualNorm = resultType.normalize(NormalizeVisitor.Mode.NF, myVisitor.getLocalContext());
+      Expression expectedNorm = expectedType.normalize(NormalizeVisitor.Mode.NF, myVisitor.getContext());
+      Expression actualNorm = resultType.normalize(NormalizeVisitor.Mode.NF, myVisitor.getContext());
       List<CompareVisitor.Equation> equations = new ArrayList<>();
       CompareVisitor.Result result = oldCompare(actualNorm, expectedNorm, equations);
 
@@ -318,8 +293,8 @@ public class OldArgsInference extends RowImplicitArgsInference {
           resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
         }
 
-        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.NFH, myVisitor.getLocalContext()), resultType.normalize(NormalizeVisitor.Mode.NFH, myVisitor.getLocalContext()), expression, getNames(myVisitor.getLocalContext()));
-        expression.setWellTyped(myVisitor.getLocalContext(), Error(resultExpr, error));
+        TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF, myVisitor.getContext()), resultType.normalize(NormalizeVisitor.Mode.HUMAN_NF, myVisitor.getContext()), expression, getNames(myVisitor.getContext()));
+        expression.setWellTyped(myVisitor.getContext(), Error(resultExpr, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }
@@ -330,13 +305,13 @@ public class OldArgsInference extends RowImplicitArgsInference {
         for (i = 0; i < argsNumber; ++i) {
           resultExpr = Apps(resultExpr, new ArgumentExpression(resultArgs[i] == null ? new InferHoleExpression(null) : resultArgs[i].expression, signatureArguments.get(i).getExplicit(), argsImp[i].isExplicit));
         }
-        expression.setWellTyped(myVisitor.getLocalContext(), Error(resultExpr, result1.error));
+        expression.setWellTyped(myVisitor.getContext(), Error(resultExpr, result1.error));
         return null;
       }
 
       argIndex = 0;
       for (i = argsNumber - 1; i >= 0; --i) {
-        if (!(resultArgs[i] instanceof CheckTypeVisitor.OKResult)) {
+        if (!(resultArgs[i] instanceof CheckTypeVisitor.Result)) {
           argIndex = i + 1;
           break;
         }
@@ -372,19 +347,20 @@ public class OldArgsInference extends RowImplicitArgsInference {
         for (int k = j; k < args.size(); ++k) {
           restArgs.add(args.get(k));
         }
-        return typeCheckApps(fun, argsSkipped + j, new CheckTypeVisitor.OKResult(resultExpr, resultType, resultEquations), restArgs, expectedType, expression);
+        return typeCheckApps(fun, argsSkipped + j, new CheckTypeVisitor.Result(resultExpr, resultType, resultEquations), restArgs, expectedType, expression);
       } else {
-        return new CheckTypeVisitor.OKResult(resultExpr, resultType, resultEquations);
+        return new CheckTypeVisitor.Result(resultExpr, resultType, resultEquations);
       }
     } else {
       TypeCheckingError error;
       if (resultArgs[argIndex - 1] instanceof CheckTypeVisitor.InferErrorResult) {
         error = ((CheckTypeVisitor.InferErrorResult) resultArgs[argIndex - 1]).error;
       } else {
-        error = new ArgInferenceError(functionArg(argIndex), fun, getNames(myVisitor.getLocalContext()), fun);
+        error = new ArgInferenceError(functionArg(argIndex), fun, getNames(myVisitor.getContext()), fun);
       }
-      expression.setWellTyped(myVisitor.getLocalContext(), Error(resultExpr, error));
+      expression.setWellTyped(myVisitor.getContext(), Error(resultExpr, error));
       return new CheckTypeVisitor.InferErrorResult(new InferHoleExpression(error), error, resultEquations);
     }
   }
+  */
 }

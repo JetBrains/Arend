@@ -2,35 +2,42 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public class TypeMismatchError extends TypeCheckingError {
-  private final Object myExpected;
-  private final Abstract.Expression myActual;
+  private final Expression myExpected;
+  private final Expression myActual;
 
-  public TypeMismatchError(ResolvedName resolvedName, Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
-    super(resolvedName, null, expression, names);
+  public TypeMismatchError(ResolvedName resolvedName, Expression expected, Expression actual, Abstract.Expression expression) {
+    super(resolvedName, null, expression);
     myExpected = expected;
     myActual = actual;
   }
 
-  public TypeMismatchError(Object expected, Abstract.Expression actual, Abstract.Expression expression, List<String> names) {
-    super(null, expression, names);
+  public TypeMismatchError(Expression expected, Expression actual, Abstract.Expression expression) {
+    super(null, expression);
     myExpected = expected;
     myActual = actual;
   }
 
   @Override
   public String toString() {
-    String message = printHeader();
-    message += "Type mismatch:\n" +
-        "\tExpected type: " + (myExpected instanceof Abstract.Expression ? prettyPrint((Abstract.Expression) myExpected) : myExpected.toString()) + "\n" +
-        "\t  Actual type: " + prettyPrint(myActual);
-    if (getCause() instanceof Abstract.PrettyPrintableSourceNode) {
-      message += "\n" +
-          "\tIn expression: " + prettyPrint((Abstract.PrettyPrintableSourceNode) getCause());
+    StringBuilder builder = new StringBuilder();
+    builder.append(printHeader());
+    builder.append("Type mismatch:\n")
+        .append("\tExpected type: ");
+    myExpected.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+    builder.append('\n')
+        .append("\t  Actual type: ");
+    myActual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+
+    String ppClause = prettyPrint(getCause());
+    if (ppClause != null) {
+      builder.append('\n')
+        .append("\tIn expression: ").append(ppClause);
     }
-    return message;
+    return builder.toString();
   }
 }

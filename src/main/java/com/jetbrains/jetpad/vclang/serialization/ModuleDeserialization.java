@@ -4,17 +4,15 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.RootModule;
 import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.LinkList;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.UnknownInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.param.*;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.NameArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TelescopeArgument;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.io.*;
@@ -25,8 +23,11 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
   private ResolvedName myResolvedName;
+  private final ElimTreeDeserialization myElimTreeDeserialization;
+  private final List<Binding> myBindingMap = new ArrayList<>();
 
   public ModuleDeserialization() {
+    myElimTreeDeserialization = new ElimTreeDeserialization(this);
   }
 
   public ModuleLoadingResult readFile(File file, ResolvedName module) throws IOException {
@@ -42,9 +43,9 @@ public class ModuleDeserialization {
     readHeader(stream);
     stream.readInt();
 
-    module.parent.getChild(module.name);
+    module.parent.getChild(module.name.name);
 
-    readDefIndicies(stream, true, module);
+    readDefIndices(stream, true, module);
   }
 
   public static Output.Header readHeaderFromFile(File file) throws IOException {
@@ -135,7 +136,7 @@ public class ModuleDeserialization {
   private static ResolvedName fullPathToRelativeResolvedName(List<String> path, ResolvedName module) {
     ResolvedName result = module;
     for (String aPath : path) {
-      result = result.toNamespace().getChild(new Name(aPath)).getResolvedName();
+      result = result.toNamespace().getChild(aPath).getResolvedName();
     }
     return result;
   }
@@ -144,7 +145,7 @@ public class ModuleDeserialization {
     return fullPathToRelativeResolvedName(path, RootModule.ROOT.getResolvedName());
   }
 
-  private static Map<Integer, Definition> readDefIndicies(DataInputStream stream, boolean createStubs, ResolvedName module) throws IOException {
+  private static Map<Integer, Definition> readDefIndices(DataInputStream stream, boolean createStubs, ResolvedName module) throws IOException {
     Map<Integer, Definition> result = new HashMap<>();
 
     int size = stream.readInt();
@@ -171,7 +172,7 @@ public class ModuleDeserialization {
     verifySignature(stream);
     readHeader(stream);
     int errorsNumber = stream.readInt();
-    Map<Integer, Definition> definitionMap = readDefIndicies(stream, false, module);
+    Map<Integer, Definition> definitionMap = readDefIndices(stream, false, module);
     Definition moduleRoot = definitionMap.get(0);
     deserializeDefinition(stream, definitionMap);
     return new ModuleLoadingResult(new NamespaceMember(moduleRoot.getResolvedName().toNamespace(), null, moduleRoot), false, errorsNumber);
@@ -198,7 +199,7 @@ public class ModuleDeserialization {
   private void deserializeDataDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, DataDefinition definition) throws IOException {
     if (!definition.hasErrors()) {
       definition.setUniverse(readUniverse(stream));
-      definition.setParameters(readTypeArguments(stream, definitionMap));
+      definition.setParameters(readParameters(stream, definitionMap));
     }
 
     int constructorsNumber = stream.readInt();
@@ -212,15 +213,18 @@ public class ModuleDeserialization {
 
       if (!constructor.hasErrors()) {
         if (stream.readBoolean()) {
+          DependentLink link = readParameters(stream, definitionMap);
           int numPatterns = stream.readInt();
           List<PatternArgument> patterns = new ArrayList<>(numPatterns);
           for (int j = 0; j < numPatterns; j++) {
-            patterns.add(readPatternArg(stream, definitionMap));
+            LinkedDeserializationResult<PatternArgument> result = readPatternArg(stream, definitionMap, link);
+            patterns.add(result.pattern);
+            link = result.link;
           }
-          constructor.setPatterns(patterns);
+          constructor.setPatterns(new Patterns(patterns));
         }
         constructor.setUniverse(readUniverse(stream));
-        constructor.setArguments(readTypeArguments(stream, definitionMap));
+        constructor.setParameters(readParameters(stream, definitionMap));
       }
 
       definition.addConstructor(constructor);
@@ -233,42 +237,11 @@ public class ModuleDeserialization {
 
     definition.typeHasErrors(stream.readBoolean());
     if (!definition.typeHasErrors()) {
-      definition.setArguments(readArguments(stream, definitionMap));
+      definition.setParameters(readParameters(stream, definitionMap));
       definition.setResultType(readExpression(stream, definitionMap));
-    }
-
-    if (stream.readBoolean()) {
-      definition.setElimTree(readElimTree(stream, definitionMap));
-    }
-  }
-
-  private ElimTreeNode readElimTree(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    switch (stream.readInt()) {
-      case 0: {
-        BranchElimTreeNode elimTree = new BranchElimTreeNode(stream.readInt());
-        int size = stream.readInt();
-        for (int i = 0; i < size; i++) {
-          Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
-          List<String> names = null;
-          if (stream.readBoolean()) {
-            int numNames = stream.readInt();
-            names = new ArrayList<>(numNames);
-            for (int j = 0; j < numNames; j++) {
-              names.add(stream.readBoolean() ? stream.readUTF() : null);
-            }
-          }
-          elimTree.addClause(constructor, names, readElimTree(stream, definitionMap));
-        }
-        return elimTree;
+      if (stream.readBoolean()) {
+        definition.setElimTree(myElimTreeDeserialization.readElimTree(stream, definitionMap));
       }
-      case 1: {
-        return new LeafElimTreeNode(stream.readBoolean() ? Abstract.Definition.Arrow.RIGHT : Abstract.Definition.Arrow.LEFT, readExpression(stream, definitionMap));
-      }
-      case 2: {
-        return EmptyElimTreeNode.getInstance();
-      }
-      default:
-        throw new IllegalStateException();
     }
   }
 
@@ -291,6 +264,7 @@ public class ModuleDeserialization {
     for (int i = 0; i < numFields; i++) {
       ClassField field = (ClassField) definitionMap.get(stream.readInt());
       definition.addField(field);
+      field.setThisParameter(readParameters(stream, definitionMap));
       field.hasErrors(stream.readBoolean());
 
       if (!field.hasErrors()) {
@@ -307,58 +281,80 @@ public class ModuleDeserialization {
     return new Universe.Type(level, truncated);
   }
 
-  public List<Argument> readArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int size = stream.readInt();
-    List<Argument> result = new ArrayList<>(size);
-    for (int i = 0; i < size; ++i) {
-      result.add(readArgument(stream, definitionMap));
+  public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    String name = null;
+    if (stream.readBoolean()) {
+      name = stream.readUTF();
     }
+    TypedBinding result = new TypedBinding(name, readExpression(stream, definitionMap));
+    myBindingMap.add(result);
     return result;
   }
 
-  public List<TypeArgument> readTypeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int size = stream.readInt();
-    List<TypeArgument> result = new ArrayList<>(size);
-    for (int i = 0; i < size; ++i) {
-      Argument argument = readArgument(stream, definitionMap);
-      if (!(argument instanceof TypeArgument)) {
-        throw new IncorrectFormat();
-      }
-      result.add((TypeArgument) argument);
-    }
-    return result;
+  private String readString(DataInputStream stream) throws IOException {
+    String str = stream.readUTF();
+    return str.isEmpty() ? null : str;
   }
 
-  public List<TelescopeArgument> readTelescopeArguments(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int size = stream.readInt();
-    List<TelescopeArgument> result = new ArrayList<>(size);
-    for (int i = 0; i < size; ++i) {
-      Argument argument = readArgument(stream, definitionMap);
-      if (!(argument instanceof TelescopeArgument)) {
-        throw new IncorrectFormat();
-      }
-      result.add((TelescopeArgument) argument);
-    }
-    return result;
-  }
-
-  public Argument readArgument(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    boolean explicit = stream.readBoolean();
-    int code = stream.read();
-    if (code == 0) {
-      int size = stream.readInt();
-      List<String> names = new ArrayList<>(size);
-      for (int i = 0; i < size; ++i) {
-        names.add(stream.readBoolean() ? stream.readUTF() : null);
-      }
-      return new TelescopeArgument(explicit, names, readExpression(stream, definitionMap));
-    } else if (code == 1) {
-      return new TypeArgument(explicit, readExpression(stream, definitionMap));
-    } else if (code == 2) {
-      return new NameArgument(explicit, stream.readBoolean() ? stream.readUTF() : null);
+  public Binding readBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    int index = stream.readInt();
+    if (index == -1) {
+      String name = stream.readUTF();
+      Expression type = readExpression(stream, definitionMap);
+      return new UnknownInferenceBinding(name, type);
     } else {
-      throw new IncorrectFormat();
+      if (index >= myBindingMap.size()) {
+        throw new IncorrectFormat();
+      }
+      return myBindingMap.get(index);
     }
+  }
+
+  public DependentLink readParameters(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    LinkList result = new LinkList();
+    for (int code = stream.read(); code != 0; code = stream.read()) {
+      List<String> untypedNames = new ArrayList<>();
+      int untypedBindingIdx = myBindingMap.size();
+      while (code == 2) {
+        untypedNames.add(stream.readUTF());
+        code = stream.read();
+        myBindingMap.add(null);
+      }
+
+      DependentLink link;
+      switch (code) {
+        case 1: {
+          boolean isExplicit = stream.readBoolean();
+          String name = readString(stream);
+          Expression type = readExpression(stream, definitionMap);
+          link = new TypedDependentLink(isExplicit, name, type, EmptyDependentLink.getInstance());
+        }
+        break;
+        case 3: {
+          boolean isExplicit = stream.readBoolean();
+          Expression type = readExpression(stream, definitionMap);
+          link = new NonDependentLink(type, EmptyDependentLink.getInstance());
+          link.setExplicit(isExplicit);
+        }
+        break;
+        default:
+          throw new IncorrectFormat();
+      }
+
+      for (int i = untypedNames.size() - 1; i >= 0; i--) {
+        link = new UntypedDependentLink(untypedNames.get(i), link);
+      }
+      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
+        if (link1 instanceof UntypedDependentLink) {
+          myBindingMap.set(untypedBindingIdx++, link1);
+        } else {
+          myBindingMap.add(link1);
+        }
+      }
+
+      result.append(link);
+    }
+    return result.getFirst();
   }
 
   public Expression readExpression(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -406,21 +402,20 @@ public class ModuleDeserialization {
         return ClassCall((ClassDefinition) definition, statements);
       }
       case 5: {
-        return Index(stream.readInt());
+        return Reference(readBinding(stream, definitionMap));
       }
       case 6: {
-        Expression body = readExpression(stream, definitionMap);
-        return Lam(readTelescopeArguments(stream, definitionMap), body);
+        return Lam(readParameters(stream, definitionMap), readExpression(stream, definitionMap));
       }
       case 7: {
-        List<TypeArgument> arguments = readTypeArguments(stream, definitionMap);
-        return Pi(arguments, readExpression(stream, definitionMap));
+        DependentLink parameters = readParameters(stream, definitionMap);
+        return Pi(parameters, readExpression(stream, definitionMap));
       }
       case 8: {
         return new UniverseExpression(readUniverse(stream));
       }
       case 9: {
-        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myResolvedName, "Deserialization error", null, null));
+        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myResolvedName, "Deserialization error", null));
       }
       case 10: {
         int size = stream.readInt();
@@ -431,7 +426,7 @@ public class ModuleDeserialization {
         return Tuple(fields, (SigmaExpression) readExpression(stream, definitionMap));
       }
       case 11: {
-        return Sigma(readTypeArguments(stream, definitionMap));
+        return Sigma(readParameters(stream, definitionMap));
       }
       case 13: {
         Expression expr = readExpression(stream, definitionMap);
@@ -457,25 +452,37 @@ public class ModuleDeserialization {
 
   private LetClause readLetClause(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     final String name = stream.readUTF();
-    final List<TypeArgument> arguments = readTypeArguments(stream, definitionMap);
+    final DependentLink parameters = readParameters(stream, definitionMap);
     final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
-    return let(name, arguments, resultType, readElimTree(stream, definitionMap));
+    LetClause result = let(name, parameters, resultType, myElimTreeDeserialization.readElimTree(stream, definitionMap));
+    myBindingMap.add(result);
+    return result;
   }
 
-  public PatternArgument readPatternArg(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public LinkedDeserializationResult<PatternArgument> readPatternArg(DataInputStream stream, Map<Integer, Definition> definitionMap, DependentLink link) throws IOException {
     boolean isExplicit = stream.readBoolean();
     boolean isHidden = stream.readBoolean();
-    return new PatternArgument(readPattern(stream, definitionMap), isExplicit, isHidden);
+    LinkedDeserializationResult<Pattern> result = readPattern(stream, definitionMap, link);
+    return new LinkedDeserializationResult<>(new PatternArgument(result.pattern, isExplicit, isHidden), result.link);
   }
 
-  public Pattern readPattern(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  private static class LinkedDeserializationResult<T> {
+    private final T pattern;
+    private final DependentLink link;
+
+    private LinkedDeserializationResult(T pattern, DependentLink link) {
+      this.pattern = pattern;
+      this.link = link;
+    }
+  }
+
+  private LinkedDeserializationResult<Pattern> readPattern(DataInputStream stream, Map<Integer, Definition> definitionMap, DependentLink link) throws IOException {
     switch (stream.readInt()) {
       case 0: {
-        String name = stream.readBoolean() ? stream.readUTF() : null;
-        return new NamePattern(name);
+        return new LinkedDeserializationResult<Pattern>(new NamePattern(link), link.getNext());
       }
       case 1: {
-        return new AnyConstructorPattern();
+        return new LinkedDeserializationResult<Pattern>(new AnyConstructorPattern(link), link.getNext());
       }
       case 2: {
         Definition constructor = definitionMap.get(stream.readInt());
@@ -485,9 +492,11 @@ public class ModuleDeserialization {
         int size = stream.readInt();
         List<PatternArgument> arguments = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
-          arguments.add(readPatternArg(stream, definitionMap));
+          LinkedDeserializationResult<PatternArgument> result = readPatternArg(stream, definitionMap, link);
+          arguments.add(result.pattern);
+          link = result.link;
         }
-        return new ConstructorPattern((Constructor) constructor, arguments);
+        return new LinkedDeserializationResult<Pattern>(new ConstructorPattern((Constructor) constructor, new Patterns(arguments)), link);
       }
       default: {
         throw new IllegalStateException();

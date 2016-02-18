@@ -212,4 +212,26 @@ public class ConditionsTest {
           " | snd => zero\n"
     );
   }
+
+  @Test
+  public void whatIfNormalizeError() {
+    typeCheckClass(
+        "\\static \\data Z | pos Nat | neg Nat \\with neg zero => pos zero\n" +
+        "\\statoc \\function test (x : Z) : Nat <= \\elim x\n" +
+        " | neg x => 1\n" +
+        " | pos x => 2\n"
+    , 1);
+  }
+
+  @Test
+  public void whatIfDontNormalizeConditionRHS() {
+    typeCheckClass(
+        "\\static \\data D | d1 | d2 \\with d1 => d2\n"+
+        "\\static \\data E | e1 D | e2 D \\with e2 x => e1 d1\n"+
+        "\\static \\function test (e : E) : Nat <= \\elim e\n" +
+        " | e2 d2 => 1\n" +
+        " | e1 d1 => 2\n" +
+        " | e1 d2 => 1\n"
+    , 1);
+  }
 }

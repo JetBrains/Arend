@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.statement.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
 
   @Override
   public Void visitDefine(Abstract.DefineStatement stat, Void params) {
-    stat.getDefinition().accept(new DefinitionPrettyPrintVisitor(myBuilder, myNames, myIndent), null);
+    stat.getDefinition().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), null);
     return null;
   }
 
@@ -38,16 +38,16 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
         throw new IllegalStateException();
     }
 
-    myBuilder.append(stat.getPath().get(0).getName());
+    myBuilder.append(stat.getPath().get(0));
     for (int i = 1; i < stat.getPath().size(); i++) {
-      myBuilder.append('.').append(stat.getPath().get(0).getName());
+      myBuilder.append('.').append(stat.getPath().get(0));
     }
     if (stat.getNames() != null) {
       myBuilder.append('(');
       if (!stat.getNames().isEmpty()) {
-        myBuilder.append(stat.getNames().get(0).getName());
+        myBuilder.append(stat.getNames().get(0));
         for (int i = 1; i < stat.getNames().size(); i++) {
-          myBuilder.append(", ").append(stat.getNames().get(0).getName());
+          myBuilder.append(", ").append(stat.getNames().get(0));
         }
       }
       myBuilder.append(')');

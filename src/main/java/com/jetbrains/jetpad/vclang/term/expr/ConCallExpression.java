@@ -1,33 +1,35 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
+
 public class ConCallExpression extends DefCallExpression {
-  private List<Expression> myParameters;
+  private List<Expression> myDataTypeArguments;
 
-  public ConCallExpression(Constructor definition, List<Expression> parameters) {
+  public ConCallExpression(Constructor definition, List<Expression> dataTypeArguments) {
     super(definition);
+    assert dataTypeArguments != null;
+    myDataTypeArguments = dataTypeArguments;
+  }
+
+  public List<Expression> getDataTypeArguments() {
+    return myDataTypeArguments;
+  }
+
+  public void setDataTypeArguments(List<Expression> parameters) {
     assert parameters != null;
-    myParameters = parameters;
-  }
-
-  public List<Expression> getParameters() {
-    return myParameters;
-  }
-
-  public void setParameters(List<Expression> parameters) {
-    myParameters = parameters;
+    myDataTypeArguments = parameters;
   }
 
   @Override
   public Expression applyThis(Expression thisExpr) {
-    myParameters.add(thisExpr);
+    assert myDataTypeArguments.isEmpty();
+    myDataTypeArguments.add(thisExpr);
     return this;
   }
 
@@ -37,15 +39,13 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression getType(List<Binding> context) {
-    Expression resultType = super.getType(context);
-
-    if (myParameters != null && !myParameters.isEmpty()) {
-      List<Expression> parameters = new ArrayList<>(myParameters);
-      Collections.reverse(parameters);
-      resultType = resultType.subst(parameters, 0);
+  public Expression getType() {
+    DependentLink parameters = getDefinition().getDataTypeParameters();
+    Expression result = getDefinition().getType();
+    if (parameters.hasNext()) {
+      result = Pi(parameters, result);
     }
-    return resultType;
+    return result.applyExpressions(myDataTypeArguments);
   }
 
   @Override

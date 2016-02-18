@@ -1,26 +1,39 @@
 package com.jetbrains.jetpad.vclang.term.pattern;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
 import java.util.Collections;
-import java.util.List;
 
 public class NamePattern extends Pattern implements Abstract.NamePattern {
-  private final String myName;
+  private final DependentLink myLink;
 
-  public NamePattern(String name) {
-    myName = name;
+  public NamePattern(DependentLink link) {
+    assert link != null;
+    myLink = link;
+  }
+
+  @Override
+  public DependentLink getParameters() {
+    return myLink;
+  }
+
+  @Override
+  public Expression toExpression(Substitution subst) {
+    Expression result = subst.get(myLink);
+    return result == null ? new ReferenceExpression(myLink) : result;
+  }
+
+  @Override
+  public MatchResult match(Expression expr, boolean ignore) {
+    return new MatchOKResult(Collections.singletonList(expr));
   }
 
   @Override
   public String getName() {
-    return myName;
-  }
-
-  @Override
-  public Utils.PatternMatchResult match(Expression expr, List<Binding> context) {
-    return new Utils.PatternMatchOKResult(Collections.singletonList(expr));
+    return myLink.getName();
   }
 }

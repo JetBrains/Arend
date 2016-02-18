@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -15,19 +14,14 @@ public final class Abstract {
   private Abstract() {}
 
   public interface SourceNode {}
-  public interface PrettyPrintableSourceNode extends SourceNode, PrettyPrintable {}
 
-  public interface Identifier extends SourceNode {
-    Name getName();
-  }
-
-  public interface Expression extends PrettyPrintableSourceNode {
+  public interface Expression extends SourceNode {
     byte PREC = -12;
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
-    void setWellTyped(List<com.jetbrains.jetpad.vclang.term.definition.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
+    void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped);
   }
 
-  public interface Argument extends PrettyPrintableSourceNode {
+  public interface Argument extends SourceNode {
     boolean getExplicit();
   }
 
@@ -43,7 +37,7 @@ public final class Abstract {
     List<String> getNames();
   }
 
-  public interface ArgumentExpression extends PrettyPrintableSourceNode {
+  public interface ArgumentExpression extends SourceNode {
     Expression getExpression();
     boolean isExplicit();
     boolean isHidden();
@@ -66,7 +60,7 @@ public final class Abstract {
 
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
-    Name getName();
+    String getName();
     Expression getExpression();
     ResolvedName getResolvedName();
   }
@@ -78,7 +72,7 @@ public final class Abstract {
   }
 
   public interface ImplementStatement extends SourceNode {
-    Identifier getIdentifier();
+    String getName();
     Expression getExpression();
   }
 
@@ -87,18 +81,13 @@ public final class Abstract {
     Expression getExpression();
   }
 
-  public interface IndexExpression extends Expression {
-    byte PREC = 12;
-    int getIndex();
-  }
-
   public interface LamExpression extends Expression {
     byte PREC = -5;
     List<? extends Argument> getArguments();
     Expression getBody();
   }
 
-  public interface LetClause extends Function, PrettyPrintable {
+  public interface LetClause extends Function {
   }
 
   public interface LetExpression extends Expression {
@@ -184,7 +173,7 @@ public final class Abstract {
     List<? extends Pattern> getPatterns();
   }
 
-  public interface Clause extends PrettyPrintableSourceNode, PatternContainer {
+  public interface Clause extends SourceNode, PatternContainer {
     Definition.Arrow getArrow();
     Expression getExpression();
   }
@@ -194,7 +183,7 @@ public final class Abstract {
   }
 
   public interface Binding extends SourceNode {
-    Name getName();
+    String getName();
   }
 
   public interface Statement extends SourceNode {
@@ -264,7 +253,7 @@ public final class Abstract {
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
     boolean isOverridden();
-    Name getOriginalName();
+    String getOriginalName();
     Collection<? extends Statement> getStatements();
   }
 
@@ -282,13 +271,13 @@ public final class Abstract {
     Collection<? extends Statement> getStatements();
   }
 
-  public interface PatternArgument extends PrettyPrintableSourceNode {
+  public interface PatternArgument extends SourceNode {
     boolean isHidden();
     boolean isExplicit();
     Pattern getPattern();
   }
 
-  public interface Pattern extends PrettyPrintableSourceNode {
+  public interface Pattern extends SourceNode {
     void setWellTyped(com.jetbrains.jetpad.vclang.term.pattern.Pattern pattern);
   }
 
@@ -296,9 +285,9 @@ public final class Abstract {
     String getName();
   }
 
-  public interface ConstructorPattern extends Pattern{
+  public interface ConstructorPattern extends Pattern {
     List<? extends PatternArgument> getArguments();
-    Name getConstructorName();
+    String getConstructorName();
   }
 
   public interface AnyConstructorPattern extends Pattern {}
@@ -309,9 +298,9 @@ public final class Abstract {
     DataDefinition getDataType();
   }
 
-  public interface Condition extends PrettyPrintableSourceNode {
+  public interface Condition extends SourceNode {
     List<? extends PatternArgument> getPatterns();
-    Name getConstructorName();
+    String getConstructorName();
     Expression getTerm();
     void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition);
   }
@@ -320,12 +309,12 @@ public final class Abstract {
     enum Kind { OPEN, CLOSE, EXPORT }
 
     Kind getKind();
-    List<? extends Identifier> getPath();
+    List<String> getPath();
 
     void setResolvedPath(ResolvedName path);
     ResolvedName getResolvedPath();
 
-    List<? extends Identifier> getNames();
+    List<String> getNames();
   }
 
   public interface DefaultStaticStatement extends Statement {

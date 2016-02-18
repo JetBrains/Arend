@@ -2,15 +2,15 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
-
-import java.util.ArrayList;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
@@ -140,13 +140,14 @@ public class ElimTest {
     ClassDefinition defs = typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | d zero zero => 0 | d _ _ => 1");
-    Namespace namespace = defs.getParentNamespace().findChild(defs.getName().name);
+    Namespace namespace = defs.getParentNamespace().findChild(defs.getName());
     FunctionDefinition test = (FunctionDefinition) namespace.getDefinition("test");
     Constructor d = (Constructor) namespace.getDefinition("d");
-    Expression call1 = Apps(ConCall(d), Zero(), Index(0));
-    Expression call2 = Apps(ConCall(d), Suc(Zero()), Index(0));
-    assertEquals(Apps(FunCall(test), call1), Apps(FunCall(test), call1).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
-    assertEquals(Suc(Zero()), Apps(FunCall(test), call2).normalize(NormalizeVisitor.Mode.NF, new ArrayList<Binding>()));
+    Binding binding = new TypedBinding("y", Nat());
+    Expression call1 = Apps(ConCall(d), Zero(), Reference(binding));
+    Expression call2 = Apps(ConCall(d), Suc(Zero()), Reference(binding));
+    assertEquals(Apps(FunCall(test), call1), Apps(FunCall(test), call1).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Suc(Zero()), Apps(FunCall(test), call2).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -218,7 +219,7 @@ public class ElimTest {
     typeCheckClass(
         "\\static \\data Geq Nat Nat | Geq _ zero => Geq-zero | Geq (suc n) (suc m) => Geq-suc (Geq n m)\n" +
         "\\static \\function test (n m : Nat) (p : Geq n m) : Nat <= \\elim n, m, p\n" +
-        "  | _, zero, Geq-zero => 0\n" +
+        "  | _!, zero, Geq-zero => 0\n" +
         "  | suc n, suc m, Geq-suc p => 1");
   }
 
@@ -294,7 +295,7 @@ public class ElimTest {
       " | zero => n\n" +
       " | _ => n\n"
     );
-    assertEquals(def.getElimTree(), branch(0, clause(Prelude.ZERO, Index(0)), clause(Prelude.SUC, Index(1))));
+    assertEquals(def.getElimTree(), top(def.getParameters(), branch(def.getParameters().getNext(), tail(), clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(def.getParameters())), clause(Reference(def.getParameters())))));
   }
 
   @Test
@@ -323,6 +324,23 @@ public class ElimTest {
             " | zero, _ => 0\n" +
             " | suc zero, _ => 1\n" +
             " | suc (suc _), e (_!)"
+    );
+  }
+
+  @Test
+  public void testMultiArg() {
+    typeCheckClass(
+      "\\static \\data D (A B : \\Type0) | c A B\n" +
+      "\\static \\function test (f : Nat -> Nat) (d : D Nat (Nat -> Nat)) : Nat <= \\elim d\n" +
+          " | c x y => f x"
+    );
+  }
+
+  @Test
+  public void testEmptyLet() {
+    typeCheckClass(
+        "\\static \\data D\n" +
+        "\\static \\function test (d : D) : 0 = 1 <= \\let x (d : D) : 0 = 1 <= \\elim d \\in x d"
     );
   }
 }

@@ -1,21 +1,21 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LetClause;
 import com.jetbrains.jetpad.vclang.term.expr.LetExpression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Argument;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseDef;
+import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
 
@@ -23,45 +23,69 @@ public class PrettyPrintingTest {
   @Test
   public void prettyPrintingLam() {
     // \x. x x
-    Expression expr = Lam("x", Nat(), Apps(Index(0), Index(0)));
+    DependentLink x = param("x", Nat());
+    Expression expr = Lam(x, Apps(Reference(x), Reference(x)));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 
   @Test
   public void prettyPrintingLam2() {
     // \x. x (\y. y x) (\z w. x w z)
-    Expression expr = Lam("x", Nat(), Apps(Index(0), Lam("y", Nat(), Apps(Index(0), Index(1))), Lam("z", Nat(), Lam("w", Nat(), Apps(Index(2), Index(0), Index(1))))));
+    DependentLink x = param("x", Nat());
+    DependentLink y = param("y", Nat());
+    DependentLink z = param("z", Nat());
+    DependentLink w = param("w", Nat());
+    Expression expr = Lam(x, Apps(Reference(x), Lam(y, Apps(Reference(y), Reference(x))), Lam(params(z, w), Apps(Reference(x), Reference(w), Reference(z)))));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 
   @Test
   public void prettyPrintingU() {
     // (X : Type0) -> X -> X
-    Expression expr = Pi("X", Universe(0), Pi(Index(0), Index(0)));
+    DependentLink X = param("x", Universe(0));
+    Expression expr = Pi(X, Pi(param(Reference(X)), Reference(X)));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 
   @Test
   public void prettyPrintingPi() {
     // (x y : N) (z w : N -> N) -> ((s : N) -> N (z s) (w x)) -> N
-    Expression expr = Pi("x", Nat(), Pi("y", Nat(), Pi("z", Pi(Nat(), Nat()), Pi("w", Pi(Nat(), Nat()), Pi(Pi("s", Nat(), Apps(Nat(), Apps(Index(2), Index(0)), Apps(Index(1), Index(4)))), Nat())))));
+    DependentLink x = param("x", Nat());
+    DependentLink y = param("y", Nat());
+    DependentLink z = param("z", Pi(param(Nat()), Nat()));
+    DependentLink w = param("w", Pi(param(Nat()), Nat()));
+    DependentLink s = param("s", Nat());
+    Expression expr = Pi(params(x, y, z, w), Pi(param(Pi(s, Apps(Nat(), Apps(Reference(z), Reference(s)), Apps(Reference(w), Reference(x))))), Nat()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 
   @Test
   public void prettyPrintingFunDef() {
     // f (X : Type0) (x : X) : X => x;
-    List<Argument> arguments = new ArrayList<>(2);
-    arguments.add(Tele(vars("X"), Universe(0)));
-    arguments.add(Tele(vars("x"), Index(0)));
-    FunctionDefinition def = new FunctionDefinition(new Namespace("test"), new Name("f"), Abstract.Definition.DEFAULT_PRECEDENCE, arguments, Index(1), leaf(Definition.Arrow.RIGHT, Lam("X", Universe(0), Lam("x", Index(0), Index(0)))));
-    def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), null);
+    List<Concrete.Argument> arguments = new ArrayList<>(2);
+    arguments.add(cTele(cvars("X"), cUniverse(0)));
+    arguments.add(cTele(cvars("x"), cVar("X")));
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Definition.DEFAULT_PRECEDENCE, arguments, cVar("X"), Abstract.Definition.Arrow.RIGHT, cLam("X", cLam("x", cVar("x"))), false, null, Collections.<Concrete.Statement>emptyList());
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), null);
   }
 
   @Test
   public void prettyPrintingLet() {
     // \let x {A : Type0} (y ; A) : A => y \in x Zero()
-    LetExpression expr = Let(lets(let("x", typeArgs(Tele(false, vars("A"), Universe(0)), Tele(vars("y"), Index(0))), Index(0))), Apps(Index(0), Zero()));
+    DependentLink A = param("A", Universe(0));
+    DependentLink y = param("y", Reference(A));
+    LetClause clause = let("x", params(A, y), Reference(A));
+    LetExpression expr = Let(lets(clause), Apps(Reference(clause), Zero()));
+    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
+  }
+
+  @Test
+  public void prettyPrintingLetEmpty() {
+    // \let x {A : Type0} (y ; A) : A <= \elim y
+    DependentLink A = param("A", Universe(0));
+    DependentLink y = param("y", Reference(A));
+    LetClause clause = let("x", params(A, y), Reference(A), EmptyElimTreeNode.getInstance());
+    LetExpression expr = Let(lets(clause), Apps(Reference(clause), Zero()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }
 
@@ -69,13 +93,13 @@ public class PrettyPrintingTest {
   public void prettyPrintingPatternDataDef() {
     Concrete.Definition def = parseDef("\\data LE (n m : Nat) | LE (zero) m => LE-zero | LE (suc n) (suc m) => LE-suc (LE n m)");
     assertNotNull(def);
-    def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC), null);
   }
 
   @Test
   public void prettyPrintingDataWithConditions() {
     Concrete.Definition def = parseDef("\\data Z | neg Nat | pos Nat \\with | pos zero => neg zero");
     assertNotNull(def);
-    def.accept(new DefinitionPrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC), null);
   }
 }

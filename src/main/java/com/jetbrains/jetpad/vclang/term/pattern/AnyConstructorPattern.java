@@ -1,39 +1,45 @@
 package com.jetbrains.jetpad.vclang.term.pattern;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
-import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
 
 public class AnyConstructorPattern extends Pattern implements Abstract.AnyConstructorPattern {
+  private final DependentLink myLink;
 
-  public AnyConstructorPattern() {
+  public AnyConstructorPattern(DependentLink link) {
+    assert link != null;
+    myLink = link;
+  }
+
+  public DependentLink getLink() {
+    return myLink;
   }
 
   @Override
-  public Utils.PatternMatchResult match(Expression expr, List<Binding> context) {
-    Expression func = (context == null ? expr : expr.normalize(NormalizeVisitor.Mode.WHNF, context)).getFunction(new ArrayList<Expression>());
-    if (!(func instanceof DefCallExpression && ((DefCallExpression) func).getDefinition() instanceof Abstract.Constructor)) {
-      return new Utils.PatternMatchMaybeResult(this, expr);
+  public DependentLink getParameters() {
+    return myLink;
+  }
+
+  @Override
+  public Expression toExpression(Substitution subst) {
+    Expression result = subst.get(myLink);
+    return result == null ? new ReferenceExpression(myLink) : result;
+  }
+
+  @Override
+  public MatchResult match(Expression expr, boolean normalize) {
+    Expression func = (normalize ? expr.normalize(NormalizeVisitor.Mode.WHNF) : expr).getFunction(null);
+    if (!(func instanceof ConCallExpression)) {
+      return new MatchMaybeResult(this, expr);
     } else {
-      return new Utils.PatternMatchOKResult(Collections.singletonList(expr));
+      return new MatchOKResult(Collections.singletonList(expr));
     }
-  }
-
-  @Override
-  public void setWellTyped(Pattern pattern) {
-
-  }
-
-  @Override
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    prettyPrintPattern(this, builder, names);
   }
 }

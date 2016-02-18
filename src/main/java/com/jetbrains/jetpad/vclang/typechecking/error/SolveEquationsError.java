@@ -1,0 +1,49 @@
+package com.jetbrains.jetpad.vclang.typechecking.error;
+
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+
+import java.util.ArrayList;
+
+public class SolveEquationsError extends TypeCheckingError {
+  private final Expression myExpr1;
+  private final Expression myExpr2;
+  private final Binding myBinding;
+
+  public SolveEquationsError(ResolvedName resolvedName, Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression) {
+    super(resolvedName, null, expression);
+    myExpr1 = expr1;
+    myExpr2 = expr2;
+    myBinding = binding;
+  }
+
+  public SolveEquationsError(Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression) {
+    super(null, expression);
+    myExpr1 = expr1;
+    myExpr2 = expr2;
+    myBinding = binding;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append(printHeader());
+    builder.append("Cannot solve equation:\n")
+        .append("\t1st expression: ");
+    myExpr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+    builder.append('\n')
+        .append("\t2nd expression: ");
+    myExpr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+    builder.append('\n')
+        .append("\tSince '").append(myBinding).append("' is free in these expressions");
+
+    String ppClause = prettyPrint(getCause());
+    if (ppClause != null) {
+      builder.append('\n')
+          .append("\tIn expression: ").append(ppClause);
+    }
+    return builder.toString();
+  }
+}

@@ -1,12 +1,9 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.term.definition.Condition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionPrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -14,10 +11,6 @@ import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisit
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.term.definition.Condition.prettyPrintCondition;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPattern;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.prettyPrintPatternArg;
 
 public final class Concrete {
   private Concrete() {}
@@ -44,27 +37,13 @@ public final class Concrete {
     }
   }
 
-  public static class Identifier extends SourceNode implements Abstract.Identifier {
-    private final Name myName;
-
-    public Identifier(Position position, String name, Abstract.Definition.Fixity fixity) {
-      super(position);
-      myName = new Name(name, fixity);
-    }
-
-    @Override
-    public Name getName() {
-      return myName;
-    }
-  }
-
   public static abstract class Expression extends SourceNode implements Abstract.Expression {
     public Expression(Position position) {
       super(position);
     }
 
     @Override
-    public void setWellTyped(List<com.jetbrains.jetpad.vclang.term.definition.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
+    public void setWellTyped(List<com.jetbrains.jetpad.vclang.term.context.binding.Binding> context, com.jetbrains.jetpad.vclang.term.expr.Expression wellTyped) {
     }
 
     @Override
@@ -75,8 +54,10 @@ public final class Concrete {
     }
 
     @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      accept(new PrettyPrintVisitor(builder, names, 0), prec);
+    public boolean equals(Object obj) {
+      if (this == obj) return true;
+      if (!(obj instanceof Expression)) return false;
+      return accept(new AbstractCompareVisitor(), (Expression) obj);
     }
   }
 
@@ -95,11 +76,6 @@ public final class Concrete {
 
     public void setExplicit(boolean explicit) {
       myExplicit = explicit;
-    }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      Utils.prettyPrintArgument(this, builder, names, prec, 0);
     }
   }
 
@@ -173,11 +149,6 @@ public final class Concrete {
     @Override
     public boolean isHidden() {
       return myHidden;
-    }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      myExpression.prettyPrint(builder, names, prec);
     }
   }
 
@@ -283,10 +254,10 @@ public final class Concrete {
 
   public static class DefCallExpression extends Expression implements Abstract.DefCallExpression {
     private Expression myExpression;
-    private Name myName;
+    private String myName;
     private ResolvedName myResolvedName;
 
-    public DefCallExpression(Position position, Expression expression, Name name) {
+    public DefCallExpression(Position position, Expression expression, String name) {
       super(position);
       myExpression = expression;
       myName = name;
@@ -296,7 +267,7 @@ public final class Concrete {
     public DefCallExpression(Position position, ResolvedName resolvedName) {
       super(position);
       myExpression = null;
-      myName = resolvedName.name;
+      myName = resolvedName.name.name;
       myResolvedName = resolvedName;
     }
 
@@ -322,7 +293,7 @@ public final class Concrete {
     }
 
     @Override
-    public Name getName() {
+    public String getName() {
       return myName;
     }
 
@@ -359,18 +330,18 @@ public final class Concrete {
   }
 
   public static class ImplementStatement extends SourceNode implements Abstract.ImplementStatement {
-    private final Identifier myIdentifier;
+    private final String myName;
     private final Expression myExpression;
 
-    public ImplementStatement(Identifier identifier, Expression expression) {
-      super(identifier.getPosition());
-      myIdentifier = identifier;
+    public ImplementStatement(Position position, String identifier, Expression expression) {
+      super(position);
+      myName = identifier;
       myExpression = expression;
     }
 
     @Override
-    public Identifier getIdentifier() {
-      return myIdentifier;
+    public String getName() {
+      return myName;
     }
 
     @Override
@@ -463,11 +434,6 @@ public final class Concrete {
       myResultType = resultType;
       myArrow = arrow;
       myTerm = term;
-    }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      Utils.prettyPrintLetClause(this, builder, names, 0);
     }
 
     @Override
@@ -600,25 +566,6 @@ public final class Concrete {
     }
   }
 
-  public static class IndexExpression extends Expression implements Abstract.IndexExpression {
-    private final int myIndex;
-
-    public IndexExpression(Position position, int index) {
-      super(position);
-      myIndex = index;
-    }
-
-    @Override
-    public int getIndex() {
-      return myIndex;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitIndex(this, params);
-    }
-  }
-
   public static class ProjExpression extends Expression implements Abstract.ProjExpression {
     private final Expression myExpression;
     private final int myField;
@@ -720,14 +667,9 @@ public final class Concrete {
     }
 
     @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      Utils.prettyPrintClause(null, this, builder, names, 0);
-    }
-
-    @Override
     public void replaceWithConstructor(int index) {
       Pattern old = myPatterns.get(index);
-      myPatterns.set(index, new ConstructorPattern(old.getPosition(), new Name(old.getName()), Collections.<PatternArgument>emptyList()));
+      myPatterns.set(index, new ConstructorPattern(old.getPosition(), old.getName(), Collections.<PatternArgument>emptyList()));
     }
   }
 
@@ -751,20 +693,15 @@ public final class Concrete {
   }
 
   public static abstract class Binding extends SourceNode implements Abstract.Binding {
-    private final Name myName;
+    private final String myName;
 
-    public Binding(Position position, Name name) {
+    public Binding(Position position, String name) {
       super(position);
       myName = name;
     }
 
-    public Binding(Position position, String name) {
-      super(position);
-      myName = new Name(name, Abstract.Definition.Fixity.PREFIX);
-    }
-
     @Override
-    public Name getName() {
+    public String getName() {
       return myName;
     }
   }
@@ -822,7 +759,7 @@ public final class Concrete {
     private final Precedence myPrecedence;
     private DefineStatement myParent;
 
-    public Definition(Position position, Name name, Precedence precedence) {
+    public Definition(Position position, String name, Precedence precedence) {
       super(position, name);
       myPrecedence = precedence;
     }
@@ -844,7 +781,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new DefinitionPrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
+      accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
       return builder.toString();
     }
   }
@@ -853,7 +790,7 @@ public final class Concrete {
     private final List<Argument> myArguments;
     private final Expression myResultType;
 
-    public SignatureDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType) {
+    public SignatureDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType) {
       super(position, name, precedence);
       myArguments = arguments;
       myResultType = resultType;
@@ -869,7 +806,7 @@ public final class Concrete {
   }
 
   public static class AbstractDefinition extends SignatureDefinition implements Abstract.AbstractDefinition {
-    public AbstractDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType) {
+    public AbstractDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType) {
       super(position, name, precedence, arguments, resultType);
     }
 
@@ -882,11 +819,11 @@ public final class Concrete {
   public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
     private final Abstract.Definition.Arrow myArrow;
     private final boolean myOverridden;
-    private final Name myOriginalName;
+    private final String myOriginalName;
     private final Expression myTerm;
     private final List<Statement> myStatements;
 
-    public FunctionDefinition(Position position, Name name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, Name originalName, List<Statement> statements) {
+    public FunctionDefinition(Position position, String name, Precedence precedence, List<Argument> arguments, Expression resultType, Abstract.Definition.Arrow arrow, Expression term, boolean overridden, String originalName, List<Statement> statements) {
       super(position, name, precedence, arguments, resultType);
       myArrow = arrow;
       myTerm = term;
@@ -911,7 +848,7 @@ public final class Concrete {
     }
 
     @Override
-    public Name getOriginalName() {
+    public String getOriginalName() {
       return myOriginalName;
     }
 
@@ -932,11 +869,11 @@ public final class Concrete {
   }
 
   public static class Condition extends SourceNode implements Abstract.Condition {
-    private final Name myConstructorName;
+    private final String myConstructorName;
     private final List<PatternArgument> myPatterns;
     private final Expression myTerm;
 
-    public Condition(Position position, Name constructorName, List<PatternArgument> patterns, Expression term) {
+    public Condition(Position position, String constructorName, List<PatternArgument> patterns, Expression term) {
       super(position);
       myConstructorName = constructorName;
       myPatterns = patterns;
@@ -944,7 +881,7 @@ public final class Concrete {
     }
 
     @Override
-    public Name getConstructorName() {
+    public String getConstructorName() {
       return myConstructorName;
     }
 
@@ -962,11 +899,6 @@ public final class Concrete {
     public void setWellTyped(com.jetbrains.jetpad.vclang.term.definition.Condition condition) {
 
     }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      prettyPrintCondition(this, builder, names);
-    }
   }
 
   public static class DataDefinition extends Definition implements Abstract.DataDefinition {
@@ -975,7 +907,7 @@ public final class Concrete {
     private final List<Condition> myConditions;
     private final Universe myUniverse;
 
-    public DataDefinition(Position position, Name name, Precedence precedence, List<TypeArgument> parameters, Universe universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
+    public DataDefinition(Position position, String name, Precedence precedence, List<TypeArgument> parameters, Universe universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
       super(position, name, precedence);
       myParameters = parameters;
       myConstructors = constructors;
@@ -1014,7 +946,7 @@ public final class Concrete {
     private final Kind myKind;
 
     public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind) {
-      super(position, new Name(name, Fixity.PREFIX), DEFAULT_PRECEDENCE);
+      super(position, name, DEFAULT_PRECEDENCE);
       myFields = fields;
       myKind = kind;
     }
@@ -1046,7 +978,7 @@ public final class Concrete {
     }
 
     public void replaceWithConstructor() {
-      myPattern = new ConstructorPattern(myPattern.getPosition(), new Name(myPattern.getName()), Collections.<PatternArgument>emptyList());
+      myPattern = new ConstructorPattern(myPattern.getPosition(), myPattern.getName(), Collections.<PatternArgument>emptyList());
     }
 
     @Override
@@ -1063,21 +995,11 @@ public final class Concrete {
     public Abstract.Pattern getPattern() {
       return myPattern;
     }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      prettyPrintPatternArg(this, builder, names);
-    }
   }
 
   public static abstract class Pattern extends SourceNode implements Abstract.Pattern {
     public Pattern(Position position) {
       super(position);
-    }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      prettyPrintPattern(this, builder, names);
     }
 
     @Override
@@ -1103,17 +1025,17 @@ public final class Concrete {
   }
 
   public static class ConstructorPattern extends Pattern implements Abstract.ConstructorPattern {
-    private final Name myConstructorName;
+    private final String myConstructorName;
     private final List<PatternArgument> myArguments;
 
-    public ConstructorPattern(Position position, Name constructorName, List<PatternArgument> arguments) {
+    public ConstructorPattern(Position position, String constructorName, List<PatternArgument> arguments) {
       super(position);
       myConstructorName = constructorName;
       myArguments = arguments;
     }
 
     @Override
-    public Name getConstructorName() {
+    public String getConstructorName() {
       return myConstructorName;
     }
 
@@ -1124,7 +1046,7 @@ public final class Concrete {
 
     @Override
     public String getName() {
-      return myConstructorName.name;
+      return myConstructorName;
     }
   }
 
@@ -1144,7 +1066,7 @@ public final class Concrete {
     private final List<TypeArgument> myArguments;
     private final List<PatternArgument> myPatterns;
 
-    public Constructor(Position position, Name name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
+    public Constructor(Position position, String name, Precedence precedence, List<TypeArgument> arguments, DataDefinition dataType, List<PatternArgument> patterns) {
       super(position, name, precedence);
       myArguments = arguments;
       myDataType = dataType;
@@ -1175,10 +1097,10 @@ public final class Concrete {
   public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
     private final Kind myKind;
     private ResolvedName myResolvedPath;
-    private final List<Identifier> myPath;
-    private final List<Identifier> myNames;
+    private final List<String> myPath;
+    private final List<String> myNames;
 
-    public NamespaceCommandStatement(Position position, Kind kind, List<Identifier> path, List<Identifier> names) {
+    public NamespaceCommandStatement(Position position, Kind kind, List<String> path, List<String> names) {
       super(position);
       myKind = kind;
       myResolvedPath = null;
@@ -1192,7 +1114,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Identifier> getPath() {
+    public List<String> getPath() {
       return myPath;
     }
 
@@ -1207,7 +1129,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Identifier> getNames() {
+    public List<String> getNames() {
       return myNames;
     }
 

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
@@ -12,14 +12,14 @@ public class GoalError extends TypeCheckingError {
   private final List<Binding> myContext;
   private final Expression myType;
 
-  public GoalError(ResolvedName resolvedName, List<Binding> context, Expression type, Abstract.PrettyPrintableSourceNode expression) {
-    super(resolvedName, "Goal", expression, getNames(context));
+  public GoalError(ResolvedName resolvedName, List<Binding> context, Expression type, Abstract.SourceNode expression) {
+    super(resolvedName, "Goal", expression);
     myContext = new ArrayList<>(context);
     myType = type;
   }
 
-  public GoalError(List<Binding> context, Expression type, Abstract.PrettyPrintableSourceNode expression) {
-    super("Goal", expression, getNames(context));
+  public GoalError(List<Binding> context, Expression type, Abstract.SourceNode expression) {
+    super("Goal", expression);
     myContext = new ArrayList<>(context);
     myType = type;
   }
@@ -44,7 +44,7 @@ public class GoalError extends TypeCheckingError {
       builder.append("\n\tExpected type: ");
       List<String> names = new ArrayList<>(myContext.size());
       for (Binding binding : myContext) {
-        names.add(binding.getName() == null ? null : binding.getName().name);
+        names.add(binding.getName() == null ? null : binding.getName());
       }
       myType.prettyPrint(builder, names, Abstract.Expression.PREC);
     }
@@ -60,7 +60,7 @@ public class GoalError extends TypeCheckingError {
         } else {
           builder.append("{!error}");
         }
-        names.add(binding.getName() == null ? null : binding.getName().name);
+        names.add(binding.getName() == null ? null : binding.getName());
       }
     }
 

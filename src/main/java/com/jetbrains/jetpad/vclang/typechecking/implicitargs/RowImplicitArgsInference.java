@@ -13,22 +13,19 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
     super(visitor);
   }
 
-  abstract CheckTypeVisitor.Result inferRow(CheckTypeVisitor.OKResult fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression funExpr, Abstract.Expression expr);
+  abstract CheckTypeVisitor.Result inferRow(CheckTypeVisitor.Result fun, List<Abstract.ArgumentExpression> args, Abstract.Expression funExpr, Abstract.Expression expr);
 
-  private CheckTypeVisitor.Result typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Expression expectedType, Abstract.Expression expression) {
+  private CheckTypeVisitor.Result typeCheckFunctionApps(Abstract.Expression fun, List<Abstract.ArgumentExpression> args, Abstract.Expression expression) {
     CheckTypeVisitor.Result function;
     if (fun instanceof Abstract.DefCallExpression) {
       function = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
     } else {
       function = myVisitor.typeCheck(fun, null);
     }
-    if (function instanceof CheckTypeVisitor.OKResult) {
-      return inferRow((CheckTypeVisitor.OKResult) function, args, expectedType, fun, expression);
+    if (function != null) {
+      return inferRow(function, args, fun, expression);
     }
 
-    if (function instanceof CheckTypeVisitor.InferErrorResult) {
-      myVisitor.getErrorReporter().report(((CheckTypeVisitor.InferErrorResult) function).error);
-    }
     for (Abstract.ArgumentExpression arg : args) {
       myVisitor.typeCheck(arg.getExpression(), null);
     }
@@ -38,7 +35,7 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
   @Override
   public CheckTypeVisitor.Result infer(Abstract.AppExpression expr, Expression expectedType) {
     List<Abstract.ArgumentExpression> args = new ArrayList<>();
-    return typeCheckFunctionApps(Abstract.getFunction(expr, args), args, expectedType, expr);
+    return typeCheckFunctionApps(Abstract.getFunction(expr, args), args, expr);
   }
 
   @Override
@@ -64,11 +61,6 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
       public boolean isHidden() {
         return false;
       }
-
-      @Override
-      public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-        expression.prettyPrint(builder, names, prec);
-      }
     }
 
     List<Abstract.ArgumentExpression> args = new ArrayList<>(2);
@@ -76,11 +68,11 @@ public abstract class RowImplicitArgsInference extends BaseImplicitArgsInference
     args.add(new AbstractArgumentExpression(expr.getRight()));
 
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : null;
-    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), args, expectedType, expr);
+    return typeCheckFunctionApps(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), args, expr);
   }
 
   @Override
-  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.OKResult fun, Expression expectedType, Abstract.Expression expr) {
-    return inferRow(fun, new ArrayList<Abstract.ArgumentExpression>(0), expectedType, expr, expr);
+  public CheckTypeVisitor.Result inferTail(CheckTypeVisitor.Result fun, Expression expectedType, Abstract.Expression expr) {
+    return myVisitor.checkResult(expectedType, inferRow(fun, new ArrayList<Abstract.ArgumentExpression>(0), expr, expr), expr);
   }
 }

@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 
 import java.util.Arrays;
@@ -19,19 +18,21 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.DefCallExpression cVar(String name) {
-    return new Concrete.DefCallExpression(POSITION, null, name == null ? null : new Name(name));
+    return new Concrete.DefCallExpression(POSITION, null, name == null ? null : name);
   }
 
   public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition) {
-    return new Concrete.DefCallExpression(POSITION, expr, definition.getName());
+    Concrete.DefCallExpression result = new Concrete.DefCallExpression(POSITION, expr, definition.getName());
+    result.setResolvedName(definition.getResolvedName());
+    return result;
   }
 
   public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ImplementStatement> definitions) {
     return new Concrete.ClassExtExpression(POSITION, expr, definitions);
   }
 
-  public static Concrete.ImplementStatement cImplStatement(Name name, Concrete.Expression expr) {
-    return new Concrete.ImplementStatement(new Concrete.Identifier(POSITION, name.name, name.fixity), expr);
+  public static Concrete.ImplementStatement cImplStatement(String name, Concrete.Expression expr) {
+    return new Concrete.ImplementStatement(POSITION, name, expr);
   }
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression... exprs) {
@@ -165,6 +166,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.ElimExpression(POSITION, expressions, clauses);
   }
 
+  public static Concrete.ElimExpression cElim(List<Concrete.Expression> expressions, Concrete.Clause... clauses) {
+    return cElim(expressions, Arrays.asList(clauses));
+  }
+
   public static Concrete.CaseExpression cCase(List<Concrete.Expression> expressions, List<Concrete.Clause> clauses) {
     return new Concrete.CaseExpression(POSITION, expressions, clauses);
   }
@@ -189,8 +194,16 @@ public class ConcreteExpressionFactory {
     return new Concrete.UniverseExpression(POSITION, new Universe.Type(level, truncated));
   }
 
-  public static Concrete.ConstructorPattern cConPattern(Name name, List<Concrete.PatternArgument> patternArgs) {
+  public static List<Concrete.Pattern> cPatterns(Concrete.Pattern... patterns) {
+    return Arrays.asList(patterns);
+  }
+
+  public static Concrete.ConstructorPattern cConPattern(String name, List<Concrete.PatternArgument> patternArgs) {
     return new Concrete.ConstructorPattern(POSITION, name, patternArgs);
+  }
+
+  public static Concrete.ConstructorPattern cConPattern(String name, Concrete.PatternArgument... patternArgs) {
+    return cConPattern(name, Arrays.asList(patternArgs));
   }
 
   public static Concrete.NamePattern cNamePattern(String name) {

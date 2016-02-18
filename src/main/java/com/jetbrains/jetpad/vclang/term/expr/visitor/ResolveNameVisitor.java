@@ -4,11 +4,12 @@ import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.Utils;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.expr.arg.Utils;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
@@ -62,26 +63,21 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
             return null;
           }
           
-          NamespaceMember member = myNameResolver.getMember(parentNamespace, expr.getName().name);
+          NamespaceMember member = myNameResolver.getMember(parentNamespace, expr.getName());
           if (member != null) {
             myResolveListener.nameResolved(expr, member.getResolvedName());
           }
         }
       } else {
-        Name name = expr.getName();
-        if (name.fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(name.name)) {
-          NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name.name, false);
+        String name = expr.getName();
+        if (new Name(name).fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(name)) {
+          NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, false);
           if (member != null) {
             myResolveListener.nameResolved(expr, member.getResolvedName());
           }
         }
       }
     }
-    return null;
-  }
-
-  @Override
-  public Void visitIndex(Abstract.IndexExpression expr, Void params) {
     return null;
   }
 
@@ -188,8 +184,8 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       expression.accept(this, null);
       NotInScopeError error = null;
       for (Abstract.BinOpSequenceElem elem : sequence) {
-        Name name = elem.binOp.getName();
-        NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name.name, true);
+        String name = elem.binOp.getName();
+        NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, true);
         if (member != null) {
           parser.pushOnStack(stack, expression, member.getResolvedName(), member.getPrecedence(), elem.binOp);
           expression = elem.argument;
@@ -245,12 +241,19 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
         return false;
       NamespaceMember namespaceMember = myNameResolver.locateName(name);
       if (namespaceMember != null && (namespaceMember.definition instanceof Constructor || namespaceMember.abstractDefinition instanceof Abstract.Constructor)) {
-        List<Abstract.Argument> args = new ArrayList<>();
-        args.addAll(namespaceMember.definition != null ? ((Constructor) namespaceMember.definition).getArguments() : ((Abstract.Constructor) namespaceMember.abstractDefinition).getArguments());
         boolean hasExplicit = false;
-        for (Abstract.Argument arg : args) {
-          if (arg.getExplicit())
-            hasExplicit = true;
+        if (namespaceMember.definition instanceof Constructor) {
+          for (DependentLink link = ((Constructor) namespaceMember.definition).getParameters(); link.hasNext(); link = link.getNext()) {
+            if (link.isExplicit()) {
+              hasExplicit = true;
+            }
+          }
+        } else {
+          for (Abstract.TypeArgument argument : ((Abstract.Constructor) namespaceMember.abstractDefinition).getArguments()) {
+            if (argument.getExplicit()) {
+              hasExplicit = true;
+            }
+          }
         }
         if (!hasExplicit) {
           return true;
@@ -310,7 +313,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
           clause.getResultType().accept(this, null);
         }
         clause.getTerm().accept(this, null);
-        myContext.add(clause.getName().name);
+        myContext.add(clause.getName());
       }
 
       expr.getExpression().accept(this, null);

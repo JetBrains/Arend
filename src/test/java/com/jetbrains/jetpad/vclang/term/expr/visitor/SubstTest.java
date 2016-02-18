@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
 
@@ -10,114 +13,100 @@ import static org.junit.Assert.assertEquals;
 public class SubstTest {
   @Test
   public void substConst() {
-    // zero -> N [0 := S] = zero -> N
-    Expression expr = Pi(Zero(), DataCall(Prelude.NAT));
-    assertEquals(expr, expr.subst(Suc(), 0));
-  }
-
-  @Test
-  public void substIndexLess() {
-    // var(2) [3 := null] = var(2)
-    Expression expr = Index(2);
-    assertEquals(expr, expr.subst((Expression) null, 3));
+    // zero -> N x [y := S] = zero -> N x
+    Expression expr = Pi(Zero(), Apps(DataCall(Prelude.NAT), Reference(new TypedBinding("x", Nat()))));
+    assertEquals(expr, expr.subst(new TypedBinding("x", Nat()), Suc()));
   }
 
   @Test
   public void substIndexEquals() {
-    // var(2) [2 := suc zero] = suc zero
-    Expression expr = Index(2);
-    assertEquals(Suc(Zero()), expr.subst(Suc(Zero()), 2));
+    // zero -> N x [x := S] = zero -> N S
+    Binding x = new TypedBinding("x", Nat());
+    Expression expr = Pi(Zero(), Apps(DataCall(Prelude.NAT), Reference(x)));
+    assertEquals(Pi(Zero(), Apps(DataCall(Prelude.NAT), Suc())), expr.subst(x, Suc()));
   }
 
   @Test
-  public void substIndexGreater() {
-    // var(4) [1 := null] = var(3)
-    Expression expr = Index(4);
-    assertEquals(Index(3), expr.subst((Expression) null, 1));
-  }
-
-  @Test
-  public void substLam1() {
-    // \x.x [0 := suc zero] = \x.x
-    Expression expr = Lam("x", Nat(), Index(0));
-    assertEquals(expr, expr.subst(Suc(Zero()), 0));
-  }
-
-  @Test
-  public void substLam2() {
-    // \x y. y x [0 := suc zero] = \x y. y x
-    Expression expr = Lam("x", Nat(), Lam("y", Nat(), Apps(Index(0), Index(1))));
-    assertEquals(expr, expr.subst(Suc(Zero()), 0));
+  public void substLam() {
+    // \x y. y x [y := suc zero] = \x y. y x
+    DependentLink xy = param(true, vars("x", "y"), Nat());
+    Expression expr = Lam(xy, Apps(Reference(xy.getNext()), Reference(xy)));
+    assertEquals(expr, expr.subst(xy.getNext(), Suc(Zero())));
   }
 
   @Test
   public void substLamConst() {
-    // \x. var(1) [1 := suc zero] = \x. suc zero
-    Expression expr = Lam("x", Nat(), Index(2));
-    assertEquals(Lam("y", Nat(), Suc(Zero())), expr.subst(Suc(Zero()), 1));
-  }
-
-  @Test
-  public void substLamInLam() {
-    // \x. var(1) [1 := \y.y] = \z y. y
-    Expression expr = Lam("x", Nat(), Index(2));
-    Expression substExpr = Lam("y", Nat(), Index(0));
-    assertEquals(Lam("z", Nat(), substExpr), expr.subst(substExpr, 1));
-  }
-
-  @Test
-  public void substLamInLamOpenConst() {
-    // \x. var(1) [0 := \y. var(0)] = \z. var(0)
-    Expression expr = Lam("x", Nat(), Index(2));
-    Expression substExpr = Lam("y", Nat(), Index(1));
-    assertEquals(Lam("z", Nat(), Index(1)), expr.subst(substExpr, 0));
+    // \x y. z y x [x := suc zero] = \x. suc zero
+    DependentLink xy = param(true, vars("x", "y"), Nat());
+    Binding z = new TypedBinding("z", Nat());
+    Expression expr = Lam(xy, Apps(Reference(z), Reference(xy.getNext()), Reference(xy)));
+    assertEquals(Lam(xy, Apps(Suc(Zero()), Reference(xy.getNext()), Reference(xy))), expr.subst(z, Suc(Zero())));
   }
 
   @Test
   public void substLamInLamOpen() {
-    // \x. var(1) [1 := \y. var(0)] = \z t. var(0)
-    Expression expr = Lam("x", Nat(), Index(2));
-    Expression substExpr = Lam("y", Nat(), Index(1));
-    assertEquals(Lam("z", Nat(), Lam("t", Nat(), Index(2))), expr.subst(substExpr, 1));
+    // \ x y. z x y [z := x] = \x' y'. x x' y'
+    DependentLink xy = param(true, vars("x", "y"), Nat());
+    Binding z = new TypedBinding("z", Nat());
+    Expression expr = Lam(xy, Apps(Reference(z), Reference(xy), Reference(xy.getNext())));
+
+    DependentLink xy1 = param(true, vars("x'", "y'"), Nat());
+    Expression expr1 = Lam(xy1, Apps(Reference(xy), Reference(xy1), Reference(xy1.getNext())));
+    assertEquals(expr1, expr.subst(z, Reference(xy)));
   }
 
   @Test
   public void substComplex() {
-    // \x y. x (var(1)) (\z. var(0) z y) [0 := \w t. t (var(0)) (w (var(1)))] = \x y. x (var(0)) (\z. (\w t. t (var(0)) (w (var(1)))) z y)
-    Expression expr = Lam("x", Nat(), Lam("y", Nat(), Apps(Index(1), Index(3), Lam("z", Nat(), Apps(Index(3), Index(0), Index(1))))));
-    Expression substExpr = Lam("w", Nat(), Lam("t", Nat(), Apps(Index(0), Index(2), Apps(Index(1), Index(3)))));
-    Expression result = Lam("x", Nat(), Lam("y", Nat(), Apps(Index(1), Index(2), Lam("z", Nat(), Apps(Lam("w", Nat(), Lam("t", Nat(), Apps(Index(0), Index(5), Apps(Index(1), Index(6))))), Index(0), Index(1))))));
-    assertEquals(result, expr.subst(substExpr, 0));
+    // \x y. x b (\z. a z y) [a := \w t. t b (w c)] = \x y. x b (\z. (\w t. t b (w c)) z y)
+    Binding a = new TypedBinding("a", Nat());
+    Binding b = new TypedBinding("b", Nat());
+    Binding c = new TypedBinding("c", Nat());
+    DependentLink xy = param(true, vars("x", "y"), Nat());
+    DependentLink z = param("z", Nat());
+    DependentLink wt = param(true, vars("w", "t"), Nat());
+
+    Expression expr = Lam(xy, Apps(Reference(xy), Reference(b), Lam(z, Apps(Reference(a), Reference(z), Reference(xy.getNext())))));
+    Expression substExpr = Lam(wt, Apps(Reference(wt.getNext()), Reference(b), Apps(Reference(wt), Reference(c))));
+    Expression result = Lam(xy, Apps(Reference(xy), Reference(b), Lam(z, Apps(Lam(wt, Apps(Reference(wt.getNext()), Reference(b), Apps(Reference(wt), Reference(c)))), Reference(z), Reference(xy.getNext())))));
+    assertEquals(result, expr.subst(a, substExpr));
   }
 
   @Test
   public void substPiClosed() {
-    // (x : N) -> N x [0 := zero] = (x : N) -> N x
-    Expression expr = Pi("x", Nat(), Apps(Nat(), Index(0)));
-    assertEquals(expr, expr.subst(Zero(), 0));
+    // (x : N) -> N x [x := zero] = (x : N) -> N x
+    DependentLink x = param("x", Nat());
+    Expression expr = Pi(x, Apps(Nat(), Reference(x)));
+    assertEquals(expr, expr.subst(x, Zero()));
   }
 
   @Test
   public void substPiOpen() {
-    // (x : N) -> N (var(0)) [0 := zero] = (y : N) -> N zero
-    Expression expr1 = Pi("x", Nat(), Apps(Nat(), Index(1)));
-    Expression expr2 = Pi("y", Nat(), Apps(Nat(), Zero()));
-    assertEquals(expr2, expr1.subst(Zero(), 0));
+    // (x : N) -> N z [z := zero] = (y : N) -> N zero
+    DependentLink x = param("x", Nat());
+    DependentLink z = param("z", Nat());
+    Expression expr1 = Pi(x, Apps(Nat(), Reference(z)));
+    Expression expr2 = Pi(x, Apps(Nat(), Zero()));
+    assertEquals(expr2, expr1.subst(z, Zero()));
   }
 
   @Test
   public void substArr() {
-    // N -> N (var(0)) [0 := zero] = N -> N zero
-    Expression expr1 = Pi(Nat(), Apps(Nat(), Index(0)));
+    // N -> N z [z := zero] = N -> N zero
+    DependentLink z = param("z", Nat());
+    Expression expr1 = Pi(Nat(), Apps(Nat(), Reference(z)));
     Expression expr2 = Pi(Nat(), Apps(Nat(), Zero()));
-    assertEquals(expr2, expr1.subst(Zero(), 0));
+    assertEquals(expr2, expr1.subst(z, Zero()));
   }
 
   @Test
   public void substLet() {
-    // \let | x (z : N) => z | y (w : N) => <2> => <2> [0 := zero] = \let | x (z : N) => z | y (w : N) => zero \in zero
-    Expression expr1 = Let(lets(let("x", typeArgs(Tele(vars("z"), Nat())), Index(0)), let("y", typeArgs(Tele(vars("w"), Nat())), Index(2))), Index(2));
-    Expression expr2 = Let(lets(let("x", typeArgs(Tele(vars("z"), Nat())), Index(0)), let("y", typeArgs(Tele(vars("w"), Nat())), Zero())), Zero());
-    assertEquals(expr1.subst(Zero(), 0), expr2);
+    // \let | x (z : N) => z | y (w : N) => a \in a [a := zero] = \let | x (z : N) => z | y (w : N) => zero \in zero
+    Binding a = new TypedBinding("a", Nat());
+    DependentLink z = param("z", Nat());
+    DependentLink w = param("w", Nat());
+
+    Expression expr1 = Let(lets(let("x", z, Reference(z)), let("y", w, Reference(a))), Reference(a));
+    Expression expr2 = Let(lets(let("x", z, Reference(z)), let("y", w, Zero())), Zero());
+    assertEquals(expr2, expr1.subst(a, Zero()));
   }
 }

@@ -2,70 +2,65 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
-import com.jetbrains.jetpad.vclang.term.expr.arg.TypeArgument;
-import com.jetbrains.jetpad.vclang.term.pattern.Utils;
+import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.arg.Utils.numberOfVariables;
-import static com.jetbrains.jetpad.vclang.term.pattern.Utils.patternMatchAll;
 
-public class DataDefinition extends Definition implements Abstract.DataDefinition {
+public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
-  private List<TypeArgument> myParameters;
+  private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
 
-  public DataDefinition(Namespace parentNamespace, Name name, Precedence precedence) {
+  public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence) {
     super(parentNamespace, name, precedence);
     myConstructors = new ArrayList<>();
+    myParameters = EmptyDependentLink.getInstance();
   }
 
-  public DataDefinition(Namespace parentNamespace, Name name, Precedence precedence, Universe universe, List<TypeArgument> parameters) {
+  public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters) {
     super(parentNamespace, name, precedence);
+    assert parameters != null;
     setUniverse(universe);
     hasErrors(false);
     myParameters = parameters;
     myConstructors = new ArrayList<>();
   }
 
-  @Override
-  public List<TypeArgument> getParameters() {
+  public DependentLink getParameters() {
     return myParameters;
   }
 
-  public int getNumberOfAllParameters() {
-    return numberOfVariables(myParameters) + (getThisClass() == null ? 0 : 1);
+  public void setParameters(DependentLink parameters) {
+    assert parameters != null;
+    myParameters = parameters;
   }
 
-  public void setParameters(List<TypeArgument> arguments) {
-    myParameters = arguments;
-  }
-
-  @Override
   public List<Constructor> getConstructors() {
     return myConstructors;
   }
 
-  public List<ConCallExpression> getConstructors(List<Expression> parameters, List<Binding> context) {
+  public List<ConCallExpression> getMatchedConstructors(List<Expression> parameters) {
     List<ConCallExpression> result = new ArrayList<>();
     for (Constructor constructor : myConstructors) {
       if (constructor.hasErrors())
         continue;
       List<Expression> matchedParameters = null;
       if (constructor.getPatterns() != null) {
-        Utils.PatternMatchResult matchResult = patternMatchAll(constructor.getPatterns(), parameters, context);
-        if (matchResult instanceof Utils.PatternMatchMaybeResult) {
+        Pattern.MatchResult matchResult = constructor.getPatterns().match(parameters);
+        if (matchResult instanceof Pattern.MatchMaybeResult) {
           return null;
-        } else if (matchResult instanceof Utils.PatternMatchFailedResult) {
+        } else if (matchResult instanceof Pattern.MatchFailedResult) {
           continue;
-        } else if (matchResult instanceof Utils.PatternMatchOKResult) {
-          matchedParameters = ((Utils.PatternMatchOKResult) matchResult).expressions;
+        } else if (matchResult instanceof Pattern.MatchOKResult) {
+          matchedParameters = ((Pattern.MatchOKResult) matchResult).expressions;
         }
       } else {
         matchedParameters = parameters;
@@ -83,7 +78,6 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
     myConditions.put(condition.getConstructor(), condition);
   }
 
-  @Override
   public Collection<Condition> getConditions() {
     return myConditions == null ? null : myConditions.values();
   }
@@ -94,7 +88,7 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
 
   public Constructor getConstructor(String name) {
     for (Constructor constructor : myConstructors) {
-      if (constructor.getName().name.equals(name)) {
+      if (constructor.getName().equals(name)) {
         return constructor;
       }
     }
@@ -107,18 +101,13 @@ public class DataDefinition extends Definition implements Abstract.DataDefinitio
   }
 
   @Override
-  public Expression getBaseType() {
+  public Expression getType() {
     Expression resultType = new UniverseExpression(getUniverse());
-    return myParameters.isEmpty() ? resultType : Pi(myParameters, resultType);
+    return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
   }
 
   @Override
   public DataCallExpression getDefCall() {
     return DataCall(this);
-  }
-
-  @Override
-  public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-    return visitor.visitData(this, params);
   }
 }

@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 public interface AbstractExpressionVisitor<P, R> {
   R visitApp(Abstract.AppExpression expr, P params);
   R visitDefCall(Abstract.DefCallExpression expr, P params);
-  R visitIndex(Abstract.IndexExpression expr, P params);
   R visitLam(Abstract.LamExpression expr, P params);
   R visitPi(Abstract.PiExpression expr, P params);
   R visitUniverse(Abstract.UniverseExpression expr, P params);

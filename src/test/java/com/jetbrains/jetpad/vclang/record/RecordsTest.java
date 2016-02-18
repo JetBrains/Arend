@@ -159,7 +159,7 @@ public class RecordsTest {
     ClassDefinition result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
-    Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
+    Namespace namespace = result.getParentNamespace().findChild(result.getName());
     assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
     assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("C").getType());
   }
@@ -169,7 +169,7 @@ public class RecordsTest {
     ClassDefinition result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
-    Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
+    Namespace namespace = result.getParentNamespace().findChild(result.getName());
     assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
     assertEquals(Universe(0, Universe.Type.PROP), namespace.getDefinition("C").getType());
   }
@@ -179,7 +179,7 @@ public class RecordsTest {
     ClassDefinition result = typeCheckClass(
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
-    Namespace namespace = result.getParentNamespace().findChild(result.getName().name);
+    Namespace namespace = result.getParentNamespace().findChild(result.getName());
     assertEquals(new Universe.Type(4, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("Point").getUniverse());
     assertEquals(Universe(2, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("C").getType());
   }
@@ -193,27 +193,31 @@ public class RecordsTest {
         "  \\function y : foo = foo => path (\\lam _ => foo)\n" +
         "}\n" +
         "\\static \\function test (p : A) => p.y");
-    Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName().name);
-    Expression resultType = ((FunctionDefinition) namespace.getDefinition("test")).getResultType();
+    Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName());
+    FunctionDefinition testFun = (FunctionDefinition) namespace.getDefinition("test");
+    Expression resultType = testFun.getResultType();
     List<Expression> arguments = new ArrayList<>(3);
-    Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF, new ArrayList<Binding>()).getFunction(arguments);
+    Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
     assertEquals(3, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 
+    DataDefinition Foo = (DataDefinition) namespace.findChild("A").getDefinition("Foo");
+    Constructor foo = Foo.getConstructor("foo");
+
     assertTrue(arguments.get(0) instanceof ConCallExpression);
-    assertEquals(1, ((ConCallExpression) arguments.get(0)).getParameters().size());
-    assertEquals(Index(0), ((ConCallExpression) arguments.get(0)).getParameters().get(0));
-    assertEquals(namespace.findChild("A").getDefinition("foo"), ((DefCallExpression) arguments.get(0)).getDefinition());
+    assertEquals(1, ((ConCallExpression) arguments.get(0)).getDataTypeArguments().size());
+    assertEquals(Reference(testFun.getParameters()), ((ConCallExpression) arguments.get(0)).getDataTypeArguments().get(0));
+    assertEquals(foo, ((DefCallExpression) arguments.get(0)).getDefinition());
 
     assertTrue(arguments.get(1) instanceof ConCallExpression);
-    assertEquals(1, ((ConCallExpression) arguments.get(1)).getParameters().size());
-    assertEquals(Index(0), ((ConCallExpression) arguments.get(1)).getParameters().get(0));
-    assertEquals(namespace.findChild("A").getDefinition("foo"), ((DefCallExpression) arguments.get(1)).getDefinition());
+    assertEquals(1, ((ConCallExpression) arguments.get(1)).getDataTypeArguments().size());
+    assertEquals(Reference(testFun.getParameters()), ((ConCallExpression) arguments.get(1)).getDataTypeArguments().get(0));
+    assertEquals(foo, ((DefCallExpression) arguments.get(1)).getDefinition());
 
     assertTrue(arguments.get(2) instanceof LamExpression);
     assertTrue(((LamExpression) arguments.get(2)).getBody() instanceof PiExpression);
     List<Expression> domArguments = new ArrayList<>(3);
-    Expression domFunction = ((PiExpression) ((LamExpression) arguments.get(2)).getBody()).getArguments().get(0).getType().getFunction(domArguments);
+    Expression domFunction = ((PiExpression) ((LamExpression) arguments.get(2)).getBody()).getParameters().getType().getFunction(domArguments);
     assertEquals(3, domArguments.size());
     assertEquals(DataCall(Prelude.PATH), domFunction);
 
@@ -221,7 +225,7 @@ public class RecordsTest {
     assertEquals(Prelude.ZERO, ((DefCallExpression) domArguments.get(0)).getDefinition());
 
     assertTrue(domArguments.get(1) instanceof AppExpression);
-    assertEquals(Index(1), ((AppExpression) domArguments.get(1)).getArgument().getExpression());
+    assertEquals(Reference(testFun.getParameters()), ((AppExpression) domArguments.get(1)).getArgument().getExpression());
     assertEquals(namespace.findChild("A").getDefinition("x").getDefCall(), ((AppExpression) domArguments.get(1)).getFunction());
 
     assertTrue(domArguments.get(2) instanceof LamExpression);
@@ -238,29 +242,31 @@ public class RecordsTest {
       "  \\function y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
       "}\n" +
       "\\static \\function test (q : A) => q.y");
-    Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName().name);
-    Expression resultType = ((FunctionDefinition) namespace.getDefinition("test")).getResultType();
+    Namespace namespace = classDef.getParentNamespace().findChild(classDef.getName());
+    FunctionDefinition testFun = (FunctionDefinition) namespace.getDefinition("test");
+    Expression resultType = testFun.getResultType();
     Expression xCall = namespace.findChild("A").getDefinition("x").getDefCall();
     List<Expression> arguments = new ArrayList<>(3);
     assertTrue(resultType instanceof PiExpression);
-    List<Binding> context = new ArrayList<>(1);
-    context.add(new TypedBinding("q", ClassCall((ClassDefinition) namespace.getDefinition("A"))));
-    Expression function = ((PiExpression) resultType).getArguments().get(0).getType().normalize(NormalizeVisitor.Mode.NF, context).getFunction(arguments);
+    Expression function = ((PiExpression) resultType).getParameters().getType().normalize(NormalizeVisitor.Mode.NF).getFunction(arguments);
     assertEquals(3, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 
+    DataDefinition Foo = (DataDefinition) namespace.findChild("A").getDefinition("Foo");
+    Constructor foo = Foo.getConstructor("foo");
+
     assertTrue(arguments.get(0) instanceof AppExpression);
     assertTrue(((AppExpression) arguments.get(0)).getFunction() instanceof ConCallExpression);
-    assertEquals(2, ((ConCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getParameters().size());
-    assertEquals(Index(0), ((ConCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getParameters().get(0));
-    Expression expr1 = ((ConCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getParameters().get(1);
+    assertEquals(2, ((ConCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getDataTypeArguments().size());
+    assertEquals(Reference(testFun.getParameters()), ((ConCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getDataTypeArguments().get(0));
+    Expression expr1 = ((ConCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getDataTypeArguments().get(1);
     assertTrue(expr1 instanceof AppExpression);
     assertTrue(((AppExpression) expr1).getArgument().getExpression() instanceof LamExpression);
     assertTrue(((LamExpression) ((AppExpression) expr1).getArgument().getExpression()).getBody() instanceof AppExpression);
     assertEquals(xCall, ((AppExpression) ((LamExpression) ((AppExpression) expr1).getArgument().getExpression()).getBody()).getFunction());
-    assertEquals(Index(1), ((AppExpression) ((LamExpression) ((AppExpression) expr1).getArgument().getExpression()).getBody()).getArgument().getExpression());
+    assertEquals(Reference(testFun.getParameters()), ((AppExpression) ((LamExpression) ((AppExpression) expr1).getArgument().getExpression()).getBody()).getArgument().getExpression());
 
-    assertEquals(namespace.findChild("A").getDefinition("foo"), ((DefCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getDefinition());
+    assertEquals(foo, ((DefCallExpression) ((AppExpression) arguments.get(0)).getFunction()).getDefinition());
     assertTrue(((AppExpression) arguments.get(0)).getArgument().getExpression() instanceof AppExpression);
     AppExpression appPath00 = (AppExpression) ((AppExpression) arguments.get(0)).getArgument().getExpression();
     assertTrue(appPath00.getArgument().getExpression() instanceof LamExpression);
@@ -269,14 +275,14 @@ public class RecordsTest {
     assertTrue(appPath01.getArgument().getExpression() instanceof LamExpression);
     assertTrue(((LamExpression) appPath01.getArgument().getExpression()).getBody() instanceof AppExpression);
     assertEquals(xCall, ((AppExpression) ((LamExpression) appPath01.getArgument().getExpression()).getBody()).getFunction());
-    assertEquals(Index(2), ((AppExpression) ((LamExpression) appPath01.getArgument().getExpression()).getBody()).getArgument().getExpression());
+    assertEquals(Reference(testFun.getParameters()), ((AppExpression) ((LamExpression) appPath01.getArgument().getExpression()).getBody()).getArgument().getExpression());
 
     assertTrue(arguments.get(1) instanceof AppExpression);
     assertTrue(((AppExpression) arguments.get(1)).getFunction() instanceof ConCallExpression);
-    assertEquals(2, ((ConCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getParameters().size());
-    assertEquals(Index(0), ((ConCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getParameters().get(0));
-    assertEquals(expr1, ((ConCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getParameters().get(1));
-    assertEquals(namespace.findChild("A").getDefinition("foo"), ((ConCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getDefinition());
+    assertEquals(2, ((ConCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getDataTypeArguments().size());
+    assertEquals(Reference(testFun.getParameters()), ((ConCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getDataTypeArguments().get(0));
+    assertEquals(expr1, ((ConCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getDataTypeArguments().get(1));
+    assertEquals(foo, ((ConCallExpression) ((AppExpression) arguments.get(1)).getFunction()).getDefinition());
     assertTrue(((AppExpression) arguments.get(1)).getArgument().getExpression() instanceof AppExpression);
     AppExpression appPath10 = (AppExpression) ((AppExpression) arguments.get(1)).getArgument().getExpression();
     assertTrue(appPath10.getArgument().getExpression() instanceof LamExpression);
@@ -285,11 +291,11 @@ public class RecordsTest {
     assertTrue(appPath11.getArgument().getExpression() instanceof LamExpression);
     assertTrue(((LamExpression) appPath11.getArgument().getExpression()).getBody() instanceof AppExpression);
     assertEquals(xCall, ((AppExpression) ((LamExpression) appPath11.getArgument().getExpression()).getBody()).getFunction());
-    assertEquals(Index(2), ((AppExpression) ((LamExpression) appPath11.getArgument().getExpression()).getBody()).getArgument().getExpression());
+    assertEquals(Reference(testFun.getParameters()), ((AppExpression) ((LamExpression) appPath11.getArgument().getExpression()).getBody()).getArgument().getExpression());
 
     assertTrue(arguments.get(2) instanceof LamExpression);
     assertTrue(((LamExpression) arguments.get(2)).getBody() instanceof AppExpression);
-    assertEquals(Apps(namespace.findChild("A").getDefinition("Foo").getDefCall(), Index(1)), ((AppExpression) ((LamExpression) arguments.get(2)).getBody()).getFunction());
+    assertEquals(Apps(Foo.getDefCall(), Reference(testFun.getParameters())), ((AppExpression) ((LamExpression) arguments.get(2)).getBody()).getFunction());
     List<Expression> parameterArguments = new ArrayList<>(1);
     Expression parameterFunction = ((AppExpression) ((LamExpression) arguments.get(2)).getBody()).getArgument().getExpression().getFunction(parameterArguments);
     assertEquals(1, parameterArguments.size());
@@ -297,22 +303,22 @@ public class RecordsTest {
     assertTrue(parameterArguments.get(0) instanceof LamExpression);
     assertTrue(((LamExpression) parameterArguments.get(0)).getBody() instanceof AppExpression);
     assertEquals(xCall, ((AppExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getFunction());
-    assertEquals(Index(2), ((AppExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getArgument().getExpression());
+    assertEquals(Reference(testFun.getParameters()), ((AppExpression) ((LamExpression) parameterArguments.get(0)).getBody()).getArgument().getExpression());
 
-    List<Expression> parameters = ((ConCallExpression) parameterFunction).getParameters();
+    List<Expression> parameters = ((ConCallExpression) parameterFunction).getDataTypeArguments();
     assertEquals(3, parameters.size());
 
     assertTrue(parameters.get(0) instanceof LamExpression);
     assertEquals(Nat(), ((LamExpression) parameters.get(0)).getBody());
 
-    Expression parameter1 = ((LamExpression) ((AppExpression) parameters.get(1)).getFunction()).getBody();
+    Expression parameter1 = parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(parameter1 instanceof AppExpression);
     assertEquals(xCall, ((AppExpression) parameter1).getFunction());
-    assertEquals(Index(2), ((AppExpression) parameter1).getArgument().getExpression());
+    assertEquals(Reference(testFun.getParameters()), ((AppExpression) parameter1).getArgument().getExpression());
 
-    Expression parameter2 = ((LamExpression) ((AppExpression) parameters.get(1)).getFunction()).getBody();
+    Expression parameter2 = parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(parameter2 instanceof AppExpression);
     assertEquals(xCall, ((AppExpression) parameter2).getFunction());
-    assertEquals(Index(2), ((AppExpression) parameter2).getArgument().getExpression());
+    assertEquals(Reference(testFun.getParameters()), ((AppExpression) parameter2).getArgument().getExpression());
   }
 }

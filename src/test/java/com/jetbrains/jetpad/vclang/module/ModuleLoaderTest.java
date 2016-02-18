@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -134,10 +137,10 @@ public class ModuleLoaderTest {
     TypecheckingOrdering.typecheck(result.namespaceMember.getResolvedName(), errorReporter);
     assertNotNull(result);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
-    assertEquals(2, RootModule.ROOT.getChild(new Name("A")).getMembers().size());
+    assertEquals(2, RootModule.ROOT.getChild("A").getMembers().size());
     Definition definitionC = result.namespaceMember.namespace.getDefinition("C");
     assertTrue(definitionC instanceof ClassDefinition);
-    assertEquals(2, definitionC.getParentNamespace().findChild(definitionC.getName().name).getMembers().size());
+    assertEquals(2, definitionC.getParentNamespace().findChild(definitionC.getName()).getMembers().size());
   }
 
   @Test
@@ -230,7 +233,6 @@ public class ModuleLoaderTest {
     assertLoaded("B", "C", "E");
     assertLoaded("B", "C", "F");
   }
-
 
   @Test
   public void testChangeAddNewFile() {

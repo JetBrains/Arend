@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.module.output;
 import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.File;
@@ -53,10 +52,10 @@ public class FileOutput implements Output {
     if (myFile != null && myFile.exists()) {
       ModuleDeserialization.readStubsFromFile(myFile, myModule);
     } else {
-      myModule.parent.getChild(myModule.name);
+      myModule.parent.getChild(myModule.name.name);
     }
     for (String childName : myChildren) {
-      myModule.toNamespace().getChild(new Name(childName));
+      myModule.toNamespace().getChild(childName);
     }
   }
 

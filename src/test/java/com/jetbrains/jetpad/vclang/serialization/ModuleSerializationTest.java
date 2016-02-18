@@ -4,12 +4,18 @@ import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.module.ReportingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static org.junit.Assert.*;
@@ -64,7 +70,12 @@ public class ModuleSerializationTest {
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(((FunctionDefinition) namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree());
+    FunctionDefinition oldFunc = ((FunctionDefinition) namespace.getDefinition("f"));
+    FunctionDefinition newFunc = ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f"));
+    Map<Binding, Binding>  argsBinding = new HashMap<>();
+    argsBinding.put(oldFunc.getParameters(), newFunc.getParameters());
+    argsBinding.put(oldFunc.getParameters().getNext(), newFunc.getParameters().getNext());
+    assertTrue(CompareVisitor.compare(argsBinding, DummyEquations.getInstance(), Equations.CMP.EQ, oldFunc.getElimTree(), newFunc.getElimTree()));
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
@@ -85,7 +96,7 @@ public class ModuleSerializationTest {
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(def.getStatements().size(), ((ClassDefinition) result.namespaceMember.definition).getStatements().size());
+    assertEquals(namespace.getMembers().size(), result.namespaceMember.definition.getResolvedName().toNamespace().getMembers().size());
     assertEquals(def.getResolvedName().toNamespace().getMembers().size(), result.namespaceMember.namespace.getMembers().size());
     assertEquals(namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType());
     assertEquals(0, errorReporter.getErrorList().size());
