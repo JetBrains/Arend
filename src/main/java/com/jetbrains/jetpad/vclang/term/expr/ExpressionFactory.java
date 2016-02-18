@@ -16,6 +16,7 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toNames;
 
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
@@ -258,7 +259,7 @@ public class ExpressionFactory {
     BranchElimTreeNode result = new BranchElimTreeNode(reference, tail);
     for (ConstructorClausePair pair : clauses) {
       if (pair.constructor != null) {
-        ConstructorClause clause = result.addClause(pair.constructor);
+        ConstructorClause clause = result.addClause(pair.constructor, toNames(pair.parameters));
         Substitution subst = clause.getSubst();
         assert size(pair.constructor.getParameters()) == size(pair.parameters);
         for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();

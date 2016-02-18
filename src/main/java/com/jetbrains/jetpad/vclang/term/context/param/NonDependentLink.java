@@ -2,8 +2,10 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
+import java.util.Iterator;
 import java.util.List;
 
 public class NonDependentLink implements DependentLink {
@@ -56,6 +58,14 @@ public class NonDependentLink implements DependentLink {
   @Override
   public DependentLink subst(Substitution subst, int size) {
     return size > 0 ? new NonDependentLink(myType.subst(subst), myNext.subst(subst, size - 1)) : EmptyDependentLink.getInstance();
+  }
+
+  @Override
+  public DependentLink subst(Substitution subst, Iterator<String> it) {
+    TypedDependentLink result = new TypedDependentLink(myExplicit, it.next(), myType.subst(subst), EmptyDependentLink.getInstance());
+    subst.add(this, new ReferenceExpression(result));
+    result.setNext(myNext.subst(subst, it));
+    return result;
   }
 
   @Override

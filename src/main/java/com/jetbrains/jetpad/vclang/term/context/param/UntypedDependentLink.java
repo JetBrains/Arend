@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
+import java.util.Iterator;
 import java.util.List;
 
 public class UntypedDependentLink implements DependentLink {
@@ -95,6 +96,14 @@ public class UntypedDependentLink implements DependentLink {
     } else {
       return EmptyDependentLink.getInstance();
     }
+  }
+
+  @Override
+  public DependentLink subst(Substitution subst, Iterator<String> it) {
+    UntypedDependentLink result = new UntypedDependentLink(it.next());
+    subst.add(this, new ReferenceExpression(result));
+    result.myNext = myNext.subst(subst, it);
+    return result;
   }
 
   @Override
