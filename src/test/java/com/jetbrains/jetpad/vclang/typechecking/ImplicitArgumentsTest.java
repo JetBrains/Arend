@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
-import com.jetbrains.jetpad.vclang.typechecking.error.InferredArgumentsMismatch;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
 
@@ -162,7 +161,7 @@ public class ImplicitArgumentsTest {
     ListErrorReporter errorReporter = new ListErrorReporter();
     typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), errorReporter);
     assertEquals(1, errorReporter.getErrorList().size());
-    assertTrue(errorReporter.getErrorList().iterator().next() instanceof InferredArgumentsMismatch);
+    assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
   }
 
   @Test
@@ -254,7 +253,7 @@ public class ImplicitArgumentsTest {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
 
-    assertNull(typeCheckExpr(context, "\\lam x1 x2 x3 => f x2 x1 x3", null, 1));
+    typeCheckExpr(context, "\\lam x1 x2 x3 => f x2 x1 x3", null, -1);
   }
 
   @Test

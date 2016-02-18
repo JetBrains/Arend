@@ -8,14 +8,14 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class Substitution {
-  private final Map<Binding, Expression> mySubstExprs;
+  private Map<Binding, Expression> mySubstExprs;
 
   public Substitution() {
-    mySubstExprs = new HashMap<>();
+    mySubstExprs = Collections.emptyMap();
   }
 
   public Substitution(Binding from, Expression to) {
-    this();
+    mySubstExprs = new HashMap<>();
     add(from, to);
   }
 
@@ -28,11 +28,19 @@ public class Substitution {
   }
 
   public void add(Binding binding, Expression expression) {
+    if (mySubstExprs.isEmpty()) {
+      mySubstExprs = new HashMap<>();
+    }
     mySubstExprs.put(binding, expression);
   }
 
   public void add(Substitution substitution) {
-    mySubstExprs.putAll(substitution.mySubstExprs);
+    if (!substitution.mySubstExprs.isEmpty()) {
+      if (mySubstExprs.isEmpty()) {
+        mySubstExprs = new HashMap<>();
+      }
+      mySubstExprs.putAll(substitution.mySubstExprs);
+    }
   }
 
   public List<Expression> substExprs(List<Expression> expressions) {

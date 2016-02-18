@@ -32,7 +32,11 @@ public class TypeCheckingTestCase {
   public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.Result result = typeCheckExpr(context, expression, expectedType, errorReporter);
-    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    if (errors >= 0) {
+      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    } else {
+      assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+    }
     return result;
   }
 

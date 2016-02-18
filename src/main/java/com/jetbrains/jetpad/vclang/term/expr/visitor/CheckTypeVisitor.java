@@ -230,6 +230,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Result bodyResult;
     try (Utils.ContextSaver saver = new Utils.ContextSaver(myContext)) {
+      Map<Binding, InferenceBinding> bindingTypes = new HashMap<>();
+
       for (Abstract.Argument argument : expr.getArguments()) {
         List<String> names;
         Result argResult = null;
@@ -278,7 +280,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             if (argResult == null) {
               InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(), argIndex, expr);
               link.setType(Reference(inferenceBinding));
-              result.addUnsolvedVariable(inferenceBinding);
+              bindingTypes.put(link, inferenceBinding);
             }
             if (actualPiLink == null) {
               actualPiLink = link;
@@ -308,14 +310,23 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
       }
 
-      for (int i = saver.getOriginalSize(); i < myContext.size(); i++) {
+      for (int i = myContext.size() - 1; i >= saver.getOriginalSize(); i--) {
         result.getEquations().abstractBinding(myContext.get(i));
+        InferenceBinding bindingType = bindingTypes.get(myContext.get(i));
+        if (bindingType != null) {
+          result.addUnsolvedVariable(bindingType);
+          Substitution substitution = result.getSubstitution();
+          if (!substitution.getDomain().isEmpty()) {
+            bodyResult.expression = bodyResult.expression.subst(substitution);
+            bodyResult.type = bodyResult.type.subst(substitution);
+            ((DependentLink) myContext.get(i)).setType(myContext.get(i).getType().subst(substitution));
+          }
+        }
       }
     }
 
     result.expression = Lam(list.getFirst(), bodyResult.expression);
     result.type = Pi(list.getFirst(), bodyResult.type);
-    result.update();
     return result;
   }
 

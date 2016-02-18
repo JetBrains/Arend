@@ -59,6 +59,14 @@ public abstract class TypeCheckingResult {
     }
   }
 
+  public Substitution getSubstitution() {
+    if (!myEquations.isEmpty()) {
+      return myEquations.getInferenceVariables(myUnsolvedVariables);
+    } else {
+      return new Substitution();
+    }
+  }
+
   public void update() {
     if (!myEquations.isEmpty()) {
       subst(myEquations.getInferenceVariables(myUnsolvedVariables));
