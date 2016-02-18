@@ -113,8 +113,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeElim(String name, List<? extends Abstract.Clause> clauses) {
-    return cElim(Collections.<Concrete.Expression>singletonList(cVar(name)), (List<Concrete.Clause>) clauses);
+  public Abstract.Expression makeElim(List<? extends Abstract.Expression> exprs, List<? extends Abstract.Clause> clauses) {
+    return cElim((List<Concrete.Expression>) exprs, (List<Concrete.Clause>) clauses);
   }
 
   @Override
@@ -123,8 +123,8 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Clause makeClause(Abstract.Pattern pattern, Abstract.Definition.Arrow arrow, Abstract.Expression expr) {
-    return cClause(Collections.singletonList((Concrete.Pattern) pattern), arrow, (Concrete.Expression) expr);
+  public Abstract.Clause makeClause(List<? extends Abstract.Pattern> patterns, Abstract.Definition.Arrow arrow, Abstract.Expression expr) {
+    return cClause((List<Concrete.Pattern>) patterns, arrow, (Concrete.Expression) expr);
   }
 
   @Override

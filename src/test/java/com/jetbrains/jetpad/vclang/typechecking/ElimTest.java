@@ -335,4 +335,12 @@ public class ElimTest {
           " | c x y => f x"
     );
   }
+
+  @Test
+  public void testEmptyLet() {
+    typeCheckClass(
+        "\\static \\data D\n" +
+        "\\static \\function test (d : D) : 0 = 1 <= \\let x (d : D) : 0 = 1 <= \\elim d \\in x d"
+    );
+  }
 }

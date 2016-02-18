@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
@@ -46,6 +48,11 @@ public class LeafElimTreeNode extends ElimTreeNode {
 
     getParent().setChild(replacement);
     return root;
+  }
+
+  @Override
+  public String toString() {
+    return accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).toString();
   }
 
   @Override

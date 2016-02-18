@@ -10,7 +10,9 @@ import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.*;
@@ -142,6 +144,11 @@ public class BranchElimTreeNode extends ElimTreeNode {
     }
 
     context.addAll(tail);
+  }
+
+  @Override
+  public String toString() {
+    return accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).toString();
   }
 
   @Override

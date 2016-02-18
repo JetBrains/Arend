@@ -5,10 +5,8 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
-import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -47,11 +45,6 @@ public abstract class ElimTreeNode {
   public abstract LeafElimTreeNode match(List<Expression> expressions);
 
   public abstract Abstract.Definition.Arrow getArrow();
-
-  @Override
-  public String toString() {
-    return accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).toString();
-  }
 
   void setParent(Clause parent) {
     myParent = parent;

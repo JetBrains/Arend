@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
 import com.jetbrains.jetpad.vclang.term.expr.LetExpression;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -74,6 +75,16 @@ public class PrettyPrintingTest {
     DependentLink A = param("A", Universe(0));
     DependentLink y = param("y", Reference(A));
     LetClause clause = let("x", params(A, y), Reference(A));
+    LetExpression expr = Let(lets(clause), Apps(Reference(clause), Zero()));
+    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
+  }
+
+  @Test
+  public void prettyPrintingLetEmpty() {
+    // \let x {A : Type0} (y ; A) : A <= \elim y
+    DependentLink A = param("A", Universe(0));
+    DependentLink y = param("y", Reference(A));
+    LetClause clause = let("x", params(A, y), Reference(A), EmptyElimTreeNode.getInstance());
     LetExpression expr = Let(lets(clause), Apps(Reference(clause), Zero()));
     expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
   }

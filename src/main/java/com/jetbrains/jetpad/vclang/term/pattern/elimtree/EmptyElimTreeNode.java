@@ -40,4 +40,9 @@ public class EmptyElimTreeNode extends ElimTreeNode {
   public Abstract.Definition.Arrow getArrow() {
     return null;
   }
+
+  @Override
+  public String toString() {
+    return "⊥";
+  }
 }

@@ -28,9 +28,9 @@ public interface AbstractExpressionFactory {
   Abstract.Expression makeNew(Abstract.Expression expr);
   Abstract.Expression makeLet(List<? extends Abstract.LetClause> clauses, Abstract.Expression expr);
   Abstract.LetClause makeLetClause(String name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term);
-  Abstract.Expression makeElim(String name, List<? extends Abstract.Clause> clauses);
+  Abstract.Expression makeElim(List<? extends Abstract.Expression> exprs, List<? extends Abstract.Clause> clauses);
   Abstract.Expression makeCase(List<? extends Abstract.Expression> expressions, List<? extends Abstract.Clause> clauses);
-  Abstract.Clause makeClause(Abstract.Pattern pattern, Abstract.Definition.Arrow arrow, Abstract.Expression expr);
+  Abstract.Clause makeClause(List<? extends Abstract.Pattern> pattern, Abstract.Definition.Arrow arrow, Abstract.Expression expr);
   Abstract.Pattern makeConPattern(String name, List<? extends Abstract.PatternArgument> args);
   Abstract.Pattern makeNamePattern(String name);
   Abstract.PatternArgument makePatternArgument(Abstract.Pattern pattern, boolean explicit);
