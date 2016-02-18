@@ -45,7 +45,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
   @Override
   public void save(ModuleID module) {
     Output output = myOutputSupplier.getOutput(module);
-    if (output.canWrite()) {
+    if (output != null && output.canWrite()) {
       try {
         output.write();
       } catch (IOException e) {
@@ -74,7 +74,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
       }
 
       Source source = mySourceSupplier.getSource(module);
-      if (!source.isAvailable()) {
+      if (source == null) {
         loadingError(new ModuleNotFoundError(module));
         return null;
       }

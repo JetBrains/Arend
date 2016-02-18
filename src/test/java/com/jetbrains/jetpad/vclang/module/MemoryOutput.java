@@ -17,7 +17,7 @@ public class MemoryOutput implements Output {
   }
 
   @Override
-  public Header getHeader() throws IOException {
+  public Header readHeader() throws IOException {
     return ModuleDeserialization.readHeaderFromStream(new DataInputStream(new ByteArrayInputStream(myEntry.data)), myModule);
   }
 

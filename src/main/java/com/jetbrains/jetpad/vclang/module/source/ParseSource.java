@@ -2,19 +2,18 @@ package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.DummyNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.LoadingModuleResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.ModuleResolver;
@@ -86,7 +85,7 @@ public abstract class ParseSource implements Source {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
       }
     }
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, null, null, moduleResolver);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, null, DummyNameResolver.getInstance(), moduleResolver);
     visitor.setResolveListener(new ConcreteResolveListener());
     visitor.visitModule(classDefinition, myModule);
     return new ModuleLoader.Result(Root.getModule(myModule), true, countingErrorReporter.getErrorsNumber());

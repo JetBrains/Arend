@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.statement.visitor;
 
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
@@ -17,6 +18,8 @@ import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveLis
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.ModuleResolver;
 
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 
 public class StatementResolveNameVisitor implements AbstractStatementVisitor<StatementResolveNameVisitor.Flag, Object>, AutoCloseable {
   private final ErrorReporter myErrorReporter;
@@ -100,24 +103,37 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
         throw new IllegalStateException();
     }
 
-    List<String> path = stat.getPath();
-    String name = path.get(0);
-    NamespaceMember member = null;
-    for (String aPath : path) {
-      NamespaceMember member1 = member == null ? NameResolver.Helper.locateName(myNameResolver, name, false) : myNameResolver.getMember(member.namespace, aPath);
-      if (member1 == null) {
-        if (member != null) {
-          myErrorReporter.report(new NameDefinedError(false, stat, aPath, member.namespace.getResolvedName()));
-        } else {
-          myErrorReporter.report(new NotInScopeError(stat, name));
+    NamespaceMember member;
+    if (stat.getResolvedClass() == null) {
+      if (stat.getModulePath() != null) {
+        member = myModuleResolver.locateModule(new ModulePath(stat.getModulePath()));
+        if (member == null) {
+          myErrorReporter.report(new NotInScopeError(stat, new ModulePath(stat.getPath()).toString()));
+          return null;
         }
-        return null;
+      } else {
+        member = null;
       }
-      member = member1;
-    }
-    if (member == null) return null;
 
-    stat.setResolvedPath(member.definition == null ? member.abstractDefinition : member.definition);
+      List<String> path = stat.getPath();
+      for (String aPath : path) {
+        NamespaceMember member1 = member == null ? NameResolver.Helper.locateName(myNameResolver, aPath, false) : myNameResolver.getMember(member.namespace, aPath);
+        if (member1 == null) {
+          if (member != null) {
+            myErrorReporter.report(new NameDefinedError(false, stat, aPath, member.namespace.getResolvedName()));
+          } else {
+            myErrorReporter.report(new NotInScopeError(stat, aPath));
+          }
+          return null;
+        }
+        member = member1;
+      }
+      if (member == null) return null;
+
+      myResolveListener.nsCmdResolved(stat, member.getResolvedDefinition());
+    } else {
+      member = toNamespaceMember(stat.getResolvedClass());
+    }
 
     List<String> names = stat.getNames();
     if (names != null) {

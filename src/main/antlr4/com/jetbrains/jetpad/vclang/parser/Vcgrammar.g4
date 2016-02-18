@@ -3,7 +3,7 @@ grammar Vcgrammar;
 statements : statement*;
 
 statement : staticMod definition                              # statDef
-          | nsCmd name fieldAcc* ('(' name (',' name)* ')')?  # statCmd
+          | nsCmd (modulePath | name) fieldAcc* ('(' name (',' name)* ')')?  # statCmd
           ;
 
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
@@ -103,10 +103,12 @@ infix : BIN_OP                          # infixBinOp
       | '`' ID '`'                      # infixId
       ;
 
+modulePath : ('::' ID)+;
+
 atom  : '(' expr (',' expr)* ')'        # tuple
       | literal                         # atomLiteral
       | NUMBER                          # atomNumber
-      | ('::' ID)+                      # moduleCall
+      | modulePath                      # atomModuleCall
       ;
 
 

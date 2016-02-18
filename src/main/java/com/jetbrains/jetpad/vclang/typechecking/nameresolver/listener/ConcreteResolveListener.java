@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Condition;
 
 public class ConcreteResolveListener implements ResolveListener {
   @Override
@@ -13,6 +14,11 @@ public class ConcreteResolveListener implements ResolveListener {
   @Override
   public void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, BaseDefinition module) {
     ((Concrete.ModuleCallExpression) moduleCallExpression).setModule(module);
+  }
+
+  @Override
+  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, BaseDefinition definition) {
+    ((Concrete.NamespaceCommandStatement) nsCmdStatement).setResolvedClass(definition);
   }
 
   @Override

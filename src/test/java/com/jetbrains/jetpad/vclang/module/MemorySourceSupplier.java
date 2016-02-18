@@ -31,6 +31,10 @@ public class MemorySourceSupplier implements SourceSupplier {
     myMap.put(modulePath, new MemorySourceEntry(source));
   }
 
+  public void remove(ModulePath modulePath) {
+    myMap.remove(modulePath);
+  }
+
   public void touch(ModulePath modulePath) {
     add(modulePath, myMap.get(modulePath).source);
   }

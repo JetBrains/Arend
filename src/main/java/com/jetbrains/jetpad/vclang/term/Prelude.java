@@ -21,7 +21,22 @@ import java.util.Collection;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class Prelude extends Namespace {
-  public static ModuleID moduleID = new NameModuleID("Prelude");
+  public static ModuleID moduleID = new ModuleID() {
+    @Override
+    public ModulePath getModulePath() {
+      return new ModulePath("Prelude");
+    }
+
+    @Override
+    public void serialize(DataOutputStream stream) throws IOException {
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public ModuleID deserialize(DataInputStream stream) throws IOException {
+      throw new IllegalStateException();
+    }
+  };
 
   public static ClassDefinition PRELUDE_CLASS;
 

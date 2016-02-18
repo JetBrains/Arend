@@ -21,7 +21,7 @@ public class FileOutput implements Output {
   }
 
   @Override
-  public Header getHeader() throws IOException {
+  public Header readHeader() throws IOException {
     return ModuleDeserialization.readHeaderFromFile(myFile, myModule);
   }
 

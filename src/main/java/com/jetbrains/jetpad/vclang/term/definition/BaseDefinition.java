@@ -20,15 +20,18 @@ public interface BaseDefinition {
     }
 
     private static NamespaceMember abstractToNamespaceMember(Abstract.Definition definition) {
+      NamespaceMember parentMember = null;
       if (definition.getParentStatement() == null) {
-        if (!(definition instanceof Abstract.ClassDefinition)) {
-          return null;
+        if (definition instanceof Abstract.Constructor) {
+          parentMember = abstractToNamespaceMember(((Abstract.Constructor) definition).getDataType());
+        } else
+        if (definition instanceof Abstract.ClassDefinition) {
+          Abstract.ClassDefinition module = (Abstract.ClassDefinition) definition;
+          return Root.getModule(module.getModuleID());
         }
-        Abstract.ClassDefinition module = (Abstract.ClassDefinition) definition;
-        return Root.getModule(module.getModuleID());
+      } else {
+        parentMember = abstractToNamespaceMember(definition.getParentStatement().getParentDefinition());
       }
-
-      NamespaceMember parentMember = abstractToNamespaceMember(definition.getParentStatement().getParentDefinition());
       return parentMember == null ? null : parentMember.namespace.getMember(definition.getName());
     }
   }

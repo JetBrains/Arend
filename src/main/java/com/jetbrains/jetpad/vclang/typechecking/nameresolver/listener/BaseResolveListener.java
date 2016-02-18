@@ -15,6 +15,11 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
+  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, BaseDefinition definition) {
+
+  }
+
+  @Override
   public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, BaseDefinition definition, Abstract.DefCallExpression var, Abstract.Expression right) {
     return null;
   }

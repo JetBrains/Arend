@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.module.output.OutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 import java.io.IOException;
@@ -76,16 +75,16 @@ public class SerializedLoader {
     Source source = mySourceSupplier.getSource(module);
     Output output = myOutputSupplier.getOutput(module);
 
-    if (!output.canRead()) {
+    if (output == null || !output.canRead()) {
       return null;
     }
 
-    if (source.isAvailable() && (source.lastModified() > output.lastModified()))
+    if (source != null && source.lastModified() > output.lastModified())
       return null;
 
     Output.Header header;
     try {
-      header = output.getHeader();
+      header = output.readHeader();
     } catch (IOException e) {
       myModuleLoader.loadingError(new GeneralError(new ModuleResolvedName(module), GeneralError.ioError(e)));
       return null;
@@ -97,9 +96,7 @@ public class SerializedLoader {
 
     boolean failed = false;
     for (ModuleID dependency : header.dependencies) {
-      ResolvedName dependencyRN = new ModuleResolvedName(dependency);
-
-      if (dependencyRN.toAbstractDefinition() != null || myLoadingModules.contains(dependency)) {
+      if (Root.getModule(dependency) != null && Root.getModule(dependency).abstractDefinition != null || myLoadingModules.contains(dependency)) {
         failed = true;
         break;
       }
@@ -113,7 +110,7 @@ public class SerializedLoader {
       }
 
       DeserializingModuleInfo nestedInfo = myDeserializingModules.get(dependency);
-      if (nestedInfo.source.isAvailable() && nestedInfo.source.lastModified() > output.lastModified()) {
+      if (nestedInfo.source != null && nestedInfo.source.lastModified() > output.lastModified()) {
         failed = true;
         break;
       }

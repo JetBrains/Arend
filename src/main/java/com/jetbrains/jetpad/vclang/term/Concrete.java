@@ -1120,13 +1120,15 @@ public final class Concrete {
   public static class NamespaceCommandStatement extends Statement implements Abstract.NamespaceCommandStatement {
     private final Kind myKind;
     private BaseDefinition myDefinition;
+    private final List<String> myModulePath;
     private final List<String> myPath;
     private final List<String> myNames;
 
-    public NamespaceCommandStatement(Position position, Kind kind, List<String> path, List<String> names) {
+    public NamespaceCommandStatement(Position position, Kind kind, List<String> modulePath, List<String> path, List<String> names) {
       super(position);
       myKind = kind;
       myDefinition = null;
+      myModulePath = modulePath;
       myPath = path;
       myNames = names;
     }
@@ -1137,17 +1139,21 @@ public final class Concrete {
     }
 
     @Override
+    public List<String> getModulePath() {
+      return myModulePath;
+    }
+
+    @Override
     public List<String> getPath() {
       return myPath;
     }
 
-    @Override
-    public void setResolvedPath(BaseDefinition definition) {
-      myDefinition = definition;
+    public void setResolvedClass(BaseDefinition resolvedClass) {
+      myDefinition = resolvedClass;
     }
 
     @Override
-    public BaseDefinition getResolvedPath() {
+    public BaseDefinition getResolvedClass() {
       return myDefinition;
     }
 

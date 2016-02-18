@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
@@ -29,11 +27,10 @@ public class ModuleLoaderTest {
   void setupSources() {
     sourceSupplier.add(moduleName("A"), "\\static \\function a => ::B::C::E.e");
     sourceSupplier.add(moduleName("B"), "\\static \\function b => 0");
-    sourceSupplier.add(moduleName("B", "C"), null);
     sourceSupplier.add(moduleName("B", "C", "D"), "\\static \\function d => 0");
     sourceSupplier.add(moduleName("B", "C", "E"), "\\static \\function e => ::B::C::F.f");
     sourceSupplier.add(moduleName("B", "C", "F"), "\\static \\function f => 0");
-    sourceSupplier.add(moduleName("All"), "\\export A \\export B.C \\export B.C.E \\export B.C.D \\export B.C.F");
+    sourceSupplier.add(moduleName("All"), "\\export ::A \\export ::B \\export ::B::C::E \\export ::B::C::D \\export ::B::C::F");
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.setOutputSupplier(outputSupplier);
 
@@ -91,23 +88,23 @@ public class ModuleLoaderTest {
   }
 
   @Test
-  public void recursiveTestError2() {
-    sourceSupplier.add(moduleName("A"), "\\static \\function f => B.g");
-    sourceSupplier.add(moduleName("B"), "\\static \\function g => A.h");
+  public void recursiveTestNoError2() {
+    sourceSupplier.add(moduleName("A"), "\\static \\function f => ::B.g");
+    sourceSupplier.add(moduleName("B"), "\\static \\function g => ::A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
-    assertFalse(errorReporter.getErrorList().isEmpty());
+    assertTrue(errorReporter.getErrorList().isEmpty());
   }
 
   @Test
-  public void recursiveTestError3() {
-    sourceSupplier.add(moduleName("A"), "\\static \\function f => B.g \\static \\function h => 0");
-    sourceSupplier.add(moduleName("B"), "\\static \\function g => A.h");
+  public void recursiveTestNoError3() {
+    sourceSupplier.add(moduleName("A"), "\\static \\function f => ::B.g \\static \\function h => 0");
+    sourceSupplier.add(moduleName("B"), "\\static \\function g => ::A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
-    assertFalse(errorReporter.getErrorList().isEmpty());
+    assertTrue(errorReporter.getErrorList().isEmpty());
   }
 
   @Test
@@ -116,7 +113,7 @@ public class ModuleLoaderTest {
     sourceSupplier.add(moduleName("B"), "\\static \\function g => A.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    ModuleLoader.Result result = moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
+    ModuleLoader.Result result = moduleLoader.load(moduleLoader.locateModule(moduleName("B")));
     TypecheckingOrdering.typecheck(result.namespaceMember.abstractDefinition, errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
   }
@@ -207,9 +204,9 @@ public class ModuleLoaderTest {
     moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
     assertTrue(errorReporter.getErrorList().isEmpty());
     assertNotLoaded("All");
-    assertNotLoaded("A");
+    assertLoaded("A");
     assertNotLoaded("B");
-    assertNotLoaded("B", "C", "E");
+    assertLoaded("B", "C", "E");
     assertLoaded("B", "C", "D");
     assertLoaded("B", "C", "F");
   }
@@ -235,7 +232,6 @@ public class ModuleLoaderTest {
 
     sourceSupplier.add(moduleName("B", "C", "G"), "\\static \\function G => f");
     moduleLoader.load(moduleLoader.locateModule(moduleName("B")));
-    moduleLoader.load(moduleLoader.locateModule(moduleName("B", "C")));
     moduleLoader.load(moduleLoader.locateModule(moduleName("B", "C", "G")));
     moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
     assertTrue(errorReporter.getErrorList().isEmpty());
@@ -249,16 +245,16 @@ public class ModuleLoaderTest {
   }
 
   @Test
-  public void testRemoveFile() {
+  public void testRemoveOutput() {
     setupSources();
 
-    sourceSupplier.add(moduleName("B"), null);
+    outputSupplier.remove(moduleName("B"));
     moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
     assertTrue(errorReporter.getErrorList().isEmpty());
     assertNotLoaded("All");
-    assertNotLoaded("A");
+    assertLoaded("A");
     assertLoaded("B", "C", "D");
-    assertNotLoaded("B", "C", "E");
+    assertLoaded("B", "C", "E");
     assertLoaded("B", "C", "F");
   }
 }

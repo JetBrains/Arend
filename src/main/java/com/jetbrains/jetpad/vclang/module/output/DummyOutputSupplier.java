@@ -4,8 +4,6 @@ import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 public class DummyOutputSupplier implements OutputSupplier {
-  private final DummyOutput myOutput = new DummyOutput();
-
   private DummyOutputSupplier() {}
 
   private static DummyOutputSupplier INSTANCE = new DummyOutputSupplier();
@@ -16,7 +14,7 @@ public class DummyOutputSupplier implements OutputSupplier {
 
   @Override
   public Output getOutput(ModuleID module) {
-    return myOutput;
+    return null;
   }
 
   @Override

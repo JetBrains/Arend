@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.module.output;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 import java.io.IOException;
 import java.util.List;
@@ -16,13 +15,13 @@ public interface Output {
     }
   }
 
-  Header getHeader() throws IOException;
-
   boolean canRead();
   boolean canWrite();
   long lastModified();
 
+  Header readHeader() throws IOException;
   void readStubs() throws IOException;
   ModuleLoader.Result read() throws IOException;
+
   void write() throws IOException;
 }

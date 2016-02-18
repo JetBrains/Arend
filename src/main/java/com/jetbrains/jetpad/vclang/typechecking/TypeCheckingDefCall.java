@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -163,6 +164,20 @@ public class TypeCheckingDefCall {
     return getDefCallResult(member, expr, next);
   }
 
+  private DefCallResult typeCheckModule(Abstract.ModuleCallExpression expr, String next) {
+    NamespaceMember member = toNamespaceMember(expr.getModule());
+
+    if (member == null) {
+      assert false;
+      TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + new ModulePath(expr.getPath()) + "' is not available yet", expr);
+      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+      myVisitor.getErrorReporter().report(error);
+      return null;
+    }
+
+    return getDefCallResult(member, expr, next);
+  }
+
   private DefCallResult getDefCallResult(NamespaceMember member, Abstract.Expression expr, String next) {
     Definition definition = member.definition;
     if (definition == null || next != null && (definition instanceof ClassDefinition || definition instanceof FunctionDefinition && member.namespace.getMember(next) != null)) {
@@ -253,8 +268,8 @@ public class TypeCheckingDefCall {
     }
 
     DefCallResult result;
-    if (left instanceof Abstract.DefCallExpression) {
-      result = typeCheckNamespace((Abstract.DefCallExpression) left, name);
+    if (left instanceof Abstract.DefCallExpression || left instanceof Abstract.ModuleCallExpression) {
+      result = left instanceof Abstract.DefCallExpression ? typeCheckNamespace((Abstract.DefCallExpression) left, name) : typeCheckModule((Abstract.ModuleCallExpression) left, name);
       if (result == null) {
         return null;
       }

@@ -18,11 +18,6 @@ public class MemorySource extends ParseSource {
   }
 
   @Override
-  public boolean isAvailable() {
-    return true;
-  }
-
-  @Override
   public long lastModified() {
     return myEntry.lastModified;
   }

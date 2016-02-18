@@ -24,6 +24,9 @@ public class MemoryOutputSupplier implements OutputSupplier {
     return new MemoryOutput((PathModuleID) moduleID, myOutputs.get(moduleID.getModulePath()));
   }
 
+  public boolean remove(ModulePath modulePath) {
+    return myOutputs.remove(modulePath) != null;
+  }
 
   @Override
   public PathModuleID locateModule(ModulePath modulePath) {

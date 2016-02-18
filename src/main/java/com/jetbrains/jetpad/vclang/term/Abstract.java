@@ -309,10 +309,10 @@ public final class Abstract {
     enum Kind { OPEN, CLOSE, EXPORT }
 
     Kind getKind();
+    List<String> getModulePath();
     List<String> getPath();
 
-    void setResolvedPath(BaseDefinition path);
-    BaseDefinition getResolvedPath();
+    BaseDefinition getResolvedClass();
 
     List<String> getNames();
   }

@@ -44,7 +44,10 @@ public class DefNamesIndices {
           ModuleSerialization.writeDefinition(stream, rn.toDefinition());
         }
       } else {
-        moduleID.serialize(stream);
+        stream.writeBoolean(moduleID != Prelude.moduleID);
+        if (moduleID != Prelude.moduleID) {
+          moduleID.serialize(stream);
+        }
         ModuleSerialization.serializeResolvedName(stream, rn);
       }
     }
@@ -55,7 +58,7 @@ public class DefNamesIndices {
 
     for (ResolvedName resolvedName : myDefinitionsList) {
       ModuleID moduleID = resolvedName.getModuleID();
-      if (moduleID.equals(Prelude.moduleID) && curModuleID.equals(moduleID)) {
+      if (!moduleID.equals(Prelude.moduleID) && !curModuleID.equals(moduleID)) {
         dependencies.add(moduleID);
       }
     }

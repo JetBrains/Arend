@@ -4,8 +4,6 @@ import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 public class DummySourceSupplier implements SourceSupplier {
-  private final DummySource mySource = new DummySource();
-
   private DummySourceSupplier() {}
 
   private static DummySourceSupplier INSTANCE = new DummySourceSupplier();
@@ -16,7 +14,7 @@ public class DummySourceSupplier implements SourceSupplier {
 
   @Override
   public Source getSource(ModuleID module) {
-    return mySource;
+    return null;
   }
 
   @Override
