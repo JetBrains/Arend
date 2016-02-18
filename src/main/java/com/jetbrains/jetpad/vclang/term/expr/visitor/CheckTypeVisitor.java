@@ -276,7 +276,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
-              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type_of_" + name, Universe(), argIndex, expr);
+              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(), argIndex, expr);
               link.setType(Reference(inferenceBinding));
               result.addUnsolvedVariable(inferenceBinding);
             }

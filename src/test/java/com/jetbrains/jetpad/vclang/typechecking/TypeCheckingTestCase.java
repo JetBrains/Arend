@@ -18,6 +18,7 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
 import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class TypeCheckingTestCase {
   public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
@@ -83,7 +84,11 @@ public class TypeCheckingTestCase {
   public static ClassDefinition typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     TypecheckingOrdering.typecheck(new ResolvedName(RootModule.ROOT, classDefinition.getName()), errorReporter);
-    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    if (errors >= 0) {
+      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    } else {
+      assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+    }
     return (ClassDefinition) RootModule.ROOT.getDefinition(classDefinition.getName());
   }
 

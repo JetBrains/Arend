@@ -6,11 +6,9 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.LamExpression;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -69,45 +67,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   private void visitApps(Abstract.Expression expr, List<Abstract.ArgumentExpression> args, byte prec) {
-    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getResolvedName() != null) {
-      if (new Name(((Abstract.DefCallExpression) expr).getName()).fixity == Abstract.Definition.Fixity.INFIX) {
-        int numberOfVisibleArgs = 0;
-        List<Abstract.Expression> visibleArgs = new ArrayList<>(2);
-        for (Abstract.ArgumentExpression arg : args) {
-          if (arg.isExplicit() || !arg.isHidden()) {
-            if (++numberOfVisibleArgs > 2) break;
-            visibleArgs.add(arg.getExpression());
-          }
-        }
-
-        if (numberOfVisibleArgs == 2) {
-          Abstract.Definition.Precedence defPrecedence = ((Abstract.DefCallExpression) expr).getResolvedName().toPrecedence() == null
-              ? Abstract.Definition.DEFAULT_PRECEDENCE : ((Abstract.DefCallExpression) expr).getResolvedName().toPrecedence();
-          if (prec > defPrecedence.priority) myBuilder.append('(');
-          if (((Abstract.DefCallExpression) expr).getExpression() != null) {
-            ((Abstract.DefCallExpression) expr).getExpression().accept(this, Abstract.DefCallExpression.PREC);
-            myBuilder.append('.');
-          }
-          visibleArgs.get(0).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
-          myBuilder.append(' ').append(((Abstract.DefCallExpression) expr).getName()).append(' ');
-          visibleArgs.get(1).accept(this, (byte) (defPrecedence.priority + (defPrecedence.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
-          if (prec > defPrecedence.priority) myBuilder.append(')');
-          return;
-        }
-      }
-
-      if (Prelude.isPath(((Abstract.DefCallExpression) expr).getResolvedName().toDefinition()) && args.size() == 3 && args.get(0).getExpression() instanceof LamExpression && !((LamExpression) args.get(0).getExpression()).getBody().findBinding(((LamExpression) args.get(0).getExpression()).getParameters())) {
-        if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append('(');
-        args.get(1).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
-        char[] eqs = new char[Prelude.getLevel(((Abstract.DefCallExpression) expr).getResolvedName().toDefinition()) + 1];
-        Arrays.fill(eqs, '=');
-        myBuilder.append(" ").append(eqs).append(" ");
-        args.get(2).getExpression().accept(this, (byte) (Prelude.PATH_INFIX.getPrecedence().priority + 1));
-        if (prec > Prelude.PATH_INFIX.getPrecedence().priority) myBuilder.append(')');
-        return;
-      }
-    }
-
     if (prec > Abstract.AppExpression.PREC) myBuilder.append('(');
     if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getExpression() != null) {
       ((Abstract.DefCallExpression) expr).getExpression().accept(this, Abstract.DefCallExpression.PREC);

@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -36,9 +37,12 @@ public class ListEquations implements Equations {
     }
     */
 
-    // TODO: check for abstracted bindings
     TypeCheckingError abstractBinding(Binding binding) {
-      return null;
+      if (expr1.findBinding(binding) || expr2.findBinding(binding)) {
+        return new SolveEquationsError(expr1, expr2, binding, sourceNode);
+      } else {
+        return null;
+      }
     }
   }
 
@@ -55,6 +59,7 @@ public class ListEquations implements Equations {
     if (equations instanceof ListEquations) {
       myEquations.addAll(((ListEquations) equations).myEquations);
       addSolutions(((ListEquations) equations).mySolutions);
+      ((ListEquations) equations).myErrorReporter.reportTo(myErrorReporter);
     } else {
       return false;
     }
@@ -113,15 +118,25 @@ public class ListEquations implements Equations {
 
   @Override
   public boolean isEmpty() {
-    return myEquations.isEmpty() && mySolutions.isEmpty();
+    return myEquations.isEmpty() && mySolutions.isEmpty() && myErrorReporter.getErrorList().isEmpty();
   }
 
   @Override
   public void abstractBinding(Binding binding) {
-    for (Equation equation : myEquations) {
+    for (Iterator<Equation> it = myEquations.iterator(); it.hasNext(); ) {
+      Equation equation = it.next();
       TypeCheckingError error = equation.abstractBinding(binding);
       if (error != null) {
         myErrorReporter.report(error);
+        it.remove();
+      }
+    }
+
+    for (Iterator<Map.Entry<InferenceBinding, Expression>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
+      Map.Entry<InferenceBinding, Expression> entry = it.next();
+      if (entry.getValue().findBinding(binding)) {
+        myErrorReporter.report(new SolveEquationsError(Reference(entry.getKey()), entry.getValue(), binding, entry.getKey().getSourceNode()));
+        it.remove();
       }
     }
   }

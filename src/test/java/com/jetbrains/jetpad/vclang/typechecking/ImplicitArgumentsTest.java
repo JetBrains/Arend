@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static org.junit.Assert.*;
 
@@ -267,5 +268,19 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", Pi(A, Reference(A))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f Nat (\\lam x => x) 0", Pi(Nat(), Nat()));
     assertNotNull(result);
+  }
+
+  @Test
+  public void inferUnderPi() {
+    typeCheckClass(
+        "\\static \\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\static \\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", -1);
+  }
+
+  @Test
+  public void inferUnderPiExpected() {
+    typeCheckClass(
+        "\\static \\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\static \\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", -1);
   }
 }
