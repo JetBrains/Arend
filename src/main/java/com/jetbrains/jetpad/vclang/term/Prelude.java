@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
+import java.lang.ref.Reference;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -230,24 +231,23 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(iso);
     defToLevel.put(iso, i);
 
-    List<TypeArgument> truncArguments = new ArrayList<>(1);
-    truncArguments.add(Tele(vars("A"), Universe(i, Universe.Type.NOT_TRUNCATED)));
-    DataDefinition propTrunc = new DataDefinition(PRELUDE, new Name("TrP" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), truncArguments);
+    DependentLink truncParameter = param("A", Universe(i, Universe.Type.NOT_TRUNCATED));
+    DataDefinition propTrunc = new DataDefinition(PRELUDE, new Name("TrP" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), truncParameter);
     PRELUDE.addDefinition(propTrunc);
     defToLevel.put(propTrunc, i);
 
-    Constructor propTruncInCon = new Constructor(PRELUDE.getChild(propTrunc.getName()), new Name("inP" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), typeArgs(TypeArg(Index(0))), propTrunc);
-    List<TypeArgument> propTruncConArguments = new ArrayList<>(3);
-    propTruncConArguments.add(Tele(vars("a"), Apps(DataCall(propTrunc), Index(0))));
-    propTruncConArguments.add(Tele(vars("a'"), Apps(DataCall(propTrunc), Index(1))));
-    propTruncConArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
-    Constructor propTruncPathCon = new Constructor(PRELUDE.getChild(propTrunc.getName()), new Name("truncP" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), propTruncConArguments, propTrunc);
+    Constructor propTruncInCon = new Constructor(PRELUDE.getChild(propTrunc.getName()), new Name("inP" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), truncParameter, propTrunc);
+    DependentLink propTruncConParameter1 = param("a", Apps(DataCall(propTrunc), Reference(truncParameter)));
+    DependentLink propTruncConParameter2 = param("a'", Apps(DataCall(propTrunc), Reference(truncParameter)));
+    DependentLink propTruncConParameter3 = param("i", DataCall(INTERVAL));
+    propTruncConParameter1.setNext(propTruncConParameter2);
+    propTruncConParameter2.setNext(propTruncConParameter3);
+    Constructor propTruncPathCon = new Constructor(PRELUDE.getChild(propTrunc.getName()), new Name("truncP" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), propTruncConParameter1, propTrunc);
     propTrunc.addConstructor(propTruncInCon);
     propTrunc.addConstructor(propTruncPathCon);
-    Condition propTruncPathCond = new Condition(propTruncPathCon, branch(0,
-            clause(LEFT, Index(1)),
-            clause(RIGHT, Index(0))
-    ));
+    Condition propTruncPathCond = new Condition(propTruncPathCon, top(propTruncConParameter1, branch(propTruncConParameter3, tail(),
+            clause(LEFT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter1)),
+            clause(RIGHT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter2)))));
     propTrunc.addCondition(propTruncPathCond);
 
     PRELUDE.addDefinition(propTruncInCon);
@@ -256,28 +256,32 @@ public class Prelude extends Namespace {
     defToLevel.put(propTruncInCon, i);
     defToLevel.put(propTruncPathCon, i);
 
-     DataDefinition setTrunc = new DataDefinition(PRELUDE, new Name("TrS" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), truncArguments);
+    DataDefinition setTrunc = new DataDefinition(PRELUDE, new Name("TrS" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), truncParameter);
     PRELUDE.addDefinition(setTrunc);
     defToLevel.put(setTrunc, i);
 
-    Constructor setTruncInCon = new Constructor(PRELUDE.getChild(setTrunc.getName()), new Name("inS" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), typeArgs(TypeArg(Index(0))), setTrunc);
-    List<TypeArgument> setTruncConArguments = new ArrayList<>(6);
-    setTruncConArguments.add(Tele(vars("a"), Apps(DataCall(setTrunc), Index(0))));
-    setTruncConArguments.add(Tele(vars("a'"), Apps(DataCall(setTrunc), Index(1))));
-    setTruncConArguments.add(Tele(vars("p"), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Apps(DataCall(setTrunc), Index(2)), false, true)), Index(1), Index(0))));
-    setTruncConArguments.add(Tele(vars("q"), Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Apps(DataCall(setTrunc), Index(3)), false, true)), Index(2), Index(1))));
-    setTruncConArguments.add(Tele(vars("i"), DataCall(INTERVAL)));
-    setTruncConArguments.add(Tele(vars("j"), DataCall(INTERVAL)));
-    Constructor setTruncPathCon = new Constructor(PRELUDE.getChild(setTrunc.getName()), new Name("truncS" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), setTruncConArguments, setTrunc);
+    Constructor setTruncInCon = new Constructor(PRELUDE.getChild(setTrunc.getName()), new Name("inS" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), truncParameter, setTrunc);
+    DependentLink setTruncConParameter1 = param("a", Apps(DataCall(setTrunc), Reference(truncParameter)));
+    DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(setTrunc), Reference(truncParameter)));
+    DependentLink setTruncConParameter3 = param("p", Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Apps(DataCall(setTrunc), Reference(truncParameter)), false, true)), Reference(setTruncConParameter1), Reference(setTruncConParameter2)));
+    DependentLink setTruncConParameter4 = param("q", Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Apps(DataCall(setTrunc), Reference(truncParameter)), false, true)), Reference(setTruncConParameter1), Reference(setTruncConParameter2)));
+    DependentLink setTruncConParameter5 = param("i", DataCall(INTERVAL));
+    DependentLink setTruncConParameter6 = param("j", DataCall(INTERVAL));
+    setTruncConParameter1.setNext(setTruncConParameter2);
+    setTruncConParameter2.setNext(setTruncConParameter3);
+    setTruncConParameter3.setNext(setTruncConParameter4);
+    setTruncConParameter4.setNext(setTruncConParameter5);
+    setTruncConParameter5.setNext(setTruncConParameter6);
+    Constructor setTruncPathCon = new Constructor(PRELUDE.getChild(setTrunc.getName()), new Name("truncS" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), setTruncConParameter1, setTrunc);
     setTrunc.addConstructor(setTruncInCon);
     setTrunc.addConstructor(setTruncPathCon);
-    Condition setTruncPathCond = new Condition(setTruncPathCon, branch(0,
-            clause(LEFT, Apps(FunCall(at), Index(2), Index(0))),
-            clause(RIGHT, Apps(FunCall(at), Index(1), Index(0))),
-            clause(null, branch(1,
-                    clause(LEFT, Index(4)),
-                    clause(RIGHT, Index(3))))
-    ));
+    Condition setTruncPathCond = new Condition(setTruncPathCon, top(setTruncConParameter1, branch(setTruncConParameter6, tail(),
+            clause(LEFT, EmptyDependentLink.getInstance(), Apps(FunCall(at), Reference(setTruncConParameter3), Reference(setTruncConParameter5))),
+            clause(RIGHT, EmptyDependentLink.getInstance(), Apps(FunCall(at), Reference(setTruncConParameter4), Reference(setTruncConParameter5))),
+            clause(branch(setTruncConParameter5, tail(setTruncConParameter6),
+                    clause(LEFT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter1)),
+                    clause(RIGHT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter2))))
+    )));
 
     setTrunc.addCondition(setTruncPathCond);
 
@@ -287,7 +291,7 @@ public class Prelude extends Namespace {
     defToLevel.put(setTruncInCon, i);
     defToLevel.put(setTruncPathCon, i); /**/
 
-    levels.put(i, new LevelPoly(path, pathCon, pathInfix, at, coerce, iso, propTruncPathCon, setTruncPathCon));
+    levels.put(i, new LevelPoly(path, pathCon, pathInfix, at, coe, iso, propTruncPathCon, setTruncPathCon));
   }
 
   public static boolean isAt(Definition definition) {
