@@ -59,7 +59,7 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
-    return CompareVisitor.compare(DummyEquations.getInstance(), cmp, expr1, expr2);
+    return CompareVisitor.compare(DummyEquations.getInstance(), cmp, expr1, expr2, null);
   }
 
   public static boolean compare(Expression expr1, Expression expr2) {

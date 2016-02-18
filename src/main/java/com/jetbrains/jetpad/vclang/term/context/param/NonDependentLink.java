@@ -54,11 +54,6 @@ public class NonDependentLink implements DependentLink {
   }
 
   @Override
-  public boolean isInference() {
-    return false;
-  }
-
-  @Override
   public DependentLink subst(Substitution subst, int size) {
     return size > 0 ? new NonDependentLink(myType.subst(subst), myNext.subst(subst, size - 1)) : EmptyDependentLink.getInstance();
   }

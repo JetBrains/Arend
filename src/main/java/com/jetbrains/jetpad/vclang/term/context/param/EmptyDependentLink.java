@@ -64,8 +64,4 @@ public class EmptyDependentLink implements DependentLink {
     throw new IllegalStateException();
   }
 
-  @Override
-  public boolean isInference() {
-    return false;
-  }
 }

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.context.binding;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
@@ -8,9 +9,7 @@ public abstract class InferenceBinding extends TypedBinding {
     super(name, type);
   }
 
-  public boolean isInference() {
-    return true;
-  }
+  public abstract Abstract.SourceNode getSourceNode();
 
   public abstract void reportError(ErrorReporter errorReporter, Expression... candidates);
 }

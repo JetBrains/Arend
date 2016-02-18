@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -23,7 +24,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(Expression expr1, Expression expr2, CMP cmp) {
+  public boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
     return false;
   }
 

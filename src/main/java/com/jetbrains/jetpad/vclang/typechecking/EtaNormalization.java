@@ -89,7 +89,7 @@ public class EtaNormalization {
       fields[index++] = ((ProjExpression) field).getExpression();
     }
     for (int i = 1; i < fields.length; i++) {
-      if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, fields[0], fields[i])) {
+      if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, fields[0], fields[i], null)) {
         return tuple;
       }
     }

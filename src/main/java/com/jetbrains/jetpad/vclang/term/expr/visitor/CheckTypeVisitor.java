@@ -169,7 +169,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result.getEquations() instanceof DummyEquations) {
       result.setEquations(myArgsInference.newEquations());
     }
-    if (CompareVisitor.compare(result.getEquations(), cmp, expectedType.normalize(NormalizeVisitor.Mode.NF), result.type.normalize(NormalizeVisitor.Mode.NF))) {
+    if (CompareVisitor.compare(result.getEquations(), cmp, expectedType.normalize(NormalizeVisitor.Mode.NF), result.type.normalize(NormalizeVisitor.Mode.NF), expr)) {
       return true;
     } else {
       TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
@@ -264,7 +264,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
               if (result.getEquations() instanceof DummyEquations) {
                 result.setEquations(myArgsInference.newEquations());
               }
-              if (!CompareVisitor.compare(result.getEquations(), Equations.CMP.EQ, piLinkType.normalize(NormalizeVisitor.Mode.NF), argResult.expression.normalize(NormalizeVisitor.Mode.NF))) {
+              if (!CompareVisitor.compare(result.getEquations(), Equations.CMP.EQ, piLinkType.normalize(NormalizeVisitor.Mode.NF), argResult.expression.normalize(NormalizeVisitor.Mode.NF), argType)) {
                 TypeCheckingError error = new TypeMismatchError(piLinkType.normalize(NormalizeVisitor.Mode.HUMAN_NF), argResult.expression.normalize(NormalizeVisitor.Mode.HUMAN_NF), argType);
                 myErrorReporter.report(error);
                 return null;

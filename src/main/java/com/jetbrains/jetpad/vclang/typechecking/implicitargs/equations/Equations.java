@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
@@ -11,7 +12,7 @@ import java.util.Set;
 
 public interface Equations {
   boolean add(Equations equations);
-  boolean add(Expression expr1, Expression expr2, CMP cmp);
+  boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode);
   void clear();
   boolean isEmpty();
   void abstractBinding(Binding binding);

@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
@@ -21,26 +23,29 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
+  private final Abstract.SourceNode mySourceNode;
   private Equations.CMP myCMP;
 
-  private CompareVisitor(Equations equations, Equations.CMP cmp) {
+  private CompareVisitor(Equations equations, Equations.CMP cmp, Abstract.SourceNode sourceNode) {
     mySubstitution = new HashMap<>();
     myEquations = equations;
+    mySourceNode = sourceNode;
     myCMP = cmp;
   }
 
   private CompareVisitor(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp) {
     mySubstitution = substitution;
     myEquations = equations;
+    mySourceNode = null;
     myCMP = cmp;
   }
 
-  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2) {
-    return new CompareVisitor(equations, cmp).compare(expr1, expr2);
+  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Abstract.SourceNode sourceNode) {
+    return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
   }
 
   public static boolean compare(Equations equations, Equations.CMP cmp, ElimTreeNode tree1, ElimTreeNode tree2) {
-    return new CompareVisitor(equations, cmp).compare(tree1, tree2);
+    return new CompareVisitor(equations, cmp, null).compare(tree1, tree2);
   }
 
   public static boolean compare(Map<Binding, Binding> substitution, Equations equations, Equations.CMP cmp, ElimTreeNode tree1, ElimTreeNode tree2) {
@@ -70,14 +75,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return true;
     }
 
-    if (expr2 instanceof ReferenceExpression && ((ReferenceExpression) expr2).getBinding().isInference()) {
+    if (expr2 instanceof ReferenceExpression && ((ReferenceExpression) expr2).getBinding() instanceof InferenceBinding) {
       return compareReference((ReferenceExpression) expr2, expr1, false);
     }
     return expr1.accept(this, expr2);
   }
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
-    if (!(fun instanceof ReferenceExpression) || !((ReferenceExpression) fun).getBinding().isInference()) {
+    if (!(fun instanceof ReferenceExpression) || !(((ReferenceExpression) fun).getBinding() instanceof InferenceBinding)) {
       return false;
     }
 
@@ -85,7 +90,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
       substitution.add(entry.getKey(), Reference(entry.getValue()));
     }
-    return myEquations.add(expr1.subst(substitution), expr2, myCMP);
+    return myEquations.add(expr1.subst(substitution), expr2, myCMP, ((InferenceBinding) ((ReferenceExpression) fun).getBinding()).getSourceNode());
   }
 
   @Override
@@ -181,6 +186,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   private boolean compareReference(ReferenceExpression expr1, Expression expr2, boolean first) {
+    Abstract.SourceNode sourceNode;
     if (expr2 instanceof ReferenceExpression) {
       Binding binding1 = first ? expr1.getBinding() : ((ReferenceExpression) expr2).getBinding();
       Binding subst1 = mySubstitution.get(binding1);
@@ -191,15 +197,21 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       if (binding1 == binding2) {
         return true;
       }
-      if (!expr1.getBinding().isInference() && !((ReferenceExpression) expr2).getBinding().isInference()) {
+      if (expr1.getBinding() instanceof InferenceBinding) {
+        sourceNode = ((InferenceBinding) expr1.getBinding()).getSourceNode();
+      } else
+      if (((ReferenceExpression) expr2).getBinding() instanceof InferenceBinding) {
+        sourceNode = ((InferenceBinding) ((ReferenceExpression) expr2).getBinding()).getSourceNode();
+      } else {
         return false;
       }
     } else {
-      if (!expr1.getBinding().isInference()) {
+      if (!(expr1.getBinding() instanceof InferenceBinding)) {
         return false;
       }
+      sourceNode = ((InferenceBinding) expr1.getBinding()).getSourceNode();
     }
-    return myEquations.add(expr1, expr2, first ? myCMP : myCMP.not());
+    return myEquations.add(expr1, expr2, first ? myCMP : myCMP.not(), sourceNode);
   }
 
   @Override

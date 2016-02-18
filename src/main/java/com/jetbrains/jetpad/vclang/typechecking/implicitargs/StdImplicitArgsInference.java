@@ -142,7 +142,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             if (argResult.getEquations() instanceof DummyEquations) {
               argResult.setEquations(myVisitor.getImplicitArgsInference().newEquations());
             }
-            if (CompareVisitor.compare(argResult.getEquations(), Equations.CMP.EQ, interval, domType)) {
+            if (CompareVisitor.compare(argResult.getEquations(), Equations.CMP.EQ, interval, domType, arg)) {
               Expression lamExpr;
               if (params.getNext().hasNext()) {
                 DependentLink lamParam = param("i", interval);

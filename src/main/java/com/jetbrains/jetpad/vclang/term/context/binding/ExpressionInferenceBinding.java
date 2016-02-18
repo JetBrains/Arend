@@ -14,6 +14,11 @@ public class ExpressionInferenceBinding extends InferenceBinding {
   }
 
   @Override
+  public Abstract.SourceNode getSourceNode() {
+    return mySourceNode;
+  }
+
+  @Override
   public void reportError(ErrorReporter errorReporter, Expression... candidates) {
     errorReporter.report(new ArgInferenceError(ArgInferenceError.expression(), mySourceNode, null, candidates));
   }

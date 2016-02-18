@@ -16,6 +16,11 @@ public class FunctionInferenceBinding extends InferenceBinding {
   }
 
   @Override
+  public Abstract.SourceNode getSourceNode() {
+    return mySourceNode;
+  }
+
+  @Override
   public void reportError(ErrorReporter errorReporter, Expression... candidates) {
     errorReporter.report(new ArgInferenceError(ArgInferenceError.functionArg(myIndex), mySourceNode, null, candidates));
   }

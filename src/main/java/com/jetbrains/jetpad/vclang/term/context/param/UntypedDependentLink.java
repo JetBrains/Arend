@@ -81,11 +81,6 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public boolean isInference() {
-    return false;
-  }
-
-  @Override
   public DependentLink subst(Substitution subst, int size) {
     if (size == 1) {
       TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, getType(), EmptyDependentLink.getInstance());

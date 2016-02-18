@@ -57,11 +57,6 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public boolean isInference() {
-    return false;
-  }
-
-  @Override
   public DependentLink subst(Substitution subst, int size) {
     if (size > 0) {
       TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.subst(subst), EmptyDependentLink.getInstance());

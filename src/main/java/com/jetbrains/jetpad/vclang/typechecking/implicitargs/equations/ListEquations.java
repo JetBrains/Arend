@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
@@ -21,7 +22,8 @@ public class ListEquations implements Equations {
     Expression expr1;
     Expression expr2;
     CMP cmp;
-    // TODO: check for abstracted bindings
+    Abstract.SourceNode sourceNode;
+    /*
     List<Binding> bindings = Collections.emptyList();
 
     void abstractBinding(Binding binding) {
@@ -31,6 +33,12 @@ public class ListEquations implements Equations {
         }
         bindings.add(binding);
       }
+    }
+    */
+
+    // TODO: check for abstracted bindings
+    TypeCheckingError abstractBinding(Binding binding) {
+      return null;
     }
   }
 
@@ -54,7 +62,7 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public boolean add(Expression expr1, Expression expr2, CMP cmp) {
+  public boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
     boolean isInf1 = expr1 instanceof ReferenceExpression && ((ReferenceExpression) expr1).getBinding() instanceof InferenceBinding;
     boolean isInf2 = expr2 instanceof ReferenceExpression && ((ReferenceExpression) expr2).getBinding() instanceof InferenceBinding;
     if (isInf1 && isInf2 && ((ReferenceExpression) expr1).getBinding() == ((ReferenceExpression) expr2).getBinding()) {
@@ -71,6 +79,7 @@ public class ListEquations implements Equations {
       equation.expr1 = expr1;
       equation.expr2 = expr2;
       equation.cmp = cmp;
+      equation.sourceNode = sourceNode;
       myEquations.add(equation);
     }
 
@@ -81,7 +90,7 @@ public class ListEquations implements Equations {
     if (!(binding instanceof IgnoreBinding)) {
       Expression expr = mySolutions.get(binding);
       if (expr != null) {
-        if (!CompareVisitor.compare(this, CMP.EQ, expression, expr)) {
+        if (!CompareVisitor.compare(this, CMP.EQ, expression, expr, binding.getSourceNode())) {
           binding.reportError(myErrorReporter, expression, expr);
         }
       } else {
@@ -110,7 +119,10 @@ public class ListEquations implements Equations {
   @Override
   public void abstractBinding(Binding binding) {
     for (Equation equation : myEquations) {
-      equation.abstractBinding(binding);
+      TypeCheckingError error = equation.abstractBinding(binding);
+      if (error != null) {
+        myErrorReporter.report(error);
+      }
     }
   }
 
@@ -162,7 +174,7 @@ public class ListEquations implements Equations {
         if (binding instanceof InferenceBinding) {
           it.remove();
           if (binding != entry.getKey()) {
-            add(Reference(entry.getKey()), expr, CMP.EQ);
+            add(Reference(entry.getKey()), expr, CMP.EQ, entry.getKey().getSourceNode());
           }
         }
       }
@@ -174,9 +186,8 @@ public class ListEquations implements Equations {
       myEquations.remove(0);
       Expression expr1 = equation.expr1.subst(substitution);
       Expression expr2 = equation.expr2.subst(substitution);
-      if (!CompareVisitor.compare(this, equation.cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF))) {
-        // TODO: Add SourceNode
-        myErrorReporter.report(new TypeCheckingError("Cannot solve equation:\nFirst expression: " + expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF) + "Second expression: " + expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), null));
+      if (!CompareVisitor.compare(this, equation.cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF), equation.sourceNode)) {
+        myErrorReporter.report(new TypeCheckingError("Cannot solve equation:\nFirst expression: " + expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF) + "Second expression: " + expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), equation.sourceNode));
       }
     }
   }

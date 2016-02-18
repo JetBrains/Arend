@@ -16,8 +16,4 @@ public abstract class NamedBinding implements Binding {
 
   public abstract Expression getType();
 
-  @Override
-  public boolean isInference() {
-    return false;
-  }
 }

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ public class InferenceError extends TypeCheckingError {
     builder.append(printHeader()).append(getMessage()).append(":\n");
     for (Binding var : myVars) {
       builder.append('\t');
-      if (var.isInference()) {
+      if (var instanceof InferenceBinding) {
         builder.append('?');
       }
       builder.append(var.getName() == null ? "_" : var.getName()).append(" : ");
