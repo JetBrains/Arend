@@ -8,10 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.pattern.AnyConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
-import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
-import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
+import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.MultiPatternsExpander.MultiBranch;
 
 import java.util.ArrayList;
@@ -74,12 +71,12 @@ class PatternsExpander {
     List<Branch> resultBranches = new ArrayList<>();
 
     for (ConCallExpression conCall : validConstructors) {
-      MatchingPatterns matching = new MatchingPatterns(patterns, conCall.getDefinition());
-      if (!matching.hasConstructor) {
+      MatchingPatterns matching = MatchingPatterns.findMatching(patterns, conCall.getDefinition());
+      if (matching == null) {
         continue;
       }
 
-      ConstructorClause clause = resultTree.addClause(conCall.getDefinition());
+      ConstructorClause clause = resultTree.addClause(conCall.getDefinition(), matching.names);
       MultiPatternsExpander.MultiElimTreeExpansionResult nestedResult = MultiPatternsExpander.expandPatterns(
         toContext(clause.getParameters()), matching.nestedPatterns, clause.getTailBindings()
       );
@@ -100,14 +97,22 @@ class PatternsExpander {
   }
 
   private static class MatchingPatterns {
-    private final List<Integer> indices = new ArrayList<>();
-    private final List<List<Pattern>> nestedPatterns = new ArrayList<>();
-    private boolean hasConstructor;
+    private final List<Integer> indices;
+    private final List<List<Pattern>> nestedPatterns;
+    private final List<String> names;
 
-    private MatchingPatterns(List<Pattern> patterns, Constructor constructor) {
-      hasConstructor = false;
+    private MatchingPatterns(List<Integer> indices, List<List<Pattern>> nestedPatterns, List<String> names) {
+      this.indices = indices;
+      this.nestedPatterns = nestedPatterns;
+      this.names = names;
+    }
+
+    private static MatchingPatterns findMatching(List<Pattern> patterns, Constructor constructor) {
       List<Pattern> anyPatterns = new ArrayList<>(Collections.<Pattern>nCopies(size(constructor.getParameters()), new NamePattern(EmptyDependentLink.getInstance())));
+      List<Integer> indices = new ArrayList<>();
+      List<List<Pattern>> nestedPatterns = new ArrayList<>();
 
+      boolean hasConstructor = false;
       for (int j = 0; j < patterns.size(); j++) {
         if (patterns.get(j) instanceof NamePattern) {
           indices.add(j);
@@ -123,6 +128,24 @@ class PatternsExpander {
           nestedPatterns.add(toPatterns(((ConstructorPattern) patterns.get(j)).getArguments()));
         }
       }
+      if (!hasConstructor) {
+        return null;
+      }
+
+      List<String> names = null;
+      for (int i : indices) {
+        if (nestedPatterns.get(i) instanceof ConstructorPattern) {
+          names = new ArrayList<>(((ConstructorPattern) nestedPatterns.get(i)).getArguments().size());
+          for (PatternArgument patternArg : ((ConstructorPattern) nestedPatterns.get(i)).getArguments()) {
+            if (patternArg.getPattern() instanceof NamePattern) {
+              names.add(((NamePattern) patternArg.getPattern()).getName());
+            } else {
+              names.add(null);
+            }
+          }
+        }
+      }
+      return new MatchingPatterns(indices, nestedPatterns, names);
     }
   }
 

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toNames;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implements ElimTreeNodeVisitor<Void, ElimTreeNode> {
@@ -92,7 +93,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
     BranchElimTreeNode newNode = new BranchElimTreeNode(newReference, newContextTail);
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-      ConstructorClause newClause = newNode.addClause(clause.getConstructor());
+      ConstructorClause newClause = newNode.addClause(clause.getConstructor(), toNames(clause.getParameters()));
       for (DependentLink linkOld = clause.getParameters(), linkNew = newClause.getParameters(); linkOld.hasNext(); linkOld = linkOld.getNext(), linkNew = linkNew.getNext()) {
         mySubstitution.add(linkOld, Reference(linkNew));
       }

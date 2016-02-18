@@ -93,12 +93,13 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(LEFT);
     PRELUDE.addDefinition(RIGHT);
 
-    PATH = (DataDefinition) PRELUDE.getDefinition("Path");
-    PATH_CON = (Constructor) PRELUDE.getDefinition("path");
-    PATH_INFIX = (FunctionDefinition) PRELUDE.getDefinition("=");
-    AT = (FunctionDefinition) PRELUDE.getDefinition("@");
-    ISO = (FunctionDefinition) PRELUDE.getDefinition("iso");
-    COERCE = (FunctionDefinition) PRELUDE.getDefinition("coe");
+    generateLevel(0);
+    PATH = (DataDefinition) levels.get(0).path;
+    PATH_CON = (Constructor) levels.get(0).pathCon;
+    PATH_INFIX = (FunctionDefinition) levels.get(0).pathInfix;
+    AT = (FunctionDefinition) levels.get(0).at;
+    ISO = (FunctionDefinition) levels.get(0).iso;
+    COERCE = (FunctionDefinition) levels.get(0).coe;
   }
 
   private Prelude() {
@@ -287,7 +288,7 @@ public class Prelude extends Namespace {
     defToLevel.put(setTruncInCon, i);
     defToLevel.put(setTruncPathCon, i); /**/
 
-    levels.put(i, new LevelPoly(path, pathCon, pathInfix, at, coerce, iso, propTruncPathCon, setTruncPathCon));
+    levels.put(i, new LevelPoly(path, pathCon, pathInfix, at, coe, iso, propTruncPathCon, setTruncPathCon));
   }
 
   public static boolean isAt(Definition definition) {
