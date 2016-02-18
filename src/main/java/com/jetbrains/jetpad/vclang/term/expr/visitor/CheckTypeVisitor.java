@@ -387,8 +387,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     LinkList list = new LinkList();
-    SigmaExpression type = Sigma(list.getFirst());
-    Result tupleResult = new Result(Tuple(fields, type), type);
+    Result tupleResult = new Result(null, null);
     for (int i = 0; i < expr.getFields().size(); ++i) {
       Result result = typeCheck(expr.getFields().get(i), null);
       if (result == null) return null;
@@ -397,6 +396,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       tupleResult.add(result);
     }
 
+    SigmaExpression type = Sigma(list.getFirst());
+    tupleResult.expression = Tuple(fields, type);
+    tupleResult.type = type;
     tupleResult = checkResult(expectedTypeNorm, tupleResult, expr);
     tupleResult.update();
     return tupleResult;

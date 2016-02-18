@@ -181,8 +181,8 @@ public class Prelude extends Namespace {
     DependentLink isoParameter3 = param("g", Pi(param(Reference(isoParameter1.getNext())), Reference(isoParameter1)));
     DependentLink piParamA = param("a", Reference(isoParameter1));
     DependentLink piParamB = param("b", Reference(isoParameter1.getNext()));
-    DependentLink isoParameter4 = param("linv", Pi(piParamA, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1), false, true)), Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA)), Reference(piParamA)))));
-    DependentLink isoParameter5 = param("rinv", Pi(piParamB, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1.getNext()), false, true)), Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB)), Reference(piParamB)))));
+    DependentLink isoParameter4 = param("linv", Pi(piParamA, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1), false, true)), Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA))), Reference(piParamA))));
+    DependentLink isoParameter5 = param("rinv", Pi(piParamB, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1.getNext()), false, true)), Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB))), Reference(piParamB))));
     DependentLink isoParameter6 = param("i", DataCall(INTERVAL));
     isoParameter1.setNext(isoParameter2);
     isoParameter2.setNext(isoParameter3);

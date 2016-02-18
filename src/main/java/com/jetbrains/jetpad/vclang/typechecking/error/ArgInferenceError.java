@@ -2,11 +2,11 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
@@ -53,10 +53,14 @@ public class ArgInferenceError extends TypeCheckingError {
       return "th";
     }
     switch (n % 10) {
-      case 1: return "st";
-      case 2: return "nd";
-      case 3: return "rd";
-      default: return "th";
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
     }
   }
 
@@ -66,42 +70,26 @@ public class ArgInferenceError extends TypeCheckingError {
 
   @Override
   public String toString() {
-    String msg = printHeader() + getMessage();
+    StringBuilder builder = new StringBuilder();
+    builder.append(printHeader()).append(getMessage());
     if (getCause() != null) {
       if (myWhere != null) {
-        msg += " " + prettyPrint(myWhere);
+        builder.append(' ');
+        myWhere.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
       } else {
-        String r = prettyPrint(getCause());
-        if (r != null) {
-          msg += " " + r;
-        }
+        builder.append(' ');
+        new PrettyPrintVisitor(builder, new ArrayList<String>(), 0).prettyPrint(getCause(), Abstract.Expression.PREC);
       }
     }
 
     if (myCandidates.length > 0) {
-      msg += "\nCandidates are:";
+      builder.append("\nCandidates are:");
       for (Expression candidate : myCandidates) {
-        msg += "\n\t" + candidate;
+        builder.append("\n\t");
+        candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
       }
     }
 
-    return msg;
-  }
-
-  public static class StringPrettyPrintable implements PrettyPrintable {
-    private final String myString;
-
-    public StringPrettyPrintable(String string) {
-      myString = string;
-    }
-
-    public StringPrettyPrintable(Name name) {
-      myString = name.getPrefixName();
-    }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-      builder.append(myString);
-    }
+    return builder.toString();
   }
 }

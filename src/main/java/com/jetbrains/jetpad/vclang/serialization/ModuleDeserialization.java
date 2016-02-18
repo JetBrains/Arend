@@ -303,6 +303,9 @@ public class ModuleDeserialization {
       Expression type = readExpression(stream, definitionMap);
       return new UnknownInferenceBinding(name, type);
     } else {
+      if (index >= myBindingMap.size()) {
+        throw new IncorrectFormat();
+      }
       return myBindingMap.get(index);
     }
   }
@@ -451,7 +454,9 @@ public class ModuleDeserialization {
     final String name = stream.readUTF();
     final DependentLink parameters = readParameters(stream, definitionMap);
     final Expression resultType = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
-    return let(name, parameters, resultType, myElimTreeDeserialization.readElimTree(stream, definitionMap));
+    LetClause result = let(name, parameters, resultType, myElimTreeDeserialization.readElimTree(stream, definitionMap));
+    myBindingMap.add(result);
+    return result;
   }
 
   public LinkedDeserializationResult<PatternArgument> readPatternArg(DataInputStream stream, Map<Integer, Definition> definitionMap, DependentLink link) throws IOException {

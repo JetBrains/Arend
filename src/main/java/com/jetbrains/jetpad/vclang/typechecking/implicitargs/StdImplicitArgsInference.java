@@ -95,9 +95,41 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       Abstract.ArgumentExpression argument = ((Abstract.AppExpression) fun).getArgument();
       result = inferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
     } else {
-      result = myVisitor.typeCheck(fun, null);
-      if (result != null && result.expression instanceof ConCallExpression) {
-        if (Prelude.isPathCon(((ConCallExpression) result.expression).getDefinition())) {
+      if (fun instanceof Abstract.DefCallExpression && isExplicit) {
+        if (expectedType != null) {
+          result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
+          if (result != null && result.expression instanceof ConCallExpression) {
+            List<Expression> args = new ArrayList<>();
+            Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(args);
+            if (expectedTypeNorm instanceof DataCallExpression) {
+              Collections.reverse(args);
+              ConCallExpression conCall = (ConCallExpression) result.expression;
+              args = conCall.getDefinition().matchDataTypeArguments(args);
+              if (!conCall.getDataTypeArguments().isEmpty()) {
+                args = args.subList(conCall.getDataTypeArguments().size(), args.size());
+              }
+              if (!args.isEmpty()) {
+                for (Expression arg1 : args) {
+                  result.expression = Apps(result.expression, arg1, false, true);
+                }
+                result.type = result.type.applyExpressions(args);
+              }
+              CheckTypeVisitor.Result result1 = inferArg(result, arg, true, fun);
+              if (result1 != null && Prelude.isPathCon(conCall.getDefinition())) {
+                Expression argExpr = ((AppExpression) result1.expression).getArgument().getExpression();
+                result1.type = Apps(((AppExpression) ((AppExpression) result1.type).getFunction()).getFunction(), Apps(argExpr, ConCall(Prelude.LEFT)), Apps(argExpr, ConCall(Prelude.RIGHT)));
+                if (!myVisitor.compare(result1, expectedType, Equations.CMP.EQ, fun)) {
+                  return null;
+                }
+              }
+              return result1;
+            }
+          }
+        } else {
+          result = myVisitor.typeCheck(fun, null);
+        }
+
+        if (result != null && result.expression instanceof ConCallExpression && Prelude.isPathCon(((ConCallExpression) result.expression).getDefinition())) {
           Expression interval = DataCall(Prelude.INTERVAL);
           CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe()))));
           if (argResult == null) return null;
@@ -132,28 +164,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           myVisitor.getErrorReporter().report(error);
           return null;
         }
-
-        /*
-        if (expectedType != null) {
-          List<Expression> args = new ArrayList<>();
-          Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(args);
-          if (expectedTypeNorm instanceof DataCallExpression) {
-            Collections.reverse(args);
-            ConCallExpression conCall = (ConCallExpression) result.expression;
-            args = conCall.getDefinition().matchDataTypeArguments(args);
-            if (!conCall.getDataTypeArguments().isEmpty()) {
-              args = args.subList(conCall.getDataTypeArguments().size(), args.size());
-            }
-            if (!args.isEmpty()) {
-              for (Expression arg1 : args) {
-                result.expression = Apps(result.expression, arg1, false, true);
-              }
-              result.type = result.type.applyExpressions(args);
-            }
-            return inferArg(result, arg, isExplicit, fun);
-          }
-        }
-        */
+      } else {
+        result = myVisitor.typeCheck(fun, null);
       }
     }
 

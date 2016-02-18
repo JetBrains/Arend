@@ -311,12 +311,12 @@ public class RecordsTest {
     assertTrue(parameters.get(0) instanceof LamExpression);
     assertEquals(Nat(), ((LamExpression) parameters.get(0)).getBody());
 
-    Expression parameter1 = ((LamExpression) ((AppExpression) parameters.get(1)).getFunction()).getBody();
+    Expression parameter1 = parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(parameter1 instanceof AppExpression);
     assertEquals(xCall, ((AppExpression) parameter1).getFunction());
     assertEquals(Reference(testFun.getParameters()), ((AppExpression) parameter1).getArgument().getExpression());
 
-    Expression parameter2 = ((LamExpression) ((AppExpression) parameters.get(1)).getFunction()).getBody();
+    Expression parameter2 = parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(parameter2 instanceof AppExpression);
     assertEquals(xCall, ((AppExpression) parameter2).getFunction());
     assertEquals(Reference(testFun.getParameters()), ((AppExpression) parameter2).getArgument().getExpression());
