@@ -786,7 +786,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public String visitInfixBinOp(InfixBinOpContext ctx) {
     if (ctx == null) return null;
-    return ctx.BIN_OP().getText();
+    return ctx.binOpName().getText();
   }
 
   @Override
@@ -808,7 +808,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public String visitNameBinOp(NameBinOpContext ctx) {
     if (ctx == null) return null;
-    return ctx.BIN_OP().getText();
+    return ctx.binOpName().getText();
   }
 
   @Override

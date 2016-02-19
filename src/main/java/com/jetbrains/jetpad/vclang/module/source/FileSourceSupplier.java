@@ -28,11 +28,8 @@ public class FileSourceSupplier implements SourceSupplier {
     if (!Arrays.equals(getSha256Hash(module.getModulePath()), ((FileModuleID) module).getSha256())) {
       return null;
     }
-    if (FileOperations.getFile(myDirectory, module.getModulePath()).exists()) {
-      return new FileSource(myModuleLoader, myErrorReporter, (FileModuleID) module, FileOperations.getFile(myDirectory, module.getModulePath(), FileOperations.EXTENSION));
-    } else {
-      return null;
-    }
+    File file = FileOperations.getFile(myDirectory, module.getModulePath(), FileOperations.EXTENSION);
+    return file.exists() ? new FileSource(myModuleLoader, myErrorReporter, (FileModuleID) module, file) : null;
   }
 
   private byte[] getSha256Hash(ModulePath modulePath) {

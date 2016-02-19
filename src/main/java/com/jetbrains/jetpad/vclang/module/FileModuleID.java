@@ -61,6 +61,6 @@ public class FileModuleID implements ModuleID {
 
   @Override
   public String toString() {
-    return myModulePath + "{" + FileOperations.sha256ToStr(mySha256) + "}";
+    return myModulePath + "{" + FileOperations.sha256ToStr(mySha256).substring(0, 5) + "}";
   }
 }

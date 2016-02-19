@@ -35,7 +35,7 @@ public class FileOperations {
       return new byte[0];
     }
     try {
-      MessageDigest md = MessageDigest.getInstance("SHA256");
+      MessageDigest md = MessageDigest.getInstance("SHA-256");
       BufferedInputStream stream = new BufferedInputStream(new FileInputStream(file));
       byte[] dataBytes = new byte[1024];
       int nread;

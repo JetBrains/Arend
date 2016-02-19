@@ -76,7 +76,7 @@ associativity : '\\infix'               # nonAssoc
               ;
 
 name  : ID                              # nameId
-      | '(' BIN_OP ')'                  # nameBinOp
+      | '(' binOpName ')'               # nameBinOp
       ;
 
 expr  : binOpLeft* maybeNew atomFieldsAcc argument*         # binOp
@@ -108,14 +108,14 @@ fieldAcc : '.' name                     # classField
          | '.' NUMBER                   # sigmaField
          ;
 
-infix : BIN_OP                          # infixBinOp
-      | '`' ID '`'                      # infixId
+infix : binOpName                      # infixBinOp
+      | '`' ID '`'                     # infixId
       ;
 
 modulePath : ('::' ID)+;
 
-atom  : '(' expr (',' expr)* ')'        # tuple
-      | literal                         # atomLiteral
+atom  : literal                         # atomLiteral
+      | '(' expr (',' expr)* ')'        # tuple
       | NUMBER                          # atomNumber
       | modulePath                      # atomModuleCall
       ;
@@ -146,6 +146,9 @@ tele : literal                          # teleLiteral
 typedExpr : expr                        # notTyped
           | expr ':' expr               # typed
           ;
+
+
+binOpName : BIN_OP | '::';
 
 NUMBER : [0-9]+;
 UNIVERSE : '\\Type' [0-9]+;
