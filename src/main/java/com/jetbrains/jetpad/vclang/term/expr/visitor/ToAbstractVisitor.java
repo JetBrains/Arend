@@ -66,7 +66,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         if (i < 0) {
           return null;
         }
-        visibleArgs[--i] = arg.getExpression();
+        visibleArgs[i--] = arg.getExpression();
       }
     }
     return i < 0 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), ((DefCallExpression) fun).getDefinition(), visibleArgs[1].accept(this, null)) : null;
