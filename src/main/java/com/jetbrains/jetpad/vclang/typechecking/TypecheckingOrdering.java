@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
@@ -151,7 +150,7 @@ public class TypecheckingOrdering {
       for (Abstract.Definition def : ((OKResult) result).order.keySet()) {
         NamespaceMember member = ((OKResult) result).order.get(def);
         DefinitionCheckTypeVisitor.typeCheck(member, new LocalErrorReporter(member.getResolvedName(), errorReporter));
-        if (member.definition == null) {
+        if (member.definition == null || member.definition.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);
         } else {
           typecheckedReporter.typecheckingSucceeded(def);

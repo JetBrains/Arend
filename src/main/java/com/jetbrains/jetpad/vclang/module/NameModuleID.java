@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class NameModuleID implements ModuleID {
+public class NameModuleID implements SerializableModuleID {
   private final String myName;
 
   public NameModuleID(String name) {

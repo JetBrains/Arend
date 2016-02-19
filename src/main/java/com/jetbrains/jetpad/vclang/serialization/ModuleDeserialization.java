@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.serialization;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.module.SerializableModuleID;
 import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
@@ -28,7 +29,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
-  private ModuleID myModuleID;
+  private SerializableModuleID myModuleID;
   private final ElimTreeDeserialization myElimTreeDeserialization;
   private final List<Binding> myBindingMap = new ArrayList<>();
 
@@ -36,15 +37,15 @@ public class ModuleDeserialization {
     myElimTreeDeserialization = new ElimTreeDeserialization(this);
   }
 
-  public ModuleLoader.Result readFile(File file, ModuleID module) throws IOException {
+  public ModuleLoader.Result readFile(File file, SerializableModuleID module) throws IOException {
     return readStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), module);
   }
 
-  public static void readStubsFromFile(File file, ModuleID module) throws IOException {
+  public static void readStubsFromFile(File file, SerializableModuleID module) throws IOException {
     readStubsFromStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), module);
   }
 
-  public static void readStubsFromStream(DataInputStream stream, ModuleID moduleID) throws IOException {
+  public static void readStubsFromStream(DataInputStream stream, SerializableModuleID moduleID) throws IOException {
     verifySignature(stream);
     readHeader(stream, moduleID);
     stream.readInt();
@@ -52,11 +53,11 @@ public class ModuleDeserialization {
     readDefIndices(stream, true, moduleID);
   }
 
-  public static Output.Header readHeaderFromFile(File file, ModuleID moduleID) throws IOException {
+  public static Output.Header readHeaderFromFile(File file, SerializableModuleID moduleID) throws IOException {
     return readHeaderFromStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), moduleID);
   }
 
-  public static Output.Header readHeaderFromStream(DataInputStream stream, ModuleID moduleID) throws IOException {
+  public static Output.Header readHeaderFromStream(DataInputStream stream, SerializableModuleID moduleID) throws IOException {
     verifySignature(stream);
     return readHeader(stream, moduleID);
   }
@@ -71,7 +72,7 @@ public class ModuleDeserialization {
     return result;
   }
 
-  private static Output.Header readHeader(DataInputStream stream, ModuleID moduleID) throws IOException {
+  private static Output.Header readHeader(DataInputStream stream, SerializableModuleID moduleID) throws IOException {
     Output.Header result = new Output.Header(new ArrayList<ModuleID>());
     int size = stream.readInt();
     for (int i = 0; i < size; i++) {
@@ -134,7 +135,7 @@ public class ModuleDeserialization {
     return result;
   }
 
-  private static Map<Integer, Definition> readDefIndices(DataInputStream stream, boolean createStubs, ModuleID moduleID) throws IOException {
+  private static Map<Integer, Definition> readDefIndices(DataInputStream stream, boolean createStubs, SerializableModuleID moduleID) throws IOException {
     Map<Integer, Definition> result = new HashMap<>();
 
     int size = stream.readInt();
@@ -156,7 +157,7 @@ public class ModuleDeserialization {
     return createStubs ? null : result;
   }
 
-  public ModuleLoader.Result readStream(DataInputStream stream, ModuleID moduleID) throws IOException {
+  public ModuleLoader.Result readStream(DataInputStream stream, SerializableModuleID moduleID) throws IOException {
     myModuleID = moduleID;
     verifySignature(stream);
     readHeader(stream, moduleID);

@@ -3,9 +3,11 @@ grammar Vcgrammar;
 statements : statement*;
 
 statement : staticMod definition                              # statDef
-          | nsCmd (modulePath | name) fieldAcc* ('(' name (',' name)* ')')?  # statCmd
+          | nsCmd nsCmdRoot fieldAcc* ('(' name (',' name)* ')')?  # statCmd
           | defaultStaticMod                                  # defaultStatic
           ;
+
+nsCmdRoot : modulePath | name;
 
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
             | '\\abstract' precedence name tele* ':' expr                                 # defAbstract
@@ -76,10 +78,10 @@ associativity : '\\infix'               # nonAssoc
               ;
 
 name  : ID                              # nameId
-      | '(' binOpName ')'               # nameBinOp
+      | '(' BIN_OP ')'               # nameBinOp
       ;
 
-expr  : binOpLeft* maybeNew atomFieldsAcc argument*         # binOp
+expr  : (binOpLeft+ | ) maybeNew atomFieldsAcc argument*     # binOp
       | <assoc=right> expr '->' expr                        # arr
       | '\\Pi' tele+ '->' expr                              # pi
       | '\\Sigma' tele+                                     # sigma
@@ -108,8 +110,8 @@ fieldAcc : '.' name                     # classField
          | '.' NUMBER                   # sigmaField
          ;
 
-infix : binOpName                      # infixBinOp
-      | '`' ID '`'                     # infixId
+infix : BIN_OP                      # infixBinOp
+      | '`' ID '`'                  # infixId
       ;
 
 modulePath : ('::' ID)+;
@@ -147,8 +149,6 @@ typedExpr : expr                        # notTyped
           | expr ':' expr               # typed
           ;
 
-
-binOpName : BIN_OP | '::';
 
 NUMBER : [0-9]+;
 UNIVERSE : '\\Type' [0-9]+;

@@ -145,10 +145,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Statement visitStatCmd(StatCmdContext ctx) {
     if (ctx == null) return null;
     Abstract.NamespaceCommandStatement.Kind kind = (Abstract.NamespaceCommandStatement.Kind) visit(ctx.nsCmd());
-    List<String> modulePath = ctx.modulePath() == null ? null : visitModulePath(ctx.modulePath());
+
+    List<String> modulePath = ctx.nsCmdRoot().modulePath() == null ? null : visitModulePath(ctx.nsCmdRoot().modulePath());
     List<String> path = new ArrayList<>();
-    if (ctx.modulePath() == null) {
-      path.add(visitName(ctx.name(0)));
+    if (ctx.nsCmdRoot().name() != null) {
+      path.add(visitName(ctx.nsCmdRoot().name()));
     }
     for (FieldAccContext fieldAccContext : ctx.fieldAcc()) {
       if (fieldAccContext instanceof ClassFieldContext) {
@@ -163,10 +164,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     List<String> names;
-    if (ctx.name().size() > 1) {
-      names = new ArrayList<>(ctx.name().size() - 1);
-      for (int i = 1; i < ctx.name().size(); ++i) {
-        names.add(visitName(ctx.name(i)));
+    if (!ctx.name().isEmpty()) {
+      names = new ArrayList<>(ctx.name().size());
+      for (NameContext nameCtx : ctx.name()) {
+        names.add(visitName(nameCtx));
       }
     } else {
       names = null;
@@ -786,7 +787,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public String visitInfixBinOp(InfixBinOpContext ctx) {
     if (ctx == null) return null;
-    return ctx.binOpName().getText();
+    return ctx.BIN_OP().getText();
   }
 
   @Override
@@ -808,7 +809,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public String visitNameBinOp(NameBinOpContext ctx) {
     if (ctx == null) return null;
-    return ctx.binOpName().getText();
+    return ctx.BIN_OP().getText();
   }
 
   @Override

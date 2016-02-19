@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.module.SerializableModuleID;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
@@ -24,7 +24,7 @@ public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
   public static final int VERSION = 1;
 
-  public static void writeFile(ModuleID moduleID, File outputFile) throws IOException {
+  public static void writeFile(SerializableModuleID moduleID, File outputFile) throws IOException {
     Files.createDirectories(outputFile.getParentFile().toPath());
     writeStream(moduleID, new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile))));
   }
@@ -41,7 +41,7 @@ public class ModuleSerialization {
     }
   }
 
-  public static void writeStream(ModuleID curModuleID, DataOutputStream stream) throws IOException {
+  public static void writeStream(SerializableModuleID curModuleID, DataOutputStream stream) throws IOException {
     DefNamesIndices defNamesIndices = new DefNamesIndices();
     ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(byteArrayStream);

@@ -64,7 +64,7 @@ public class NameResolverTestCase {
     statement.setParentDefinition(classDefinition);
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, null, DummyNameResolver.getInstance(), null);
     visitor.setResolveListener(new ConcreteResolveListener());
-    visitor.visitModule(classDefinition, moduleID);
+    visitor.visitModule(classDefinition);
     return errorReporter.getErrorList();
   }
 
@@ -83,7 +83,7 @@ public class NameResolverTestCase {
     ListErrorReporter errorReporter = new ListErrorReporter();
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, null, DummyNameResolver.getInstance(), null);
     visitor.setResolveListener(new ConcreteResolveListener());
-    visitor.visitModule(classDefinition, new NameModuleID(classDefinition.getName()));
+    visitor.visitModule(classDefinition);
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
   }
 

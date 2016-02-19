@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class PathModuleID implements ModuleID {
+public class PathModuleID implements SerializableModuleID {
   private final ModulePath myModulePath;
 
   public PathModuleID(ModulePath modulePath) {

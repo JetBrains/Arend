@@ -12,9 +12,6 @@ import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,16 +24,6 @@ public class Prelude extends Namespace {
     @Override
     public ModulePath getModulePath() {
       return new ModulePath("Prelude");
-    }
-
-    @Override
-    public void serialize(DataOutputStream stream) throws IOException {
-      throw new IllegalStateException();
-    }
-
-    @Override
-    public ModuleID deserialize(DataInputStream stream) throws IOException {
-      throw new IllegalStateException();
     }
   };
 

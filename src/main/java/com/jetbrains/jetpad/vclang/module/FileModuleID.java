@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class FileModuleID implements ModuleID {
+public class FileModuleID implements SerializableModuleID {
   private final byte[] mySha256;
   private final ModulePath myModulePath;
 

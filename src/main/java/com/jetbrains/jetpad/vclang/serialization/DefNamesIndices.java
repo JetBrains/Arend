@@ -1,8 +1,7 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
+import com.jetbrains.jetpad.vclang.module.SerializableModuleID;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
@@ -31,7 +30,7 @@ public class DefNamesIndices {
     }
   }
 
-  public void serialize(DataOutputStream stream, ModuleID curModuleID) throws IOException {
+  public void serialize(DataOutputStream stream, SerializableModuleID curModuleID) throws IOException {
     stream.writeInt(myDefinitionsList.size());
     for (ResolvedName rn : myDefinitionsList) {
       ModuleID moduleID = rn.getModuleID();
@@ -46,7 +45,7 @@ public class DefNamesIndices {
       } else {
         stream.writeBoolean(moduleID != Prelude.moduleID);
         if (moduleID != Prelude.moduleID) {
-          moduleID.serialize(stream);
+          ((SerializableModuleID) moduleID).serialize(stream);
         }
         ModuleSerialization.serializeResolvedName(stream, rn);
       }
@@ -54,17 +53,17 @@ public class DefNamesIndices {
   }
 
   public void serializeHeader(DataOutputStream stream, ModuleID curModuleID) throws IOException {
-    Set<ModuleID> dependencies = new HashSet<>();
+    Set<SerializableModuleID> dependencies = new HashSet<>();
 
     for (ResolvedName resolvedName : myDefinitionsList) {
       ModuleID moduleID = resolvedName.getModuleID();
       if (!moduleID.equals(Prelude.moduleID) && !curModuleID.equals(moduleID)) {
-        dependencies.add(moduleID);
+        dependencies.add((SerializableModuleID) moduleID);
       }
     }
 
     stream.writeInt(dependencies.size());
-    for (ModuleID dependency : dependencies) {
+    for (SerializableModuleID dependency : dependencies) {
       dependency.serialize(stream);
     }
   }

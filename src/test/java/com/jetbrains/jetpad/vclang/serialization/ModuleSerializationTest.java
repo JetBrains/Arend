@@ -35,10 +35,10 @@ public class ModuleSerializationTest {
     Namespace namespace = def.getResolvedName().toNamespace();
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(def.getResolvedName().getModuleID(), dataStream);
+    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), def.getResolvedName().getModuleID());
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
@@ -57,13 +57,13 @@ public class ModuleSerializationTest {
     Namespace namespace = def.getResolvedName().toNamespace();
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(def.getResolvedName().getModuleID(), dataStream);
+    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
 
     Root.initialize();
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), def.getResolvedName().getModuleID());
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), def.getResolvedName().getModuleID());
+    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
@@ -83,13 +83,13 @@ public class ModuleSerializationTest {
     Namespace namespace = def.getResolvedName().toNamespace();
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(def.getResolvedName().getModuleID(), dataStream);
+    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
 
     Root.initialize();
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), def.getResolvedName().getModuleID());
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), def.getResolvedName().getModuleID());
+    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
@@ -111,13 +111,13 @@ public class ModuleSerializationTest {
     Namespace namespace = def.getResolvedName().toNamespace();
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(def.getResolvedName().getModuleID(), dataStream);
+    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
 
     Root.initialize();
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), def.getResolvedName().getModuleID());
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), def.getResolvedName().getModuleID());
+    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
@@ -134,13 +134,13 @@ public class ModuleSerializationTest {
     ClassDefinition def = typeCheckClass("\\class A { \\class B { \\class C { } } }");
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream(def.getResolvedName().getModuleID(), dataStream);
+    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
 
     Root.initialize();
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), def.getResolvedName().getModuleID());
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), def.getResolvedName().getModuleID());
+    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);

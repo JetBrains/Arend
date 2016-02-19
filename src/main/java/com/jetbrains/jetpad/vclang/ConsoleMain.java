@@ -139,6 +139,10 @@ public class ConsoleMain {
       @Override
       public void typecheckingFailed(Abstract.Definition definition) {
         failedModules.add(toNamespaceMember(definition).getResolvedName().getModuleID());
+        for (GeneralError error : errorReporter.getErrorList()) {
+          System.err.println(error);
+        }
+        errorReporter.getErrorList().clear();
       }
     });
 
