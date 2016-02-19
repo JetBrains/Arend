@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.param.*;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
@@ -56,7 +56,9 @@ public class BranchElimTreeNode extends ElimTreeNode {
     Collections.reverse(dataTypeArguments);
 
     dataTypeArguments = constructor.matchDataTypeArguments(dataTypeArguments);
-    DependentLink constructorArgs = constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments), names.iterator());
+    DependentLink constructorArgs = names != null
+        ? constructor.getParameters().subst(toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments), names.iterator())
+        : DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments));
 
     Expression substExpr = ConCall(constructor, dataTypeArguments);
     for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {

@@ -2,14 +2,13 @@ package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.module.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.PiExpression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -712,98 +711,46 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       String name = def.getName();
 
-      /*
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
         Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
         while (type instanceof PiExpression) {
           for (DependentLink link1 = ((PiExpression) type).getParameters(); link1.hasNext(); link1 = link1.getNext()) {
-            if (link1.getType().findBinding(dataDefinition)) {
-              nonPositiveError(dataDefinition, name, list.getFirst(), link, arguments, def);
+            link1 = link1.getNextTyped(null);
+            if (!checkNonPositiveError(link1.getType(), dataDefinition, name, list.getFirst(), link, arguments, def)) {
               return null;
             }
           }
           type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
         }
 
-        List<Expression> exprs = new ArrayList<>();
-        type.getFunction(exprs);
-        for (Expression expr : exprs) {
-          if (expr.findBinding(dataDefinition)) {
-            nonPositiveError(dataDefinition, name, list.getFirst(), link, arguments, def);
-            return null;
-          }
-        }
-      }
-      */
-
-      // TODO: From here.
-
-      for (int j = 0; j < typeArguments.size(); ++j) {
-        Expression type = typeArguments.get(j).getType().normalize(NormalizeVisitor.Mode.WHNF, context);
-        String nonPositiveError = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
-        boolean isNontrivPositive = true;
-
-        while (isNontrivPositive) {
-          if (type instanceof PiExpression) {
-            for (TypeArgument argument1 : ((PiExpression) type).getArguments()) {
-              if (argument1.getType().accept(new FindDefCallVisitor(dataDefinition), null)) {
-                myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), nonPositiveError, arguments.get(j).getType(), getNames(context)));
-                return null;
+        boolean check = true;
+        while (check) {
+          check = false;
+          List<Expression> exprs = new ArrayList<>();
+          type = type.getFunction(exprs);
+          if (type instanceof DataCallExpression) {
+            DataDefinition typeDef = ((DataCallExpression) type).getDefinition();
+            if (Prelude.isPath(typeDef) && !exprs.isEmpty()) {
+              Expression expr = exprs.get(exprs.size() - 1).normalize(NormalizeVisitor.Mode.WHNF);
+              if (expr instanceof LamExpression) {
+                check = true;
+                type = ((LamExpression) expr).getBody().normalize(NormalizeVisitor.Mode.WHNF);
+                exprs = exprs.subList(0, exprs.size() - 1);
               }
             }
-            type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF, context);
           } else {
-            LinkedList<Expression> type_args = new LinkedList<>();
-            Expression type_fun = type.getFunction(type_args);
-
-            type_fun.normalize(NormalizeVisitor.Mode.WHNF, context);
-            if (type_fun instanceof DefCallExpression) {
-              DefCallExpression type_fun_def = (DefCallExpression)type_fun;
-              if (Prelude.isPath(type_fun_def.getDefinition())) {
-                if (type_args.isEmpty()) {
-                  /*
-                  String msg = "Path arguments are missing in constructor " + name + " of data type " + dataDefinition.getName();
-                  myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, arguments.get(j).getType(), getNames(context))); */
-                  return null;
-                }
-                Expression typeOverInterval = type_args.pollLast();
-                typeOverInterval.normalize(NormalizeVisitor.Mode.WHNF, context);
-                if (typeOverInterval instanceof LamExpression) {
-                  type = ((LamExpression)typeOverInterval).getBody().normalize(NormalizeVisitor.Mode.WHNF, context);
-                } else {
-                  return null;
-                }
-              } else {
-                isNontrivPositive = false;
-              }
-            } else {
-              if (type_fun.accept(new FindDefCallVisitor(dataDefinition), null)) {
-                myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), nonPositiveError, arguments.get(j).getType(), getNames(context)));
-                return null;
-              }
-              isNontrivPositive = false;
-            }
-
-            for (Expression expr : type_args) {
-              if (expr.accept(new FindDefCallVisitor(dataDefinition), null)) {
-                myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), nonPositiveError, arguments.get(j).getType(), getNames(context)));
-                return null;
-              }
-            }
-          }
-        }
-
-        /*if ((type_fun instanceof DefCallExpression) && ((DefCallExpression)type_fun).getDefinition() == dataDefinition) {
-          for (Expression expr : type_args) {
-            if (expr.accept(new FindDefCallVisitor(dataDefinition), null)) {
-              myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), nonPositiveError, arguments.get(j).getType(), getNames(context)));
+            if (!checkNonPositiveError(type, dataDefinition, name, list.getFirst(), link, arguments, def)) {
               return null;
             }
           }
-        } */
-      }
 
-      // TODO: To here.
+          for (Expression expr : exprs) {
+            if (!checkNonPositiveError(expr, dataDefinition, name, list.getFirst(), link, arguments, def)) {
+              return null;
+            }
+          }
+        }
+      }
 
       Constructor constructor = new Constructor(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), new Name(name), def.getPrecedence(), universe, list.getFirst(), dataDefinition, typedPatterns);
       constructor.setThisClass(dataDefinition.getThisClass());
@@ -813,7 +760,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
   }
 
-  private void nonPositiveError(DataDefinition dataDefinition, String name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor) {
+  private boolean checkNonPositiveError(Expression expr, DataDefinition dataDefinition, String name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor) {
+    if (!expr.findBinding(dataDefinition)) {
+      return true;
+    }
+
     int index = DependentLink.Helper.getIndex(params, param);
     int i = 0;
     Abstract.Argument argument = null;
@@ -831,6 +782,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
     myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, argument == null ? constructor : argument));
+    return false;
   }
 
   private List<Abstract.PatternArgument> processImplicitPatterns(Abstract.SourceNode expression, DependentLink parameters, List<? extends Abstract.PatternArgument> patterns) {

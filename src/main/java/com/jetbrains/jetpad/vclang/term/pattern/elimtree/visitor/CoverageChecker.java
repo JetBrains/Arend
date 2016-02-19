@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -36,17 +37,17 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
 
     boolean result = true;
     for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getMatchedConstructors(parameters)) {
-      if (((UniverseExpression) myResultType.getType(myContext)).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.PROP))) {
+      if (((UniverseExpression) myResultType.getType()).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.PROP))) {
         if (Prelude.isTruncP(conCall.getDefinition())) {
           continue;
         }
-      } else if (((UniverseExpression) myResultType.getType(myContext)).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.SET))) {
+      } else if (((UniverseExpression) myResultType.getType()).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.SET))) {
         if (Prelude.isTruncS(conCall.getDefinition())) {
           continue;
         }
       }
       if (branchNode.getClause(conCall.getDefinition()) == null) {
-        branchNode.addClause(conCall.getDefinition());
+        branchNode.addClause(conCall.getDefinition(), null);
       }
       Clause clause = branchNode.getClause(conCall.getDefinition());
       result &= clause.getChild().accept(this, clause.getSubst().compose(argsSubst));
@@ -91,7 +92,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
 
     BranchElimTreeNode fakeBranch = new BranchElimTreeNode(tailContext.get(0), tailContext.subList(1, tailContext.size()));
     for (ConCallExpression conCall : validConCalls) {
-      ConstructorClause clause = fakeBranch.addClause(conCall.getDefinition());
+      ConstructorClause clause = fakeBranch.addClause(conCall.getDefinition(), null);
       if (!checkEmptyContext(clause.getTailBindings(), clause.getSubst().compose(argsSubst)))
         return false;
     }
