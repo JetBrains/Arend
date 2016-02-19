@@ -2,11 +2,8 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;

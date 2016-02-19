@@ -114,7 +114,7 @@ public class TypecheckingOrdering {
     }
 
     for (Abstract.Definition curThis = definition; curThis != null && curThis.getParentStatement() != null; curThis = curThis.getParentStatement().getParentDefinition()) {
-      if (!curThis.getParentStatement().isStatic()) {
+      if (curThis.getParentStatement().getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
         if (!doOrder(curThis.getParentStatement().getParentDefinition()))
           return false;
       }

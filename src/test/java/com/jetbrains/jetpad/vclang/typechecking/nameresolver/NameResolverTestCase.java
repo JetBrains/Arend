@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
@@ -55,10 +56,10 @@ public class NameResolverTestCase {
   public static Collection<? extends GeneralError> resolveNamesDef(Concrete.Definition definition) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     ModuleID moduleID = new NameModuleID("test");
-    Concrete.DefineStatement statement = new Concrete.DefineStatement(null, true, definition);
+    Concrete.DefineStatement statement = new Concrete.DefineStatement(null, Abstract.DefineStatement.StaticMod.STATIC, definition);
     definition.setParentStatement(statement);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, "test",
-        Collections.<Concrete.Statement>singletonList(statement));
+        Collections.<Concrete.Statement>singletonList(statement), Abstract.ClassDefinition.Kind.Module);
     classDefinition.setModuleID(moduleID);
     statement.setParentDefinition(classDefinition);
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, null, DummyNameResolver.getInstance(), null);

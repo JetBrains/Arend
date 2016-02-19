@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.typechecking.nameresolver.DummyNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.LoadingModuleResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.ModuleResolver;
+import com.jetbrains.jetpad.vclang.typechecking.staticmodresolver.ConcreteStaticModListener;
 import org.antlr.v4.runtime.*;
 
 import java.io.IOException;
@@ -80,7 +81,7 @@ public abstract class ParseSource implements Source {
 
     ModuleResolver moduleResolver = new LoadingModuleResolver(myModuleLoader);
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.getModulePath().getName(), statements);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.getModulePath().getName(), statements, Abstract.ClassDefinition.Kind.Module);
     classDefinition.setModuleID(myModule);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
@@ -115,7 +116,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
       if (statement instanceof Abstract.DefineStatement) {
         Abstract.DefineStatement defineStatement = (Abstract.DefineStatement) statement;
         if (isStatic) {
-          if (defineStatement.isStatic() || parent instanceof Abstract.FunctionDefinition) {
+          if (defineStatement.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC || parent instanceof Abstract.FunctionDefinition) {
             result.add(defineStatement.getDefinition());
             result.addAll(defineStatement.getDefinition().accept(
                 new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true
@@ -126,7 +127,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
             result.addAll(visitAbstract((Abstract.AbstractDefinition) ((Abstract.DefineStatement) statement).getDefinition()));
           } else {
             myOthers.add(defineStatement.getDefinition());
-            if (parent instanceof Abstract.ClassDefinition && !((Abstract.DefineStatement) statement).isStatic()) {
+            if (parent instanceof Abstract.ClassDefinition && ((Abstract.DefineStatement) statement).getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
               nonStatic.add(defineStatement.getDefinition());
               for (BaseDefinition def : ((Abstract.DefineStatement) statement).getDefinition().accept(new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true)) {
                 nonStatic.add((Abstract.Definition) def);
