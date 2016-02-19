@@ -45,7 +45,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (args.get(2).getExpression() instanceof LamExpression) {
       LamExpression expr = (LamExpression) args.get(2).getExpression();
       if (!expr.getBody().findBinding(expr.getParameters())) {
-        return myFactory.makeBinOp(args.get(1).getExpression().accept(this, null), Prelude.getLevelDefs(Prelude.getLevel(((DefCallExpression) fun).getDefinition())).path, args.get(0).getExpression().accept(this, null));
+        return myFactory.makeBinOp(args.get(1).getExpression().accept(this, null), Prelude.getLevelDefs(Prelude.getLevel(((DefCallExpression) fun).getDefinition())).pathInfix, args.get(0).getExpression().accept(this, null));
       }
     }
     return null;

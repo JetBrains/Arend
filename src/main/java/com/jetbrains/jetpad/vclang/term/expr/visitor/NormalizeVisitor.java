@@ -215,29 +215,38 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression visitFunctionCall(Function func, Expression defCallExpr, List<ArgumentExpression> args, Mode mode) {
-    if (func instanceof FunctionDefinition && Prelude.isCoe((FunctionDefinition) func) && args.size() == 3) {
+    if (func instanceof FunctionDefinition && Prelude.isCoe((FunctionDefinition) func) && args.size() >= 3) {
+      Expression result = null;
+
       Binding binding = new TypedBinding("i", DataCall(Prelude.INTERVAL));
       Expression expr = Apps(args.get(0).getExpression(), Reference(binding)).accept(this, NormalizeVisitor.Mode.NF);
       if (!expr.findBinding(binding)) {
-        return mode == Mode.TOP ? args.get(1).getExpression() : args.get(1).getExpression().accept(this, mode);
+        result = args.get(1).getExpression();
+      } else {
+        List<Expression> mbIsoArgs = new ArrayList<>();
+        Expression mbIso = expr.getFunction(mbIsoArgs);
+        if (mbIso instanceof FunCallExpression && Prelude.isIso(((FunCallExpression) mbIso).getDefinition()) && mbIsoArgs.size() == 7) {
+          boolean noFreeVar = true;
+          for (int i = 1; i < mbIsoArgs.size(); i++) {
+            if (mbIsoArgs.get(i).findBinding(binding)) {
+              noFreeVar = false;
+              break;
+            }
+          }
+          if (noFreeVar) {
+            Expression normedPt = args.get(2).getExpression().accept(this, Mode.NF);
+            if (normedPt instanceof ConCallExpression && ((ConCallExpression) normedPt).getDefinition() == Prelude.RIGHT) {
+              result = Apps(mbIsoArgs.get(4), args.get(1));
+            }
+          }
+        }
       }
-      List<Expression> mbIsoArgs = new ArrayList<>();
-      Expression mbIso = expr.getFunction(mbIsoArgs);
-      if (mbIso instanceof FunCallExpression && Prelude.isIso(((FunCallExpression) mbIso).getDefinition()) && mbIsoArgs.size() == 7) {
-        boolean noFreeVar = true;
-        for (int i = 1; i < mbIsoArgs.size(); i++) {
-          if (mbIsoArgs.get(i).findBinding(binding)) {
-            noFreeVar = false;
-            break;
-          }
+
+      if (result != null) {
+        for (int i = 3; i < args.size(); i++) {
+          result = Apps(result, args.get(i));
         }
-        if (noFreeVar) {
-          Expression normedPt = args.get(2).getExpression().accept(this, Mode.NF);
-          if (normedPt instanceof ConCallExpression && ((ConCallExpression) normedPt).getDefinition() == Prelude.RIGHT) {
-            Expression result = Apps(mbIsoArgs.get(4), args.get(1));
-            return mode == Mode.TOP ? result : result.accept(this, mode);
-          }
-        }
+        return mode == Mode.TOP ? result : result.accept(this, mode);
       }
     }
 
