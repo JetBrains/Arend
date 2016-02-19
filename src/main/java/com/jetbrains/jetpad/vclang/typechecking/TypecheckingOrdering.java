@@ -76,31 +76,31 @@ public class TypecheckingOrdering {
         Boolean good = ((Abstract.Definition) def).accept(new AbstractDefinitionVisitor<Void, Boolean>() {
           @Override
           public Boolean visitFunction(Abstract.FunctionDefinition def, Void params) {
-            return def == definition || doOrder(def);
+            return def.equals(definition) || doOrder(def);
           }
 
           @Override
           public Boolean visitAbstract(Abstract.AbstractDefinition def, Void params) {
-            return def.getParentStatement().getParentDefinition() == definition || doOrder(def.getParentStatement().getParentDefinition());
+            return def.getParentStatement().getParentDefinition().equals(definition) || doOrder(def.getParentStatement().getParentDefinition());
           }
 
           @Override
           public Boolean visitData(Abstract.DataDefinition def, Void params) {
-            return def == definition || doOrder(def);
+            return def.equals(definition) || doOrder(def);
           }
 
           @Override
           public Boolean visitConstructor(Abstract.Constructor def, Void params) {
-            return def.getDataType() == definition || doOrder(def.getDataType());
+            return def.getDataType().equals(definition) || doOrder(def.getDataType());
           }
 
           @Override
           public Boolean visitClass(Abstract.ClassDefinition def, Void params) {
-            if (!(def == definition) && !doOrder(def)) {
+            if (!def.equals(definition) && !doOrder(def)) {
               return false;
             }
             for (Abstract.Definition nonStatic : myClassToNonStatic.get(def)) {
-              if (!(nonStatic == definition) && !doOrder(nonStatic)) {
+              if (!(nonStatic.equals(definition)) && !doOrder(nonStatic)) {
                 return false;
               }
             }
