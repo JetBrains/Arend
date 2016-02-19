@@ -94,7 +94,7 @@ public abstract class ParseSource implements Source {
 
     DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, null, DummyNameResolver.getInstance(), moduleResolver);
     visitor.setResolveListener(new ConcreteResolveListener());
-    visitor.visitModule(classDefinition, myModule);
+    visitor.visitModule(classDefinition);
     return new ModuleLoader.Result(Root.getModule(myModule), true, countingErrorReporter.getErrorsNumber());
   }
 }

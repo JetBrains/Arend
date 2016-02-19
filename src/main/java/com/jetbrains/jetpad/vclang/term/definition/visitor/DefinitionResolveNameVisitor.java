@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -223,9 +222,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     }
   }
 
-  public void visitModule(Abstract.ClassDefinition def, ModuleID moduleID) {
-    Namespace classNamespace = new Namespace(moduleID);
-    Root.addModule(moduleID, new NamespaceMember(classNamespace, def, null));
+  public void visitModule(Abstract.ClassDefinition def) {
+    Namespace classNamespace = new Namespace(def.getModuleID());
+    Root.addModule(def.getModuleID(), new NamespaceMember(classNamespace, def, null));
     visitClass(def, true, classNamespace);
   }
 }
