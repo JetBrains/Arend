@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -8,25 +9,30 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NamespaceNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.ModuleResolver;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
+
 public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
   private final ErrorReporter myErrorReporter;
   private final NameResolver myNameResolver;
+  private final ModuleResolver myModuleResolver;
   private final List<String> myContext;
   private final ResolveListener myResolveListener;
 
-  public ResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, List<String> context, ResolveListener resolveListener) {
+  public ResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, ModuleResolver moduleResolver, List<String> context, ResolveListener resolveListener) {
+    myModuleResolver = moduleResolver;
     assert resolveListener != null;
     myErrorReporter = errorReporter;
     CompositeNameResolver compositeNameResolver = new CompositeNameResolver();
@@ -51,21 +57,28 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       expression.accept(this, null);
     }
 
-    if (expr.getResolvedName() == null) {
+    if (expr.getResolvedDefinition() == null) {
       if (expression != null) {
-        if (expression instanceof Abstract.DefCallExpression) {
-          ResolvedName parentName = ((Abstract.DefCallExpression) expression).getResolvedName();
-          if (parentName == null) {
+        if (expression instanceof Abstract.DefCallExpression || expression instanceof Abstract.ModuleCallExpression) {
+          BaseDefinition parent;
+          if (expression instanceof Abstract.DefCallExpression) {
+            parent = ((Abstract.DefCallExpression) expression).getResolvedDefinition();
+          } else {
+            parent = ((Abstract.ModuleCallExpression) expression).getModule();
+          }
+
+          if (parent == null) {
             return null;
           }
-          Namespace parentNamespace = parentName.toNamespace();
+
+          Namespace parentNamespace = toNamespaceMember(parent).namespace;
           if (parentNamespace == null) {
             return null;
           }
           
           NamespaceMember member = myNameResolver.getMember(parentNamespace, expr.getName());
           if (member != null) {
-            myResolveListener.nameResolved(expr, member.getResolvedName());
+            myResolveListener.nameResolved(expr, member.getResolvedDefinition());
           }
         }
       } else {
@@ -73,9 +86,20 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
         if (new Name(name).fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(name)) {
           NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, false);
           if (member != null) {
-            myResolveListener.nameResolved(expr, member.getResolvedName());
+            myResolveListener.nameResolved(expr, member.getResolvedDefinition());
           }
         }
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitModuleCall(Abstract.ModuleCallExpression expr, Void params) {
+    if (expr.getModule() == null) {
+      NamespaceMember member = myModuleResolver.locateModule(new ModulePath(expr.getPath()));
+      if (member != null) {
+        myResolveListener.moduleResolved(expr, member.getResolvedDefinition());
       }
     }
     return null;
@@ -187,7 +211,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
         String name = elem.binOp.getName();
         NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, true);
         if (member != null) {
-          parser.pushOnStack(stack, expression, member.getResolvedName(), member.getPrecedence(), elem.binOp);
+          parser.pushOnStack(stack, expression, member.getResolvedDefinition(), member.getResolvedDefinition().getPrecedence(), elem.binOp);
           expression = elem.argument;
           expression.accept(this, null);
         } else {

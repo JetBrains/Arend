@@ -246,7 +246,7 @@ public class TypeCheckingElim {
   }
 
   private ReferenceExpression lookupLocalVar(Abstract.Expression expression) {
-    if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getResolvedName() == null) {
+    if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getResolvedDefinition() == null) {
       CheckTypeVisitor.Result exprResult = myVisitor.getTypeCheckingDefCall().getLocalVar(((Abstract.DefCallExpression) expression).getName(), expression);
       if (exprResult == null)
         return null;

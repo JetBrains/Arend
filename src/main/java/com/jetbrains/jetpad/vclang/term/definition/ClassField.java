@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -13,8 +13,8 @@ public class ClassField extends Definition {
   private DependentLink myThisParameter;
   private Expression myType;
 
-  public ClassField(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
-    super(parentNamespace, name, precedence);
+  public ClassField(ResolvedName rn, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
+    super(rn, precedence);
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);

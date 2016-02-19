@@ -13,7 +13,7 @@ public class TypeCheckingTest {
     ClassDefinition result = typeCheckClass(
         "\\static \\function x : Nat => zero\n" +
         "\\static \\function y : Nat => x");
-    assertEquals(2, result.getParentNamespace().getChild(result.getName()).getMembers().size());
+    assertEquals(2, result.getResolvedName().toNamespace().getMembers().size());
   }
 
   @Test
@@ -21,7 +21,7 @@ public class TypeCheckingTest {
     ClassDefinition result = typeCheckClass(
         "\\static \\function x : \\Type0 => Nat\n" +
         "\\static \\function y : x => zero");
-    assertEquals(2, result.getParentNamespace().getChild(result.getName()).getMembers().size());
+    assertEquals(2, result.getResolvedName().toNamespace().getMembers().size());
   }
 
   @Test
@@ -29,7 +29,7 @@ public class TypeCheckingTest {
     ClassDefinition result = typeCheckClass(
         "\\static \\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
         "\\static \\function (*) : Nat -> Nat => \\lam x => x + zero");
-    assertEquals(2, result.getParentNamespace().getChild(result.getName()).getMembers().size());
+    assertEquals(2, result.getResolvedName().toNamespace().getMembers().size());
   }
 
   @Test

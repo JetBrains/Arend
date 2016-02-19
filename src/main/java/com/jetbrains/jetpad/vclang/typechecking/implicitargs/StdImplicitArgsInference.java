@@ -185,7 +185,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   @Override
   public CheckTypeVisitor.Result infer(Abstract.BinOpExpression expr, Expression expectedType) {
     Concrete.Position position = expr instanceof Concrete.Expression ? ((Concrete.Expression) expr).getPosition() : ConcreteExpressionFactory.POSITION;
-    return inferArg(inferArg(new Concrete.DefCallExpression(position, expr.getResolvedBinOpName()), expr.getLeft(), true, null), expr.getRight(), true, expr);
+    return inferArg(inferArg(new Concrete.DefCallExpression(position, expr.getResolvedBinOp()), expr.getLeft(), true, null), expr.getRight(), true, expr);
   }
 
   @Override

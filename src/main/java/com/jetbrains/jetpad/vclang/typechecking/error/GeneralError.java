@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 
 import java.io.IOException;
 
@@ -49,7 +49,7 @@ public class GeneralError {
   }
 
   public String printHeader() {
-    return "[" + myLevel + "] " + (myResolvedName == null || myResolvedName.parent == null ? "" : myResolvedName + ": ");
+    return "[" + myLevel + "] " + (myResolvedName == null ? "" : myResolvedName.getFullName() + ": ");
   }
 
   public static String ioError(IOException e) {

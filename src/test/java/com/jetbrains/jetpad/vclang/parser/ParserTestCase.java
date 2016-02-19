@@ -1,9 +1,10 @@
 package com.jetbrains.jetpad.vclang.parser;
 
-import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.module.NameModuleID;
+import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -15,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ParserTestCase {
-  public static VcgrammarParser parse(final ErrorReporter errorReporter, String text) {
+  public static VcgrammarParser parse(final String name, final ErrorReporter errorReporter, String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -24,16 +25,16 @@ public class ParserTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new ResolvedName(RootModule.ROOT, "test"), new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(new ModuleResolvedName(new NameModuleID(name)), new Concrete.Position(line, pos), msg));
       }
     });
     return parser;
   }
 
   public static Concrete.Expression parseExpr(String text, int errors) {
-    RootModule.initialize();
+    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
-    Concrete.Expression result = new BuildVisitor(errorReporter).visitExpr(parse(errorReporter, text).expr());
+    Concrete.Expression result = new BuildVisitor(errorReporter).visitExpr(parse("test", errorReporter, text).expr());
     if (errors >= 0) {
       assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
     } else {
@@ -51,9 +52,9 @@ public class ParserTestCase {
   }
 
   public static Concrete.Definition parseDef(String text, int errors) {
-    RootModule.initialize();
+    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
-    Concrete.Definition definition = new BuildVisitor(errorReporter).visitDefinition(parse(errorReporter, text).definition());
+    Concrete.Definition definition = new BuildVisitor(errorReporter).visitDefinition(parse("test", errorReporter, text).definition());
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
     return definition;
   }
@@ -63,9 +64,9 @@ public class ParserTestCase {
   }
 
   public static Concrete.ClassDefinition parseClass(String name, String text, int errors) {
-    RootModule.initialize();
+    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
-    VcgrammarParser.StatementsContext tree = parse(errorReporter, text).statements();
+    VcgrammarParser.StatementsContext tree = parse(name, errorReporter, text).statements();
     assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, name, statements, Abstract.ClassDefinition.Kind.Module);
@@ -74,6 +75,7 @@ public class ParserTestCase {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
       }
     }
+    classDefinition.setModuleID(new NameModuleID(name));
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
     return classDefinition;
   }

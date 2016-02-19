@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,6 +85,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.Expression) visit(expr);
   }
 
+  @Override
+  public List<String> visitModulePath(ModulePathContext ctx) {
+    List<String> path = new ArrayList<>(ctx.ID().size());
+    for (TerminalNode id : ctx.ID()) {
+      path.add(id.getText());
+    }
+    return path;
+  }
+
+  @Override
+  public Concrete.ModuleCallExpression visitAtomModuleCall(AtomModuleCallContext ctx) {
+    return new Concrete.ModuleCallExpression(tokenPosition(ctx.getStart()), visitModulePath(ctx.modulePath()));
+  }
+
   public Concrete.Expression visitExpr(LiteralContext expr) {
     return (Concrete.Expression) visit(expr);
   }
@@ -130,8 +145,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Statement visitStatCmd(StatCmdContext ctx) {
     if (ctx == null) return null;
     Abstract.NamespaceCommandStatement.Kind kind = (Abstract.NamespaceCommandStatement.Kind) visit(ctx.nsCmd());
+    List<String> modulePath = ctx.modulePath() == null ? null : visitModulePath(ctx.modulePath());
     List<String> path = new ArrayList<>();
-    path.add(visitName(ctx.name(0)));
+    if (ctx.modulePath() == null) {
+      path.add(visitName(ctx.name(0)));
+    }
     for (FieldAccContext fieldAccContext : ctx.fieldAcc()) {
       if (fieldAccContext instanceof ClassFieldContext) {
         String name = visitName(((ClassFieldContext) fieldAccContext).name());
@@ -153,7 +171,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else {
       names = null;
     }
-    return new Concrete.NamespaceCommandStatement(tokenPosition(ctx.getStart()), kind, path, names);
+    return new Concrete.NamespaceCommandStatement(tokenPosition(ctx.getStart()), kind, modulePath, path, names);
   }
 
   @Override

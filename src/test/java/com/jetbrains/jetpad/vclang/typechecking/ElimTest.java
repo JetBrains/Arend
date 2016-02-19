@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
@@ -140,7 +140,7 @@ public class ElimTest {
     ClassDefinition defs = typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | d zero zero => 0 | d _ _ => 1");
-    Namespace namespace = defs.getParentNamespace().findChild(defs.getName());
+    Namespace namespace = defs.getResolvedName().toNamespace();
     FunctionDefinition test = (FunctionDefinition) namespace.getDefinition("test");
     Constructor d = (Constructor) namespace.getDefinition("d");
     Binding binding = new TypedBinding("y", Nat());

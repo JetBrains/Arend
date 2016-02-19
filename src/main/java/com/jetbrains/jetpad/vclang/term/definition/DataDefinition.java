@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -19,15 +19,14 @@ public class DataDefinition extends Definition {
   private DependentLink myParameters;
   private Map<Constructor, Condition> myConditions;
 
-  public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence) {
-    super(parentNamespace, name, precedence);
+  public DataDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
+    super(rn, precedence);
     myConstructors = new ArrayList<>();
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public DataDefinition(Namespace parentNamespace, Name name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters) {
-    super(parentNamespace, name, precedence);
-    assert parameters != null;
+  public DataDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters) {
+    super(rn, precedence);
     setUniverse(universe);
     hasErrors(false);
     myParameters = parameters;

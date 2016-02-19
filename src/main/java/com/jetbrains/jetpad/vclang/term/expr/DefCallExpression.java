@@ -9,6 +9,7 @@ public abstract class DefCallExpression extends Expression {
     myDefinition = definition;
   }
 
+
   public abstract Expression applyThis(Expression thisExpr);
 
   public Definition getDefinition() {

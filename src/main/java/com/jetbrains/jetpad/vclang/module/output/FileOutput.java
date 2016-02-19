@@ -1,40 +1,38 @@
 package com.jetbrains.jetpad.vclang.module.output;
 
-import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
+import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.serialization.ModuleSerialization;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 public class FileOutput implements Output {
+  private final boolean myReadOnly;
+  private final FileModuleID myModule;
   private final File myFile;
-  private final List<String> myChildren;
-  private final ResolvedName myModule;
   private final ModuleDeserialization myModuleDeserialization;
 
-  public FileOutput(ModuleDeserialization moduleDeserialization, ResolvedName module, File file, List<String> children) {
-    myFile = file;
-    myChildren = children;
+  public FileOutput(ModuleDeserialization moduleDeserialization, FileModuleID module, File file, boolean readOnly) {
+    myReadOnly = readOnly;
     myModule = module;
+    myFile = file;
     myModuleDeserialization = moduleDeserialization;
   }
 
   @Override
-  public Header getHeader() throws IOException {
-    return ModuleDeserialization.readHeaderFromFile(myFile);
+  public Header readHeader() throws IOException {
+    return ModuleDeserialization.readHeaderFromFile(myFile, myModule);
   }
 
   @Override
   public boolean canRead() {
-    return (myFile != null && myFile.exists() || myChildren != null);
+    return myFile.exists() && myFile.canRead();
   }
 
   @Override
   public boolean canWrite() {
-    return myFile != null;
+    return !myReadOnly && myFile.canWrite();
   }
 
   @Override
@@ -43,24 +41,14 @@ public class FileOutput implements Output {
   }
 
   @Override
-  public boolean isContainer() {
-    return (myFile == null || !myFile.exists()) && myChildren != null;
-  }
-
-  @Override
   public void readStubs() throws IOException {
-    if (myFile != null && myFile.exists()) {
+    if (myFile.exists()) {
       ModuleDeserialization.readStubsFromFile(myFile, myModule);
-    } else {
-      myModule.parent.getChild(myModule.name.name);
-    }
-    for (String childName : myChildren) {
-      myModule.toNamespace().getChild(childName);
     }
   }
 
   @Override
-  public ModuleLoadingResult read() throws IOException {
+  public ModuleLoader.Result read() throws IOException {
     return myModuleDeserialization.readFile(myFile, myModule);
   }
 

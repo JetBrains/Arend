@@ -19,6 +19,11 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     return expr1.getName().equals(defCallExpr2.getName());
   }
 
+  @Override
+  public Boolean visitModuleCall(Abstract.ModuleCallExpression expr1, Abstract.Expression expr2) {
+    return expr2 instanceof Abstract.ModuleCallExpression && expr1.getPath().equals(((Abstract.ModuleCallExpression) expr2).getPath());
+  }
+
   private boolean compareArg(Abstract.Argument arg1, Abstract.Argument arg2) {
     if (arg1.getExplicit() != arg2.getExplicit()) {
       return false;
@@ -92,7 +97,7 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
     }
     if (!(expr2 instanceof Abstract.BinOpExpression)) return false;
     Abstract.BinOpExpression binOpExpr2 = (Abstract.BinOpExpression) expr2;
-    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && expr1.getRight().accept(this, binOpExpr2.getRight()) && expr1.getResolvedBinOpName().equals(((Abstract.BinOpExpression) expr2).getResolvedBinOpName());
+    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && expr1.getRight().accept(this, binOpExpr2.getRight()) && expr1.getResolvedBinOp().equals(((Abstract.BinOpExpression) expr2).getResolvedBinOp());
   }
 
   @Override

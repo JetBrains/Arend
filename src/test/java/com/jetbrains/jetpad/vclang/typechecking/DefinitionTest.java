@@ -1,6 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.NameModuleID;
+import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
@@ -31,7 +35,7 @@ public class DefinitionTest {
 
   @Before
   public void initialize() {
-    RootModule.initialize();
+    Root.initialize();
     errorReporter = new ListErrorReporter();
   }
 
@@ -135,9 +139,11 @@ public class DefinitionTest {
     DependentLink A = param("A", Universe(0));
     DependentLink B = param("B", Universe(1));
 
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild("test"), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
-    RootModule.ROOT.getChild("test").addDefinition(def);
-    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, params(B, param(Reference(A)), param(Reference(B))), def);
+    ModuleID moduleID = new NameModuleID("test");
+    Namespace namespace = new Namespace(moduleID);
+    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
+    namespace.addDefinition(def);
+    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, null, params(B, param(Reference(A)), param(Reference(B))), def);
     def.addConstructor(con);
 
     Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
@@ -153,9 +159,11 @@ public class DefinitionTest {
     DependentLink A = param("A", Universe(0));
     DependentLink B = param("B", Universe(1));
 
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild("test"), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
-    RootModule.ROOT.getChild("test").addDefinition(def);
-    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, params(B, param(Reference(A)), param(Reference(B))), def);
+    ModuleID moduleID = new NameModuleID("test");
+    Namespace namespace = new Namespace(moduleID);
+    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
+    namespace.addDefinition(def);
+    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, null, params(B, param(Reference(A)), param(Reference(B))), def);
     def.addConstructor(con);
 
     Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con), cNat(), cLam("x", cVar("x")), cZero()));
@@ -172,9 +180,11 @@ public class DefinitionTest {
   public void constructorConst() {
     // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
     DependentLink A = param("A", Universe(0));
-    DataDefinition def = new DataDefinition(RootModule.ROOT.getChild("test"), new Name("D"), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
-    RootModule.ROOT.getChild("test").addDefinition(def);
-    Constructor con = new Constructor(def.getParentNamespace().getChild(def.getName()), new Name("con"), Abstract.Definition.DEFAULT_PRECEDENCE, null, param(Reference(A)), def);
+    ModuleID moduleID = new NameModuleID("test");
+    Namespace namespace = new Namespace(moduleID);
+    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
+    namespace.addDefinition(def);
+    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, null, param(Reference(A)), def);
     def.addConstructor(con);
 
     Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con));

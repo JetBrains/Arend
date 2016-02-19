@@ -8,9 +8,8 @@ import com.jetbrains.jetpad.vclang.module.output.OutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.DummySourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
+import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 import java.io.EOFException;
@@ -18,47 +17,46 @@ import java.io.IOException;
 import java.util.*;
 
 public abstract class BaseModuleLoader implements ModuleLoader {
-  private final List<ResolvedName> myLoadingModules = new ArrayList<>();
+  private final List<ModuleID> myLoadingModules = new ArrayList<>();
 
   private SourceSupplier mySourceSupplier;
   private OutputSupplier myOutputSupplier;
 
-  private final DeserializingLoader myDeserializingLoader;
+  private final SerializedLoader mySerializedLoader;
   private final boolean myRecompile;
 
   public BaseModuleLoader(boolean recompile) {
     mySourceSupplier = DummySourceSupplier.getInstance();
     myOutputSupplier = DummyOutputSupplier.getInstance();
     myRecompile = recompile;
-    myDeserializingLoader = new DeserializingLoader(myLoadingModules, this, mySourceSupplier, myOutputSupplier);
+    mySerializedLoader = new SerializedLoader(myLoadingModules, this, mySourceSupplier, myOutputSupplier);
   }
 
   public void setSourceSupplier(SourceSupplier sourceSupplier) {
     mySourceSupplier = sourceSupplier;
-    myDeserializingLoader.setSourceSupplier(sourceSupplier);
+    mySerializedLoader.setSourceSupplier(sourceSupplier);
   }
 
   public void setOutputSupplier(OutputSupplier outputSupplier) {
     myOutputSupplier = outputSupplier;
-    myDeserializingLoader.setOutputSupplier(outputSupplier);
+    mySerializedLoader.setOutputSupplier(outputSupplier);
   }
 
   @Override
-  public void save(ResolvedName module) {
+  public void save(ModuleID module) {
     Output output = myOutputSupplier.getOutput(module);
-    if (output.canWrite()) {
+    if (output != null && output.canWrite()) {
       try {
         output.write();
       } catch (IOException e) {
-        savingError(new GeneralError(module, GeneralError.ioError(e)));
+        savingError(new GeneralError(new ModuleResolvedName(module), GeneralError.ioError(e)));
       }
     }
   }
 
   @Override
-  public ModuleLoadingResult load(ResolvedName module, boolean tryLoad) {
-    NamespaceMember member = module.parent.getMember(module.name.name);
-    if (member != null && (member.abstractDefinition != null || member.definition != null)) {
+  public Result load(ModuleID module) {
+    if (Root.getModule(module) != null) {
       return null;
     }
 
@@ -70,23 +68,21 @@ public abstract class BaseModuleLoader implements ModuleLoader {
 
     try {
       if (!myRecompile) {
-        ModuleLoadingResult result = myDeserializingLoader.load(module);
+        Result result = mySerializedLoader.load(module);
         if (result != null)
           return result;
       }
 
       Source source = mySourceSupplier.getSource(module);
-      if (!source.isAvailable()) {
-        if (!tryLoad) {
-          loadingError(new ModuleNotFoundError(module));
-        }
+      if (source == null) {
+        loadingError(new ModuleNotFoundError(module));
         return null;
       }
 
       try {
         myLoadingModules.add(module);
 
-        ModuleLoadingResult result = source.load(false);
+        Result result = source.load();
         Helper.processLoaded(this, module, result);
 
         return result;
@@ -94,12 +90,18 @@ public abstract class BaseModuleLoader implements ModuleLoader {
         myLoadingModules.remove(myLoadingModules.size() - 1);
       }
     } catch (EOFException e) {
-      loadingError(new GeneralError(module, "Incorrect format: Unexpected EOF"));
+      loadingError(new GeneralError(new ModuleResolvedName(module), "Incorrect format: Unexpected EOF"));
     } catch (ModuleDeserialization.DeserializationException e) {
-      loadingError(new GeneralError(module, e.toString()));
+      loadingError(new GeneralError(new ModuleResolvedName(module), e.toString()));
     } catch (IOException e) {
-      loadingError(new GeneralError(module, GeneralError.ioError(e)));
+      loadingError(new GeneralError(new ModuleResolvedName(module), GeneralError.ioError(e)));
     }
     return null;
+  }
+
+  @Override
+  public ModuleID locateModule(ModulePath modulePath) {
+    ModuleID result = mySourceSupplier.locateModule(modulePath);
+    return result != null ? result : myOutputSupplier.locateModule(modulePath);
   }
 }

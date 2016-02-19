@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
@@ -305,7 +306,7 @@ public class ClassesTest {
         "  \\abstract a : A\n" +
         "  \\abstract y : a.x\n" +
         "}");
-    Namespace namespace = testClass.getParentNamespace().findChild("test");
+    Namespace namespace = testClass.getResolvedName().toNamespace();
     ClassDefinition aClass = (ClassDefinition) namespace.getDefinition("A");
     ClassDefinition bClass = (ClassDefinition) namespace.getDefinition("B");
     ClassField xField = aClass.getField("x");
@@ -337,7 +338,7 @@ public class ClassesTest {
         "    \\function k => h + (p + q)" +
         "  }\n" +
         "}");
-    Namespace namespace = testClass.getParentNamespace().findChild("test");
+    Namespace namespace = testClass.getResolvedName().toNamespace();
     Definition plus = namespace.getDefinition("+");
 
     NamespaceMember aMember = namespace.getMember("A");

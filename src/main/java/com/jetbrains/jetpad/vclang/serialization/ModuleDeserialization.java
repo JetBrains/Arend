@@ -1,9 +1,15 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.ModuleLoadingResult;
-import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
@@ -22,7 +28,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
-  private ResolvedName myResolvedName;
+  private ModuleID myModuleID;
   private final ElimTreeDeserialization myElimTreeDeserialization;
   private final List<Binding> myBindingMap = new ArrayList<>();
 
@@ -30,31 +36,29 @@ public class ModuleDeserialization {
     myElimTreeDeserialization = new ElimTreeDeserialization(this);
   }
 
-  public ModuleLoadingResult readFile(File file, ResolvedName module) throws IOException {
+  public ModuleLoader.Result readFile(File file, ModuleID module) throws IOException {
     return readStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), module);
   }
 
-  public static void readStubsFromFile(File file, ResolvedName module) throws IOException {
+  public static void readStubsFromFile(File file, ModuleID module) throws IOException {
     readStubsFromStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), module);
   }
 
-  public static void readStubsFromStream(DataInputStream stream, ResolvedName module) throws IOException {
+  public static void readStubsFromStream(DataInputStream stream, ModuleID moduleID) throws IOException {
     verifySignature(stream);
-    readHeader(stream);
+    readHeader(stream, moduleID);
     stream.readInt();
-
-    module.parent.getChild(module.name.name);
-
-    readDefIndices(stream, true, module);
+    Root.addModule(moduleID, new NamespaceMember(new Namespace(moduleID), null, null));
+    readDefIndices(stream, true, moduleID);
   }
 
-  public static Output.Header readHeaderFromFile(File file) throws IOException {
-    return readHeaderFromStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))));
+  public static Output.Header readHeaderFromFile(File file, ModuleID moduleID) throws IOException {
+    return readHeaderFromStream(new DataInputStream(new BufferedInputStream(new FileInputStream(file))), moduleID);
   }
 
-  public static Output.Header readHeaderFromStream(DataInputStream stream) throws IOException {
+  public static Output.Header readHeaderFromStream(DataInputStream stream, ModuleID moduleID) throws IOException {
     verifySignature(stream);
-    return readHeader(stream);
+    return readHeader(stream, moduleID);
   }
 
   private static List<String> readFullPath(DataInputStream stream) throws IOException {
@@ -67,25 +71,15 @@ public class ModuleDeserialization {
     return result;
   }
 
-  private static Output.Header readHeader(DataInputStream stream) throws IOException {
-    Output.Header result = new Output.Header(new ArrayList<List<String>>(), new ArrayList<String>());
+  private static Output.Header readHeader(DataInputStream stream, ModuleID moduleID) throws IOException {
+    Output.Header result = new Output.Header(new ArrayList<ModuleID>());
     int size = stream.readInt();
     for (int i = 0; i < size; i++) {
-      result.provided.add(stream.readUTF());
-    }
-    size = stream.readInt();
-    for (int i = 0; i < size; i++) {
-      result.dependencies.add(readFullPath(stream));
+      result.dependencies.add(moduleID.deserialize(stream));
     }
 
     return result;
   }
-
-  private static Name readName(DataInputStream stream) throws IOException {
-    String name = stream.readUTF();
-    Abstract.Definition.Fixity fixity = stream.read() == 1 ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
-    return new Name(name, fixity);
-   }
 
   private static Definition readDefinition(DataInputStream stream, ResolvedName rn, boolean dryRun) throws IOException {
     int codeIdx = stream.readInt();
@@ -107,16 +101,15 @@ public class ModuleDeserialization {
       byte priority = stream.readByte();
       precedence = new Abstract.Definition.Precedence(associativity, priority);
     }
-    Name name = readName(stream);
 
     if (dryRun)
       return null;
 
-    Definition definition = code.toDefinition(name, rn.parent, precedence);
-    if (rn.name.name.equals("\\parent"))
-      ((ClassDefinition) rn.parent.getResolvedName().toDefinition()).addField((ClassField) definition);
+    Definition definition = code.toDefinition(rn, precedence);
+    if (rn.getName().equals("\\parent"))
+      ((ClassDefinition) rn.getParent().toDefinition()).addField((ClassField) definition);
     else {
-      rn.parent.addDefinition(definition);
+      rn.toNamespaceMember().definition = definition;
     }
     return definition;
   }
@@ -133,49 +126,45 @@ public class ModuleDeserialization {
     }
   }
 
-  private static ResolvedName fullPathToRelativeResolvedName(List<String> path, ResolvedName module) {
-    ResolvedName result = module;
+  private static ResolvedName fullPathToResolvedName(List<String> path, ModuleID moduleID) {
+    ResolvedName result = new ModuleResolvedName(moduleID);
     for (String aPath : path) {
       result = result.toNamespace().getChild(aPath).getResolvedName();
     }
     return result;
   }
 
-  private static ResolvedName fullPathToResolvedName(List<String> path) throws IOException {
-    return fullPathToRelativeResolvedName(path, RootModule.ROOT.getResolvedName());
-  }
-
-  private static Map<Integer, Definition> readDefIndices(DataInputStream stream, boolean createStubs, ResolvedName module) throws IOException {
+  private static Map<Integer, Definition> readDefIndices(DataInputStream stream, boolean createStubs, ModuleID moduleID) throws IOException {
     Map<Integer, Definition> result = new HashMap<>();
 
     int size = stream.readInt();
     for (int i = 0; i < size; i++) {
       ResolvedName rn;
       if (stream.readBoolean()) {
-        rn = fullPathToRelativeResolvedName(readFullPath(stream), module);
+        rn = fullPathToResolvedName(readFullPath(stream), moduleID);
         readDefinition(stream, rn, !createStubs);
       } else {
-        rn = fullPathToResolvedName(readFullPath(stream));
+        ModuleID depModuleID = stream.readBoolean() ? moduleID.deserialize(stream) : Prelude.moduleID;
+        rn = fullPathToResolvedName(readFullPath(stream), depModuleID);
       }
       if (!createStubs) {
-        result.put(i, rn.name.name.equals("\\parent") ?
-            ((ClassDefinition) rn.parent.getResolvedName().toDefinition()).getField("\\parent") : rn.toDefinition());
+        result.put(i, rn.getName().equals("\\parent") ?
+            ((ClassDefinition) rn.getParent().toDefinition()).getField("\\parent") : rn.toDefinition());
       }
     }
 
     return createStubs ? null : result;
   }
 
-  public ModuleLoadingResult readStream(DataInputStream stream, ResolvedName module) throws IOException {
-    myResolvedName = module;
-
+  public ModuleLoader.Result readStream(DataInputStream stream, ModuleID moduleID) throws IOException {
+    myModuleID = moduleID;
     verifySignature(stream);
-    readHeader(stream);
+    readHeader(stream, moduleID);
     int errorsNumber = stream.readInt();
-    Map<Integer, Definition> definitionMap = readDefIndices(stream, false, module);
+    Map<Integer, Definition> definitionMap = readDefIndices(stream, false, moduleID);
     Definition moduleRoot = definitionMap.get(0);
     deserializeDefinition(stream, definitionMap);
-    return new ModuleLoadingResult(new NamespaceMember(moduleRoot.getResolvedName().toNamespace(), null, moduleRoot), false, errorsNumber);
+    return new ModuleLoader.Result(new NamespaceMember(moduleRoot.getResolvedName().toNamespace(), null, moduleRoot), false, errorsNumber);
   }
 
   private Definition deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -415,7 +404,7 @@ public class ModuleDeserialization {
         return new UniverseExpression(readUniverse(stream));
       }
       case 9: {
-        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myResolvedName, "Deserialization error", null));
+        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(new ModuleResolvedName(myModuleID), "Deserialization error", null));
       }
       case 10: {
         int size = stream.readInt();

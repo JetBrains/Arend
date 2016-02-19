@@ -1,6 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
-import com.jetbrains.jetpad.vclang.module.RootModule;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.NameModuleID;
+import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
@@ -10,6 +14,7 @@ import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteRe
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
 import static org.junit.Assert.assertEquals;
@@ -17,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 public class NameResolverTestCase {
   public static Collection<? extends GeneralError> resolveNamesExpr(Concrete.Expression expression, NameResolver nameResolver) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    expression.accept(new ResolveNameVisitor(errorReporter, nameResolver, new ArrayList<String>(0), new ConcreteResolveListener()), null);
+    expression.accept(new ResolveNameVisitor(errorReporter, nameResolver, Root.rootModuleResolver, new ArrayList<String>(0), new ConcreteResolveListener()), null);
     return errorReporter.getErrorList();
   }
 
@@ -49,9 +54,16 @@ public class NameResolverTestCase {
 
   public static Collection<? extends GeneralError> resolveNamesDef(Concrete.Definition definition) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT.getChild("test"), DummyNameResolver.getInstance());
+    ModuleID moduleID = new NameModuleID("test");
+    Concrete.DefineStatement statement = new Concrete.DefineStatement(null, true, definition);
+    definition.setParentStatement(statement);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, "test",
+        Collections.<Concrete.Statement>singletonList(statement));
+    classDefinition.setModuleID(moduleID);
+    statement.setParentDefinition(classDefinition);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, null, DummyNameResolver.getInstance(), null);
     visitor.setResolveListener(new ConcreteResolveListener());
-    definition.accept(visitor, null);
+    visitor.visitModule(classDefinition, moduleID);
     return errorReporter.getErrorList();
   }
 
@@ -68,9 +80,9 @@ public class NameResolverTestCase {
 
   public static void resolveNamesClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, RootModule.ROOT, DummyNameResolver.getInstance());
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, null, DummyNameResolver.getInstance(), null);
     visitor.setResolveListener(new ConcreteResolveListener());
-    visitor.visitClass(classDefinition, null);
+    visitor.visitModule(classDefinition, new NameModuleID(classDefinition.getName()));
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
   }
 

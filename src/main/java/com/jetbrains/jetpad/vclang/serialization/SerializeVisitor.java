@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -65,7 +65,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitDefCall(DefCallExpression expr, Void params) {
     myStream.write(2);
     try {
-      myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName(), false));
+      myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName()));
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -75,7 +75,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   @Override
   public Void visitConCall(ConCallExpression expr, Void params) {
     myStream.write(3);
-    int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
+    int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName());
     try {
       myDataStream.writeInt(index);
       myDataStream.writeInt(expr.getDataTypeArguments().size());
@@ -91,12 +91,12 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
     myStream.write(4);
-    int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName(), false);
+    int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName());
     try {
       myDataStream.writeInt(index);
       myDataStream.writeInt(expr.getImplementStatements().size());
       for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
-        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(elem.getKey().getResolvedName(), true));
+        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(elem.getKey().getResolvedName()));
 
         Expression type = elem.getValue().type;
         myDataStream.writeBoolean(type != null);
@@ -246,7 +246,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       }
       if (pattern instanceof ConstructorPattern) {
         Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
-        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(new ResolvedName(constructor.getParentNamespace(), constructor.getName()), false));
+        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(constructor.getResolvedName()));
         myDataStream.writeInt(((ConstructorPattern) pattern).getArguments().size());
         for (PatternArgument patternArg : ((ConstructorPattern) pattern).getArguments()) {
           visitPatternArg(patternArg);
@@ -317,7 +317,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
       }
       myDataStream.writeInt(branchNode.getConstructorClauses().size());
       for (ConstructorClause clause : branchNode.getConstructorClauses()) {
-        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(clause.getConstructor().getResolvedName(), false));
+        myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(clause.getConstructor().getResolvedName()));
         ModuleSerialization.writeParameters(this, clause.getParameters());
         for (Binding binding : clause.getTailBindings()) {
           ModuleSerialization.writeTypedBinding(this, binding);

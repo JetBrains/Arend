@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
-import com.jetbrains.jetpad.vclang.term.definition.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 
 import java.util.ArrayList;
 import java.util.List;

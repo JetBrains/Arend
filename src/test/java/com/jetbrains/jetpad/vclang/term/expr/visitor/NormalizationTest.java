@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.module.Namespace;
+import com.jetbrains.jetpad.vclang.module.NameModuleID;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -26,7 +27,8 @@ import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.type
 import static org.junit.Assert.assertEquals;
 
 public class NormalizationTest {
-  Namespace testNS;
+  NameModuleID testModuleID = new NameModuleID("test");
+  Namespace testNS = new Namespace(testModuleID);
   // \function (+) (x y : Nat) : Nat <= elim x | zero => y | suc x' => suc (x' + y)
   private final FunctionDefinition plus;
   // \function (*) (x y : Nat) : Nat <= elim x | zero => zero | suc x' => y + x' * y
@@ -42,10 +44,9 @@ public class NormalizationTest {
   private Constructor bdSnoc;
 
   public NormalizationTest() {
-    testNS = new Namespace("test");
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
-    plus = new FunctionDefinition(testNS, new Name("+", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), params(xPlus, yPlus), Nat(), null);
+    plus = new FunctionDefinition(testNS.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), params(xPlus, yPlus), Nat(), null);
 
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
@@ -56,7 +57,7 @@ public class NormalizationTest {
 
     DependentLink xMul = param("x", Nat());
     DependentLink yMul = param("y", Nat());
-    mul = new FunctionDefinition(testNS, new Name("*", Abstract.Definition.Fixity.INFIX), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), params(xMul, yMul), Nat(), null);
+    mul = new FunctionDefinition(testNS.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), params(xMul, yMul), Nat(), null);
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
@@ -66,7 +67,7 @@ public class NormalizationTest {
     testNS.addDefinition(mul);
 
     DependentLink xFac = param("x", Nat());
-    fac = new FunctionDefinition(testNS, new Name("fac"), Abstract.Definition.DEFAULT_PRECEDENCE, xFac, Nat(), null);
+    fac = new FunctionDefinition(testNS.getChild("fac").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, xFac, Nat(), null);
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
@@ -78,7 +79,7 @@ public class NormalizationTest {
     DependentLink zNElim = param("z", Nat());
     DependentLink sNElim = param("s", Pi(param(Nat()), Pi(param(Nat()), Nat())));
     DependentLink xNElim = param("x", Nat());
-    nelim = new FunctionDefinition(testNS, new Name("nelim"), Abstract.Definition.DEFAULT_PRECEDENCE, params(zNElim, sNElim, xNElim), Nat(), null);
+    nelim = new FunctionDefinition(testNS.getChild("nelim").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, params(zNElim, sNElim, xNElim), Nat(), null);
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
@@ -263,7 +264,7 @@ public class NormalizationTest {
     ClassDefinition def = typeCheckClass(
         "\\static \\data D | d Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | _! => 0");
-    FunctionDefinition test = (FunctionDefinition) def.getParentNamespace().getChild(def.getName()).getMember("test").definition;
+    FunctionDefinition test = (FunctionDefinition) def.getResolvedName().toNamespace().getMember("test").definition;
     assertEquals(Apps(FunCall(test), Reference(var0)), Apps(FunCall(test), Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 

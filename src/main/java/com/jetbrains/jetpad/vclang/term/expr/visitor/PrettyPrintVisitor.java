@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
@@ -14,6 +15,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.Utils.removeFromList;
 import static com.jetbrains.jetpad.vclang.term.context.Utils.trimToSize;
+import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 
 // TODO: Simplify pretty printer
 // TODO: move myNames to ToAbstractVisitor
@@ -95,13 +97,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   private Integer getNumber(Abstract.Expression expr) {
-    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getResolvedName() != null
-        && ((Abstract.DefCallExpression) expr).getResolvedName().toDefinition() == Prelude.ZERO) {
+    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getResolvedDefinition() != null
+        && ((Abstract.DefCallExpression) expr).getResolvedDefinition() == Prelude.ZERO) {
       return 0;
     }
     if (expr instanceof Abstract.AppExpression && ((Abstract.AppExpression) expr).getFunction() instanceof Abstract.DefCallExpression
-        && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getResolvedName() != null
-        && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getResolvedName().toDefinition() == Prelude.SUC) {
+        && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getResolvedDefinition() != null
+        && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getResolvedDefinition() == Prelude.SUC) {
       Integer result = getNumber(((Abstract.AppExpression) expr).getArgument().getExpression());
       if (result == null) return null;
       return result + 1;
@@ -124,11 +126,17 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Byte prec) {
-    if (expr.getResolvedName() != null && expr.getResolvedName().toDefinition() == Prelude.ZERO) {
+    if (expr.getResolvedDefinition() != null && expr.getResolvedDefinition() == Prelude.ZERO) {
       myBuilder.append("0");
     } else {
       myBuilder.append(new Name(expr.getName()));
     }
+    return null;
+  }
+
+  @Override
+  public Void visitModuleCall(Abstract.ModuleCallExpression expr, Byte prec) {
+    myBuilder.append(new ModulePath(expr.getPath()));
     return null;
   }
 
@@ -271,11 +279,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Byte prec) {
-    if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append('(');
-    expr.getLeft().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
-    myBuilder.append(' ').append(expr.getResolvedBinOpName().name.getInfixName()).append(' ');
-    expr.getRight().accept(this, (byte) (expr.getResolvedBinOpName().toPrecedence().priority + (expr.getResolvedBinOpName().toPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
-    if (prec > expr.getResolvedBinOpName().toPrecedence().priority) myBuilder.append(')');
+    if (prec > expr.getResolvedBinOp().getPrecedence().priority) myBuilder.append('(');
+    expr.getLeft().accept(this, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
+    myBuilder.append(' ').append(new Name(expr.getResolvedBinOp().getName()).getInfixName()).append(' ');
+    expr.getRight().accept(this, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
+    if (prec > expr.getResolvedBinOp().getPrecedence().priority) myBuilder.append(')');
     return null;
   }
 

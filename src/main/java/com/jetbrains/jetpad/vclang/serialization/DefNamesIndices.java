@@ -1,93 +1,71 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.*;
 
 public class DefNamesIndices {
-  private static class Entry {
-    ResolvedName defName;
-    boolean isNew;
-
-    public Entry(ResolvedName defName, boolean isNew) {
-      this.defName = defName;
-      this.isNew = isNew;
-    }
-  }
-
   final private Map<ResolvedName, Integer> myDefinitions = new HashMap<>();
-  final private List<Entry> myDefinitionsList = new ArrayList<>();
+  final private List<ResolvedName> myDefinitionsList = new ArrayList<>();
   private int myCounter = 0;
 
-  public int getDefNameIndex(ResolvedName defName, boolean isNew) {
+  public int getDefNameIndex(ResolvedName defName) {
     if (defName == null) {
       return -1;
     }
 
     Integer index = myDefinitions.get(defName);
     if (index == null) {
-      myDefinitionsList.add(new Entry(defName, isNew));
+      myDefinitionsList.add(defName);
       myDefinitions.put(defName, myCounter++);
       return myCounter - 1;
     } else {
-      if (isNew)
-        myDefinitionsList.get(index).isNew = true;
       return index;
     }
   }
 
-  public void serialize(DataOutputStream stream, ResolvedName module) throws IOException {
+  public void serialize(DataOutputStream stream, ModuleID curModuleID) throws IOException {
     stream.writeInt(myDefinitionsList.size());
-    for (Entry entry : myDefinitionsList) {
-      stream.writeBoolean(entry.isNew);
-      if (entry.isNew) {
-        ModuleSerialization.serializeRelativeResolvedName(stream, entry.defName, module);
-        if (entry.defName.name.name.equals("\\parent")) {
-          ModuleSerialization.writeDefinition(stream, ((ClassDefinition) entry.defName.parent.getResolvedName().toDefinition()).getField("\\parent"));
+    for (ResolvedName rn : myDefinitionsList) {
+      ModuleID moduleID = rn.getModuleID();
+      stream.writeBoolean(moduleID.equals(curModuleID));
+      if (moduleID.equals(curModuleID)) {
+        ModuleSerialization.serializeResolvedName(stream, rn);
+        if (rn.getName().equals("\\parent")) {
+          ModuleSerialization.writeDefinition(stream, ((ClassDefinition) rn.getParent().toDefinition()).getField("\\parent"));
         } else {
-          ModuleSerialization.writeDefinition(stream, entry.defName.toDefinition());
+          ModuleSerialization.writeDefinition(stream, rn.toDefinition());
         }
       } else {
-        ModuleSerialization.serializeResolvedName(stream, entry.defName);
+        stream.writeBoolean(moduleID != Prelude.moduleID);
+        if (moduleID != Prelude.moduleID) {
+          moduleID.serialize(stream);
+        }
+        ModuleSerialization.serializeResolvedName(stream, rn);
       }
     }
   }
 
-  public void serializeHeader(DataOutputStream stream, ResolvedName module) throws IOException {
-    Set<String> provided = new HashSet<>();
-    Set<ResolvedName> dependencies = new HashSet<>();
+  public void serializeHeader(DataOutputStream stream, ModuleID curModuleID) throws IOException {
+    Set<ModuleID> dependencies = new HashSet<>();
 
-    for (Entry entry : myDefinitionsList) {
-      if (entry.isNew) {
-        for (ResolvedName name = entry.defName; !name.equals(module); name = name.parent.getResolvedName()) {
-          if (name.parent.getResolvedName().equals(module)) {
-            provided.add(name.name.name);
-          }
-        }
-      } else {
-        boolean prelude = false;
-        for (ResolvedName rn = entry.defName; rn.parent != null; rn = rn.parent.getResolvedName()) {
-          if (rn.equals(Prelude.PRELUDE.getResolvedName())) {
-            prelude = true;
-            break;
-          }
-        }
-        if (!prelude)
-          dependencies.add(entry.defName);
+    for (ResolvedName resolvedName : myDefinitionsList) {
+      ModuleID moduleID = resolvedName.getModuleID();
+      if (!moduleID.equals(Prelude.moduleID) && !curModuleID.equals(moduleID)) {
+        dependencies.add(moduleID);
       }
     }
 
-    stream.writeInt(provided.size());
-    for (String str : provided) {
-      stream.writeUTF(str);
-    }
     stream.writeInt(dependencies.size());
-    for (ResolvedName dependency : dependencies) {
-      ModuleSerialization.serializeResolvedName(stream, dependency);
+    for (ModuleID dependency : dependencies) {
+      dependency.serialize(stream);
     }
   }
 }
