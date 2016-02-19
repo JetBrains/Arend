@@ -17,7 +17,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toNames;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
@@ -144,10 +143,6 @@ class PatternsExpander {
 
       if (!hasConstructor) {
         return null;
-      }
-
-      if (names == null) {
-        names = toNames(constructor.getParameters());
       }
 
       return new MatchingPatterns(indices, nestedPatterns, names);
