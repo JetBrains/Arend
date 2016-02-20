@@ -19,7 +19,6 @@ public interface ModuleLoader {
         GeneralError error = new GeneralError(new ModuleResolvedName(module), result == null ? "cannot load module '" + module.getModulePath().getName() + "'" : "module '" + module.getModulePath().getName() + "' contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
         error.setLevel(GeneralError.Level.INFO);
         moduleLoader.loadingError(error);
-        Root.removeModule(module);
       } else {
         if (result.namespaceMember != null) {
           if (result.namespaceMember.abstractDefinition != null || result.namespaceMember.definition != null)
