@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.term.statement.visitor;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NameDefinedError;
@@ -108,7 +108,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
       if (stat.getModulePath() != null) {
         member = myModuleResolver.locateModule(new ModulePath(stat.getModulePath()));
         if (member == null) {
-          myErrorReporter.report(new NotInScopeError(stat, new ModulePath(stat.getPath()).toString()));
+          myErrorReporter.report(new NotInScopeError(stat, new ModulePath(stat.getModulePath()).toString()));
           return null;
         }
       } else {
