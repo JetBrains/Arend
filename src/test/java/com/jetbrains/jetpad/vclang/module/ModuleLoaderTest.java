@@ -57,9 +57,7 @@ public class ModuleLoaderTest {
     moduleLoader = new ReportingModuleLoader(new ErrorReporter() {
       @Override
       public void report(GeneralError error) {
-        if (error.getLevel() != GeneralError.Level.INFO) {
-          errorReporter.report(error);
-        }
+        errorReporter.report(error);
       }
 
     }, false) {
@@ -125,32 +123,35 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
-    assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
+    assertEquals(errorReporter.getErrorList().toString(), 2, errorReporter.getErrorList().size());
   }
 
   @Test
   public void moduleTest() {
-    sourceSupplier.add(moduleName("A"), "\\abstract f : Nat \\static \\class C { \\abstract g : Nat \\function h => g }");
+    sourceSupplier.add(moduleName("A"), "\\class A { \\abstract f : Nat \\static \\class C { \\abstract g : Nat \\function h => g }}");
     moduleLoader.setSourceSupplier(sourceSupplier);
 
     ModuleID moduleID = moduleLoader.locateModule(moduleName("A"));
     ModuleLoader.Result result = moduleLoader.load(moduleID);
+    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     TypecheckingOrdering.typecheck(result.namespaceMember.abstractDefinition, errorReporter);
     assertNotNull(result);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
-    assertEquals(2, Root.getModule(moduleID).namespace.getMembers().size());
-    Definition definitionC = result.namespaceMember.namespace.getDefinition("C");
+    assertEquals(2, Root.getModule(moduleID).namespace.getChild("A").getMembers().size());
+    Definition definitionC = result.namespaceMember.namespace.getChild("A").getDefinition("C");
     assertTrue(definitionC instanceof ClassDefinition);
     assertEquals(2, definitionC.getParentNamespace().findChild(definitionC.getName()).getMembers().size());
   }
 
   @Test
   public void nonStaticTest() {
-    sourceSupplier.add(moduleName("A"), "\\abstract f : Nat \\static \\class B { \\abstract g : Nat \\function h => g }");
-    sourceSupplier.add(moduleName("B"), "\\static \\function f (p : A.B) => p.h");
+    sourceSupplier.add(moduleName("A"), "\\class A { \\abstract f : Nat \\static \\class B { \\abstract g : Nat \\function h => g }}");
+    sourceSupplier.add(moduleName("B"), "\\static \\function f (p : ::A::A.B) => p.h");
 
     moduleLoader.setSourceSupplier(sourceSupplier);
-    TypecheckingOrdering.typecheck(moduleLoader.load(moduleLoader.locateModule(moduleName("A"))).namespaceMember.abstractDefinition, errorReporter);
+    ModuleLoader.Result result = moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
+    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    TypecheckingOrdering.typecheck(result.namespaceMember.abstractDefinition, errorReporter);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
   }
 
