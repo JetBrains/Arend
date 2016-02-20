@@ -365,7 +365,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitError(Abstract.ErrorExpression expr, Expression expectedType) {
-    TypeCheckingError error = new GoalError(myContext, expectedType == null ? null : expectedType.normalize(NormalizeVisitor.Mode.NF), expr);
+    TypeCheckingError error = new GoalError(myContext, expectedType == null ? null : expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
     expr.setWellTyped(myContext, Error(null, error));
     myErrorReporter.report(error);
     return null;
@@ -818,7 +818,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       letResult.add(result);
 
       letResult.expression = Let(clauses, result.expression);
-      letResult.type = Let(clauses, result.type).normalize(NormalizeVisitor.Mode.NF);
+      letResult.type = Let(clauses, result.type);
       letResult.update();
       return letResult;
     }

@@ -259,4 +259,14 @@ public class ModuleLoaderTest {
     assertLoaded("B", "C", "E");
     assertLoaded("B", "C", "F");
   }
+
+  @Test
+  public void testUnknownNameReport() {
+    sourceSupplier.add(moduleName("A"), "\\static \\function f => 0");
+    sourceSupplier.add(moduleName("B"), "\\static \\function g => ::A.asdfas");
+
+    moduleLoader.setSourceSupplier(sourceSupplier);
+    TypecheckingOrdering.typecheck(moduleLoader.load(moduleLoader.locateModule(moduleName("B"))).namespaceMember.abstractDefinition, errorReporter);
+    assertNotNull(errorReporter.getErrorList().toString());
+  }
 }

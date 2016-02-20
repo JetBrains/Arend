@@ -223,7 +223,7 @@ public class TypeCheckingDefCall {
       String name = expr.getName();
       member = result.member.namespace.getMember(name);
       if (member == null) {
-        TypeCheckingError error = new NameDefinedError(false, expr, name, new DefinitionResolvedName(result.member.namespace.getParent(), result.member.namespace.getName()));
+        TypeCheckingError error = new NameDefinedError(false, expr, name, result.member.getResolvedName());
         expr.setWellTyped(myVisitor.getContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
