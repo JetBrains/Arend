@@ -1,22 +1,22 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 
 import java.util.ArrayList;
 
 public class TypeMismatchError extends TypeCheckingError {
-  private final Expression myExpected;
-  private final Expression myActual;
+  private final PrettyPrintable myExpected;
+  private final PrettyPrintable myActual;
 
-  public TypeMismatchError(ResolvedName resolvedName, Expression expected, Expression actual, Abstract.Expression expression) {
+  public TypeMismatchError(ResolvedName resolvedName, PrettyPrintable expected, PrettyPrintable actual, Abstract.Expression expression) {
     super(resolvedName, null, expression);
     myExpected = expected;
     myActual = actual;
   }
 
-  public TypeMismatchError(Expression expected, Expression actual, Abstract.Expression expression) {
+  public TypeMismatchError(PrettyPrintable expected, PrettyPrintable actual, Abstract.Expression expression) {
     super(null, expression);
     myExpected = expected;
     myActual = actual;

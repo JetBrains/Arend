@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -28,8 +29,8 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
+import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.expression;
@@ -577,11 +578,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitProj(Abstract.ProjExpression expr, Expression expectedType) {
-    Result exprResult = typeCheck(expr.getExpression(), null);
+    Abstract.Expression expr1 = expr.getExpression();
+    Result exprResult = typeCheck(expr1, null);
     if (exprResult == null) return null;
     Expression type = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
     if (!(type instanceof SigmaExpression)) {
-      TypeCheckingError error = new TypeCheckingError("Expected an type of a sigma type", expr);
+      TypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A sigma type"), type, expr1);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;

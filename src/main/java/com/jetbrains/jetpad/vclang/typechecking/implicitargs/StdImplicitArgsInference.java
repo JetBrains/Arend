@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
@@ -63,7 +60,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (!(result.type instanceof PiExpression)) {
-      TypeCheckingError error = new TypeCheckingError("Expected an expression of a pi type", fun);
+      TypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
