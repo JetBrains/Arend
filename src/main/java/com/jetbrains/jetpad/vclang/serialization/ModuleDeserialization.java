@@ -30,8 +30,8 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class ModuleDeserialization {
   private SerializableModuleID myModuleID;
+  private List<Binding> myBindingMap;
   private final ElimTreeDeserialization myElimTreeDeserialization;
-  private final List<Binding> myBindingMap = new ArrayList<>();
 
   public ModuleDeserialization() {
     myElimTreeDeserialization = new ElimTreeDeserialization(this);
@@ -159,6 +159,7 @@ public class ModuleDeserialization {
 
   public ModuleLoader.Result readStream(DataInputStream stream, SerializableModuleID moduleID) throws IOException {
     myModuleID = moduleID;
+    myBindingMap = new ArrayList<>();
     verifySignature(stream);
     readHeader(stream, moduleID);
     int errorsNumber = stream.readInt();

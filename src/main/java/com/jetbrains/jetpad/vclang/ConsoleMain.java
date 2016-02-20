@@ -73,7 +73,7 @@ public class ConsoleMain {
 
     Root.initialize();
     final List<ModuleID> loadedModules = new ArrayList<>();
-    final List<Abstract.Definition> loadedModuleRoots = new ArrayList<>();
+    final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
       @Override
       public void savingError(GeneralError error) {
@@ -87,11 +87,11 @@ public class ConsoleMain {
 
       @Override
       public void loadingSucceeded(ModuleID module, NamespaceMember nsMember, boolean compiled) {
-        loadedModules.add(module);
         if (nsMember.abstractDefinition != null) {
-          loadedModuleRoots.add(nsMember.abstractDefinition);
+          modulesToTypeCheck.add(nsMember.abstractDefinition);
         }
         if (compiled) {
+          loadedModules.add(module);
           System.out.println("[Resolved] " + module.getModulePath());
         } else {
           System.out.println("[Loaded] " + module.getModulePath());
@@ -133,7 +133,7 @@ public class ConsoleMain {
 
     final Set<ModuleID> failedModules = new HashSet<>();
 
-    TypecheckingOrdering.typecheck(loadedModuleRoots, errorReporter, new TypecheckedReporter() {
+    TypecheckingOrdering.typecheck(modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Abstract.Definition definition) {
       }

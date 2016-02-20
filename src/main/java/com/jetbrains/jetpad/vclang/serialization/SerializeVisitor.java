@@ -116,12 +116,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     return null;
   }
 
-  public void addDependentLink(DependentLink link) {
-    for (; link.hasNext(); link = link.getNext()) {
-      myBindingMap.put(link, myCounter++);
-    }
-  }
-
   public void addBinding(Binding binding) {
     myBindingMap.put(binding, myCounter++);
   }
