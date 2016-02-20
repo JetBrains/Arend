@@ -368,7 +368,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   }
 
   public ClassField visitAbstract(Abstract.AbstractDefinition def, ClassDefinition thisClass) {
-    String name = def.getName();
     List<? extends Abstract.Argument> arguments = def.getArguments();
     Expression typedResultType;
     DependentLink thisParameter = param("\\this", ClassCall(thisClass));

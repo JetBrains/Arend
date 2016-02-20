@@ -498,7 +498,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         myErrorReporter.report(error);
         return null;
       }
-      universe = maxUniverse;
+      Universe prop = new Universe.Type(0, Universe.Type.PROP);
+      universe = codomainUniverse.equals(prop) ? prop : maxUniverse;
     }
 
     argsResult.expression = codomainResult == null ? Sigma(list.getFirst()) : Pi(list.getFirst(), codomainResult.expression);

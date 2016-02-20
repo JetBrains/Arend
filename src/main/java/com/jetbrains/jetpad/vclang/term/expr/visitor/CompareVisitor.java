@@ -271,6 +271,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       mySubstitution.put(params1.get(i), params2.get(i));
     }
 
+    visitor.myCMP = myCMP;
     if (!visitor.compare(cod1, cod2)) {
       return false;
     }
