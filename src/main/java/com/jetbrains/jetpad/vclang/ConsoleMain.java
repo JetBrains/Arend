@@ -88,7 +88,9 @@ public class ConsoleMain {
       @Override
       public void loadingSucceeded(ModuleID module, NamespaceMember nsMember, boolean compiled) {
         loadedModules.add(module);
-        loadedModuleRoots.add(nsMember.abstractDefinition);
+        if (nsMember.abstractDefinition != null) {
+          loadedModuleRoots.add(nsMember.abstractDefinition);
+        }
         if (compiled) {
           System.out.println("[Resolved] " + module.getModulePath());
         } else {

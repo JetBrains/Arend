@@ -32,7 +32,7 @@ public class FileOutput implements Output {
 
   @Override
   public boolean canWrite() {
-    return !myReadOnly && myFile.canWrite();
+    return !myReadOnly;
   }
 
   @Override

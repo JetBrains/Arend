@@ -51,7 +51,7 @@ public class FileOperations {
   public static String sha256ToStr(byte[] sha256) {
     StringBuilder sb = new StringBuilder();
     for (byte b : sha256) {
-      sb.append(Integer.toString((b & 0xff) + 0x100, 16));
+      sb.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
     }
     return sb.toString();
   }
