@@ -214,7 +214,7 @@ public class TypeCheckingDefCall {
       NamespaceMember actualMember = toNamespaceMember(resolvedDefinition);
       member = result.member.namespace.getMember(resolvedDefinition.getName());
       if (member == null || actualMember.namespace.getParent() != member.namespace.getParent()) {
-        TypeCheckingError error = new NameDefinedError(false, expr, resolvedDefinition.getName(), actualMember.namespace.getParent().getResolvedName());
+        TypeCheckingError error = new NameDefinedError(false, expr, resolvedDefinition.getName(), result.member.getResolvedName());
         expr.setWellTyped(myVisitor.getContext(), Error(result.baseResult == null ? null : result.baseResult.expression, error));
         myVisitor.getErrorReporter().report(error);
         return null;
