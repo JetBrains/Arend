@@ -203,6 +203,13 @@ public class ElimTest {
   }
 
   @Test
+  public void testPreludeSuc() {
+    typeCheckClass(
+        "\\static \\function test' => ::Prelude.suc\n"
+    );
+  }
+
+  @Test
   public void testNoPatterns() {
     typeCheckClass("\\static \\function test (n : Nat) : 0 = 1 <= \\elim n", 1);
   }
