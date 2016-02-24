@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 public class ProjExpression extends Expression {
   private final Expression myExpression;
@@ -23,6 +24,7 @@ public class ProjExpression extends Expression {
   @Override
   public Expression getType() {
     Expression type = myExpression.getType();
+    type = type.normalize(NormalizeVisitor.Mode.WHNF);
     if (!(type instanceof SigmaExpression)) return null;
     DependentLink params = ((SigmaExpression) type).getParameters();
     if (myField == 0) {
