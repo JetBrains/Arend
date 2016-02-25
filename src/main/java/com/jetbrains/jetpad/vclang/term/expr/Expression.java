@@ -19,6 +19,10 @@ public abstract class Expression implements PrettyPrintable {
 
   public abstract Expression getType();
 
+  public String checkType() {
+    return accept(new ValidateTypeVisitor(), null);
+  }
+
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
