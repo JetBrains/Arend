@@ -1,12 +1,16 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
@@ -63,6 +67,12 @@ public class ValidateTypeTest {
     DependentLink link = params(param("x", Nat()), param("y", Nat()), param("z", Nat()));
     Expression expr = Proj(Tuple(Sigma(link), Zero(), Zero(), Zero()), 3);
     fail(expr);
+  }
+
+  @Test
+  public void testLol() {
+    FunctionDefinition classDefinition = (FunctionDefinition) typeCheckDef("\\function id (x : Nat) => x");
+    classDefinition.getDefCall().checkType();
   }
 
 }

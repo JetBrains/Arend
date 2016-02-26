@@ -2,11 +2,16 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
+public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void>
+        implements ElimTreeNodeVisitor<Void, Void> {
 
   public static class ErrorReporter {
     private final ArrayList<Expression> expressions = new ArrayList<>();
@@ -34,6 +39,15 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
 
   public ValidateTypeVisitor(ErrorReporter errorReporter) {
     this.myErrorReporter = errorReporter;
+  }
+
+  private void visitDependentLink(DependentLink link) {
+    if (!link.isExplicit()) {
+      myErrorReporter.addError(link.getType(), "Explicit argument expected");
+    }
+    if (link.hasNext()) {
+      visitDependentLink(link.getNext());
+    }
   }
 
   @Override
@@ -75,6 +89,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
 
   @Override
   public Void visitLam(LamExpression expr, Void params) {
+    visitDependentLink(expr.getParameters());
     expr.getType().accept(this, params);
     expr.getBody().accept(this, params);
     return null;
@@ -82,6 +97,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
 
   @Override
   public Void visitPi(PiExpression expr, Void params) {
+    visitDependentLink(expr.getParameters());
     expr.getType().accept(this, params);
     expr.getCodomain().accept(this, params);
     return null;
@@ -89,6 +105,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
 
   @Override
   public Void visitSigma(SigmaExpression expr, Void params) {
+    visitDependentLink(expr.getParameters());
     expr.getType().accept(this, params);
     return null;
   }
@@ -108,6 +125,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
   public Void visitTuple(TupleExpression expr, Void params) {
     SigmaExpression type = expr.getType();
     DependentLink link = type.getParameters();
+    visitDependentLink(link);
     type.accept(this, params);
     for (Expression field : expr.getFields()) {
       field.accept(this, params);
@@ -153,4 +171,21 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
     letExpression.getType().accept(this, params);
     return null;
   }
+
+  @Override
+  public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
+    return null;
+  }
+
+  @Override
+  public Void visitLeaf(LeafElimTreeNode leafNode, Void params) {
+    leafNode.getExpression().accept(this, params);
+    return null;
+  }
+
+  @Override
+  public Void visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
+    return null;
+  }
+
 }
