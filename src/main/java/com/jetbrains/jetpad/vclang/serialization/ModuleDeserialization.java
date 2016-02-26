@@ -4,18 +4,21 @@ import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.module.SerializableModuleID;
+import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
-import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.UnknownInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.param.*;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -319,13 +322,6 @@ public class ModuleDeserialization {
           String name = readString(stream);
           Expression type = readExpression(stream, definitionMap);
           link = new TypedDependentLink(isExplicit, name, type, EmptyDependentLink.getInstance());
-        }
-        break;
-        case 3: {
-          boolean isExplicit = stream.readBoolean();
-          Expression type = readExpression(stream, definitionMap);
-          link = new NonDependentLink(type, EmptyDependentLink.getInstance());
-          link.setExplicit(isExplicit);
         }
         break;
         default:
