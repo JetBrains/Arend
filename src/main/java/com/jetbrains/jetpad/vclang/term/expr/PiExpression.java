@@ -26,7 +26,10 @@ public class PiExpression extends DependentTypeExpression {
   @Override
   public Universe getUniverse() {
     Universe universe = super.getUniverse();
-    Expression type = myCodomain.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    Expression type = myCodomain.getType();
+    if (type != null) {
+      type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    }
     if (!(type instanceof UniverseExpression) || universe == null) {
       return null;
     }

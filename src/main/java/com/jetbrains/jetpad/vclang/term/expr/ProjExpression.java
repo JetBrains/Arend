@@ -24,6 +24,10 @@ public class ProjExpression extends Expression {
   @Override
   public Expression getType() {
     Expression type = myExpression.getType();
+    if (type == null) {
+      return null;
+    }
+
     type = type.normalize(NormalizeVisitor.Mode.WHNF);
     if (!(type instanceof SigmaExpression)) return null;
     DependentLink params = ((SigmaExpression) type).getParameters();

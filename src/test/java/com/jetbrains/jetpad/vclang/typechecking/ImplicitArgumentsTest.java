@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
@@ -228,7 +229,7 @@ public class ImplicitArgumentsTest {
         "  | z (x : Nat) => x\n" +
         "\\in x z";
     CheckTypeVisitor.Result result = typeCheckExpr(context, term, null);
-    assertEquals(Pi(Nat(), Nat()), result.type);
+    assertEquals(Pi(Nat(), Nat()), result.type.normalize(NormalizeVisitor.Mode.WHNF));
   }
 
   @Test

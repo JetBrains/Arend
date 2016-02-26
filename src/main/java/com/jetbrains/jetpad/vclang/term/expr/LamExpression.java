@@ -27,6 +27,7 @@ public class LamExpression extends Expression {
 
   @Override
   public Expression getType() {
-    return new PiExpression(myLink, myBody.getType());
+    Expression bodyType = myBody.getType();
+    return bodyType != null ? new PiExpression(myLink, bodyType) : null;
   }
 }

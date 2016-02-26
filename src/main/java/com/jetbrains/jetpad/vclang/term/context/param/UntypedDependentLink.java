@@ -5,11 +5,10 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
-import java.util.Iterator;
 import java.util.List;
 
 public class UntypedDependentLink implements DependentLink {
-  private final String myName;
+  private String myName;
   private DependentLink myNext;
 
   public UntypedDependentLink(String name, DependentLink next) {
@@ -50,6 +49,11 @@ public class UntypedDependentLink implements DependentLink {
       last = last.getNext();
     }
     last.setNext(next);
+  }
+
+  @Override
+  public void setName(String name) {
+    myName = name;
   }
 
   @Override
@@ -96,14 +100,6 @@ public class UntypedDependentLink implements DependentLink {
     } else {
       return EmptyDependentLink.getInstance();
     }
-  }
-
-  @Override
-  public DependentLink subst(Substitution subst, Iterator<String> it) {
-    UntypedDependentLink result = new UntypedDependentLink(it.next());
-    subst.add(this, new ReferenceExpression(result));
-    result.myNext = myNext.subst(subst, it);
-    return result;
   }
 
   @Override

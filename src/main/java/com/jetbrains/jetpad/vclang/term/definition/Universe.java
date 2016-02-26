@@ -104,7 +104,7 @@ public abstract class Universe {
     @Override
     public Type succ() {
       if (myTruncated == PROP) return new Type(0, SET);
-      return new Type(getLevel() == NO_LEVEL ? NO_LEVEL : getLevel() + 1, myTruncated);
+      return new Type(getLevel() == NO_LEVEL ? NO_LEVEL : getLevel() + 1, myTruncated == NOT_TRUNCATED ? NOT_TRUNCATED : myTruncated + 1);
     }
 
     @Override

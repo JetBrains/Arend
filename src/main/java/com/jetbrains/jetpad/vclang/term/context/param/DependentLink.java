@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public interface DependentLink extends Binding {
@@ -14,11 +13,10 @@ public interface DependentLink extends Binding {
   void setType(Expression type);
   DependentLink getNext();
   void setNext(DependentLink next);
+  void setName(String name);
   DependentLink subst(Substitution subst, int size);
-  DependentLink subst(Substitution subst, Iterator<String> names);
   DependentLink getNextTyped(List<String> names);
   boolean hasNext();
-
 
   class Helper {
     public static void freeSubsts(DependentLink link, Substitution substitution) {

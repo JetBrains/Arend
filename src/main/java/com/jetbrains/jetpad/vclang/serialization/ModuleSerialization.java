@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.context.param.NonDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -111,7 +110,6 @@ public class ModuleSerialization {
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(constructor.getResolvedName()));
       visitor.getDataStream().writeBoolean(constructor.hasErrors());
       if (!constructor.hasErrors()) {
-        // TODO: serialization test for patterns
         visitor.getDataStream().writeBoolean(constructor.getPatterns() != null);
         if (constructor.getPatterns() != null) {
           writeParameters(visitor, constructor.getPatterns().getParameters());
@@ -242,11 +240,6 @@ public class ModuleSerialization {
       if (link instanceof UntypedDependentLink) {
         visitor.getDataStream().write(2);
         writeString(visitor, link.getName());
-      } else
-      if (link instanceof NonDependentLink) {
-        visitor.getDataStream().write(3);
-        visitor.getDataStream().writeBoolean(link.isExplicit());
-        link.getType().accept(visitor, null);
       } else {
         throw new IllegalStateException();
       }

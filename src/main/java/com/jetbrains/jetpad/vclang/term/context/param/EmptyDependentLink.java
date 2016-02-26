@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 
-import java.util.Iterator;
 import java.util.List;
 
 public class EmptyDependentLink implements DependentLink {
@@ -41,12 +40,12 @@ public class EmptyDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink subst(Substitution subst, int size) {
-    return this;
+  public void setName(String name) {
+    throw new IllegalStateException();
   }
 
   @Override
-  public DependentLink subst(Substitution subst, Iterator<String> names) {
+  public DependentLink subst(Substitution subst, int size) {
     return this;
   }
 

@@ -31,8 +31,12 @@ public class AppExpression extends Expression {
   @Override
   public Expression getType() {
     List<Expression> arguments = new ArrayList<>();
-    Expression function = getFunction(arguments);
-    Collections.reverse(arguments);
-    return function.getType().applyExpressions(arguments);
+    Expression functionType = getFunction(arguments).getType();
+    if (functionType != null) {
+      Collections.reverse(arguments);
+      return functionType.applyExpressions(arguments);
+    } else {
+      return null;
+    }
   }
 }

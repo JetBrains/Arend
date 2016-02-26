@@ -194,6 +194,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   public Result typeCheck(Abstract.Expression expr, Expression expectedType) {
     if (expr == null) {
+      TypeCheckingError error = new TypeCheckingError("Incomplete expression", null);
+      myErrorReporter.report(error);
       return null;
     }
     return expr.accept(this, expectedType);

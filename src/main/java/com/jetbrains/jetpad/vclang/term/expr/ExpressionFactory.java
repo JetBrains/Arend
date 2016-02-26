@@ -3,7 +3,10 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.param.*;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
@@ -14,9 +17,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
-import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toNames;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.*;
 
 public class ExpressionFactory {
   public static Expression Apps(Expression expr, Expression... exprs) {
@@ -146,7 +147,7 @@ public class ExpressionFactory {
   }
 
   public static DependentLink param(Expression type) {
-    return new NonDependentLink(type, EmptyDependentLink.getInstance());
+    return new TypedDependentLink(true, null, type, EmptyDependentLink.getInstance());
   }
 
   public static List<String> vars(String... vars) {
