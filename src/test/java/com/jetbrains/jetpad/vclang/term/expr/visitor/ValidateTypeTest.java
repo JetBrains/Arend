@@ -3,9 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.SigmaExpression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
-import com.jetbrains.jetpad.vclang.typechecking.constructions.Sigma;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
@@ -39,7 +37,7 @@ public class ValidateTypeTest {
     fail(expr);
   }
 
-  @Test
+  @Test(expected = NullPointerException.class)
   public void testProjNotSigma() {
     Expression expr = Proj(Nat(), 0);
     fail(expr);
@@ -52,4 +50,19 @@ public class ValidateTypeTest {
     Expression expr = Proj(Tuple(Sigma(param), Zero(), Zero()), 0);
     fail(expr);
   }
+
+  @Test
+  public void testProjTriple() {
+    DependentLink link = params(param("x", Nat()), param("y", Nat()), param("z", Nat()));
+    Expression expr = Proj(Tuple(Sigma(link), Zero(), Zero(), Zero()), 2);
+    ok(expr);
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void testProjTooLargeIndex() {
+    DependentLink link = params(param("x", Nat()), param("y", Nat()), param("z", Nat()));
+    Expression expr = Proj(Tuple(Sigma(link), Zero(), Zero(), Zero()), 3);
+    fail(expr);
+  }
+
 }

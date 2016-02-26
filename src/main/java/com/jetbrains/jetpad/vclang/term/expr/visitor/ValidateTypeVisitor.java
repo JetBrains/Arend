@@ -132,8 +132,8 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
       myErrorReporter.addError(tuple, "Tuple expected");
     } else {
       List<Expression> fields = ((TupleExpression)tuple).getFields();
-      if (fields.size() >= expr.getField()) {
-        myErrorReporter.addError(tuple, "Too few fields (at least " + (expr.getField() + 1) + " expected");
+      if (fields.size() <= expr.getField()) {
+        myErrorReporter.addError(tuple, "Too few fields (at least " + (expr.getField() + 1) + " expected)");
       }
     }
     return null;
