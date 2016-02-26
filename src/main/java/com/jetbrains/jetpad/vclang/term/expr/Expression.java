@@ -19,7 +19,7 @@ public abstract class Expression implements PrettyPrintable {
 
   public abstract Expression getType();
 
-  public String checkType() {
+  public ValidateTypeVisitor.Result checkType() {
     return accept(new ValidateTypeVisitor(), null);
   }
 
