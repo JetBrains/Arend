@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
 
@@ -47,12 +48,27 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
     Expression funType = fun.getType();
     if (!(funType instanceof PiExpression)) {
       myErrorReporter.addError(expr, "Function " + fun + " doesn't have Pi-type");
+    } else {
+      ArrayList<DependentLink> links = new ArrayList<>();
+      funType.getPiParameters(links, false, false);
+      ArrayList<ArgumentExpression> args = new ArrayList<>();
+      fun.getFunctionArgs(args);
+      if (args.size() > links.size()) {
+        myErrorReporter.addError(expr, "Too few Pi abstractions");
+      }
+      for (int i = 0; i < args.size(); i++) {
+        if (!args.get(i).getExpression().getType().equals(links.get(i).getType())) {
+          myErrorReporter.addError(args.get(i).getExpression(), "Expected type: " + links.get(i).getType());
+        }
+      }
     }
+
     return null;
   }
 
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
+    expr.getType().accept(this, params);
     expr.getBinding().getType().accept(this, params);
     return null;
   }
@@ -108,8 +124,18 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
 
   @Override
   public Void visitProj(ProjExpression expr, Void params) {
-    expr.getType().accept(this, params);
-    expr.getExpression().accept(this, params);
+    Expression type = expr.getType();
+    type.accept(this, params);
+    Expression tuple = expr.getExpression();
+    tuple.accept(this, params);
+    if (!(tuple instanceof TupleExpression)) {
+      myErrorReporter.addError(tuple, "Tuple expected");
+    } else {
+      List<Expression> fields = ((TupleExpression)tuple).getFields();
+      if (fields.size() >= expr.getField()) {
+        myErrorReporter.addError(tuple, "Too few fields (at least " + (expr.getField() + 1) + " expected");
+      }
+    }
     return null;
   }
 
@@ -121,6 +147,9 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void> {
 
   @Override
   public Void visitLet(LetExpression letExpression, Void params) {
+    for (LetClause clause : letExpression.getClauses()) {
+      clause.getResultType().accept(this, params);
+    }
     letExpression.getType().accept(this, params);
     return null;
   }
