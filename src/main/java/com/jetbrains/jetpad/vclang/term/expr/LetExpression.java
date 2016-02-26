@@ -36,7 +36,8 @@ public class LetExpression extends Expression {
 
   @Override
   public Expression getType() {
-    return Let(myClauses, myExpression.getType());
+    Expression type = myExpression.getType();
+    return type != null ? Let(myClauses, type) : null;
   }
 
   @Override
