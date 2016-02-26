@@ -346,7 +346,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     Expression type = typedDef.getType();
     if (type != null) {
-      type = type.getType().normalize(NormalizeVisitor.Mode.NF);
+      type = type.getType().normalize(NormalizeVisitor.Mode.WHNF);
       if (type instanceof UniverseExpression) {
         typedDef.setUniverse(((UniverseExpression) type).getUniverse());
       } else {

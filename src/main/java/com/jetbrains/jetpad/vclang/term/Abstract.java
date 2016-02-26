@@ -212,8 +212,8 @@ public final class Abstract {
     enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
     class Precedence {
-      public Associativity associativity;
-      public byte priority;
+      public final Associativity associativity;
+      public final byte priority;
 
       public Precedence(Associativity associativity, byte priority) {
         this.associativity = associativity;
