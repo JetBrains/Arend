@@ -110,7 +110,6 @@ public class ModuleSerialization {
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(constructor.getResolvedName()));
       visitor.getDataStream().writeBoolean(constructor.hasErrors());
       if (!constructor.hasErrors()) {
-        // TODO: serialization test for patterns
         visitor.getDataStream().writeBoolean(constructor.getPatterns() != null);
         if (constructor.getPatterns() != null) {
           writeParameters(visitor, constructor.getPatterns().getParameters());
