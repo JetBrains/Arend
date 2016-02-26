@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +59,7 @@ public class ConstructorClause implements Clause {
     Substitution result = new Substitution();
 
     List<Expression> arguments = new ArrayList<>();
-    myParent.getReference().getType().getFunction(arguments);
+    myParent.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
     Collections.reverse(arguments);
 
     Expression substExpr = new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(arguments));
