@@ -52,7 +52,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
 
   public ConstructorClause addClause(Constructor constructor, List<String> names) {
     List<Expression> dataTypeArguments = new ArrayList<>();
-    myReference.getType().getFunction(dataTypeArguments);
+    myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(dataTypeArguments);
     Collections.reverse(dataTypeArguments);
 
     dataTypeArguments = constructor.matchDataTypeArguments(dataTypeArguments);

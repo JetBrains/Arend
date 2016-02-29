@@ -240,6 +240,16 @@ public class ElimTest {
   }
 
   @Test
+  public void testElimNeedNormalize() {
+    typeCheckClass(
+      "\\static \\data D Nat | D (suc n) => c\n" +
+      "\\static \\function f => D (suc zero)\n" +
+      "\\static \\function test (x : f) : Nat <= \\elim x\n" +
+          " | c => 0"
+    );
+  }
+
+  @Test
   public void elimFail() {
       typeCheckClass("\\static \\function\n" +
                      "test (x y : Nat) : y = 0 <= \\elim x, y\n" +
