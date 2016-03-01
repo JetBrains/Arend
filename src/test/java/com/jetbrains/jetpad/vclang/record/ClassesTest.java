@@ -1,9 +1,11 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import org.junit.Test;
@@ -298,7 +300,7 @@ public class ClassesTest {
 
   @Test
   public void fieldCallTest() {
-    ClassDefinition testClass = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract x : \\Type0\n" +
         "}\n" +
@@ -306,9 +308,8 @@ public class ClassesTest {
         "  \\abstract a : A\n" +
         "  \\abstract y : a.x\n" +
         "}");
-    Namespace namespace = testClass.getResolvedName().toNamespace();
-    ClassDefinition aClass = (ClassDefinition) namespace.getDefinition("A");
-    ClassDefinition bClass = (ClassDefinition) namespace.getDefinition("B");
+    ClassDefinition aClass = (ClassDefinition) member.namespace.getDefinition("A");
+    ClassDefinition bClass = (ClassDefinition) member.namespace.getDefinition("B");
     ClassField xField = aClass.getField("x");
     ClassField aField = bClass.getField("a");
     ClassField yField = bClass.getField("y");
@@ -324,7 +325,7 @@ public class ClassesTest {
 
   @Test
   public void funCallsTest() {
-    ClassDefinition testClass = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         "\\static \\function (+) (x y : Nat) => x\n" +
         "\\static \\class A {\n" +
         "  \\static \\function p => 0\n" +
@@ -338,10 +339,9 @@ public class ClassesTest {
         "    \\function k => h + (p + q)" +
         "  }\n" +
         "}");
-    Namespace namespace = testClass.getResolvedName().toNamespace();
-    Definition plus = namespace.getDefinition("+");
+    Definition plus = member.namespace.getDefinition("+");
 
-    NamespaceMember aMember = namespace.getMember("A");
+    NamespaceMember aMember = member.namespace.getMember("A");
     ClassDefinition aClass = (ClassDefinition) aMember.definition;
     assertTrue(aClass.getFields().isEmpty());
     FunctionDefinition pFun = (FunctionDefinition) aMember.namespace.getDefinition("p");

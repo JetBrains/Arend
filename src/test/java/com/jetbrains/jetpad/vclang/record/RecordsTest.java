@@ -1,8 +1,11 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
@@ -156,52 +159,48 @@ public class RecordsTest {
 
   @Test
   public void recordUniverseTest() {
-    ClassDefinition result = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
-    Namespace namespace = result.getResolvedName().toNamespace();
-    assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("C").getType());
+    assertEquals(new Universe.Type(0, Universe.Type.SET), member.namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(0, Universe.Type.SET), member.namespace.getDefinition("C").getType());
   }
 
   @Test
   public void recordUniverseTest2() {
-    ClassDefinition result = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
-    Namespace namespace = result.getResolvedName().toNamespace();
-    assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(0, Universe.Type.PROP), namespace.getDefinition("C").getType());
+    assertEquals(new Universe.Type(0, Universe.Type.SET), member.namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(0, Universe.Type.PROP), member.namespace.getDefinition("C").getType());
   }
 
   @Test
   public void recordUniverseTest3() {
-    ClassDefinition result = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
-    Namespace namespace = result.getResolvedName().toNamespace();
-    assertEquals(new Universe.Type(4, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(2, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("C").getType());
+    assertEquals(new Universe.Type(4, Universe.Type.NOT_TRUNCATED), member.namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(2, Universe.Type.NOT_TRUNCATED), member.namespace.getDefinition("C").getType());
   }
 
   @Test
   public void recordConstructorsTest() {
-    ClassDefinition classDef = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract x : Nat\n" +
         "  \\data Foo | foo (x = 0)\n" +
         "  \\function y : foo = foo => path (\\lam _ => foo)\n" +
         "}\n" +
         "\\static \\function test (p : A) => p.y");
-    Namespace namespace = classDef.getResolvedName().toNamespace();
-    FunctionDefinition testFun = (FunctionDefinition) namespace.getDefinition("test");
+    FunctionDefinition testFun = (FunctionDefinition) member.namespace.getDefinition("test");
     Expression resultType = testFun.getResultType();
     List<Expression> arguments = new ArrayList<>(3);
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
     assertEquals(3, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 
-    DataDefinition Foo = (DataDefinition) namespace.findChild("A").getDefinition("Foo");
+    DataDefinition Foo = (DataDefinition) member.namespace.findChild("A").getDefinition("Foo");
     Constructor foo = Foo.getConstructor("foo");
 
     assertTrue(arguments.get(0) instanceof ConCallExpression);
@@ -226,7 +225,7 @@ public class RecordsTest {
 
     assertTrue(domArguments.get(1) instanceof AppExpression);
     assertEquals(Reference(testFun.getParameters()), ((AppExpression) domArguments.get(1)).getArgument().getExpression());
-    assertEquals(namespace.findChild("A").getDefinition("x").getDefCall(), ((AppExpression) domArguments.get(1)).getFunction());
+    assertEquals(member.namespace.findChild("A").getDefinition("x").getDefCall(), ((AppExpression) domArguments.get(1)).getFunction());
 
     assertTrue(domArguments.get(2) instanceof LamExpression);
     assertTrue(((LamExpression) domArguments.get(2)).getBody() instanceof DefCallExpression);
@@ -235,24 +234,23 @@ public class RecordsTest {
 
   @Test
   public void recordConstructorsParametersTest() {
-    ClassDefinition classDef = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
       "\\static \\class A {\n" +
       "  \\abstract x : Nat\n" +
       "  \\data Foo (p : x = x) | foo (p = p)\n" +
       "  \\function y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
       "}\n" +
       "\\static \\function test (q : A) => q.y");
-    Namespace namespace = classDef.getResolvedName().toNamespace();
-    FunctionDefinition testFun = (FunctionDefinition) namespace.getDefinition("test");
+    FunctionDefinition testFun = (FunctionDefinition) member.namespace.getDefinition("test");
     Expression resultType = testFun.getResultType();
-    Expression xCall = namespace.findChild("A").getDefinition("x").getDefCall();
+    Expression xCall = member.namespace.findChild("A").getDefinition("x").getDefCall();
     List<Expression> arguments = new ArrayList<>(3);
     assertTrue(resultType instanceof PiExpression);
     Expression function = ((PiExpression) resultType).getParameters().getType().normalize(NormalizeVisitor.Mode.NF).getFunction(arguments);
     assertEquals(3, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 
-    DataDefinition Foo = (DataDefinition) namespace.findChild("A").getDefinition("Foo");
+    DataDefinition Foo = (DataDefinition) member.namespace.findChild("A").getDefinition("Foo");
     Constructor foo = Foo.getConstructor("foo");
 
     assertTrue(arguments.get(0) instanceof AppExpression);
