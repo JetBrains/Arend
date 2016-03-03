@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -22,7 +20,6 @@ import java.util.List;
 import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
-import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toSubstitution;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
@@ -48,6 +45,36 @@ public class TypeCheckingDefCall {
     return myThisExpr;
   }
 
+  private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result, Abstract.Expression expr) {
+    if (classDefinition == definition.getThisClass()) {
+      return result;
+    }
+    ClassField parentField = classDefinition.getParentField();
+    if (parentField == null || !(parentField.getBaseType() instanceof ClassCallExpression)) {
+      TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr);
+      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+      myVisitor.getErrorReporter().report(error);
+      return null;
+    }
+    return findParent(((ClassCallExpression) parentField.getBaseType()).getDefinition(), definition, Apps(FieldCall(parentField), result), expr);
+  }
+
+  public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
+    String name = expr.getName();
+    ListIterator<Binding> it = myVisitor.getContext().listIterator(myVisitor.getContext().size());
+    while (it.hasPrevious()) {
+      Binding def = it.previous();
+      if (name.equals(def.getName())) {
+        return new CheckTypeVisitor.Result(Reference(def), def.getType());
+      }
+    }
+
+    TypeCheckingError error = new NotInScopeError(expr, name);
+    expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+    myVisitor.getErrorReporter().report(error);
+    return null;
+  }
+
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
     DefCallResult result = typeCheckNamespace(expr, null);
     if (result == null) {
@@ -71,9 +98,6 @@ public class TypeCheckingDefCall {
       return null;
     } else {
       CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(definition.getDefCall(), definition.getType());
-      if (definition instanceof Constructor) {
-        fixConstructorParameters((Constructor) definition, result, false);
-      }
       if (thisExpr != null) {
         result.expression = ((DefCallExpression) result.expression).applyThis(thisExpr);
         if (definition instanceof ClassDefinition) {
@@ -84,52 +108,6 @@ public class TypeCheckingDefCall {
       }
       return result;
     }
-  }
-
-  private void fixConstructorParameters(Constructor constructor, CheckTypeVisitor.Result result, boolean doSubst) {
-    DependentLink parameters = constructor.getDataTypeParameters();
-    if (parameters.hasNext()) {
-      Substitution substitution = new Substitution();
-      parameters = DependentLink.Helper.subst(parameters, substitution);
-      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-        link.setExplicit(false);
-      }
-      result.type = Pi(parameters, result.type.subst(substitution));
-    }
-
-    if (doSubst && result.expression instanceof ConCallExpression) {
-      List<Expression> args = ((ConCallExpression) result.expression).getDataTypeArguments();
-      if (!args.isEmpty()) {
-        assert parameters.hasNext();
-        result.type = result.type.applyExpressions(args);
-      }
-    }
-  }
-
-  private Expression findParent(ClassDefinition classDefinition, ClassDefinition parent, Expression expr) {
-    if (classDefinition == parent) {
-      return expr;
-    }
-    ClassField parentField = classDefinition.getParentField();
-    if (parentField == null || !(parentField.getBaseType() instanceof ClassCallExpression)) {
-      return null;
-    }
-    return findParent(((ClassCallExpression) parentField.getBaseType()).getDefinition(), parent, Apps(FieldCall(parentField), expr));
-  }
-
-  public CheckTypeVisitor.Result getLocalVar(String name, Abstract.Expression expr) {
-    ListIterator<Binding> it = myVisitor.getContext().listIterator(myVisitor.getContext().size());
-    while (it.hasPrevious()) {
-      Binding def = it.previous();
-      if (name.equals(def.getName())) {
-        return new CheckTypeVisitor.Result(Reference(def), def.getType());
-      }
-    }
-
-    TypeCheckingError error = new NotInScopeError(expr, name);
-    expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-    myVisitor.getErrorReporter().report(error);
-    return null;
   }
 
   private static class DefCallResult {
@@ -148,7 +126,7 @@ public class TypeCheckingDefCall {
     String name = expr.getName();
     BaseDefinition resolvedDefinition = expr.getResolvedDefinition();
     if (resolvedDefinition == null) {
-      CheckTypeVisitor.Result result = getLocalVar(name, expr);
+      CheckTypeVisitor.Result result = getLocalVar(expr);
       return result == null ? null : new DefCallResult(result, null, null);
     }
 
@@ -188,11 +166,8 @@ public class TypeCheckingDefCall {
     if (definition.getThisClass() != null) {
       if (myThisClass != null) {
         member = null;
-        thisExpr = findParent(myThisClass, definition.getThisClass(), myThisExpr);
+        thisExpr = findParent(myThisClass, definition, myThisExpr, expr);
         if (thisExpr == null) {
-          TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-          myVisitor.getErrorReporter().report(error);
           return null;
         }
       } else {
@@ -341,8 +316,6 @@ public class TypeCheckingDefCall {
       }
     }
 
-    CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType().subst(toSubstitution(constructor.getDataTypeParameters(), arguments)));
-    fixConstructorParameters(constructor, result, true);
-    return result;
+    return new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType().applyExpressions(arguments));
   }
 }

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -25,6 +26,10 @@ public class DefCall {
     assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression());
   }
 
+  private void testFI(Expression expected, NamespaceMember member) {
+    assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getChild("Test").getDefinition("test")).getElimTree()).getExpression());
+  }
+
   private void testType(Expression expected, NamespaceMember member) {
     assertEquals(expected, ((FunctionDefinition) member.namespace.getDefinition("test")).getResultType());
   }
@@ -32,6 +37,11 @@ public class DefCall {
   private DependentLink getThis(NamespaceMember member) {
     FunctionDefinition function = (FunctionDefinition) member.namespace.getDefinition("test");
     return function.getParameters();
+  }
+
+  private Expression getThisFI(NamespaceMember member) {
+    FunctionDefinition function = (FunctionDefinition) member.namespace.getChild("Test").getDefinition("test");
+    return Apps(((ClassDefinition) member.namespace.getDefinition("Test")).getParentField().getDefCall(), Reference(function.getParameters()));
   }
 
   @Test
@@ -57,6 +67,16 @@ public class DefCall {
         "\\function f => 0\n" +
         "\\function test => f");
     test(Apps(member.namespace.getDefinition("f").getDefCall(), Reference(getThis(member))), member);
+  }
+
+  @Test
+  public void funDynamicFromInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\function f => 0\n" +
+        "\\class Test {\n" +
+        "  \\function test => f\n" +
+        "}");
+    testFI(Apps(member.namespace.getDefinition("f").getDefCall(), getThisFI(member)), member);
   }
 
   @Test
@@ -131,6 +151,20 @@ public class DefCall {
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.f");
     test(Apps(member.namespace.getChild("E").getChild("A").getChild("B").getDefinition("f").getDefCall(), Reference(getThis(member))), member);
+  }
+
+  @Test
+  public void funFieldInside2() {
+    NamespaceMember member = typeCheckClass(
+        "\\static \\class E {\n" +
+        "  \\class A {\n" +
+        "    \\static \\class B {\n" +
+        "      \\function f => 0\n" +
+        "    }\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function test (e : E) (b : e.A.B) => b.f");
+    test(Apps(member.namespace.getChild("E").getChild("A").getChild("B").getDefinition("f").getDefCall(), Reference(getThis(member).getNext())), member);
   }
 
   @Test
@@ -217,12 +251,32 @@ public class DefCall {
   }
 
   @Test
+  public void conDynamicFromInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\data D | c\n" +
+        "\\class Test {\n" +
+        "  \\function test => c\n" +
+        "}");
+    testFI(Apps(member.namespace.getDefinition("c").getDefCall(), getThisFI(member)).normalize(NormalizeVisitor.Mode.WHNF), member);
+  }
+
+  @Test
   public void dataDynamic() {
     NamespaceMember member = typeCheckClass(
         "\\data D | c\n" +
         "\\function test => D.c");
     test(Apps(member.namespace.getDefinition("c").getDefCall(), Reference(getThis(member))).normalize(NormalizeVisitor.Mode.WHNF), member);
     assertEquals(member.namespace.getDefinition("c"), member.namespace.getChild("D").getDefinition("c"));
+  }
+
+  @Test
+  public void dataDynamicFromInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\data D | c\n" +
+        "\\class Test {\n" +
+        "  \\function test => D.c\n" +
+        "}");
+    testFI(Apps(member.namespace.getDefinition("c").getDefCall(), getThisFI(member)).normalize(NormalizeVisitor.Mode.WHNF), member);
   }
 
   @Test
@@ -236,6 +290,17 @@ public class DefCall {
   }
 
   @Test
+  public void data0DynamicFromInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
+        "\\class Test {\n" +
+        "  \\function test => (D 0 (\\lam _ => 1)).c\n" +
+        "}");
+    testFI(Apps(member.namespace.getDefinition("c").getDefCall(), getThisFI(member), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(NormalizeVisitor.Mode.WHNF), member);
+    testType(Apps(member.namespace.getDefinition("D").getDefCall(), getThisFI(member), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
+  }
+
+  @Test
   public void data1Dynamic() {
     NamespaceMember member = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
@@ -246,6 +311,17 @@ public class DefCall {
   }
 
   @Test
+  public void data1DynamicFromInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
+        "\\class Test {\n" +
+        "  \\function test => (D 0).c (\\lam _ => 1)\n" +
+        "}");
+    testFI(Apps(Apps(member.namespace.getDefinition("c").getDefCall(), getThisFI(member), Zero()).normalize(NormalizeVisitor.Mode.WHNF), Lam(param(Nat()), Suc(Zero()))), member);
+    testType(Apps(member.namespace.getDefinition("D").getDefCall(), getThisFI(member), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
+  }
+
+  @Test
   public void data2Dynamic() {
     NamespaceMember member = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
@@ -253,6 +329,17 @@ public class DefCall {
     test(Apps(Apps(member.namespace.getDefinition("c").getDefCall(), Reference(getThis(member))).normalize(NormalizeVisitor.Mode.WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getDefinition("c"), member.namespace.getChild("D").getDefinition("c"));
+  }
+
+  @Test
+  public void data2DynamicFromInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
+        "\\class Test {\n" +
+        "  \\function test => D.c 0 (\\lam _ => 1)\n" +
+        "}");
+    testFI(Apps(Apps(member.namespace.getDefinition("c").getDefCall(), getThisFI(member)).normalize(NormalizeVisitor.Mode.WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
+    testType(Apps(member.namespace.getDefinition("D").getDefCall(), getThisFI(member), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
   }
 
   @Test
@@ -667,5 +754,131 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.D.c", 1);
+  }
+
+  @Test
+  public void classStatic() {
+    NamespaceMember member = typeCheckClass(
+        "\\static \\class C {}\n" +
+        "\\static \\function test => C");
+    test(member.namespace.getDefinition("C").getDefCall(), member);
+  }
+
+  @Test
+  public void classDynamic() {
+    NamespaceMember member = typeCheckClass(
+        "\\class C {}\n" +
+        "\\function test => C");
+    test(member.namespace.getDefinition("C").getDefCall().applyThis(Reference(getThis(member))), member);
+  }
+
+  @Test
+  public void classDynamicFromInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\class C {}\n" +
+        "\\class Test {\n" +
+        "  \\function test => C\n" +
+        "}");
+    testFI(member.namespace.getDefinition("C").getDefCall().applyThis(getThisFI(member)), member);
+  }
+
+  @Test
+  public void classDynamicError() {
+    typeCheckClass(
+        "\\class C {}\n" +
+        "\\static \\function test => C", 1);
+  }
+
+  @Test
+  public void classStaticInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\static \\class B {\n" +
+        "    \\static \\class C {}\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function test => A.B.C");
+    test(member.namespace.getChild("A").getChild("B").getDefinition("C").getDefCall(), member);
+  }
+
+  @Test
+  public void classDynamicInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\class A {\n" +
+        "  \\static \\class B {\n" +
+        "    \\static \\class C {}\n" +
+        "  }\n" +
+        "}\n" +
+        "\\function test => A.B.C");
+    test(member.namespace.getChild("A").getChild("B").getDefinition("C").getDefCall().applyThis(Reference(getThis(member))), member);
+  }
+
+  @Test
+  public void classFieldStatic() {
+    NamespaceMember member = typeCheckClass(
+        "\\static \\class E {\n" +
+        "  \\class C {}\n" +
+        "}\n" +
+        "\\static \\function test (e : E) => e.C");
+    test(member.namespace.getChild("E").getDefinition("C").getDefCall().applyThis(Reference(getThis(member))), member);
+  }
+
+  @Test
+  public void classFieldError() {
+    typeCheckClass(
+        "\\static \\class E {\n" +
+        "  \\static \\class C {}\n" +
+        "}\n" +
+        "\\static \\function test (e : E) => e.C", 1);
+  }
+
+  @Test
+  public void classFieldDynamic() {
+    NamespaceMember member = typeCheckClass(
+        "\\class E {\n" +
+        "  \\class C {}\n" +
+        "}\n" +
+        "\\function test (e : E) => e.C");
+    test(member.namespace.getChild("E").getDefinition("C").getDefCall().applyThis(Reference(getThis(member).getNext())), member);
+  }
+
+  @Test
+  public void classFieldInside() {
+    NamespaceMember member = typeCheckClass(
+        "\\static \\class E {\n" +
+        "  \\class A {\n" +
+        "    \\static \\class B {\n" +
+        "      \\static \\class C {}\n" +
+        "    }\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function test (e : E) => e.A.B.C");
+    test(member.namespace.getChild("E").getChild("A").getChild("B").getDefinition("C").getDefCall().applyThis(Reference(getThis(member))), member);
+  }
+
+  @Test
+  public void classFieldInsideError() {
+    typeCheckClass(
+        "\\static \\class E {\n" +
+        "  \\class A {\n" +
+        "    \\static \\class B {\n" +
+        "      \\class C {}\n" +
+        "    }\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function test (e : E) => e.A.B.C", 1);
+  }
+
+  @Test
+  public void classFieldInsideError2() {
+    typeCheckClass(
+        "\\static \\class E {\n" +
+        "  \\class A {\n" +
+        "    \\class B {\n" +
+        "      \\static \\class C {}\n" +
+        "    }\n" +
+        "  }\n" +
+        "}\n" +
+        "\\static \\function test (e : E) => e.A.B.C", 1);
   }
 }

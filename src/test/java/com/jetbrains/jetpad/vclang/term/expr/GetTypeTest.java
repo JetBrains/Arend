@@ -83,9 +83,13 @@ public class GetTypeTest {
   public void patternConstructor1() {
     NamespaceMember member = typeCheckClass(
         "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
-    assertEquals(Apps(member.namespace.getMember("C").definition.getDefCall(), Zero()), ((DataDefinition) member.namespace.getMember("C").definition).getConstructor("c1").getType());
-    assertEquals(Pi(param(Nat()), Apps(member.namespace.getMember("C").definition.getDefCall(), Suc(Reference(((DataDefinition) member.namespace.getMember("C").definition).getConstructor("c2").getDataTypeParameters())))),
-        ((DataDefinition) member.namespace.getMember("C").definition).getConstructor("c2").getType());
+    DataDefinition data = (DataDefinition) member.namespace.getMember("C").definition;
+    assertEquals(Apps(data.getDefCall(), Zero()), data.getConstructor("c1").getType());
+    DependentLink params = data.getConstructor("c2").getDataTypeParameters();
+    assertEquals(
+        Pi(params, Pi(param(Nat()), Apps(data.getDefCall(), Suc(Reference(params))))),
+        data.getConstructor("c2").getType()
+    );
   }
 
   @Test
@@ -95,11 +99,20 @@ public class GetTypeTest {
         "\\static \\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
     DataDefinition vec = (DataDefinition) member.namespace.getMember("Vec").definition;
     DataDefinition d = (DataDefinition) member.namespace.getMember("D").definition;
-    assertEquals(Apps(DataCall(d), Zero(), Reference(d.getConstructor("dzero").getDataTypeParameters())), d.getConstructor("dzero").getType());
+    assertEquals(
+        Pi(d.getConstructor("dzero").getDataTypeParameters(), Apps(DataCall(d), Zero(), Reference(d.getConstructor("dzero").getDataTypeParameters()))),
+        d.getConstructor("dzero").getType()
+    );
     DependentLink doneParams = d.getConstructor("done").getDataTypeParameters();
-    assertEquals(Apps(DataCall(d), Suc(Reference(doneParams)), Reference(doneParams.getNext())), d.getConstructor("done").getType());
+    assertEquals(
+        Pi(d.getConstructor("done").getDataTypeParameters(), Apps(DataCall(d), Suc(Reference(doneParams)), Reference(doneParams.getNext()))),
+        d.getConstructor("done").getType()
+    );
     DependentLink consParams = vec.getConstructor("Cons").getDataTypeParameters();
-    assertEquals(Pi(Reference(consParams), Pi(Apps(DataCall(vec), Reference(consParams), Reference(consParams.getNext())), Apps(DataCall(vec), Reference(consParams), Suc(Reference(consParams.getNext()))))), vec.getConstructor("Cons").getType());
+    assertEquals(
+        Pi(consParams, Pi(Reference(consParams), Pi(Apps(DataCall(vec), Reference(consParams), Reference(consParams.getNext())), Apps(DataCall(vec), Reference(consParams), Suc(Reference(consParams.getNext())))))),
+        vec.getConstructor("Cons").getType()
+    );
   }
 
   @Test
@@ -110,7 +123,10 @@ public class GetTypeTest {
     DataDefinition d = (DataDefinition) member.namespace.getMember("D").definition;
     DataDefinition c = (DataDefinition) member.namespace.getMember("C").definition;
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
-    assertEquals(Pi(Reference(A), Apps(DataCall(c), Apps(ConCall(d.getConstructor("d")), Reference(A)))), c.getConstructor("c").getType());
+    assertEquals(
+        Pi(c.getConstructor("c").getDataTypeParameters(), Pi(Reference(A), Apps(DataCall(c), Apps(ConCall(d.getConstructor("d")), Reference(A))))),
+        c.getConstructor("c").getType()
+    );
   }
 
   @Test
@@ -119,6 +135,9 @@ public class GetTypeTest {
         "\\static \\data Box (n : Nat) | box\n" +
         "\\static \\data D (n : Nat) (Box n) | D (zero) _ => d");
     DataDefinition d = (DataDefinition) member.namespace.getMember("D").definition;
-    assertEquals(Apps(DataCall(d), Zero(), Reference(d.getConstructor("d").getDataTypeParameters())), d.getConstructor("d").getType());
+    assertEquals(
+        Pi(d.getConstructor("d").getDataTypeParameters(), Apps(DataCall(d), Zero(), Reference(d.getConstructor("d").getDataTypeParameters()))),
+        d.getConstructor("d").getType()
+    );
   }
 }

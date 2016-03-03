@@ -94,8 +94,8 @@ public class NormalizationTest {
 
   private void initializeBDList() {
     NamespaceMember member = typeCheckClass(
-        "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A" +
-            "\\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
+        "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A\n" +
+        "  \\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
     );
     bdList = (DataDefinition) member.namespace.getDefinition("BD-list");
     bdNil = bdList.getConstructor("nil");

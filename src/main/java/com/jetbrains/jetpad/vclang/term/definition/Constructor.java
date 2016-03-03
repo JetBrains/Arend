@@ -77,8 +77,7 @@ public class Constructor extends Definition {
     return myPatterns == null ? arguments : ((Pattern.MatchOKResult) myPatterns.match(arguments)).expressions;
   }
 
-  @Override
-  public Expression getType() {
+  public Expression getDataTypeExpression() {
     Expression resultType = DataCall(myDataType);
     if (myPatterns == null) {
       for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -103,7 +102,27 @@ public class Constructor extends Definition {
         dataTypeParams = dataTypeParams.getNext();
       }
     }
-    return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
+
+    return resultType;
+  }
+
+  @Override
+  public Expression getType() {
+    Expression resultType = getDataTypeExpression();
+    if (myParameters.hasNext()) {
+      resultType = Pi(myParameters, resultType);
+    }
+
+    DependentLink parameters = getDataTypeParameters();
+    if (parameters.hasNext()) {
+      Substitution substitution = new Substitution();
+      parameters = DependentLink.Helper.subst(parameters, substitution);
+      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+        link.setExplicit(false);
+      }
+      resultType = Pi(parameters, resultType.subst(substitution));
+    }
+    return resultType;
   }
 
   @Override
