@@ -45,15 +45,6 @@ public class DefCall {
   }
 
   @Test
-  public void local() {
-    List<Binding> context = new ArrayList<>(1);
-    context.add(new TypedBinding("x", Nat()));
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "x", null);
-    assertNotNull(result);
-    assertEquals(Reference(context.get(0)), result.expression);
-  }
-
-  @Test
   public void funStatic() {
     NamespaceMember member = typeCheckClass(
         "\\static \\function f => 0\n" +
@@ -880,5 +871,44 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.C", 1);
+  }
+
+  @Test
+  public void local() {
+    List<Binding> context = new ArrayList<>(1);
+    context.add(new TypedBinding("x", Nat()));
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "x", null);
+    assertNotNull(result);
+    assertEquals(Reference(context.get(0)), result.expression);
+  }
+
+  @Test
+  public void nonStaticTestError() {
+    typeCheckClass("\\static \\class A { \\function x => 0 } \\static \\function y => A.x", 1);
+  }
+
+  @Test
+  public void staticTestError() {
+    typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\function y (a : A) => a.x", 1);
+  }
+
+  @Test
+  public void innerNonStaticTestError() {
+    typeCheckClass("\\static \\class A { \\class B { \\function x => 0 } } \\static \\function y (a : A) => a.B.x", 1);
+  }
+
+  @Test
+  public void innerNonStaticTestAcc() {
+    typeCheckClass("\\static \\class A { \\class B { \\function x => 0 } } \\static \\function y (a : A) (b : a.B) => b.x");
+  }
+
+  @Test
+  public void innerNonStaticTest() {
+    typeCheckClass("\\static \\class A { \\class B { \\static \\function x => 0 } } \\static \\function y (a : A) => a.B.x");
+  }
+
+  @Test
+  public void staticTest() {
+    typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\function y : Nat => A.x");
   }
 }

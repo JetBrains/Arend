@@ -562,6 +562,6 @@ public class ClassesTest {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\function y (a : A) : a.B.C.d.E = 0 => path (\\lam _ => 0)");
+        "\\static \\function y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
   }
 }
