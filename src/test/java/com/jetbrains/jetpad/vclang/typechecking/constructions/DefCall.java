@@ -216,7 +216,7 @@ public class DefCall {
   public void data1Static() {
     NamespaceMember member = typeCheckClass(
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\static \\function test => (D 0).c (\\lam _ => 1)");
+        "\\static \\function test => (D 0).c {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getDefinition("c").getDefCall(), Zero()).normalize(NormalizeVisitor.Mode.WHNF), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getDefinition("D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getDefinition("c"), member.namespace.getChild("D").getDefinition("c"));
@@ -226,7 +226,7 @@ public class DefCall {
   public void data2Static() {
     NamespaceMember member = typeCheckClass(
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\static \\function test => D.c 0 (\\lam _ => 1)");
+        "\\static \\function test => D.c {0} {\\lam _ => 1}");
     test(Apps(member.namespace.getDefinition("c").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getDefinition("D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getDefinition("c"), member.namespace.getChild("D").getDefinition("c"));
@@ -288,14 +288,13 @@ public class DefCall {
         "  \\function test => (D 0 (\\lam _ => 1)).c\n" +
         "}");
     testFI(Apps(member.namespace.getDefinition("c").getDefCall(), getThisFI(member), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(NormalizeVisitor.Mode.WHNF), member);
-    testType(Apps(member.namespace.getDefinition("D").getDefCall(), getThisFI(member), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
   }
 
   @Test
   public void data1Dynamic() {
     NamespaceMember member = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\function test => (D 0).c (\\lam _ => 1)");
+        "\\function test => (D 0).c {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getDefinition("c").getDefCall(), Reference(getThis(member)), Zero()).normalize(NormalizeVisitor.Mode.WHNF), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getDefinition("c"), member.namespace.getChild("D").getDefinition("c"));
@@ -306,17 +305,16 @@ public class DefCall {
     NamespaceMember member = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\class Test {\n" +
-        "  \\function test => (D 0).c (\\lam _ => 1)\n" +
+        "  \\function test => (D 0).c {\\lam _ => 1}\n" +
         "}");
     testFI(Apps(Apps(member.namespace.getDefinition("c").getDefCall(), getThisFI(member), Zero()).normalize(NormalizeVisitor.Mode.WHNF), Lam(param(Nat()), Suc(Zero()))), member);
-    testType(Apps(member.namespace.getDefinition("D").getDefCall(), getThisFI(member), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
   }
 
   @Test
   public void data2Dynamic() {
     NamespaceMember member = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\function test => D.c 0 (\\lam _ => 1)");
+        "\\function test => D.c {0} {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getDefinition("c").getDefCall(), Reference(getThis(member))).normalize(NormalizeVisitor.Mode.WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getDefinition("c"), member.namespace.getChild("D").getDefinition("c"));
@@ -327,10 +325,9 @@ public class DefCall {
     NamespaceMember member = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\class Test {\n" +
-        "  \\function test => D.c 0 (\\lam _ => 1)\n" +
+        "  \\function test => D.c {0} {\\lam _ => 1}\n" +
         "}");
     testFI(Apps(Apps(member.namespace.getDefinition("c").getDefCall(), getThisFI(member)).normalize(NormalizeVisitor.Mode.WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
-    testType(Apps(member.namespace.getDefinition("D").getDefCall(), getThisFI(member), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
   }
 
   @Test
@@ -382,8 +379,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test => (A.B.D 0 (\\lam _ => 1)).c");
-    test(Apps(member.namespace.getChild("A").getChild("B").getDefinition("c").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(NormalizeVisitor.Mode.WHNF), member);
-    testType(Apps(member.namespace.getChild("A").getChild("B").getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
+    test(Apps(member.namespace.getChild("A").getChild("B").getDefinition("c").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(NormalizeVisitor.Mode.WHNF), member);
+    testType(Apps(member.namespace.getChild("A").getChild("B").getDefinition("D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("A").getChild("B").getDefinition("c"), member.namespace.getChild("A").getChild("B").getChild("D").getDefinition("c"));
   }
 
@@ -395,7 +392,7 @@ public class DefCall {
         "    \\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\function test => (A.B.D 0).c (\\lam _ => 1)");
+        "\\static \\function test => (A.B.D 0).c {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getChild("A").getChild("B").getDefinition("c").getDefCall(), Zero()).normalize(NormalizeVisitor.Mode.WHNF), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("A").getChild("B").getDefinition("D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("A").getChild("B").getDefinition("c"), member.namespace.getChild("A").getChild("B").getChild("D").getDefinition("c"));
@@ -409,7 +406,7 @@ public class DefCall {
         "    \\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\function test => A.B.D.c 0 (\\lam _ => 1)");
+        "\\static \\function test => A.B.D.c {0} {\\lam _ => 1}");
     test(Apps(member.namespace.getChild("A").getChild("B").getDefinition("c").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("A").getChild("B").getDefinition("D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("A").getChild("B").getDefinition("c"), member.namespace.getChild("A").getChild("B").getChild("D").getDefinition("c"));
@@ -463,7 +460,7 @@ public class DefCall {
         "    \\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "  }\n" +
         "}\n" +
-        "\\function test => (A.B.D 0).c (\\lam _ => 1)");
+        "\\function test => (A.B.D 0).c {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getChild("A").getChild("B").getDefinition("c").getDefCall(), Reference(getThis(member)), Zero()).normalize(NormalizeVisitor.Mode.WHNF), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("A").getChild("B").getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("A").getChild("B").getDefinition("c"), member.namespace.getChild("A").getChild("B").getChild("D").getDefinition("c"));
@@ -477,7 +474,7 @@ public class DefCall {
         "    \\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "  }\n" +
         "}\n" +
-        "\\function test => A.B.D.c 0 (\\lam _ => 1)");
+        "\\function test => A.B.D.c {0} {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getChild("A").getChild("B").getDefinition("c").getDefCall(), Reference(getThis(member))).normalize(NormalizeVisitor.Mode.WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("A").getChild("B").getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("A").getChild("B").getDefinition("c"), member.namespace.getChild("A").getChild("B").getChild("D").getDefinition("c"));
@@ -523,7 +520,7 @@ public class DefCall {
         "\\static \\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
-        "\\static \\function test (e : E) => (e.D 0).c (\\lam _ => 1)");
+        "\\static \\function test (e : E) => (e.D 0).c {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getChild("E").getDefinition("c").getDefCall(), Reference(getThis(member)), Zero()).normalize(NormalizeVisitor.Mode.WHNF), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("E").getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("E").getDefinition("c"), member.namespace.getChild("E").getChild("D").getDefinition("c"));
@@ -535,7 +532,7 @@ public class DefCall {
         "\\static \\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
-        "\\static \\function test (e : E) => e.D.c 0 (\\lam _ => 1)");
+        "\\static \\function test (e : E) => e.D.c {0} {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getChild("E").getDefinition("c").getDefCall(), Reference(getThis(member))).normalize(NormalizeVisitor.Mode.WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("E").getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("E").getDefinition("c"), member.namespace.getChild("E").getChild("D").getDefinition("c"));
@@ -599,7 +596,7 @@ public class DefCall {
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
-        "\\function test (e : E) => (e.D 0).c (\\lam _ => 1)");
+        "\\function test (e : E) => (e.D 0).c {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getChild("E").getDefinition("c").getDefCall(), Reference(getThis(member).getNext()), Zero()).normalize(NormalizeVisitor.Mode.WHNF), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("E").getDefinition("D").getDefCall(), Reference(getThis(member).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("E").getDefinition("c"), member.namespace.getChild("E").getChild("D").getDefinition("c"));
@@ -611,7 +608,7 @@ public class DefCall {
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
-        "\\function test (e : E) => e.D.c 0 (\\lam _ => 1)");
+        "\\function test (e : E) => e.D.c {0} {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getChild("E").getDefinition("c").getDefCall(), Reference(getThis(member).getNext())).normalize(NormalizeVisitor.Mode.WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("E").getDefinition("D").getDefCall(), Reference(getThis(member).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("E").getDefinition("c"), member.namespace.getChild("E").getChild("D").getDefinition("c"));
@@ -673,7 +670,7 @@ public class DefCall {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\function test (e : E) => (e.A.B.D 0).c (\\lam _ => 1)");
+        "\\static \\function test (e : E) => (e.A.B.D 0).c {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getChild("E").getChild("A").getChild("B").getDefinition("c").getDefCall(), Reference(getThis(member)), Zero()).normalize(NormalizeVisitor.Mode.WHNF), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("E").getChild("A").getChild("B").getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("E").getChild("A").getChild("B").getDefinition("c"), member.namespace.getChild("E").getChild("A").getChild("B").getChild("D").getDefinition("c"));
@@ -689,7 +686,7 @@ public class DefCall {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\static \\function test (e : E) => e.A.B.D.c 0 (\\lam _ => 1)");
+        "\\static \\function test (e : E) => e.A.B.D.c {0} {\\lam _ => 1}");
     test(Apps(Apps(member.namespace.getChild("E").getChild("A").getChild("B").getDefinition("c").getDefCall(), Reference(getThis(member))).normalize(NormalizeVisitor.Mode.WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     testType(Apps(member.namespace.getChild("E").getChild("A").getChild("B").getDefinition("D").getDefCall(), Reference(getThis(member)), Zero(), Lam(param(Nat()), Suc(Zero()))), member);
     assertEquals(member.namespace.getChild("E").getChild("A").getChild("B").getDefinition("c"), member.namespace.getChild("E").getChild("A").getChild("B").getChild("D").getDefinition("c"));
