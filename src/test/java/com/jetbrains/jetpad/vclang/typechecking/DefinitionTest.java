@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -14,7 +13,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -105,8 +103,8 @@ public class DefinitionTest {
     substitution.add(link, Reference(a));
     link = link.getNext();
     substitution.add(link, Reference(b));
-    assertEquals(Pi(parameters1.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b))), typedDef.getConstructors().get(0).getType().subst(substitution));
-    assertEquals(Pi(parameters2.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b))), typedDef.getConstructors().get(1).getType().subst(substitution));
+    assertEquals(Pi(parameters.getFirst(), Pi(parameters1.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b)))), typedDef.getConstructors().get(0).getType());
+    assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b)))), typedDef.getConstructors().get(1).getType());
   }
 
   @Test
@@ -129,8 +127,8 @@ public class DefinitionTest {
     assertEquals(Pi(A, Universe(6, 7)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    assertEquals(Pi(parameters1.getFirst(), Apps(DataCall(typedDef), Reference(A))), typedDef.getConstructors().get(0).getType());
-    assertEquals(Pi(parameters2.getFirst(), Apps(DataCall(typedDef), Reference(A))), typedDef.getConstructors().get(1).getType());
+    assertEquals(Pi(A, Pi(parameters1.getFirst(), Apps(DataCall(typedDef), Reference(A)))), typedDef.getConstructors().get(0).getType());
+    assertEquals(Pi(A, Pi(parameters2.getFirst(), Apps(DataCall(typedDef), Reference(A)))), typedDef.getConstructors().get(1).getType());
   }
 
   @Test

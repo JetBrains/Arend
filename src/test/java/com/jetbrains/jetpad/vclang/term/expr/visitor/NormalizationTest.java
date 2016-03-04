@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -9,7 +10,9 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
@@ -90,11 +93,11 @@ public class NormalizationTest {
   }
 
   private void initializeBDList() {
-    ClassDefinition classDefinition = typeCheckClass(
-        "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A" +
-            "\\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
+    NamespaceMember member = typeCheckClass(
+        "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A\n" +
+        "  \\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
     );
-    bdList = (DataDefinition) classDefinition.getResolvedName().toNamespace().getDefinition("BD-list");
+    bdList = (DataDefinition) member.namespace.getDefinition("BD-list");
     bdNil = bdList.getConstructor("nil");
     bdCons = bdList.getConstructor("cons");
     bdSnoc = bdList.getConstructor("snoc");
@@ -261,10 +264,10 @@ public class NormalizationTest {
   @Test
   public void normalizeElimAnyConstructor() {
     DependentLink var0 = param("var0", Universe(0));
-    ClassDefinition def = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         "\\static \\data D | d Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | _! => 0");
-    FunctionDefinition test = (FunctionDefinition) def.getResolvedName().toNamespace().getMember("test").definition;
+    FunctionDefinition test = (FunctionDefinition) member.namespace.getMember("test").definition;
     assertEquals(Apps(FunCall(test), Reference(var0)), Apps(FunCall(test), Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 

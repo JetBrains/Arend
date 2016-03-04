@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -137,12 +136,11 @@ public class ElimTest {
 
   @Test
   public void elim8() {
-    ClassDefinition defs = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         "\\static \\data D | d Nat Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | d zero zero => 0 | d _ _ => 1");
-    Namespace namespace = defs.getResolvedName().toNamespace();
-    FunctionDefinition test = (FunctionDefinition) namespace.getDefinition("test");
-    Constructor d = (Constructor) namespace.getDefinition("d");
+    FunctionDefinition test = (FunctionDefinition) member.namespace.getDefinition("test");
+    Constructor d = (Constructor) member.namespace.getDefinition("d");
     Binding binding = new TypedBinding("y", Nat());
     Expression call1 = Apps(ConCall(d), Zero(), Reference(binding));
     Expression call2 = Apps(ConCall(d), Suc(Zero()), Reference(binding));

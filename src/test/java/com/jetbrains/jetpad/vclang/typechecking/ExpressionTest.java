@@ -102,14 +102,16 @@ public class ExpressionTest {
 
   @Test
   public void typeCheckingAppLamPiIndex() {
-    // \f h. h (\k -> k (suc zero)) : (f : (g : N -> N) -> N (g zero)) -> ((z : (N -> N) -> N) -> N (f (\x. z (\_. x)))) -> N (f (\x. x))
-    /* TODO: Rewrite with parser
-    Concrete.Expression expr = cLam("f", cLam("h", cApps(cVar("h"), cLam("k", cApps(cVar("k"), cApps(cSuc(), cZero()))))));
-    Expression type = Pi("f", Pi("g", Pi(Nat(), Nat()), Apps(Nat(), Apps(Index(0), Zero()))), Pi(Pi("z", Pi(Pi(Nat(), Nat()), Nat()), Apps(Nat(), Apps(Index(1), Lam("x", Nat(), Apps(Index(1), Lam("_", Nat(), Index(1))))))), Apps(Nat(), Apps(Index(0), Lam("x", Nat(), Index(0))))));
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, type);
-    assertEquals(0, errorReporter.getErrorList().size());
-    */
+    List<Binding> context = new ArrayList<>();
+    context.add(new TypedBinding("X", Pi(Nat(), Universe(0))));
+    DependentLink link = param("t", Nat());
+    context.add(new TypedBinding("Y", Pi(params(link, param("x", Apps(Reference(context.get(0)), Reference(link)))), Universe(0))));
+    CheckTypeVisitor.Result typeResult = typeCheckExpr(context,
+          "\\Pi (f : \\Pi (g : Nat -> Nat) -> X (g zero)) " +
+          "-> (\\Pi (z : (Nat -> Nat) -> Nat) -> Y (z (\\lam _ => 0)) (f (\\lam x => z (\\lam _ => x)))) " +
+          "-> Y 0 (f (\\lam x => x))", null);
+    assertNotNull(typeResult);
+    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam f h => h (\\lam k => k 1)", typeResult.expression);
   }
 
   @Test
@@ -164,14 +166,9 @@ public class ExpressionTest {
 
   @Test
   public void typedLambdaExpectedType() {
-    // \(X : Type1) x. x : (X : Type0) (X) -> X
-    /* TODO: Rewrite with parser
-    Concrete.Expression expr = cLam(cargs(cTele(cvars("X"), cUniverse(1)), cName("x")), cVar("x"));
-    Expression texpr = Lam(teleArgs(Tele(vars("X"), Universe(1)), Tele(vars("x"), Index(0))), Index(0));
-    ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(texpr, new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(typeArgs(Tele(vars("X"), Universe(0)), TypeArg(Index(0))), Index(1))).expression);
-    assertEquals(0, errorReporter.getErrorList().size());
-    */
+    // \(X : Type0) x. x : (X : Type0) (X) -> X
+    DependentLink link = param("X", Universe(0));
+    typeCheckExpr("\\lam (X : \\Type0) x => x", Pi(params(link, param(Reference(link))), Reference(link)));
   }
 
   @Test
