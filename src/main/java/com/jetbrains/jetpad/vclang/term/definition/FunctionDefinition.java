@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -27,7 +26,7 @@ public class FunctionDefinition extends Definition implements Function {
   public FunctionDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(rn, precedence);
     assert parameters != null;
-    setUniverse(new Universe.Type(0, Universe.Type.PROP));
+    setUniverse(new UniverseOld.Type(0, UniverseOld.Type.PROP));
     hasErrors(false);
     myParameters = parameters;
     myResultType = resultType;

@@ -167,9 +167,9 @@ public class ExpressionTest {
     // \(X : Type1) x. x : (X : Type0) (X) -> X
     /* TODO: Rewrite with parser
     Concrete.Expression expr = cLam(cargs(cTele(cvars("X"), cUniverse(1)), cName("x")), cVar("x"));
-    Expression texpr = Lam(teleArgs(Tele(vars("X"), Universe(1)), Tele(vars("x"), Index(0))), Index(0));
+    Expression texpr = Lam(teleArgs(Tele(vars("X"), UniverseOld(1)), Tele(vars("x"), Index(0))), Index(0));
     ListErrorReporter errorReporter = new ListErrorReporter();
-    assertEquals(texpr, new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(typeArgs(Tele(vars("X"), Universe(0)), TypeArg(Index(0))), Index(1))).expression);
+    assertEquals(texpr, new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, Pi(typeArgs(Tele(vars("X"), UniverseOld(0)), TypeArg(Index(0))), Index(1))).expression);
     assertEquals(0, errorReporter.getErrorList().size());
     */
   }

@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 
 import java.util.List;
 
@@ -67,7 +67,7 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeUniverse(Universe universe) {
+  public Abstract.Expression makeUniverse(UniverseOld universe) {
     return cUniverse(universe);
   }
 

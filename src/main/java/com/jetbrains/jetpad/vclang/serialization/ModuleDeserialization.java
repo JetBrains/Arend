@@ -269,10 +269,10 @@ public class ModuleDeserialization {
     }
   }
 
-  public static Universe readUniverse(DataInputStream stream) throws IOException {
+  public static UniverseOld readUniverse(DataInputStream stream) throws IOException {
     int level = stream.readInt();
     int truncated = stream.readInt();
-    return new Universe.Type(level, truncated);
+    return new UniverseOld.Type(level, truncated);
   }
 
   public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {

@@ -35,8 +35,8 @@ public class GetTypeTest {
     ClassDefinition def = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
     Namespace namespace = def.getResolvedName().toNamespace();
     assertEquals(Universe(1), namespace.getDefinition("Test").getType());
-    assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("test").getType());
-    assertEquals(Universe(0, Universe.Type.SET), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType());
+    assertEquals(Universe(0, UniverseOld.Type.SET), namespace.getDefinition("test").getType());
+    assertEquals(Universe(0, UniverseOld.Type.SET), ((LeafElimTreeNode) ((FunctionDefinition) namespace.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
   @Test

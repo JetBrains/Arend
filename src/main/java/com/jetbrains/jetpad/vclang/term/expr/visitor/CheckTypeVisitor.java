@@ -14,7 +14,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -477,10 +477,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
+    UniverseOld universe = new UniverseOld.Type(UniverseOld.NO_LEVEL, UniverseOld.Type.PROP);
     for (int i = 0; i < domainTypes.length; ++i) {
-      Universe argUniverse = ((UniverseExpression) domainTypes[i].normalize(NormalizeVisitor.Mode.NF)).getUniverse();
-      Universe maxUniverse = universe.max(argUniverse);
+      UniverseOld argUniverse = ((UniverseExpression) domainTypes[i].normalize(NormalizeVisitor.Mode.NF)).getUniverse();
+      UniverseOld maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
         String msg = "Universe " + argUniverse + " of " + ordinal(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
         TypeCheckingError error = new TypeCheckingError(msg, expr);
@@ -491,8 +491,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       universe = maxUniverse;
     }
     if (codomainResult != null) {
-      Universe codomainUniverse = ((UniverseExpression) codomainResult.type.normalize(NormalizeVisitor.Mode.NF)).getUniverse();
-      Universe maxUniverse = universe.max(codomainUniverse);
+      UniverseOld codomainUniverse = ((UniverseExpression) codomainResult.type.normalize(NormalizeVisitor.Mode.NF)).getUniverse();
+      UniverseOld maxUniverse = universe.max(codomainUniverse);
       if (maxUniverse == null) {
         String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
         TypeCheckingError error = new TypeCheckingError(msg, expr);
@@ -500,7 +500,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         myErrorReporter.report(error);
         return null;
       }
-      Universe prop = new Universe.Type(0, Universe.Type.PROP);
+      UniverseOld prop = new UniverseOld.Type(0, UniverseOld.Type.PROP);
       universe = codomainUniverse.equals(prop) ? prop : maxUniverse;
     }
 

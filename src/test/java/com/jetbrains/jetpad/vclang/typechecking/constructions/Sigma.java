@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
@@ -43,7 +43,7 @@ public class Sigma {
   public void sigmaProp() {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("A", Universe(3, 7)));
-    context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(5, Universe.Type.PROP))));
+    context.add(new TypedBinding("B", Pi(Reference(context.get(0)), Universe(5, UniverseOld.Type.PROP))));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Sigma (x : A) (B x)", null);
     assertEquals(Universe(3, 7), result.type);
   }
@@ -51,7 +51,7 @@ public class Sigma {
   @Test
   public void sigmaPropDom() {
     List<Binding> context = new ArrayList<>();
-    context.add(new TypedBinding("A", Universe(4, Universe.Type.PROP)));
+    context.add(new TypedBinding("A", Universe(4, UniverseOld.Type.PROP)));
     context.add(new TypedBinding("B", Universe(2, 6)));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\Sigma A B", null);
     assertEquals(Universe(2, 6), result.type);

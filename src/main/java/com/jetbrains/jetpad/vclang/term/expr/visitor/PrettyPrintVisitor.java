@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
@@ -15,7 +15,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.Utils.removeFromList;
 import static com.jetbrains.jetpad.vclang.term.context.Utils.trimToSize;
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 
 // TODO: Simplify pretty printer
 // TODO: move myNames to ToAbstractVisitor
@@ -583,7 +582,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("{!error}");
     }
 
-    Universe universe = def.getUniverse();
+    UniverseOld universe = def.getUniverse();
     if (universe != null) {
       myBuilder.append(" : ").append(universe);
     }

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 
 import java.util.Arrays;
 import java.util.List;
@@ -178,20 +178,20 @@ public class ConcreteExpressionFactory {
     return new Concrete.Clause(POSITION, patterns, arrow, expr);
   }
 
-  public static Concrete.UniverseExpression cUniverse(Universe universe) {
+  public static Concrete.UniverseExpression cUniverse(UniverseOld universe) {
     return new Concrete.UniverseExpression(POSITION, universe);
   }
 
   public static Concrete.UniverseExpression cUniverse() {
-    return new Concrete.UniverseExpression(POSITION, new Universe.Type());
+    return new Concrete.UniverseExpression(POSITION, new UniverseOld.Type());
   }
 
   public static Concrete.UniverseExpression cUniverse(int level) {
-    return new Concrete.UniverseExpression(POSITION, new Universe.Type(level));
+    return new Concrete.UniverseExpression(POSITION, new UniverseOld.Type(level));
   }
 
   public static Concrete.UniverseExpression cUniverse(int level, int truncated) {
-    return new Concrete.UniverseExpression(POSITION, new Universe.Type(level, truncated));
+    return new Concrete.UniverseExpression(POSITION, new UniverseOld.Type(level, truncated));
   }
 
   public static List<Concrete.Pattern> cPatterns(Concrete.Pattern... patterns) {

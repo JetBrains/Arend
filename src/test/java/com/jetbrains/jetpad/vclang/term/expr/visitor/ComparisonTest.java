@@ -113,8 +113,8 @@ public class ComparisonTest {
 
   @Test
   public void compareLeq() {
-    // Expression expr1 = Pi("X", Universe(1), Pi(Index(0), Index(0)));
-    // Expression expr2 = Pi("X", Universe(0), Pi(Index(0), Index(0)));
+    // Expression expr1 = Pi("X", UniverseOld(1), Pi(Index(0), Index(0)));
+    // Expression expr2 = Pi("X", UniverseOld(0), Pi(Index(0), Index(0)));
     Expression expr1 = Universe(0);
     Expression expr2 = Universe(1);
     assertTrue(compare(expr1, expr2, Equations.CMP.LE));

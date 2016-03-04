@@ -216,10 +216,10 @@ public class ModuleSerialization {
     }
   }
 
-  public static void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {
+  public static void writeUniverse(DataOutputStream stream, UniverseOld universe) throws IOException {
     stream.writeInt(universe.getLevel());
-    if (universe instanceof Universe.Type) {
-      stream.writeInt(((Universe.Type) universe).getTruncated());
+    if (universe instanceof UniverseOld.Type) {
+      stream.writeInt(((UniverseOld.Type) universe).getTruncated());
     } else {
       throw new IllegalStateException();
     }

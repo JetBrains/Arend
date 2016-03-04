@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
-  private Universe myUniverse;
+  private UniverseOld myUniverse;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
@@ -40,9 +40,9 @@ public class ClassCallExpression extends DefCallExpression {
     return myStatements;
   }
 
-  public Universe getUniverse() {
+  public UniverseOld getUniverse() {
     if (myUniverse == null) {
-      myUniverse = new Universe.Type(0, Universe.Type.PROP);
+      myUniverse = new UniverseOld.Type(0, UniverseOld.Type.PROP);
       for (ClassField field : getDefinition().getFields()) {
         if (!myStatements.containsKey(field)) {
           Expression expr = field.getBaseType().getType().normalize(NormalizeVisitor.Mode.WHNF);

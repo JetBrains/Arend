@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -37,11 +37,11 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
 
     boolean result = true;
     for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getMatchedConstructors(parameters)) {
-      if (((UniverseExpression) myResultType.getType()).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.PROP))) {
+      if (((UniverseExpression) myResultType.getType()).getUniverse().lessOrEquals(new UniverseOld.Type(0, UniverseOld.Type.PROP))) {
         if (Prelude.isTruncP(conCall.getDefinition())) {
           continue;
         }
-      } else if (((UniverseExpression) myResultType.getType()).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.SET))) {
+      } else if (((UniverseExpression) myResultType.getType()).getUniverse().lessOrEquals(new UniverseOld.Type(0, UniverseOld.Type.SET))) {
         if (Prelude.isTruncS(conCall.getDefinition())) {
           continue;
         }

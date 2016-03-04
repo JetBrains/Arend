@@ -374,7 +374,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
-    Universe universe = new Universe.Type(0, Universe.Type.PROP);
+    UniverseOld universe = new UniverseOld.Type(0, UniverseOld.Type.PROP);
 
     int index = 0;
     LinkList list = new LinkList();
@@ -397,10 +397,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         list.append(param);
         context.addAll(toContext(param));
 
-        Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
-        Universe maxUniverse = universe.max(argUniverse);
+        UniverseOld argUniverse = ((UniverseExpression) result.type).getUniverse();
+        UniverseOld maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
-          String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
+          String error = "UniverseOld " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
           myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
           return null;
         } else {
@@ -422,10 +422,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     typedResultType = typeResult.expression;
 
-    Universe resultTypeUniverse = ((UniverseExpression) typeResult.type).getUniverse();
-    Universe maxUniverse = universe.max(resultTypeUniverse);
+    UniverseOld resultTypeUniverse = ((UniverseExpression) typeResult.type).getUniverse();
+    UniverseOld maxUniverse = universe.max(resultTypeUniverse);
     if (maxUniverse == null) {
-      String error = "Universe " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
+      String error = "UniverseOld " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
       myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
       return null;
     } else {
@@ -442,8 +442,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public DataDefinition visitData(Abstract.DataDefinition def, Void params) {
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
-    Universe universe = def.getUniverse();
-    Universe typedUniverse = new Universe.Type(0, Universe.Type.PROP);
+    UniverseOld universe = def.getUniverse();
+    UniverseOld typedUniverse = new UniverseOld.Type(0, UniverseOld.Type.PROP);
 
     List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
@@ -471,7 +471,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
     }
 
-    DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), list.getFirst());
+    DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), universe != null ? universe : new UniverseOld.Type(0, UniverseOld.Type.PROP), list.getFirst());
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
@@ -487,9 +487,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
       member.definition = typedConstructor;
 
-      Universe maxUniverse = typedUniverse.max(typedConstructor.getUniverse());
+      UniverseOld maxUniverse = typedUniverse.max(typedConstructor.getUniverse());
       if (maxUniverse == null) {
-        String msg = "Universe " + typedConstructor.getUniverse() + " of constructor '" + constructor.getName() + "' is not compatible with universe " + typedUniverse + " of previous constructors";
+        String msg = "UniverseOld " + typedConstructor.getUniverse() + " of constructor '" + constructor.getName() + "' is not compatible with universe " + typedUniverse + " of previous constructors";
         myErrorReporter.report(new TypeCheckingError(msg, null));
       } else {
         typedUniverse = maxUniverse;
@@ -647,7 +647,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   public Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
-      Universe universe = new Universe.Type(0, Universe.Type.PROP);
+      UniverseOld universe = new UniverseOld.Type(0, UniverseOld.Type.PROP);
       int index = 1;
       boolean ok = true;
 
@@ -680,10 +680,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           return null;
         }
 
-        Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
-        Universe maxUniverse = universe.max(argUniverse);
+        UniverseOld argUniverse = ((UniverseExpression) result.type).getUniverse();
+        UniverseOld maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
-          String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
+          String error = "UniverseOld " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
           myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), error, def));
           ok = false;
         } else {
@@ -813,11 +813,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
             if (member.definition instanceof ClassField) {
               ClassField field = (ClassField) member.definition;
-              Universe oldUniverse = classDefinition.getUniverse();
-              Universe newUniverse = field.getUniverse();
-              Universe maxUniverse = oldUniverse.max(newUniverse);
+              UniverseOld oldUniverse = classDefinition.getUniverse();
+              UniverseOld newUniverse = field.getUniverse();
+              UniverseOld maxUniverse = oldUniverse.max(newUniverse);
               if (maxUniverse == null) {
-                String error = "Universe " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
+                String error = "UniverseOld " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
                 myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, definition));
               } else {
                 classDefinition.setUniverse(maxUniverse);

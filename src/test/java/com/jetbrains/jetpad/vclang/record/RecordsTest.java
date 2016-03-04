@@ -160,8 +160,8 @@ public class RecordsTest {
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
     Namespace namespace = result.getResolvedName().toNamespace();
-    assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(0, Universe.Type.SET), namespace.getDefinition("C").getType());
+    assertEquals(new UniverseOld.Type(0, UniverseOld.Type.SET), namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(0, UniverseOld.Type.SET), namespace.getDefinition("C").getType());
   }
 
   @Test
@@ -170,8 +170,8 @@ public class RecordsTest {
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
     Namespace namespace = result.getResolvedName().toNamespace();
-    assertEquals(new Universe.Type(0, Universe.Type.SET), namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(0, Universe.Type.PROP), namespace.getDefinition("C").getType());
+    assertEquals(new UniverseOld.Type(0, UniverseOld.Type.SET), namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(0, UniverseOld.Type.PROP), namespace.getDefinition("C").getType());
   }
 
   @Test
@@ -180,8 +180,8 @@ public class RecordsTest {
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
     Namespace namespace = result.getResolvedName().toNamespace();
-    assertEquals(new Universe.Type(4, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(2, Universe.Type.NOT_TRUNCATED), namespace.getDefinition("C").getType());
+    assertEquals(new UniverseOld.Type(4, UniverseOld.Type.NOT_TRUNCATED), namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(2, UniverseOld.Type.NOT_TRUNCATED), namespace.getDefinition("C").getType());
   }
 
   @Test

@@ -211,16 +211,40 @@ public class ExpressionFactory {
     return Apps(Suc(), expr);
   }
 
+  public static ConCallExpression ZeroLvl() { return ConCall(Prelude.ZERO_LVL); }
+
+  public static ConCallExpression SucLvl() { return ConCall(Prelude.SUC_LVL); }
+
+  public static Expression SucLvl(Expression expr) { return Apps(SucLvl(), expr); }
+
+  public static FunCallExpression MaxLvl() { return FunCall(Prelude.MAX_LVL); }
+
+  public static Expression MaxLvl(Expression expr1, Expression expr2) { return Apps(MaxLvl(), expr1, expr2); }
+
+  public static DataCallExpression CNat() {
+    return DataCall(Prelude.CNAT);
+  }
+
+  public static Expression Fin(Expression expr) { return Apps(ConCall(Prelude.FIN), expr); }
+
+  public static ConCallExpression Inf() {
+    return ConCall(Prelude.INF);
+  }
+
+  public static Expression SucCNat(Expression expr) { return Apps(FunCall(Prelude.SUC_CNAT), expr); }
+
+  public static Expression MaxCNat(Expression expr1, Expression expr2) { return Apps(FunCall(Prelude.MAX_CNAT), expr1, expr2); }
+
   public static UniverseExpression Universe() {
-    return new UniverseExpression(new Universe.Type());
+    return new UniverseExpression(new UniverseOld.Type());
   }
 
   public static UniverseExpression Universe(int level) {
-    return new UniverseExpression(new Universe.Type(level));
+    return new UniverseExpression(new UniverseOld.Type(level));
   }
 
   public static UniverseExpression Universe(int level, int truncated) {
-    return new UniverseExpression(new Universe.Type(level, truncated));
+    return new UniverseExpression(new UniverseOld.Type(level, truncated));
   }
 
   public static ErrorExpression Error(Expression expr, TypeCheckingError error) {

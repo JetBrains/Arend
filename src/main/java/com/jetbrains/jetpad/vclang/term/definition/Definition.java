@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 public abstract class Definition extends NamedBinding implements BaseDefinition {
   private final Abstract.Definition.Fixity myFixity;
   private Abstract.Definition.Precedence myPrecedence;
-  private Universe myUniverse;
+  private UniverseOld myUniverse;
   private boolean myHasErrors;
   private final ResolvedName myResolvedName;
   private ClassDefinition myThisClass;
@@ -19,7 +19,7 @@ public abstract class Definition extends NamedBinding implements BaseDefinition 
     myResolvedName = resolvedName;
     myFixity = new Name(resolvedName.getName()).fixity;
     myPrecedence = precedence;
-    myUniverse = new Universe.Type(0, Universe.Type.PROP);
+    myUniverse = new UniverseOld.Type(0, UniverseOld.Type.PROP);
     myHasErrors = true;
   }
 
@@ -49,11 +49,11 @@ public abstract class Definition extends NamedBinding implements BaseDefinition 
     return myResolvedName;
   }
 
-  public Universe getUniverse() {
+  public UniverseOld getUniverse() {
     return myUniverse;
   }
 
-  public void setUniverse(Universe universe) {
+  public void setUniverse(UniverseOld universe) {
     myUniverse = universe;
   }
 
