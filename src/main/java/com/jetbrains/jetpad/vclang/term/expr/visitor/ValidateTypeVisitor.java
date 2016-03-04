@@ -8,10 +8,11 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void>
-        implements ElimTreeNodeVisitor<Void, Void> {
+public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
+        implements ElimTreeNodeVisitor<Expression, Void> {
 
   public static class ErrorReporter {
     private final ArrayList<Expression> expressions = new ArrayList<>();
@@ -51,29 +52,33 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void>
   }
 
   @Override
-  public Void visitDefCall(DefCallExpression expr, Void params) {
-    expr.getType().accept(this, params);
+  public Void visitDefCall(DefCallExpression expr, Expression expectedType) {
+    expr.getType().accept(this, expectedType);
     return null;
   }
 
   @Override
-  public Void visitApp(AppExpression expr, Void params) {
-    Expression fun = expr.getFunction();
+  public Void visitApp(AppExpression expr, Expression expectedType) {
+    ArrayList<ArgumentExpression> args = new ArrayList<>();
+    Expression fun = expr.getFunctionArgs(args);
     Expression funType = fun.getType();
     if (!(funType instanceof PiExpression)) {
       myErrorReporter.addError(expr, "Function " + fun + " doesn't have Pi-type");
     } else {
       ArrayList<DependentLink> links = new ArrayList<>();
-      funType.getPiParameters(links, false, false);
-      ArrayList<ArgumentExpression> args = new ArrayList<>();
-      fun.getFunctionArgs(args);
+      funType.getPiParameters(links, true, false);
+      Collections.reverse(args);
+      Substitution subst = new Substitution();
       if (args.size() > links.size()) {
         myErrorReporter.addError(expr, "Too few Pi abstractions");
       }
       for (int i = 0; i < args.size(); i++) {
-        if (!args.get(i).getExpression().getType().equals(links.get(i).getType())) {
+        DependentLink param = links.get(i);
+        Expression arg = args.get(i).getExpression();
+        if (!arg.getType().equals(param.getType().subst(subst))) {
           myErrorReporter.addError(args.get(i).getExpression(), "Expected type: " + links.get(i).getType());
         }
+        subst.add(param, arg);
       }
     }
 
@@ -81,54 +86,54 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void>
   }
 
   @Override
-  public Void visitReference(ReferenceExpression expr, Void params) {
-    expr.getType().accept(this, params);
-    expr.getBinding().getType().accept(this, params);
+  public Void visitReference(ReferenceExpression expr, Expression expectedType) {
+    expr.getType().accept(this, expectedType);
+    expr.getBinding().getType().accept(this, expectedType);
     return null;
   }
 
   @Override
-  public Void visitLam(LamExpression expr, Void params) {
+  public Void visitLam(LamExpression expr, Expression expectedType) {
     visitDependentLink(expr.getParameters());
-    expr.getType().accept(this, params);
-    expr.getBody().accept(this, params);
+    expr.getType().accept(this, expectedType);
+    expr.getBody().accept(this, expectedType);
     return null;
   }
 
   @Override
-  public Void visitPi(PiExpression expr, Void params) {
+  public Void visitPi(PiExpression expr, Expression expectedType) {
     visitDependentLink(expr.getParameters());
-    expr.getType().accept(this, params);
-    expr.getCodomain().accept(this, params);
+    expr.getType().accept(this, expectedType);
+    expr.getCodomain().accept(this, expectedType);
     return null;
   }
 
   @Override
-  public Void visitSigma(SigmaExpression expr, Void params) {
+  public Void visitSigma(SigmaExpression expr, Expression expectedType) {
     visitDependentLink(expr.getParameters());
-    expr.getType().accept(this, params);
+    expr.getType().accept(this, expectedType);
     return null;
   }
 
   @Override
-  public Void visitUniverse(UniverseExpression expr, Void params) {
+  public Void visitUniverse(UniverseExpression expr, Expression expectedType) {
     return null;
   }
 
   @Override
-  public Void visitError(ErrorExpression expr, Void params) {
+  public Void visitError(ErrorExpression expr, Expression expectedType) {
     myErrorReporter.addError(expr, expr.getError().toString());
     return null;
   }
 
   @Override
-  public Void visitTuple(TupleExpression expr, Void params) {
+  public Void visitTuple(TupleExpression expr, Expression expectedType) {
     SigmaExpression type = expr.getType();
     DependentLink link = type.getParameters();
     visitDependentLink(link);
-    type.accept(this, params);
+    type.accept(this, expectedType);
     for (Expression field : expr.getFields()) {
-      field.accept(this, params);
+      field.accept(this, expectedType);
       if (!field.getType().equals(link.getType())) {
         myErrorReporter.addError(field, "Expected type: " + link.getType() + ", found: " + field.getType());
       }
@@ -141,11 +146,11 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void>
   }
 
   @Override
-  public Void visitProj(ProjExpression expr, Void params) {
+  public Void visitProj(ProjExpression expr, Expression expectedType) {
     Expression type = expr.getType();
-    type.accept(this, params);
+    type.accept(this, expectedType);
     Expression tuple = expr.getExpression();
-    tuple.accept(this, params);
+    tuple.accept(this, expectedType);
     if (!(tuple instanceof TupleExpression)) {
       myErrorReporter.addError(tuple, "Tuple expected");
     } else {
@@ -158,33 +163,33 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Void, Void>
   }
 
   @Override
-  public Void visitNew(NewExpression expr, Void params) {
-    expr.getType().accept(this, params);
+  public Void visitNew(NewExpression expr, Expression expectedType) {
+    expr.getType().accept(this, expectedType);
     return null;
   }
 
   @Override
-  public Void visitLet(LetExpression letExpression, Void params) {
+  public Void visitLet(LetExpression letExpression, Expression expectedType) {
     for (LetClause clause : letExpression.getClauses()) {
-      clause.getResultType().accept(this, params);
+      clause.getResultType().accept(this, expectedType);
     }
-    letExpression.getType().accept(this, params);
+    letExpression.getType().accept(this, expectedType);
     return null;
   }
 
   @Override
-  public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
+  public Void visitBranch(BranchElimTreeNode branchNode, Expression expectedType) {
     return null;
   }
 
   @Override
-  public Void visitLeaf(LeafElimTreeNode leafNode, Void params) {
-    leafNode.getExpression().accept(this, params);
+  public Void visitLeaf(LeafElimTreeNode leafNode, Expression expectedType) {
+    leafNode.getExpression().accept(this, expectedType);
     return null;
   }
 
   @Override
-  public Void visitEmpty(EmptyElimTreeNode emptyNode, Void params) {
+  public Void visitEmpty(EmptyElimTreeNode emptyNode, Expression expectedType) {
     return null;
   }
 
