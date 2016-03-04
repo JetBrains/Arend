@@ -20,22 +20,12 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.*;
 
 public class ExpressionFactory {
-  public static Expression Apps(Expression expr, Expression... exprs) {
-    for (Expression expr1 : exprs) {
-      expr = new AppExpression(expr, new ArgumentExpression(expr1, true, false));
-    }
-    return expr;
+  public static Expression Apps(Expression function, Expression... arguments) {
+    return new AppExpression(function, Arrays.asList(arguments), Collections.<EnumSet<AppExpression.Flag>>emptyList());
   }
 
-  public static Expression Apps(Expression expr, ArgumentExpression... exprs) {
-    for (ArgumentExpression expr1 : exprs) {
-      expr = new AppExpression(expr, expr1);
-    }
-    return expr;
-  }
-
-  public static Expression Apps(Expression expr, Expression arg, boolean explicit, boolean hidden) {
-    return new AppExpression(expr, new ArgumentExpression(arg, explicit, hidden));
+  public static Expression Apps(Expression fun, List<Expression> arguments) {
+    return new AppExpression(fun, arguments, Collections.<EnumSet<AppExpression.Flag>>emptyList());
   }
 
   public static FunCallExpression FunCall(FunctionDefinition definition) {

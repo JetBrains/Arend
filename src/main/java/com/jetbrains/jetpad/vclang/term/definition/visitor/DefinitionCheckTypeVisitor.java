@@ -723,8 +723,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         boolean check = true;
         while (check) {
           check = false;
-          List<Expression> exprs = new ArrayList<>();
-          type = type.getFunction(exprs);
+          List<? extends Expression> exprs = type.getArguments();
+          type = type.getFunction();
           if (type instanceof DataCallExpression) {
             DataDefinition typeDef = ((DataCallExpression) type).getDefinition();
             if (Prelude.isPath(typeDef) && !exprs.isEmpty()) {

@@ -71,7 +71,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     expr1 = EtaNormalization.normalize(expr1);
     expr2 = EtaNormalization.normalize(expr2);
 
-    if (expr2 instanceof AppExpression && checkIsInferVar(expr2.getFunction(null), expr1, expr2)) {
+    if (expr2 instanceof AppExpression && checkIsInferVar(expr2.getFunction(), expr1, expr2)) {
       return true;
     }
 
@@ -95,14 +95,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitApp(AppExpression expr1, Expression expr2) {
-    List<Expression> args1 = new ArrayList<>();
-    Expression fun1 = expr1.getFunction(args1);
+    List<? extends Expression> args1 = expr1.getArguments();
+    Expression fun1 = expr1.getFunction();
     if (checkIsInferVar(fun1, expr1, expr2)) {
       return true;
     }
 
-    List<Expression> args2 = new ArrayList<>(args1.size());
-    Expression fun2 = expr2.getFunction(args2);
+    List<? extends Expression> args2 = expr2.getArguments();
+    Expression fun2 = expr2.getFunction();
     if (checkIsInferVar(fun2, expr1, expr2)) {
       return true;
     }

@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
@@ -37,10 +36,9 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
 
   @Override
   public Void visitBranch(final BranchElimTreeNode branchNode, final Substitution argSubst) {
-    List<Expression> parameters = new ArrayList<>();
-    Expression type = branchNode.getReference().getType();
-    DataDefinition dataType = ((DataCallExpression) type.normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters)).getDefinition();
-    Collections.reverse(parameters);
+    Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
+    List<? extends Expression> parameters = type.getArguments();
+    DataDefinition dataType = ((DataCallExpression) type.getFunction()).getDefinition();
 
     for (final ConCallExpression conCall : dataType.getMatchedConstructors(parameters)) {
       if (branchNode.getClause(conCall.getDefinition()) != null) {
@@ -52,13 +50,13 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
           SubstituteExpander.substituteExpand(conCall.getDefinition().getDataType().getCondition(conCall.getDefinition()).getElimTree(), subst, toContext(constructorArgs), new SubstituteExpander.SubstituteExpansionProcessor() {
             @Override
             public void process(Substitution subst, Substitution toCtxC, List<Binding> ctx, LeafElimTreeNode leaf) {
-              Expression lhs = conCall;
+              List<Expression> arguments = new ArrayList<>();
               for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {
-                lhs = Apps(lhs, toCtxC.get(link));
+                arguments.add(toCtxC.get(link));
               }
               final Expression rhs = leaf.getExpression().subst(subst);
               try (Utils.ContextSaver ignore = new Utils.ContextSaver(ctx)) {
-                final Substitution subst1 = new Substitution(branchNode.getReference(), lhs);
+                final Substitution subst1 = new Substitution(branchNode.getReference(), Apps(conCall, arguments));
                 ctx.addAll(subst1.extendBy(branchNode.getContextTail()));
                 SubstituteExpander.substituteExpand(branchNode, subst1, ctx, new SubstituteExpander.SubstituteExpansionProcessor() {
                   @Override

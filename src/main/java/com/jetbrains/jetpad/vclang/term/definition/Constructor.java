@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
@@ -15,6 +16,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -80,27 +82,33 @@ public class Constructor extends Definition {
   public Expression getDataTypeExpression() {
     Expression resultType = DataCall(myDataType);
     if (myPatterns == null) {
+      List<Expression> arguments = new ArrayList<>();
+      List<EnumSet<AppExpression.Flag>> flags = new ArrayList<>();
       for (DependentLink link = myDataType.getParameters(); link.hasNext(); link = link.getNext()) {
-        resultType = Apps(resultType, Reference(link), link.isExplicit(), !link.isExplicit());
+        arguments.add(Reference(link));
+        flags.add(link.isExplicit() ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.noneOf(AppExpression.Flag.class));
       }
+      resultType = new AppExpression(resultType, arguments, flags);
     } else {
       Substitution subst = new Substitution();
       DependentLink dataTypeParams = myDataType.getParameters();
+      List<Expression> arguments = new ArrayList<>(myPatterns.getPatterns().size());
       for (PatternArgument patternArg : myPatterns.getPatterns()) {
         Substitution innerSubst = new Substitution();
 
         if (patternArg.getPattern() instanceof ConstructorPattern) {
-          List<Expression> argDataTypeParams = new ArrayList<>();
-          dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getFunction(argDataTypeParams);
+          List<? extends Expression> argDataTypeParams = dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getArguments();
           Collections.reverse(argDataTypeParams);
-          innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(argDataTypeParams);
+          innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
         }
 
         Expression expr = patternArg.getPattern().toExpression(innerSubst);
-        resultType = Apps(resultType, expr);
+
         subst.add(dataTypeParams, expr);
+        arguments.add(expr);
         dataTypeParams = dataTypeParams.getNext();
       }
+      resultType = Apps(resultType, arguments);
     }
 
     return resultType;

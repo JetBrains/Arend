@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolean> {
@@ -31,9 +30,9 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
 
   @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, Substitution argsSubst) {
-    List<Expression> parameters = new ArrayList<>();
-    DefCallExpression ftype = (DefCallExpression) branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
-    Collections.reverse(parameters);
+    Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
+    List<? extends Expression> parameters = type.getArguments();
+    DefCallExpression ftype = (DefCallExpression) type.getFunction();
 
     boolean result = true;
     for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getMatchedConstructors(parameters)) {
@@ -78,9 +77,9 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
       return false;
     }
 
-    List<Expression> parameters = new ArrayList<>();
-    Expression ftype = tailContext.get(0).getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
-    Collections.reverse(parameters);
+    Expression ftype = tailContext.get(0).getType().normalize(NormalizeVisitor.Mode.WHNF);
+    List<? extends Expression> parameters = ftype.getArguments();
+    ftype = ftype.getFunction();
 
     if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
       return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), argsSubst);

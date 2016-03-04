@@ -317,10 +317,12 @@ public class ClassesTest {
     assertTrue(type instanceof AppExpression);
     AppExpression appType = (AppExpression) type;
     assertEquals(FieldCall(xField), appType.getFunction());
-    assertTrue(appType.getArgument().getExpression() instanceof AppExpression);
-    AppExpression appArg = (AppExpression) appType.getArgument().getExpression();
+    assertEquals(1, appType.getArguments().size());
+    assertTrue(appType.getArguments().get(0) instanceof AppExpression);
+    AppExpression appArg = (AppExpression) appType.getArguments().get(0);
     assertEquals(FieldCall(aField), appArg.getFunction());
-    assertEquals(Reference(yField.getThisParameter()), appArg.getArgument().getExpression());
+    assertEquals(1, appArg.getArguments().size());
+    assertEquals(Reference(yField.getThisParameter()), appArg.getArguments().get(0));
   }
 
   @Test

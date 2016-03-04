@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
@@ -20,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
@@ -103,8 +105,18 @@ public class DefinitionTest {
     substitution.add(link, Reference(a));
     link = link.getNext();
     substitution.add(link, Reference(b));
-    assertEquals(Pi(parameters.getFirst(), Pi(parameters1.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b)))), typedDef.getConstructors().get(0).getType());
-    assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), Apps(Apps(Apps(DataCall(typedDef), Reference(A), false, false), Reference(B), false, false), Reference(I), Reference(a), Reference(b)))), typedDef.getConstructors().get(1).getType());
+    assertEquals(Pi(parameters.getFirst(), Pi(parameters1.getFirst(), DataCall(typedDef)
+        .addArgument(Reference(A), EnumSet.of(AppExpression.Flag.VISIBLE))
+        .addArgument(Reference(B), EnumSet.of(AppExpression.Flag.VISIBLE))
+        .addArgument(Reference(I), AppExpression.DEFAULT)
+        .addArgument(Reference(a), AppExpression.DEFAULT)
+        .addArgument(Reference(b), AppExpression.DEFAULT))), typedDef.getConstructors().get(0).getType());
+    assertEquals(Pi(parameters.getFirst(), Pi(parameters2.getFirst(), DataCall(typedDef)
+        .addArgument(Reference(A), EnumSet.of(AppExpression.Flag.VISIBLE))
+        .addArgument(Reference(B), EnumSet.of(AppExpression.Flag.VISIBLE))
+        .addArgument(Reference(I), AppExpression.DEFAULT)
+        .addArgument(Reference(a), AppExpression.DEFAULT)
+        .addArgument(Reference(b), AppExpression.DEFAULT))), typedDef.getConstructors().get(1).getType());
   }
 
   @Test

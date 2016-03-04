@@ -111,15 +111,14 @@ public class TypeCheckingDefCall {
       return applyThis(new CheckTypeVisitor.Result(definition.getDefCall(), definition.getTypeWithThis()), result.expression, expr);
     }
 
-    List<Expression> arguments = new ArrayList<>();
-    Expression fun = result.expression.getFunction(arguments);
-    Collections.reverse(arguments);
+    List<? extends Expression> arguments = result.expression.getArguments();
+    Expression fun = result.expression.getFunction();
     if (fun instanceof DataCallExpression) {
       DataDefinition dataDefinition = ((DataCallExpression) fun).getDefinition();
       String name = expr.getName();
       Constructor constructor = dataDefinition.getConstructor(name);
       if (constructor != null) {
-        return new CheckTypeVisitor.Result(ConCall(constructor, arguments), constructor.getType().applyExpressions(arguments));
+        return new CheckTypeVisitor.Result(ConCall(constructor, new ArrayList<>(arguments)), constructor.getType().applyExpressions(arguments));
       }
 
       if (!arguments.isEmpty()) {
@@ -147,9 +146,9 @@ public class TypeCheckingDefCall {
       thisExpr = null;
       definition = ((DefCallExpression) result.expression).getDefinition();
     } else
-    if (result.expression instanceof AppExpression && ((AppExpression) result.expression).getFunction() instanceof DefCallExpression) {
-      thisExpr = ((AppExpression) result.expression).getArgument().getExpression();
-      definition = ((DefCallExpression) ((AppExpression) result.expression).getFunction()).getDefinition();
+    if (result.expression instanceof AppExpression && result.expression.getFunction() instanceof DefCallExpression && result.expression.getArguments().size() == 1) {
+      thisExpr = ((AppExpression) result.expression).getArguments().get(0);
+      definition = ((DefCallExpression) result.expression.getFunction()).getDefinition();
     } else {
       TypeCheckingError error = new TypeCheckingError("Expected a definition", expr);
       expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));

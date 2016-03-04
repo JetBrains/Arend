@@ -7,8 +7,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class EtaNormalization {
@@ -37,10 +35,9 @@ public class EtaNormalization {
         break;
       }
 
-      AppExpression appBody = (AppExpression) body;
-      Expression arg = normalize(appBody.getArgument().getExpression());
-      if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == params.get(index - 1) && !appBody.getFunction().findBinding(params.get(index - 1))) {
-        body = appBody.getFunction();
+      Expression arg = normalize(body.getArguments().get(body.getArguments().size() - 1));
+      if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == params.get(index - 1) && !body.getFunction().findBinding(params.get(index - 1))) {
+        body = body.getFunction();
       } else {
         break;
       }
@@ -59,14 +56,12 @@ public class EtaNormalization {
   }
 
   public static Expression normalizePath(AppExpression expr) {
-    List<ArgumentExpression> args = new ArrayList<>();
-    Expression fun = expr.getFunctionArgs(args);
-    Collections.reverse(args);
+    List<? extends Expression> args = expr.getArguments();
+    Expression fun = expr.getFunction();
     if (fun instanceof ConCallExpression && Prelude.isPathCon(((ConCallExpression) fun).getDefinition())) {
-      ArgumentExpression lastArg = args.get(args.size() - 1);
-      Expression arg = normalize(lastArg.getExpression());
-      List<Expression> argArgs = new ArrayList<>();
-      arg = arg.getFunction(argArgs);
+      Expression arg = normalize(args.get(args.size() - 1));
+      List<? extends Expression> argArgs = arg.getArguments();
+      arg = arg.getFunction();
       if (argArgs.size() > 0 && arg instanceof FunCallExpression && Prelude.isAt(((FunCallExpression) arg).getDefinition())) {
         return argArgs.get(0);
       }

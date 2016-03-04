@@ -25,7 +25,7 @@ public interface DependentLink extends Binding {
       }
     }
 
-    public static Substitution toSubstitution(DependentLink link, List<Expression> expressions) {
+    public static Substitution toSubstitution(DependentLink link, List<? extends Expression> expressions) {
       Substitution result = new Substitution();
       for (Expression expression : expressions) {
         result.add(link, expression);

@@ -62,10 +62,10 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   private enum Ord { LESS, EQUALS, NOT_LESS }
 
   private Ord isLess(Expression expr1, Expression expr2) {
-    List<Expression> args1 = new ArrayList<>();
-    Expression fun1 = expr1.getFunction(args1);
-    List<Expression> args2 = new ArrayList<>();
-    Expression fun2 = expr2.getFunction(args2);
+    List<? extends Expression> args1 = expr1.getArguments();
+    Expression fun1 = expr1.getFunction();
+    List<? extends Expression> args2 = expr2.getArguments();
+    Expression fun2 = expr2.getFunction();
     if (fun1.equals(fun2)) {
       Ord ord = isLess(args1, args2);
       if (ord != Ord.NOT_LESS) return ord;
@@ -76,9 +76,9 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     return Ord.NOT_LESS;
   }
 
-  private Ord isLess(List<Expression> exprs1, List<Expression> exprs2) {
-    for (int i = 0; i < Math.min(exprs1.size(), exprs2.size()); ++i) {
-      Ord ord = isLess(exprs1.get(exprs1.size() - 1 - i), exprs2.get(exprs2.size() - 1 - i));
+  private Ord isLess(List<? extends Expression> exprs1, List<? extends Expression> exprs2) {
+    for (int i = 0; i < Math.min(exprs1.size(), exprs2.size()); i++) {
+      Ord ord = isLess(exprs1.get(i), exprs2.get(i));
       if (ord != Ord.EQUALS) return ord;
     }
     return exprs1.size() >= exprs2.size() ? Ord.EQUALS : Ord.NOT_LESS;
@@ -86,11 +86,16 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
 
   @Override
   public Boolean visitApp(AppExpression expr, Void params) {
-    List<Expression> args = new ArrayList<>();
-    Expression fun = expr.getFunction(args);
+    List<? extends Expression> args = expr.getArguments();
+    Expression fun = expr.getFunction();
     if (fun instanceof ConCallExpression) {
-      args.addAll(((ConCallExpression) fun).getDataTypeArguments());
-      Collections.reverse(args.subList(args.size() - ((ConCallExpression) fun).getDataTypeArguments().size(), args.size()));
+      List<Expression> dataTypeArguments = ((ConCallExpression) fun).getDataTypeArguments();
+      if (!dataTypeArguments.isEmpty()) {
+        List<Expression> newArgs = new ArrayList<>(args.size() + dataTypeArguments.size());
+        newArgs.addAll(dataTypeArguments);
+        newArgs.addAll(args);
+        args = newArgs;
+      }
     }
     if (fun instanceof DefCallExpression) {
       if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {

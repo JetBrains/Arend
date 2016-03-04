@@ -25,7 +25,11 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
-   return Apps(expr.getFunction().accept(this, null), new ArgumentExpression(expr.getArgument().getExpression().accept(this, null), expr.getArgument().isExplicit(), expr.getArgument().isHidden()));
+    List<Expression> arguments = new ArrayList<>(expr.getArguments().size());
+    for (Expression argument : expr.getArguments()) {
+      arguments.add(argument.accept(this, null));
+    }
+    return new AppExpression(expr.getFunction().accept(this, null), arguments, expr.getFlags());
   }
 
   @Override
