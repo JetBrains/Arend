@@ -147,7 +147,7 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   public Expression addArgument(Expression argument, EnumSet<AppExpression.Flag> flag) {
-    return new AppExpression(this, Collections.singletonList(argument), Collections.singletonList(flag));
+    return new AppExpression(this, new ArrayList<>(Collections.singletonList(argument)), new ArrayList<>(Collections.singletonList(flag)));
   }
 
   public Expression addArguments(Collection<? extends Expression> arguments, Collection<? extends EnumSet<AppExpression.Flag>> flags) {

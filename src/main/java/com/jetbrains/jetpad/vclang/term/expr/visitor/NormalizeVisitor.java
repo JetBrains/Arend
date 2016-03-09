@@ -93,8 +93,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         if (thisType instanceof ClassCallExpression) {
           ClassCallExpression.ImplementStatement elem = ((ClassCallExpression) thisType).getImplementStatements().get(defCallExpr.getDefinition());
           if (elem != null && elem.term != null) {
-            AppExpression result = new AppExpression(elem.term, expr.getArguments().subList(1, expr.getArguments().size()), ((AppExpression) expr).getFlags().subList(1, ((AppExpression) expr).getFlags().size()));
-            return mode == Mode.TOP ? result : visitApp(result, mode);
+            Expression result = Apps(elem.term, expr.getArguments().subList(1, expr.getArguments().size()), ((AppExpression) expr).getFlags().subList(1, ((AppExpression) expr).getFlags().size()));
+            return mode == Mode.TOP ? result : result.accept(this, mode);
           }
         }
       }
@@ -149,7 +149,13 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         parameters.add(args.get(i));
       }
       conCallExpression = ConCall(conCallExpression.getDefinition(), parameters);
-      args = args.subList(take, args.size());
+      int size = args.size();
+      args = args.subList(take, size);
+      if (!args.isEmpty()) {
+        expr = Apps(conCallExpression, args, ((AppExpression) expr).getFlags().subList(take, size));
+      } else {
+        expr = conCallExpression;
+      }
     }
 
     DependentLink excessiveParams = conCallExpression.getDefinition().getParameters();
@@ -207,7 +213,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         List<? extends Expression> mbIsoArgs = normExpr.getArguments();
         if (mbIso instanceof FunCallExpression && Prelude.isIso(((FunCallExpression) mbIso).getDefinition()) && mbIsoArgs.size() == 7) {
           boolean noFreeVar = true;
-          for (int i = 1; i < mbIsoArgs.size(); i++) {
+          for (int i = 0; i < mbIsoArgs.size() - 1; i++) {
             if (mbIsoArgs.get(i).findBinding(binding)) {
               noFreeVar = false;
               break;
@@ -216,7 +222,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           if (noFreeVar) {
             Expression normedPt = args.get(2).accept(this, Mode.NF);
             if (normedPt instanceof ConCallExpression && ((ConCallExpression) normedPt).getDefinition() == Prelude.RIGHT) {
-              result = Apps(mbIsoArgs.get(4), args.get(1));
+              result = Apps(mbIsoArgs.get(2), args.get(1));
             }
           }
         }
@@ -224,7 +230,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
       if (result != null) {
         List<? extends EnumSet<AppExpression.Flag>> flags = ((AppExpression) expr).getFlags();
-        result = new AppExpression(result, args.subList(3, args.size()), flags.subList(3, flags.size()));
+        result = Apps(result, args.subList(3, args.size()), flags.subList(3, flags.size()));
         return mode == Mode.TOP ? result : result.accept(this, mode);
       }
     }
@@ -259,7 +265,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     for (; i < args.size(); i++) {
-      result = result.addArgument(args.get(i), ((AppExpression) result).getFlags().get(i));
+      result = result.addArgument(args.get(i), ((AppExpression) expr).getFlags().get(i));
     }
     result = excessiveParams.hasNext() ? Lam(excessiveParams, result) : result;
     return mode == Mode.TOP ? result : result.accept(this, mode);

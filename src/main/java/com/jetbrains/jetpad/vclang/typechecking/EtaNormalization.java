@@ -9,6 +9,8 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
+
 public class EtaNormalization {
   public static Expression normalize(Expression expression) {
     if (expression instanceof LamExpression) {
@@ -25,33 +27,35 @@ public class EtaNormalization {
   }
 
   public static Expression normalizeLam(LamExpression expression) {
-    Expression body = expression.getBody();
     List<DependentLink> params = DependentLink.Helper.toList(expression.getParameters());
+    Expression body = normalize(expression.getBody());
+    List<? extends Expression> args = body.getArguments();
 
-    int index = params.size();
-    for (; index != 0; index--) {
-      body = normalize(body);
-      if (!(body instanceof AppExpression)) {
+    int index = 0;
+    for (; index < params.size() && index < args.size(); index++) {
+      Expression arg = normalize(args.get(args.size() - 1 - index));
+      DependentLink param = params.get(params.size() - 1 - index);
+      if (!(arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == param && !body.getFunction().findBinding(param))) {
         break;
       }
-
-      Expression arg = normalize(body.getArguments().get(body.getArguments().size() - 1));
-      if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == params.get(index - 1) && !body.getFunction().findBinding(params.get(index - 1))) {
-        body = body.getFunction();
-      } else {
-        break;
+      for (int i = 0; i < args.size() - 1 - index; i++) {
+        if (args.get(i).findBinding(param)) {
+          break;
+        }
       }
     }
 
     if (index == 0) {
-      return normalize(body);
-    }
-    if (index == params.size()) {
       return expression;
     }
 
+    body = Apps(body.getFunction(), args.subList(0, args.size() - index), ((AppExpression) body).getFlags().subList(0, args.size() - index));
+    if (index == params.size()) {
+      return body;
+    }
+
     Substitution substitution = new Substitution();
-    DependentLink newParams = expression.getParameters().subst(substitution, index);
+    DependentLink newParams = expression.getParameters().subst(substitution, params.size() - index);
     return new LamExpression(newParams, body.subst(substitution));
   }
 
@@ -63,7 +67,7 @@ public class EtaNormalization {
       List<? extends Expression> argArgs = arg.getArguments();
       arg = arg.getFunction();
       if (argArgs.size() > 0 && arg instanceof FunCallExpression && Prelude.isAt(((FunCallExpression) arg).getDefinition())) {
-        return argArgs.get(0);
+        return argArgs.get(argArgs.size() - 1);
       }
     }
     return expr;

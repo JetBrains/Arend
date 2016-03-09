@@ -63,8 +63,9 @@ class PatternsExpander {
     }
 
     Expression ftype = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    List<? extends Expression> args = ftype.getArguments();
     ftype = ftype.getFunction();
-    List<ConCallExpression> validConstructors = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(ftype.getArguments());
+    List<ConCallExpression> validConstructors = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(args);
 
     BranchElimTreeNode resultTree = new BranchElimTreeNode(binding, context);
     List<Branch> resultBranches = new ArrayList<>();

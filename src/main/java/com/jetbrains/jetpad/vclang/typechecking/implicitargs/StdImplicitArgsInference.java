@@ -44,7 +44,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       flags.add(EnumSet.noneOf(AppExpression.Flag.class));
       substitution.add(parameter, binding);
     }
-    result.expression = new AppExpression(result.expression, arguments, flags);
+    result.expression = Apps(result.expression, arguments, flags);
     result.type = result.type.subst(substitution);
     return true;
   }
@@ -111,13 +111,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
                 args = args.subList(conCall.getDataTypeArguments().size(), args.size());
               }
               if (!args.isEmpty()) {
-                result.expression = new AppExpression(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
+                result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
                 result.type = result.type.applyExpressions(args);
               }
               CheckTypeVisitor.Result result1 = inferArg(result, arg, true, fun);
               if (result1 != null && Prelude.isPathCon(conCall.getDefinition())) {
-                Expression argExpr = result1.expression.getArguments().get(result1.expression.getArguments().size() - 1);
-                result1.type = Apps(result1.type.getFunction().getFunction(), Apps(argExpr, ConCall(Prelude.LEFT)), Apps(argExpr, ConCall(Prelude.RIGHT)));
+                result1.type = Apps(result1.type.getFunction().getFunction(), new ArrayList<>(result1.expression.getArguments().subList(0, 3)));
                 if (!myVisitor.compare(result1, expectedType, Equations.CMP.EQ, fun)) {
                   return null;
                 }

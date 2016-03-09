@@ -88,7 +88,7 @@ public class Constructor extends Definition {
         arguments.add(Reference(link));
         flags.add(link.isExplicit() ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.noneOf(AppExpression.Flag.class));
       }
-      resultType = new AppExpression(resultType, arguments, flags);
+      resultType = Apps(resultType, arguments, flags);
     } else {
       Substitution subst = new Substitution();
       DependentLink dataTypeParams = myDataType.getParameters();

@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +29,6 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
         myPatterns.add(Reference(parameter));
       }
     }
-    Collections.reverse(myPatterns);
   }
 
   private TerminationCheckVisitor(Definition def, List<Expression> patterns) {

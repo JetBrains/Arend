@@ -65,13 +65,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
 
     Expression[] visibleArgs = new Expression[2];
-    int i = 1;
+    int i = 0;
     for (int j = 0; j < expr.getArguments().size(); j++) {
       if (expr.getFlags().get(j).contains(AppExpression.Flag.EXPLICIT) && (expr.getFlags().get(j).contains(AppExpression.Flag.VISIBLE) || myFlags.contains(Flag.SHOW_HIDDEN_ARGS))) {
-        if (i < 0) {
+        if (i == 2) {
           return null;
         }
-        visibleArgs[i--] = expr.getArguments().get(j);
+        visibleArgs[i++] = expr.getArguments().get(j);
       }
     }
     return i < 0 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), ((DefCallExpression) fun).getDefinition(), visibleArgs[1].accept(this, null)) : null;

@@ -221,17 +221,17 @@ public class RecordsTest {
     assertEquals(3, domArguments.size());
     assertEquals(DataCall(Prelude.PATH), domFunction);
 
-    assertTrue(domArguments.get(0) instanceof DefCallExpression);
-    assertEquals(Prelude.ZERO, ((DefCallExpression) domArguments.get(0)).getDefinition());
+    assertTrue(domArguments.get(0) instanceof LamExpression);
+    assertTrue(((LamExpression) domArguments.get(0)).getBody() instanceof DefCallExpression);
+    assertEquals(Prelude.NAT, ((DefCallExpression) ((LamExpression) domArguments.get(0)).getBody()).getDefinition());
 
     assertTrue(domArguments.get(1) instanceof AppExpression);
     assertEquals(1, domArguments.get(1).getArguments().size());
     assertEquals(Reference(testFun.getParameters()), domArguments.get(1).getArguments().get(0));
     assertEquals(member.namespace.findChild("A").getDefinition("x").getDefCall(), domArguments.get(1).getFunction());
 
-    assertTrue(domArguments.get(2) instanceof LamExpression);
-    assertTrue(((LamExpression) domArguments.get(2)).getBody() instanceof DefCallExpression);
-    assertEquals(Prelude.NAT, ((DefCallExpression) ((LamExpression) domArguments.get(2)).getBody()).getDefinition());
+    assertTrue(domArguments.get(2) instanceof DefCallExpression);
+    assertEquals(Prelude.ZERO, ((DefCallExpression) domArguments.get(2)).getDefinition());
   }
 
   @Test
