@@ -36,7 +36,11 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
     }
   }
 
-  private final ErrorReporter myErrorReporter;
+  public final ErrorReporter myErrorReporter;
+
+  public ValidateTypeVisitor() {
+    this.myErrorReporter = new ErrorReporter();
+  }
 
   public ValidateTypeVisitor(ErrorReporter errorReporter) {
     this.myErrorReporter = errorReporter;
@@ -75,8 +79,10 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
       for (int i = 0; i < args.size(); i++) {
         DependentLink param = links.get(i);
         Expression arg = args.get(i).getExpression();
-        if (!arg.getType().equals(param.getType().subst(subst))) {
-          myErrorReporter.addError(args.get(i).getExpression(), "Expected type: " + links.get(i).getType());
+        Expression argType = arg.getType().normalize(NormalizeVisitor.Mode.NF);
+        Expression expectedArgType = param.getType().subst(subst).normalize(NormalizeVisitor.Mode.NF);
+        if (!argType.equals(expectedArgType)) {
+          myErrorReporter.addError(arg, "Expected type: " + expectedArgType + ", actual: " + argType);
         }
         subst.add(param, arg);
       }
@@ -129,17 +135,22 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   @Override
   public Void visitTuple(TupleExpression expr, Expression expectedType) {
     SigmaExpression type = expr.getType();
+    type = (SigmaExpression) type.normalize(NormalizeVisitor.Mode.NF);
     DependentLink link = type.getParameters();
     visitDependentLink(link);
     type.accept(this, expectedType);
+    Substitution subst = new Substitution();
     for (Expression field : expr.getFields()) {
       field.accept(this, expectedType);
-      if (!field.getType().equals(link.getType())) {
-        myErrorReporter.addError(field, "Expected type: " + link.getType() + ", found: " + field.getType());
+      Expression expectedFieldType = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.NF);
+      Expression actualFieldType = field.getType().normalize(NormalizeVisitor.Mode.NF);
+      if (!actualFieldType.equals(expectedFieldType)) {
+        myErrorReporter.addError(field, "Expected type: " + expectedFieldType + ", found: " + actualFieldType);
       }
       if (!link.hasNext()) {
         myErrorReporter.addError(expr, "Too few abstractions in Sigma");
       }
+      subst.add(link, field);
       link = link.getNext();
     }
     return null;
@@ -149,7 +160,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   public Void visitProj(ProjExpression expr, Expression expectedType) {
     Expression type = expr.getType();
     type.accept(this, expectedType);
-    Expression tuple = expr.getExpression();
+    Expression tuple = expr.getExpression().normalize(NormalizeVisitor.Mode.WHNF);
     tuple.accept(this, expectedType);
     if (!(tuple instanceof TupleExpression)) {
       myErrorReporter.addError(tuple, "Tuple expected");
@@ -171,9 +182,8 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   @Override
   public Void visitLet(LetExpression letExpression, Expression expectedType) {
     for (LetClause clause : letExpression.getClauses()) {
-      clause.getResultType().accept(this, expectedType);
+      clause.getElimTree().accept(this, clause.getType());
     }
-    letExpression.getType().accept(this, expectedType);
     return null;
   }
 

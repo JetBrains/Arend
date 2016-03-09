@@ -1,11 +1,15 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.LetClause;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import org.junit.Test;
 
@@ -26,6 +30,13 @@ public class ValidateTypeTest {
     ValidateTypeVisitor.ErrorReporter res = expr.checkType();
     assertTrue(res.errors() == 0);
     return res;
+  }
+
+  private ValidateTypeVisitor.ErrorReporter ok(ElimTreeNode elimTree) {
+    ValidateTypeVisitor visitor = new ValidateTypeVisitor();
+    elimTree.accept(visitor, null);
+    assertEquals(0, visitor.myErrorReporter.errors());
+    return visitor.myErrorReporter;
   }
 
   @Test
@@ -67,6 +78,13 @@ public class ValidateTypeTest {
     DependentLink link = params(param("x", Nat()), param("y", Nat()), param("z", Nat()));
     Expression expr = Proj(Tuple(Sigma(link), Zero(), Zero(), Zero()), 3);
     fail(expr);
+  }
+
+  @Test
+  public void testSigma() {
+    FunctionDefinition f = (FunctionDefinition) typeCheckDef(
+            "\\function f (n : Nat) : \\Sigma (m : Nat) (suc n = suc m) => (n, path (\\lam (i : I) => suc n))");
+    ok(f.getElimTree());
   }
 
   @Test
