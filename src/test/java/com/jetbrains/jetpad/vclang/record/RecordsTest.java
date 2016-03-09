@@ -296,8 +296,9 @@ public class RecordsTest {
 
     assertTrue(arguments.get(0) instanceof LamExpression);
     assertTrue(((LamExpression) arguments.get(0)).getBody() instanceof AppExpression);
-    assertEquals(Apps(Foo.getDefCall(), Reference(testFun.getParameters())), ((LamExpression) arguments.get(0)).getBody().getFunction());
-    Expression parameterFunction = ((LamExpression) arguments.get(0)).getBody().getArguments().get(0);
+    assertEquals(Foo.getDefCall(), ((LamExpression) arguments.get(0)).getBody().getFunction());
+    assertEquals(Reference(testFun.getParameters()), ((LamExpression) arguments.get(0)).getBody().getArguments().get(0));
+    Expression parameterFunction = ((LamExpression) arguments.get(0)).getBody().getArguments().get(1);
     List<? extends Expression> parameterArguments = parameterFunction.getArguments();
     parameterFunction = parameterFunction.getFunction();
     assertEquals(1, parameterArguments.size());

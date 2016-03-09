@@ -110,7 +110,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, Void params) {
-    String name = def.getName();
     Abstract.Definition.Arrow arrow = def.getArrow();
     final FunctionDefinition typedDef = new FunctionDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence());
     /*

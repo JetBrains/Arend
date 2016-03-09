@@ -50,9 +50,10 @@ public class SubstituteExpander {
         }
         Binding binding = ((ReferenceExpression) nestedSubstitution.get(branchNode.getReference())).getBinding();
         Expression ftype = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
+        List<? extends Expression> arguments = ftype.getArguments();
         ftype = ftype.getFunction();
 
-        for (ConCallExpression conCall : ((DataCallExpression) ftype).getDefinition().getMatchedConstructors(ftype.getArguments())) {
+        for (ConCallExpression conCall : ((DataCallExpression) ftype).getDefinition().getMatchedConstructors(arguments)) {
           DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
           List<Expression> args = new ArrayList<>();
           for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {

@@ -116,7 +116,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
               }
               CheckTypeVisitor.Result result1 = inferArg(result, arg, true, fun);
               if (result1 != null && Prelude.isPathCon(conCall.getDefinition())) {
-                result1.type = Apps(result1.type.getFunction().getFunction(), new ArrayList<>(result1.expression.getArguments().subList(0, 3)));
+                Expression argExpr = result1.expression.getArguments().get(result1.expression.getArguments().size() - 1);
+                result1.type = Apps(result1.type.getFunction(), result1.type.getArguments().get(0), Apps(argExpr, ConCall(Prelude.LEFT)), Apps(argExpr, ConCall(Prelude.RIGHT)));
                 if (!myVisitor.compare(result1, expectedType, Equations.CMP.EQ, fun)) {
                   return null;
                 }
