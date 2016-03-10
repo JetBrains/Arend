@@ -455,10 +455,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
+    DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), null);
+    dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
         CheckTypeVisitor.Result result = visitor.checkType(parameter.getType(), Universe());
-        if (result == null) return null;
+        if (result == null) {
+          return dataDefinition;
+        }
         DependentLink param;
         if (parameter instanceof Abstract.TelescopeArgument) {
           param = param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression);
@@ -470,7 +474,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
     }
 
-    DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), list.getFirst());
+    dataDefinition.setParameters(list.getFirst());
+    dataDefinition.hasErrors(false);
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
@@ -542,6 +547,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName());
       if (constructor == null) {
         myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
+        continue;
+      }
+      if (constructor.hasErrors()) {
         continue;
       }
       if (!condMap.containsKey(constructor)) {
@@ -646,10 +654,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   public Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
+      String name = def.getName();
       Universe universe = new Universe.Type(0, Universe.Type.PROP);
       int index = 1;
       boolean ok = true;
 
+      Constructor constructor = new Constructor(new DefinitionResolvedName(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name), def.getPrecedence(), universe, null, dataDefinition, null);
+      constructor.hasErrors(true);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
       if (patterns != null) {
@@ -658,12 +669,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           processedPatterns.add(0, new PatternArgument(new NamePattern(dataDefinition.getParameters()), true, true));
         }
         processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), processedPatterns);
-        if (processedPatterns == null)
-          return null;
+        if (processedPatterns == null) {
+          return constructor;
+        }
 
         typedPatterns = visitor.getTypeCheckingElim().visitPatternArgs(processedPatterns, dataDefinition.getParameters(), Collections.<Expression>emptyList(), TypeCheckingElim.PatternExpansionMode.DATATYPE);
-        if (typedPatterns == null)
-          return null;
+        if (typedPatterns == null) {
+          return constructor;
+        }
       } else {
         visitor.getContext().addAll(toContext(dataDefinition.getParameters()));
       }
@@ -676,7 +689,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       for (Abstract.TypeArgument argument : arguments) {
         CheckTypeVisitor.Result result = visitor.checkType(argument.getType(), Universe());
         if (result == null) {
-          return null;
+          return constructor;
         }
 
         Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
@@ -702,10 +715,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       if (!ok) {
-        return null;
+        return constructor;
       }
-
-      String name = def.getName();
 
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
         Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
@@ -713,7 +724,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           for (DependentLink link1 = ((PiExpression) type).getParameters(); link1.hasNext(); link1 = link1.getNext()) {
             link1 = link1.getNextTyped(null);
             if (!checkNonPositiveError(link1.getType(), dataDefinition, name, list.getFirst(), link, arguments, def)) {
-              return null;
+              return constructor;
             }
           }
           type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
@@ -736,19 +747,22 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
             }
           } else {
             if (!checkNonPositiveError(type, dataDefinition, name, list.getFirst(), link, arguments, def)) {
-              return null;
+              return constructor;
             }
           }
 
           for (Expression expr : exprs) {
             if (!checkNonPositiveError(expr, dataDefinition, name, list.getFirst(), link, arguments, def)) {
-              return null;
+              return constructor;
             }
           }
         }
       }
 
-      Constructor constructor = new Constructor(new DefinitionResolvedName(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name), def.getPrecedence(), universe, list.getFirst(), dataDefinition, typedPatterns);
+      constructor.setParameters(list.getFirst());
+      constructor.setPatterns(typedPatterns);
+      constructor.setUniverse(universe);
+      constructor.hasErrors(false);
       constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
       dataDefinition.getParentNamespace().addDefinition(constructor);

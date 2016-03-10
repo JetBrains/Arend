@@ -48,7 +48,7 @@ public class TypeCheckingDefCall {
     BaseDefinition resolvedDefinition = expr.getResolvedDefinition();
     if (resolvedDefinition != null) {
       NamespaceMember member = toNamespaceMember(resolvedDefinition);
-      if (member == null) {
+      if (member == null || member.definition == null) {
         assert false;
         TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + resolvedDefinition + "' is not available yet", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));

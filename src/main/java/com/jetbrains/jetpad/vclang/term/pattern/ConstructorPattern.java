@@ -20,6 +20,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   private final Patterns myArguments;
 
   public ConstructorPattern(Constructor constructor, Patterns arguments) {
+    assert !constructor.hasErrors();
     myConstructor = constructor;
     myArguments = arguments;
   }

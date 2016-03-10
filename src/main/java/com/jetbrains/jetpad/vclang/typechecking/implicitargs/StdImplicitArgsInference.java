@@ -100,7 +100,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (fun instanceof Abstract.DefCallExpression && isExplicit) {
         if (expectedType != null) {
           result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
-          if (result != null && result.expression instanceof ConCallExpression) {
+          if (result != null && result.expression instanceof ConCallExpression && !((ConCallExpression) result.expression).getDefinition().hasErrors()) {
             Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
             List<? extends Expression> args = expectedTypeNorm.getArguments();
             expectedTypeNorm = expectedTypeNorm.getFunction();

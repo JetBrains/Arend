@@ -34,7 +34,6 @@ public class Constructor extends Definition {
 
   public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
     super(rn, precedence);
-    assert parameters != null;
     setUniverse(universe);
     hasErrors(false);
     myDataType = dataType;
@@ -47,6 +46,7 @@ public class Constructor extends Definition {
   }
 
   public Patterns getPatterns() {
+    assert !hasErrors() && !myDataType.hasErrors();
     return myPatterns;
   }
 
@@ -55,6 +55,7 @@ public class Constructor extends Definition {
   }
 
   public DependentLink getParameters() {
+    assert !hasErrors() && !myDataType.hasErrors();
     return myParameters;
   }
 
@@ -72,14 +73,18 @@ public class Constructor extends Definition {
   }
 
   public DependentLink getDataTypeParameters() {
+    assert !hasErrors() && !myDataType.hasErrors();
     return myPatterns == null ? myDataType.getParameters() : myPatterns.getParameters();
   }
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
+    assert !hasErrors() && !myDataType.hasErrors();
     return myPatterns == null ? arguments : ((Pattern.MatchOKResult) myPatterns.match(arguments)).expressions;
   }
 
   public Expression getDataTypeExpression() {
+    assert !hasErrors() && !myDataType.hasErrors();
+
     Expression resultType = DataCall(myDataType);
     if (myPatterns == null) {
       List<Expression> arguments = new ArrayList<>();
@@ -116,6 +121,10 @@ public class Constructor extends Definition {
 
   @Override
   public Expression getType() {
+    if (hasErrors()) {
+      return null;
+    }
+
     Expression resultType = getDataTypeExpression();
     if (myParameters.hasNext()) {
       resultType = Pi(myParameters, resultType);

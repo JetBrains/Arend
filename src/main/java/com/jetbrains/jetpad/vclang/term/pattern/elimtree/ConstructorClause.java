@@ -22,6 +22,7 @@ public class ConstructorClause implements Clause {
   private final List<Binding> myTailBindings;
 
   ConstructorClause(Constructor constructor, DependentLink parameters, List<Binding> tailBindings, BranchElimTreeNode parent) {
+    assert !constructor.hasErrors();
     myConstructor = constructor;
     myParameters = parameters;
     myTailBindings = tailBindings;

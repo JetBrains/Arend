@@ -120,7 +120,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   @Override
   public Abstract.Expression visitConCall(ConCallExpression expr, Void params) {
     Abstract.Expression conParams = null;
-    if (myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
+    if (!expr.getDefinition().hasErrors() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
       conParams = myFactory.makeDefCall(null, expr.getDefinition().getDataType());
       DependentLink link = expr.getDefinition().getDataTypeParameters();
       for (int i = 0; i < expr.getDataTypeArguments().size() && link.hasNext(); i++, link = link.getNext()) {

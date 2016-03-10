@@ -51,6 +51,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
   }
 
   public ConstructorClause addClause(Constructor constructor, List<String> names) {
+    assert !constructor.hasErrors();
     List<? extends Expression> dataTypeArguments = myReference.getType().normalize(NormalizeVisitor.Mode.WHNF).getArguments();
 
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));

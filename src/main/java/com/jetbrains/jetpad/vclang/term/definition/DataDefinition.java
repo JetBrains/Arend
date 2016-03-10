@@ -35,6 +35,7 @@ public class DataDefinition extends Definition {
   }
 
   public DependentLink getParameters() {
+    assert !hasErrors();
     return myParameters;
   }
 
@@ -104,6 +105,10 @@ public class DataDefinition extends Definition {
 
   @Override
   public Expression getType() {
+    if (hasErrors()) {
+      return null;
+    }
+
     Expression resultType = new UniverseExpression(getUniverse());
     return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
   }
