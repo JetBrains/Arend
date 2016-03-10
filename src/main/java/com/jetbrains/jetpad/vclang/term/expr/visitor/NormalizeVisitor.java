@@ -264,6 +264,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
+    if (i < args.size()) {
+      result = Apps(result, Collections.singletonList(args.get(i)), Collections.singletonList(((AppExpression) expr).getFlags().get(i)));
+      i++;
+    }
     for (; i < args.size(); i++) {
       result = result.addArgument(args.get(i), ((AppExpression) expr).getFlags().get(i));
     }
