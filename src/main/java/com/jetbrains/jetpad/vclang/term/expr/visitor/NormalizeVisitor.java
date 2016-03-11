@@ -8,32 +8,27 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
+  private final Normalizer myNormalizer;
+
+  public NormalizeVisitor(Normalizer normalizer) {
+    myNormalizer = normalizer;
+  }
+
   public enum Mode { WHNF, NF, HUMAN_NF, TOP }
 
   @Override
   public Expression visitApp(AppExpression expr, Mode mode) {
     Expression fun = expr.getFunction();
     if (fun instanceof LamExpression) {
-      int i = 0;
-      DependentLink link = ((LamExpression) fun).getParameters();
-      Substitution subst = new Substitution();
-      while (link.hasNext() && i < expr.getArguments().size()) {
-        subst.add(link, expr.getArguments().get(i++));
-        link = link.getNext();
-      }
-      fun = ((LamExpression) fun).getBody();
-      if (link.hasNext()) {
-        fun = Lam(link, fun);
-      }
-      fun = fun.subst(subst);
-      fun = fun.addArguments(expr.getArguments().subList(i, expr.getArguments().size()), expr.getFlags().subList(i, expr.getFlags().size()));
-      return mode == Mode.TOP ? fun : fun.accept(this, mode);
+      Expression result = myNormalizer.normalize((LamExpression) fun, expr.getArguments(), expr.getFlags());
+      return mode == Mode.TOP || mode == Mode.WHNF ? result : result.accept(this, mode);
     }
 
     if (fun instanceof DefCallExpression) {
@@ -316,6 +311,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     Binding binding = expr.getBinding();
     if (binding instanceof Function) {
       return visitFunctionCall((Function) binding, expr, mode);
+      /*
+      Expression result = myNormalizer.normalize((Function) binding, Collections.<Expression>emptyList());
+      return result == null ? expr : result;
+      */
     } else {
       return expr;
     }
@@ -403,11 +402,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLet(LetExpression letExpression, Mode mode) {
-    Expression term = letExpression.getExpression().accept(this, mode);
-    Set<Binding> bindings = new HashSet<>();
-    for (LetClause clause : letExpression.getClauses()) {
-      bindings.add(clause);
-    }
-    return term.findBinding(bindings) ? Let(letExpression.getClauses(), term) : term;
+    return myNormalizer.normalize(letExpression);
   }
 }

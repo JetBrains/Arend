@@ -166,6 +166,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return Abstract.Definition.Arrow.LEFT;
   }
 
+  @Override
   public LeafElimTreeNode match(List<Expression> expressions) {
     int idx = expressions.size() - 1 - myContextTail.size();
     Expression func = expressions.get(idx).normalize(NormalizeVisitor.Mode.WHNF);

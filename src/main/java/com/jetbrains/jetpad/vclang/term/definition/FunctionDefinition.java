@@ -67,6 +67,11 @@ public class FunctionDefinition extends Definition implements Function {
     return myResultType;
   }
 
+  @Override
+  public int getNumberOfRequiredArguments() {
+    return DependentLink.Helper.size(myParameters);
+  }
+
   public void setResultType(Expression resultType) {
     myResultType = resultType;
   }
