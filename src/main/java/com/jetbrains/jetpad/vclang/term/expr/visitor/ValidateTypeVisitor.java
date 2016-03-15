@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -47,8 +48,20 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Expression expectedType) {
-    expr.getType().accept(this, expectedType);
     return null;
+  }
+
+  private boolean typesCompatible(Expression expected, Expression actual) {
+    if (expected instanceof UniverseExpression) {
+      if (actual instanceof UniverseExpression) {
+        Universe expectedU = ((UniverseExpression) expected).getUniverse();
+        Universe actualU = ((UniverseExpression) actual).getUniverse();
+        return actualU.lessOrEquals(expectedU);
+      } else {
+        return false;
+      }
+    }
+    return expected.equals(actual);
   }
 
   @Override
@@ -74,7 +87,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
         if (param.isExplicit() != arg.isExplicit()) {
           myErrorReporter.addError(expr, i + "th argument is expected to be" + (param.isExplicit() ? "explicit" : "implicit"));
         }
-        if (!argType.equals(expectedArgType)) {
+        if (!typesCompatible(expectedArgType, argType)) {
           myErrorReporter.addError(arg.getExpression(), "Expected type: " + expectedArgType + ", actual: " + argType);
         }
         subst.add(param, arg.getExpression());
@@ -91,23 +104,28 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitLam(LamExpression expr, Expression expectedType) {
-    for (DependentLink params = expr.getParameters(); params.hasNext(); params = params.getNext()) {
-      params.getType().accept(this, null);
-    }
-    expr.getBody().accept(this, expectedType);
+    visitDependentLink(expr.getParameters());
+    expr.getBody().accept(this, null);
     return null;
+  }
+
+  private void visitDependentLink(DependentLink link) {
+    if (link.hasNext()) {
+      link.getType().accept(this, null);
+      visitDependentLink(link.getNext());
+    }
   }
 
   @Override
   public Void visitPi(PiExpression expr, Expression expectedType) {
-    expr.getType().accept(this, expectedType);
-    expr.getCodomain().accept(this, expectedType);
+    visitDependentLink(expr.getParameters());
+    expr.getCodomain().accept(this, null);
     return null;
   }
 
   @Override
   public Void visitSigma(SigmaExpression expr, Expression expectedType) {
-    expr.getType().accept(this, expectedType);
+    visitDependentLink(expr.getParameters());
     return null;
   }
 
@@ -147,8 +165,6 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitProj(ProjExpression expr, Expression expectedType) {
-    Expression type = expr.getType();
-    type.accept(this, expectedType);
     Expression tuple = expr.getExpression().normalize(NormalizeVisitor.Mode.WHNF);
     tuple.accept(this, expectedType);
     if (!(tuple instanceof TupleExpression)) {
@@ -164,12 +180,13 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitNew(NewExpression expr, Expression expectedType) {
-    expr.getType().accept(this, expectedType);
+    expr.getExpression().accept(this, expectedType);
     return null;
   }
 
   @Override
   public Void visitLet(LetExpression letExpression, Expression expectedType) {
+    // TOTO subst
     Substitution subst = new Substitution();
     for (LetClause clause : letExpression.getClauses()) {
       clause.getElimTree().accept(this, clause.getType());
