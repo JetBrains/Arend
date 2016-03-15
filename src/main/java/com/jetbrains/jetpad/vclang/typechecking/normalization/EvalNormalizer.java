@@ -16,7 +16,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class EvalNormalizer implements Normalizer {
   @Override
-  public Expression normalize(LamExpression fun, List<? extends Expression> arguments, List<? extends EnumSet<AppExpression.Flag>> flags) {
+  public Expression normalize(LamExpression fun, List<? extends Expression> arguments, List<? extends EnumSet<AppExpression.Flag>> flags, NormalizeVisitor.Mode mode) {
     int i = 0;
     DependentLink link = fun.getParameters();
     Substitution subst = new Substitution();
@@ -35,7 +35,7 @@ public class EvalNormalizer implements Normalizer {
     } else {
       result = Apps(result, arguments.subList(i, arguments.size()), flags.subList(i, flags.size()));
     }
-    return result.normalize(NormalizeVisitor.Mode.WHNF);
+    return result.normalize(mode);
   }
 
   @Override
@@ -49,7 +49,9 @@ public class EvalNormalizer implements Normalizer {
   }
 
   @Override
-  public Expression normalize(Function fun, List<? extends Expression> arguments) {
+  public Expression normalize(Function fun, List<? extends Expression> arguments, List<? extends Expression> otherArguments, List<? extends EnumSet<AppExpression.Flag>> otherFlags, NormalizeVisitor.Mode mode) {
+    assert fun.getNumberOfRequiredArguments() == arguments.size();
+
     if (fun instanceof FunctionDefinition && Prelude.isCoe((FunctionDefinition) fun)) {
       Expression result = null;
 
@@ -78,7 +80,7 @@ public class EvalNormalizer implements Normalizer {
       }
 
       if (result != null) {
-        return result.normalize(NormalizeVisitor.Mode.WHNF);
+        return Apps(result, otherArguments, otherFlags).normalize(mode);
       }
     }
 
@@ -88,7 +90,7 @@ public class EvalNormalizer implements Normalizer {
       return null;
     }
 
-    return leaf.getExpression().subst(leaf.matchedToSubst(matchedArguments)).normalize(NormalizeVisitor.Mode.WHNF);
+    return Apps(leaf.getExpression().subst(leaf.matchedToSubst(matchedArguments)), otherArguments, otherFlags).normalize(mode);
   }
 
   @Override

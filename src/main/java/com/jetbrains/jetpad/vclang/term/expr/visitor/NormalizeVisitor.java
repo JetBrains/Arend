@@ -1,11 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Condition;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
@@ -27,8 +28,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitApp(AppExpression expr, Mode mode) {
     Expression fun = expr.getFunction();
     if (fun instanceof LamExpression) {
-      Expression result = myNormalizer.normalize((LamExpression) fun, expr.getArguments(), expr.getFlags());
-      return mode == Mode.TOP || mode == Mode.WHNF ? result : result.accept(this, mode);
+      return myNormalizer.normalize((LamExpression) fun, expr.getArguments(), expr.getFlags(), mode);
     }
 
     if (fun instanceof DefCallExpression) {
@@ -196,78 +196,36 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression visitFunctionCall(Function func, Expression expr, Mode mode) {
     List<? extends Expression> args = expr.getArguments();
-    if (func instanceof FunctionDefinition && Prelude.isCoe((FunctionDefinition) func) && args.size() >= 3) {
-      Expression result = null;
-
-      Binding binding = new TypedBinding("i", DataCall(Prelude.INTERVAL));
-      Expression normExpr = Apps(args.get(0), Reference(binding)).accept(this, NormalizeVisitor.Mode.NF);
-      if (!normExpr.findBinding(binding)) {
-        result = args.get(1);
-      } else {
-        Expression mbIso = normExpr.getFunction();
-        List<? extends Expression> mbIsoArgs = normExpr.getArguments();
-        if (mbIso instanceof FunCallExpression && Prelude.isIso(((FunCallExpression) mbIso).getDefinition()) && mbIsoArgs.size() == 7) {
-          boolean noFreeVar = true;
-          for (int i = 0; i < mbIsoArgs.size() - 1; i++) {
-            if (mbIsoArgs.get(i).findBinding(binding)) {
-              noFreeVar = false;
-              break;
-            }
-          }
-          if (noFreeVar) {
-            Expression normedPt = args.get(2).accept(this, Mode.NF);
-            if (normedPt instanceof ConCallExpression && ((ConCallExpression) normedPt).getDefinition() == Prelude.RIGHT) {
-              result = Apps(mbIsoArgs.get(2), args.get(1));
-            }
-          }
-        }
+    List<? extends EnumSet<AppExpression.Flag>> flags = Collections.emptyList();
+    List<? extends Expression> requiredArgs;
+    DependentLink excessiveParams;
+    int numberOfRequiredArgs = func.getNumberOfRequiredArguments();
+    if (numberOfRequiredArgs > args.size()) {
+      excessiveParams = DependentLink.Helper.subst(DependentLink.Helper.get(func.getParameters(), args.size()), new Substitution());
+      List<Expression> requiredArgs1 = new ArrayList<>();
+      for (DependentLink link = excessiveParams; link.hasNext(); link = link.getNext()) {
+        requiredArgs1.add(Reference(link));
       }
-
-      if (result != null) {
-        List<? extends EnumSet<AppExpression.Flag>> flags = ((AppExpression) expr).getFlags();
-        result = Apps(result, args.subList(3, args.size()), flags.subList(3, flags.size()));
-        return mode == Mode.TOP ? result : result.accept(this, mode);
+      List<Expression> requiredArgs2 = new ArrayList<>(args.size() + requiredArgs1.size());
+      requiredArgs2.addAll(args);
+      requiredArgs2.addAll(requiredArgs1);
+      requiredArgs = requiredArgs2;
+      args = Collections.emptyList();
+    } else {
+      excessiveParams = EmptyDependentLink.getInstance();
+      requiredArgs = args.subList(0, func.getNumberOfRequiredArguments());
+      if (expr instanceof AppExpression) {
+        flags = ((AppExpression) expr).getFlags().subList(numberOfRequiredArgs, args.size());
       }
+      args = args.subList(numberOfRequiredArgs, args.size());
     }
 
-    DependentLink excessiveParams = func.getParameters();
-    int i = 0;
-    for (; i < args.size(); i++) {
-      if (!excessiveParams.hasNext()) {
-        break;
-      }
-      excessiveParams = excessiveParams.getNext();
-    }
-
-    if (mode == Mode.WHNF && excessiveParams.hasNext() || func.getElimTree() == null) {
+    Expression result = myNormalizer.normalize(func, requiredArgs, args, flags, mode);
+    if (result == null) {
       return applyDefCall(expr, mode);
     }
 
-    excessiveParams = DependentLink.Helper.subst(excessiveParams, new Substitution());
-    List<Expression> args2 = completeArgs(args, func.getParameters(), excessiveParams);
-
-    LeafElimTreeNode leaf = func.getElimTree().match(args2);
-    if (leaf == null) {
-      return applyDefCall(expr, mode);
-    }
-
-    Expression result = leaf.getExpression().subst(leaf.matchedToSubst(args2));
-    if ((mode == Mode.HUMAN_NF || mode == Mode.TOP) && leaf.getArrow() == Abstract.Definition.Arrow.LEFT) {
-      result = result.accept(this, Mode.TOP);
-      if (result == null) {
-        return applyDefCall(expr, mode);
-      }
-    }
-
-    if (i < args.size()) {
-      result = Apps(result, Collections.singletonList(args.get(i)), Collections.singletonList(((AppExpression) expr).getFlags().get(i)));
-      i++;
-    }
-    for (; i < args.size(); i++) {
-      result = result.addArgument(args.get(i), ((AppExpression) expr).getFlags().get(i));
-    }
-    result = excessiveParams.hasNext() ? Lam(excessiveParams, result) : result;
-    return mode == Mode.TOP ? result : result.accept(this, mode);
+    return excessiveParams.hasNext() ? Lam(excessiveParams, result) : result;
   }
 
   private List<Expression> completeArgs(List<? extends Expression> args, DependentLink params, DependentLink excessiveParams) {
@@ -311,10 +269,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     Binding binding = expr.getBinding();
     if (binding instanceof Function) {
       return visitFunctionCall((Function) binding, expr, mode);
-      /*
-      Expression result = myNormalizer.normalize((Function) binding, Collections.<Expression>emptyList());
-      return result == null ? expr : result;
-      */
     } else {
       return expr;
     }
