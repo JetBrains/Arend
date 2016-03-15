@@ -13,6 +13,8 @@ import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,7 +23,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-public class Constructor extends Definition {
+public class Constructor extends Definition implements Function {
   private DataDefinition myDataType;
   private DependentLink myParameters;
   private Patterns myPatterns;
@@ -54,9 +56,25 @@ public class Constructor extends Definition {
     myPatterns = patterns;
   }
 
+  @Override
+  public ElimTreeNode getElimTree() {
+    Condition condition = myDataType.getCondition(this);
+    return condition == null ? EmptyElimTreeNode.getInstance() : condition.getElimTree();
+  }
+
   public DependentLink getParameters() {
     assert !hasErrors() && !myDataType.hasErrors();
     return myParameters;
+  }
+
+  @Override
+  public Expression getResultType() {
+    return getDataTypeExpression();
+  }
+
+  @Override
+  public int getNumberOfRequiredArguments() {
+    return DependentLink.Helper.size(myParameters);
   }
 
   public void setParameters(DependentLink parameters) {

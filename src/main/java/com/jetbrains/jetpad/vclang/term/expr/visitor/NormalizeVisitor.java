@@ -4,11 +4,8 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Condition;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 
 import java.util.*;
@@ -95,39 +92,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
-    if (defCallExpr.getDefinition() instanceof Function) {
-      return visitFunctionCall((Function) defCallExpr.getDefinition(), expr, mode);
-    } else if (defCallExpr instanceof ConCallExpression) {
+    if (defCallExpr instanceof ConCallExpression) {
       return visitConstructorCall(expr, mode);
     }
-
-    if (mode == Mode.TOP) return null;
-
-    if (defCallExpr instanceof ClassCallExpression || defCallExpr instanceof FieldCallExpression) {
-      return applyDefCall(expr, mode);
+    if (defCallExpr.getDefinition() instanceof Function) {
+      return visitFunctionCall((Function) defCallExpr.getDefinition(), expr, mode);
     }
 
-    if (!(defCallExpr instanceof DataCallExpression)) {
-      throw new IllegalStateException();
-    }
-
-    DataDefinition dataDefinition = ((DataCallExpression) defCallExpr).getDefinition();
-    DependentLink parameters = dataDefinition.getParameters();
-
-    Expression result = applyDefCall(expr, mode);
-    for (Expression ignored : expr.getArguments()) {
-      parameters = parameters.getNext();
-    }
-
-    if (parameters.hasNext()) {
-      parameters = DependentLink.Helper.subst(parameters, new Substitution());
-      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-        result = result.addArgument(Reference(link), AppExpression.DEFAULT);
-      }
-      return Lam(parameters, result);
-    } else {
-      return result;
-    }
+    return mode == Mode.TOP ? null : applyDefCall(expr, mode);
   }
 
   private Expression visitConstructorCall(Expression expr, Mode mode) {
@@ -153,45 +125,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
-    DependentLink excessiveParams = conCallExpression.getDefinition().getParameters();
-    int i = 0;
-    for (; i < args.size(); i++) {
-      if (!excessiveParams.hasNext()) {
-        break;
-      }
-      excessiveParams = excessiveParams.getNext();
-    }
-
-    if (mode == Mode.WHNF && excessiveParams.hasNext()) {
-      return applyDefCall(expr, mode);
-    }
-
-    excessiveParams = DependentLink.Helper.subst(excessiveParams, new Substitution());
-    List<Expression> args2 = completeArgs(args, conCallExpression.getDefinition().getParameters(), excessiveParams);
-
-
-    Condition condition = conCallExpression.getDefinition().getDataType().getCondition(conCallExpression.getDefinition());
-    if (condition == null) {
-      return applyDefCall(expr, mode);
-    }
-
-    LeafElimTreeNode leaf = condition.getElimTree().match(args2);
-    if (leaf == null) {
-      return applyDefCall(expr, mode);
-    }
-
-    Substitution subst = leaf.matchedToSubst(args2);
-
-    DependentLink link = conCallExpression.getDefinition().getDataTypeParameters();
-    for (Expression argument : conCallExpression.getDataTypeArguments()) {
-      subst.add(link, argument);
-      link = link.getNext();
-    }
-
-    Expression result = leaf.getExpression().subst(subst);
-
-    result = excessiveParams.hasNext() ? Lam(excessiveParams, result) : result;
-    return mode == Mode.TOP ? result : result.accept(this, mode);
+    return visitFunctionCall(conCallExpression.getDefinition(), expr, mode);
   }
 
   private Expression visitFunctionCall(Function func, Expression expr, Mode mode) {
@@ -220,27 +154,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       args = args.subList(numberOfRequiredArgs, args.size());
     }
 
-    Expression result = myNormalizer.normalize(func, requiredArgs, args, flags, mode);
+    DependentLink params = EmptyDependentLink.getInstance();
+    List<? extends Expression> paramArgs = Collections.<Expression>emptyList();
+    if (expr.getFunction() instanceof ConCallExpression) {
+      params = ((ConCallExpression) expr.getFunction()).getDefinition().getDataTypeParameters();
+      paramArgs = ((ConCallExpression) expr.getFunction()).getDataTypeArguments();
+    }
+    Expression result = myNormalizer.normalize(func, params, paramArgs, requiredArgs, args, flags, mode);
     if (result == null) {
       return applyDefCall(expr, mode);
     }
 
     return excessiveParams.hasNext() ? Lam(excessiveParams, result) : result;
-  }
-
-  private List<Expression> completeArgs(List<? extends Expression> args, DependentLink params, DependentLink excessiveParams) {
-    List<Expression> result = new ArrayList<>();
-    for (Expression arg : args) {
-      if (!params.hasNext()) {
-        break;
-      }
-      result.add(arg);
-      params = params.getNext();
-    }
-    for (; excessiveParams.hasNext(); excessiveParams = excessiveParams.getNext(), params = params.getNext()) {
-      result.add(Reference(excessiveParams));
-    }
-    return result;
   }
 
   @Override
