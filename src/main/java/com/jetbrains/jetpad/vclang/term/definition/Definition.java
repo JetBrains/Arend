@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 public abstract class Definition extends NamedBinding implements BaseDefinition {
   private final Abstract.Definition.Fixity myFixity;
@@ -48,6 +49,10 @@ public abstract class Definition extends NamedBinding implements BaseDefinition 
 
   public ClassDefinition getThisClass() {
     return myThisClass;
+  }
+
+  public Expression getTypeWithThis() {
+    return getType();
   }
 
   public void setThisClass(ClassDefinition thisClass) {

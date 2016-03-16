@@ -34,6 +34,7 @@ public class DataDefinition extends Definition {
   }
 
   public DependentLink getParameters() {
+    assert !hasErrors();
     return myParameters;
   }
 
@@ -46,12 +47,12 @@ public class DataDefinition extends Definition {
     return myConstructors;
   }
 
-  public List<ConCallExpression> getMatchedConstructors(List<Expression> parameters) {
+  public List<ConCallExpression> getMatchedConstructors(List<? extends Expression> parameters) {
     List<ConCallExpression> result = new ArrayList<>();
     for (Constructor constructor : myConstructors) {
       if (constructor.hasErrors())
         continue;
-      List<Expression> matchedParameters = null;
+      List<? extends Expression> matchedParameters;
       if (constructor.getPatterns() != null) {
         Pattern.MatchResult matchResult = constructor.getPatterns().match(parameters);
         if (matchResult instanceof Pattern.MatchMaybeResult) {
@@ -60,12 +61,14 @@ public class DataDefinition extends Definition {
           continue;
         } else if (matchResult instanceof Pattern.MatchOKResult) {
           matchedParameters = ((Pattern.MatchOKResult) matchResult).expressions;
+        } else {
+          throw new IllegalStateException();
         }
       } else {
         matchedParameters = parameters;
       }
 
-      result.add(ConCall(constructor, matchedParameters));
+      result.add(ConCall(constructor, new ArrayList<>(matchedParameters)));
     }
     return result;
   }
@@ -101,6 +104,10 @@ public class DataDefinition extends Definition {
 
   @Override
   public Expression getType() {
+    if (hasErrors()) {
+      return null;
+    }
+
     Expression resultType = new UniverseExpression(getUniverse());
     return myParameters.hasNext() ? Pi(myParameters, resultType) : resultType;
   }

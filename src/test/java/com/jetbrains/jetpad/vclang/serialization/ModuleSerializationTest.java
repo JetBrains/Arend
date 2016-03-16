@@ -1,7 +1,10 @@
 package com.jetbrains.jetpad.vclang.serialization;
 
-import com.jetbrains.jetpad.vclang.module.*;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.NameModuleID;
+import com.jetbrains.jetpad.vclang.module.ReportingModuleLoader;
+import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -35,44 +38,44 @@ public class ModuleSerializationTest {
 
   @Test
   public void serializeExprTest() throws IOException {
-    ClassDefinition def = typeCheckClass("\\static \\function f => \\lam {x y : Nat} (z : Nat -> Nat) => \\Pi (A : \\Type0) {x : A} -> A");
-    Namespace namespace = def.getResolvedName().toNamespace();
+    NamespaceMember member = typeCheckClass("\\static \\function f => \\lam {x y : Nat} (z : Nat -> Nat) => \\Pi (A : \\Type0) {x : A} -> A");
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
+    NameModuleID moduleID = (NameModuleID) member.definition.getResolvedName().getModuleID();
+    ModuleSerialization.writeStream(moduleID, dataStream);
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(((FunctionDefinition) namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree());
+    assertEquals(((FunctionDefinition) member.namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree());
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
   public void serializeElimTest() throws IOException {
-    ClassDefinition def = typeCheckClass("\\static \\function\n" +
+    NamespaceMember member = typeCheckClass("\\static \\function\n" +
         " f (x y : Nat) : Nat <= \\elim x, y\n" +
         "  | _, zero => 0\n" +
         "  | x, suc zero => x\n" +
         "  | _, suc (suc x) => suc x");
-    Namespace namespace = def.getResolvedName().toNamespace();
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
+    NameModuleID moduleID = (NameModuleID) member.definition.getResolvedName().getModuleID();
+    ModuleSerialization.writeStream(moduleID, dataStream);
 
     Root.initialize();
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    FunctionDefinition oldFunc = ((FunctionDefinition) namespace.getDefinition("f"));
+    FunctionDefinition oldFunc = ((FunctionDefinition) member.namespace.getDefinition("f"));
     FunctionDefinition newFunc = ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f"));
     Map<Binding, Binding>  argsBinding = new HashMap<>();
     argsBinding.put(oldFunc.getParameters(), newFunc.getParameters());
@@ -83,47 +86,47 @@ public class ModuleSerializationTest {
 
   @Test
   public void serializeDataTest() throws IOException {
-    ClassDefinition def = typeCheckClass("\\static \\data D (A : \\Type0) | con1 A | con2 Nat A");
-    Namespace namespace = def.getResolvedName().toNamespace();
+    NamespaceMember member = typeCheckClass("\\static \\data D (A : \\Type0) | con1 A | con2 Nat A");
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
+    NameModuleID moduleID = (NameModuleID) member.definition.getResolvedName().getModuleID();
+    ModuleSerialization.writeStream(moduleID, dataStream);
 
     Root.initialize();
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(namespace.getMembers().size(), result.namespaceMember.definition.getResolvedName().toNamespace().getMembers().size());
-    assertEquals(def.getResolvedName().toNamespace().getMembers().size(), result.namespaceMember.namespace.getMembers().size());
-    assertEquals(namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType());
+    assertEquals(member.namespace.getMembers().size(), result.namespaceMember.definition.getResolvedName().toNamespace().getMembers().size());
+    assertEquals(member.definition.getResolvedName().toNamespace().getMembers().size(), result.namespaceMember.namespace.getMembers().size());
+    assertEquals(member.namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType());
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
   public void serializeIndexedDataTest() throws IOException {
-    ClassDefinition def = typeCheckClass("\\static \\data D (n : Nat) | D zero => con0 | D (suc n) => con1 (n = n)");
-    Namespace namespace = def.getResolvedName().toNamespace();
+    NamespaceMember member = typeCheckClass("\\static \\data D (n : Nat) | D zero => con0 | D (suc n) => con1 (n = n)");
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
+    NameModuleID moduleID = (NameModuleID) member.definition.getResolvedName().getModuleID();
+    ModuleSerialization.writeStream(moduleID, dataStream);
 
     Root.initialize();
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
-    assertEquals(namespace.getMembers().size(), result.namespaceMember.definition.getResolvedName().toNamespace().getMembers().size());
-    assertEquals(def.getResolvedName().toNamespace().getMembers().size(), result.namespaceMember.namespace.getMembers().size());
-    assertEquals(namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType());
+    assertEquals(member.namespace.getMembers().size(), result.namespaceMember.definition.getResolvedName().toNamespace().getMembers().size());
+    assertEquals(member.definition.getResolvedName().toNamespace().getMembers().size(), result.namespaceMember.namespace.getMembers().size());
+    assertEquals(member.namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType());
     assertEquals(0, errorReporter.getErrorList().size());
     DataDefinition newDef = (DataDefinition) result.namespaceMember.namespace.getDefinition("D");
     Constructor con0 = newDef.getConstructor("con0");
@@ -139,24 +142,25 @@ public class ModuleSerializationTest {
     assertTrue(((ConstructorPattern) con1.getPatterns().getPatterns().get(0).getPattern()).getConstructor() == Prelude.SUC);
     assertTrue(con1.getPatterns().getParameters() instanceof TypedDependentLink);
   }
+
   @Test
   public void serializeFunctionTest() throws IOException {
-    ClassDefinition def = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         " \\static \\function\n" +
         " f : Nat => g\n" +
         " \\where \\static \\function\n" +
         "        g : Nat => 0\n" +
         "\n");
-    Namespace namespace = def.getResolvedName().toNamespace();
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
+    NameModuleID moduleID = (NameModuleID) member.definition.getResolvedName().getModuleID();
+    ModuleSerialization.writeStream(moduleID, dataStream);
 
     Root.initialize();
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
@@ -164,22 +168,23 @@ public class ModuleSerializationTest {
     assertEquals(1, result.namespaceMember.namespace.getMembers().size());
     Definition definition = result.namespaceMember.namespace.getDefinition("f");
     assertNotNull(definition);
-    assertEquals(1, namespace.getMembers().size());
+    assertEquals(1, member.namespace.getMembers().size());
     assertEquals(0, errorReporter.getErrorList().size());
   }
 
   @Test
   public void serializeNestedTest() throws IOException {
-    ClassDefinition def = typeCheckClass("\\class A { \\class B { \\class C { } } }");
+    NamespaceMember member = typeCheckClass("\\class A { \\class B { \\class C { } } }");
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream dataStream = new DataOutputStream(stream);
-    ModuleSerialization.writeStream((NameModuleID) def.getResolvedName().getModuleID(), dataStream);
+    NameModuleID moduleID = (NameModuleID) member.definition.getResolvedName().getModuleID();
+    ModuleSerialization.writeStream(moduleID, dataStream);
 
     Root.initialize();
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
-    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), (NameModuleID) def.getResolvedName().getModuleID());
+    ModuleDeserialization.readStubsFromStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
+    ModuleLoader.Result result = moduleDeserialization.readStream(new DataInputStream(new ByteArrayInputStream(stream.toByteArray())), moduleID);
     assertNotNull(result);
     assertNotNull(result.namespaceMember);
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);

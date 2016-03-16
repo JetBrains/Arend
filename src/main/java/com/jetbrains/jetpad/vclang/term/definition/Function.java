@@ -11,7 +11,7 @@ public interface Function {
   ElimTreeNode getElimTree();
   DependentLink getParameters();
   Expression getResultType();
-  ClassDefinition getThisClass();
+  int getNumberOfRequiredArguments();
 
   class Helper {
     public static Expression getFunctionType(Function function) {

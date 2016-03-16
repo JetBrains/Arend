@@ -571,10 +571,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Result caseResult = new Result(null, expectedType);
     LetClause letBinding = let(Abstract.CaseExpression.FUNCTION_NAME, EmptyDependentLink.getInstance(), expectedType, (ElimTreeNode) null);
-    Expression letTerm = Reference(letBinding);
     List<? extends Abstract.Expression> expressions = expr.getExpressions();
 
     LinkList list = new LinkList();
+    List<Expression> letArguments = new ArrayList<>(expressions.size());
     for (int i = 0; i < expressions.size(); i++) {
       Result exprResult = typeCheck(expressions.get(i), null);
       if (exprResult == null) return null;
@@ -585,7 +585,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         caseResult.add(exprResult);
       }
       list.append(param(true, vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprResult.type));
-      letTerm = Apps(letTerm, exprResult.expression);
+      letArguments.add(exprResult.expression);
     }
     letBinding.setParameters(list.getFirst());
 
@@ -599,7 +599,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
     letBinding.setElimTree(elimResult.elimTree);
 
-    caseResult.expression = Let(lets(letBinding), letTerm);
+    caseResult.expression = Let(lets(letBinding), Apps(Reference(letBinding), letArguments));
     caseResult.update();
     expr.setWellTyped(myContext, caseResult.expression);
     return caseResult;

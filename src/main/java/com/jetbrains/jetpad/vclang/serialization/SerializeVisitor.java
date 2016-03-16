@@ -2,10 +2,8 @@ package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -52,12 +50,15 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     myStream.write(1);
     expr.getFunction().accept(this, null);
     try {
-      myDataStream.writeBoolean(expr.getArgument().isExplicit());
-      myDataStream.writeBoolean(expr.getArgument().isHidden());
+      myDataStream.writeInt(expr.getArguments().size());
+      for (int i = 0; i < expr.getArguments().size(); i++) {
+        expr.getArguments().get(i).accept(this, null);
+        myDataStream.writeBoolean(expr.getFlags().get(i).contains(AppExpression.Flag.EXPLICIT));
+        myDataStream.writeBoolean(expr.getFlags().get(i).contains(AppExpression.Flag.VISIBLE));
+      }
     } catch (IOException e) {
       throw new IllegalStateException();
     }
-    expr.getArgument().getExpression().accept(this, null);
     return null;
   }
 

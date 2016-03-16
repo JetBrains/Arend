@@ -2,9 +2,9 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -85,7 +85,7 @@ public class TypeCheckingTestCase {
     return typeCheckDef(text, 0);
   }
 
-  public static ClassDefinition typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
+  public static NamespaceMember typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     TypecheckingOrdering.typecheck(classDefinition, errorReporter);
     if (errors >= 0) {
@@ -93,24 +93,24 @@ public class TypeCheckingTestCase {
     } else {
       assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
     }
-    return (ClassDefinition) Root.getModule(new NameModuleID(classDefinition.getName())).definition;
+    return Root.getModule(new NameModuleID(classDefinition.getName()));
   }
 
-  public static ClassDefinition typeCheckClass(String name, String text, int errors) {
+  public static NamespaceMember typeCheckClass(String name, String text, int errors) {
     Concrete.ClassDefinition classDefinition = parseClass(name, text);
     resolveNamesClass(classDefinition, 0);
     return typeCheckClass(classDefinition, errors);
   }
 
-  public static ClassDefinition typeCheckClass(String name, String text) {
+  public static NamespaceMember typeCheckClass(String name, String text) {
     return typeCheckClass(name, text, 0);
   }
 
-  public static ClassDefinition typeCheckClass(String text) {
+  public static NamespaceMember typeCheckClass(String text) {
     return typeCheckClass("test", text, 0);
   }
 
-  public static ClassDefinition typeCheckClass(String text, int errors) {
+  public static NamespaceMember typeCheckClass(String text, int errors) {
     return typeCheckClass("test", text, errors);
   }
 }

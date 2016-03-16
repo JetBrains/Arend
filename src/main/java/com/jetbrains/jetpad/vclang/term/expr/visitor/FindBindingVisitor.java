@@ -22,7 +22,15 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
 
   @Override
   public Boolean visitApp(AppExpression expr, Void params) {
-    return expr.getFunction().accept(this, null) || expr.getArgument().getExpression().accept(this, null);
+    if (expr.getFunction().accept(this, null)) {
+      return true;
+    }
+    for (Expression argument : expr.getArguments()) {
+      if (argument.accept(this, null)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

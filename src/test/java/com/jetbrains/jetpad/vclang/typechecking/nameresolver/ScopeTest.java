@@ -17,31 +17,6 @@ public class ScopeTest {
   }
 
   @Test
-  public void defCallNonStaticTestError() {
-    typeCheckClass("\\static \\class A { \\function x => 0 } \\static \\function y => A.x", 1);
-  }
-
-  @Test
-  public void defCallStaticTestError() {
-    typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\function y (a : A) => a.x", 1);
-  }
-
-  @Test
-  public void defCallInnerNonStaticTestError() {
-    typeCheckClass("\\static \\class A { \\class B { \\function x => 0 } } \\static \\function y (a : A) => a.B.x", 1);
-  }
-
-  @Test
-  public void defCallInnerNonStaticTest() {
-    typeCheckClass("\\static \\class A { \\class B { \\static \\function x => 0 } } \\static \\function y (a : A) => a.B.x");
-  }
-
-  @Test
-  public void staticDefCallTest() {
-    typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\function y : Nat => A.x");
-  }
-
-  @Test
   public void staticClassExportTest() {
     typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\class B { \\export A } \\static \\function y => B.x");
   }

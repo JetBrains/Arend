@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -28,7 +29,10 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", Pi(A, Pi(Reference(A), Reference(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f 0", null);
-    assertEquals(Apps(Apps(Reference(context.get(0)), Nat(), false, false), Zero()), result.expression);
+    Expression expr = Reference(context.get(0))
+      .addArgument(Nat(), EnumSet.of(AppExpression.Flag.VISIBLE))
+      .addArgument(Zero(), AppExpression.DEFAULT);
+    assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
 
@@ -72,7 +76,10 @@ public class ImplicitArgumentsTest {
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam g => g 0)", null);
     DependentLink g = param("g", Nat());
-    assertEquals(Apps(Reference(context.get(0)), new ArgumentExpression(Nat(), false, true), new ArgumentExpression(Lam(g, Apps(Reference(g), Zero())), true, false)), result.expression);
+    Expression expr = Reference(context.get(0))
+      .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Lam(g, Apps(Reference(g), Zero())), AppExpression.DEFAULT);
+    assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
 
@@ -84,7 +91,10 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Reference(A)), Reference(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f suc", null);
-    assertEquals(Apps(Apps(Reference(context.get(0)), Nat(), false, false), Suc()), result.expression);
+    Expression expr = Reference(context.get(0))
+      .addArgument(Nat(), EnumSet.of(AppExpression.Flag.VISIBLE))
+      .addArgument(Suc(), AppExpression.DEFAULT);
+    assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
 
@@ -96,7 +106,10 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", Pi(A, Pi(Pi(Nat(), Reference(A)), Reference(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x => suc)", null);
-    assertEquals(Apps(Apps(Reference(context.get(0)), Pi(Nat(), Nat()), false, false), Lam(param("x", Nat()), Suc())), result.expression);
+    Expression expr = Reference(context.get(0))
+      .addArgument(Pi(Nat(), Nat()), EnumSet.of(AppExpression.Flag.VISIBLE))
+      .addArgument(Lam(param("x", Nat()), Suc()), AppExpression.DEFAULT);
+    assertEquals(expr, result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }
 
@@ -110,7 +123,10 @@ public class ImplicitArgumentsTest {
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x (y : Nat -> Nat) => y x)", null);
     DependentLink params = params(param("x", Nat()), param("y", Pi(Nat(), Nat())));
     Expression arg = Lam(params, Apps(Reference(params.getNext()), Reference(params)));
-    assertEquals(Apps(Apps(Reference(context.get(0)), Pi(Pi(Nat(), Nat()), Nat()), false, false), arg), result.expression);
+    Expression expr = Reference(context.get(0))
+      .addArgument(Pi(Pi(Nat(), Nat()), Nat()), EnumSet.of(AppExpression.Flag.VISIBLE))
+      .addArgument(arg, AppExpression.DEFAULT);
+    assertEquals(expr, result.expression);
     assertEquals(Pi(Pi(Nat(), Nat()), Nat()), result.type);
   }
 
@@ -123,7 +139,11 @@ public class ImplicitArgumentsTest {
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x => x) (\\lam x => x)", null);
     DependentLink x = param("x", Nat());
-    assertEquals(Apps(Apps(Reference(context.get(0)), Nat(), false, false), Lam(x, Reference(x)), Lam(x, Reference(x))), result.expression);
+    Expression expr = Reference(context.get(0))
+      .addArgument(Nat(), EnumSet.of(AppExpression.Flag.VISIBLE))
+      .addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT)
+      .addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT);
+    assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
 
@@ -136,7 +156,11 @@ public class ImplicitArgumentsTest {
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam x => x) (\\lam (x : Nat) => x)", null);
     DependentLink x = param("x", Nat());
-    assertEquals(Apps(Apps(Reference(context.get(0)), Nat(), false, false), Lam(x, Reference(x)), Lam(x, Reference(x))), result.expression);
+    Expression expr = Reference(context.get(0))
+        .addArgument(Nat(), EnumSet.of(AppExpression.Flag.VISIBLE))
+        .addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT)
+        .addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT);
+    assertEquals(expr, result.expression);
     assertEquals(Nat(), result.type);
   }
 
@@ -148,7 +172,10 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", Pi(A, Pi(Nat(), Pi(Reference(A), Reference(A))))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f 0", Pi(Nat(), Nat()));
-    assertEquals(Apps(Apps(Reference(context.get(0)), Nat(), false, false), Zero()), result.expression);
+    Expression expr = Reference(context.get(0))
+        .addArgument(Nat(), EnumSet.of(AppExpression.Flag.VISIBLE))
+        .addArgument(Zero(), AppExpression.DEFAULT);
+    assertEquals(expr, result.expression);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }
 
@@ -187,7 +214,9 @@ public class ImplicitArgumentsTest {
     Expression type = Apps(Reference(context.get(0)), Apps(Suc(), Apps(Suc(), Zero())));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "i", type);
-    assertEquals(Apps(Reference(context.get(1)), Apps(Suc(), Zero()), false, false), result.expression);
+    Expression expr = Reference(context.get(1))
+        .addArgument(Suc(Zero()), EnumSet.of(AppExpression.Flag.VISIBLE));
+    assertEquals(expr, result.expression);
     assertEquals(type, result.type);
   }
 

@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
@@ -23,6 +22,7 @@ public class ConstructorClause implements Clause {
   private final List<Binding> myTailBindings;
 
   ConstructorClause(Constructor constructor, DependentLink parameters, List<Binding> tailBindings, BranchElimTreeNode parent) {
+    assert !constructor.hasErrors();
     myConstructor = constructor;
     myParameters = parameters;
     myTailBindings = tailBindings;
@@ -59,14 +59,10 @@ public class ConstructorClause implements Clause {
     Substitution result = new Substitution();
 
     List<Expression> arguments = new ArrayList<>();
-    myParent.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(arguments);
-    Collections.reverse(arguments);
-
-    Expression substExpr = new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(arguments));
     for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {
-      substExpr = Apps(substExpr, Reference(link));
+      arguments.add(Reference(link));
     }
-    result.add(myParent.getReference(), substExpr);
+    result.add(myParent.getReference(), Apps(new ConCallExpression(myConstructor, myConstructor.matchDataTypeArguments(new ArrayList<>(myParent.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF).getArguments()))), arguments));
 
     for (int i = 0; i < myParent.getContextTail().size(); i++) {
       result.add(myParent.getContextTail().get(i), Reference(myTailBindings.get(i)));

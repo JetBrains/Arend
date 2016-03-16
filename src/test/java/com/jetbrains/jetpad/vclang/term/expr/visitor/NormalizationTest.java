@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -9,8 +10,10 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -18,6 +21,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
@@ -90,11 +94,11 @@ public class NormalizationTest {
   }
 
   private void initializeBDList() {
-    ClassDefinition classDefinition = typeCheckClass(
-        "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A" +
-            "\\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
+    NamespaceMember member = typeCheckClass(
+        "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A\n" +
+        "  \\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
     );
-    bdList = (DataDefinition) classDefinition.getResolvedName().toNamespace().getDefinition("BD-list");
+    bdList = (DataDefinition) member.namespace.getDefinition("BD-list");
     bdNil = bdList.getConstructor("nil");
     bdCons = bdList.getConstructor("cons");
     bdSnoc = bdList.getConstructor("snoc");
@@ -261,10 +265,10 @@ public class NormalizationTest {
   @Test
   public void normalizeElimAnyConstructor() {
     DependentLink var0 = param("var0", Universe(0));
-    ClassDefinition def = typeCheckClass(
+    NamespaceMember member = typeCheckClass(
         "\\static \\data D | d Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | _! => 0");
-    FunctionDefinition test = (FunctionDefinition) def.getResolvedName().toNamespace().getMember("test").definition;
+    FunctionDefinition test = (FunctionDefinition) member.namespace.getMember("test").definition;
     assertEquals(Apps(FunCall(test), Reference(var0)), Apps(FunCall(test), Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -315,8 +319,14 @@ public class NormalizationTest {
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    DependentLink linv = param("linv", Pi(a, Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Reference(A), false, true)), Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)))));
-    DependentLink rinv = param("rinv", Pi(b, Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Reference(B), false, true)), Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)))));
+    Expression linvType = FunCall(Prelude.PATH_INFIX)
+      .addArgument(Reference(A), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)), AppExpression.DEFAULT);
+    DependentLink linv = param("linv", Pi(a, linvType));
+    Expression rinvType = FunCall(Prelude.PATH_INFIX)
+      .addArgument(Reference(B), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)), AppExpression.DEFAULT);
+    DependentLink rinv = param("rinv", Pi(b, rinvType));
     Expression expr = Apps(FunCall(Prelude.ISO), Reference(A), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), ConCall(Prelude.LEFT));
     assertEquals(Reference(A), expr.normalize(NormalizeVisitor.Mode.NF));
   }
@@ -329,8 +339,14 @@ public class NormalizationTest {
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    DependentLink linv = param("linv", Pi(a, Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Reference(A), false, true)), Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)))));
-    DependentLink rinv = param("rinv", Pi(b, Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Reference(B), false, true)), Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)))));
+    Expression linvType = FunCall(Prelude.PATH_INFIX)
+      .addArgument(Reference(A), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)), AppExpression.DEFAULT);
+    DependentLink linv = param("linv", Pi(a, linvType));
+    Expression rinvType = FunCall(Prelude.PATH_INFIX)
+      .addArgument(Reference(B), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)), AppExpression.DEFAULT);
+    DependentLink rinv = param("rinv", Pi(b, rinvType));
     Expression expr = Apps(FunCall(Prelude.ISO), Reference(A), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), ConCall(Prelude.RIGHT));
     assertEquals(Reference(B), expr.normalize(NormalizeVisitor.Mode.NF));
   }
@@ -343,8 +359,6 @@ public class NormalizationTest {
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    DependentLink linv = param("linv", Pi(a, Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Reference(A), false, true)), Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)))));
-    DependentLink rinv = param("rinv", Pi(b, Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Reference(B), false, true)), Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)))));
     DependentLink k = param("k", DataCall(Prelude.INTERVAL));
     DependentLink aleft = param("aleft", Reference(A));
     Expression expr = Apps(FunCall(Prelude.COERCE), Lam(k, Apps(FunCall(Prelude.ISO), Reference(A), Reference(B), Reference(f), Reference(g), Reference(a), Reference(b), Reference(k))), Reference(aleft), ConCall(Prelude.RIGHT));
@@ -361,8 +375,14 @@ public class NormalizationTest {
     DependentLink g = param("g", Pi(param(Reference(B)), A));
     DependentLink a = param("a", A);
     DependentLink b = param("b", Reference(B));
-    DependentLink linv = param("linv", Pi(a, Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(A, false, true)), Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)))));
-    DependentLink rinv = param("rinv", Pi(b, Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Reference(B), false, true)), Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)))));
+    Expression linvType = FunCall(Prelude.PATH_INFIX)
+      .addArgument(A, EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)), AppExpression.DEFAULT);
+    DependentLink linv = param("linv", Pi(a, linvType));
+    Expression rinvType = FunCall(Prelude.PATH_INFIX)
+      .addArgument(Reference(B), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)), AppExpression.DEFAULT);
+    DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = param("aleft", A.subst(k, ConCall(Prelude.RIGHT)));
     Expression expr = Apps(FunCall(Prelude.COERCE), Lam(k, Apps(FunCall(Prelude.ISO), Apps(DataCall(Prelude.PATH), Lam(i, DataCall(Prelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), ConCall(Prelude.RIGHT));
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF));

@@ -27,7 +27,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
@@ -247,7 +246,7 @@ public class TypeCheckingElim {
 
   private ReferenceExpression lookupLocalVar(Abstract.Expression expression) {
     if (expression instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expression).getExpression() == null && ((Abstract.DefCallExpression) expression).getResolvedDefinition() == null) {
-      CheckTypeVisitor.Result exprResult = myVisitor.getTypeCheckingDefCall().getLocalVar(((Abstract.DefCallExpression) expression).getName(), expression);
+      CheckTypeVisitor.Result exprResult = myVisitor.getTypeCheckingDefCall().getLocalVar((Abstract.DefCallExpression) expression);
       if (exprResult == null)
         return null;
       return (ReferenceExpression) exprResult.expression;
@@ -290,7 +289,7 @@ public class TypeCheckingElim {
           return null;
         }
 
-        Expression ftype = refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(new ArrayList<Expression>());
+        Expression ftype = refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction();
         if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
           error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var);
           myVisitor.getErrorReporter().report(error);
@@ -347,9 +346,8 @@ public class TypeCheckingElim {
       TypeCheckingError error = null;
 
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
-      List<Expression> parameters = new ArrayList<>();
-      Expression ftype = type.getFunction(parameters);
-      Collections.reverse(parameters);
+      List<? extends Expression> parameters = type.getArguments();
+      Expression ftype = type.getFunction();
 
       if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
         error = new TypeCheckingError("Pattern expected a data type, got: " + type, pattern);
@@ -444,10 +442,10 @@ public class TypeCheckingElim {
       List<Abstract.PatternArgument> patterns = implicitResult.patterns;
 
       DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), matchedParameters));
-      Expression substExpression = ConCall(constructor, matchedParameters);
 
       List<PatternArgument> resultPatterns = new ArrayList<>();
       DependentLink tailArgs = constructorArgs;
+      List<Expression> arguments = new ArrayList<>(patterns.size());
       for (Abstract.PatternArgument subPattern : patterns) {
         ExpandPatternResult result = expandPattern(subPattern.getPattern(), tailArgs, mode, links);
         if (result instanceof ExpandPatternErrorResult)
@@ -455,12 +453,12 @@ public class TypeCheckingElim {
         ExpandPatternOKResult okResult = (ExpandPatternOKResult) result;
         resultPatterns.add(new PatternArgument(okResult.pattern, subPattern.isExplicit(), subPattern.isHidden()));
         tailArgs = DependentLink.Helper.subst(tailArgs.getNext(), new Substitution(tailArgs, okResult.expression));
-        substExpression = Apps(substExpression, okResult.expression);
+        arguments.add(okResult.expression);
       }
 
       ConstructorPattern result = new ConstructorPattern(constructor, new Patterns(resultPatterns));
       pattern.setWellTyped(result);
-      return new ExpandPatternOKResult(substExpression, result);
+      return new ExpandPatternOKResult(Apps(ConCall(constructor, matchedParameters), arguments), result);
     } else {
       throw new IllegalStateException();
     }

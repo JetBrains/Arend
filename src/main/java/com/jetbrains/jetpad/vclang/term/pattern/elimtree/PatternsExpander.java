@@ -62,10 +62,10 @@ class PatternsExpander {
       return new ExpansionResult(leaf, Collections.singletonList(new Branch(Reference(binding), leaf, anyPatternIdxs, context)));
     }
 
-    List<Expression> parameters = new ArrayList<>();
-    Expression ftype = binding.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction(parameters);
-    Collections.reverse(parameters);
-    List<ConCallExpression> validConstructors = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(parameters);
+    Expression ftype = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    List<? extends Expression> args = ftype.getArguments();
+    ftype = ftype.getFunction();
+    List<ConCallExpression> validConstructors = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(args);
 
     BranchElimTreeNode resultTree = new BranchElimTreeNode(binding, context);
     List<Branch> resultBranches = new ArrayList<>();
@@ -82,7 +82,7 @@ class PatternsExpander {
       );
       clause.setChild(nestedResult.tree);
       for (MultiBranch branch : nestedResult.branches) {
-        Expression expr = Apps(conCall, branch.expressions.toArray(new Expression[branch.expressions.size()]));
+        Expression expr = Apps(conCall, new ArrayList<>(branch.expressions));
         resultBranches.add(new Branch(expr, branch.leaf, recalcIndices(matching.indices, branch.indices), branch.newContext));
       }
     }

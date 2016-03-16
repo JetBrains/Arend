@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -21,6 +20,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   private final Patterns myArguments;
 
   public ConstructorPattern(Constructor constructor, Patterns arguments) {
+    assert !constructor.hasErrors();
     myConstructor = constructor;
     myArguments = arguments;
   }
@@ -51,17 +51,18 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
       Expression param = subst.get(link);
       params.add(param == null ? Reference(link) : param);
     }
-    Expression result = ConCall(myConstructor, params);
+
     DependentLink constructorParameters = myConstructor.getParameters();
     DependentLink link = constructorParameters;
+    List<Expression> arguments = new ArrayList<>();
     for (PatternArgument patternArgument : myArguments.getPatterns()) {
       assert link.hasNext();
       if (patternArgument.getPattern() instanceof ConstructorPattern) {
-        List<Expression> args = new ArrayList<>();
-        Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getFunction(args);
+        Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
+        List<? extends Expression> args = type.getArguments();
+        type = type.getFunction();
         assert type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
-        Collections.reverse(args);
-        Substitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(args);
+        Substitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(args));
         for (Binding binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }
@@ -71,12 +72,12 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
         DependentLink.Helper.freeSubsts(getParameters(), subst);
       }
 
-      result = Apps(result, param);
+      arguments.add(param);
       subst.add(link, param);
       link = link.getNext();
     }
     DependentLink.Helper.freeSubsts(constructorParameters, subst);
-    return result;
+    return Apps(ConCall(myConstructor, params), arguments);
   }
 
   public Substitution getMatchedArguments(List<Expression> dataTypeArguments) {
@@ -85,9 +86,12 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
 
   @Override
   public MatchResult match(Expression expr, boolean normalize) {
-    List<Expression> constructorArgs = new ArrayList<>();
-    expr = (normalize ? expr.normalize(NormalizeVisitor.Mode.WHNF) : expr).getFunction(constructorArgs);
-    Collections.reverse(constructorArgs);
+    if (normalize) {
+      expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
+    }
+
+    List<? extends Expression> constructorArgs = expr.getArguments();
+    expr = expr.getFunction();
     if (!(expr instanceof ConCallExpression)) {
       return new MatchMaybeResult(this, expr);
     }

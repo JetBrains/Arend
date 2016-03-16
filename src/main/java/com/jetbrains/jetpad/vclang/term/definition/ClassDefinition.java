@@ -11,8 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ClassCall;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.param;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ClassDefinition extends Definition {
   private Map<String, ClassField> myFields = null;
@@ -83,5 +82,14 @@ public class ClassDefinition extends Definition {
     ClassField field = new ClassField(getResolvedName().toNamespace().getChild("\\parent").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this)));
     addField(field);
     getResolvedName().toNamespace().addDefinition(field);
+  }
+
+  @Override
+  public Expression getTypeWithThis() {
+    Expression type = getType();
+    if (getThisClass() != null) {
+      type = Pi(getThisClass().getDefCall(), type);
+    }
+    return type;
   }
 }
