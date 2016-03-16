@@ -156,6 +156,19 @@ public final class Abstract {
         myPLevel = PLevel;
         myHLevel = HLevel;
       }
+
+      public boolean equals(Object obj) {
+        if (obj.getClass() != this.getClass()) return false;
+        Universe u = (Universe)obj;
+        return myPLevel == u.myPLevel && myHLevel == u.myHLevel;
+      }
+
+      @Override
+      public String toString() {
+        if (myHLevel == PROP) return "\\Prop";
+        if (myHLevel == SET) return "\\Set" + myPLevel;
+        return "\\" + (myHLevel == NOT_TRUNCATED ? "" : myHLevel + "-") + "Type" + myPLevel;
+      }
     }
 
     Universe getUniverse();

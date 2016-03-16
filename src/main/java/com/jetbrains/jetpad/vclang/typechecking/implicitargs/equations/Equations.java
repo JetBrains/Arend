@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
@@ -23,11 +24,11 @@ public interface Equations {
   enum CMP {
     LE, EQ, GE;
 
-    public UniverseOld.Cmp toUniverseCmp() {
+    public Universe.Cmp toUniverseCmp() {
       switch (this) {
-        case LE: return UniverseOld.Cmp.LESS;
-        case EQ: return UniverseOld.Cmp.EQUALS;
-        case GE: return UniverseOld.Cmp.GREATER;
+        case LE: return Universe.Cmp.LESS;
+        case EQ: return Universe.Cmp.EQUALS;
+        case GE: return Universe.Cmp.GREATER;
       }
       throw new IllegalStateException();
     }

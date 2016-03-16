@@ -376,7 +376,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    Abstract.UniverseExpression.Universe universe = null;
+    /* Abstract.UniverseExpression.Universe universe = null;
     if (ctx.expr() != null) {
       Concrete.Expression expression = (Concrete.Expression) visit(ctx.expr());
       if (expression instanceof Concrete.UniverseExpression) {
@@ -384,7 +384,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       } else {
         myErrorReporter.report(new ParserError(expression.getPosition(), "Expected a universe"));
       }
-    }
+    } /**/
+
+    Concrete.Expression universe = ctx.expr() == null ? null : (Concrete.Expression) visit(ctx.expr());
 
     List<Concrete.Constructor> constructors = new ArrayList<>(ctx.constructorDef().size());
     List<Concrete.Condition> conditions = ctx.conditionDef() != null ? visitConditionDef(ctx.conditionDef()) : null;

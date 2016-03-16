@@ -102,7 +102,7 @@ public class ModuleSerialization {
   private static int serializeDataDefinition(SerializeVisitor visitor, DataDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
     if (!definition.hasErrors()) {
-      writeUniverse(visitor.getDataStream(), definition.getUniverse());
+      writeUniverse(visitor, definition.getUniverse());
       writeParameters(visitor, definition.getParameters());
     }
     visitor.getDataStream().writeInt(definition.getConstructors().size());
@@ -118,7 +118,7 @@ public class ModuleSerialization {
             visitor.visitPatternArg(patternArg);
           }
         }
-        writeUniverse(visitor.getDataStream(), constructor.getUniverse());
+        writeUniverse(visitor, constructor.getUniverse());
         writeParameters(visitor, constructor.getParameters());
       } else {
         errors += 1;
@@ -174,7 +174,7 @@ public class ModuleSerialization {
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     int errors = serializeNamespace(visitor, definition.getResolvedName().toNamespace());
 
-    writeUniverse(visitor.getDataStream(), definition.getUniverse());
+    writeUniverse(visitor, definition.getUniverse());
 
     visitor.getDataStream().writeInt(definition.getFields().size());
     for (ClassField field : definition.getFields()) {
@@ -182,7 +182,7 @@ public class ModuleSerialization {
       writeParameters(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());
       if (!field.hasErrors()) {
-        writeUniverse(visitor.getDataStream(), field.getUniverse());
+        writeUniverse(visitor, field.getUniverse());
         field.getType().accept(visitor, null);
       }
     }
@@ -216,10 +216,9 @@ public class ModuleSerialization {
     }
   }
 
-  public static void writeUniverse(DataOutputStream stream, UniverseOld universe) throws IOException {
-    stream.writeInt(universe.getLevel());
-    if (universe instanceof UniverseOld.Type) {
-      stream.writeInt(((UniverseOld.Type) universe).getTruncated());
+  public static void writeUniverse(SerializeVisitor visitor, Universe universe) throws IOException {
+    if (universe instanceof TypeUniverse) {
+      ((TypeUniverse) universe).getLevel().getValue().accept(visitor, null);
     } else {
       throw new IllegalStateException();
     }

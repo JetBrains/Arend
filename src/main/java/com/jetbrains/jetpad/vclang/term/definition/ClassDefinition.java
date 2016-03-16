@@ -22,6 +22,11 @@ public class ClassDefinition extends Definition {
     super.hasErrors(false);
   }
 
+  public ClassDefinition(ResolvedName rn, Universe universe) {
+    super(rn, Abstract.Definition.DEFAULT_PRECEDENCE, universe);
+    super.hasErrors(false);
+  }
+
   @Override
   public Expression getType() {
     return new UniverseExpression(getUniverse());

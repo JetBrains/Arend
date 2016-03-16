@@ -21,6 +21,14 @@ public class ClassField extends Definition {
     hasErrors(false);
   }
 
+  public ClassField(ResolvedName rn, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, Universe universe) {
+    super(rn, precedence, universe);
+    myThisParameter = thisParameter;
+    myType = type;
+    setThisClass(thisClass);
+    hasErrors(false);
+  }
+
   public DependentLink getThisParameter() {
     return myThisParameter;
   }

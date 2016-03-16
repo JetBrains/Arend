@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.factory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public interface AbstractExpressionFactory {
   Abstract.TypeArgument makeTelescopeArgument(boolean explicit, List<String> names, Abstract.Expression type);
   Abstract.Expression makeLam(List<? extends Abstract.Argument> arguments, Abstract.Expression body);
   Abstract.Expression makePi(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression codomain);
-  Abstract.Expression makeUniverse(UniverseOld universe);
+  Abstract.Expression makeUniverse(Abstract.Expression level);
   Abstract.Expression makeInferHole();
   Abstract.Expression makeError(Abstract.Expression expr);
   Abstract.Expression makeTuple(List<? extends Abstract.Expression> fields);

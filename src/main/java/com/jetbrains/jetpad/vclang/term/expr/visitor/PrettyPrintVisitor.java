@@ -235,6 +235,15 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
+  public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Byte prec) {
+    myBuilder.append("Type ");
+    if (expr.getLevel() != null) {
+      expr.getLevel().accept(this, prec);
+    }
+    return null;
+  }
+
+  @Override
   public Void visitInferHole(Abstract.InferHoleExpression expr, Byte prec) {
     myBuilder.append('_');
     return null;
@@ -582,9 +591,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("{!error}");
     }
 
-    UniverseOld universe = def.getUniverse();
+    Abstract.Expression universe = def.getUniverse();
     if (universe != null) {
-      myBuilder.append(" : ").append(universe);
+      myBuilder.append(" : ");
+      universe.accept(this, null);
     }
     ++myIndent;
 

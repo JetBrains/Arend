@@ -9,19 +9,21 @@ public interface Universe {
     L succ();
   }
 
-  interface CompareResult {}
-
-  class OkCompareResult implements CompareResult {
-    public Universe myMaxUniverse;
-    public Cmp myResult;
-
-    public OkCompareResult(Universe maxUniverse, Cmp result) {
-      myMaxUniverse = maxUniverse;
-      myResult = result;
-    }
+  interface LeveledUniverseFactory<U extends Universe, L extends Level<L>> {
+    U createUniverse(L level);
   }
 
-  class NotComparableResult implements CompareResult {}
+  class CompareResult {
+    public Universe MaxUniverse;
+    public Cmp Result;
+
+    public CompareResult(Universe maxUniverse, Cmp result) {
+      MaxUniverse = maxUniverse;
+      Result = result;
+    }
+
+    public boolean isLessOrEquals() { return Result == Cmp.LESS || Result == Cmp.EQUALS; }
+  }
 
   CompareResult compare(Universe other);
   Universe succ();

@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -296,8 +297,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
     if (!(expr2 instanceof UniverseExpression)) return false;
-    UniverseOld.Cmp result = expr1.getUniverse().compare(((UniverseExpression) expr2).getUniverse());
-    return result == UniverseOld.Cmp.EQUALS || result == myCMP.toUniverseCmp();
+    Universe.CompareResult cmp = expr1.getUniverse().compare(((UniverseExpression) expr2).getUniverse());
+    return cmp != null && (cmp.Result == Universe.Cmp.EQUALS || cmp.Result == myCMP.toUniverseCmp());
   }
 
   @Override
