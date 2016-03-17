@@ -199,8 +199,8 @@ public class Prelude extends Namespace {
     defToLevel.put(pathInfix, i);
 
     DependentLink atParameter1 = param(false, "A", PathParameter1.getType());
-    DependentLink atParameter2 = param(false, "a", PathParameter2.getType());
-    DependentLink atParameter3 = param(false, "a'", PathParameter3.getType());
+    DependentLink atParameter2 = param(false, "a", Apps(Reference(atParameter1), ConCall(LEFT)));
+    DependentLink atParameter3 = param(false, "a'", Apps(Reference(atParameter1), ConCall(RIGHT)));
     DependentLink atParameter4 = param("p", Apps(DataCall((DataDefinition) PRELUDE.getDefinition("Path" + suffix)), Reference(atParameter1), Reference(atParameter2), Reference(atParameter3)));
     DependentLink atParameter5 = param("i", DataCall(INTERVAL));
     atParameter1.setNext(atParameter2);
