@@ -526,7 +526,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
     }
 
-    if (dataDefinition.getConditions() != null) {
+    if (!dataDefinition.getConditions().isEmpty()) {
       List<Condition> failedConditions = new ArrayList<>();
       for (Condition condition : dataDefinition.getConditions()) {
         TypeCheckingError error = TypeCheckingElim.checkConditions(condition.getConstructor().getName(), def, condition.getConstructor().getParameters(), condition.getElimTree());

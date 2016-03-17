@@ -105,6 +105,7 @@ public class ModuleSerialization {
       writeUniverse(visitor.getDataStream(), definition.getUniverse());
       writeParameters(visitor, definition.getParameters());
     }
+
     visitor.getDataStream().writeInt(definition.getConstructors().size());
     for (Constructor constructor : definition.getConstructors()) {
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(constructor.getResolvedName()));
@@ -123,6 +124,12 @@ public class ModuleSerialization {
       } else {
         errors += 1;
       }
+    }
+
+    visitor.getDataStream().writeInt(definition.getConditions().size());
+    for (Condition condition : definition.getConditions()) {
+      visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(condition.getConstructor().getResolvedName()));
+      condition.getElimTree().accept(visitor, null);
     }
     return errors;
   }
