@@ -9,14 +9,11 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -239,8 +236,16 @@ public class Prelude extends Namespace {
     DependentLink isoParameter3 = param("g", Pi(param(Reference(isoParameter1.getNext())), Reference(isoParameter1)));
     DependentLink piParamA = param("a", Reference(isoParameter1));
     DependentLink piParamB = param("b", Reference(isoParameter1.getNext()));
-    DependentLink isoParameter4 = param("linv", Pi(piParamA, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1), false, true)), Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA))), Reference(piParamA))));
-    DependentLink isoParameter5 = param("rinv", Pi(piParamB, Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Reference(isoParameter1.getNext()), false, true)), Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB))), Reference(piParamB))));
+    Expression isoParameters4type = FunCall(pathInfix)
+      .addArgument(Reference(isoParameter1), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA))), AppExpression.DEFAULT)
+      .addArgument(Reference(piParamA), AppExpression.DEFAULT);
+    DependentLink isoParameter4 = param("linv", Pi(piParamA, isoParameters4type));
+    Expression isoParameters5type = FunCall(pathInfix)
+      .addArgument(Reference(isoParameter1.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB))), AppExpression.DEFAULT)
+      .addArgument(Reference(piParamB), AppExpression.DEFAULT);
+    DependentLink isoParameter5 = param("rinv", Pi(piParamB, isoParameters5type));
     DependentLink isoParameter6 = param("i", DataCall(INTERVAL));
     isoParameter1.setNext(isoParameter2);
     isoParameter2.setNext(isoParameter3);
@@ -285,8 +290,16 @@ public class Prelude extends Namespace {
     Constructor setTruncInCon = new Constructor(PRELUDE.getChild(setTrunc.getName()).getChild("inS" + suffix).getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), param("inS", Reference(truncParameter)), setTrunc);
     DependentLink setTruncConParameter1 = param("a", Apps(DataCall(setTrunc), Reference(truncParameter)));
     DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(setTrunc), Reference(truncParameter)));
-    DependentLink setTruncConParameter3 = param("p", Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Apps(DataCall(setTrunc), Reference(truncParameter)), false, true)), Reference(setTruncConParameter1), Reference(setTruncConParameter2)));
-    DependentLink setTruncConParameter4 = param("q", Apps(Apps(FunCall(pathInfix), new ArgumentExpression(Apps(DataCall(setTrunc), Reference(truncParameter)), false, true)), Reference(setTruncConParameter1), Reference(setTruncConParameter2)));
+    Expression setTruncConParameter3type = FunCall(pathInfix)
+      .addArgument(Apps(DataCall(setTrunc), Reference(truncParameter)), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Reference(setTruncConParameter1), AppExpression.DEFAULT)
+      .addArgument(Reference(setTruncConParameter2), AppExpression.DEFAULT);
+    DependentLink setTruncConParameter3 = param("p", setTruncConParameter3type);
+    Expression setTruncConParameter4type = FunCall(pathInfix)
+      .addArgument(Apps(DataCall(setTrunc), Reference(truncParameter)), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Reference(setTruncConParameter1), AppExpression.DEFAULT)
+      .addArgument(Reference(setTruncConParameter2), AppExpression.DEFAULT);
+    DependentLink setTruncConParameter4 = param("q", setTruncConParameter4type);
     DependentLink setTruncConParameter5 = param("i", DataCall(INTERVAL));
     DependentLink setTruncConParameter6 = param("j", DataCall(INTERVAL));
     setTruncConParameter1.setNext(setTruncConParameter2);

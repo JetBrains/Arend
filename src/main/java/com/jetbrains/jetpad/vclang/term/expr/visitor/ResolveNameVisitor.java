@@ -2,15 +2,15 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
@@ -266,16 +266,20 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       NamespaceMember namespaceMember = myNameResolver.locateName(name);
       if (namespaceMember != null && (namespaceMember.definition instanceof Constructor || namespaceMember.abstractDefinition instanceof Abstract.Constructor)) {
         boolean hasExplicit = false;
-        if (namespaceMember.definition instanceof Constructor) {
+        if (namespaceMember.definition instanceof Constructor && !namespaceMember.definition.hasErrors()) {
           for (DependentLink link = ((Constructor) namespaceMember.definition).getParameters(); link.hasNext(); link = link.getNext()) {
             if (link.isExplicit()) {
               hasExplicit = true;
+              break;
             }
           }
         } else {
-          for (Abstract.TypeArgument argument : ((Abstract.Constructor) namespaceMember.abstractDefinition).getArguments()) {
-            if (argument.getExplicit()) {
-              hasExplicit = true;
+          if (namespaceMember.abstractDefinition instanceof Abstract.Constructor) {
+            for (Abstract.TypeArgument argument : ((Abstract.Constructor) namespaceMember.abstractDefinition).getArguments()) {
+              if (argument.getExplicit()) {
+                hasExplicit = true;
+                break;
+              }
             }
           }
         }

@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -32,14 +33,18 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     Substitution substitution = new Substitution();
+    List<Expression> arguments = new ArrayList<>();
+    List<EnumSet<AppExpression.Flag>> flags = new ArrayList<>();
     for (int i = 0; i < parameters.size(); i++) {
       DependentLink parameter = parameters.get(i);
       InferenceBinding inferenceBinding = new FunctionInferenceBinding(parameter.getName(), parameter.getType(), i + 1, expr);
       result.addUnsolvedVariable(inferenceBinding);
       Expression binding = Reference(inferenceBinding);
-      result.expression = Apps(result.expression, binding, false, true);
+      arguments.add(binding);
+      flags.add(EnumSet.noneOf(AppExpression.Flag.class));
       substitution.add(parameter, binding);
     }
+    result.expression = Apps(result.expression, arguments, flags);
     result.type = result.type.subst(substitution);
     return true;
   }
@@ -79,7 +84,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return null;
     }
 
-    result.expression = new AppExpression(result.expression, new ArgumentExpression(argResult.expression, isExplicit, false));
+    result.expression = result.expression.addArgument(argResult.expression, isExplicit ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.of(AppExpression.Flag.VISIBLE));
     result.type = actualType.applyExpressions(Collections.singletonList(argResult.expression));
     result.add(argResult);
     result.update();
@@ -95,26 +100,24 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (fun instanceof Abstract.DefCallExpression && isExplicit) {
         if (expectedType != null) {
           result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
-          if (result != null && result.expression instanceof ConCallExpression) {
-            List<Expression> args = new ArrayList<>();
-            Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF).getFunction(args);
+          if (result != null && result.expression instanceof ConCallExpression && !((ConCallExpression) result.expression).getDefinition().hasErrors()) {
+            Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+            List<? extends Expression> args = expectedTypeNorm.getArguments();
+            expectedTypeNorm = expectedTypeNorm.getFunction();
             if (expectedTypeNorm instanceof DataCallExpression) {
-              Collections.reverse(args);
               ConCallExpression conCall = (ConCallExpression) result.expression;
-              args = conCall.getDefinition().matchDataTypeArguments(args);
+              args = conCall.getDefinition().matchDataTypeArguments(new ArrayList<>(args));
               if (!conCall.getDataTypeArguments().isEmpty()) {
                 args = args.subList(conCall.getDataTypeArguments().size(), args.size());
               }
               if (!args.isEmpty()) {
-                for (Expression arg1 : args) {
-                  result.expression = Apps(result.expression, arg1, false, true);
-                }
+                result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
                 result.type = result.type.applyExpressions(args);
               }
               CheckTypeVisitor.Result result1 = inferArg(result, arg, true, fun);
               if (result1 != null && Prelude.isPathCon(conCall.getDefinition())) {
-                Expression argExpr = ((AppExpression) result1.expression).getArgument().getExpression();
-                result1.type = Apps(((AppExpression) ((AppExpression) result1.type).getFunction()).getFunction(), Apps(argExpr, ConCall(Prelude.LEFT)), Apps(argExpr, ConCall(Prelude.RIGHT)));
+                Expression argExpr = result1.expression.getArguments().get(result1.expression.getArguments().size() - 1);
+                result1.type = Apps(result1.type.getFunction(), result1.type.getArguments().get(0), Apps(argExpr, ConCall(Prelude.LEFT)), Apps(argExpr, ConCall(Prelude.RIGHT)));
                 if (!myVisitor.compare(result1, expectedType, Equations.CMP.EQ, fun)) {
                   return null;
                 }

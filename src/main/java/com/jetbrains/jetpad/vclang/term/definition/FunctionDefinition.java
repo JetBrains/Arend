@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -66,6 +65,11 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public Expression getResultType() {
     return myResultType;
+  }
+
+  @Override
+  public int getNumberOfRequiredArguments() {
+    return DependentLink.Helper.size(myParameters);
   }
 
   public void setResultType(Expression resultType) {

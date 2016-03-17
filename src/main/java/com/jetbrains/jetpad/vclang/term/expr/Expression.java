@@ -8,11 +8,9 @@ import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+import com.jetbrains.jetpad.vclang.typechecking.normalization.EvalNormalizer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public abstract class Expression implements PrettyPrintable {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
@@ -61,7 +59,7 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   public final Expression normalize(NormalizeVisitor.Mode mode) {
-    return accept(new NormalizeVisitor(), mode);
+    return accept(new NormalizeVisitor(new EvalNormalizer()), mode);
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
@@ -70,26 +68,6 @@ public abstract class Expression implements PrettyPrintable {
 
   public static boolean compare(Expression expr1, Expression expr2) {
     return compare(expr1, expr2, Equations.CMP.EQ);
-  }
-
-  public Expression getFunction(List<Expression> arguments) {
-    Expression expr = this;
-    while (expr instanceof AppExpression) {
-      if (arguments != null) {
-        arguments.add(((AppExpression) expr).getArgument().getExpression());
-      }
-      expr = ((AppExpression) expr).getFunction();
-    }
-    return expr;
-  }
-
-  public Expression getFunctionArgs(List<ArgumentExpression> arguments) {
-    Expression expr = this;
-    while (expr instanceof AppExpression) {
-      arguments.add(((AppExpression) expr).getArgument());
-      expr = ((AppExpression) expr).getFunction();
-    }
-    return expr;
   }
 
   public Expression getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
@@ -153,7 +131,7 @@ public abstract class Expression implements PrettyPrintable {
     return body;
   }
 
-  public Expression applyExpressions(List<Expression> expressions) {
+  public Expression applyExpressions(List<? extends Expression> expressions) {
     Substitution subst = new Substitution();
     List<DependentLink> params = new ArrayList<>();
     Expression cod = getPiParameters(params, true, false);
@@ -165,5 +143,21 @@ public abstract class Expression implements PrettyPrintable {
       subst.add(params.get(i), expressions.get(i));
     }
     return cod.fromPiParameters(params.subList(expressions.size(), params.size())).subst(subst);
+  }
+
+  public Expression getFunction() {
+    return this;
+  }
+
+  public List<? extends Expression> getArguments() {
+    return Collections.emptyList();
+  }
+
+  public Expression addArgument(Expression argument, EnumSet<AppExpression.Flag> flag) {
+    return new AppExpression(this, new ArrayList<>(Collections.singletonList(argument)), new ArrayList<>(Collections.singletonList(flag)));
+  }
+
+  public Expression addArguments(Collection<? extends Expression> arguments, Collection<? extends EnumSet<AppExpression.Flag>> flags) {
+    return arguments.isEmpty() ? this : new AppExpression(this, arguments, flags);
   }
 }

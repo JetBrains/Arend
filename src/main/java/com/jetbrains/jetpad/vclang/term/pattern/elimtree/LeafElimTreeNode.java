@@ -86,6 +86,7 @@ public class LeafElimTreeNode extends ElimTreeNode {
     return result;
   }
 
+  @Override
   public LeafElimTreeNode match(List<Expression> expressions) {
     return this;
   }

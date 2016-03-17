@@ -112,6 +112,7 @@ public class ExpressionTest {
           "-> Y 0 (f (\\lam x => x))", null);
     assertNotNull(typeResult);
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam f h => h (\\lam k => k 1)", typeResult.expression);
+    assertNotNull(result);
   }
 
   @Test

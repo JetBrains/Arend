@@ -11,6 +11,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import org.junit.Test;
 
+import java.util.EnumSet;
+
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
@@ -59,7 +61,10 @@ public class GetTypeTest {
   public void fieldAccTest() {
     NamespaceMember member = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), member.namespace.getDefinition("C").getDefCall()));
-    Expression type = Apps(Apps(FunCall(Prelude.PATH_INFIX), new ArgumentExpression(Nat(), false, true)), Zero(), Apps(member.namespace.getMember("C").namespace.getDefinition("x").getDefCall(), Apps(Reference(p), Zero())));
+    Expression type = FunCall(Prelude.PATH_INFIX)
+      .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Zero(), AppExpression.DEFAULT)
+      .addArgument(Apps(member.namespace.getMember("C").namespace.getDefinition("x").getDefCall(), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), member.namespace.getDefinition("test").getType().normalize(NormalizeVisitor.Mode.NF));
   }
 

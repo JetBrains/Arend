@@ -3,8 +3,6 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Apps;
-
 public class FunCallExpression extends DefCallExpression {
   public FunCallExpression(FunctionDefinition definition) {
     super(definition);
@@ -12,7 +10,7 @@ public class FunCallExpression extends DefCallExpression {
 
   @Override
   public Expression applyThis(Expression thisExpr) {
-    return Apps(this, thisExpr);
+    return ExpressionFactory.Apps(this, thisExpr);
   }
 
   @Override

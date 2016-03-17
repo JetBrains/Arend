@@ -28,11 +28,11 @@ public class Patterns {
     return EmptyDependentLink.getInstance();
   }
 
-  public Pattern.MatchResult match(List<Expression> exprs) {
+  public Pattern.MatchResult match(List<? extends Expression> exprs) {
     return match(exprs, true);
   }
 
-  public Pattern.MatchResult match(List<Expression> exprs, boolean normalize) {
+  public Pattern.MatchResult match(List<? extends Expression> exprs, boolean normalize) {
     assert myPatterns.size() == exprs.size();
     List<Expression> result = new ArrayList<>();
 

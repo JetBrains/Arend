@@ -33,40 +33,45 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return this;
   }
 
-  private Abstract.Expression checkPath(Expression fun, List<ArgumentExpression> args) {
+  private Abstract.Expression checkPath(AppExpression expr) {
+    Expression fun = expr.getFunction();
+    List<? extends Expression> args = expr.getArguments();
+
     if (!(args.size() == 3 && fun instanceof DefCallExpression && Prelude.isPath(((DefCallExpression) fun).getDefinition()))) {
       return null;
     }
-    for (ArgumentExpression arg : args) {
-      if (!arg.isExplicit()) {
+    for (EnumSet<AppExpression.Flag> flag : expr.getFlags()) {
+      if (!flag.contains(AppExpression.Flag.EXPLICIT)) {
         return null;
       }
     }
-    if (args.get(2).getExpression() instanceof LamExpression) {
-      LamExpression expr = (LamExpression) args.get(2).getExpression();
-      if (!expr.getBody().findBinding(expr.getParameters())) {
-        return myFactory.makeBinOp(args.get(1).getExpression().accept(this, null), Prelude.getLevelDefs(Prelude.getLevel(((DefCallExpression) fun).getDefinition())).pathInfix, args.get(0).getExpression().accept(this, null));
+    if (args.get(2) instanceof LamExpression) {
+      LamExpression expr1 = (LamExpression) args.get(2);
+      if (!expr1.getBody().findBinding(expr1.getParameters())) {
+        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.getLevelDefs(Prelude.getLevel(((DefCallExpression) fun).getDefinition())).pathInfix, args.get(0).accept(this, null));
       }
     }
     return null;
   }
 
-  private Abstract.Expression checkBinOp(Expression fun, List<ArgumentExpression> args) {
+  private Abstract.Expression checkBinOp(AppExpression expr) {
+    Expression fun = expr.getFunction();
+
     if (!(fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX)) {
       return null;
     }
-    if (args.size() < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!args.get(0).isExplicit() || !args.get(1).isExplicit())) {
+    if (expr.getFlags().size() < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!expr.getFlags().get(0).contains(AppExpression.Flag.EXPLICIT) || !expr.getFlags().get(1).contains(AppExpression.Flag.EXPLICIT))) {
       return null;
     }
 
     Expression[] visibleArgs = new Expression[2];
-    int i = 1;
-    for (ArgumentExpression arg : args) {
-      if (arg.isExplicit() && (!arg.isHidden() || myFlags.contains(Flag.SHOW_HIDDEN_ARGS))) {
-        if (i < 0) {
+    int i = 0;
+    for (int j = 0; j < expr.getArguments().size(); j++) {
+      if (expr.getFlags().get(j).contains(AppExpression.Flag.EXPLICIT) && (expr.getFlags().get(j).contains(AppExpression.Flag.VISIBLE) || myFlags.contains(Flag.SHOW_HIDDEN_ARGS))) {
+        if (i == 2) {
           return null;
         }
-        visibleArgs[i--] = arg.getExpression();
+        visibleArgs[i++] = expr.getArguments().get(j);
       }
     }
     return i < 0 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), ((DefCallExpression) fun).getDefinition(), visibleArgs[1].accept(this, null)) : null;
@@ -74,29 +79,37 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitApp(AppExpression expr, Void params) {
-    List<ArgumentExpression> args = new ArrayList<>();
-    Expression fun = expr.getFunctionArgs(args);
-
     if (!myFlags.contains(Flag.SHOW_PREFIX_PATH)) {
-      Abstract.Expression result = checkPath(fun, args);
+      Abstract.Expression result = checkPath(expr);
       if (result != null) {
         return result;
       }
     }
 
-    Abstract.Expression result = checkBinOp(fun, args);
+    Abstract.Expression result = checkBinOp(expr);
     if (result != null) {
       return result;
     }
 
+    int index;
     if (expr.getFunction() instanceof FieldCallExpression) {
-      return myFactory.makeDefCall(expr.getArgument().getExpression().accept(this, null), ((FieldCallExpression) expr.getFunction()).getDefinition());
+      result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), ((FieldCallExpression) expr.getFunction()).getDefinition());
+      index = 1;
     } else {
-      boolean showArg = (!expr.getArgument().isHidden() || myFlags.contains(Flag.SHOW_HIDDEN_ARGS)) && (expr.getArgument().isExplicit() || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS));
-      Abstract.Expression abstractFun = expr.getFunction().accept(this, null);
-      Abstract.Expression arg = showArg ? expr.getArgument().getExpression().accept(this, null) : expr.getArgument().isExplicit() ? myFactory.makeInferHole() : null;
-      return arg != null ? myFactory.makeApp(abstractFun, expr.getArgument().isExplicit(), arg) : abstractFun;
+      result = expr.getFunction().accept(this, null);
+      index = 0;
     }
+
+    for (; index < expr.getArguments().size(); index++) {
+      result = visitApp(result, expr.getArguments().get(index), expr.getFlags().get(index));
+    }
+    return result;
+  }
+
+  private Abstract.Expression visitApp(Abstract.Expression function, Expression argument, EnumSet<AppExpression.Flag> flag) {
+    boolean showArg = (flag.contains(AppExpression.Flag.VISIBLE) || myFlags.contains(Flag.SHOW_HIDDEN_ARGS)) && (flag.contains(AppExpression.Flag.EXPLICIT) || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS));
+    Abstract.Expression arg = showArg ? argument.accept(this, null) : flag.contains(AppExpression.Flag.EXPLICIT) ? myFactory.makeInferHole() : null;
+    return arg != null ? myFactory.makeApp(function, flag.contains(AppExpression.Flag.EXPLICIT), arg) : function;
   }
 
   @Override
@@ -107,7 +120,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   @Override
   public Abstract.Expression visitConCall(ConCallExpression expr, Void params) {
     Abstract.Expression conParams = null;
-    if (myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
+    if (!expr.getDefinition().hasErrors() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
       conParams = myFactory.makeDefCall(null, expr.getDefinition().getDataType());
       DependentLink link = expr.getDefinition().getDataTypeParameters();
       for (int i = 0; i < expr.getDataTypeArguments().size() && link.hasNext(); i++, link = link.getNext()) {
@@ -214,8 +227,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private Abstract.Expression checkCase(LetExpression letExpression) {
     if (letExpression.getClauses().size() == 1 && Abstract.CaseExpression.FUNCTION_NAME.equals(letExpression.getClauses().get(0).getName()) && letExpression.getClauses().get(0).getElimTree() instanceof BranchElimTreeNode) {
-      List<Expression> args = new ArrayList<>();
-      Expression expr = letExpression.getExpression().getFunction(args);
+      Expression expr = letExpression.getExpression().getFunction();
+      List<? extends Expression> args = letExpression.getExpression().getArguments();
       if (expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getBinding() == letExpression.getClauses().get(0)) {
         for (Expression arg : args) {
           if (arg.findBinding(letExpression.getClauses().get(0))) {

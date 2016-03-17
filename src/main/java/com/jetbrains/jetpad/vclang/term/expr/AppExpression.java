@@ -3,24 +3,82 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 
 public class AppExpression extends Expression {
-  private final Expression myFunction;
-  private final ArgumentExpression myArgument;
+  private Expression myFunction;
+  private List<Expression> myArguments;
+  private List<EnumSet<Flag>> myFlags;
 
-  public AppExpression(Expression function, ArgumentExpression argument) {
-    myFunction = function;
-    myArgument = argument;
+  public enum Flag { EXPLICIT, VISIBLE }
+  public static final EnumSet<Flag> DEFAULT = EnumSet.of(Flag.EXPLICIT, Flag.VISIBLE);
+
+  private void initialize(Expression function, Collection<? extends Expression> arguments, Collection<? extends EnumSet<Flag>> flags) {
+    assert flags.size() <= arguments.size();
+    assert !arguments.isEmpty();
+
+    myFunction = function.getFunction();
+    if (function instanceof AppExpression) {
+      myArguments = new ArrayList<>(function.getArguments().size() + arguments.size());
+      myArguments.addAll(function.getArguments());
+      myArguments.addAll(arguments);
+
+      myFlags = new ArrayList<>(((AppExpression) function).myFlags.size() + arguments.size());
+      myFlags.addAll(((AppExpression) function).myFlags);
+    } else {
+      myFlags = new ArrayList<>(arguments.size());
+    }
+
+    myFlags.addAll(flags);
+    if (flags.size() < arguments.size()) {
+      for (int i = arguments.size() - flags.size(); i > 0; i--) {
+        myFlags.add(DEFAULT);
+      }
+    }
   }
 
+  public AppExpression(Expression function, Collection<? extends Expression> arguments, Collection<? extends EnumSet<Flag>> flags) {
+    initialize(function, arguments, flags);
+    if (!(function instanceof AppExpression)) {
+      myArguments = new ArrayList<>(arguments);
+    }
+  }
+
+  public AppExpression(Expression function, List<Expression> arguments, Collection<? extends EnumSet<Flag>> flags) {
+    initialize(function, arguments, flags);
+    if (!(function instanceof AppExpression)) {
+      myArguments = arguments;
+    }
+  }
+
+  @Override
   public Expression getFunction() {
     return myFunction;
   }
 
-  public ArgumentExpression getArgument() {
-    return myArgument;
+  @Override
+  public List<? extends Expression> getArguments() {
+    return myArguments;
+  }
+
+  public List<? extends EnumSet<Flag>> getFlags() {
+    return myFlags;
+  }
+
+  @Override
+  public AppExpression addArgument(Expression argument, EnumSet<Flag> flag) {
+    myArguments.add(argument);
+    myFlags.add(flag);
+    return this;
+  }
+
+  @Override
+  public AppExpression addArguments(Collection<? extends Expression> arguments, Collection<? extends EnumSet<AppExpression.Flag>> flags) {
+    myArguments.addAll(arguments);
+    myFlags.addAll(flags);
+    return this;
   }
 
   @Override
@@ -30,11 +88,9 @@ public class AppExpression extends Expression {
 
   @Override
   public Expression getType() {
-    List<Expression> arguments = new ArrayList<>();
-    Expression functionType = getFunction(arguments).getType();
+    Expression functionType = myFunction.getType();
     if (functionType != null) {
-      Collections.reverse(arguments);
-      return functionType.applyExpressions(arguments);
+      return functionType.applyExpressions(myArguments);
     } else {
       return null;
     }
