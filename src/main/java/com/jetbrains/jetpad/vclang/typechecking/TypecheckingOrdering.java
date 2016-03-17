@@ -153,7 +153,7 @@ public class TypecheckingOrdering {
         if (member.definition == null || member.definition.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);
         } else {
-          typecheckedReporter.typecheckingSucceeded(def);
+          typecheckedReporter.typecheckingSucceeded(def, member.definition);
         }
       }
     } else if (result instanceof CycleResult) {

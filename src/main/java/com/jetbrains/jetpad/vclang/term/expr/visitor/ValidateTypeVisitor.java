@@ -6,10 +6,9 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
         implements ElimTreeNodeVisitor<Expression, Void> {
@@ -33,6 +32,11 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
     public int errors() {
       return expressions.size();
+    }
+
+    @Override
+    public String toString() {
+      return expressions + " " + reasons;
     }
   }
 
@@ -60,37 +64,49 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
       } else {
         return false;
       }
+    } else if (expected instanceof PiExpression) {
+      if (actual instanceof PiExpression) {
+        Expression expectedCod = ((PiExpression) expected).getCodomain();
+        if (expectedCod instanceof UniverseExpression) {
+          Expression actualCod = ((PiExpression) actual).getCodomain();
+          return typesCompatible(expectedCod, actualCod)
+                  && expected.equals(Pi(((PiExpression) actual).getParameters(), expectedCod));
+        }
+      } else {
+        return false;
+      }
     }
     return expected.equals(actual);
   }
 
   @Override
   public Void visitApp(AppExpression expr, Expression expectedType) {
-    ArrayList<ArgumentExpression> args = new ArrayList<>();
-    Expression fun = expr.getFunctionArgs(args);
+    List<? extends Expression> args = expr.getArguments();
+    List<? extends EnumSet<AppExpression.Flag>> flags = expr.getFlags();
+    Expression fun = expr.getFunction();
     Expression funType = fun.getType().normalize(NormalizeVisitor.Mode.NF);
     if (!(funType instanceof PiExpression)) {
       myErrorReporter.addError(expr, "Function " + fun + " doesn't have Pi-type");
     } else {
       ArrayList<DependentLink> links = new ArrayList<>();
       funType.getPiParameters(links, true, false);
-      Collections.reverse(args);
       Substitution subst = new Substitution();
       if (args.size() > links.size()) {
         myErrorReporter.addError(expr, "Too few Pi abstractions");
       }
       for (int i = 0; i < args.size(); i++) {
         DependentLink param = links.get(i);
-        ArgumentExpression arg = args.get(i);
-        Expression argType = arg.getExpression().getType().normalize(NormalizeVisitor.Mode.NF);
+        Expression arg = args.get(i);
+        Expression argType = arg.getType().normalize(NormalizeVisitor.Mode.NF);
         Expression expectedArgType = param.getType().subst(subst).normalize(NormalizeVisitor.Mode.NF);
-        if (param.isExplicit() != arg.isExplicit()) {
+        boolean isArgExplicit = flags.get(i).contains(AppExpression.Flag.EXPLICIT);
+        if (param.isExplicit() != isArgExplicit) {
           myErrorReporter.addError(expr, i + "th argument is expected to be" + (param.isExplicit() ? "explicit" : "implicit"));
         }
         if (!typesCompatible(expectedArgType, argType)) {
-          myErrorReporter.addError(arg.getExpression(), "Expected type: " + expectedArgType + ", actual: " + argType);
+          myErrorReporter.addError(arg, "Expected type: " + expectedArgType + ", actual: " + argType);
         }
-        subst.add(param, arg.getExpression());
+        subst.add(param, arg);
       }
     }
 
@@ -186,7 +202,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitLet(LetExpression letExpression, Expression expectedType) {
-    // TOTO subst
+    // TODO subst
     Substitution subst = new Substitution();
     for (LetClause clause : letExpression.getClauses()) {
       clause.getElimTree().accept(this, clause.getType());

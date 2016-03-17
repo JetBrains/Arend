@@ -2,19 +2,19 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
-import com.jetbrains.jetpad.vclang.term.expr.LetClause;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static org.junit.Assert.*;
 
@@ -88,9 +88,26 @@ public class ValidateTypeTest {
   }
 
   @Test
-  public void testLol() {
-    FunctionDefinition classDefinition = (FunctionDefinition) typeCheckDef("\\function id (x : Nat) => x");
-    classDefinition.getDefCall().checkType();
+  public void testSqueeze1() {
+    FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\function\n" +
+            "squeeze1 (i j : I) : I\n" +
+            "    <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n");
+    ok(fun.getElimTree());
+  }
+
+  @Test
+  public void testAt() {
+    Expression at = typeCheckExpr("(@)", null).expression;
+    PiExpression atType = (PiExpression) at.getType();
+//    System.err.println(atType);
+    DependentLink first = atType.getParameters();
+//    System.err.println("first = " + first);
+    DependentLink second = first.getNext();
+//    System.err.println(second);
+    Binding a2 = ((ReferenceExpression) ((AppExpression) second.getType()).getFunction()).getBinding();
+//    System.err.println("a2 = " + a2);
+//    System.err.println(a2 == first);
+    assertEquals(a2, first);
   }
 
 }
