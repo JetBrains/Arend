@@ -209,7 +209,7 @@ public class ModuleDeserialization {
     }
 
     int constructorsNumber = stream.readInt();
-    for (int i = 0; i < constructorsNumber; ++i) {
+    for (int i = 0; i < constructorsNumber; i++) {
       Constructor constructor = (Constructor) definitionMap.get(stream.readInt());
       if (constructor == null) {
         throw new IncorrectFormat();
@@ -235,6 +235,15 @@ public class ModuleDeserialization {
 
       definition.addConstructor(constructor);
       definition.getParentNamespace().addDefinition(constructor);
+    }
+
+    int conditionsNumber = stream.readInt();
+    for (int i = 0; i < conditionsNumber; i++) {
+      Definition constructor = definitionMap.get(stream.readInt());
+      if (!(constructor instanceof Constructor && ((Constructor) constructor).getDataType() == definition)) {
+        throw new IncorrectFormat();
+      }
+      definition.addCondition(new Condition((Constructor) constructor, myElimTreeDeserialization.readElimTree(stream, definitionMap)));
     }
   }
 

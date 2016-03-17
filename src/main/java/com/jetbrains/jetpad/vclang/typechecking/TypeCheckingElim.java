@@ -357,7 +357,7 @@ public class TypeCheckingElim {
 
       DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
 
-      if (mode == PatternExpansionMode.DATATYPE && dataType.getConditions() != null) {
+      if (mode == PatternExpansionMode.DATATYPE && !dataType.getConditions().isEmpty()) {
         error = new TypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type, pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
