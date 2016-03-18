@@ -58,6 +58,11 @@ public class DummyEquations implements Equations {
 
   }
 
+  @Override
+  public void solve() {
+
+  }
+
   public static class Exception extends RuntimeException {
 
   }

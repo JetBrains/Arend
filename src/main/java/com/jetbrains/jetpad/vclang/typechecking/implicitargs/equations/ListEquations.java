@@ -55,6 +55,9 @@ public class ListEquations implements Equations {
 
     @Override
     public TypeCheckingError abstractBinding(Binding binding) {
+      if (typeOf) {
+        return null;
+      }
       if (expr1.findBinding(binding) || expr2.findBinding(binding)) {
         return new SolveEquationsError(expr1, expr2, binding, sourceNode, typeOf);
       } else {
@@ -208,6 +211,7 @@ public class ListEquations implements Equations {
                 entry.getKey().reportError(myErrorReporter, subst);
               }
             } else {
+              substitution.add(entry.getKey(), subst);
               myEquations.add(new CmpEquation(expectedType, subst, CMP.EQ, entry.getKey().getSourceNode(), true));
             }
             break;
@@ -251,5 +255,15 @@ public class ListEquations implements Equations {
   public void reportErrors(ErrorReporter errorReporter) {
     myErrorReporter.reportTo(errorReporter);
     myErrorReporter.getErrorList().clear();
+  }
+
+  @Override
+  public void solve() {
+    int size = myEquations.size();
+    while (size-- > 0) {
+      Equation equation = myEquations.get(0);
+      myEquations.remove(0);
+      equation.solveIn(this);
+    }
   }
 }

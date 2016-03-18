@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -62,13 +61,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     Expression result = mySubstitution.get(expr.getBinding());
-    if (result != null) {
-      return result;
-    }
-    if (expr.getBinding() instanceof InferenceBinding) {
-      ((InferenceBinding) expr.getBinding()).setType(expr.getBinding().getType().accept(this, null));
-    }
-    return expr;
+    return result != null ? result : expr;
   }
 
   @Override

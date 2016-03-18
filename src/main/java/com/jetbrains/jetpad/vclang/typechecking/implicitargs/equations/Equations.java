@@ -19,6 +19,7 @@ public interface Equations {
   Equations newInstance();
   Substitution getInferenceVariables(Set<InferenceBinding> binding);
   void reportErrors(ErrorReporter errorReporter);
+  void solve();
 
   enum CMP {
     LE, EQ, GE;

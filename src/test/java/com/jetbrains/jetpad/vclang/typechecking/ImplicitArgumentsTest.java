@@ -286,6 +286,16 @@ public class ImplicitArgumentsTest {
   }
 
   @Test
+  public void untypedLambdaError1() {
+    // f : (A : Nat) (a : A) -> Nat |- \x1 x2. f x1 x2
+    DependentLink A = param("A", Nat());
+    Expression type = Pi(params(A, param("a", Reference(A))), Nat());
+    List<Binding> context = new ArrayList<>();
+    context.add(new TypedBinding("f", type));
+    typeCheckExpr(context, "\\lam x1 x2 => f x1 x2", null, 1);
+  }
+
+  @Test
   public void inferLater() {
     // f : {A : \Type0} (B : \Type1) -> A -> B -> A |- f Nat (\lam x => x) 0 : Nat -> Nat
     List<Binding> context = new ArrayList<>();
