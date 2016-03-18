@@ -8,12 +8,9 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -128,52 +125,32 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
               result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
               result.type = result.type.applyExpressions(args);
             }
-            CheckTypeVisitor.Result result1 = inferArg(result, arg, true, fun);
-            if (result1 != null && Prelude.isPathCon(conCall.getDefinition())) {
-              Expression argExpr = result1.expression.getArguments().get(result1.expression.getArguments().size() - 1);
-              result1.type = Apps(result1.type.getFunction(), result1.type.getArguments().get(0), Apps(argExpr, ConCall(Prelude.LEFT)), Apps(argExpr, ConCall(Prelude.RIGHT)));
-              if (!myVisitor.compare(result1, expectedType, Equations.CMP.EQ, fun)) {
-                return null;
-              }
-            }
-            return result1;
+            return inferArg(result, arg, true, fun);
           }
         }
 
         if (Prelude.isPathCon(((ConCallExpression) result.expression.getFunction()).getDefinition())) {
           Expression interval = DataCall(Prelude.INTERVAL);
           CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe()))));
-          if (argResult == null) return null;
-          Expression type = argResult.type.normalize(NormalizeVisitor.Mode.WHNF);
-          if (type instanceof PiExpression) {
-            PiExpression piType = (PiExpression) type;
-            DependentLink params = piType.getParameters();
-            Expression domType = params.getType().normalize(NormalizeVisitor.Mode.WHNF);
-
-            if (argResult.getEquations() instanceof DummyEquations) {
-              argResult.setEquations(myVisitor.getImplicitArgsInference().newEquations());
-            }
-            if (CompareVisitor.compare(argResult.getEquations(), Equations.CMP.EQ, interval, domType, arg)) {
-              Expression lamExpr;
-              if (params.getNext().hasNext()) {
-                DependentLink lamParam = param("i", interval);
-                lamExpr = Lam(lamParam, Pi(params.getNext(), piType.getCodomain()).subst(params, Reference(lamParam)));
-              } else {
-                lamExpr = Lam(params, piType.getCodomain());
-              }
-              Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
-              Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
-              Constructor pathCon = ((ConCallExpression) result.expression.getFunction()).getDefinition();
-              argResult.expression = Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression);
-              argResult.type = Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2);
-              return argResult;
-            }
+          if (argResult == null) {
+            return null;
           }
+          PiExpression piType = (PiExpression) argResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+          DependentLink params = piType.getParameters();
 
-          TypeCheckingError error = new TypeCheckingError("Expected an expression of a type of the form I -> _", arg);
-          arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
-          myVisitor.getErrorReporter().report(error);
-          return null;
+          Expression lamExpr;
+          if (params.getNext().hasNext()) {
+            DependentLink lamParam = param("i", interval);
+            lamExpr = Lam(lamParam, Pi(params.getNext(), piType.getCodomain()).subst(params, Reference(lamParam)));
+          } else {
+            lamExpr = Lam(params, piType.getCodomain());
+          }
+          Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
+          Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
+          Constructor pathCon = ((ConCallExpression) result.expression.getFunction()).getDefinition();
+          argResult.expression = Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression);
+          argResult.type = Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2);
+          return argResult;
         }
       }
     }

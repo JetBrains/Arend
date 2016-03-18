@@ -209,7 +209,7 @@ public class ListEquations implements Equations {
       Expression expr1 = equation.expr1.subst(substitution);
       Expression expr2 = equation.expr2.subst(substitution);
       if (!CompareVisitor.compare(this, equation.cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF), equation.sourceNode)) {
-        myErrorReporter.report(new TypeCheckingError("Cannot solve equation:\nFirst expression: " + expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF) + "Second expression: " + expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), equation.sourceNode));
+        myErrorReporter.report(new SolveEquationsError(expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, equation.sourceNode));
       }
     }
   }

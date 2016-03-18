@@ -36,8 +36,10 @@ public class SolveEquationsError extends TypeCheckingError {
     builder.append('\n')
         .append("\t2nd expression: ");
     myExpr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
-    builder.append('\n')
-        .append("\tSince '").append(myBinding).append("' is free in these expressions");
+    if (myBinding != null) {
+      builder.append('\n')
+          .append("\tSince '").append(myBinding).append("' is free in these expressions");
+    }
 
     String ppClause = prettyPrint(getCause());
     if (ppClause != null) {
