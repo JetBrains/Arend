@@ -73,7 +73,11 @@ public class TypeCheckingTestCase {
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(errorReporter);
     visitor.setNamespaceMember(Root.getModule(new NameModuleID("test")).namespace.getMember(definition.getName()));
     Definition result = definition.accept(visitor, null);
-    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    if (errors >= 0) {
+      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    } else {
+      assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+    }
     return result;
   }
 

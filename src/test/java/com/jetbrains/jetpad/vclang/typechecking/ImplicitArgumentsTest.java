@@ -314,7 +314,12 @@ public class ImplicitArgumentsTest {
 
   @Test
   public void inferPathCon() {
-    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", 1);
+    typeCheckDef("\\function f : 1 = 1 => path (\\lam _ => 0)", 1);
+  }
+
+  @Test
+  public void inferPathCon0() {
+    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", -1);
   }
 
   @Test
