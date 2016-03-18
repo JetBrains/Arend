@@ -19,11 +19,27 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class ListEquations implements Equations {
-  private static class Equation {
+  private interface Equation {
+    TypeCheckingError abstractBinding(Binding binding);
+    void subst(Substitution substitution);
+    void solveIn(ListEquations equations);
+  }
+
+  private static class CmpEquation implements Equation {
     Expression expr1;
     Expression expr2;
     CMP cmp;
     Abstract.SourceNode sourceNode;
+    boolean typeOf;
+
+    public CmpEquation(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, boolean typeOf) {
+      this.expr1 = expr1;
+      this.expr2 = expr2;
+      this.cmp = cmp;
+      this.sourceNode = sourceNode;
+      this.typeOf = typeOf;
+    }
+
     /*
     List<Binding> bindings = Collections.emptyList();
 
@@ -37,11 +53,33 @@ public class ListEquations implements Equations {
     }
     */
 
-    TypeCheckingError abstractBinding(Binding binding) {
+    @Override
+    public TypeCheckingError abstractBinding(Binding binding) {
       if (expr1.findBinding(binding) || expr2.findBinding(binding)) {
-        return new SolveEquationsError(expr1, expr2, binding, sourceNode);
+        return new SolveEquationsError(expr1, expr2, binding, sourceNode, typeOf);
       } else {
         return null;
+      }
+    }
+
+    @Override
+    public void subst(Substitution substitution) {
+      expr1 = expr1.subst(substitution);
+      expr2 = expr2.subst(substitution);
+    }
+
+    @Override
+    public void solveIn(ListEquations equations) {
+      Expression expr3 = expr2;
+      if (typeOf) {
+        expr3 = expr2.getType();
+        if (expr3 == null) {
+          equations.myEquations.add(this);
+          return;
+        }
+      }
+      if (!CompareVisitor.compare(equations, cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr3.normalize(NormalizeVisitor.Mode.NF), sourceNode)) {
+        equations.myErrorReporter.report(new SolveEquationsError(expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr3.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, sourceNode));
       }
     }
   }
@@ -80,12 +118,7 @@ public class ListEquations implements Equations {
     if (isInf2 && !isInf1) {
       addSolution((InferenceBinding) ((ReferenceExpression) expr2).getBinding(), expr1);
     } else {
-      Equation equation = new Equation();
-      equation.expr1 = expr1;
-      equation.expr2 = expr2;
-      equation.cmp = cmp;
-      equation.sourceNode = sourceNode;
-      myEquations.add(equation);
+      myEquations.add(new CmpEquation(expr1, expr2, cmp, sourceNode, false));
     }
 
     return true;
@@ -166,14 +199,17 @@ public class ListEquations implements Equations {
           if (subst.findBinding(entry.getKey())) {
             entry.getKey().reportError(myErrorReporter, subst);
           } else {
-            // TODO: There are a lot of bugs
-            // Expression expectedType = entry.getKey().getType();
-            // Expression actualType = subst.getType();
-            // if (expectedType != null && actualType != null && CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
-              substitution.add(entry.getKey(), subst);
-            // } else {
-            //   entry.getKey().reportError(myErrorReporter, subst);
-            // }
+            Expression expectedType = entry.getKey().getType();
+            Expression actualType = subst.getType();
+            if (actualType != null) {
+              if (expectedType != null && CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
+                substitution.add(entry.getKey(), subst);
+              } else {
+                entry.getKey().reportError(myErrorReporter, subst);
+              }
+            } else {
+              myEquations.add(new CmpEquation(expectedType, subst, CMP.EQ, entry.getKey().getSourceNode(), true));
+            }
             break;
           }
         }
@@ -206,11 +242,8 @@ public class ListEquations implements Equations {
     while (size-- > 0) {
       Equation equation = myEquations.get(0);
       myEquations.remove(0);
-      Expression expr1 = equation.expr1.subst(substitution);
-      Expression expr2 = equation.expr2.subst(substitution);
-      if (!CompareVisitor.compare(this, equation.cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF), equation.sourceNode)) {
-        myErrorReporter.report(new SolveEquationsError(expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, equation.sourceNode));
-      }
+      equation.subst(substitution);
+      equation.solveIn(this);
     }
   }
 

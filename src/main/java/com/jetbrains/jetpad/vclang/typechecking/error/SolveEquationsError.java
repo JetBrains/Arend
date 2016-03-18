@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -11,19 +10,18 @@ public class SolveEquationsError extends TypeCheckingError {
   private final Expression myExpr1;
   private final Expression myExpr2;
   private final Binding myBinding;
+  private final boolean myTypeOf;
 
-  public SolveEquationsError(ResolvedName resolvedName, Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression) {
-    super(resolvedName, null, expression);
-    myExpr1 = expr1;
-    myExpr2 = expr2;
-    myBinding = binding;
-  }
-
-  public SolveEquationsError(Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression) {
+  public SolveEquationsError(Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression, boolean typeOf) {
     super(null, expression);
     myExpr1 = expr1;
     myExpr2 = expr2;
     myBinding = binding;
+    myTypeOf = typeOf;
+  }
+
+  public SolveEquationsError(Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression) {
+    this(expr1, expr2, binding, expression, false);
   }
 
   @Override
@@ -35,6 +33,9 @@ public class SolveEquationsError extends TypeCheckingError {
     myExpr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     builder.append('\n')
         .append("\t2nd expression: ");
+    if (myTypeOf) {
+      builder.append("type of ");
+    }
     myExpr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     if (myBinding != null) {
       builder.append('\n')

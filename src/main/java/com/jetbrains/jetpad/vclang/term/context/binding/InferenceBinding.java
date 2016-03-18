@@ -12,4 +12,8 @@ public abstract class InferenceBinding extends TypedBinding {
   public abstract Abstract.SourceNode getSourceNode();
 
   public abstract void reportError(ErrorReporter errorReporter, Expression... candidates);
+
+  public void setType(Expression type) {
+    myType = type;
+  }
 }

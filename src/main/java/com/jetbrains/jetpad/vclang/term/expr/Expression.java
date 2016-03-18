@@ -133,6 +133,10 @@ public abstract class Expression implements PrettyPrintable {
     Substitution subst = new Substitution();
     List<DependentLink> params = new ArrayList<>();
     Expression cod = getPiParameters(params, true, false);
+    if (params.isEmpty()) {
+      assert false;
+      return null;
+    }
     int size = expressions.size() > params.size() ? params.size() : expressions.size();
     for (int i = 0; i < size; i++) {
       subst.add(params.get(i), expressions.get(i));
