@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
@@ -207,15 +208,34 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return result;
   }
 
+  private boolean checkPath(Result result, Abstract.Expression expr) {
+    if (result != null &&
+        result.expression.getFunction() instanceof ConCallExpression &&
+        Prelude.isPathCon(((ConCallExpression) result.expression.getFunction()).getDefinition())) {
+      result.expression = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
+      if (result.expression.getArguments().isEmpty()) {
+        TypeCheckingError error = new TypeCheckingError("Expected an argument for 'path'", expr);
+        expr.setWellTyped(myContext, Error(result.expression, error));
+        myErrorReporter.report(error);
+        return false;
+      }
+    }
+    return true;
+  }
+
   @Override
   public Result visitApp(Abstract.AppExpression expr, Expression expectedType) {
-    return checkResultImplicit(expectedType, myArgsInference.infer(expr, expectedType), expr);
+    Result result = myArgsInference.infer(expr, expectedType);
+    if (!checkPath(result, expr)) {
+      return null;
+    }
+    return checkResultImplicit(expectedType, result, expr);
   }
 
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
-    if (result == null) {
+    if (!checkPath(result, expr)) {
       return null;
     }
     return checkResultImplicit(expectedType, result, expr);
