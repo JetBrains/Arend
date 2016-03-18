@@ -208,6 +208,19 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return result;
   }
 
+  private boolean compareExpressions(Result result, Expression expected, Expression actual, Abstract.Expression expr) {
+    if (result.getEquations() instanceof DummyEquations) {
+      result.setEquations(myArgsInference.newEquations());
+    }
+    if (!CompareVisitor.compare(result.getEquations(), Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
+      TypeCheckingError error = new SolveEquationsError(expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
+      expr.setWellTyped(myContext, Error(result.expression, error));
+      myErrorReporter.report(error);
+      return false;
+    }
+    return true;
+  }
+
   private boolean checkPath(Result result, Abstract.Expression expr) {
     if (result != null &&
         result.expression.getFunction() instanceof ConCallExpression &&
@@ -217,6 +230,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         TypeCheckingError error = new TypeCheckingError("Expected an argument for 'path'", expr);
         expr.setWellTyped(myContext, Error(result.expression, error));
         myErrorReporter.report(error);
+        return false;
+      }
+
+      List<Expression> args = ((ConCallExpression) result.expression.getFunction()).getDataTypeArguments();
+      if (!compareExpressions(result, args.get(1), Apps(result.expression.getArguments().get(0), ConCall(Prelude.LEFT)), expr) ||
+          !compareExpressions(result, args.get(2), Apps(result.expression.getArguments().get(0), ConCall(Prelude.RIGHT)), expr)) {
         return false;
       }
     }
