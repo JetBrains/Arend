@@ -4,8 +4,8 @@ import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
-import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
@@ -48,7 +48,7 @@ public class ConsoleMain {
     String sourceDirStr = cmdLine.getOptionValue("s");
     final File sourceDir = new File(sourceDirStr == null ? System.getProperty("user.dir") : sourceDirStr);
     String outputDirStr = cmdLine.getOptionValue("o");
-    File outputDir = outputDirStr == null ? null : new File(outputDirStr);
+    File outputDir = outputDirStr == null ? sourceDir : new File(outputDirStr);
     boolean recompile = cmdLine.hasOption("recompile");
 
     List<File> libDirs = new ArrayList<>();
