@@ -12,6 +12,8 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import org.junit.Test;
 
+import java.util.List;
+
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
@@ -108,6 +110,34 @@ public class ValidateTypeTest {
 //    System.err.println("a2 = " + a2);
 //    System.err.println(a2 == first);
     assertEquals(a2, first);
+  }
+
+  @Test
+  public void testFunEqToHom() {
+    FunctionDefinition funEqToHom = (FunctionDefinition) typeCheckDef("\\function\n" +
+            "funEqToHom {A : \\Type0} (B : A -> \\Type0) {f g : \\Pi (x : A) -> B x} (p : f = g) (x : A) : f x = g x => \n" +
+            "    path (\\lam i => (p @ i) x)\n");
+    AppExpression app = (AppExpression) ((LeafElimTreeNode)funEqToHom.getElimTree()).getExpression();
+    List<? extends Expression> args = app.getArguments();
+    Expression argType = args.get(0).getType();
+    System.err.println(argType);
+  }
+
+  @Test
+  public void testFunEqToHomNonDep() {
+    FunctionDefinition funEqToHom = (FunctionDefinition) typeCheckDef("\\function\n" +
+            "funEqToHom' {A B : \\Type0} {f g : A -> B} (p : f = g) (x : A) : f x = g x =>\n" +
+            "    path (\\lam i => (p @ i) x)\n");
+    AppExpression app = (AppExpression) ((LeafElimTreeNode)funEqToHom.getElimTree()).getExpression();
+    List<? extends Expression> args = app.getArguments();
+    Expression argType = args.get(0).getType();
+    System.err.println(argType);
+  }
+  @Test
+  public void testMoreArgsThanParamsOk() {
+//    CheckTypeVisitor.Result e = typeCheckExpr("(\\lam (x: Nat) => suc) zero zero", null);
+    CheckTypeVisitor.Result e = typeCheckExpr("\\lam (p : suc = suc) => (p @ left) zero", null);
+    System.err.println(e.expression.getType());
   }
 
 }
