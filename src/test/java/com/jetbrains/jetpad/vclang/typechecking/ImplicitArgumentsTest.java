@@ -16,8 +16,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
 import static org.junit.Assert.*;
 
 public class ImplicitArgumentsTest {
@@ -311,5 +310,50 @@ public class ImplicitArgumentsTest {
     typeCheckClass(
         "\\static \\function ($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\static \\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", -1);
+  }
+
+  @Test
+  public void inferPathCon() {
+    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", 1);
+  }
+
+  @Test
+  public void inferPathCon1() {
+    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} {1} (\\lam _ => 0)", 1);
+  }
+
+  @Test
+  public void inferPathCon2() {
+    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} {0} (\\lam _ => 0)", 1);
+  }
+
+  @Test
+  public void inferPathCon3() {
+    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} {1} {1} (\\lam _ => 0)", 1);
+  }
+
+  @Test
+  public void pathWithoutArg() {
+    typeCheckDef("\\function f => path", 1);
+  }
+
+  @Test
+  public void pathWithoutArg1() {
+    typeCheckDef("\\function f : \\Pi {A : I -> \\Type0} {a : A left} {a' : A right} (\\Pi (i : I) -> A i) -> Path A a a' => path", 1);
+  }
+
+  @Test
+  public void pathWithoutArg2() {
+    typeCheckDef("\\function f => path {\\lam _ => Nat}", 1);
+  }
+
+  @Test
+  public void pathWithoutArg3() {
+    typeCheckDef("\\function f => path {\\lam _ => Nat} {0}", 1);
+  }
+
+  @Test
+  public void pathWithoutArg4() {
+    typeCheckDef("\\function f => path {\\lam _ => Nat} {0} {0}", 1);
   }
 }
