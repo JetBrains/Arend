@@ -1,11 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class TypeCheckingTest {
   @Test
@@ -99,5 +100,11 @@ public class TypeCheckingTest {
   public void testTransport1Error() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a == a') (b : B a) : B a' =>\n" +
         "coe (\\lam i => B (p @ i)) b right", 1);
+  }
+
+  @Test
+  public void testAt() {
+    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (p : suc = suc) => (p @ left) 0", null);
+    assertNotNull(result.expression.getType());
   }
 }

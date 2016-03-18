@@ -102,7 +102,7 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   public Expression fromPiParameters(List<DependentLink> params) {
-    if (params.size() > 0 && !params.get(0).hasNext()) {
+    if (!params.isEmpty() && !params.get(0).hasNext()) {
       params = params.subList(1, params.size());
     }
     if (params.isEmpty()) {
@@ -132,17 +132,22 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   public Expression applyExpressions(List<? extends Expression> expressions) {
+    if (expressions.isEmpty()) {
+      return this;
+    }
+
     Substitution subst = new Substitution();
     List<DependentLink> params = new ArrayList<>();
     Expression cod = getPiParameters(params, true, false);
-    if (expressions.size() > params.size()) {
-      assert false;
-      return null;
-    }
-    for (int i = 0; i < expressions.size(); i++) {
+    int size = expressions.size() > params.size() ? params.size() : expressions.size();
+    for (int i = 0; i < size; i++) {
       subst.add(params.get(i), expressions.get(i));
     }
-    return cod.fromPiParameters(params.subList(expressions.size(), params.size())).subst(subst);
+
+    if (expressions.size() < params.size()) {
+      cod = cod.fromPiParameters(params.subList(expressions.size(), params.size()));
+    }
+    return cod.subst(subst).applyExpressions(expressions.subList(size, expressions.size()));
   }
 
   public Expression getFunction() {
