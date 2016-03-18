@@ -94,7 +94,8 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
       if (args.size() > links.size()) {
         myErrorReporter.addError(expr, "Too few Pi abstractions");
       }
-      for (int i = 0; i < args.size(); i++) {
+      int size = Math.min(args.size(), links.size());
+      for (int i = 0; i < size; i++) {
         DependentLink param = links.get(i);
         Expression arg = args.get(i);
         Expression argType = arg.getType().normalize(NormalizeVisitor.Mode.NF);
