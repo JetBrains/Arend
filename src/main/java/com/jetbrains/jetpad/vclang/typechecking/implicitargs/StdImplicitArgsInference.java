@@ -97,39 +97,50 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       Abstract.ArgumentExpression argument = ((Abstract.AppExpression) fun).getArgument();
       result = inferArg(((Abstract.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
     } else {
-      if (fun instanceof Abstract.DefCallExpression && isExplicit) {
-        if (expectedType != null) {
-          result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
-          if (result != null && result.expression instanceof ConCallExpression && !((ConCallExpression) result.expression).getDefinition().hasErrors()) {
-            Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
-            List<? extends Expression> args = expectedTypeNorm.getArguments();
-            expectedTypeNorm = expectedTypeNorm.getFunction();
-            if (expectedTypeNorm instanceof DataCallExpression) {
-              ConCallExpression conCall = (ConCallExpression) result.expression;
-              args = conCall.getDefinition().matchDataTypeArguments(new ArrayList<>(args));
-              if (!conCall.getDataTypeArguments().isEmpty()) {
-                args = args.subList(conCall.getDataTypeArguments().size(), args.size());
-              }
-              if (!args.isEmpty()) {
-                result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
-                result.type = result.type.applyExpressions(args);
-              }
-              CheckTypeVisitor.Result result1 = inferArg(result, arg, true, fun);
-              if (result1 != null && Prelude.isPathCon(conCall.getDefinition())) {
-                Expression argExpr = result1.expression.getArguments().get(result1.expression.getArguments().size() - 1);
-                result1.type = Apps(result1.type.getFunction(), result1.type.getArguments().get(0), Apps(argExpr, ConCall(Prelude.LEFT)), Apps(argExpr, ConCall(Prelude.RIGHT)));
-                if (!myVisitor.compare(result1, expectedType, Equations.CMP.EQ, fun)) {
-                  return null;
-                }
-              }
-              return result1;
+      if (fun instanceof Abstract.DefCallExpression) {
+        result = myVisitor.getTypeCheckingDefCall().typeCheckDefCall((Abstract.DefCallExpression) fun);
+        if (result != null) {
+          fun.setWellTyped(myVisitor.getContext(), result.expression);
+        }
+      } else {
+        result = myVisitor.typeCheck(fun, null);
+      }
+
+      if (isExplicit &&
+          result != null &&
+          result.expression.getFunction() instanceof ConCallExpression &&
+          result.expression.getArguments().size() <
+              DependentLink.Helper.size(((ConCallExpression) result.expression.getFunction()).getDefinition().getDataType().getParameters())) {
+        if (expectedType != null && !((ConCallExpression) result.expression.getFunction()).getDefinition().hasErrors()) {
+          Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+          List<? extends Expression> args = expectedTypeNorm.getArguments();
+          expectedTypeNorm = expectedTypeNorm.getFunction();
+          if (expectedTypeNorm instanceof DataCallExpression) {
+            ConCallExpression conCall = (ConCallExpression) result.expression.getFunction();
+            List<Expression> args1 = new ArrayList<>(args.size());
+            args1.addAll(result.expression.getArguments());
+            args1.addAll(args.subList(result.expression.getArguments().size(), args.size()));
+            args = conCall.getDefinition().matchDataTypeArguments(args1);
+            if (!conCall.getDataTypeArguments().isEmpty()) {
+              args = args.subList(conCall.getDataTypeArguments().size(), args.size());
             }
+            if (!args.isEmpty()) {
+              result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
+              result.type = result.type.applyExpressions(args);
+            }
+            CheckTypeVisitor.Result result1 = inferArg(result, arg, true, fun);
+            if (result1 != null && Prelude.isPathCon(conCall.getDefinition())) {
+              Expression argExpr = result1.expression.getArguments().get(result1.expression.getArguments().size() - 1);
+              result1.type = Apps(result1.type.getFunction(), result1.type.getArguments().get(0), Apps(argExpr, ConCall(Prelude.LEFT)), Apps(argExpr, ConCall(Prelude.RIGHT)));
+              if (!myVisitor.compare(result1, expectedType, Equations.CMP.EQ, fun)) {
+                return null;
+              }
+            }
+            return result1;
           }
-        } else {
-          result = myVisitor.typeCheck(fun, null);
         }
 
-        if (result != null && result.expression instanceof ConCallExpression && Prelude.isPathCon(((ConCallExpression) result.expression).getDefinition())) {
+        if (Prelude.isPathCon(((ConCallExpression) result.expression.getFunction()).getDefinition())) {
           Expression interval = DataCall(Prelude.INTERVAL);
           CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe()))));
           if (argResult == null) return null;
@@ -152,7 +163,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
               }
               Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
               Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
-              Constructor pathCon = ((ConCallExpression) result.expression).getDefinition();
+              Constructor pathCon = ((ConCallExpression) result.expression.getFunction()).getDefinition();
               argResult.expression = Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression);
               argResult.type = Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2);
               return argResult;
@@ -164,8 +175,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           myVisitor.getErrorReporter().report(error);
           return null;
         }
-      } else {
-        result = myVisitor.typeCheck(fun, null);
       }
     }
 
