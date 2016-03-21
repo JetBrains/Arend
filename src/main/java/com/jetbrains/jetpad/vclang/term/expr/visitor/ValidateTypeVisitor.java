@@ -137,7 +137,12 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   public Void visitLam(LamExpression expr, Expression expectedType) {
     checkType(expr, expectedType);
     visitDependentLink(expr.getParameters());
-    expr.getBody().accept(this, ((PiExpression) expectedType.normalize(NormalizeVisitor.Mode.WHNF)).getCodomain());
+    Expression normType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+    if (!(normType instanceof PiExpression)) {
+      myErrorReporter.addError(expr, "Expected type " + normType + " is expected to be Pi-type");
+    } else {
+      expr.getBody().accept(this, ((PiExpression)normType).getCodomain());
+    }
     return null;
   }
 
@@ -152,7 +157,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   public Void visitPi(PiExpression expr, Expression expectedType) {
     checkType(expr, expectedType);
     visitDependentLink(expr.getParameters());
-    expr.getCodomain().accept(this, null);
+    expr.getCodomain().accept(this, expectedType);
     return null;
   }
 

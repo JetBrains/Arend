@@ -142,7 +142,7 @@ public class ConsoleMain {
         if (definition instanceof FunctionDefinition) {
           System.err.println("Checking " + definition.getName());
           ValidateTypeVisitor visitor = new ValidateTypeVisitor();
-          ((FunctionDefinition) definition).getElimTree().accept(visitor, definition.getType());
+          ((FunctionDefinition) definition).getElimTree().accept(visitor, ((FunctionDefinition) definition).getResultType());
           if (visitor.myErrorReporter.errors() > 0) {
             System.err.println(((FunctionDefinition) definition).getElimTree());
             System.err.println(visitor.myErrorReporter);
