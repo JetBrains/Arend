@@ -50,8 +50,20 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
     this.myErrorReporter = errorReporter;
   }
 
+  private void checkType(Expression expr, Expression expectedType) {
+    if (expectedType == null) {
+      myErrorReporter.addError(expr, "Expected type is null");
+      return;
+    }
+    Expression actualType = expr.getType();
+    if (!typesCompatible(expectedType, actualType)) {
+      myErrorReporter.addError(expr, "Expected type: " + expectedType + ", actual: " + actualType);
+    }
+  }
+
   @Override
   public Void visitDefCall(DefCallExpression expr, Expression expectedType) {
+    checkType(expr, expectedType);
     return null;
   }
 
@@ -81,6 +93,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitApp(AppExpression expr, Expression expectedType) {
+    checkType(expr, expectedType);
     List<? extends Expression> args = expr.getArguments();
     List<? extends EnumSet<AppExpression.Flag>> flags = expr.getFlags();
     Expression fun = expr.getFunction();
@@ -116,13 +129,15 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitReference(ReferenceExpression expr, Expression expectedType) {
+    checkType(expr, expectedType);
     return null;
   }
 
   @Override
   public Void visitLam(LamExpression expr, Expression expectedType) {
+    checkType(expr, expectedType);
     visitDependentLink(expr.getParameters());
-    expr.getBody().accept(this, null);
+    expr.getBody().accept(this, ((PiExpression) expectedType.normalize(NormalizeVisitor.Mode.WHNF)).getCodomain());
     return null;
   }
 
@@ -135,6 +150,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitPi(PiExpression expr, Expression expectedType) {
+    checkType(expr, expectedType);
     visitDependentLink(expr.getParameters());
     expr.getCodomain().accept(this, null);
     return null;
@@ -142,6 +158,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitSigma(SigmaExpression expr, Expression expectedType) {
+    checkType(expr, expectedType);
     visitDependentLink(expr.getParameters());
     return null;
   }
@@ -159,6 +176,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitTuple(TupleExpression expr, Expression expectedType) {
+    checkType(expr, expectedType);
     SigmaExpression type = expr.getType();
     type = (SigmaExpression) type.normalize(NormalizeVisitor.Mode.NF);
     DependentLink link = type.getParameters();
@@ -182,8 +200,9 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitProj(ProjExpression expr, Expression expectedType) {
+    // TODO проверить, что expr.getExpr().getField(expr.getField()) : expectedType
     Expression tuple = expr.getExpression().normalize(NormalizeVisitor.Mode.WHNF);
-    tuple.accept(this, expectedType);
+    tuple.accept(this, /* TODO что тут? */ null);
     if (!(tuple instanceof TupleExpression)) {
       myErrorReporter.addError(tuple, "Tuple expected");
     } else {
@@ -197,12 +216,14 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitNew(NewExpression expr, Expression expectedType) {
-    expr.getExpression().accept(this, expectedType);
+    checkType(expr, expectedType);
+    expr.getExpression().accept(this, expectedType.getType());
     return null;
   }
 
   @Override
   public Void visitLet(LetExpression letExpression, Expression expectedType) {
+    checkType(letExpression, expectedType);
     // TODO subst
     Substitution subst = new Substitution();
     for (LetClause clause : letExpression.getClauses()) {
