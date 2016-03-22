@@ -234,8 +234,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
       List<Expression> args = ((ConCallExpression) result.expression.getFunction()).getDataTypeArguments();
-      if (!compareExpressions(result, args.get(1), Apps(result.expression.getArguments().get(0), ConCall(Prelude.LEFT)), expr) ||
-          !compareExpressions(result, args.get(2), Apps(result.expression.getArguments().get(0), ConCall(Prelude.RIGHT)), expr)) {
+      if (!compareExpressions(result, args.get(2), Apps(result.expression.getArguments().get(0), ConCall(Prelude.LEFT)), expr) ||
+          !compareExpressions(result, args.get(3), Apps(result.expression.getArguments().get(0), ConCall(Prelude.RIGHT)), expr)) {
         return false;
       }
     }
@@ -399,7 +399,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
-    UniverseExpression universe = Universe(expr.getUniverse().myPLevel, expr.getUniverse().myHLevel);
+    TypeUniverse.HomotopyLevel hlevel = expr.getUniverse().myHLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? TypeUniverse.HomotopyLevel.NOT_TRUNCATED : new TypeUniverse.HomotopyLevel(expr.getUniverse().myHLevel);
+    UniverseExpression universe = Universe(expr.getUniverse().myPLevel, hlevel);
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
 

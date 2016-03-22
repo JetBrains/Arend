@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -137,7 +138,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           }
           PiExpression piType = (PiExpression) argResult.type.normalize(NormalizeVisitor.Mode.WHNF);
           DependentLink params = piType.getParameters();
-
+          Expression universe = piType.getCodomain().getType();
+          if (!(universe instanceof UniverseExpression) || !(((UniverseExpression) universe).getUniverse() instanceof TypeUniverse)) {
+            return null;
+          }
+          Expression lvlExpr = ((TypeUniverse) ((UniverseExpression) universe).getUniverse()).getLevel().getValue();
           Expression lamExpr;
           if (params.getNext().hasNext()) {
             DependentLink lamParam = param("i", interval);
@@ -148,8 +153,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
           Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
           Constructor pathCon = ((ConCallExpression) result.expression.getFunction()).getDefinition();
-          argResult.expression = Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression);
-          argResult.type = Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2);
+          argResult.expression = Apps(ConCall(pathCon, lamExpr, lvlExpr, expr1, expr2), argResult.expression);
+          argResult.type = Apps(DataCall(pathCon.getDataType()).addArgument(lvlExpr, EnumSet.noneOf(AppExpression.Flag.class)), lamExpr, expr1, expr2);
           return argResult;
         }
       }

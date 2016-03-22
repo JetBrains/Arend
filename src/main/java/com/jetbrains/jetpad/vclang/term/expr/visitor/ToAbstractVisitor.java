@@ -34,37 +34,42 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return this;
   }
 
-  private Abstract.Expression checkPath(Expression fun, List<ArgumentExpression> args) {
+  private Abstract.Expression checkPath(AppExpression expr) {
+    Expression fun = expr.getFunction();
+    List<? extends Expression> args = expr.getArguments();
+
     if (!(args.size() == 3 && fun instanceof DefCallExpression && Prelude.isPath(((DefCallExpression) fun).getDefinition()))) {
       return null;
     }
-    for (ArgumentExpression arg : args) {
-      if (!arg.isExplicit()) {
+    for (EnumSet<AppExpression.Flag> flag : expr.getFlags()) {
+      if (!flag.contains(AppExpression.Flag.EXPLICIT)) {
         return null;
       }
     }
     if (args.get(2) instanceof LamExpression) {
       LamExpression expr1 = (LamExpression) args.get(2);
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.getLevelDefs(Prelude.getLevel(((DefCallExpression) fun).getDefinition())).pathInfix, args.get(0).accept(this, null));
+        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.PATH_INFIX, args.get(0).accept(this, null));
       }
     }
     return null;
   }
 
-  private Abstract.Expression checkBinOp(Expression fun, List<ArgumentExpression> args) {
+  private Abstract.Expression checkBinOp(AppExpression expr) {
+    Expression fun = expr.getFunction();
+
     if (!(fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX)) {
       return null;
     }
-    if (args.size() < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!args.get(0).isExplicit() || !args.get(1).isExplicit())) {
+    if (expr.getFlags().size() < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!expr.getFlags().get(0).contains(AppExpression.Flag.EXPLICIT) || !expr.getFlags().get(1).contains(AppExpression.Flag.EXPLICIT))) {
       return null;
     }
 
     Expression[] visibleArgs = new Expression[2];
-    int i = 1;
-    for (ArgumentExpression arg : args) {
-      if (arg.isExplicit() && (!arg.isHidden() || myFlags.contains(Flag.SHOW_HIDDEN_ARGS))) {
-        if (i < 0) {
+    int i = 0;
+    for (int j = 0; j < expr.getArguments().size(); j++) {
+      if (expr.getFlags().get(j).contains(AppExpression.Flag.EXPLICIT) && (expr.getFlags().get(j).contains(AppExpression.Flag.VISIBLE) || myFlags.contains(Flag.SHOW_HIDDEN_ARGS))) {
+        if (i == 2) {
           return null;
         }
         visibleArgs[i++] = expr.getArguments().get(j);

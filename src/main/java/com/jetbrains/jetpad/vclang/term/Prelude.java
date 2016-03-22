@@ -9,15 +9,13 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -134,7 +132,7 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(CNAT);
 
     INF = new Constructor(new DefinitionResolvedName(PRELUDE.getChild(CNAT.getName()), "inf"), Abstract.Definition.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance(), CNAT);
-    DependentLink finParameter = param("n", DataCall(CNAT));
+    DependentLink finParameter = param("n", DataCall(NAT));
     FIN = new Constructor(new DefinitionResolvedName(PRELUDE.getChild(CNAT.getName()), "fin"), Abstract.Definition.DEFAULT_PRECEDENCE, null, finParameter, CNAT);
     PRELUDE.addMember(CNAT.addConstructor(FIN));
     PRELUDE.addMember(CNAT.addConstructor(INF));
@@ -173,12 +171,12 @@ public class Prelude extends Namespace {
     ElimTreeNode sucCNatElimTree = top(sucCNatParameter, branch(sucCNatParameter, tail(),
             clause(INF, EmptyDependentLink.getInstance(), ConCall(INF)),
             clause(FIN, finCNatParameter, Apps(ConCall(FIN), Apps(ConCall(SUC), Reference(finCNatParameter))))));
-    SUC_CNAT = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "suc"), Abstract.Definition.DEFAULT_PRECEDENCE, sucCNatParameter, DataCall(CNAT), sucCNatElimTree, null);
+    SUC_CNAT = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "sucCNat"), Abstract.Definition.DEFAULT_PRECEDENCE, sucCNatParameter, DataCall(CNAT), sucCNatElimTree, null);
     PRELUDE.addDefinition(SUC_CNAT);
 
     LEVEL = new ClassDefinition(new DefinitionResolvedName(PRELUDE, "Level"), null);
-    PLEVEL = new ClassField(new DefinitionResolvedName(PRELUDE.getChild(LEVEL.getName()), "PLevel"), Abstract.Definition.DEFAULT_PRECEDENCE, DataCall(LVL), LEVEL, EmptyDependentLink.getInstance(), null);
-    HLEVEL = new ClassField(new DefinitionResolvedName(PRELUDE.getChild(LEVEL.getName()), "HLevel"), Abstract.Definition.DEFAULT_PRECEDENCE, DataCall(CNAT), LEVEL, EmptyDependentLink.getInstance(), null);
+    PLEVEL = new ClassField(new DefinitionResolvedName(PRELUDE.getChild(LEVEL.getName()), "PLevel"), Abstract.Definition.DEFAULT_PRECEDENCE, DataCall(LVL), LEVEL, param("\\this", ClassCall(LEVEL)), null);
+    HLEVEL = new ClassField(new DefinitionResolvedName(PRELUDE.getChild(LEVEL.getName()), "HLevel"), Abstract.Definition.DEFAULT_PRECEDENCE, DataCall(CNAT), LEVEL, param("\\this", ClassCall(LEVEL)), null);
     LEVEL.addField(PLEVEL);
     LEVEL.addField(HLEVEL);
     PRELUDE.addDefinition(LEVEL);
@@ -213,10 +211,10 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(PATH);
 
     DependentLink piParam = param("i", DataCall(INTERVAL));
-    DependentLink pathParameter1 = param(false, "lvl", Level());
-    DependentLink pathParameter2 = param(Pi(piParam, Apps(Reference(PathParameter2), Reference(piParam))));
-    pathParameter1.setNext(pathParameter2);
-    PATH_CON = new Constructor(new DefinitionResolvedName(PRELUDE.getChild(PATH.getName()), "path"), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(new TypeUniverse.TypeLevel(Reference(pathParameter1))), pathParameter1, PATH);
+    //DependentLink pathParameter1 = param(false, "lvl", Level());
+    DependentLink pathParameter = param(Pi(piParam, Apps(Reference(PathParameter2), Reference(piParam))));
+    //pathParameter1.setNext(pathParameter2);
+    PATH_CON = new Constructor(new DefinitionResolvedName(PRELUDE.getChild(PATH.getName()), "path"), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(new TypeUniverse.TypeLevel(Reference(PathParameter1))), pathParameter, PATH);
     PRELUDE.addMember(PATH.addConstructor(PATH_CON));
 
     DependentLink pathInfixParameter1 = param(false, "lvl", Level());
@@ -224,23 +222,27 @@ public class Prelude extends Namespace {
     DependentLink pathInfixParameter3 = param(true, vars("a", "a'"), Reference(pathInfixParameter1));
     pathInfixParameter1.setNext(pathInfixParameter2);
     pathInfixParameter2.setNext(pathInfixParameter3);
-    Expression pathInfixTerm = Apps(Apps(DataCall(PATH), new ArgumentExpression(Reference(pathInfixParameter1), false, true)), Lam(param("_", DataCall(INTERVAL)), Reference(pathInfixParameter2)), Reference(pathInfixParameter3), Reference(pathInfixParameter3.getNext()));
+    Expression pathInfixTerm = DataCall(PATH)
+            .addArgument(Reference(pathInfixParameter1), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Lam(param("_", DataCall(INTERVAL)), Reference(pathInfixParameter2)), AppExpression.DEFAULT)
+            .addArgument(Reference(pathInfixParameter3), AppExpression.DEFAULT)
+            .addArgument(Reference(pathInfixParameter3.getNext()), AppExpression.DEFAULT);
     PATH_INFIX = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "="), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixParameter1, Universe(Reference(pathInfixParameter1)), top(pathInfixParameter1, leaf(pathInfixTerm)));
 
     PRELUDE.addDefinition(PATH_INFIX);
 
     DependentLink atParameter1 = param(false, "lvl", Level());
-    DependentLink atParameter2 = param(false, "A", PathParameter2.getType());
-    DependentLink atParameter3 = param(false, "a", PathParameter3.getType());
-    DependentLink atParameter4 = param(false, "a'", PathParameter4.getType());
-    DependentLink atParameter5 = param("p", Apps(DataCall(PATH), Reference(atParameter2), Reference(atParameter3), Reference(atParameter4)));
+    DependentLink atParameter2 = param(false, "A", Universe(Reference(atParameter1)));
+    DependentLink atParameter3 = param(false, "a", Reference(atParameter2));
+    DependentLink atParameter4 = param(false, "a'", Reference(atParameter2));
+    DependentLink atParameter5 = param("p", Apps(DataCall(PATH), Reference(atParameter1), Reference(atParameter2), Reference(atParameter3), Reference(atParameter4)));
     DependentLink atParameter6 = param("i", DataCall(INTERVAL));
     atParameter1.setNext(atParameter2);
     atParameter2.setNext(atParameter3);
     atParameter3.setNext(atParameter4);
     atParameter4.setNext(atParameter5);
     atParameter5.setNext(atParameter6);
-    DependentLink atPath = param("f", pathParameter2.getType());
+    DependentLink atPath = param("f", pathParameter.getType());
     Expression atResultType = Apps(Reference(atParameter2), Reference(atParameter6));
     ElimTreeNode atElimTree = top(atParameter1, branch(atParameter6, tail(),
             clause(LEFT, EmptyDependentLink.getInstance(), Reference(atParameter3)),
@@ -269,8 +271,16 @@ public class Prelude extends Namespace {
     DependentLink isoParameter4 = param("g", Pi(param(Reference(isoParameter2.getNext())), Reference(isoParameter2)));
     DependentLink piParamA = param("a", Reference(isoParameter2));
     DependentLink piParamB = param("b", Reference(isoParameter2.getNext()));
-    DependentLink isoParameter5 = param("linv", Pi(piParamA, Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Reference(isoParameter1), false, true), new ArgumentExpression(Reference(isoParameter2), false, true)), Apps(Reference(isoParameter4), Apps(Reference(isoParameter3), Reference(piParamA))), Reference(piParamA))));
-    DependentLink isoParameter6 = param("rinv", Pi(piParamB, Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Reference(isoParameter1), false, true), new ArgumentExpression(Reference(isoParameter2.getNext()), false, true)), Apps(Reference(isoParameter3), Apps(Reference(isoParameter4), Reference(piParamB))), Reference(piParamB))));
+    Expression isoParameters5type = FunCall(PATH_INFIX)
+            .addArgument(Reference(isoParameter2), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Apps(Reference(isoParameter4), Apps(Reference(isoParameter3), Reference(piParamA))), AppExpression.DEFAULT)
+            .addArgument(Reference(piParamA), AppExpression.DEFAULT);
+    DependentLink isoParameter5 = param("linv", Pi(piParamA, isoParameters5type));
+    Expression isoParameters6type = FunCall(PATH_INFIX)
+            .addArgument(Reference(isoParameter2.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Apps(Reference(isoParameter3), Apps(Reference(isoParameter4), Reference(piParamB))), AppExpression.DEFAULT)
+            .addArgument(Reference(piParamB), AppExpression.DEFAULT);
+    DependentLink isoParameter6 = param("rinv", Pi(piParamB, isoParameters6type));
     DependentLink isoParameter7 = param("i", DataCall(INTERVAL));
     isoParameter1.setNext(isoParameter2);
     isoParameter2.setNext(isoParameter3);
@@ -311,9 +321,17 @@ public class Prelude extends Namespace {
 
     Constructor setTruncInCon = new Constructor(PRELUDE.getChild(SET_TRUNC.getName()).getChild("inS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(new TypeUniverse.TypeLevel(Reference(truncParameter1))), param("inS", Reference(truncParameter2)), SET_TRUNC);
     DependentLink setTruncConParameter1 = param("a", Apps(DataCall(SET_TRUNC), Reference(truncParameter2)));
-    DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(SET_TRUNC), Reference(truncParameter2)));
-    DependentLink setTruncConParameter3 = param("p", Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Reference(truncParameter1), false, true), new ArgumentExpression(Apps(DataCall(SET_TRUNC), Reference(truncParameter2)), false, true)), Reference(setTruncConParameter1), Reference(setTruncConParameter2)));
-    DependentLink setTruncConParameter4 = param("q", Apps(Apps(FunCall(PATH_INFIX), new ArgumentExpression(Reference(truncParameter1), false, true), new ArgumentExpression(Apps(DataCall(SET_TRUNC), Reference(truncParameter2)), false, true)), Reference(setTruncConParameter1), Reference(setTruncConParameter2)));
+    DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(SET_TRUNC), Reference(truncParameter2)));;
+    Expression setTruncConParameter3type = FunCall(PATH_INFIX)
+            .addArgument(DataCall(SET_TRUNC).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(truncParameter2), AppExpression.DEFAULT), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Reference(setTruncConParameter1), AppExpression.DEFAULT)
+            .addArgument(Reference(setTruncConParameter2), AppExpression.DEFAULT);
+    DependentLink setTruncConParameter3 = param("p", setTruncConParameter3type);
+    Expression setTruncConParameter4type = FunCall(PATH_INFIX)
+            .addArgument(DataCall(SET_TRUNC).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(truncParameter2), AppExpression.DEFAULT), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Reference(setTruncConParameter1), AppExpression.DEFAULT)
+            .addArgument(Reference(setTruncConParameter2), AppExpression.DEFAULT);
+    DependentLink setTruncConParameter4 = param("q", setTruncConParameter4type);
     DependentLink setTruncConParameter5 = param("i", DataCall(INTERVAL));
     DependentLink setTruncConParameter6 = param("j", DataCall(INTERVAL));
     setTruncConParameter1.setNext(setTruncConParameter2);
@@ -325,8 +343,8 @@ public class Prelude extends Namespace {
     PRELUDE.addMember(SET_TRUNC.addConstructor(setTruncInCon));
     PRELUDE.addMember(SET_TRUNC.addConstructor(setTruncPathCon));
     Condition setTruncPathCond = new Condition(setTruncPathCon, top(setTruncConParameter1, branch(setTruncConParameter6, tail(),
-            clause(LEFT, EmptyDependentLink.getInstance(), Apps(Apps(FunCall(AT), new ArgumentExpression(Reference(truncParameter1), false, true)), Reference(setTruncConParameter3), Reference(setTruncConParameter5))),
-            clause(RIGHT, EmptyDependentLink.getInstance(), Apps(Apps(FunCall(AT), new ArgumentExpression(Reference(truncParameter1), false, true)), Reference(setTruncConParameter4), Reference(setTruncConParameter5))),
+            clause(LEFT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter3), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
+            clause(RIGHT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter4), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
             clause(branch(setTruncConParameter5, tail(setTruncConParameter6),
                     clause(LEFT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter1)),
                     clause(RIGHT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter2))))

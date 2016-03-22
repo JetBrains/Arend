@@ -128,6 +128,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (expr.getResolvedDefinition() != null && expr.getResolvedDefinition() == Prelude.ZERO) {
       myBuilder.append("0");
     } else {
+      if (expr.getExpression() != null) {
+        expr.getExpression().accept(this, prec);
+        myBuilder.append(".");
+      }
       myBuilder.append(new Name(expr.getName()));
     }
     return null;

@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
 
@@ -239,7 +240,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitUniverse(UniverseExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : expr;
+    if (mode == Mode.TOP) return null;
+    if ((mode == Mode.NF || mode == Mode.HUMAN_NF) && expr.getUniverse() instanceof TypeUniverse) {
+      return ((TypeUniverse) expr.getUniverse()).getLevel() != null ? Universe(((TypeUniverse) expr.getUniverse()).getLevel().getValue().accept(this, mode)) : expr;
+    }
+    return expr;
   }
 
   @Override

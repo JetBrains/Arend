@@ -2,10 +2,7 @@ package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
@@ -161,8 +158,8 @@ public class RecordsTest {
     NamespaceMember member = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
-    assertEquals(new Universe.Type(0, Universe.Type.SET), member.namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(0, Universe.Type.SET), member.namespace.getDefinition("C").getType());
+    assertEquals(TypeUniverse.SetOfLevel(0), member.namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), member.namespace.getDefinition("C").getType());
   }
 
   @Test
@@ -170,8 +167,8 @@ public class RecordsTest {
     NamespaceMember member = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
-    assertEquals(new Universe.Type(0, Universe.Type.SET), member.namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(0, Universe.Type.PROP), member.namespace.getDefinition("C").getType());
+    assertEquals(TypeUniverse.SetOfLevel(0), member.namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(TypeUniverse.PROP), member.namespace.getDefinition("C").getType());
   }
 
   @Test
@@ -179,8 +176,8 @@ public class RecordsTest {
     NamespaceMember member = typeCheckClass(
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
-    assertEquals(new Universe.Type(4, Universe.Type.NOT_TRUNCATED), member.namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(2, Universe.Type.NOT_TRUNCATED), member.namespace.getDefinition("C").getType());
+    assertEquals(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(4), TypeUniverse.HomotopyLevel.NOT_TRUNCATED)), member.namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(2), TypeUniverse.HomotopyLevel.NOT_TRUNCATED))), member.namespace.getDefinition("C").getType());
   }
 
   @Test

@@ -8,10 +8,6 @@ public class UniverseExpression extends Expression {
 
   public UniverseExpression(Universe universe) {
     myUniverse = universe;
-    if (universe == null)
-    {
-        int n = 5;
-    }
   }
 
   public Universe getUniverse() {

@@ -249,12 +249,20 @@ public class ExpressionFactory {
     return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
   }
 
+  public static UniverseExpression Universe(int plevel, TypeUniverse.HomotopyLevel hlevel) {
+    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(plevel), hlevel)));
+  }
+
   public static UniverseExpression Universe(Expression level) {
     return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
   }
 
   public static UniverseExpression Universe(Expression plevel, Expression hlevel) {
     return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
+  }
+
+  public static UniverseExpression Universe(Universe universe) {
+    return new UniverseExpression(universe);
   }
 
   public static ErrorExpression Error(Expression expr, TypeCheckingError error) {

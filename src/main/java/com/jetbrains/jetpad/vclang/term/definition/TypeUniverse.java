@@ -14,7 +14,7 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
   public static final TypeUniverse PROP = new TypeUniverse(new TypeLevel(HomotopyLevel.PROP, true));
   public static final TypeUniverse SET = new TypeUniverse(new TypeLevel(HomotopyLevel.SET, true));
 
-  public static TypeUniverse SetOfLevel(int level) { return new TypeUniverse(new TypeLevel(level, 1)); }
+  public static TypeUniverse SetOfLevel(int level) { return new TypeUniverse(new TypeLevel(level, 0)); }
 
   public static class PredicativeLevel implements Universe.Level<PredicativeLevel> {
     private Expression myLevel;
@@ -69,7 +69,8 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     public static final HomotopyLevel SET = new HomotopyLevel(Fin(Suc(Zero())));
 
     public HomotopyLevel() {
-      myLevel = NOT_TRUNCATED.myLevel;
+      // myLevel = NOT_TRUNCATED.myLevel;
+      myLevel = PROP.myLevel;
     }
 
     public HomotopyLevel(Expression level) {
@@ -78,7 +79,7 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
 
     public HomotopyLevel(int level) {
       myLevel = Zero();
-      for (int i = 0; i < level; ++i) {
+      for (int i = -1; i < level; ++i) {
         myLevel = Suc(myLevel);
       }
       myLevel = Fin(myLevel);
@@ -117,6 +118,8 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     private HomotopyLevel myHLevel;
     private boolean myIgnorePLevel = false;
 
+    private Expression myLevel = null;
+
     public TypeLevel() {
       myPLevel = new PredicativeLevel();
       myHLevel = new HomotopyLevel();
@@ -139,7 +142,8 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     }
 
     public TypeLevel(Expression level) {
-      this(PLevel().applyThis(level), HLevel().applyThis(level));
+      //this(PLevel().applyThis(level), HLevel().applyThis(level));
+      myLevel = level;
     }
 
     public TypeLevel(int plevel, int hlevel) {
@@ -152,7 +156,16 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
       myHLevel = hlevel;
     }
 
+    public PredicativeLevel getPLevel() {
+      return myLevel == null ? myPLevel : new PredicativeLevel(PLevel().applyThis(myLevel));
+    }
+
+    public HomotopyLevel getHLevel() {
+      return myLevel == null ? myHLevel : new HomotopyLevel(HLevel().applyThis(myLevel));
+    }
+
     public Expression getValue() {
+      if (myLevel != null) return myLevel;
       HashMap<ClassField, ClassCallExpression.ImplementStatement> map = new HashMap<>();
       map.put(Prelude.PLEVEL, new ClassCallExpression.ImplementStatement(Lvl(), myPLevel.getValue()));
       map.put(Prelude.HLEVEL, new ClassCallExpression.ImplementStatement(CNat(), myHLevel.getValue()));
@@ -163,9 +176,14 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
 
     @Override
     public Cmp compare(TypeLevel other) {
-      Cmp r1 = myIgnorePLevel || other.myIgnorePLevel ? Cmp.EQUALS : myPLevel.compare(other.myPLevel);
-      Cmp r2 = myHLevel.compare(other.myHLevel);
-      if (r1 == Cmp.UNKNOWN || r2 == Cmp.UNKNOWN) return Cmp.UNKNOWN;
+      // if ((myLevel == null && other.myLevel != null) || (other.myLevel == null && myLevel != null)) return Cmp.NOT_COMPARABLE;
+      // if (myLevel != null) return Expression.compare(myLevel, other.myLevel) ? Cmp.EQUALS : Cmp.UNKNOWN;
+
+      Cmp r1 = myIgnorePLevel || other.myIgnorePLevel ? Cmp.EQUALS : getPLevel().compare(other.getPLevel());
+      Cmp r2 = getHLevel().compare(other.getHLevel());
+      if (r1 == Cmp.UNKNOWN || r2 == Cmp.UNKNOWN) {
+        return Cmp.UNKNOWN;
+      }
       if (r1 == Cmp.LESS) {
         return r2 == Cmp.LESS || r2 == Cmp.EQUALS ? Cmp.LESS : Cmp.NOT_COMPARABLE;
       }
@@ -177,12 +195,13 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
 
     @Override
     public TypeLevel max(TypeLevel other) {
-      return new TypeLevel(myPLevel.max(other.myPLevel), myHLevel.max(other.myHLevel));
+      return new TypeLevel(getPLevel().max(other.getPLevel()), getHLevel().max(other.getHLevel()));
     }
 
     @Override
     public TypeLevel succ() {
-      return new TypeLevel(myPLevel.succ(), myHLevel.succ());
+      //return myLevel == null ? new TypeLevel(myPLevel.succ(), myHLevel.succ()) : new TypeLevel(new PredicativeLevel(PLevel().applyThis(myLevel)).succ(), new HomotopyLevel(HLevel().applyThis(myLevel)).succ());
+      return new TypeLevel(getPLevel().succ(), getHLevel().succ());
     }
 
     @Override
