@@ -28,6 +28,7 @@ public abstract class Definition extends NamedBinding implements BaseDefinition 
     return myFixity;
   }
 
+  @Override
   public Abstract.Definition.Precedence getPrecedence() {
     return myPrecedence;
   }

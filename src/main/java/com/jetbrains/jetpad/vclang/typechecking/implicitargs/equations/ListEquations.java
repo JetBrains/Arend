@@ -21,7 +21,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 public class ListEquations implements Equations {
   private interface Equation {
     TypeCheckingError abstractBinding(Binding binding);
-    void subst(Substitution substitution);
+    void subst(Binding binding, Expression subst);
     void solveIn(ListEquations equations);
   }
 
@@ -66,9 +66,9 @@ public class ListEquations implements Equations {
     }
 
     @Override
-    public void subst(Substitution substitution) {
-      expr1 = expr1.subst(substitution);
-      expr2 = expr2.subst(substitution);
+    public void subst(Binding binding, Expression subst) {
+      expr1 = expr1.subst(binding, subst);
+      expr2 = expr2.subst(binding, subst);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class ListEquations implements Equations {
 
   private final List<Equation> myEquations = new ArrayList<>();
   // TODO: add <=, => solutions
-  private final Map<InferenceBinding, Expression> mySolutions = new HashMap<>();
+  private final Map<InferenceBinding, Expression> mySolutions = new LinkedHashMap<>();
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
 
   @Override
@@ -192,26 +192,28 @@ public class ListEquations implements Equations {
     boolean was;
     do {
       was = false;
-      Substitution substitution = new Substitution();
+      InferenceBinding binding = null;
+      Expression subst = null;
       for (Iterator<Map.Entry<InferenceBinding, Expression>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
         Map.Entry<InferenceBinding, Expression> entry = it.next();
         if (bindings.remove(entry.getKey())) {
           was = true;
           it.remove();
-          Expression subst = entry.getValue();
+          subst = entry.getValue();
           if (subst.findBinding(entry.getKey())) {
             entry.getKey().reportError(myErrorReporter, subst);
           } else {
-            Expression expectedType = entry.getKey().getType();
+            Expression expectedType = entry.getKey().getType().subst(result);
             Expression actualType = subst.getType();
             if (actualType != null) {
+              actualType = actualType.subst(result);
               if (expectedType != null && CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
-                substitution.add(entry.getKey(), subst);
+                binding = entry.getKey();
               } else {
                 entry.getKey().reportError(myErrorReporter, subst);
               }
             } else {
-              substitution.add(entry.getKey(), subst);
+              binding = entry.getKey();
               myEquations.add(new CmpEquation(expectedType, subst, CMP.EQ, entry.getKey().getSourceNode(), true));
             }
             break;
@@ -219,34 +221,35 @@ public class ListEquations implements Equations {
         }
       }
 
-      result.add(substitution);
-      subst(substitution);
+      if (binding != null) {
+        result.add(binding, subst);
+        subst(binding, subst);
+      }
     } while (was);
 
     return result;
   }
 
-  public void subst(Substitution substitution) {
+  public void subst(Binding binding, Expression subst) {
     for (Iterator<Map.Entry<InferenceBinding, Expression>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
       Map.Entry<InferenceBinding, Expression> entry = it.next();
-      Expression expr = entry.getValue().subst(substitution).normalize(NormalizeVisitor.Mode.NF);
+      Expression expr = entry.getValue().subst(binding, subst).normalize(NormalizeVisitor.Mode.NF);
       entry.setValue(expr);
       if (expr instanceof ReferenceExpression) {
-        Binding binding = ((ReferenceExpression) expr).getBinding();
-        if (binding instanceof InferenceBinding) {
+        Binding binding1 = ((ReferenceExpression) expr).getBinding();
+        if (binding1 instanceof InferenceBinding) {
           it.remove();
-          if (binding != entry.getKey()) {
+          if (binding1 != entry.getKey()) {
             add(Reference(entry.getKey()), expr, CMP.EQ, entry.getKey().getSourceNode());
           }
         }
       }
     }
 
-    int size = myEquations.size();
-    while (size-- > 0) {
-      Equation equation = myEquations.get(0);
-      myEquations.remove(0);
-      equation.subst(substitution);
+    for (int i = myEquations.size() - 1; i >= 0; i--) {
+      Equation equation = myEquations.get(i);
+      myEquations.remove(i);
+      equation.subst(binding, subst);
       equation.solveIn(this);
     }
   }
