@@ -30,14 +30,12 @@ public class ListEquations implements Equations {
     Expression expr2;
     CMP cmp;
     Abstract.SourceNode sourceNode;
-    boolean typeOf;
 
-    public CmpEquation(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode, boolean typeOf) {
+    public CmpEquation(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
       this.expr1 = expr1;
       this.expr2 = expr2;
       this.cmp = cmp;
       this.sourceNode = sourceNode;
-      this.typeOf = typeOf;
     }
 
     /*
@@ -55,11 +53,8 @@ public class ListEquations implements Equations {
 
     @Override
     public TypeCheckingError abstractBinding(Binding binding) {
-      if (typeOf) {
-        return null;
-      }
       if (expr1.findBinding(binding) || expr2.findBinding(binding)) {
-        return new SolveEquationsError(expr1, expr2, binding, sourceNode, typeOf);
+        return new SolveEquationsError(expr1, expr2, binding, sourceNode);
       } else {
         return null;
       }
@@ -73,23 +68,15 @@ public class ListEquations implements Equations {
 
     @Override
     public void solveIn(ListEquations equations) {
-      Expression expr3 = expr2;
-      if (typeOf) {
-        expr3 = expr2.getType();
-        if (expr3 == null) {
-          equations.myEquations.add(this);
-          return;
-        }
-      }
-      if (!CompareVisitor.compare(equations, cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr3.normalize(NormalizeVisitor.Mode.NF), sourceNode)) {
-        equations.myErrorReporter.report(new SolveEquationsError(expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr3.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, sourceNode));
+      if (!CompareVisitor.compare(equations, cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF), sourceNode)) {
+        equations.myErrorReporter.report(new SolveEquationsError(expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, sourceNode));
       }
     }
   }
 
   private final List<Equation> myEquations = new ArrayList<>();
   // TODO: add <=, => solutions
-  private final Map<InferenceBinding, Expression> mySolutions = new LinkedHashMap<>();
+  private final Map<InferenceBinding, Expression> mySolutions = new HashMap<>();
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
 
   @Override
@@ -121,7 +108,7 @@ public class ListEquations implements Equations {
     if (isInf2 && !isInf1) {
       addSolution((InferenceBinding) ((ReferenceExpression) expr2).getBinding(), expr1);
     } else {
-      myEquations.add(new CmpEquation(expr1, expr2, cmp, sourceNode, false));
+      myEquations.add(new CmpEquation(expr1, expr2, cmp, sourceNode));
     }
 
     return true;
@@ -203,21 +190,9 @@ public class ListEquations implements Equations {
           if (subst.findBinding(entry.getKey())) {
             entry.getKey().reportError(myErrorReporter, subst);
           } else {
-            Expression expectedType = entry.getKey().getType().subst(result);
-            Expression actualType = subst.getType();
-            if (actualType != null) {
-              actualType = actualType.subst(result);
-              if (expectedType != null && CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
-                binding = entry.getKey();
-              } else {
-                entry.getKey().reportError(myErrorReporter, subst);
-              }
-            } else {
-              binding = entry.getKey();
-              myEquations.add(new CmpEquation(expectedType, subst, CMP.EQ, entry.getKey().getSourceNode(), true));
-            }
-            break;
+            binding = entry.getKey();
           }
+          break;
         }
       }
 
@@ -258,15 +233,5 @@ public class ListEquations implements Equations {
   public void reportErrors(ErrorReporter errorReporter) {
     myErrorReporter.reportTo(errorReporter);
     myErrorReporter.getErrorList().clear();
-  }
-
-  @Override
-  public void solve() {
-    int size = myEquations.size();
-    while (size-- > 0) {
-      Equation equation = myEquations.get(0);
-      myEquations.remove(0);
-      equation.solveIn(this);
-    }
   }
 }

@@ -261,7 +261,17 @@ public class ImplicitArgumentsTest {
   }
 
   @Test
-  public void untypedLambda() {
+  public void untypedLambda1() {
+    // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x1 x2
+    DependentLink A = param("A", Universe());
+    Expression type = Pi(params(A, param("a", Reference(A))), Nat());
+    List<Binding> context = new ArrayList<>();
+    context.add(new TypedBinding("f", type));
+    typeCheckExpr(context, "\\lam x1 x2 => f x1 x2", null);
+  }
+
+  @Test
+  public void untypedLambda2() {
     // f : (A : Type) (B : A -> Type) (a : A) -> B a |- \x1 x2 x3. f x1 x2 x3
     DependentLink A = param("A", Universe());
     DependentLink params = params(A, param("B", Pi(Reference(A), Universe())), param("a", Reference(A)));
@@ -274,7 +284,17 @@ public class ImplicitArgumentsTest {
   }
 
   @Test
-  public void untypedLambdaError() {
+  public void untypedLambdaError1() {
+    // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x2 x1
+    DependentLink A = param("A", Universe());
+    Expression type = Pi(params(A, param("a", Reference(A))), Nat());
+    List<Binding> context = new ArrayList<>();
+    context.add(new TypedBinding("f", type));
+    typeCheckExpr(context, "\\lam x1 x2 => f x2 x1", null, -1);
+  }
+
+  @Test
+  public void untypedLambdaError2() {
     // f : (A : Type) (B : A -> Type) (a : A) -> B a |- \x1 x2 x3. f x2 x1 x3
     DependentLink A = param("A", Universe());
     DependentLink params = params(A, param("B", Pi(Reference(A), Universe())), param("a", Reference(A)));
@@ -283,16 +303,6 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", type));
 
     typeCheckExpr(context, "\\lam x1 x2 x3 => f x2 x1 x3", null, -1);
-  }
-
-  @Test
-  public void untypedLambdaError1() {
-    // f : (A : Nat) (a : A) -> Nat |- \x1 x2. f x1 x2
-    DependentLink A = param("A", Nat());
-    Expression type = Pi(params(A, param("a", Reference(A))), Nat());
-    List<Binding> context = new ArrayList<>();
-    context.add(new TypedBinding("f", type));
-    typeCheckExpr(context, "\\lam x1 x2 => f x1 x2", null, 1);
   }
 
   @Test
