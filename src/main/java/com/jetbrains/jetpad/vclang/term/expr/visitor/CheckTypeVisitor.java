@@ -595,8 +595,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         for (DependentLink link = list.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
           exprResult.getEquations().abstractBinding(link);
         }
-        caseResult.add(exprResult);
       }
+      caseResult.add(exprResult);
       list.append(param(true, vars(Abstract.CaseExpression.ARGUMENT_NAME + i), exprResult.type));
       letArguments.add(exprResult.expression);
     }
@@ -608,8 +608,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       for (DependentLink link = list.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
         elimResult.getEquations().abstractBinding(link);
       }
-      caseResult.add(elimResult);
     }
+    caseResult.add(elimResult);
     letBinding.setElimTree(elimResult.elimTree);
 
     caseResult.expression = Let(lets(letBinding), Apps(Reference(letBinding), letArguments));
@@ -769,8 +769,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
               result.getEquations().abstractBinding(link);
             }
-            letResult.add(result);
           }
+          letResult.add(result);
           links.append(param(teleArg.getExplicit(), teleArg.getNames(), result.expression));
           for (DependentLink link = links.getLast(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
             myContext.add(link);
@@ -788,8 +788,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
             result.getEquations().abstractBinding(link);
           }
-          letResult.add(result);
         }
+        letResult.add(result);
         expectedType = result.expression;
       }
 
@@ -802,8 +802,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
             elimResult.getEquations().abstractBinding(link);
           }
-          letResult.add(elimResult);
         }
+        letResult.add(elimResult);
         elimTree = elimResult.elimTree;
         resultType = expectedType;
       } else {
@@ -813,8 +813,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
             termResult.getEquations().abstractBinding(link);
           }
-          letResult.add(termResult);
         }
+        letResult.add(termResult);
         elimTree = top(links.getFirst(), leaf(clause.getArrow(), termResult.expression));
         resultType = termResult.type;
       }
