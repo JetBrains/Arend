@@ -55,7 +55,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
       myErrorReporter.addError(expr, "Expected type is null");
       return;
     }
-    Expression actualType = expr.getType();
+    Expression actualType = expr.getType().normalize(NormalizeVisitor.Mode.NF);
     if (!typesCompatible(expectedType, actualType)) {
       myErrorReporter.addError(expr, "Expected type: " + expectedType + ", actual: " + actualType);
     }
@@ -205,15 +205,17 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitProj(ProjExpression expr, Expression expectedType) {
-    // TODO проверить, что expr.getExpr().getField(expr.getField()) : expectedType
     Expression tuple = expr.getExpression().normalize(NormalizeVisitor.Mode.WHNF);
-    tuple.accept(this, /* TODO что тут? */ null);
+    tuple.accept(this, tuple.getType());
     if (!(tuple instanceof TupleExpression)) {
       myErrorReporter.addError(tuple, "Tuple expected");
     } else {
       List<Expression> fields = ((TupleExpression)tuple).getFields();
       if (fields.size() <= expr.getField()) {
         myErrorReporter.addError(tuple, "Too few fields (at least " + (expr.getField() + 1) + " expected)");
+      } else {
+        Expression field = fields.get(expr.getField());
+        checkType(field, expectedType);
       }
     }
     return null;
@@ -241,7 +243,9 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   public Void visitBranch(BranchElimTreeNode branchNode, Expression expectedType) {
     Collection<ConstructorClause> clauses = branchNode.getConstructorClauses();
     for (ConstructorClause clause : clauses) {
-      clause.getChild().accept(this, expectedType);
+      Substitution subst = clause.getSubst();
+      Expression expectedTypeHere = expectedType.subst(subst).normalize(NormalizeVisitor.Mode.NF);
+      clause.getChild().subst(subst).accept(this, expectedTypeHere);
     }
     OtherwiseClause otherwiseClause = branchNode.getOtherwiseClause();
     if (otherwiseClause != null) {
