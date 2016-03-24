@@ -77,6 +77,7 @@ public class ParserTestCase {
     }
     classDefinition.setModuleID(new NameModuleID(name));
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
     return classDefinition;
   }
 

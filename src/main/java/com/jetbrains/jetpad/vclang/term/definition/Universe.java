@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 public abstract class Universe {
   private final int myLevel;
   public static final int NO_LEVEL = -10;
+  public static final int ANY_LEVEL = -30;
   public enum Cmp { EQUALS, NOT_COMPARABLE, LESS, GREATER }
 
   public Universe(int level) {
@@ -28,7 +29,7 @@ public abstract class Universe {
   public abstract Universe max(Universe other);
 
   protected Cmp compareLevels(int other) {
-    if (myLevel == other) return Cmp.EQUALS;
+    if (myLevel == other || myLevel == ANY_LEVEL || other == ANY_LEVEL) return Cmp.EQUALS;
     if (myLevel == NO_LEVEL) return Cmp.GREATER;
     if (other == NO_LEVEL || myLevel < other) return Cmp.LESS;
     return Cmp.GREATER;
@@ -66,7 +67,7 @@ public abstract class Universe {
     @Override
     public String toString() {
       if (myTruncated == PROP) return "\\Prop";
-      String level = getLevel() == NO_LEVEL ? "" : Integer.toString(getLevel());
+      String level = getLevel() == NO_LEVEL ? "" : getLevel() == ANY_LEVEL ? "?" : Integer.toString(getLevel());
       if (myTruncated == SET) return "\\Set" + level;
       return "\\" + (myTruncated == NOT_TRUNCATED ? "" : myTruncated + "-") + "Type" + level;
     }
@@ -104,7 +105,7 @@ public abstract class Universe {
     @Override
     public Type succ() {
       if (myTruncated == PROP) return new Type(0, SET);
-      return new Type(getLevel() == NO_LEVEL ? NO_LEVEL : getLevel() + 1, myTruncated == NOT_TRUNCATED ? NOT_TRUNCATED : myTruncated + 1);
+      return new Type(getLevel() == NO_LEVEL || getLevel() == ANY_LEVEL ? getLevel() : getLevel() + 1, myTruncated == NOT_TRUNCATED ? NOT_TRUNCATED : myTruncated + 1);
     }
 
     @Override

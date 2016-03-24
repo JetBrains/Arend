@@ -211,8 +211,8 @@ public class TypeCheckingElim {
             for (DependentLink link = links.getFirst(); link != EmptyDependentLink.getInstance(); link = link.getNext()) {
               clauseResult.getEquations().abstractBinding(link);
             }
-            result.add(clauseResult);
           }
+          result.add(clauseResult);
           expressions.add(clauseResult.expression);
         } else {
           expressions.add(null);

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -11,13 +10,6 @@ public class SolveEquationsError extends TypeCheckingError {
   private final Expression myExpr1;
   private final Expression myExpr2;
   private final Binding myBinding;
-
-  public SolveEquationsError(ResolvedName resolvedName, Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression) {
-    super(resolvedName, null, expression);
-    myExpr1 = expr1;
-    myExpr2 = expr2;
-    myBinding = binding;
-  }
 
   public SolveEquationsError(Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression) {
     super(null, expression);
