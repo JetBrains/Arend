@@ -140,14 +140,13 @@ public class ConsoleMain {
       @Override
       public void typecheckingSucceeded(Abstract.Definition abstractDefinition, Definition definition) {
         if (definition instanceof FunctionDefinition) {
-          System.err.println("Checking " + definition.getName());
           ValidateTypeVisitor visitor = new ValidateTypeVisitor();
           ((FunctionDefinition) definition).getElimTree().accept(visitor, ((FunctionDefinition) definition).getResultType());
           if (visitor.myErrorReporter.errors() > 0) {
+            System.err.println("Checking " + definition.getName());
             System.err.println(((FunctionDefinition) definition).getElimTree());
             System.err.println(visitor.myErrorReporter);
           }
-          System.err.println("done");
         }
       }
 

@@ -55,6 +55,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
       myErrorReporter.addError(expr, "Expected type is null");
       return;
     }
+    expectedType = expectedType.normalize(NormalizeVisitor.Mode.NF);
     Expression actualType = expr.getType().normalize(NormalizeVisitor.Mode.NF);
     if (!typesCompatible(expectedType, actualType)) {
       myErrorReporter.addError(expr, "Expected type: " + expectedType + ", actual: " + actualType);
@@ -148,7 +149,8 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   private void visitDependentLink(DependentLink link) {
     if (link.hasNext()) {
-      link.getType().accept(this, null);
+      // TODO use proper Universe
+      link.getType().accept(this, Universe(0));
       visitDependentLink(link.getNext());
     }
   }
