@@ -396,7 +396,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         list.append(param);
         context.addAll(toContext(param));
 
-        Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
+        Universe argUniverse = ((UniverseExpression) result.type.normalize(NormalizeVisitor.Mode.WHNF)).getUniverse();
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
           String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
@@ -692,7 +692,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           return constructor;
         }
 
-        Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
+        Universe argUniverse = ((UniverseExpression) result.type.normalize(NormalizeVisitor.Mode.WHNF)).getUniverse();
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
           String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";

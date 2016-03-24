@@ -163,6 +163,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (compare(result, expectedType, Equations.CMP.GE, expression)) {
+      result.expression = new OfTypeExpression(result.expression, expectedType);
       expression.setWellTyped(myContext, result.expression);
       return result;
     } else {
@@ -518,7 +519,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
     for (int i = 0; i < domainTypes.length; ++i) {
-      Universe argUniverse = ((UniverseExpression) domainTypes[i].normalize(NormalizeVisitor.Mode.NF)).getUniverse();
+      Universe argUniverse = ((UniverseExpression) domainTypes[i].normalize(NormalizeVisitor.Mode.WHNF)).getUniverse();
       Universe maxUniverse = universe.max(argUniverse);
       if (maxUniverse == null) {
         String msg = "Universe " + argUniverse + " of " + ordinal(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
@@ -530,7 +531,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       universe = maxUniverse;
     }
     if (codomainResult != null) {
-      Universe codomainUniverse = ((UniverseExpression) codomainResult.type.normalize(NormalizeVisitor.Mode.NF)).getUniverse();
+      Universe codomainUniverse = ((UniverseExpression) codomainResult.type.normalize(NormalizeVisitor.Mode.WHNF)).getUniverse();
       Universe maxUniverse = universe.max(codomainUniverse);
       if (maxUniverse == null) {
         String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";

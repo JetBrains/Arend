@@ -22,6 +22,9 @@ public class EtaNormalization {
     if (expression instanceof TupleExpression) {
       return normalizeTuple((TupleExpression) expression);
     }
+    if (expression instanceof OfTypeExpression) {
+      return normalize(((OfTypeExpression) expression).getExpression());
+    }
 
     return expression;
   }
@@ -67,7 +70,7 @@ public class EtaNormalization {
       List<? extends Expression> argArgs = arg.getArguments();
       arg = arg.getFunction();
       if (argArgs.size() > 0 && arg instanceof FunCallExpression && Prelude.isAt(((FunCallExpression) arg).getDefinition())) {
-        return argArgs.get(argArgs.size() - 1);
+        return normalize(argArgs.get(argArgs.size() - 1));
       }
     }
     return expr;
@@ -93,6 +96,6 @@ public class EtaNormalization {
       }
     }
 
-    return fields[0];
+    return normalize(fields[0]);
   }
 }

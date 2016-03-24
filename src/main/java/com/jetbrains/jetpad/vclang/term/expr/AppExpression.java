@@ -19,6 +19,9 @@ public class AppExpression extends Expression {
     assert flags.size() <= arguments.size();
     assert !arguments.isEmpty();
 
+    if (function instanceof OfTypeExpression) {
+      function = ((OfTypeExpression) function).getExpression();
+    }
     myFunction = function.getFunction();
     if (function instanceof AppExpression) {
       myArguments = new ArrayList<>(function.getArguments().size() + arguments.size());
@@ -41,14 +44,15 @@ public class AppExpression extends Expression {
 
   public AppExpression(Expression function, Collection<? extends Expression> arguments, Collection<? extends EnumSet<Flag>> flags) {
     initialize(function, arguments, flags);
-    if (!(function instanceof AppExpression)) {
+    if (myArguments == null) {
       myArguments = new ArrayList<>(arguments);
     }
   }
 
   public AppExpression(Expression function, List<Expression> arguments, Collection<? extends EnumSet<Flag>> flags) {
+    assert arguments.size() >= flags.size();
     initialize(function, arguments, flags);
-    if (!(function instanceof AppExpression)) {
+    if (myArguments == null) {
       myArguments = arguments;
     }
   }
