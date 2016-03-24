@@ -451,6 +451,11 @@ public class ModuleDeserialization {
         final Expression expr = readExpression(stream, definitionMap);
         return Let(clauses, expr);
       }
+      case 16: {
+        Expression expr = readExpression(stream, definitionMap);
+        Expression type = readExpression(stream, definitionMap);
+        return new OfTypeExpression(expr, type);
+      }
       default: {
         throw new IncorrectFormat();
       }

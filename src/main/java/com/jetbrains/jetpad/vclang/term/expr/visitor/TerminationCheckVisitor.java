@@ -213,6 +213,11 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     return letExpression.getExpression().accept(this, null);
   }
 
+  @Override
+  public Boolean visitOfType(OfTypeExpression expr, Void params) {
+    return expr.getExpression().accept(this, null);
+  }
+
   private boolean visitLetClause(LetClause clause) {
     if (!visitArguments(clause.getParameters())) {
       return false;

@@ -283,4 +283,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitLet(LetExpression letExpression, Mode mode) {
     return myNormalizer.normalize(letExpression);
   }
+
+  @Override
+  public Expression visitOfType(OfTypeExpression expr, Mode mode) {
+    return mode == Mode.NF ? new OfTypeExpression(expr.getExpression().accept(this, mode), expr.getType()) : expr.getExpression().accept(this, mode);
+  }
 }

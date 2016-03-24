@@ -71,6 +71,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     expr1 = EtaNormalization.normalize(expr1);
     expr2 = EtaNormalization.normalize(expr2);
 
+    if (expr2 instanceof OfTypeExpression) {
+      return compare(expr1, ((OfTypeExpression) expr2).getExpression());
+    }
+
     if (expr2 instanceof AppExpression && checkIsInferVar(expr2.getFunction(), expr1, expr2)) {
       return true;
     }
@@ -397,6 +401,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     }
     myEquations.add(equations);
     return true;
+  }
+
+  @Override
+  public Boolean visitOfType(OfTypeExpression expr, Expression params) {
+    return expr.getExpression().accept(this, params);
   }
 
   @Override

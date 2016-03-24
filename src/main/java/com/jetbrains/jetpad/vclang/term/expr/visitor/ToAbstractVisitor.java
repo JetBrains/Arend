@@ -259,6 +259,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
   }
 
+  @Override
+  public Abstract.Expression visitOfType(OfTypeExpression expr, Void params) {
+    return expr.getExpression().accept(this, null);
+  }
+
   private List<Abstract.Clause> visitBranch(BranchElimTreeNode branchNode) {
     List<Abstract.Clause> clauses = new ArrayList<>(branchNode.getConstructorClauses().size());
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
