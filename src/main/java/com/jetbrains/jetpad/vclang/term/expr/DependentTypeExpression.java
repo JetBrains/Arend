@@ -21,10 +21,9 @@ public abstract class DependentTypeExpression extends Expression {
 
     while (link.hasNext()) {
       if (!(link instanceof UntypedDependentLink)) {
-        Expression type = link.getType().getType();
-        if (!(type instanceof UniverseExpression)) return null;
-        Universe universe1 = ((UniverseExpression) type).getUniverse();
-        universe = universe == null ? universe1 : universe.max(universe1);
+        UniverseExpression type = link.getType().getType().toUniverse();
+        if (type == null) return null;
+        universe = universe == null ? type.getUniverse() : universe.max(type.getUniverse());
         if (universe == null) return null;
       }
       link = link.getNext();
@@ -37,5 +36,10 @@ public abstract class DependentTypeExpression extends Expression {
   public Expression getType() {
     Universe universe = getUniverse();
     return universe == null ? null : new UniverseExpression(universe);
+  }
+
+  @Override
+  public DependentTypeExpression toDependentType() {
+    return this;
   }
 }

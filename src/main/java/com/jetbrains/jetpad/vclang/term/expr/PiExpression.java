@@ -27,14 +27,20 @@ public class PiExpression extends DependentTypeExpression {
   public Universe getUniverse() {
     Universe universe = super.getUniverse();
     Expression type = myCodomain.getType();
-    if (type != null) {
-      type = type.normalize(NormalizeVisitor.Mode.WHNF);
-    }
-    if (!(type instanceof UniverseExpression) || universe == null) {
+    if (type == null || universe == null) {
       return null;
     }
-    Universe codomainUniverse = ((UniverseExpression) type).getUniverse();
+    UniverseExpression universeType = type.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    if (universeType == null) {
+      return null;
+    }
+    Universe codomainUniverse = universeType.getUniverse();
     Universe prop = new Universe.Type(0, Universe.Type.PROP);
     return codomainUniverse.equals(prop) ? prop : universe.max(codomainUniverse);
+  }
+
+  @Override
+  public PiExpression toPi() {
+    return this;
   }
 }

@@ -28,4 +28,9 @@ public class ReferenceExpression extends Expression {
   public Expression getType() {
     return myBinding.getType().accept(new SubstVisitor(new Substitution()), null);
   }
+
+  @Override
+  public ReferenceExpression toReference() {
+    return this;
+  }
 }

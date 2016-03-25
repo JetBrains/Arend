@@ -64,29 +64,34 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   private Boolean compare(Expression expr1, Expression expr2) {
-    if (expr1 == expr2 || expr1 instanceof ErrorExpression || expr2 instanceof ErrorExpression) {
+    if (expr1 == expr2 || expr1.toError() != null  || expr2.toError() != null) {
       return true;
     }
 
     expr1 = EtaNormalization.normalize(expr1);
     expr2 = EtaNormalization.normalize(expr2);
 
-    if (expr2 instanceof OfTypeExpression) {
-      return compare(expr1, ((OfTypeExpression) expr2).getExpression());
+    while (expr1.toOfType() != null) {
+      expr1 = expr1.toOfType().getExpression();
+    }
+    while (expr2.toOfType() != null) {
+      expr2 = expr2.toOfType().getExpression();
     }
 
-    if (expr2 instanceof AppExpression && checkIsInferVar(expr2.getFunction(), expr1, expr2)) {
+    if (!expr2.getArguments().isEmpty() && checkIsInferVar(expr2.getFunction(), expr1, expr2)) {
       return true;
     }
 
-    if (expr2 instanceof ReferenceExpression && ((ReferenceExpression) expr2).getBinding() instanceof InferenceBinding) {
-      return compareReference((ReferenceExpression) expr2, expr1, false);
+    ReferenceExpression ref2 = expr2.toReference();
+    if (ref2 != null && ref2.getBinding() instanceof InferenceBinding) {
+      return compareReference(ref2, expr1, false);
     }
     return expr1.accept(this, expr2);
   }
 
   private boolean checkIsInferVar(Expression fun, Expression expr1, Expression expr2) {
-    if (!(fun instanceof ReferenceExpression) || !(((ReferenceExpression) fun).getBinding() instanceof InferenceBinding)) {
+    ReferenceExpression ref = fun.toReference();
+    if (ref == null || !(ref.getBinding() instanceof InferenceBinding)) {
       return false;
     }
 
@@ -94,7 +99,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     for (Map.Entry<Binding, Binding> entry : mySubstitution.entrySet()) {
       substitution.add(entry.getKey(), Reference(entry.getValue()));
     }
-    return myEquations.add(expr1.subst(substitution), expr2, myCMP, ((InferenceBinding) ((ReferenceExpression) fun).getBinding()).getSourceNode());
+    return myEquations.add(expr1.subst(substitution), expr2, myCMP, ((InferenceBinding) ref.getBinding()).getSourceNode());
   }
 
   @Override
@@ -129,14 +134,16 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
-    return expr2 instanceof DefCallExpression && expr1.getDefinition() == ((DefCallExpression) expr2).getDefinition();
+    DefCallExpression defCall2 = expr2.toDefCall();
+    return defCall2 != null && expr1.getDefinition() == defCall2.getDefinition();
   }
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof ClassCallExpression) || expr1.getDefinition() != ((ClassCallExpression) expr2).getDefinition()) return false;
+    ClassCallExpression classCall2 = expr2.toClassCall();
+    if (classCall2 == null || expr1.getDefinition() != classCall2.getDefinition()) return false;
     Map<ClassField, ClassCallExpression.ImplementStatement> implStats1 = expr1.getImplementStatements();
-    Map<ClassField, ClassCallExpression.ImplementStatement> implStats2 = ((ClassCallExpression) expr2).getImplementStatements();
+    Map<ClassField, ClassCallExpression.ImplementStatement> implStats2 = classCall2.getImplementStatements();
     if (myCMP == Equations.CMP.EQ && implStats1.size() != implStats2.size() ||
         myCMP == Equations.CMP.LE && implStats1.size() <  implStats2.size() ||
         myCMP == Equations.CMP.GE && implStats1.size() >  implStats2.size()) {
@@ -191,21 +198,22 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   private boolean compareReference(ReferenceExpression expr1, Expression expr2, boolean first) {
     Abstract.SourceNode sourceNode;
-    if (expr2 instanceof ReferenceExpression) {
-      Binding binding1 = first ? expr1.getBinding() : ((ReferenceExpression) expr2).getBinding();
+    ReferenceExpression ref2 = expr2.toReference();
+    if (ref2 != null) {
+      Binding binding1 = first ? expr1.getBinding() : ref2.getBinding();
       Binding subst1 = mySubstitution.get(binding1);
       if (subst1 != null) {
         binding1 = subst1;
       }
-      Binding binding2 = first ? ((ReferenceExpression) expr2).getBinding() : expr1.getBinding();
+      Binding binding2 = first ? ref2.getBinding() : expr1.getBinding();
       if (binding1 == binding2) {
         return true;
       }
       if (expr1.getBinding() instanceof InferenceBinding) {
         sourceNode = ((InferenceBinding) expr1.getBinding()).getSourceNode();
       } else
-      if (((ReferenceExpression) expr2).getBinding() instanceof InferenceBinding) {
-        sourceNode = ((InferenceBinding) ((ReferenceExpression) expr2).getBinding()).getSourceNode();
+      if (ref2.getBinding() instanceof InferenceBinding) {
+        sourceNode = ((InferenceBinding) ref2.getBinding()).getSourceNode();
       } else {
         return false;
       }
@@ -250,7 +258,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitPi(PiExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof PiExpression)) return false;
+    if (expr2.toPi() == null) return false;
 
     List<DependentLink> params1 = new ArrayList<>(), params2 = new ArrayList<>();
     Expression cod1 = expr1.getPiParameters(params1, false, false);
@@ -299,8 +307,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof UniverseExpression)) return false;
-    Universe.Cmp result = expr1.getUniverse().compare(((UniverseExpression) expr2).getUniverse());
+    UniverseExpression universe2 = expr2.toUniverse();
+    if (universe2 == null) return false;
+    Universe.Cmp result = expr1.getUniverse().compare(universe2.getUniverse());
     return result == Universe.Cmp.EQUALS || result == myCMP.toUniverseCmp();
   }
 
@@ -311,15 +320,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitTuple(TupleExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof TupleExpression)) return false;
-    TupleExpression tupleExpr2 = (TupleExpression) expr2;
-    if (expr1.getFields().size() != tupleExpr2.getFields().size()) {
+    TupleExpression tuple2 = expr2.toTuple();
+    if (tuple2 == null) return false;
+    if (expr1.getFields().size() != tuple2.getFields().size()) {
       return false;
     }
 
     myCMP = Equations.CMP.EQ;
     for (int i = 0; i < expr1.getFields().size(); i++) {
-      if (!compare(expr1.getFields().get(i), tupleExpr2.getFields().get(i))) {
+      if (!compare(expr1.getFields().get(i), tuple2.getFields().get(i))) {
         return false;
       }
     }
@@ -328,16 +337,17 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitSigma(SigmaExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof SigmaExpression)) return false;
+    SigmaExpression sigma2 = expr2.toSigma();
+    if (sigma2 == null) return false;
     Equations equations = myEquations.newInstance();
     CompareVisitor visitor = new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ);
-    if (!visitor.compareParameters(expr1.getParameters(), ((SigmaExpression) expr2).getParameters())) {
+    if (!visitor.compareParameters(expr1.getParameters(), sigma2.getParameters())) {
       return false;
     }
     for (DependentLink link = expr1.getParameters(); link.hasNext(); link = link.getNext()) {
       mySubstitution.remove(link);
     }
-    for (DependentLink link = ((SigmaExpression) expr2).getParameters(); link.hasNext(); link = link.getNext()) {
+    for (DependentLink link = sigma2.getParameters(); link.hasNext(); link = link.getNext()) {
       equations.abstractBinding(link);
     }
     myEquations.add(equations);
@@ -346,29 +356,31 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitProj(ProjExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof ProjExpression)) return false;
-    ProjExpression projExpr2 = (ProjExpression) expr2;
-    if (expr1.getField() != projExpr2.getField()) {
+    ProjExpression proj2 = expr2.toProj();
+    if (proj2 == null) return false;
+    if (expr1.getField() != proj2.getField()) {
       return false;
     }
     myCMP = Equations.CMP.EQ;
-    return compare(expr1.getExpression(), projExpr2.getExpression());
+    return compare(expr1.getExpression(), proj2.getExpression());
   }
 
   @Override
   public Boolean visitNew(NewExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof NewExpression)) return false;
+    NewExpression new2 = expr2.toNew();
+    if (new2 == null) return false;
     myCMP = Equations.CMP.EQ;
-    return compare(expr1.getExpression(), ((NewExpression) expr2).getExpression());
+    return compare(expr1.getExpression(), new2.getExpression());
   }
 
   @Override
   public Boolean visitLet(LetExpression expr1, Expression expr2) {
-    if (!(expr2 instanceof LetExpression)) {
+    LetExpression letExpr2 = expr2.toLet();
+    if (letExpr2 == null) {
       return false;
     }
     LetExpression letExpr1 = expr1.mergeNestedLets();
-    LetExpression letExpr2 = ((LetExpression) expr2).mergeNestedLets();
+    letExpr2 = letExpr2.mergeNestedLets();
     if (letExpr1.getClauses().size() != letExpr2.getClauses().size()) {
       return false;
     }

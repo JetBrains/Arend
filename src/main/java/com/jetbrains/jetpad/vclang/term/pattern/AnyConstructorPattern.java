@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.pattern;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
@@ -35,8 +34,7 @@ public class AnyConstructorPattern extends Pattern implements Abstract.AnyConstr
 
   @Override
   public MatchResult match(Expression expr, boolean normalize) {
-    Expression func = (normalize ? expr.normalize(NormalizeVisitor.Mode.WHNF) : expr).getFunction();
-    if (!(func instanceof ConCallExpression)) {
+    if ((normalize ? expr.normalize(NormalizeVisitor.Mode.WHNF) : expr).getFunction().toConCall() == null) {
       return new MatchMaybeResult(this, expr);
     } else {
       return new MatchOKResult(Collections.singletonList(expr));

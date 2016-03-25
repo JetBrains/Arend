@@ -30,4 +30,9 @@ public class LamExpression extends Expression {
     Expression bodyType = myBody.getType();
     return bodyType != null ? new PiExpression(myLink, bodyType) : null;
   }
+
+  @Override
+  public LamExpression toLam() {
+    return this;
+  }
 }

@@ -36,4 +36,99 @@ public class OfTypeExpression extends Expression {
   public Expression getType() {
     return myType;
   }
+
+  @Override
+  public AppExpression toApp() {
+    return myExpression.toApp();
+  }
+
+  @Override
+  public ClassCallExpression toClassCall() {
+    return myExpression.toClassCall();
+  }
+
+  @Override
+  public ConCallExpression toConCall() {
+    return myExpression.toConCall();
+  }
+
+  @Override
+  public DataCallExpression toDataCall() {
+    return myExpression.toDataCall();
+  }
+
+  @Override
+  public DefCallExpression toDefCall() {
+    return myExpression.toDefCall();
+  }
+
+  @Override
+  public DependentTypeExpression toDependentType() {
+    return myExpression.toDependentType();
+  }
+
+  @Override
+  public ErrorExpression toError() {
+    return myExpression.toError();
+  }
+
+  @Override
+  public FieldCallExpression toFieldCall() {
+    return myExpression.toFieldCall();
+  }
+
+  @Override
+  public FunCallExpression toFunCall() {
+    return myExpression.toFunCall();
+  }
+
+  @Override
+  public LamExpression toLam() {
+    return myExpression.toLam();
+  }
+
+  @Override
+  public LetExpression toLet() {
+    return myExpression.toLet();
+  }
+
+  @Override
+  public NewExpression toNew() {
+    return myExpression.toNew();
+  }
+
+  @Override
+  public OfTypeExpression toOfType() {
+    return this;
+  }
+
+  @Override
+  public PiExpression toPi() {
+    return myExpression.toPi();
+  }
+
+  @Override
+  public ProjExpression toProj() {
+    return myExpression.toProj();
+  }
+
+  @Override
+  public ReferenceExpression toReference() {
+    return myExpression.toReference();
+  }
+
+  @Override
+  public SigmaExpression toSigma() {
+    return myExpression.toSigma();
+  }
+
+  @Override
+  public TupleExpression toTuple() {
+    return myExpression.toTuple();
+  }
+
+  @Override
+  public UniverseExpression toUniverse() {
+    return myExpression.toUniverse();
+  }
 }

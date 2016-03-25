@@ -345,9 +345,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     Expression type = typedDef.getType();
     if (type != null) {
-      type = type.getType().normalize(NormalizeVisitor.Mode.WHNF);
-      if (type instanceof UniverseExpression) {
-        typedDef.setUniverse(((UniverseExpression) type).getUniverse());
+      UniverseExpression universeType = type.getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+      if (universeType != null) {
+        typedDef.setUniverse(universeType.getUniverse());
       } else {
         throw new IllegalStateException();
       }
@@ -396,7 +396,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         list.append(param);
         context.addAll(toContext(param));
 
-        Universe argUniverse = ((UniverseExpression) result.type.normalize(NormalizeVisitor.Mode.WHNF)).getUniverse();
+        Universe argUniverse = result.type.normalize(NormalizeVisitor.Mode.WHNF).toUniverse().getUniverse();
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
           String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
@@ -421,7 +421,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     typedResultType = typeResult.expression;
 
-    Universe resultTypeUniverse = ((UniverseExpression) typeResult.type).getUniverse();
+    Universe resultTypeUniverse = typeResult.type.toUniverse().getUniverse();
     Universe maxUniverse = universe.max(resultTypeUniverse);
     if (maxUniverse == null) {
       String error = "Universe " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
@@ -692,7 +692,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           return constructor;
         }
 
-        Universe argUniverse = ((UniverseExpression) result.type.normalize(NormalizeVisitor.Mode.WHNF)).getUniverse();
+        Universe argUniverse = result.type.normalize(NormalizeVisitor.Mode.WHNF).toUniverse().getUniverse();
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
           String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
@@ -720,14 +720,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
         Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
-        while (type instanceof PiExpression) {
-          for (DependentLink link1 = ((PiExpression) type).getParameters(); link1.hasNext(); link1 = link1.getNext()) {
+        PiExpression pi = type.toPi();
+        while (pi != null) {
+          for (DependentLink link1 = pi.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
             link1 = link1.getNextTyped(null);
             if (!checkNonPositiveError(link1.getType(), dataDefinition, name, list.getFirst(), link, arguments, def)) {
               return constructor;
             }
           }
-          type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+          type = pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+          pi = type.toPi();
         }
 
         boolean check = true;
@@ -735,13 +737,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           check = false;
           List<? extends Expression> exprs = type.getArguments();
           type = type.getFunction();
-          if (type instanceof DataCallExpression) {
-            DataDefinition typeDef = ((DataCallExpression) type).getDefinition();
+          DataCallExpression dataCall = type.toDataCall();
+          if (dataCall != null) {
+            DataDefinition typeDef = dataCall.getDefinition();
             if (Prelude.isPath(typeDef) && !exprs.isEmpty()) {
-              Expression expr = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF);
-              if (expr instanceof LamExpression) {
+              LamExpression lam = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF).toLam();
+              if (lam != null) {
                 check = true;
-                type = ((LamExpression) expr).getBody().normalize(NormalizeVisitor.Mode.WHNF);
+                type = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
                 exprs = exprs.subList(1, exprs.size());
               }
             }

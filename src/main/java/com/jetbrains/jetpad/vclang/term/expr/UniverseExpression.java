@@ -23,4 +23,9 @@ public class UniverseExpression extends Expression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitUniverse(this, params);
   }
+
+  @Override
+  public UniverseExpression toUniverse() {
+    return this;
+  }
 }

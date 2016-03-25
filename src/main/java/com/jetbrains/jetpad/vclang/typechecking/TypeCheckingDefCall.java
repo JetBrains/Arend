@@ -5,7 +5,10 @@ import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
@@ -86,8 +89,9 @@ public class TypeCheckingDefCall {
     }
 
     Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
-    if (type instanceof ClassCallExpression) {
-      ClassDefinition classDefinition = ((ClassCallExpression) type).getDefinition();
+    ClassCallExpression classCall = type.toClassCall();
+    if (classCall != null) {
+      ClassDefinition classDefinition = classCall.getDefinition();
       String name = expr.getName();
       Definition definition = classDefinition.getResolvedName().toNamespace().getDefinition(name);
       if (definition == null) {
@@ -113,8 +117,9 @@ public class TypeCheckingDefCall {
 
     List<? extends Expression> arguments = result.expression.getArguments();
     Expression fun = result.expression.getFunction();
-    if (fun instanceof DataCallExpression) {
-      DataDefinition dataDefinition = ((DataCallExpression) fun).getDefinition();
+    DataCallExpression dataCall = fun.toDataCall();
+    if (dataCall != null) {
+      DataDefinition dataDefinition = dataCall.getDefinition();
       String name = expr.getName();
       Constructor constructor = dataDefinition.getConstructor(name);
       if (constructor != null) {
@@ -131,24 +136,24 @@ public class TypeCheckingDefCall {
 
     Definition definition;
     Expression thisExpr = null;
-    if (result.expression instanceof ClassCallExpression) {
-      ClassCallExpression classCall = (ClassCallExpression) result.expression;
-      definition = classCall.getDefinition();
-      ClassField parentField = classCall.getDefinition().getParentField();
+    ClassCallExpression classCall1 = result.expression.toClassCall();
+    if (classCall1 != null) {
+      definition = classCall1.getDefinition();
+      ClassField parentField = classCall1.getDefinition().getParentField();
       if (parentField != null) {
-        ClassCallExpression.ImplementStatement statement = classCall.getImplementStatements().get(parentField);
+        ClassCallExpression.ImplementStatement statement = classCall1.getImplementStatements().get(parentField);
         if (statement != null) {
           thisExpr = statement.term;
         }
       }
     } else
-    if (result.expression instanceof DefCallExpression) {
+    if (result.expression.toDefCall() != null) {
       thisExpr = null;
-      definition = ((DefCallExpression) result.expression).getDefinition();
+      definition = result.expression.toDefCall().getDefinition();
     } else
-    if (result.expression instanceof AppExpression && result.expression.getFunction() instanceof DefCallExpression && result.expression.getArguments().size() == 1) {
-      thisExpr = ((AppExpression) result.expression).getArguments().get(0);
-      definition = ((DefCallExpression) result.expression.getFunction()).getDefinition();
+    if (result.expression.getFunction().toDefCall() != null && result.expression.getArguments().size() == 1) {
+      thisExpr = result.expression.getArguments().get(0);
+      definition = result.expression.getFunction().toDefCall().getDefinition();
     } else {
       TypeCheckingError error = new TypeCheckingError("Expected a definition", expr);
       expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
@@ -181,24 +186,25 @@ public class TypeCheckingDefCall {
       return result;
     }
     ClassField parentField = classDefinition.getParentField();
-    if (parentField == null || !(parentField.getBaseType() instanceof ClassCallExpression)) {
+    if (parentField == null || parentField.getBaseType().toClassCall() == null) {
       TypeCheckingError error = new TypeCheckingError("Definition '" + definition.getName() + "' is not available in this context", expr);
       expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
-    return findParent(((ClassCallExpression) parentField.getBaseType()).getDefinition(), definition, Apps(FieldCall(parentField), result), expr);
+    return findParent(parentField.getBaseType().toClassCall().getDefinition(), definition, Apps(FieldCall(parentField), result), expr);
   }
 
   private CheckTypeVisitor.Result applyThis(CheckTypeVisitor.Result result, Expression thisExpr, Abstract.Expression expr) {
+    DefCallExpression defCall = result.expression.toDefCall();
     if (result.type == null) {
-      TypeCheckingError error = new HasErrors(((DefCallExpression) result.expression).getDefinition().getName(), expr);
+      TypeCheckingError error = new HasErrors(defCall.getDefinition().getName(), expr);
       expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
     if (thisExpr != null) {
-      result.expression = ((DefCallExpression) result.expression).applyThis(thisExpr);
+      result.expression = defCall.applyThis(thisExpr);
       result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
     }
     return result;

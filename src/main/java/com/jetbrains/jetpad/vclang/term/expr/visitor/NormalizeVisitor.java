@@ -24,17 +24,20 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitApp(AppExpression expr, Mode mode) {
     Expression fun = expr.getFunction();
-    if (fun instanceof LamExpression) {
-      return myNormalizer.normalize((LamExpression) fun, expr.getArguments(), expr.getFlags(), mode);
+    LamExpression lamFun = fun.toLam();
+    if (lamFun != null) {
+      return myNormalizer.normalize(lamFun, expr.getArguments(), expr.getFlags(), mode);
     }
 
-    if (fun instanceof DefCallExpression) {
+    if (fun.toDefCall() != null) {
       return visitDefCallExpr(expr, mode);
-    } else
-    if (fun instanceof ReferenceExpression) {
-      Binding binding = ((ReferenceExpression) fun).getBinding();
-      if (binding instanceof Function) {
-        return visitFunctionCall((Function) binding, expr, mode);
+    } else {
+      ReferenceExpression ref = fun.toReference();
+      if (ref != null) {
+        Binding binding = ref.getBinding();
+        if (binding instanceof Function) {
+          return visitFunctionCall((Function) binding, expr, mode);
+        }
       }
     }
 
@@ -50,19 +53,20 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   public Expression applyDefCall(Expression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
-    if (expr instanceof AppExpression && (mode == Mode.NF || mode == Mode.HUMAN_NF)) {
+    AppExpression appExpr = expr.toApp();
+    if (appExpr != null && (mode == Mode.NF || mode == Mode.HUMAN_NF)) {
       List<Expression> newArgs = new ArrayList<>(expr.getArguments().size());
       for (Expression argument : expr.getArguments()) {
         newArgs.add(argument.accept(this, mode));
       }
-      return new AppExpression(expr.getFunction(), newArgs, ((AppExpression) expr).getFlags());
+      return new AppExpression(expr.getFunction(), newArgs, appExpr.getFlags());
     } else {
       return expr;
     }
   }
 
   public Expression visitDefCallExpr(Expression expr, Mode mode) {
-    DefCallExpression defCallExpr = (DefCallExpression) expr.getFunction();
+    DefCallExpression defCallExpr = expr.getFunction().toDefCall();
     if (defCallExpr.getDefinition().hasErrors()) {
       return mode == Mode.TOP ? null : applyDefCall(expr, mode);
     }
@@ -81,18 +85,19 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       if (thisType == null) {
         assert false;
       } else {
-        thisType = thisType.normalize(Mode.WHNF);
-        if (thisType instanceof ClassCallExpression) {
-          ClassCallExpression.ImplementStatement elem = ((ClassCallExpression) thisType).getImplementStatements().get(defCallExpr.getDefinition());
+        ClassCallExpression classCall = thisType.normalize(Mode.WHNF).toClassCall();
+        if (classCall != null) {
+          ClassCallExpression.ImplementStatement elem = classCall.getImplementStatements().get(defCallExpr.getDefinition());
           if (elem != null && elem.term != null) {
-            Expression result = Apps(elem.term, expr.getArguments().subList(1, expr.getArguments().size()), ((AppExpression) expr).getFlags().subList(1, ((AppExpression) expr).getFlags().size()));
+            List<? extends EnumSet<AppExpression.Flag>> flags = expr.toApp().getFlags();
+            Expression result = Apps(elem.term, expr.getArguments().subList(1, expr.getArguments().size()), flags.subList(1, flags.size()));
             return mode == Mode.TOP ? result : result.accept(this, mode);
           }
         }
       }
     }
 
-    if (defCallExpr instanceof ConCallExpression) {
+    if (defCallExpr.toConCall() != null) {
       return visitConstructorCall(expr, mode);
     }
     if (defCallExpr.getDefinition() instanceof Function) {
@@ -103,7 +108,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression visitConstructorCall(Expression expr, Mode mode) {
-    ConCallExpression conCallExpression = (ConCallExpression) expr.getFunction();
+    ConCallExpression conCallExpression = expr.getFunction().toConCall();
     List<? extends Expression> args = expr.getArguments();
     int take = DependentLink.Helper.size(conCallExpression.getDefinition().getDataTypeParameters()) - conCallExpression.getDataTypeArguments().size();
     if (take > 0) {
@@ -119,7 +124,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       int size = args.size();
       args = args.subList(take, size);
       if (!args.isEmpty()) {
-        expr = Apps(conCallExpression, args, ((AppExpression) expr).getFlags().subList(take, size));
+        expr = Apps(conCallExpression, args, expr.toApp().getFlags().subList(take, size));
       } else {
         expr = conCallExpression;
       }
@@ -148,17 +153,19 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     } else {
       excessiveParams = EmptyDependentLink.getInstance();
       requiredArgs = args.subList(0, func.getNumberOfRequiredArguments());
-      if (expr instanceof AppExpression) {
-        flags = ((AppExpression) expr).getFlags().subList(numberOfRequiredArgs, args.size());
+      AppExpression app = expr.toApp();
+      if (app != null) {
+        flags = app.getFlags().subList(numberOfRequiredArgs, args.size());
       }
       args = args.subList(numberOfRequiredArgs, args.size());
     }
 
     DependentLink params = EmptyDependentLink.getInstance();
     List<? extends Expression> paramArgs = Collections.<Expression>emptyList();
-    if (expr.getFunction() instanceof ConCallExpression) {
-      params = ((ConCallExpression) expr.getFunction()).getDefinition().getDataTypeParameters();
-      paramArgs = ((ConCallExpression) expr.getFunction()).getDataTypeArguments();
+    ConCallExpression conCall = expr.getFunction().toConCall();
+    if (conCall != null) {
+      params = conCall.getDefinition().getDataTypeParameters();
+      paramArgs = conCall.getDataTypeArguments();
     }
     Expression result = myNormalizer.normalize(func, params, paramArgs, requiredArgs, args, flags, mode);
     if (result == null) {
@@ -265,9 +272,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitProj(ProjExpression expr, Mode mode) {
-    Expression exprNorm = expr.getExpression().normalize(Mode.WHNF);
-    if (exprNorm instanceof TupleExpression) {
-      Expression result = ((TupleExpression) exprNorm).getFields().get(expr.getField());
+    TupleExpression exprNorm = expr.getExpression().normalize(Mode.WHNF).toTuple();
+    if (exprNorm != null) {
+      Expression result = exprNorm.getFields().get(expr.getField());
       return mode == Mode.TOP ? result : result.accept(this, mode);
     } else {
       return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.HUMAN_NF ? Proj(expr.getExpression().accept(this, mode), expr.getField()) : expr;

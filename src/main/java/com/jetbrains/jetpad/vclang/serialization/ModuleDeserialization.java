@@ -430,7 +430,11 @@ public class ModuleDeserialization {
         for (int i = 0; i < size; ++i) {
           fields.add(readExpression(stream, definitionMap));
         }
-        return Tuple(fields, (SigmaExpression) readExpression(stream, definitionMap));
+        SigmaExpression sigma = readExpression(stream, definitionMap).toSigma();
+        if (sigma == null) {
+          throw new IncorrectFormat();
+        }
+        return Tuple(fields, sigma);
       }
       case 11: {
         return Sigma(readParameters(stream, definitionMap));

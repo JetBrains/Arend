@@ -28,9 +28,9 @@ public class ProjExpression extends Expression {
       return null;
     }
 
-    type = type.normalize(NormalizeVisitor.Mode.WHNF);
-    if (!(type instanceof SigmaExpression)) return null;
-    DependentLink params = ((SigmaExpression) type).getParameters();
+    SigmaExpression sigma = type.normalize(NormalizeVisitor.Mode.WHNF).toSigma();
+    if (sigma == null) return null;
+    DependentLink params = sigma.getParameters();
     if (myField == 0) {
       return params.getType();
     }
@@ -49,5 +49,10 @@ public class ProjExpression extends Expression {
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitProj(this, params);
+  }
+
+  @Override
+  public ProjExpression toProj() {
+    return this;
   }
 }

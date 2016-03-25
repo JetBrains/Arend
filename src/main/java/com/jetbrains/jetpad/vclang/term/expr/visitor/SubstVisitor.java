@@ -89,10 +89,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
-    Binding newReference = ((ReferenceExpression) Reference(branchNode.getReference()).accept(this, null)).getBinding();
+    Binding newReference = visitReference(Reference(branchNode.getReference()), null).toReference().getBinding();
     List<Binding> newContextTail = new ArrayList<>(branchNode.getContextTail().size());
     for (Binding binding : branchNode.getContextTail()) {
-      newContextTail.add(((ReferenceExpression) Reference(binding).accept(this, null)).getBinding());
+      newContextTail.add(visitReference(Reference(binding), null).toReference().getBinding());
     }
 
     BranchElimTreeNode newNode = new BranchElimTreeNode(newReference, newContextTail);
@@ -125,7 +125,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     if (leafNode.getMatched() != null) {
       List<Binding> matched = new ArrayList<>(leafNode.getMatched().size());
       for (Binding binding : leafNode.getMatched()) {
-        matched.add(mySubstitution.getDomain().contains (binding) ? ((ReferenceExpression) mySubstitution.get(binding)).getBinding() : binding);
+        matched.add(mySubstitution.getDomain().contains(binding) ? mySubstitution.get(binding).toReference().getBinding() : binding);
       }
       result.setMatched(matched);
     }

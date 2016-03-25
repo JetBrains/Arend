@@ -61,14 +61,14 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
     }
 
-    if (!(result.type instanceof PiExpression)) {
+    PiExpression actualType = result.type.toPi();
+    if (actualType == null) {
       TypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
 
-    PiExpression actualType = (PiExpression) result.type;
     CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, actualType.getParameters().getType());
     if (argResult == null) {
       return null;
@@ -103,17 +103,15 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         result = myVisitor.typeCheck(fun, null);
       }
 
-      if (isExplicit &&
-          result != null &&
-          result.expression.getFunction() instanceof ConCallExpression &&
-          result.expression.getArguments().size() <
-              DependentLink.Helper.size(((ConCallExpression) result.expression.getFunction()).getDefinition().getDataType().getParameters())) {
-        if (expectedType != null && !((ConCallExpression) result.expression.getFunction()).getDefinition().hasErrors()) {
+      if (isExplicit && result != null) {
+        ConCallExpression conCall = result.expression.getFunction().toConCall();
+        if (conCall != null &&
+            result.expression.getArguments().size() < DependentLink.Helper.size(conCall.getDefinition().getDataType().getParameters()) &&
+            expectedType != null &&
+            !conCall.getDefinition().hasErrors()) {
           Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
           List<? extends Expression> args = expectedTypeNorm.getArguments();
-          expectedTypeNorm = expectedTypeNorm.getFunction();
-          if (expectedTypeNorm instanceof DataCallExpression) {
-            ConCallExpression conCall = (ConCallExpression) result.expression.getFunction();
+          if (expectedTypeNorm.getFunction().toDataCall() != null) {
             List<Expression> args1 = new ArrayList<>(args.size());
             args1.addAll(result.expression.getArguments());
             args1.addAll(args.subList(result.expression.getArguments().size(), args.size()));
@@ -129,13 +127,13 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           }
         }
 
-        if (Prelude.isPathCon(((ConCallExpression) result.expression.getFunction()).getDefinition())) {
+        if (conCall != null && Prelude.isPathCon(conCall.getDefinition())) {
           Expression interval = DataCall(Prelude.INTERVAL);
           CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe()))));
           if (argResult == null) {
             return null;
           }
-          PiExpression piType = (PiExpression) argResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+          PiExpression piType = argResult.type.normalize(NormalizeVisitor.Mode.WHNF).toPi();
           DependentLink params = piType.getParameters();
 
           Expression lamExpr;
@@ -147,7 +145,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           }
           Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
           Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
-          Constructor pathCon = ((ConCallExpression) result.expression.getFunction()).getDefinition();
+          Constructor pathCon = conCall.getDefinition();
           argResult.expression = Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression);
           argResult.type = Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2);
           return argResult;

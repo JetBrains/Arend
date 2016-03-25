@@ -19,9 +19,9 @@ public class LetExpression extends Expression {
   public LetExpression mergeNestedLets() {
     List<LetClause> clauses = new ArrayList<>(myClauses);
     Expression expression = myExpression;
-    while (expression instanceof  LetExpression) {
-      clauses.addAll(((LetExpression) expression).getClauses());
-      expression = ((LetExpression) expression).getExpression();
+    while (expression.toLet() != null) {
+      clauses.addAll(expression.toLet().getClauses());
+      expression = expression.toLet().getExpression();
     }
     return Let(clauses, expression);
   }
@@ -43,5 +43,10 @@ public class LetExpression extends Expression {
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitLet(this, params);
+  }
+
+  @Override
+  public LetExpression toLet() {
+    return this;
   }
 }

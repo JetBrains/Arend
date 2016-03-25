@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -61,7 +60,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
         Expression type = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
         List<? extends Expression> args = type.getArguments();
         type = type.getFunction();
-        assert type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
+        assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
         Substitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(args));
         for (Binding binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
@@ -92,10 +91,11 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
 
     List<? extends Expression> constructorArgs = expr.getArguments();
     expr = expr.getFunction();
-    if (!(expr instanceof ConCallExpression)) {
+    ConCallExpression conCall = expr.toConCall();
+    if (conCall == null) {
       return new MatchMaybeResult(this, expr);
     }
-    if (((ConCallExpression) expr).getDefinition() != myConstructor) {
+    if (conCall.getDefinition() != myConstructor) {
       return new MatchFailedResult(this, expr);
     }
     if (constructorArgs.size() != myArguments.getPatterns().size()) {

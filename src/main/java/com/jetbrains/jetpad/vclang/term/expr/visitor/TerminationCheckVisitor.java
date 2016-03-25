@@ -86,8 +86,9 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
   public Boolean visitApp(AppExpression expr, Void params) {
     List<? extends Expression> args = expr.getArguments();
     Expression fun = expr.getFunction();
-    if (fun instanceof ConCallExpression) {
-      List<Expression> dataTypeArguments = ((ConCallExpression) fun).getDataTypeArguments();
+    ConCallExpression conCall = fun.toConCall();
+    if (conCall != null) {
+      List<Expression> dataTypeArguments = conCall.getDataTypeArguments();
       if (!dataTypeArguments.isEmpty()) {
         List<Expression> newArgs = new ArrayList<>(args.size() + dataTypeArguments.size());
         newArgs.addAll(dataTypeArguments);
@@ -95,14 +96,16 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
         args = newArgs;
       }
     }
-    if (fun instanceof DefCallExpression) {
-      if (((DefCallExpression) fun).getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
+
+    DefCallExpression defCall = fun.toDefCall();
+    if (defCall != null) {
+      if (defCall.getDefinition() == myDef && isLess(args, myPatterns) != Ord.LESS) {
         return false;
       }
-      if (fun instanceof ConCallExpression && ((ConCallExpression) fun).getDefinition() != myDef && !visitConCall((ConCallExpression) fun, null)) {
+      if (conCall != null && conCall.getDefinition() != myDef && !visitConCall(conCall, null)) {
         return false;
       }
-      if (fun instanceof ClassCallExpression && !visitClassCall((ClassCallExpression) fun, null)) {
+      if (fun.toClassCall() != null && !visitClassCall(fun.toClassCall(), null)) {
         return false;
       }
     } else {
