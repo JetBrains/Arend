@@ -703,11 +703,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    Map<ClassField, ClassCallExpression.ImplementStatement> typeCheckedStatements = new HashMap<>();
+    ClassCallExpression resultExpr = null;
     Result classExtResult = new Result(null, null);
+    Map<ClassField, ClassCallExpression.ImplementStatement> typeCheckedStatements = Collections.emptyMap();
     for (int i = 0; i < fields.size(); i++) {
       ImplementStatement field = fields.get(i);
-      Expression thisExpr = New(ClassCall(baseClass, typeCheckedStatements));
+      resultExpr = ClassCall(baseClass, typeCheckedStatements);
+      Expression thisExpr = New(resultExpr);
       Result result1 = typeCheck(field.term, field.classField.getBaseType().subst(field.classField.getThisParameter(), thisExpr));
       baseClass.addField(field.classField);
       if (result1 == null) {
@@ -718,11 +720,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return null;
       }
 
+      typeCheckedStatements = new HashMap<>(typeCheckedStatements);
       typeCheckedStatements.put(field.classField, new ClassCallExpression.ImplementStatement(result1.type, result1.expression));
       classExtResult.add(result1);
     }
 
-    ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
+    if (resultExpr == null) {
+      resultExpr = ClassCall(baseClass, typeCheckedStatements);
+    }
     classExtResult.expression = resultExpr;
     classExtResult.type = new UniverseExpression(resultExpr.getUniverse());
     classExtResult.update();
