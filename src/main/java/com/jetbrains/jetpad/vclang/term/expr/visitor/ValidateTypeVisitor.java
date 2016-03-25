@@ -92,22 +92,20 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
     return expected.equals(actual);
   }
 
-  @Override
-  public Void visitApp(AppExpression expr, Expression expectedType) {
-    checkType(expr, expectedType);
-    List<? extends Expression> args = expr.getArguments();
-    List<? extends EnumSet<AppExpression.Flag>> flags = expr.getFlags();
-    Expression fun = expr.getFunction();
-    Expression funType = fun.getType().normalize(NormalizeVisitor.Mode.NF);
+  private void visitApp(Expression funType, List<? extends Expression> args,
+                        List<? extends EnumSet<AppExpression.Flag>> flags, Expression expectedType) {
+    if (args.isEmpty()) {
+      if (!typesCompatible(expectedType, funType)) {
+        myErrorReporter.addError(funType, "Result expected type: " + expectedType + ", actual: " + funType);
+      }
+      return;
+    }
     if (!(funType instanceof PiExpression)) {
-      myErrorReporter.addError(expr, "Function " + fun + " doesn't have Pi-type");
+      myErrorReporter.addError(funType, "Function type " + funType + " is not Pi");
     } else {
       ArrayList<DependentLink> links = new ArrayList<>();
-      funType.getPiParameters(links, true, false);
+      Expression cod = funType.getPiParameters(links, true, false);
       Substitution subst = new Substitution();
-      if (args.size() > links.size()) {
-        myErrorReporter.addError(expr, "Too few Pi abstractions");
-      }
       int size = Math.min(args.size(), links.size());
       for (int i = 0; i < size; i++) {
         DependentLink param = links.get(i);
@@ -116,14 +114,29 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
         Expression expectedArgType = param.getType().subst(subst).normalize(NormalizeVisitor.Mode.NF);
         boolean isArgExplicit = flags.get(i).contains(AppExpression.Flag.EXPLICIT);
         if (param.isExplicit() != isArgExplicit) {
-          myErrorReporter.addError(expr, i + "th argument is expected to be" + (param.isExplicit() ? "explicit" : "implicit"));
+          myErrorReporter.addError(funType, i + "th argument is expected to be" + (param.isExplicit() ? "explicit" : "implicit"));
         }
         if (!typesCompatible(expectedArgType, argType)) {
           myErrorReporter.addError(arg, "Expected type: " + expectedArgType + ", actual: " + argType);
         }
         subst.add(param, arg);
       }
+      if (args.size() > links.size()) {
+        cod = cod.subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
+        visitApp(cod, args.subList(size, args.size()), flags.subList(size, flags.size()), expectedType);
+      }
     }
+  }
+
+  @Override
+  public Void visitApp(AppExpression expr, Expression expectedType) {
+    checkType(expr, expectedType);
+//    List<? extends Expression> args = expr.normalize(NormalizeVisitor.Mode.WHNF).getArguments();
+    List<? extends Expression> args = expr.getArguments();
+    List<? extends EnumSet<AppExpression.Flag>> flags = expr.getFlags();
+    Expression fun = expr.getFunction();
+    Expression funType = fun.getType().normalize(NormalizeVisitor.Mode.NF);
+    visitApp(funType, args, flags, expectedType);
 
     return null;
   }
