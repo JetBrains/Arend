@@ -192,8 +192,6 @@ public class ListEquations implements Equations {
           if (subst.findBinding(entry.getKey())) {
             entry.getKey().reportError(myErrorReporter, subst);
           } else {
-            binding = entry.getKey();
-            /*
             Expression expectedType = entry.getKey().getType().subst(result);
             Expression actualType = subst.getType().subst(result);
             if (expectedType != null && CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
@@ -201,7 +199,6 @@ public class ListEquations implements Equations {
             } else {
               entry.getKey().reportError(myErrorReporter, subst);
             }
-            */
           }
           break;
         }
