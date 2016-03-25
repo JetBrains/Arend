@@ -208,6 +208,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result == null) return null;
     result.update();
     result.reportErrors(myErrorReporter);
+    result.expression = result.expression.strip();
+    result.type = result.type.strip();
     return result;
   }
 

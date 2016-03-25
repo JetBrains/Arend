@@ -44,6 +44,10 @@ public abstract class Expression implements PrettyPrintable {
     return accept(new FindBindingVisitor(bindings), null);
   }
 
+  public Expression strip() {
+    return accept(new StripVisitor(), null);
+  }
+
   public final Expression subst(Binding binding, Expression substExpr) {
     return accept(new SubstVisitor(new Substitution(binding, substExpr)), null);
   }

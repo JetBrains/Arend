@@ -213,7 +213,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     if (mode == Mode.HUMAN_NF) {
       Substitution substitution = new Substitution();
-      return Lam(visitParameters(expr.getParameters(), substitution, mode), expr.getBody().subst(substitution).accept(this, mode));
+      return Lam(DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getBody().subst(substitution).accept(this, mode));
     }
     if (mode == Mode.NF) {
       return Lam(expr.getParameters(), expr.getBody().accept(this, mode));
@@ -229,19 +229,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     if (mode == Mode.HUMAN_NF || mode == Mode.NF) {
       Substitution substitution = new Substitution();
-      return Pi(visitParameters(expr.getParameters(), substitution, mode), expr.getCodomain().subst(substitution).accept(this, mode));
+      return Pi(DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
     } else {
       return expr;
     }
-  }
-
-  private DependentLink visitParameters(DependentLink link, Substitution substitution, Mode mode) {
-    link = DependentLink.Helper.subst(link, substitution);
-    for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
-      link1 = link1.getNextTyped(null);
-      link1.setType(link1.getType().accept(this, mode));
-    }
-    return link;
   }
 
   @Override
@@ -267,7 +258,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.HUMAN_NF ? Sigma(visitParameters(expr.getParameters(), new Substitution(), mode)) : expr;
+    return mode == Mode.TOP ? null : mode == Mode.NF || mode == Mode.HUMAN_NF ? Sigma(DependentLink.Helper.accept(expr.getParameters(), this, mode)) : expr;
   }
 
   @Override
