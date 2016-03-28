@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
@@ -144,7 +143,41 @@ public final class Abstract {
 
   public interface UniverseExpression extends Expression {
     byte PREC = 12;
+
+    class Universe {
+      public int myPLevel;
+      public int myHLevel;
+
+      public static final int NOT_TRUNCATED = -20;
+      public static final int PROP = -1;
+      public static final int SET = 0;
+
+      public Universe(int PLevel, int HLevel) {
+        myPLevel = PLevel;
+        myHLevel = HLevel;
+      }
+
+      public boolean equals(Object obj) {
+        if (obj.getClass() != this.getClass()) return false;
+        Universe u = (Universe)obj;
+        return myPLevel == u.myPLevel && myHLevel == u.myHLevel;
+      }
+
+      @Override
+      public String toString() {
+        if (myHLevel == PROP) return "\\Prop";
+        if (myHLevel == SET) return "\\Set" + myPLevel;
+        return "\\" + (myHLevel == NOT_TRUNCATED ? "" : myHLevel + "-") + "Type" + myPLevel;
+      }
+    }
+
     Universe getUniverse();
+  }
+
+  public interface PolyUniverseExpression extends Expression {
+    byte PREC = 12;
+
+    Expression getLevel();
   }
 
   public interface InferHoleExpression extends Expression {
@@ -267,7 +300,7 @@ public final class Abstract {
     List<? extends TypeArgument> getParameters();
     List<? extends Constructor> getConstructors();
     Collection<? extends Condition> getConditions();
-    Universe getUniverse();
+    Expression getUniverse();
   }
 
   public interface ClassDefinition extends Definition {

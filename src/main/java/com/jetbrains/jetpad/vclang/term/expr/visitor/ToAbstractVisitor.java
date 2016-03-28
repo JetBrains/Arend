@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.factory.AbstractExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -49,7 +50,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     LamExpression expr1 = args.get(2).toLam();
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.getLevelDefs(Prelude.getLevel(dataCall.getDefinition())).pathInfix, args.get(0).accept(this, null));
+        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.PATH_INFIX, args.get(0).accept(this, null));
       }
     }
     return null;
@@ -196,7 +197,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
-    return myFactory.makeUniverse(expr.getUniverse());
+    if (!(expr.getUniverse() instanceof TypeUniverse)) return null;
+    TypeUniverse universe = (TypeUniverse) expr.getUniverse();
+    if (universe.getLevel() == null) return myFactory.makeUniverse(null);
+    return myFactory.makeUniverse(universe.getLevel().getValue().accept(this, null));
   }
 
   @Override

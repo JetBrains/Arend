@@ -192,7 +192,7 @@ public class ModuleDeserialization {
 
   private void deserializeDataDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, DataDefinition definition) throws IOException {
     if (!definition.hasErrors()) {
-      definition.setUniverse(readUniverse(stream));
+      definition.setUniverse(readUniverse(stream, definitionMap));
       definition.setParameters(readParameters(stream, definitionMap));
     }
 
@@ -217,7 +217,7 @@ public class ModuleDeserialization {
           }
           constructor.setPatterns(new Patterns(patterns));
         }
-        constructor.setUniverse(readUniverse(stream));
+        constructor.setUniverse(readUniverse(stream, definitionMap));
         constructor.setParameters(readParameters(stream, definitionMap));
       }
 
@@ -261,7 +261,7 @@ public class ModuleDeserialization {
 
   private void deserializeClassDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap, ClassDefinition definition) throws IOException {
     deserializeNamespace(stream, definitionMap, definition);
-    definition.setUniverse(readUniverse(stream));
+    definition.setUniverse(readUniverse(stream, definitionMap));
 
     int numFields = stream.readInt();
     for (int i = 0; i < numFields; i++) {
@@ -271,17 +271,22 @@ public class ModuleDeserialization {
       field.hasErrors(stream.readBoolean());
 
       if (!field.hasErrors()) {
-        field.setUniverse(readUniverse(stream));
+        field.setUniverse(readUniverse(stream, definitionMap));
         field.setBaseType(readExpression(stream, definitionMap));
         field.setThisClass(definition);
       }
     }
   }
 
-  public static Universe readUniverse(DataInputStream stream) throws IOException {
-    int level = stream.readInt();
-    int truncated = stream.readInt();
-    return new Universe.Type(level, truncated);
+  public Universe readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    Expression level = readExpression(stream, definitionMap);
+    Expression plevel, hlevel;
+    if (level instanceof NewExpression) {
+      plevel = ((ClassCallExpression)((NewExpression) level).getExpression()).getImplementStatements().get(PLevel().getDefinition()).term;
+      hlevel = ((ClassCallExpression)((NewExpression) level).getExpression()).getImplementStatements().get(HLevel().getDefinition()).term;
+      return new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel));
+    }
+    throw new IncorrectFormat();
   }
 
   public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -419,7 +424,7 @@ public class ModuleDeserialization {
         return Pi(parameters, readExpression(stream, definitionMap));
       }
       case 8: {
-        return new UniverseExpression(readUniverse(stream));
+        return new UniverseExpression(readUniverse(stream, definitionMap));
       }
       case 9: {
         return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(new ModuleResolvedName(myModuleID), "Deserialization error", null));

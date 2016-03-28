@@ -11,12 +11,12 @@ import java.util.Map;
 
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
-  private Universe myUniverse;
+//  private Universe myUniverse;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
     myStatements = Collections.emptyMap();
-    myUniverse = definition.getUniverse();
+  //  myUniverse = definition.getUniverse();
   }
 
   public ClassCallExpression(ClassDefinition definition, Map<ClassField, ImplementStatement> statements) {
@@ -41,18 +41,24 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   public Universe getUniverse() {
-    if (myUniverse == null) {
-      myUniverse = new Universe.Type(0, Universe.Type.PROP);
+    if (getDefinition().getUniverse() == null) {
+      Universe universe = null;
       for (ClassField field : getDefinition().getFields()) {
         if (!myStatements.containsKey(field)) {
-          UniverseExpression expr = field.getBaseType().getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-          myUniverse = myUniverse.max(expr != null ? expr.getUniverse() : field.getUniverse());
-          assert expr != null;
+          Expression expr = field.getBaseType().getType().normalize(NormalizeVisitor.Mode.WHNF);
+          Universe fieldUniverse = expr instanceof UniverseExpression ? ((UniverseExpression) expr).getUniverse() : field.getUniverse();
+          if (universe == null) {
+            universe = fieldUniverse;
+            continue;
+          }
+          universe = universe.compare(fieldUniverse, null).MaxUniverse;
+          assert expr instanceof UniverseExpression;
         }
       }
+      getDefinition().setUniverse(universe);
     }
 
-    return myUniverse;
+    return getDefinition().getUniverse();
   }
 
   @Override

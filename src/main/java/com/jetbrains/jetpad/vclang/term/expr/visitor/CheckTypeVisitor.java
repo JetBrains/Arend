@@ -13,9 +13,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.LambdaInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -239,8 +237,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
 
         List<Expression> args = result.expression.getFunction().toConCall().getDataTypeArguments();
-        if (!compareExpressions(result, args.get(1), Apps(result.expression.getArguments().get(0), ConCall(Prelude.LEFT)), expr) ||
-            !compareExpressions(result, args.get(2), Apps(result.expression.getArguments().get(0), ConCall(Prelude.RIGHT)), expr)) {
+        if (!compareExpressions(result, args.get(2), Apps(result.expression.getArguments().get(0), ConCall(Prelude.LEFT)), expr) ||
+            !compareExpressions(result, args.get(3), Apps(result.expression.getArguments().get(0), ConCall(Prelude.RIGHT)), expr)) {
           return false;
         }
       }
@@ -405,7 +403,27 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
-    return checkResult(expectedType, new Result(new UniverseExpression(expr.getUniverse()), new UniverseExpression(expr.getUniverse().succ())), expr);
+    TypeUniverse.HomotopyLevel hlevel = expr.getUniverse().myHLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? TypeUniverse.HomotopyLevel.NOT_TRUNCATED : new TypeUniverse.HomotopyLevel(expr.getUniverse().myHLevel);
+    UniverseExpression universe = Universe(expr.getUniverse().myPLevel, hlevel);
+    return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
+  }
+
+  @Override
+  public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Expression expectedType) {
+    Result result = typeCheck(expr.getLevel(), Level());
+    if (result == null) return null;
+    Expression level = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
+    UniverseExpression universe;
+    if (!(level instanceof NewExpression)) {
+      //plevel = new ProjExpression(level, 0);
+      //hlevel = new ProjExpression(level, 1);
+      universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
+    } else {
+      Expression plevel = ((ClassCallExpression)((NewExpression) level).getExpression()).getImplementStatements().get(PLevel().getDefinition()).term;
+      Expression hlevel = ((ClassCallExpression)((NewExpression) level).getExpression()).getImplementStatements().get(HLevel().getDefinition()).term;
+      universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
+    }
+    return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
 
   @Override
@@ -521,31 +539,39 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    Universe universe = new Universe.Type(Universe.NO_LEVEL, Universe.Type.PROP);
+    Universe universe = null;
     for (int i = 0; i < domainTypes.length; ++i) {
-      Universe argUniverse = domainTypes[i].normalize(NormalizeVisitor.Mode.WHNF).toUniverse().getUniverse();
-      Universe maxUniverse = universe.max(argUniverse);
-      if (maxUniverse == null) {
+      Universe argUniverse = ((UniverseExpression) domainTypes[i].normalize(NormalizeVisitor.Mode.NF)).getUniverse();
+      if (universe == null) {
+        universe = argUniverse;
+        continue;
+      }
+      Universe.CompareResult cmp = universe.compare(argUniverse, null);
+      if (cmp == null) {
         String msg = "Universe " + argUniverse + " of " + ordinal(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
         TypeCheckingError error = new TypeCheckingError(msg, expr);
         expr.setWellTyped(myContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
       }
-      universe = maxUniverse;
+      universe = cmp.MaxUniverse;
     }
     if (codomainResult != null) {
-      Universe codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.WHNF).toUniverse().getUniverse();
-      Universe maxUniverse = universe.max(codomainUniverse);
-      if (maxUniverse == null) {
-        String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
-        TypeCheckingError error = new TypeCheckingError(msg, expr);
-        expr.setWellTyped(myContext, Error(null, error));
-        myErrorReporter.report(error);
-        return null;
+      Universe codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse;
+      if (universe != null) {
+        Universe.CompareResult cmp = universe.compare(codomainUniverse, null);
+        if (cmp == null) {
+          String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
+          TypeCheckingError error = new TypeCheckingError(msg, expr);
+          expr.setWellTyped(myContext, Error(null, error));
+          myErrorReporter.report(error);
+          return null;
+        }
+        Universe prop = new TypeUniverse(new TypeUniverse.TypeLevel(TypeUniverse.HomotopyLevel.PROP, false));
+        universe = codomainUniverse.equals(prop) ? prop : cmp.MaxUniverse;
+      } else {
+        universe = codomainUniverse;
       }
-      Universe prop = new Universe.Type(0, Universe.Type.PROP);
-      universe = codomainUniverse.equals(prop) ? prop : maxUniverse;
     }
 
     argsResult.expression = codomainResult == null ? Sigma(list.getFirst()) : Pi(list.getFirst(), codomainResult.expression);

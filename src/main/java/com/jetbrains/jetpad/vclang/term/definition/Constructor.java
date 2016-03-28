@@ -35,8 +35,7 @@ public class Constructor extends Definition implements Function {
   }
 
   public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
-    super(rn, precedence);
-    setUniverse(universe);
+    super(rn, precedence, universe);
     hasErrors(false);
     myDataType = dataType;
     myParameters = parameters;

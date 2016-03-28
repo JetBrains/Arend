@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 
 import java.util.Arrays;
 import java.util.List;
@@ -178,21 +179,33 @@ public class ConcreteExpressionFactory {
     return new Concrete.Clause(POSITION, patterns, arrow, expr);
   }
 
-  public static Concrete.UniverseExpression cUniverse(Universe universe) {
-    return new Concrete.UniverseExpression(POSITION, universe);
-  }
-
-  public static Concrete.UniverseExpression cUniverse() {
-    return new Concrete.UniverseExpression(POSITION, new Universe.Type());
-  }
-
   public static Concrete.UniverseExpression cUniverse(int level) {
-    return new Concrete.UniverseExpression(POSITION, new Universe.Type(level));
+    return new Concrete.UniverseExpression(POSITION, new Abstract.UniverseExpression.Universe(level, Abstract.UniverseExpression.Universe.NOT_TRUNCATED));
   }
 
   public static Concrete.UniverseExpression cUniverse(int level, int truncated) {
-    return new Concrete.UniverseExpression(POSITION, new Universe.Type(level, truncated));
+    return new Concrete.UniverseExpression(POSITION, new Abstract.UniverseExpression.Universe(level, truncated));
   }
+
+  public static Concrete.PolyUniverseExpression cPolyUniverse(Concrete.Expression level) {
+    return new Concrete.PolyUniverseExpression(POSITION, level);
+  }
+
+  /*
+  public static Concrete.PolyUniverseExpression cPolyUniverse(Concrete.Expression level) {
+    return new Concrete.PolyUniverseExpression(POSITION, level);
+  }
+  public static Concrete.UniverseExpression cUniverse() {
+    return new Concrete.UniverseExpression(POSITION, new UniverseOld.Type());
+  }
+
+  public static Concrete.UniverseExpression cUniverse(int level) {
+    return new Concrete.UniverseExpression(POSITION, new UniverseOld.Type(level));
+  }
+
+  public static Concrete.UniverseExpression cUniverse(int level, int truncated) {
+    return new Concrete.UniverseExpression(POSITION, new UniverseOld.Type(level, truncated));
+  }/**/
 
   public static List<Concrete.Pattern> cPatterns(Concrete.Pattern... patterns) {
     return Arrays.asList(patterns);

@@ -149,6 +149,11 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
   }
 
   @Override
+  public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Void params) {
+    return expr.getLevel().accept(this, null);
+  }
+
+  @Override
   public Void visitInferHole(Abstract.InferHoleExpression expr, Void params) {
     return null;
   }

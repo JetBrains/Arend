@@ -30,13 +30,12 @@ public class PiExpression extends DependentTypeExpression {
     if (type == null || universe == null) {
       return null;
     }
-    UniverseExpression universeType = type.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-    if (universeType == null) {
+    type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    if (!(type instanceof UniverseExpression)) {
       return null;
     }
-    Universe codomainUniverse = universeType.getUniverse();
-    Universe prop = new Universe.Type(0, Universe.Type.PROP);
-    return codomainUniverse.equals(prop) ? prop : universe.max(codomainUniverse);
+    Universe codomainUniverse = ((UniverseExpression) type).getUniverse();
+    return codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : universe.compare(codomainUniverse, null).MaxUniverse;
   }
 
   @Override

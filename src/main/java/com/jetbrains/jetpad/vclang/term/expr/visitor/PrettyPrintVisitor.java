@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.UniverseOld;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
@@ -15,7 +15,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.Utils.removeFromList;
 import static com.jetbrains.jetpad.vclang.term.context.Utils.trimToSize;
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 
 // TODO: Simplify pretty printer
 // TODO: move myNames to ToAbstractVisitor
@@ -129,6 +128,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (expr.getResolvedDefinition() != null && expr.getResolvedDefinition() == Prelude.ZERO) {
       myBuilder.append("0");
     } else {
+      if (expr.getExpression() != null) {
+        expr.getExpression().accept(this, prec);
+        myBuilder.append(".");
+      }
       myBuilder.append(new Name(expr.getName()));
     }
     return null;
@@ -232,6 +235,15 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitUniverse(Abstract.UniverseExpression expr, Byte prec) {
     myBuilder.append(expr.getUniverse());
+    return null;
+  }
+
+  @Override
+  public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Byte prec) {
+    myBuilder.append("Type ");
+    if (expr.getLevel() != null) {
+      expr.getLevel().accept(this, prec);
+    }
     return null;
   }
 
@@ -583,9 +595,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("{!error}");
     }
 
-    Universe universe = def.getUniverse();
+    Abstract.Expression universe = def.getUniverse();
     if (universe != null) {
-      myBuilder.append(" : ").append(universe);
+      myBuilder.append(" : ");
+      universe.accept(this, null);
     }
     ++myIndent;
 

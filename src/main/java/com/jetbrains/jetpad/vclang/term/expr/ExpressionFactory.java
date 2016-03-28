@@ -205,16 +205,64 @@ public class ExpressionFactory {
     return Apps(Suc(), expr);
   }
 
+  public static DataCallExpression Lvl() {return DataCall(Prelude.LVL); }
+
+  public static ConCallExpression ZeroLvl() { return ConCall(Prelude.ZERO_LVL); }
+
+  public static ConCallExpression SucLvl() { return ConCall(Prelude.SUC_LVL); }
+
+  public static Expression SucLvl(Expression expr) { return Apps(SucLvl(), expr); }
+
+  public static FunCallExpression MaxLvl() { return FunCall(Prelude.MAX_LVL); }
+
+  public static Expression MaxLvl(Expression expr1, Expression expr2) { return Apps(MaxLvl(), expr1, expr2); }
+
+  public static DataCallExpression CNat() {
+    return DataCall(Prelude.CNAT);
+  }
+
+  public static Expression Fin(Expression expr) { return Apps(ConCall(Prelude.FIN), expr); }
+
+  public static ConCallExpression Inf() {
+    return ConCall(Prelude.INF);
+  }
+
+  public static Expression SucCNat(Expression expr) { return Apps(FunCall(Prelude.SUC_CNAT), expr); }
+
+  public static Expression MaxCNat(Expression expr1, Expression expr2) { return Apps(FunCall(Prelude.MAX_CNAT), expr1, expr2); }
+
+  public static ClassCallExpression Level() { return new ClassCallExpression(Prelude.LEVEL); }
+
+  public static FieldCallExpression PLevel() { return new FieldCallExpression(Prelude.PLEVEL); }
+
+  public static FieldCallExpression HLevel() { return new FieldCallExpression(Prelude.HLEVEL); }
+
   public static UniverseExpression Universe() {
-    return new UniverseExpression(new Universe.Type());
+    return new UniverseExpression(new TypeUniverse());
   }
 
-  public static UniverseExpression Universe(int level) {
-    return new UniverseExpression(new Universe.Type(level));
+  public static UniverseExpression Universe(int plevel) {
+    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(plevel), TypeUniverse.HomotopyLevel.NOT_TRUNCATED)));
   }
 
-  public static UniverseExpression Universe(int level, int truncated) {
-    return new UniverseExpression(new Universe.Type(level, truncated));
+  public static UniverseExpression Universe(int plevel, int hlevel) {
+    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
+  }
+
+  public static UniverseExpression Universe(int plevel, TypeUniverse.HomotopyLevel hlevel) {
+    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(plevel), hlevel)));
+  }
+
+  public static UniverseExpression Universe(Expression level) {
+    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
+  }
+
+  public static UniverseExpression Universe(Expression plevel, Expression hlevel) {
+    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
+  }
+
+  public static UniverseExpression Universe(Universe universe) {
+    return new UniverseExpression(universe);
   }
 
   public static ErrorExpression Error(Expression expr, TypeCheckingError error) {

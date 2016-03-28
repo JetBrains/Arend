@@ -20,7 +20,16 @@ public abstract class Definition extends NamedBinding implements BaseDefinition 
     myResolvedName = resolvedName;
     myFixity = new Name(resolvedName.getName()).fixity;
     myPrecedence = precedence;
-    myUniverse = new Universe.Type(0, Universe.Type.PROP);
+    myUniverse = new TypeUniverse(new TypeUniverse.TypeLevel());
+    myHasErrors = true;
+  }
+
+  public Definition(ResolvedName resolvedName, Abstract.Definition.Precedence precedence, Universe universe) {
+    super(resolvedName.getName());
+    myResolvedName = resolvedName;
+    myFixity = new Name(resolvedName.getName()).fixity;
+    myPrecedence = precedence;
+    myUniverse = universe;
     myHasErrors = true;
   }
 

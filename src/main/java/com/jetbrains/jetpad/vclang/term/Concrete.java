@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -596,6 +595,25 @@ public final class Concrete {
     }
   }
 
+  public static class PolyUniverseExpression extends Expression implements Abstract.PolyUniverseExpression {
+    private final Expression myLevel;
+
+    public PolyUniverseExpression(Position position, Expression level) {
+      super(position);
+      myLevel = level;
+    }
+
+    @Override
+    public Expression getLevel() {
+      return myLevel;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitPolyUniverse(this, params);
+    }
+  }
+
   public static class ProjExpression extends Expression implements Abstract.ProjExpression {
     private final Expression myExpression;
     private final int myField;
@@ -935,9 +953,9 @@ public final class Concrete {
     private final List<Constructor> myConstructors;
     private final List<TypeArgument> myParameters;
     private final List<Condition> myConditions;
-    private final Universe myUniverse;
+    private final Expression myUniverse;
 
-    public DataDefinition(Position position, String name, Precedence precedence, List<TypeArgument> parameters, Universe universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
+    public DataDefinition(Position position, String name, Precedence precedence, List<TypeArgument> parameters, Expression universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
       super(position, name, precedence);
       myParameters = parameters;
       myConstructors = constructors;
@@ -961,7 +979,7 @@ public final class Concrete {
     }
 
     @Override
-    public Universe getUniverse() {
+    public Expression getUniverse() {
       return myUniverse;
     }
 
