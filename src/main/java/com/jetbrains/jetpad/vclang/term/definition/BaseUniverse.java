@@ -18,6 +18,8 @@ public abstract class BaseUniverse<U extends Universe, L extends Universe.Level<
     L otherLevel = ((BaseUniverse<U, L>) other).getLevel();
     if (myLevel == null)
       return otherLevel == null ? new CompareResult(this, Cmp.EQUALS) : new CompareResult(this, Cmp.GREATER);
+    if (otherLevel == null)
+      return new CompareResult(this, Cmp.LESS);
     Cmp res = myLevel.compare(otherLevel, visitor);
     if (res == Cmp.UNKNOWN || res == Cmp.NOT_COMPARABLE)
       return new CompareResult(createUniverse(myLevel.max(otherLevel)), res);
@@ -37,7 +39,7 @@ public abstract class BaseUniverse<U extends Universe, L extends Universe.Level<
     return cmp != null && cmp.Result == Cmp.EQUALS;
   }
 
-  protected static boolean compreLevelExprs(Expression expr1, Expression expr2, CompareVisitor visitor) {
+  protected static boolean compareLevelExprs(Expression expr1, Expression expr2, CompareVisitor visitor) {
     return visitor == null ? Expression.compare(expr1, expr2) : expr1.accept(visitor, expr2);
   }
 }

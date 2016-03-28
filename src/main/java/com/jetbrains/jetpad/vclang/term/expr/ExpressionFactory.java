@@ -233,6 +233,13 @@ public class ExpressionFactory {
 
   public static ClassCallExpression Level() { return new ClassCallExpression(Prelude.LEVEL); }
 
+  public static NewExpression Level(Expression plevel, Expression hlevel) {
+    HashMap<ClassField, ClassCallExpression.ImplementStatement> map = new HashMap<>();
+    map.put(Prelude.PLEVEL, new ClassCallExpression.ImplementStatement(Lvl(), plevel));
+    map.put(Prelude.HLEVEL, new ClassCallExpression.ImplementStatement(CNat(), hlevel));
+    return new NewExpression(new ClassCallExpression(Prelude.LEVEL, map));
+  }
+
   public static FieldCallExpression PLevel() { return new FieldCallExpression(Prelude.PLEVEL); }
 
   public static FieldCallExpression HLevel() { return new FieldCallExpression(Prelude.HLEVEL); }

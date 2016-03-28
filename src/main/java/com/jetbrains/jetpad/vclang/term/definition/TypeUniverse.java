@@ -1,17 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-import com.jetbrains.jetpad.vclang.term.expr.NewExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
-import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-
-import java.util.HashMap;
 
 public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLevel> {
   public static final TypeUniverse PROP = new TypeUniverse(new TypeLevel(HomotopyLevel.PROP, true));
@@ -46,10 +39,10 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
       Expression otherLevel = other.myLevel;
       myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
       otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
-      if (compreLevelExprs(myLevel, otherLevel, visitor)) return Cmp.EQUALS;
+      if (compareLevelExprs(myLevel, otherLevel, visitor)) return Cmp.EQUALS;
       Expression maxUlevel = MaxLvl(myLevel, otherLevel).normalize(NormalizeVisitor.Mode.NF);
-      if (compreLevelExprs(myLevel, maxUlevel, visitor)) return Cmp.GREATER;
-      if (compreLevelExprs(otherLevel, maxUlevel, visitor)) return Cmp.LESS;
+      if (compareLevelExprs(myLevel, maxUlevel, visitor)) return Cmp.GREATER;
+      if (compareLevelExprs(otherLevel, maxUlevel, visitor)) return Cmp.LESS;
       return Cmp.UNKNOWN;
     }
 
@@ -96,12 +89,12 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     public Cmp compare(HomotopyLevel other, CompareVisitor visitor) {
       myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
       other.myLevel = other.myLevel.normalize(NormalizeVisitor.Mode.NF);
-      if (compreLevelExprs(myLevel, other.myLevel, visitor)) return Cmp.EQUALS;
-      if (compreLevelExprs(myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.GREATER;
-      if (compreLevelExprs(other.myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.LESS;
+      if (compareLevelExprs(myLevel, other.myLevel, visitor)) return Cmp.EQUALS;
+      if (compareLevelExprs(myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.GREATER;
+      if (compareLevelExprs(other.myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.LESS;
       Expression maxHlevel = MaxCNat(myLevel, other.myLevel).normalize(NormalizeVisitor.Mode.NF);
-      if (compreLevelExprs(myLevel, maxHlevel, visitor)) return Cmp.GREATER;
-      if (compreLevelExprs(other.myLevel, maxHlevel, visitor)) return Cmp.LESS;
+      if (compareLevelExprs(myLevel, maxHlevel, visitor)) return Cmp.GREATER;
+      if (compareLevelExprs(other.myLevel, maxHlevel, visitor)) return Cmp.LESS;
       return Cmp.UNKNOWN;
     }
 
@@ -172,10 +165,7 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
 
     public Expression getValue() {
       if (myLevel != null) return myLevel;
-      HashMap<ClassField, ClassCallExpression.ImplementStatement> map = new HashMap<>();
-      map.put(Prelude.PLEVEL, new ClassCallExpression.ImplementStatement(Lvl(), myPLevel.getValue()));
-      map.put(Prelude.HLEVEL, new ClassCallExpression.ImplementStatement(CNat(), myHLevel.getValue()));
-      return new NewExpression(new ClassCallExpression(Prelude.LEVEL, map));
+      return Level(myPLevel.getValue(), myHLevel.getValue());
     }
 
     public void setIgnorePLevel() { myIgnorePLevel = true; }
@@ -184,7 +174,7 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     public Cmp compare(TypeLevel other, CompareVisitor visitor) {
       // if ((myLevel == null && other.myLevel != null) || (other.myLevel == null && myLevel != null)) return Cmp.NOT_COMPARABLE;
       // if (myLevel != null) return Expression.compare(myLevel, other.myLevel) ? Cmp.EQUALS : Cmp.UNKNOWN;
-      if (compreLevelExprs(getValue(), other.getValue(), visitor)) {
+      if (compareLevelExprs(getValue(), other.getValue(), visitor)) {
         return Cmp.EQUALS;
       }
 

@@ -344,7 +344,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
-              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(Universe.ANY_LEVEL), argIndex, expr);
+              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(), argIndex, expr);
               link.setType(Reference(inferenceBinding));
               bindingTypes.put(link, inferenceBinding);
             }
@@ -415,8 +415,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Expression level = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
     UniverseExpression universe;
     if (!(level instanceof NewExpression)) {
-      //plevel = new ProjExpression(level, 0);
-      //hlevel = new ProjExpression(level, 1);
       universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
     } else {
       Expression plevel = ((ClassCallExpression)((NewExpression) level).getExpression()).getImplementStatements().get(PLevel().getDefinition()).term;
@@ -557,7 +555,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       universe = cmp.MaxUniverse;
     }
     if (codomainResult != null) {
-      Universe codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse;
+      Universe codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
       if (universe != null) {
         Universe.CompareResult cmp = universe.compare(codomainUniverse, null);
         if (cmp == null) {

@@ -10,8 +10,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.term.expr.ArgumentExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
@@ -88,21 +86,6 @@ public class Prelude extends Namespace {
     PRELUDE.addMember(INTERVAL.addConstructor(LEFT));
     PRELUDE.addMember(INTERVAL.addConstructor(RIGHT));
     INTERVAL.addConstructor(ABSTRACT);
-
-    /*DependentLink isoParameter1 = param(false, vars("A", "B"), Universe(0, UniverseOld.Type.PROP));
-    DependentLink isoParameter2 = param("f", Pi(param(Reference(isoParameter1)), Reference(isoParameter1.getNext())));
-    DependentLink isoParameter3 = param("g", Pi(param(Reference(isoParameter1.getNext())), Reference(isoParameter1)));
-    DependentLink isoParameter4 = param("i", DataCall(INTERVAL));
-    isoParameter1.setNext(isoParameter2);
-    isoParameter2.setNext(isoParameter3);
-    isoParameter3.setNext(isoParameter4);
-    Expression isoResultType = Universe(0, UniverseOld.Type.PROP);
-    ElimTreeNode isoElimTree = top(isoParameter1, branch(isoParameter4, tail(),
-            clause(LEFT, EmptyDependentLink.getInstance(), Reference(isoParameter1)),
-            clause(RIGHT, EmptyDependentLink.getInstance(), Reference(isoParameter1.getNext()))
-    ));
-    FunctionDefinition iso = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "isoP"), Abstract.Definition.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree);
-    PRELUDE.addDefinition(iso); /**/
 
     LVL = new DataDefinition(new DefinitionResolvedName(PRELUDE, "Lvl"), Abstract.Definition.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
     PRELUDE.addDefinition(LVL);
@@ -232,9 +215,9 @@ public class Prelude extends Namespace {
     PRELUDE.addDefinition(PATH_INFIX);
 
     DependentLink atParameter1 = param(false, "lvl", Level());
-    DependentLink atParameter2 = param(false, "A", Universe(Reference(atParameter1)));
-    DependentLink atParameter3 = param(false, "a", Reference(atParameter2));
-    DependentLink atParameter4 = param(false, "a'", Reference(atParameter2));
+    DependentLink atParameter2 = param(false, "A", Pi(param(DataCall(INTERVAL)), Universe(Reference(atParameter1))));
+    DependentLink atParameter3 = param(false, "a", Apps(Reference(atParameter2), Left()));
+    DependentLink atParameter4 = param(false, "a'", Apps(Reference(atParameter2), Right()));
     DependentLink atParameter5 = param("p", Apps(DataCall(PATH), Reference(atParameter1), Reference(atParameter2), Reference(atParameter3), Reference(atParameter4)));
     DependentLink atParameter6 = param("i", DataCall(INTERVAL));
     atParameter1.setNext(atParameter2);
