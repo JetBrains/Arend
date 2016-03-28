@@ -140,7 +140,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public Expression visitUniverse(UniverseExpression expr, Void params) {
-    return expr.getUniverse() instanceof TypeUniverse ? Universe(((TypeUniverse) expr.getUniverse()).getLevel().getValue().accept(this, null)) : expr;
+    return expr.getUniverse() instanceof TypeUniverse && ((TypeUniverse) expr.getUniverse()).getLevel() != null ? Universe(((TypeUniverse) expr.getUniverse()).getLevel().getValue().accept(this, null)) : expr;
   }
 
   @Override

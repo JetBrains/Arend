@@ -242,7 +242,7 @@ public class ExpressionFactory {
   }
 
   public static UniverseExpression Universe(int plevel) {
-    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(plevel))));
+    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(plevel), TypeUniverse.HomotopyLevel.NOT_TRUNCATED)));
   }
 
   public static UniverseExpression Universe(int plevel, int hlevel) {

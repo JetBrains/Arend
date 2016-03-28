@@ -398,7 +398,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (universe == null) {
           universe = argUniverse;
         } else {
-          Universe.CompareResult cmp = universe.compare(argUniverse);
+          Universe.CompareResult cmp = universe.compare(argUniverse, null);
           if (cmp == null) {
             String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
             myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
@@ -427,7 +427,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     if (universe == null) {
       universe = resultTypeUniverse;
     } else {
-      Universe.CompareResult cmp = universe.compare(resultTypeUniverse);
+      Universe.CompareResult cmp = universe.compare(resultTypeUniverse, null);
       if (cmp == null) {
         String error = "Universe " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
         myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
@@ -510,7 +510,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
       member.definition = typedConstructor;
 
-      Universe.CompareResult cmp = inferredUniverse.compare(typedConstructor.getUniverse());
+      Universe.CompareResult cmp = inferredUniverse.compare(typedConstructor.getUniverse(), null);
       if (cmp == null) {
         String msg = "Universe " + typedConstructor.getUniverse() + " of constructor '" + constructor.getName() + "' is not compatible with universe " + inferredUniverse + " of previous constructors";
         myErrorReporter.report(new TypeCheckingError(msg, null));
@@ -520,7 +520,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
 
     if (userUniverse != null) {
-      Universe.CompareResult cmp = inferredUniverse.compare(userUniverse);
+      Universe.CompareResult cmp = inferredUniverse.compare(userUniverse, null);
       if (cmp == null || cmp.Result == Universe.Cmp.GREATER) {
         myErrorReporter.report(new TypeMismatchError(new UniverseExpression(userUniverse), new UniverseExpression(inferredUniverse), null));
         dataDefinition.setUniverse(inferredUniverse);
@@ -716,7 +716,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (universe == null) {
           universe = argUniverse;
         } else {
-          Universe.CompareResult cmp = universe.compare(argUniverse);
+          Universe.CompareResult cmp = universe.compare(argUniverse, null);
           if (cmp == null) {
             String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
             myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), error, def));
@@ -852,7 +852,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               ClassField field = (ClassField) member.definition;
               Universe oldUniverse = classDefinition.getUniverse();
               Universe newUniverse = field.getUniverse();
-              Universe.CompareResult cmp = oldUniverse.compare(newUniverse);
+              Universe.CompareResult cmp = oldUniverse.compare(newUniverse, null);
               if (cmp == null) {
                 String error = "UniverseOld " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
                 myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, definition));

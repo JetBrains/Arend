@@ -36,6 +36,6 @@ public class PiExpression extends DependentTypeExpression {
       return null;
     }
     Universe codomainUniverse = ((UniverseExpression) type).getUniverse();
-    return codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : universe.compare(codomainUniverse).MaxUniverse;
+    return codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : universe.compare(codomainUniverse, null).MaxUniverse;
   }
 }

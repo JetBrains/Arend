@@ -219,7 +219,7 @@ public class Prelude extends Namespace {
 
     DependentLink pathInfixParameter1 = param(false, "lvl", Level());
     DependentLink pathInfixParameter2 = param(false, "A", Universe(Reference(pathInfixParameter1)));
-    DependentLink pathInfixParameter3 = param(true, vars("a", "a'"), Reference(pathInfixParameter1));
+    DependentLink pathInfixParameter3 = param(true, vars("a", "a'"), Reference(pathInfixParameter2));
     pathInfixParameter1.setNext(pathInfixParameter2);
     pathInfixParameter2.setNext(pathInfixParameter3);
     Expression pathInfixTerm = DataCall(PATH)
@@ -393,10 +393,6 @@ public class Prelude extends Namespace {
 
   public static boolean isPath(Definition definition) {
     return PATH == definition;
-  }
-
-  public static boolean isPathInfix(Definition definition) {
-    return PATH_INFIX == definition;
   }
 
   public static boolean isIso(Definition definition) {

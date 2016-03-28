@@ -52,7 +52,7 @@ public class ClassCallExpression extends DefCallExpression {
             universe = fieldUniverse;
             continue;
           }
-          universe = universe.compare(fieldUniverse).MaxUniverse;
+          universe = universe.compare(fieldUniverse, null).MaxUniverse;
           assert expr instanceof UniverseExpression;
         }
       }
