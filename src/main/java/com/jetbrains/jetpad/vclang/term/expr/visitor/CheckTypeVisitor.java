@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
@@ -422,8 +423,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (newLevel == null) {
       universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
     } else {
-      Expression plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Prelude.PLEVEL).term;
-      Expression hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Prelude.HLEVEL).term;
+      Expression plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.PLEVEL).term;
+      Expression hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.HLEVEL).term;
       universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
     }
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);

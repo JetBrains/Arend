@@ -35,14 +35,19 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     }
 
     @Override
+    public boolean equals(Object other) {
+      return (other instanceof PredicativeLevel) && checkLevelExprsAreEqual(myLevel, ((PredicativeLevel) other).getValue(), null);
+    }
+
+    @Override
     public Cmp compare(PredicativeLevel other, CompareVisitor visitor) {
       Expression otherLevel = other.myLevel;
       myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
       otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
-      if (compareLevelExprs(myLevel, otherLevel, visitor)) return Cmp.EQUALS;
+      if (checkLevelExprsAreEqual(myLevel, otherLevel, visitor)) return Cmp.EQUALS;
       Expression maxUlevel = MaxLvl(myLevel, otherLevel).normalize(NormalizeVisitor.Mode.NF);
-      if (compareLevelExprs(myLevel, maxUlevel, visitor)) return Cmp.GREATER;
-      if (compareLevelExprs(otherLevel, maxUlevel, visitor)) return Cmp.LESS;
+      if (checkLevelExprsAreEqual(myLevel, maxUlevel, visitor)) return Cmp.GREATER;
+      if (checkLevelExprsAreEqual(otherLevel, maxUlevel, visitor)) return Cmp.LESS;
       return Cmp.UNKNOWN;
     }
 
@@ -65,7 +70,6 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     public static final HomotopyLevel SET = new HomotopyLevel(Fin(Suc(Zero())));
 
     public HomotopyLevel() {
-      // myLevel = NOT_TRUNCATED.myLevel;
       myLevel = PROP.myLevel;
     }
 
@@ -86,15 +90,20 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     }
 
     @Override
+    public boolean equals(Object other) {
+      return (other instanceof HomotopyLevel) && checkLevelExprsAreEqual(myLevel, ((HomotopyLevel) other).getValue(), null);
+    }
+
+    @Override
     public Cmp compare(HomotopyLevel other, CompareVisitor visitor) {
       myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
       other.myLevel = other.myLevel.normalize(NormalizeVisitor.Mode.NF);
-      if (compareLevelExprs(myLevel, other.myLevel, visitor)) return Cmp.EQUALS;
-      if (compareLevelExprs(myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.GREATER;
-      if (compareLevelExprs(other.myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.LESS;
+      if (checkLevelExprsAreEqual(myLevel, other.myLevel, visitor)) return Cmp.EQUALS;
+      if (checkLevelExprsAreEqual(myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.GREATER;
+      if (checkLevelExprsAreEqual(other.myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.LESS;
       Expression maxHlevel = MaxCNat(myLevel, other.myLevel).normalize(NormalizeVisitor.Mode.NF);
-      if (compareLevelExprs(myLevel, maxHlevel, visitor)) return Cmp.GREATER;
-      if (compareLevelExprs(other.myLevel, maxHlevel, visitor)) return Cmp.LESS;
+      if (checkLevelExprsAreEqual(myLevel, maxHlevel, visitor)) return Cmp.GREATER;
+      if (checkLevelExprsAreEqual(other.myLevel, maxHlevel, visitor)) return Cmp.LESS;
       return Cmp.UNKNOWN;
     }
 
@@ -168,13 +177,13 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
       return Level(myPLevel.getValue(), myHLevel.getValue());
     }
 
-    public void setIgnorePLevel() { myIgnorePLevel = true; }
+    //public boolean getIgnorePLevel() { return myIgnorePLevel || getHLevel().equals(HomotopyLevel.PROP); }
 
     @Override
     public Cmp compare(TypeLevel other, CompareVisitor visitor) {
       // if ((myLevel == null && other.myLevel != null) || (other.myLevel == null && myLevel != null)) return Cmp.NOT_COMPARABLE;
       // if (myLevel != null) return Expression.compare(myLevel, other.myLevel) ? Cmp.EQUALS : Cmp.UNKNOWN;
-      if (compareLevelExprs(getValue(), other.getValue(), visitor)) {
+      if (checkLevelExprsAreEqual(getValue(), other.getValue(), visitor)) {
         return Cmp.EQUALS;
       }
 
@@ -206,6 +215,9 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     @Override
     public TypeLevel succ() {
       if (myIgnorePLevel) {
+        if (getHLevel().equals(HomotopyLevel.PROP)) {
+          return new TypeLevel(0, 0);
+        }
         return new TypeLevel(getPLevel(), getHLevel().succ());
       }
       return new TypeLevel(getPLevel().succ(), getHLevel().succ());

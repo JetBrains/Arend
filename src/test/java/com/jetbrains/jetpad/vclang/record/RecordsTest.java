@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -226,7 +227,7 @@ public class RecordsTest {
     assertNotNull(domArg0);
     DefCallExpression domArg0Body = domArg0.getBody().toDefCall();
     assertNotNull(domArg0Body);
-    assertEquals(Prelude.NAT, domArg0Body.getDefinition());
+    assertEquals(Preprelude.NAT, domArg0Body.getDefinition());
 
     assertEquals(1, domArguments.get(2).getArguments().size());
     assertEquals(Reference(testFun.getParameters()), domArguments.get(2).getArguments().get(0));
@@ -234,7 +235,7 @@ public class RecordsTest {
 
     ConCallExpression domArg2 = domArguments.get(3).toConCall();
     assertNotNull(domArg2);
-    assertEquals(Prelude.ZERO, domArg2.getDefinition());
+    assertEquals(Preprelude.ZERO, domArg2.getDefinition());
   }
 
   @Test

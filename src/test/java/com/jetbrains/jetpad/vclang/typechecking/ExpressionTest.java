@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -220,8 +221,8 @@ public class ExpressionTest {
     //   \let | x (y : Nat) : Nat <= \elim y | zero => zero
     //                                       | suc x' => suc x' \in f x)
     Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")),
-        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(null, Prelude.ZERO)),
-        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern("x'"), true, false))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar("x'"))));
+        cClause(cPatterns(cConPattern(Preprelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cDefCall(null, Preprelude.ZERO)),
+        cClause(cPatterns(cConPattern(Preprelude.SUC.getName(), cPatternArg(cNamePattern("x'"), true, false))), Abstract.Definition.Arrow.RIGHT, cSuc(cVar("x'"))));
     Concrete.Expression expr = cLam(cargs(
             cTele(cvars("F"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("a"), cVar("A"))), cUniverse(1))),
             cTele(cvars("f"), cPi(ctypeArgs(cTele(false, cvars("A"), cUniverse(0)), cTele(cvars("x"), cVar("A"))), cApps(cVar("F"), cVar("x"))))),

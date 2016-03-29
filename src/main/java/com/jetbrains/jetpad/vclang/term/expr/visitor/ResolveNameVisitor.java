@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
@@ -38,6 +39,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
     CompositeNameResolver compositeNameResolver = new CompositeNameResolver();
     compositeNameResolver.pushNameResolver(nameResolver);
     compositeNameResolver.pushNameResolver(new NamespaceNameResolver(Prelude.PRELUDE));
+    compositeNameResolver.pushNameResolver(new NamespaceNameResolver(Preprelude.PRE_PRELUDE));
     myNameResolver = compositeNameResolver;
     myContext = context;
     myResolveListener = resolveListener;

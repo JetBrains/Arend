@@ -29,7 +29,7 @@ public abstract class BaseUniverse<U extends Universe, L extends Universe.Level<
 
   @Override
   public Universe succ() {
-    return myLevel != null ? createUniverse(myLevel.succ()) : null;
+    return myLevel != null ? createUniverse(myLevel.succ()) : createUniverse(null);
   }
 
   @Override
@@ -39,7 +39,7 @@ public abstract class BaseUniverse<U extends Universe, L extends Universe.Level<
     return cmp != null && cmp.Result == Cmp.EQUALS;
   }
 
-  protected static boolean compareLevelExprs(Expression expr1, Expression expr2, CompareVisitor visitor) {
+  protected static boolean checkLevelExprsAreEqual(Expression expr1, Expression expr2, CompareVisitor visitor) {
     return visitor == null ? Expression.compare(expr1, expr2) : expr1.accept(visitor, expr2);
   }
 }

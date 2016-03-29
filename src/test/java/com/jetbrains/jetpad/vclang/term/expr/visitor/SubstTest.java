@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -14,7 +15,7 @@ public class SubstTest {
   @Test
   public void substConst() {
     // zero -> N x [y := S] = zero -> N x
-    Expression expr = Pi(Zero(), Apps(DataCall(Prelude.NAT), Reference(new TypedBinding("x", Nat()))));
+    Expression expr = Pi(Zero(), Apps(DataCall(Preprelude.NAT), Reference(new TypedBinding("x", Nat()))));
     assertEquals(expr, expr.subst(new TypedBinding("x", Nat()), Suc()));
   }
 
@@ -22,8 +23,8 @@ public class SubstTest {
   public void substIndexEquals() {
     // zero -> N x [x := S] = zero -> N S
     Binding x = new TypedBinding("x", Nat());
-    Expression expr = Pi(Zero(), Apps(DataCall(Prelude.NAT), Reference(x)));
-    assertEquals(Pi(Zero(), Apps(DataCall(Prelude.NAT), Suc())), expr.subst(x, Suc()));
+    Expression expr = Pi(Zero(), Apps(DataCall(Preprelude.NAT), Reference(x)));
+    assertEquals(Pi(Zero(), Apps(DataCall(Preprelude.NAT), Suc())), expr.subst(x, Suc()));
   }
 
   @Test

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -67,6 +68,10 @@ public class ExpressionFactory {
 
   public static Expression BinOp(Expression left, Definition binOp, Expression right) {
     return Apps(binOp.getDefCall(), left, right);
+  }
+
+  public static DataCallExpression Interval() {
+    return DataCall(Prelude.INTERVAL);
   }
 
   public static ConCallExpression Left() {
@@ -190,59 +195,59 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return DataCall(Prelude.NAT);
+    return DataCall(Preprelude.NAT);
   }
 
   public static ConCallExpression Zero() {
-    return ConCall(Prelude.ZERO);
+    return ConCall(Preprelude.ZERO);
   }
 
   public static ConCallExpression Suc() {
-    return ConCall(Prelude.SUC);
+    return ConCall(Preprelude.SUC);
   }
 
   public static Expression Suc(Expression expr) {
     return Apps(Suc(), expr);
   }
 
-  public static DataCallExpression Lvl() {return DataCall(Prelude.LVL); }
+  public static DataCallExpression Lvl() {return DataCall(Preprelude.LVL); }
 
-  public static ConCallExpression ZeroLvl() { return ConCall(Prelude.ZERO_LVL); }
+  public static ConCallExpression ZeroLvl() { return ConCall(Preprelude.ZERO_LVL); }
 
-  public static ConCallExpression SucLvl() { return ConCall(Prelude.SUC_LVL); }
+  public static ConCallExpression SucLvl() { return ConCall(Preprelude.SUC_LVL); }
 
   public static Expression SucLvl(Expression expr) { return Apps(SucLvl(), expr); }
 
-  public static FunCallExpression MaxLvl() { return FunCall(Prelude.MAX_LVL); }
+  public static FunCallExpression MaxLvl() { return FunCall(Preprelude.MAX_LVL); }
 
   public static Expression MaxLvl(Expression expr1, Expression expr2) { return Apps(MaxLvl(), expr1, expr2); }
 
   public static DataCallExpression CNat() {
-    return DataCall(Prelude.CNAT);
+    return DataCall(Preprelude.CNAT);
   }
 
-  public static Expression Fin(Expression expr) { return Apps(ConCall(Prelude.FIN), expr); }
+  public static Expression Fin(Expression expr) { return Apps(ConCall(Preprelude.FIN), expr); }
 
   public static ConCallExpression Inf() {
-    return ConCall(Prelude.INF);
+    return ConCall(Preprelude.INF);
   }
 
-  public static Expression SucCNat(Expression expr) { return Apps(FunCall(Prelude.SUC_CNAT), expr); }
+  public static Expression SucCNat(Expression expr) { return Apps(FunCall(Preprelude.SUC_CNAT), expr); }
 
-  public static Expression MaxCNat(Expression expr1, Expression expr2) { return Apps(FunCall(Prelude.MAX_CNAT), expr1, expr2); }
+  public static Expression MaxCNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_CNAT), expr1, expr2); }
 
-  public static ClassCallExpression Level() { return new ClassCallExpression(Prelude.LEVEL); }
+  public static ClassCallExpression Level() { return new ClassCallExpression(Preprelude.LEVEL); }
 
   public static NewExpression Level(Expression plevel, Expression hlevel) {
     HashMap<ClassField, ClassCallExpression.ImplementStatement> map = new HashMap<>();
-    map.put(Prelude.PLEVEL, new ClassCallExpression.ImplementStatement(Lvl(), plevel));
-    map.put(Prelude.HLEVEL, new ClassCallExpression.ImplementStatement(CNat(), hlevel));
-    return new NewExpression(new ClassCallExpression(Prelude.LEVEL, map));
+    map.put(Preprelude.PLEVEL, new ClassCallExpression.ImplementStatement(Lvl(), plevel));
+    map.put(Preprelude.HLEVEL, new ClassCallExpression.ImplementStatement(CNat(), hlevel));
+    return new NewExpression(new ClassCallExpression(Preprelude.LEVEL, map));
   }
 
-  public static FieldCallExpression PLevel() { return new FieldCallExpression(Prelude.PLEVEL); }
+  public static FieldCallExpression PLevel() { return new FieldCallExpression(Preprelude.PLEVEL); }
 
-  public static FieldCallExpression HLevel() { return new FieldCallExpression(Prelude.HLEVEL); }
+  public static FieldCallExpression HLevel() { return new FieldCallExpression(Preprelude.HLEVEL); }
 
   public static UniverseExpression Universe() {
     return new UniverseExpression(new TypeUniverse());

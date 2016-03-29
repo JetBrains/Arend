@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
@@ -148,7 +149,8 @@ public class ModuleDeserialization {
         rn = fullPathToResolvedName(readFullPath(stream), moduleID);
         readDefinition(stream, rn, !createStubs);
       } else {
-        ModuleID depModuleID = stream.readBoolean() ? moduleID.deserialize(stream) : Prelude.moduleID;
+        int is_prelude = stream.readInt();
+        ModuleID depModuleID = is_prelude == 2 ? moduleID.deserialize(stream) : is_prelude == 1 ? Preprelude.moduleID : Prelude.moduleID;
         rn = fullPathToResolvedName(readFullPath(stream), depModuleID);
       }
       if (!createStubs) {
@@ -283,8 +285,8 @@ public class ModuleDeserialization {
     Expression plevel, hlevel;
     NewExpression newLevel = level.toNew();
     if (newLevel != null) {
-      plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Prelude.PLEVEL).term;
-      hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Prelude.HLEVEL).term;
+      plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.PLEVEL).term;
+      hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.HLEVEL).term;
       return new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel));
     }
     throw new IncorrectFormat();

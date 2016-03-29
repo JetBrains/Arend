@@ -77,12 +77,12 @@ public class TypeCheckingTest {
 
   @Test
   public void testPMap1() {
-    typeCheckDef("\\function pmap {A B : \\Type1} {a a' : A} (f : A -> B) (p : a == a') : (f a == f a') => path1 (\\lam i => f (p @@ i))");
+    typeCheckDef("\\function pmap {A B : \\Type1} {a a' : A} (f : A -> B) (p : a = a') : (f a = f a') => path (\\lam i => f (p @ i))");
   }
 
   @Test
   public void testPMap1Mix() {
-    typeCheckDef("\\function pmap {A : \\Type1} {B : \\Type0} {a a' : A} (f : A -> B) (p : a == a') : (f a = f a') => path (\\lam i => f (p @@ i))");
+    typeCheckDef("\\function pmap {A : \\Type1} {B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : (f a = f a') => path (\\lam i => f (p @ i))");
   }
 
    @Test

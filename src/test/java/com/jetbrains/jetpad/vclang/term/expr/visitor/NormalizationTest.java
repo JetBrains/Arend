@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -54,8 +55,8 @@ public class NormalizationTest {
 
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
-        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
-        clause(Prelude.SUC, xPlusMinusOne, Suc(BinOp(Reference(xPlusMinusOne), plus, Reference(yPlus))))));
+        clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
+        clause(Preprelude.SUC, xPlusMinusOne, Suc(BinOp(Reference(xPlusMinusOne), plus, Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
     testNS.addDefinition(plus);
 
@@ -64,8 +65,8 @@ public class NormalizationTest {
     mul = new FunctionDefinition(testNS.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), params(xMul, yMul), Nat(), null);
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
-        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
-        clause(Prelude.SUC, xMulMinusOne, BinOp(Reference(yMul), plus, BinOp(Reference(xMulMinusOne), mul, Reference(yMul))))
+        clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
+        clause(Preprelude.SUC, xMulMinusOne, BinOp(Reference(yMul), plus, BinOp(Reference(xMulMinusOne), mul, Reference(yMul))))
     ));
     mul.setElimTree(mulElimTree);
     testNS.addDefinition(mul);
@@ -74,8 +75,8 @@ public class NormalizationTest {
     fac = new FunctionDefinition(testNS.getChild("fac").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, xFac, Nat(), null);
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
-        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
-        clause(Prelude.SUC, xFacMinusOne, BinOp(Suc(Reference(xFacMinusOne)), mul, Apps(FunCall(fac), Reference(xFacMinusOne))))
+        clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
+        clause(Preprelude.SUC, xFacMinusOne, BinOp(Suc(Reference(xFacMinusOne)), mul, Apps(FunCall(fac), Reference(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
     testNS.addDefinition(fac);
@@ -86,8 +87,8 @@ public class NormalizationTest {
     nelim = new FunctionDefinition(testNS.getChild("nelim").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, params(zNElim, sNElim, xNElim), Nat(), null);
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
-        clause(Prelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
-        clause(Prelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), Apps(FunCall(nelim), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
+        clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
+        clause(Preprelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), Apps(FunCall(nelim), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
     ));
     nelim.setElimTree(nelimElimTree);
     testNS.addDefinition(nelim);
@@ -255,8 +256,8 @@ public class NormalizationTest {
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \Type2 <= \elim y | \Type0 => \Type1 | succ _ => \Type1 \in x zero) = \Type0
     Concrete.Expression elimTree = cElim(Collections.<Concrete.Expression>singletonList(cVar("y")),
-        cClause(cPatterns(cConPattern(Prelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverse(0)),
-        cClause(cPatterns(cConPattern(Prelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverse(1))
+        cClause(cPatterns(cConPattern(Preprelude.ZERO.getName())), Abstract.Definition.Arrow.RIGHT, cUniverse(0)),
+        cClause(cPatterns(cConPattern(Preprelude.SUC.getName(), cPatternArg(cNamePattern(null), true, false))), Abstract.Definition.Arrow.RIGHT, cUniverse(1))
     );
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(clet("x", cargs(cTele(cvars("y"), cNat())), cUniverse(2), Abstract.Definition.Arrow.LEFT, elimTree)), cApps(cVar("x"), cZero())), null, 0);
     assertEquals(Universe(0), result.expression.normalize(NormalizeVisitor.Mode.NF));

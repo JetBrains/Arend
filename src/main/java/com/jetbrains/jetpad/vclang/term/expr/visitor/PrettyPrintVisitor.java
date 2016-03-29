@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -92,12 +93,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   private Integer getNumber(Abstract.Expression expr) {
     if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getResolvedDefinition() != null
-        && ((Abstract.DefCallExpression) expr).getResolvedDefinition() == Prelude.ZERO) {
+        && ((Abstract.DefCallExpression) expr).getResolvedDefinition() == Preprelude.ZERO) {
       return 0;
     }
     if (expr instanceof Abstract.AppExpression && ((Abstract.AppExpression) expr).getFunction() instanceof Abstract.DefCallExpression
         && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getResolvedDefinition() != null
-        && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getResolvedDefinition() == Prelude.SUC) {
+        && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getResolvedDefinition() == Preprelude.SUC) {
       Integer result = getNumber(((Abstract.AppExpression) expr).getArgument().getExpression());
       if (result == null) return null;
       return result + 1;
@@ -120,7 +121,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Byte prec) {
-    if (expr.getResolvedDefinition() != null && expr.getResolvedDefinition() == Prelude.ZERO) {
+    if (expr.getResolvedDefinition() != null && expr.getResolvedDefinition() == Preprelude.ZERO) {
       myBuilder.append("0");
     } else {
       if (expr.getExpression() != null) {
