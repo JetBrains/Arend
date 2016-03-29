@@ -31,11 +31,11 @@ public class PiExpression extends DependentTypeExpression {
     if (type == null || universe == null) {
       return null;
     }
-    type = type.normalize(NormalizeVisitor.Mode.WHNF);
-    if (!(type instanceof UniverseExpression)) {
+    UniverseExpression universeType = type.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    if (universeType == null) {
       return null;
     }
-    Universe codomainUniverse = ((UniverseExpression) type).getUniverse();
+    Universe codomainUniverse = universeType.getUniverse();
     return codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : universe.compare(codomainUniverse, null).MaxUniverse;
   }
 

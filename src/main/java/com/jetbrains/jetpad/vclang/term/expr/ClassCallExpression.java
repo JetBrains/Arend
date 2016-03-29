@@ -45,14 +45,14 @@ public class ClassCallExpression extends DefCallExpression {
       Universe universe = null;
       for (ClassField field : getDefinition().getFields()) {
         if (!myStatements.containsKey(field)) {
-          Expression expr = field.getBaseType().getType().normalize(NormalizeVisitor.Mode.WHNF);
-          Universe fieldUniverse = expr instanceof UniverseExpression ? ((UniverseExpression) expr).getUniverse() : field.getUniverse();
+          UniverseExpression expr = field.getBaseType().getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+          Universe fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
           if (universe == null) {
             universe = fieldUniverse;
             continue;
           }
           universe = universe.compare(fieldUniverse, null).MaxUniverse;
-          assert expr instanceof UniverseExpression;
+          assert expr != null;
         }
       }
       getDefinition().setUniverse(universe);

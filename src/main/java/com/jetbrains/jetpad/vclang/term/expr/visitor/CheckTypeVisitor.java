@@ -13,7 +13,10 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.LambdaInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -414,11 +417,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result == null) return null;
     Expression level = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
     UniverseExpression universe;
-    if (!(level instanceof NewExpression)) {
+    NewExpression newLevel = level.toNew();
+
+    if (newLevel == null) {
       universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
     } else {
-      Expression plevel = ((ClassCallExpression)((NewExpression) level).getExpression()).getImplementStatements().get(PLevel().getDefinition()).term;
-      Expression hlevel = ((ClassCallExpression)((NewExpression) level).getExpression()).getImplementStatements().get(HLevel().getDefinition()).term;
+      Expression plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Prelude.PLEVEL).term;
+      Expression hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Prelude.HLEVEL).term;
       universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
     }
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
@@ -539,7 +544,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Universe universe = null;
     for (int i = 0; i < domainTypes.length; ++i) {
-      Universe argUniverse = ((UniverseExpression) domainTypes[i].normalize(NormalizeVisitor.Mode.NF)).getUniverse();
+      Universe argUniverse = domainTypes[i].normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
       if (universe == null) {
         universe = argUniverse;
         continue;
