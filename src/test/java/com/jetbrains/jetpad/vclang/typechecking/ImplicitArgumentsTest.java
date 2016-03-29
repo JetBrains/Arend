@@ -273,8 +273,8 @@ public class ImplicitArgumentsTest {
   @Test
   public void untypedLambda2() {
     // f : (A : Type) (B : A -> Type) (a : A) -> B a |- \x1 x2 x3. f x1 x2 x3
-    DependentLink A = param("A", Universe());
-    DependentLink params = params(A, param("B", Pi(Reference(A), Universe())), param("a", Reference(A)));
+    DependentLink A = param("A", Universe(0));
+    DependentLink params = params(A, param("B", Pi(Reference(A), Universe(0))), param("a", Reference(A)));
     Expression type = Pi(params, Apps(Reference(params.getNext()), Reference(params.getNext().getNext())));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));

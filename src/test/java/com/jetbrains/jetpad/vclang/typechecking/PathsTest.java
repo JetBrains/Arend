@@ -2,9 +2,13 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
+
+import java.util.EnumSet;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
@@ -22,8 +26,14 @@ public class PathsTest {
     DependentLink A = param(false, "A", Universe(0));
     A.setNext(param("a", Reference(A)));
     DependentLink C = param((String) null, DataCall(Prelude.INTERVAL));
-    assertEquals(Lam(A, Apps(ConCall(Prelude.PATH_CON, Lam(C, Reference(A)), Reference(A.getNext()), Reference(A.getNext())), Lam(C, Reference(A.getNext())))), idp.expression);
-    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+    Expression pathCall = ConCall(Prelude.PATH_CON)
+            .addArgument(Level(ZeroLvl(), Inf()), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Lam(C, Reference(A)), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Reference(A.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Reference(A.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
+    assertEquals(Lam(A, pathCall), idp.expression);
+    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX).addArgument(Level(ZeroLvl(), Inf()), EnumSet.noneOf(AppExpression.Flag.class)), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -46,12 +56,12 @@ public class PathsTest {
 
   @Test
   public void pathEtaLeftTestLevel() {
-    typeCheckDef("\\function test (p : Nat == Nat) => (\\lam (x : path1 (\\lam i => p @@ i) == p) => x) (path1 (\\lam _ => p))");
+    typeCheckDef("\\function test (p : Nat = Nat) => (\\lam (x : path (\\lam i => p @ i) = p) => x) (path (\\lam _ => p))");
   }
 
   @Test
   public void pathEtaRightTestLevel() {
-    typeCheckDef("\\function test (p : Nat == Nat) => (\\lam (x : p == p) => x) (path1 (\\lam _ => path1 (\\lam i => p @@ i)))");
+    typeCheckDef("\\function test (p : Nat = Nat) => (\\lam (x : p = p) => x) (path (\\lam _ => path (\\lam i => p @ i)))");
   }
 }
 
