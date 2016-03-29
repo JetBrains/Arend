@@ -68,10 +68,6 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   private void visitApps(Abstract.Expression expr, List<Abstract.ArgumentExpression> args, byte prec) {
     if (prec > Abstract.AppExpression.PREC) myBuilder.append('(');
-    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getExpression() != null) {
-      ((Abstract.DefCallExpression) expr).getExpression().accept(this, Abstract.DefCallExpression.PREC);
-      myBuilder.append('.');
-    }
     expr.accept(this, Abstract.AppExpression.PREC);
 
     for (Abstract.ArgumentExpression arg : args) {
