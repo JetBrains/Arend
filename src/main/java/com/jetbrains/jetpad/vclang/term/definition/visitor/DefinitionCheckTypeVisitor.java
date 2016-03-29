@@ -394,7 +394,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         list.append(param);
         context.addAll(toContext(param));
 
-        Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
+        Universe argUniverse = result.type.toUniverse().getUniverse();
         if (universe == null) {
           universe = argUniverse;
         } else {
@@ -423,7 +423,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     typedResultType = typeResult.expression;
 
-    Universe resultTypeUniverse = ((UniverseExpression) typeResult.type).getUniverse();
+    Universe resultTypeUniverse = typeResult.type.toUniverse().getUniverse();
     if (universe == null) {
       universe = resultTypeUniverse;
     } else {
@@ -482,11 +482,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     if (def.getUniverse() != null) {
       CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
 
-      if (result == null || !(result.expression instanceof UniverseExpression)) {
+      if (result == null || result.expression.toUniverse() == null) {
         String msg = "Specified type " + def.getUniverse().accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), Abstract.Expression.PREC) + " of '" + def.getName() + "' is not a universe";
         myErrorReporter.report(new TypeCheckingError(msg, null));
       } else {
-        userUniverse = ((UniverseExpression) result.expression).getUniverse();
+        userUniverse = result.expression.toUniverse().getUniverse();
       }
     }
 
@@ -713,7 +713,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           return constructor;
         }
 
-        Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
+        Universe argUniverse = result.type.toUniverse().getUniverse();
         if (universe == null) {
           universe = argUniverse;
         } else {

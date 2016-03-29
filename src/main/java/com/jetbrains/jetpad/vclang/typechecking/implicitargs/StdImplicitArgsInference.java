@@ -136,11 +136,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           }
           PiExpression piType = argResult.type.normalize(NormalizeVisitor.Mode.WHNF).toPi();
           DependentLink params = piType.getParameters();
-          Expression universe = piType.getCodomain().getType();
-          if (!(universe instanceof UniverseExpression) || !(((UniverseExpression) universe).getUniverse() instanceof TypeUniverse)) {
+          UniverseExpression universe = piType.getCodomain().getType().toUniverse();
+          if (universe == null || !(universe.getUniverse() instanceof TypeUniverse)) {
             return null;
           }
-          Expression lvlExpr = ((TypeUniverse) ((UniverseExpression) universe).getUniverse()).getLevel().getValue();
+          Expression lvlExpr = ((TypeUniverse) universe.getUniverse()).getLevel().getValue();
           Expression lamExpr;
           if (params.getNext().hasNext()) {
             DependentLink lamParam = param("i", interval);

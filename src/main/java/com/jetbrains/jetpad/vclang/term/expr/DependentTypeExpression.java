@@ -21,13 +21,12 @@ public abstract class DependentTypeExpression extends Expression {
 
     while (link.hasNext()) {
       if (!(link instanceof UntypedDependentLink)) {
-        Expression type = link.getType().getType();
-        if (!(type instanceof UniverseExpression)) return null;
-        Universe universe1 = ((UniverseExpression) type).getUniverse();
+        UniverseExpression type = link.getType().getType().toUniverse();
+        if (type == null) return null;
         if (universe == null) {
-          universe = universe1;
+          universe = type.getUniverse();
         } else {
-          Universe.CompareResult cmp = universe.compare(universe1, null);
+          Universe.CompareResult cmp = universe.compare(type.getUniverse(), null);
           if (cmp == null) return null;
           universe = cmp.MaxUniverse;
         }

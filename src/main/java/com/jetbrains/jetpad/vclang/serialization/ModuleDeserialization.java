@@ -281,9 +281,10 @@ public class ModuleDeserialization {
   public Universe readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     Expression level = readExpression(stream, definitionMap);
     Expression plevel, hlevel;
-    if (level instanceof NewExpression) {
-      plevel = ((ClassCallExpression)((NewExpression) level).getExpression()).getImplementStatements().get(PLevel().getDefinition()).term;
-      hlevel = ((ClassCallExpression)((NewExpression) level).getExpression()).getImplementStatements().get(HLevel().getDefinition()).term;
+    NewExpression newLevel = level.toNew();
+    if (newLevel != null) {
+      plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Prelude.PLEVEL).term;
+      hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Prelude.HLEVEL).term;
       return new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel));
     }
     throw new IncorrectFormat();
