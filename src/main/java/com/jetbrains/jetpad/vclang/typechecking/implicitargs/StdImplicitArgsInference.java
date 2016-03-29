@@ -56,16 +56,29 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
       if (conCall != null && Prelude.isPathCon(conCall.getDefinition())) {
         Expression interval = DataCall(Prelude.INTERVAL);
-        CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe()))));
+        Expression lvl;
+        if (result.expression.getArguments().isEmpty()) {
+          InferenceBinding inferenceBinding = new FunctionInferenceBinding("lvl", Level(), 1, fun);
+          result.addUnsolvedVariable(inferenceBinding);
+          lvl = Reference(inferenceBinding);
+          result.expression = result.expression.addArgument(lvl, EnumSet.noneOf(AppExpression.Flag.class));
+          result.type = result.type.applyExpressions(Collections.singletonList(lvl));
+        } else {
+          lvl = result.expression.getArguments().get(0);
+        }
+
+        CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe(lvl)))));
         if (argResult == null) {
           return null;
         }
+
         PiExpression piType = argResult.type.normalize(NormalizeVisitor.Mode.WHNF).toPi();
         DependentLink params = piType.getParameters();
         UniverseExpression universe = piType.getCodomain().getType().toUniverse();
         if (universe == null || !(universe.getUniverse() instanceof TypeUniverse)) {
           return null;
         }
+
         Expression lvlExpr = ((TypeUniverse) universe.getUniverse()).getLevel().getValue();
         Expression lamExpr;
         if (params.getNext().hasNext()) {
@@ -74,14 +87,15 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         } else {
           lamExpr = Lam(params, piType.getCodomain());
         }
+
         Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
         Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
         Constructor pathCon = conCall.getDefinition();
         Expression  pathCall = ConCall(pathCon)
             .addArgument(lvlExpr, EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(lamExpr, AppExpression.DEFAULT)
-            .addArgument(expr1, AppExpression.DEFAULT)
-            .addArgument(expr2, AppExpression.DEFAULT);
+            .addArgument(lamExpr, EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(expr1, EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(expr2, EnumSet.noneOf(AppExpression.Flag.class));
         argResult.expression = Apps(pathCall, argResult.expression);
         argResult.type = Apps(DataCall(pathCon.getDataType()).addArgument(lvlExpr, EnumSet.noneOf(AppExpression.Flag.class)), lamExpr, expr1, expr2);
         return argResult;
