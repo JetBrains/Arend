@@ -52,6 +52,31 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (isExplicit) {
+      ConCallExpression conCall = result.expression.getFunction().toConCall();
+      if (conCall != null && Prelude.isPathCon(conCall.getDefinition())) {
+        Expression interval = DataCall(Prelude.INTERVAL);
+        CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe()))));
+        if (argResult == null) {
+          return null;
+        }
+        PiExpression piType = argResult.type.normalize(NormalizeVisitor.Mode.WHNF).toPi();
+        DependentLink params = piType.getParameters();
+
+        Expression lamExpr;
+        if (params.getNext().hasNext()) {
+          DependentLink lamParam = param("i", interval);
+          lamExpr = Lam(lamParam, Pi(params.getNext(), piType.getCodomain()).subst(params, Reference(lamParam)));
+        } else {
+          lamExpr = Lam(params, piType.getCodomain());
+        }
+        Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
+        Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
+        Constructor pathCon = conCall.getDefinition();
+        argResult.expression = Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression);
+        argResult.type = Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2);
+        return argResult;
+      }
+
       List<DependentLink> params = new ArrayList<>();
       result.type = result.type.getPiParameters(params, true, true);
       if (!fixImplicitArgs(result, params, fun)) {
@@ -125,30 +150,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             }
             return inferArg(result, arg, true, fun);
           }
-        }
-
-        if (conCall != null && Prelude.isPathCon(conCall.getDefinition())) {
-          Expression interval = DataCall(Prelude.INTERVAL);
-          CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe()))));
-          if (argResult == null) {
-            return null;
-          }
-          PiExpression piType = argResult.type.normalize(NormalizeVisitor.Mode.WHNF).toPi();
-          DependentLink params = piType.getParameters();
-
-          Expression lamExpr;
-          if (params.getNext().hasNext()) {
-            DependentLink lamParam = param("i", interval);
-            lamExpr = Lam(lamParam, Pi(params.getNext(), piType.getCodomain()).subst(params, Reference(lamParam)));
-          } else {
-            lamExpr = Lam(params, piType.getCodomain());
-          }
-          Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
-          Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
-          Constructor pathCon = conCall.getDefinition();
-          argResult.expression = Apps(ConCall(pathCon, lamExpr, expr1, expr2), argResult.expression);
-          argResult.type = Apps(DataCall(pathCon.getDataType()), lamExpr, expr1, expr2);
-          return argResult;
         }
       }
     }
