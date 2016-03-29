@@ -121,7 +121,7 @@ public class ListEquations implements Equations {
       Expression expr = mySolutions.get(binding);
       if (expr != null) {
         if (!CompareVisitor.compare(this, CMP.EQ, expression, expr, binding.getSourceNode())) {
-          binding.reportError(myErrorReporter, expression, expr);
+          binding.reportErrorInfer(myErrorReporter, expression, expr);
         }
       } else {
         mySolutions.put(binding, expression);
@@ -190,14 +190,14 @@ public class ListEquations implements Equations {
           it.remove();
           subst = entry.getValue();
           if (subst.findBinding(entry.getKey())) {
-            entry.getKey().reportError(myErrorReporter, subst);
+            entry.getKey().reportErrorInfer(myErrorReporter, subst);
           } else {
             Expression expectedType = entry.getKey().getType().subst(result);
             Expression actualType = subst.getType().subst(result);
-            if (expectedType != null && CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
+            if (CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
               binding = entry.getKey();
             } else {
-              entry.getKey().reportError(myErrorReporter, subst);
+              entry.getKey().reportErrorMismatch(myErrorReporter, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF), subst);
             }
           }
           break;
