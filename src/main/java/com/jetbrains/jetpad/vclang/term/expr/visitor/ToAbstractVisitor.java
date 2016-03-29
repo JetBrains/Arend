@@ -30,6 +30,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   public ToAbstractVisitor addFlags(Flag flag) {
+    if (myFlags == DEFAULT) {
+      myFlags = DEFAULT.clone();
+    }
     myFlags.add(flag);
     return this;
   }

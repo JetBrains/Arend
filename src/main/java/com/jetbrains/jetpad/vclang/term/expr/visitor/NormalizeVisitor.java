@@ -81,12 +81,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return FieldCall((ClassField) defCallExpr.getDefinition());
       }
 
-      Expression thisArg = expr.getArguments().get(0);
-      Expression thisType = thisArg.getType();
-      if (thisType == null) {
-        assert false;
-      } else {
-        ClassCallExpression classCall = thisType.normalize(Mode.WHNF).toClassCall();
+      NewExpression thisArg = expr.getArguments().get(0).normalize(Mode.WHNF).toNew();
+      if (thisArg != null) {
+        ClassCallExpression classCall = thisArg.getExpression().normalize(Mode.WHNF).toClassCall();
         if (classCall != null) {
           ClassCallExpression.ImplementStatement elem = classCall.getImplementStatements().get(defCallExpr.getDefinition());
           if (elem != null && elem.term != null) {
