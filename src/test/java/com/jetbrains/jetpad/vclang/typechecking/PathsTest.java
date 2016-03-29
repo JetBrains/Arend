@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -25,7 +26,7 @@ public class PathsTest {
     CheckTypeVisitor.Result idp = typeCheckExpr("\\lam {A : \\Type0} (a : A) => path (\\lam _ => a)", null);
     DependentLink A = param(false, "A", Universe(0));
     A.setNext(param("a", Reference(A)));
-    DependentLink C = param((String) null, DataCall(Prelude.INTERVAL));
+    DependentLink C = param((String) null, DataCall(Preprelude.INTERVAL));
     Expression pathCall = ConCall(Prelude.PATH_CON)
             .addArgument(Level(ZeroLvl(), Inf()), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Lam(C, Reference(A)), EnumSet.noneOf(AppExpression.Flag.class))

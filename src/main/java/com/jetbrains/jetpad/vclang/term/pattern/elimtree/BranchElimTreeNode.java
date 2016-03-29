@@ -35,7 +35,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     myContextTail = contextTail;
 
     DataCallExpression ftype = reference.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall();
-    myIsInterval = ftype != null && ftype.getDefinition() == Prelude.INTERVAL;
+    myIsInterval = ftype != null && ftype.getDefinition() == Preprelude.INTERVAL;
   }
 
   @Override

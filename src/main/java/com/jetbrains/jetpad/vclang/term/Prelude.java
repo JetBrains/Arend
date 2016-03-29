@@ -29,9 +29,6 @@ public class Prelude extends Namespace {
 
   public static Namespace PRELUDE = new Prelude();
 
-  public static DataDefinition INTERVAL;
-  public static Constructor LEFT, RIGHT, ABSTRACT;
-
   public static FunctionDefinition COERCE;
 
   public static DataDefinition PATH;
@@ -47,17 +44,6 @@ public class Prelude extends Namespace {
 
   static {
     PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID), null);
-
-    INTERVAL = new DataDefinition(new DefinitionResolvedName(PRELUDE, "I"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance());
-    Namespace intervalNamespace = PRELUDE.getChild(INTERVAL.getName());
-    LEFT = new Constructor(new DefinitionResolvedName(intervalNamespace, "left"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance(), INTERVAL);
-    RIGHT = new Constructor(new DefinitionResolvedName(intervalNamespace, "right"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance(), INTERVAL);
-    ABSTRACT = new Constructor(new DefinitionResolvedName(intervalNamespace, "<abstract>"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance(), INTERVAL);
-
-    PRELUDE.addDefinition(INTERVAL);
-    PRELUDE.addMember(INTERVAL.addConstructor(LEFT));
-    PRELUDE.addMember(INTERVAL.addConstructor(RIGHT));
-    INTERVAL.addConstructor(ABSTRACT);
 
     DependentLink PathParameter1 = param(false, "lvl", Level());
     DependentLink PathParameter2 = param("A", Pi(param(Interval()), Universe(Reference(PathParameter1))));
@@ -104,8 +90,8 @@ public class Prelude extends Namespace {
     DependentLink atPath = param("f", pathParameter.getType());
     Expression atResultType = Apps(Reference(atParameter2), Reference(atParameter6));
     ElimTreeNode atElimTree = top(atParameter1, branch(atParameter6, tail(),
-            clause(LEFT, EmptyDependentLink.getInstance(), Reference(atParameter3)),
-            clause(RIGHT, EmptyDependentLink.getInstance(), Reference(atParameter4)),
+            clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(atParameter3)),
+            clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(atParameter4)),
             clause(branch(atParameter5, tail(atParameter6),
                     clause(PATH_CON, atPath, Apps(Reference(atPath), Reference(atParameter6)))))
     ));
@@ -120,7 +106,7 @@ public class Prelude extends Namespace {
     coerceParameter2.setNext(coerceParameter3);
     coerceParameter3.setNext(coerceParameter4);
     ElimTreeNode coerceElimTreeNode = top(coerceParameter1, branch(coerceParameter4, tail(),
-            clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter3))));
+            clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter3))));
     COERCE = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "coe"), Abstract.Definition.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter2), Reference(coerceParameter4)), coerceElimTreeNode);
     PRELUDE.addDefinition(COERCE);
 
@@ -149,8 +135,8 @@ public class Prelude extends Namespace {
     isoParameter6.setNext(isoParameter7);
     Expression isoResultType = Universe(Reference(isoParameter1));
     ElimTreeNode isoElimTree = top(isoParameter1, branch(isoParameter7, tail(),
-            clause(LEFT, EmptyDependentLink.getInstance(), Reference(isoParameter2)),
-            clause(RIGHT, EmptyDependentLink.getInstance(), Reference(isoParameter2.getNext()))
+            clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(isoParameter2)),
+            clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(isoParameter2.getNext()))
     ));
     ISO = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "iso"), Abstract.Definition.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree);
     PRELUDE.addDefinition(ISO);
@@ -171,8 +157,8 @@ public class Prelude extends Namespace {
     PRELUDE.addMember(PROP_TRUNC.addConstructor(propTruncInCon));
     PRELUDE.addMember(PROP_TRUNC.addConstructor(propTruncPathCon));
     Condition propTruncPathCond = new Condition(propTruncPathCon, top(propTruncConParameter1, branch(propTruncConParameter3, tail(),
-            clause(LEFT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter1)),
-            clause(RIGHT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter2)))));
+            clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter1)),
+            clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter2)))));
     PROP_TRUNC.addCondition(propTruncPathCond);
 
     SET_TRUNC = new DataDefinition(PRELUDE.getChild("TrS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(new TypeUniverse.TypeLevel(PLevel().applyThis(Reference(truncParameter1)), TypeUniverse.HomotopyLevel.SET.getValue())), truncParameter1);
@@ -202,11 +188,11 @@ public class Prelude extends Namespace {
     PRELUDE.addMember(SET_TRUNC.addConstructor(setTruncInCon));
     PRELUDE.addMember(SET_TRUNC.addConstructor(setTruncPathCon));
     Condition setTruncPathCond = new Condition(setTruncPathCon, top(setTruncConParameter1, branch(setTruncConParameter6, tail(),
-            clause(LEFT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter3), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
-            clause(RIGHT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter4), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
+            clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter3), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
+            clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter4), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
             clause(branch(setTruncConParameter5, tail(setTruncConParameter6),
-                    clause(LEFT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter1)),
-                    clause(RIGHT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter2))))
+                    clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter1)),
+                    clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter2))))
     )));
 
     SET_TRUNC.addCondition(setTruncPathCond);

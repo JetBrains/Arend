@@ -336,7 +336,7 @@ public class NormalizationTest {
             .addArgument(Reference(A), AppExpression.DEFAULT).addArgument(Reference(B), AppExpression.DEFAULT)
             .addArgument(Reference(f), AppExpression.DEFAULT).addArgument(Reference(g), AppExpression.DEFAULT)
             .addArgument(Reference(linv), AppExpression.DEFAULT).addArgument(Reference(rinv), AppExpression.DEFAULT)
-            .addArgument(ConCall(Prelude.LEFT), AppExpression.DEFAULT);
+            .addArgument(ConCall(Preprelude.LEFT), AppExpression.DEFAULT);
     assertEquals(Reference(A), iso_expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -364,7 +364,7 @@ public class NormalizationTest {
             .addArgument(Reference(A), AppExpression.DEFAULT).addArgument(Reference(B), AppExpression.DEFAULT)
             .addArgument(Reference(f), AppExpression.DEFAULT).addArgument(Reference(g), AppExpression.DEFAULT)
             .addArgument(Reference(linv), AppExpression.DEFAULT).addArgument(Reference(rinv), AppExpression.DEFAULT)
-            .addArgument(ConCall(Prelude.RIGHT), AppExpression.DEFAULT);
+            .addArgument(ConCall(Preprelude.RIGHT), AppExpression.DEFAULT);
     assertEquals(Reference(B), iso_expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -377,7 +377,7 @@ public class NormalizationTest {
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
-    DependentLink k = param("k", DataCall(Prelude.INTERVAL));
+    DependentLink k = param("k", DataCall(Preprelude.INTERVAL));
     Expression linvType = FunCall(Prelude.PATH_INFIX)
             .addArgument(Reference(lvl), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Reference(A), EnumSet.noneOf(AppExpression.Flag.class))
@@ -399,15 +399,15 @@ public class NormalizationTest {
         .addArgument(Reference(lvl), EnumSet.noneOf(AppExpression.Flag.class))
         .addArgument(Lam(k, iso_expr), AppExpression.DEFAULT)
         .addArgument(Reference(aleft), AppExpression.DEFAULT)
-        .addArgument(ConCall(Prelude.RIGHT), AppExpression.DEFAULT);
+        .addArgument(ConCall(Preprelude.RIGHT), AppExpression.DEFAULT);
     assertEquals(Apps(Reference(f), Reference(aleft)), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void testCoeIsoFreeVar() {
-    DependentLink k = param("k", DataCall(Prelude.INTERVAL));
-    DependentLink i = param("i", DataCall(Prelude.INTERVAL));
-    Expression A = Apps(DataCall(Prelude.PATH), Lam(i, DataCall(Prelude.INTERVAL)), Reference(k), Reference(k));
+    DependentLink k = param("k", DataCall(Preprelude.INTERVAL));
+    DependentLink i = param("i", DataCall(Preprelude.INTERVAL));
+    Expression A = Apps(DataCall(Prelude.PATH), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k));
     DependentLink B = param("B", Universe(0));
     DependentLink f = param("f", Pi(param(A), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), A));
@@ -421,8 +421,8 @@ public class NormalizationTest {
       .addArgument(Reference(B), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)), AppExpression.DEFAULT);
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    DependentLink aleft = param("aleft", A.subst(k, ConCall(Prelude.RIGHT)));
-    Expression expr = Apps(FunCall(Prelude.COERCE), Lam(k, Apps(FunCall(Prelude.ISO), Apps(DataCall(Prelude.PATH), Lam(i, DataCall(Prelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), ConCall(Prelude.RIGHT));
+    DependentLink aleft = param("aleft", A.subst(k, ConCall(Preprelude.RIGHT)));
+    Expression expr = Apps(FunCall(Prelude.COERCE), Lam(k, Apps(FunCall(Prelude.ISO), Apps(DataCall(Prelude.PATH), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), ConCall(Preprelude.RIGHT));
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF));
   }
 

@@ -27,6 +27,9 @@ public class Preprelude extends Namespace {
 
   public static Namespace PRE_PRELUDE = new Preprelude();
 
+  public static DataDefinition INTERVAL;
+  public static Constructor LEFT, RIGHT, ABSTRACT;
+
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
 
@@ -149,6 +152,17 @@ public class Preprelude extends Namespace {
     LEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
     PLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
     HLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
+
+    INTERVAL = new DataDefinition(new DefinitionResolvedName(PRE_PRELUDE, "I"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance());
+    Namespace intervalNamespace = PRE_PRELUDE.getChild(INTERVAL.getName());
+    LEFT = new Constructor(new DefinitionResolvedName(intervalNamespace, "left"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance(), INTERVAL);
+    RIGHT = new Constructor(new DefinitionResolvedName(intervalNamespace, "right"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance(), INTERVAL);
+    ABSTRACT = new Constructor(new DefinitionResolvedName(intervalNamespace, "<abstract>"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance(), INTERVAL);
+
+    PRE_PRELUDE.addDefinition(INTERVAL);
+    PRE_PRELUDE.addMember(INTERVAL.addConstructor(LEFT));
+    PRE_PRELUDE.addMember(INTERVAL.addConstructor(RIGHT));
+    INTERVAL.addConstructor(ABSTRACT);
   }
 
   public Preprelude() {

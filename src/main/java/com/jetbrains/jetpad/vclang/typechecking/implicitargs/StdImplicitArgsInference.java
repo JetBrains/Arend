@@ -55,7 +55,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     if (isExplicit) {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
       if (conCall != null && Prelude.isPathCon(conCall.getDefinition())) {
-        Expression interval = DataCall(Prelude.INTERVAL);
+        Expression interval = DataCall(Preprelude.INTERVAL);
         Expression lvl;
         if (result.expression.getArguments().isEmpty()) {
           InferenceBinding inferenceBinding = new FunctionInferenceBinding("lvl", Level(), 1, fun);
@@ -88,8 +88,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           lamExpr = Lam(params, piType.getCodomain());
         }
 
-        Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
-        Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
+        Expression expr1 = Apps(argResult.expression, ConCall(Preprelude.LEFT));
+        Expression expr2 = Apps(argResult.expression, ConCall(Preprelude.RIGHT));
         Constructor pathCon = conCall.getDefinition();
         Expression  pathCall = ConCall(pathCon)
             .addArgument(lvlExpr, EnumSet.noneOf(AppExpression.Flag.class))

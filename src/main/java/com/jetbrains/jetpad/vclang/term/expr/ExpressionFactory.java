@@ -71,15 +71,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Interval() {
-    return DataCall(Prelude.INTERVAL);
+    return DataCall(Preprelude.INTERVAL);
   }
 
   public static ConCallExpression Left() {
-    return ConCall(Prelude.LEFT);
+    return ConCall(Preprelude.LEFT);
   }
 
   public static ConCallExpression Right() {
-    return ConCall(Prelude.RIGHT);
+    return ConCall(Preprelude.RIGHT);
   }
 
   public static NewExpression New(Expression expression) {
