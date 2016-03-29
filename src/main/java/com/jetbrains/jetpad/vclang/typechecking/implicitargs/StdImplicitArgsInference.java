@@ -151,7 +151,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           Expression expr1 = Apps(argResult.expression, ConCall(Prelude.LEFT));
           Expression expr2 = Apps(argResult.expression, ConCall(Prelude.RIGHT));
           Constructor pathCon = conCall.getDefinition();
-          argResult.expression = Apps(ConCall(pathCon, lamExpr, lvlExpr, expr1, expr2), argResult.expression);
+          Expression  pathCall = ConCall(pathCon)
+                  .addArgument(lvlExpr, EnumSet.noneOf(AppExpression.Flag.class))
+                  .addArgument(lamExpr, AppExpression.DEFAULT)
+                  .addArgument(expr1, AppExpression.DEFAULT)
+                  .addArgument(expr2, AppExpression.DEFAULT);
+          argResult.expression = Apps(pathCall, argResult.expression);
           argResult.type = Apps(DataCall(pathCon.getDataType()).addArgument(lvlExpr, EnumSet.noneOf(AppExpression.Flag.class)), lamExpr, expr1, expr2);
           return argResult;
         }
