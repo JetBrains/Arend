@@ -539,7 +539,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Universe universe = null;
     for (int i = 0; i < domainTypes.length; ++i) {
-      Universe argUniverse = ((UniverseExpression) domainTypes[i].normalize(NormalizeVisitor.Mode.NF)).getUniverse();
+      Universe argUniverse = domainTypes[i].normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
       if (universe == null) {
         universe = argUniverse;
         continue;

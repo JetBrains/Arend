@@ -34,7 +34,7 @@ public class GetTypeTest {
   public void classExtTest() {
     NamespaceMember member = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
     assertEquals(Universe(1), member.namespace.getDefinition("Test").getType());
-    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), member.namespace.getDefinition("test").getType());
+    assertEquals(Universe(1), member.namespace.getDefinition("test").getType());
     assertEquals(Universe(TypeUniverse.SetOfLevel(0)), ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
@@ -59,6 +59,7 @@ public class GetTypeTest {
     NamespaceMember member = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), member.namespace.getDefinition("C").getDefCall()));
     Expression type = FunCall(Prelude.PATH_INFIX)
+      .addArgument(Level(ZeroLvl(), Fin(Suc(Zero()))), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Zero(), AppExpression.DEFAULT)
       .addArgument(Apps(member.namespace.getMember("C").namespace.getDefinition("x").getDefCall(), Apps(Reference(p), Zero())), AppExpression.DEFAULT);

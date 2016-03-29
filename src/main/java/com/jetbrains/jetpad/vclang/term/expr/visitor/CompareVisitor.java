@@ -308,7 +308,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
     UniverseExpression universe2 = expr2.toUniverse();
-    if (universe2 == null) return false;
+    if (universe2 == null || universe2.getUniverse() == null) return false;
     Universe.Cmp expectedCMP = myCMP.toUniverseCmp();
     Universe.CompareResult cmp = expr1.getUniverse().compare(universe2.getUniverse(), this);
     return cmp != null && (cmp.Result == Universe.Cmp.EQUALS || cmp.Result == expectedCMP);

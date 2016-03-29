@@ -193,7 +193,7 @@ public class ComparisonTest {
 
   @Test
   public void etaLam() {
-    Expression type = Pi(param(Nat()), Apps(Prelude.PATH.getDefCall(), Lam(param("i", Prelude.INTERVAL.getDefCall()), Nat()), Zero(), Zero()));
+    Expression type = Pi(param(Nat()), Apps(Prelude.PATH.getDefCall(), Level(ZeroLvl(), Fin(Suc(Zero()))), Lam(param("i", Prelude.INTERVAL.getDefCall()), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
     assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
@@ -204,7 +204,7 @@ public class ComparisonTest {
   @Test
   public void etaPath() {
     DependentLink x = param("x", Nat());
-    Expression type = Apps(Prelude.PATH.getDefCall(), Lam(param(Prelude.INTERVAL.getDefCall()), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
+    Expression type = Apps(Prelude.PATH.getDefCall(), Level(ZeroLvl(), Fin(Suc(Zero()))), Lam(param(Prelude.INTERVAL.getDefCall()), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
     assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
