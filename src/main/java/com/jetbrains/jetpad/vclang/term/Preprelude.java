@@ -120,6 +120,7 @@ public class Preprelude extends Namespace {
             clause(INF, EmptyDependentLink.getInstance(), ConCall(INF)),
             clause(FIN, finCNatParameter, branch(maxCNatParameter2, tail(),
                     clause(INF, EmptyDependentLink.getInstance(), ConCall(INF)),
+                   // clause(FIN, finCNatParameterPrime, Apps(ConCall(FIN), Apps(FunCall(MAX_NAT), Reference(finCNatParameter), Reference(finCNatParameterPrime)))),
                     clause(FIN, finCNatParameterPrime, Apps(ConCall(FIN), Apps(FunCall(MAX_NAT), Reference(finCNatParameter), Reference(finCNatParameterPrime))))))));
     MAX_CNAT.setElimTree(maxCNatElimTree);
     PRE_PRELUDE.addDefinition(MAX_CNAT);
@@ -140,6 +141,19 @@ public class Preprelude extends Namespace {
     PRE_PRELUDE.getChild(LEVEL.getName()).addDefinition(PLEVEL);
     PRE_PRELUDE.getChild(LEVEL.getName()).addDefinition(HLEVEL);
 
+    INTERVAL = new DataDefinition(new DefinitionResolvedName(PRE_PRELUDE, "I"), Abstract.Definition.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
+    Namespace intervalNamespace = PRE_PRELUDE.getChild(INTERVAL.getName());
+    LEFT = new Constructor(new DefinitionResolvedName(intervalNamespace, "left"), Abstract.Definition.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance(), INTERVAL);
+    RIGHT = new Constructor(new DefinitionResolvedName(intervalNamespace, "right"), Abstract.Definition.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance(), INTERVAL);
+    ABSTRACT = new Constructor(new DefinitionResolvedName(intervalNamespace, "<abstract>"), Abstract.Definition.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance(), INTERVAL);
+
+    PRE_PRELUDE.addDefinition(INTERVAL);
+    PRE_PRELUDE.addMember(INTERVAL.addConstructor(LEFT));
+    PRE_PRELUDE.addMember(INTERVAL.addConstructor(RIGHT));
+    INTERVAL.addConstructor(ABSTRACT);
+  }
+
+  public static void setUniverses() {
     NAT.setUniverse(TypeUniverse.SetOfLevel(0));
     ZERO.setUniverse(TypeUniverse.SetOfLevel(0));
     SUC.setUniverse(TypeUniverse.SetOfLevel(0));
@@ -152,17 +166,10 @@ public class Preprelude extends Namespace {
     LEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
     PLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
     HLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
-
-    INTERVAL = new DataDefinition(new DefinitionResolvedName(PRE_PRELUDE, "I"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance());
-    Namespace intervalNamespace = PRE_PRELUDE.getChild(INTERVAL.getName());
-    LEFT = new Constructor(new DefinitionResolvedName(intervalNamespace, "left"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance(), INTERVAL);
-    RIGHT = new Constructor(new DefinitionResolvedName(intervalNamespace, "right"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance(), INTERVAL);
-    ABSTRACT = new Constructor(new DefinitionResolvedName(intervalNamespace, "<abstract>"), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.PROP, EmptyDependentLink.getInstance(), INTERVAL);
-
-    PRE_PRELUDE.addDefinition(INTERVAL);
-    PRE_PRELUDE.addMember(INTERVAL.addConstructor(LEFT));
-    PRE_PRELUDE.addMember(INTERVAL.addConstructor(RIGHT));
-    INTERVAL.addConstructor(ABSTRACT);
+    INTERVAL.setUniverse(TypeUniverse.PROP);
+    LEFT.setUniverse(TypeUniverse.PROP);
+    RIGHT.setUniverse(TypeUniverse.PROP);
+    ABSTRACT.setUniverse(TypeUniverse.PROP);
   }
 
   public Preprelude() {

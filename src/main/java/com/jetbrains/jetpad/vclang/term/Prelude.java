@@ -42,8 +42,12 @@ public class Prelude extends Namespace {
   public static DataDefinition PROP_TRUNC;
   public static DataDefinition SET_TRUNC;
 
+  public static Constructor PROP_TRUNC_PATH_CON;
+  public static Constructor SET_TRUNC_PATH_CON;
+
   static {
     PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID), null);
+    Preprelude.setUniverses();
 
     DependentLink PathParameter1 = param(false, "lvl", Level());
     DependentLink PathParameter2 = param("A", Pi(param(Interval()), Universe(Reference(PathParameter1))));
@@ -153,10 +157,10 @@ public class Prelude extends Namespace {
     DependentLink propTruncConParameter3 = param("i", Interval());
     propTruncConParameter1.setNext(propTruncConParameter2);
     propTruncConParameter2.setNext(propTruncConParameter3);
-    Constructor propTruncPathCon = new Constructor(PRELUDE.getChild(PROP_TRUNC.getName()).getChild("truncP").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(new TypeUniverse.TypeLevel(Reference(truncParameter1))), propTruncConParameter1, PROP_TRUNC);
+    PROP_TRUNC_PATH_CON = new Constructor(PRELUDE.getChild(PROP_TRUNC.getName()).getChild("truncP").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(new TypeUniverse.TypeLevel(Reference(truncParameter1))), propTruncConParameter1, PROP_TRUNC);
     PRELUDE.addMember(PROP_TRUNC.addConstructor(propTruncInCon));
-    PRELUDE.addMember(PROP_TRUNC.addConstructor(propTruncPathCon));
-    Condition propTruncPathCond = new Condition(propTruncPathCon, top(propTruncConParameter1, branch(propTruncConParameter3, tail(),
+    PRELUDE.addMember(PROP_TRUNC.addConstructor(PROP_TRUNC_PATH_CON));
+    Condition propTruncPathCond = new Condition(PROP_TRUNC_PATH_CON, top(propTruncConParameter1, branch(propTruncConParameter3, tail(),
             clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter1)),
             clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter2)))));
     PROP_TRUNC.addCondition(propTruncPathCond);
@@ -184,10 +188,10 @@ public class Prelude extends Namespace {
     setTruncConParameter3.setNext(setTruncConParameter4);
     setTruncConParameter4.setNext(setTruncConParameter5);
     setTruncConParameter5.setNext(setTruncConParameter6);
-    Constructor setTruncPathCon = new Constructor(PRELUDE.getChild(SET_TRUNC.getName()).getChild("truncS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(new TypeUniverse.TypeLevel(Reference(truncParameter1))), setTruncConParameter1, SET_TRUNC);
+    SET_TRUNC_PATH_CON = new Constructor(PRELUDE.getChild(SET_TRUNC.getName()).getChild("truncS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(new TypeUniverse.TypeLevel(Reference(truncParameter1))), setTruncConParameter1, SET_TRUNC);
     PRELUDE.addMember(SET_TRUNC.addConstructor(setTruncInCon));
-    PRELUDE.addMember(SET_TRUNC.addConstructor(setTruncPathCon));
-    Condition setTruncPathCond = new Condition(setTruncPathCon, top(setTruncConParameter1, branch(setTruncConParameter6, tail(),
+    PRELUDE.addMember(SET_TRUNC.addConstructor(SET_TRUNC_PATH_CON));
+    Condition setTruncPathCond = new Condition(SET_TRUNC_PATH_CON, top(setTruncConParameter1, branch(setTruncConParameter6, tail(),
             clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter3), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
             clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter4), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
             clause(branch(setTruncConParameter5, tail(setTruncConParameter6),
@@ -249,11 +253,11 @@ public class Prelude extends Namespace {
   }
 
   public static boolean isTruncP(Definition definition) {
-    return PROP_TRUNC == definition;
+    return PROP_TRUNC_PATH_CON == definition;
   }
 
   public static boolean isTruncS(Definition definition) {
-    return SET_TRUNC == definition;
+    return SET_TRUNC_PATH_CON == definition;
   }
 
 }

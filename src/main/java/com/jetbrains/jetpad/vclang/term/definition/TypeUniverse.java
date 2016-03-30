@@ -99,8 +99,13 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
       myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
       other.myLevel = other.myLevel.normalize(NormalizeVisitor.Mode.NF);
       if (checkLevelExprsAreEqual(myLevel, other.myLevel, visitor)) return Cmp.EQUALS;
+
+      if (checkLevelExprsAreEqual(myLevel, PROP.getValue(), visitor)) return Cmp.LESS;
+      if (checkLevelExprsAreEqual(other.myLevel, PROP.getValue(), visitor)) return Cmp.GREATER;
+
       if (checkLevelExprsAreEqual(myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.GREATER;
       if (checkLevelExprsAreEqual(other.myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.LESS;
+
       Expression maxHlevel = MaxCNat(myLevel, other.myLevel).normalize(NormalizeVisitor.Mode.NF);
       if (checkLevelExprsAreEqual(myLevel, maxHlevel, visitor)) return Cmp.GREATER;
       if (checkLevelExprsAreEqual(other.myLevel, maxHlevel, visitor)) return Cmp.LESS;
