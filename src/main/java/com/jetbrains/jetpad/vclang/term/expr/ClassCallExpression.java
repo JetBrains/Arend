@@ -10,6 +10,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
+
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
   private Universe myUniverse;
@@ -43,9 +45,19 @@ public class ClassCallExpression extends DefCallExpression {
 
   public Universe getUniverse() {
     if (myUniverse == null) {
+      Substitution substitution = null;
       for (ClassField field : getDefinition().getFields()) {
         if (!myStatements.containsKey(field)) {
-          UniverseExpression expr = field.getBaseType().getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+          if (substitution == null) {
+            substitution = new Substitution();
+            for (Map.Entry<ClassField, ImplementStatement> entry : myStatements.entrySet()) {
+              if (entry.getValue().term != null) {
+                substitution.add(entry.getKey(), Lam(entry.getKey().getThisParameter(), entry.getValue().term));
+              }
+            }
+          }
+
+          UniverseExpression expr = field.getBaseType().subst(substitution).getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
           Universe fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
           if (myUniverse == null) {
             myUniverse = fieldUniverse;
