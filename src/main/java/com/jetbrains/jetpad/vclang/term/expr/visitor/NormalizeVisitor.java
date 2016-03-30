@@ -81,16 +81,13 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return FieldCall((ClassField) defCallExpr.getDefinition());
       }
 
-      NewExpression thisArg = expr.getArguments().get(0).normalize(Mode.WHNF).toNew();
-      if (thisArg != null) {
-        ClassCallExpression classCall = thisArg.getExpression().normalize(Mode.WHNF).toClassCall();
-        if (classCall != null) {
-          ClassCallExpression.ImplementStatement elem = classCall.getImplementStatements().get(defCallExpr.getDefinition());
-          if (elem != null && elem.term != null) {
-            List<? extends EnumSet<AppExpression.Flag>> flags = expr.toApp().getFlags();
-            Expression result = Apps(elem.term, expr.getArguments().subList(1, expr.getArguments().size()), flags.subList(1, flags.size()));
-            return mode == Mode.TOP ? result : result.accept(this, mode);
-          }
+      ClassCallExpression classCall = expr.getArguments().get(0).getType().normalize(Mode.WHNF).toClassCall();
+      if (classCall != null) {
+        ClassCallExpression.ImplementStatement elem = classCall.getImplementStatements().get(defCallExpr.getDefinition());
+        if (elem != null && elem.term != null) {
+          List<? extends EnumSet<AppExpression.Flag>> flags = expr.toApp().getFlags();
+          Expression result = Apps(elem.term, expr.getArguments().subList(1, expr.getArguments().size()), flags.subList(1, flags.size()));
+          return mode == Mode.TOP ? result : result.accept(this, mode);
         }
       }
     }
