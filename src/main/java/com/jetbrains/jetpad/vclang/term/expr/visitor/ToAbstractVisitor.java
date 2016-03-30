@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
@@ -85,6 +86,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitApp(AppExpression expr, Void params) {
+    Integer num = getNum(expr);
+    if (num != null) {
+      return myFactory.makeNumericalLiteral(num);
+    }
+
     if (!myFlags.contains(Flag.SHOW_PREFIX_PATH)) {
       Abstract.Expression result = checkPath(expr);
       if (result != null) {
@@ -126,6 +132,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitConCall(ConCallExpression expr, Void params) {
+    Integer num = getNum(expr);
+    if (num != null) {
+      return myFactory.makeNumericalLiteral(num);
+    }
+
     Abstract.Expression conParams = null;
     if (!expr.getDefinition().hasErrors() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
       conParams = myFactory.makeDefCall(null, expr.getDefinition().getDataType());
@@ -198,6 +209,42 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return args;
   }
 
+  private Integer getNum(Expression expr) {
+    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Preprelude.ZERO) {
+      return 0;
+    }
+    if (expr.toApp() != null && expr.toApp().getArguments().size() == 1 && expr.toApp().getFunction().toConCall() != null && expr.toApp().getFunction().toConCall().getDefinition() == Preprelude.SUC) {
+      Integer result = getNum(expr.toApp().getArguments().get(0));
+      if (result != null) {
+        return result + 1;
+      }
+    }
+    return null;
+  }
+
+  private Integer getHNum(Expression expr) {
+    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Preprelude.INF) {
+      return Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
+    }
+    if (expr.toApp() != null && expr.toApp().getArguments().size() == 1 && expr.toApp().getFunction().toConCall() != null && expr.toApp().getFunction().toConCall().getDefinition() == Preprelude.FIN) {
+      return getNum(expr.toApp().getArguments().get(0));
+    }
+    return null;
+  }
+
+  private Integer getPNum(Expression expr) {
+    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Preprelude.ZERO_LVL) {
+      return 0;
+    }
+    if (expr.toApp() != null && expr.toApp().getArguments().size() == 1 && expr.toApp().getFunction().toConCall() != null && expr.toApp().getFunction().toConCall().getDefinition() == Preprelude.SUC_LVL) {
+      Integer result = getNum(expr.toApp().getArguments().get(0));
+      if (result != null) {
+        return result + 1;
+      }
+    }
+    return null;
+  }
+
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
     if (!(expr.getUniverse() instanceof TypeUniverse)) {
@@ -207,7 +254,21 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     if (universe.getLevel() == null) {
       return myFactory.makeUniverse(null);
     }
-    return myFactory.makeUniverse(universe.getLevel().getValue().accept(this, null));
+
+    Expression level = universe.getLevel().getValue();
+    if (level.toNew() != null && level.toNew().getExpression().toClassCall() != null) {
+      ClassCallExpression classCall = level.toNew().getExpression().toClassCall();
+      ClassCallExpression.ImplementStatement pStat = classCall.getImplementStatements().get(Preprelude.PLEVEL);
+      ClassCallExpression.ImplementStatement hStat = classCall.getImplementStatements().get(Preprelude.HLEVEL);
+      if (pStat != null && hStat != null && pStat.term != null && hStat.term != null) {
+        Integer pNum = getPNum(pStat.term);
+        Integer hNum = getHNum(hStat.term);
+        if (pNum != null && hNum != null) {
+          return myFactory.makeUniverse(pNum, hNum);
+        }
+      }
+    }
+    return myFactory.makeUniverse(level.accept(this, null));
   }
 
   @Override

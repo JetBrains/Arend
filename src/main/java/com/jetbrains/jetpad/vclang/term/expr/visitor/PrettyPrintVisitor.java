@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
@@ -90,29 +89,8 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
   }
 
-  private Integer getNumber(Abstract.Expression expr) {
-    if (expr instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) expr).getResolvedDefinition() != null
-        && ((Abstract.DefCallExpression) expr).getResolvedDefinition() == Preprelude.ZERO) {
-      return 0;
-    }
-    if (expr instanceof Abstract.AppExpression && ((Abstract.AppExpression) expr).getFunction() instanceof Abstract.DefCallExpression
-        && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getResolvedDefinition() != null
-        && ((Abstract.DefCallExpression) ((Abstract.AppExpression) expr).getFunction()).getResolvedDefinition() == Preprelude.SUC) {
-      Integer result = getNumber(((Abstract.AppExpression) expr).getArgument().getExpression());
-      if (result == null) return null;
-      return result + 1;
-    }
-    return null;
-  }
-
   @Override
   public Void visitApp(Abstract.AppExpression expr, Byte prec) {
-    Integer number = getNumber(expr);
-    if (number != null) {
-      myBuilder.append(number);
-      return null;
-    }
-
     List<Abstract.ArgumentExpression> args = new ArrayList<>();
     visitApps(Abstract.getFunction(expr, args), args, prec);
     return null;
@@ -120,15 +98,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Byte prec) {
-    if (expr.getResolvedDefinition() != null && expr.getResolvedDefinition() == Preprelude.ZERO) {
-      myBuilder.append("0");
-    } else {
-      if (expr.getExpression() != null) {
-        expr.getExpression().accept(this, prec);
-        myBuilder.append(".");
-      }
-      myBuilder.append(new Name(expr.getName()));
+    if (expr.getExpression() != null) {
+      expr.getExpression().accept(this, prec);
+      myBuilder.append(".");
     }
+    myBuilder.append(new Name(expr.getName()));
     return null;
   }
 

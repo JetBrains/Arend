@@ -71,6 +71,11 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
+  public Abstract.Expression makeUniverse(int pLevel, int hLevel) {
+    return cUniverse(pLevel, hLevel);
+  }
+
+  @Override
   public Abstract.Expression makeInferHole() {
     return cInferHole();
   }
@@ -98,6 +103,11 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Override
   public Abstract.Expression makeNew(Abstract.Expression expr) {
     return cNew((Concrete.Expression) expr);
+  }
+
+  @Override
+  public Abstract.Expression makeNumericalLiteral(int num) {
+    return cNum(num);
   }
 
   @Override

@@ -19,12 +19,14 @@ public interface AbstractExpressionFactory {
   Abstract.Expression makeLam(List<? extends Abstract.Argument> arguments, Abstract.Expression body);
   Abstract.Expression makePi(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression codomain);
   Abstract.Expression makeUniverse(Abstract.Expression level);
+  Abstract.Expression makeUniverse(int pLevel, int hLevel);
   Abstract.Expression makeInferHole();
   Abstract.Expression makeError(Abstract.Expression expr);
   Abstract.Expression makeTuple(List<? extends Abstract.Expression> fields);
   Abstract.Expression makeSigma(List<? extends Abstract.TypeArgument> arguments);
   Abstract.Expression makeProj(Abstract.Expression expr, int field);
   Abstract.Expression makeNew(Abstract.Expression expr);
+  Abstract.Expression makeNumericalLiteral(int num);
   Abstract.Expression makeLet(List<? extends Abstract.LetClause> clauses, Abstract.Expression expr);
   Abstract.LetClause makeLetClause(String name, List<? extends Abstract.Argument> arguments, Abstract.Expression resultType, Abstract.Definition.Arrow arrow, Abstract.Expression term);
   Abstract.Expression makeElim(List<? extends Abstract.Expression> exprs, List<? extends Abstract.Clause> clauses);
