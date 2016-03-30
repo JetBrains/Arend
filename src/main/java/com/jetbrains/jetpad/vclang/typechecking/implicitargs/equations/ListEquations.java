@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
@@ -105,10 +104,10 @@ public class ListEquations implements Equations {
     }
 
     if (isInf1 && !isInf2) {
-      addSolution((InferenceBinding) ref1.getBinding(), expr2, sourceNode);
+      addSolution((InferenceBinding) ref1.getBinding(), expr2);
     } else
     if (isInf2 && !isInf1) {
-      addSolution((InferenceBinding) ref2.getBinding(), expr1, sourceNode);
+      addSolution((InferenceBinding) ref2.getBinding(), expr1);
     } else {
       myEquations.add(new CmpEquation(expr1, expr2, cmp, sourceNode));
     }
@@ -116,25 +115,20 @@ public class ListEquations implements Equations {
     return true;
   }
 
-  private boolean addSolution(InferenceBinding binding, Expression expression, Abstract.SourceNode sourceNode) {
-    if (!(binding instanceof IgnoreBinding)) {
-      Expression expr = mySolutions.get(binding);
-      if (expr != null) {
-        if (!CompareVisitor.compare(this, CMP.EQ, expression, expr, binding.getSourceNode())) {
-          binding.reportErrorInfer(myErrorReporter, expression, expr);
-        }
-      } else {
-        mySolutions.put(binding, expression);
+  private void addSolution(InferenceBinding binding, Expression expression) {
+    Expression expr = mySolutions.get(binding);
+    if (expr != null) {
+      if (!CompareVisitor.compare(this, CMP.EQ, expression, expr, binding.getSourceNode())) {
+        binding.reportErrorInfer(myErrorReporter, expression, expr);
       }
-      return true;
     } else {
-      return CompareVisitor.compare(this, CMP.GE, binding.getType(), expression.getType(), sourceNode);
+      mySolutions.put(binding, expression);
     }
   }
 
   private void addSolutions(Map<InferenceBinding, Expression> solutions) {
     for (Map.Entry<InferenceBinding, Expression> entry : solutions.entrySet()) {
-      addSolution(entry.getKey(), entry.getValue(), null);
+      addSolution(entry.getKey(), entry.getValue());
     }
   }
 

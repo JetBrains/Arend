@@ -2,21 +2,15 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -54,7 +48,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     if (isExplicit) {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
-      if (conCall != null && Prelude.isPathCon(conCall.getDefinition())) {
+      if (conCall != null && Prelude.isPathCon(conCall.getDefinition()) && result.expression.getArguments().size() <= 1) {
         Expression interval = DataCall(Preprelude.INTERVAL);
         Expression lvl;
         if (result.expression.getArguments().isEmpty()) {
@@ -67,38 +61,29 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           lvl = result.expression.getArguments().get(0);
         }
 
-        CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(interval, Reference(new IgnoreBinding(null, Universe(lvl)))));
+        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", Universe(lvl), 2, fun);
+        result.addUnsolvedVariable(inferenceBinding);
+        DependentLink lamParam = param("i", interval);
+        Expression binding = Reference(inferenceBinding);
+        Expression lamExpr = Lam(lamParam, binding);
+        result.expression = result.expression.addArgument(lamExpr, EnumSet.noneOf(AppExpression.Flag.class));
+        result.type = result.type.applyExpressions(Collections.singletonList(lamExpr));
+
+        CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, Pi(lamParam, binding));
         if (argResult == null) {
           return null;
         }
 
-        PiExpression piType = argResult.type.normalize(NormalizeVisitor.Mode.WHNF).toPi();
-        DependentLink params = piType.getParameters();
-        UniverseExpression universe = piType.getCodomain().getType().toUniverse();
-        if (universe == null || !(universe.getUniverse() instanceof TypeUniverse)) {
-          return null;
-        }
-
-        Expression lvlExpr = ((TypeUniverse) universe.getUniverse()).getLevel().getValue();
-        Expression lamExpr;
-        if (params.getNext().hasNext()) {
-          DependentLink lamParam = param("i", interval);
-          lamExpr = Lam(lamParam, Pi(params.getNext(), piType.getCodomain()).subst(params, Reference(lamParam)));
-        } else {
-          lamExpr = Lam(params, piType.getCodomain());
-        }
-
         Expression expr1 = Apps(argResult.expression, ConCall(Preprelude.LEFT));
         Expression expr2 = Apps(argResult.expression, ConCall(Preprelude.RIGHT));
-        Constructor pathCon = conCall.getDefinition();
-        Expression  pathCall = ConCall(pathCon)
-            .addArgument(lvlExpr, EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(lamExpr, EnumSet.noneOf(AppExpression.Flag.class))
+        result.expression
             .addArgument(expr1, EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(expr2, EnumSet.noneOf(AppExpression.Flag.class));
-        argResult.expression = Apps(pathCall, argResult.expression);
-        argResult.type = Apps(DataCall(pathCon.getDataType()).addArgument(lvlExpr, EnumSet.noneOf(AppExpression.Flag.class)), lamExpr, expr1, expr2);
-        return argResult;
+            .addArgument(expr2, EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(argResult.expression, AppExpression.DEFAULT);
+        result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
+        result.add(argResult);
+        result.update();
+        return result;
       }
 
       List<DependentLink> params = new ArrayList<>();
