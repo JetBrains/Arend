@@ -8,11 +8,13 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 public class LambdaInferenceBinding extends InferenceBinding {
   private final int myIndex;
   private final Abstract.SourceNode mySourceNode;
+  private final boolean myLevel;
 
-  public LambdaInferenceBinding(String name, Expression type, int index, Abstract.SourceNode sourceNode) {
+  public LambdaInferenceBinding(String name, Expression type, int index, Abstract.SourceNode sourceNode, boolean level) {
     super(name, type);
     myIndex = index;
     mySourceNode = sourceNode;
+    myLevel = level;
   }
 
   @Override
@@ -22,11 +24,11 @@ public class LambdaInferenceBinding extends InferenceBinding {
 
   @Override
   public void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates) {
-    errorReporter.report(new ArgInferenceError(ArgInferenceError.lambdaArg(myIndex), mySourceNode, null, candidates));
+    errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), mySourceNode, null, candidates));
   }
 
   @Override
   public void reportErrorMismatch(ErrorReporter errorReporter, Expression expectedType, Expression actualType, Expression candidate) {
-    errorReporter.report(new ArgInferenceError(ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, mySourceNode, null, candidate));
+    errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, mySourceNode, null, candidate));
   }
 }

@@ -8,7 +8,10 @@ import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
-import com.jetbrains.jetpad.vclang.term.context.binding.*;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.ExpressionInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LambdaInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
@@ -345,8 +348,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
-              InferenceBinding levelInferenceBinding = new TypeOfInferenceBinding("level-of-" + name, Level(), expr);
-              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(Reference(levelInferenceBinding)), argIndex, expr);
+              InferenceBinding levelInferenceBinding = new LambdaInferenceBinding("level-of-" + name, Level(), argIndex, expr, true);
+              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(Reference(levelInferenceBinding)), argIndex, expr, false);
               link.setType(Reference(inferenceBinding));
               bindingTypes.put(link, inferenceBinding);
             }

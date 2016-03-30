@@ -40,6 +40,6 @@ public abstract class BaseUniverse<U extends Universe, L extends Universe.Level<
   }
 
   protected static boolean checkLevelExprsAreEqual(Expression expr1, Expression expr2, CompareVisitor visitor) {
-    return visitor == null ? Expression.compare(expr1, expr2) : expr1.accept(visitor, expr2);
+    return visitor == null ? Expression.compare(expr1, expr2) : visitor.compare(expr1, expr2);
   }
 }

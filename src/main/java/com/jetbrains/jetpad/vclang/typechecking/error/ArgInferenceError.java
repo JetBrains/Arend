@@ -40,27 +40,27 @@ public class ArgInferenceError extends TypeCheckingError {
   }
 
   public static String functionArg(int index) {
-    return "Cannot infer " + ordinal(index) + " argument to function";
+    return "Cannot infer the " + ordinal(index) + " argument to function";
   }
 
   public static String typeOfFunctionArg(int index) {
-    return "Cannot infer type of " + ordinal(index) + " argument of function";
+    return "Cannot infer type of the " + ordinal(index) + " argument of function";
   }
 
   public static String lambdaArg(int index) {
-    return "Cannot infer type of " + ordinal(index) + " parameter of lambda";
+    return "Cannot infer type of the " + ordinal(index) + " parameter of lambda";
+  }
+
+  public static String levelOfLambdaArg(int index) {
+    return "Cannot infer level of the type of the " + ordinal(index) + " parameter of lambda";
   }
 
   public static String parameter(int index) {
-    return "Cannot infer " + ordinal(index) + " parameter to constructor";
+    return "Cannot infer the " + ordinal(index) + " parameter to constructor";
   }
 
   public static String expression() {
     return "Cannot infer an expression";
-  }
-
-  public static String levelOf() {
-    return "Cannot infer level of";
   }
 
   public static String suffix(int n) {

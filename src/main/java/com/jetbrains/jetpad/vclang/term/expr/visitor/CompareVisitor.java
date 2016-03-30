@@ -56,14 +56,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return new CompareVisitor(substitution, equations, cmp).compare(expr1, expr2);
   }
 
-  private Boolean compare(ElimTreeNode tree1, ElimTreeNode tree2) {
+  public Boolean compare(ElimTreeNode tree1, ElimTreeNode tree2) {
     if (tree1 == tree2) {
       return true;
     }
     return tree1.accept(this, tree2);
   }
 
-  private Boolean compare(Expression expr1, Expression expr2) {
+  public Boolean compare(Expression expr1, Expression expr2) {
     if (expr1 == expr2 || expr1.toError() != null  || expr2.toError() != null) {
       return true;
     }
