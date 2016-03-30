@@ -385,7 +385,7 @@ public class ImplicitArgumentsTest {
   @Test
   public void orderTest1() {
     typeCheckClass(
-        "\\function idpOver (A : I -> \\Type0) (a : A left) => path (coe A a)\n" +
+        "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
         "\\function test {A : \\Type0} (P : A -> \\Type0) {a a' : A} (q : a = a') (pa : P a) (i : I)\n" +
         "  => idpOver (\\lam (j : I) => P (q @ j)) pa @ i\n");
   }
@@ -393,7 +393,7 @@ public class ImplicitArgumentsTest {
   @Test
   public void orderTest2() {
     typeCheckClass(
-        "\\function idpOver (A : I -> \\Type0) (a : A left) => path (coe A a)\n" +
+        "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
         "\\function test {A : \\Type0} (P : A -> \\Type0) {a : A} (pa : P a) (i : I)\n" +
         "  => \\lam (a' : A) (q : a = a') => idpOver (\\lam (j : I) => P (q @ j)) pa @ i");
   }

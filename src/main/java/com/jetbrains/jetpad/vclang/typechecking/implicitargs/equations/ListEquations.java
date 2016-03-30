@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
@@ -117,15 +116,13 @@ public class ListEquations implements Equations {
   }
 
   private void addSolution(InferenceBinding binding, Expression expression) {
-    if (!(binding instanceof IgnoreBinding)) {
-      Expression expr = mySolutions.get(binding);
-      if (expr != null) {
-        if (!CompareVisitor.compare(this, CMP.EQ, expression, expr, binding.getSourceNode())) {
-          binding.reportErrorInfer(myErrorReporter, expression, expr);
-        }
-      } else {
-        mySolutions.put(binding, expression);
+    Expression expr = mySolutions.get(binding);
+    if (expr != null) {
+      if (!CompareVisitor.compare(this, CMP.EQ, expression, expr, binding.getSourceNode())) {
+        binding.reportErrorInfer(myErrorReporter, expression, expr);
       }
+    } else {
+      mySolutions.put(binding, expression);
     }
   }
 
