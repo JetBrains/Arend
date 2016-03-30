@@ -36,7 +36,7 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
 
     @Override
     public boolean equals(Object other) {
-      return (other instanceof PredicativeLevel) && checkLevelExprsAreEqual(myLevel, ((PredicativeLevel) other).getValue(), null);
+      return (other instanceof PredicativeLevel) && checkLevelExprsAreEqual(myLevel.normalize(NormalizeVisitor.Mode.NF), ((PredicativeLevel) other).getValue().normalize(NormalizeVisitor.Mode.NF), null);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
 
     @Override
     public boolean equals(Object other) {
-      return (other instanceof HomotopyLevel) && checkLevelExprsAreEqual(myLevel, ((HomotopyLevel) other).getValue(), null);
+      return (other instanceof HomotopyLevel) && checkLevelExprsAreEqual(myLevel.normalize(NormalizeVisitor.Mode.NF), ((HomotopyLevel) other).getValue().normalize(NormalizeVisitor.Mode.NF), null);
     }
 
     @Override
@@ -128,11 +128,7 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     public TypeLevel() {
       myPLevel = new PredicativeLevel();
       myHLevel = new HomotopyLevel();
-    }
-
-    public TypeLevel(PredicativeLevel plevel) {
-      myPLevel = plevel;
-      myHLevel = new HomotopyLevel();
+      myIgnorePLevel = true;
     }
 
     public TypeLevel(HomotopyLevel hlevel, boolean ignorePLevel) {
@@ -155,21 +151,29 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     public TypeLevel(int plevel, int hlevel) {
       myPLevel = new PredicativeLevel(plevel);
       myHLevel = new HomotopyLevel(hlevel);
-      myIgnorePLevel = myHLevel.equals(HomotopyLevel.PROP);
+      myIgnorePLevel = getHLevel().equals(HomotopyLevel.PROP);
     }
 
     public TypeLevel(PredicativeLevel plevel, HomotopyLevel hlevel) {
       myPLevel = plevel;
       myHLevel = hlevel;
-      myIgnorePLevel = myHLevel.equals(HomotopyLevel.PROP);
+      myIgnorePLevel = getHLevel().equals(HomotopyLevel.PROP);
     }
 
     public PredicativeLevel getPLevel() {
-      return myLevel == null ? myPLevel : new PredicativeLevel(PLevel().applyThis(myLevel));
+      if (myPLevel != null) {
+        return myPLevel;
+      }
+      myPLevel = new PredicativeLevel(PLevel().applyThis(myLevel).normalize(NormalizeVisitor.Mode.NF));
+      return myPLevel;
     }
 
     public HomotopyLevel getHLevel() {
-      return myLevel == null ? myHLevel : new HomotopyLevel(HLevel().applyThis(myLevel));
+      if (myHLevel != null) {
+        return myHLevel;
+      }
+      myHLevel = new HomotopyLevel(HLevel().applyThis(myLevel).normalize(NormalizeVisitor.Mode.NF));
+      return myHLevel;
     }
 
     public Expression getValue() {

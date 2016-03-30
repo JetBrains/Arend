@@ -202,9 +202,9 @@ public class ElimTest {
   }
 
   @Test
-  public void testPreludeSuc() {
+  public void testPrepreludeSuc() {
     typeCheckClass(
-        "\\static \\function test' => ::Prelude.suc\n"
+        "\\static \\function test' => ::Preprelude.suc\n"
     );
   }
 

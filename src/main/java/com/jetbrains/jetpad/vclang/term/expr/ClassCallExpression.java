@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -11,12 +12,12 @@ import java.util.Map;
 
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
-//  private Universe myUniverse;
+  private Universe myUniverse;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
     myStatements = Collections.emptyMap();
-  //  myUniverse = definition.getUniverse();
+    myUniverse = definition.getUniverse();
   }
 
   public ClassCallExpression(ClassDefinition definition, Map<ClassField, ImplementStatement> statements) {
@@ -41,24 +42,26 @@ public class ClassCallExpression extends DefCallExpression {
   }
 
   public Universe getUniverse() {
-    if (getDefinition().getUniverse() == null) {
-      Universe universe = null;
+    if (myUniverse == null) {
       for (ClassField field : getDefinition().getFields()) {
         if (!myStatements.containsKey(field)) {
           UniverseExpression expr = field.getBaseType().getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
           Universe fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
-          if (universe == null) {
-            universe = fieldUniverse;
+          if (myUniverse == null) {
+            myUniverse = fieldUniverse;
             continue;
           }
-          universe = universe.compare(fieldUniverse, null).MaxUniverse;
+          myUniverse = myUniverse.compare(fieldUniverse, null).MaxUniverse;
           assert expr != null;
         }
       }
-      getDefinition().setUniverse(universe);
     }
 
-    return getDefinition().getUniverse();
+    if (myUniverse == null) {
+      myUniverse = TypeUniverse.PROP;
+    }
+
+    return myUniverse;
   }
 
   @Override
