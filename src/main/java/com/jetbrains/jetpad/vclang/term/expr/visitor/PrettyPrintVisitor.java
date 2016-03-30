@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
@@ -236,9 +235,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Byte prec) {
-    myBuilder.append("Type ");
+    myBuilder.append("Type");
     if (expr.getLevel() != null) {
-      expr.getLevel().accept(this, prec);
+      myBuilder.append(" ");
+      expr.getLevel().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
     }
     return null;
   }
@@ -383,6 +383,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("\n");
     }
     myIndent -= INDENT;
+    myBuilder.append("}");
     if (prec > Abstract.ClassExtExpression.PREC) myBuilder.append(')');
     return null;
   }

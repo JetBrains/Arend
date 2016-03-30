@@ -105,10 +105,10 @@ public class ListEquations implements Equations {
     }
 
     if (isInf1 && !isInf2) {
-      addSolution((InferenceBinding) ref1.getBinding(), expr2);
+      addSolution((InferenceBinding) ref1.getBinding(), expr2, sourceNode);
     } else
     if (isInf2 && !isInf1) {
-      addSolution((InferenceBinding) ref2.getBinding(), expr1);
+      addSolution((InferenceBinding) ref2.getBinding(), expr1, sourceNode);
     } else {
       myEquations.add(new CmpEquation(expr1, expr2, cmp, sourceNode));
     }
@@ -116,7 +116,7 @@ public class ListEquations implements Equations {
     return true;
   }
 
-  private void addSolution(InferenceBinding binding, Expression expression) {
+  private boolean addSolution(InferenceBinding binding, Expression expression, Abstract.SourceNode sourceNode) {
     if (!(binding instanceof IgnoreBinding)) {
       Expression expr = mySolutions.get(binding);
       if (expr != null) {
@@ -126,12 +126,15 @@ public class ListEquations implements Equations {
       } else {
         mySolutions.put(binding, expression);
       }
+      return true;
+    } else {
+      return CompareVisitor.compare(this, CMP.GE, binding.getType(), expression.getType(), sourceNode);
     }
   }
 
   private void addSolutions(Map<InferenceBinding, Expression> solutions) {
     for (Map.Entry<InferenceBinding, Expression> entry : solutions.entrySet()) {
-      addSolution(entry.getKey(), entry.getValue());
+      addSolution(entry.getKey(), entry.getValue(), null);
     }
   }
 

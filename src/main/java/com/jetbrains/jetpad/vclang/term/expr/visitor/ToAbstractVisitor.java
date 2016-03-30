@@ -200,9 +200,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
-    if (!(expr.getUniverse() instanceof TypeUniverse)) return null;
+    if (!(expr.getUniverse() instanceof TypeUniverse)) {
+      return null;
+    }
     TypeUniverse universe = (TypeUniverse) expr.getUniverse();
-    if (universe.getLevel() == null) return myFactory.makeUniverse(null);
+    if (universe.getLevel() == null) {
+      return myFactory.makeUniverse(null);
+    }
     return myFactory.makeUniverse(universe.getLevel().getValue().accept(this, null));
   }
 

@@ -8,10 +8,7 @@ import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.ExpressionInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.LambdaInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.*;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
@@ -348,7 +345,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
-              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(), argIndex, expr);
+              InferenceBinding levelInferenceBinding = new TypeOfInferenceBinding("level-of-" + name, Level(), expr);
+              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(Reference(levelInferenceBinding)), argIndex, expr);
               link.setType(Reference(inferenceBinding));
               bindingTypes.put(link, inferenceBinding);
             }
@@ -384,6 +382,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         result.getEquations().abstractBinding(myContext.get(i));
         InferenceBinding bindingType = bindingTypes.get(myContext.get(i));
         if (bindingType != null) {
+          result.addUnsolvedVariable((InferenceBinding) ((TypeUniverse) bindingType.getType().toUniverse().getUniverse()).getLevel().getValue().toReference().getBinding());
           result.addUnsolvedVariable(bindingType);
           Substitution substitution = result.getSubstitution();
           if (!substitution.getDomain().isEmpty()) {

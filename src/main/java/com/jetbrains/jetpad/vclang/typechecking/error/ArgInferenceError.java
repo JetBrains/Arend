@@ -59,8 +59,8 @@ public class ArgInferenceError extends TypeCheckingError {
     return "Cannot infer an expression";
   }
 
-  public static String type() {
-    return "Cannot infer type of expression";
+  public static String levelOf() {
+    return "Cannot infer level of";
   }
 
   public static String suffix(int n) {
