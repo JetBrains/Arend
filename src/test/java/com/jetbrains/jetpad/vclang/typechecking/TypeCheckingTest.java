@@ -88,7 +88,7 @@ public class TypeCheckingTest {
    @Test
   public void testPMap1Error() {
     typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : ((=) {\\new Level {PLevel => sucLvl zeroLvl|HLevel => inf}} {B} (f a) (f a'))" +
-            " => path (\\lam i => f (p @ i))", -1);
+            " => path {\\new Level {PLevel => zeroLvl|HLevel => inf}} (\\lam i => f (p @ i))", -1);
   }
 
   @Test

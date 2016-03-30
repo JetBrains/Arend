@@ -282,14 +282,15 @@ public class ModuleDeserialization {
 
   public Universe readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     Expression level = readExpression(stream, definitionMap);
-    Expression plevel, hlevel;
+    /*Expression plevel, hlevel;
     NewExpression newLevel = level.toNew();
     if (newLevel != null) {
       plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.PLEVEL).term;
       hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.HLEVEL).term;
       return new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel));
     }
-    throw new IncorrectFormat();
+    throw new IncorrectFormat(); /**/
+    return new TypeUniverse(new TypeUniverse.TypeLevel(level));
   }
 
   public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
