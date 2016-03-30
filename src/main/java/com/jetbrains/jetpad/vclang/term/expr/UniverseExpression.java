@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
@@ -27,5 +28,10 @@ public class UniverseExpression extends Expression {
   @Override
   public UniverseExpression toUniverse() {
     return this;
+  }
+
+  @Override
+  public boolean isAnyUniverse() {
+    return myUniverse instanceof TypeUniverse && ((TypeUniverse) myUniverse).getLevel() == null;
   }
 }

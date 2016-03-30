@@ -383,6 +383,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append("\n");
     }
     myIndent -= INDENT;
+    printIndent();
     myBuilder.append("}");
     if (prec > Abstract.ClassExtExpression.PREC) myBuilder.append(')');
     return null;

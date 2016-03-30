@@ -8,10 +8,7 @@ import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.ExpressionInferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.LambdaInferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.*;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
@@ -165,7 +162,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     if (compare(result, expectedType, Equations.CMP.GE, expression)) {
-      result.expression = new OfTypeExpression(result.expression, expectedType);
       expression.setWellTyped(myContext, result.expression);
       return result;
     } else {
@@ -177,7 +173,22 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result.getEquations() instanceof DummyEquations) {
       result.setEquations(myArgsInference.newEquations());
     }
-    if (CompareVisitor.compare(result.getEquations(), cmp, expectedType.normalize(NormalizeVisitor.Mode.NF), result.type.normalize(NormalizeVisitor.Mode.NF), expr)) {
+
+    Expression expectedType1 = expectedType.normalize(NormalizeVisitor.Mode.NF);
+    Expression actualType = result.type.normalize(NormalizeVisitor.Mode.NF);
+
+    if (expectedType1.isAnyUniverse()) {
+      if (actualType.toUniverse() != null) {
+        return true;
+      }
+
+      InferenceBinding lvl = new LevelInferenceBinding("lvl", Level(), expr);
+      result.addUnsolvedVariable(lvl);
+      expectedType1 = Universe(Reference(lvl));
+    }
+
+    if (CompareVisitor.compare(result.getEquations(), cmp, expectedType1, actualType, expr)) {
+      result.expression = new OfTypeExpression(result.expression, expectedType1);
       return true;
     } else {
       TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);

@@ -33,7 +33,7 @@ public class PathsTest {
             .addArgument(Reference(A.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Reference(A.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
-    assertEquals(Lam(A, pathCall), idp.expression);
+    assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.expression);
     assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX).addArgument(Level(ZeroLvl(), Inf()), EnumSet.noneOf(AppExpression.Flag.class)), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }
 

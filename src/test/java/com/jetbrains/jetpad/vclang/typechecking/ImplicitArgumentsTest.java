@@ -263,7 +263,7 @@ public class ImplicitArgumentsTest {
   @Test
   public void untypedLambda1() {
     // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x1 x2
-    DependentLink A = param("A", Universe());
+    DependentLink A = param("A", Universe(0));
     Expression type = Pi(params(A, param("a", Reference(A))), Nat());
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
@@ -286,7 +286,7 @@ public class ImplicitArgumentsTest {
   @Test
   public void untypedLambdaError1() {
     // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x2 x1
-    DependentLink A = param("A", Universe());
+    DependentLink A = param("A", Universe(0));
     Expression type = Pi(params(A, param("a", Reference(A))), Nat());
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
@@ -295,9 +295,9 @@ public class ImplicitArgumentsTest {
 
   @Test
   public void untypedLambdaError2() {
-    // f : (A : Type) (B : A -> Type) (a : A) -> B a |- \x1 x2 x3. f x2 x1 x3
-    DependentLink A = param("A", Universe());
-    DependentLink params = params(A, param("B", Pi(Reference(A), Universe())), param("a", Reference(A)));
+    // f : (A : Type0) (B : A -> Type0) (a : A) -> B a |- \x1 x2 x3. f x2 x1 x3
+    DependentLink A = param("A", Universe(0));
+    DependentLink params = params(A, param("B", Pi(Reference(A), Universe(0))), param("a", Reference(A)));
     Expression type = Pi(params, Apps(Reference(params.getNext()), Reference(params.getNext().getNext())));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));

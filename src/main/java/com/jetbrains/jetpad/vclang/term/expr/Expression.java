@@ -249,4 +249,8 @@ public abstract class Expression implements PrettyPrintable {
   public UniverseExpression toUniverse() {
     return null;
   }
+
+  public boolean isAnyUniverse() {
+    return false;
+  }
 }
