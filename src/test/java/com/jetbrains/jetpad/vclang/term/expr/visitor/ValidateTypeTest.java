@@ -197,8 +197,26 @@ public class ValidateTypeTest {
     FunctionDefinition ofHlevel1IsProp = (FunctionDefinition) member.namespace.getMember("ofHlevel1-isProp").definition;
     FunctionDefinition ofHlevel = (FunctionDefinition) member.namespace.getMember("ofHlevel").definition;
     Expression e = Apps(FunCall(ofHlevel), Suc(Zero()), Nat());
-    System.err.println(e);
-    System.err.println(e.normalize(NormalizeVisitor.Mode.NF));
     ok(ofHlevel1IsProp.getElimTree(), ofHlevel1IsProp.getResultType());
+  }
+
+  @Test
+  public void testIsContrIsProp() {
+    NamespaceMember member = typeCheckClass("" +
+            "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
+            "\\static \\function transport {A : \\Type0} (B : A -> \\Type0) {a a' : A} (p : a = a') (b : B a)\n" +
+            "    <= coe (\\lam i => B (p @ i)) b right\n" +
+            "\\static \\function inv {A : \\Type0} {a a' : A} (p : a = a')\n" +
+            "    <= transport (\\lam a'' => a'' = a) p idp\n" +
+            "\\static \\function concat {A : I -> \\Type0} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'')\n" +
+            "    <= transport (Path A a) q p\n" +
+            "\\static \\function \\infixr 9\n" +
+            "(*>) {A : \\Type0} {a a' a'' : A} (p : a = a') (q : a' = a'')\n" +
+            "    <= concat p q\n" +
+            "\\static \\function isContr (A : \\Type0) => \\Sigma (a : A) (\\Pi (a' : A) -> a = a')\n" +
+            "\\static \\function isProp (A : \\Type0) => \\Pi (aa aa' : A) -> aa = aa'\n" +
+            "\\static \\function isContr-isProp (A : \\Type0) (c : isContr A) : isProp A => \\lam aaa aaa' => inv (c.2 aaa) *> c.2 aaa'\n");
+    FunctionDefinition isContrIsProp = (FunctionDefinition) member.namespace.getMember("isContr-isProp").definition;
+    ok(isContrIsProp.getElimTree(), isContrIsProp.getResultType());
   }
 }

@@ -158,7 +158,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
       ArrayList<DependentLink> params = new ArrayList<>();
       expr.getLamParameters(params);
       ArrayList<DependentLink> piParams = new ArrayList<>();
-      expectedType.getPiParameters(piParams, true, false);
+      normType.getPiParameters(piParams, true, false);
       if (params.size() != piParams.size()) {
         myErrorReporter.addError(expr, "Type " + expectedType + " has less Pi-abstractions than term's Lam abstractions");
       }
