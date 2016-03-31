@@ -242,7 +242,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
         Expression field = fields.get(expr.getField());
         checkType(field, expectedType);
       }
-    } else if (!(tuple instanceof AppExpression)) {
+    } else if (!(tuple instanceof AppExpression) && !(tuple instanceof ReferenceExpression)) {
       myErrorReporter.addError(tuple, "Tuple or App expected");
     }
     return null;

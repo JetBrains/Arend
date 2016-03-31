@@ -256,4 +256,25 @@ public class ValidateTypeTest {
     FunctionDefinition isPropIsSet = (FunctionDefinition) member.namespace.getMember("isProp-isSet").definition;
     ok(isPropIsSet.getElimTree(), isPropIsSet.getResultType());
   }
+
+  @Test
+  public void testQinvToEquiv() {
+    NamespaceMember member = typeCheckClass("" +
+            "\\static \\function id {X : \\Type0} (x : X) => x\n" +
+            "\\static \\function \\infixr 1\n" +
+            "($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+            "\\static \\function \\infixr 8\n" +
+            "o {X Y Z : \\Type0} (g : Y -> Z) (f : X -> Y) (x : X) => g $ f x\n" +
+            "\\static \\function \\infix 2\n" +
+            "(~) {A B : \\Type0} (f : A -> B) (g : A -> B) <= \\Pi (x : A) -> f x = g x\n" +
+            "\\static \\function linv {A B : \\Type0} (f : A -> B) <= \\Sigma (g : B -> A) (g `o` f ~ id)\n" +
+            "\\static \\function rinv {A B : \\Type0} (f : A -> B) <= \\Sigma (g : B -> A) (f `o` g ~ id)\n" +
+            "\\static \\function isequiv {A B : \\Type0} (f : A -> B) <= \\Sigma (linv f) (rinv f)\n" +
+            "\\static \\function qinv {A B : \\Type0} (f : A -> B) <= \\Sigma (g : B -> A) (g `o` f ~ id) (f `o` g ~ id)\n" +
+            "\\static \\function qinv-to-equiv {A B : \\Type0} (f : A -> B) (x : qinv f) : isequiv f => \n" +
+            "  ((x.1, x.2), (x.1, x.3))\n");
+    FunctionDefinition qinvToEquiv = (FunctionDefinition) member.namespace.getMember("qinv-to-equiv").definition;
+    ok(qinvToEquiv.getElimTree(), qinvToEquiv.getResultType());
+
+  }
 }
