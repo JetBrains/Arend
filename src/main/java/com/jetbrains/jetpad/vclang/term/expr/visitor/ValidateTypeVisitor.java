@@ -155,7 +155,20 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
     if (!(normType instanceof PiExpression)) {
       myErrorReporter.addError(expr, "Expected type " + normType + " is expected to be Pi-type");
     } else {
-      expr.getBody().accept(this, ((PiExpression)normType).getCodomain());
+      ArrayList<DependentLink> params = new ArrayList<>();
+      expr.getLamParameters(params);
+      ArrayList<DependentLink> piParams = new ArrayList<>();
+      expectedType.getPiParameters(piParams, true, false);
+      if (params.size() != piParams.size()) {
+        myErrorReporter.addError(expr, "Type " + expectedType + " has less Pi-abstractions than term's Lam abstractions");
+      }
+      int size = Math.min(params.size(), piParams.size());
+      Substitution subst = new Substitution();
+      for (int i = 0; i < size; i++) {
+        subst.add(piParams.get(i), Reference(params.get(i)));
+      }
+      Expression expectedBodyType = ((PiExpression) normType).getCodomain().subst(subst);
+      expr.getBody().accept(this, expectedBodyType);
     }
     return null;
   }
@@ -200,12 +213,11 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
     SigmaExpression type = expr.getType();
     type = (SigmaExpression) type.normalize(NormalizeVisitor.Mode.NF);
     DependentLink link = type.getParameters();
-    type.accept(this, expectedType);
     Substitution subst = new Substitution();
     for (Expression field : expr.getFields()) {
-      field.accept(this, expectedType);
       Expression expectedFieldType = link.getType().subst(subst).normalize(NormalizeVisitor.Mode.NF);
       Expression actualFieldType = field.getType().normalize(NormalizeVisitor.Mode.NF);
+      field.accept(this, expectedFieldType);
       if (!actualFieldType.equals(expectedFieldType)) {
         myErrorReporter.addError(field, "Expected type: " + expectedFieldType + ", found: " + actualFieldType);
       }
@@ -249,8 +261,9 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
     // TODO subst
     Substitution subst = new Substitution();
     for (LetClause clause : letExpression.getClauses()) {
-      clause.getElimTree().accept(this, clause.getType());
+      clause.getElimTree().accept(this, clause.getResultType());
     }
+    letExpression.getExpression().accept(this, expectedType);
     return null;
   }
 

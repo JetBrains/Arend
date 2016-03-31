@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
@@ -35,8 +36,12 @@ public class ValidateTypeTest {
   }
 
   private ValidateTypeVisitor.ErrorReporter ok(ElimTreeNode elimTree) {
+    return ok(elimTree, null);
+  }
+
+  private ValidateTypeVisitor.ErrorReporter ok(ElimTreeNode elimTree, Expression type) {
     ValidateTypeVisitor visitor = new ValidateTypeVisitor();
-    elimTree.accept(visitor, null);
+    elimTree.accept(visitor, type);
     assertEquals(0, visitor.myErrorReporter.errors());
     return visitor.myErrorReporter;
   }
@@ -48,13 +53,13 @@ public class ValidateTypeTest {
     ok(expr);
   }
 
-  @Test
+  @Test(expected = AssertionError.class)
   public void testAppNotPi() {
     Expression expr = Apps(Nat(), Nat());
     fail(expr);
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testProjNotSigma() {
     Expression expr = Proj(Nat(), 0);
     fail(expr);
@@ -86,7 +91,7 @@ public class ValidateTypeTest {
   public void testSigma() {
     FunctionDefinition f = (FunctionDefinition) typeCheckDef(
             "\\function f (n : Nat) : \\Sigma (m : Nat) (suc n = suc m) => (n, path (\\lam (i : I) => suc n))");
-    ok(f.getElimTree());
+    ok(f.getElimTree(), f.getResultType());
   }
 
   @Test
@@ -94,7 +99,7 @@ public class ValidateTypeTest {
     FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\function\n" +
             "squeeze1 (i j : I) : I\n" +
             "    <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n");
-    ok(fun.getElimTree());
+    ok(fun.getElimTree(), fun.getResultType());
   }
 
   @Test
@@ -137,7 +142,45 @@ public class ValidateTypeTest {
   public void testMoreArgsThanParamsOk() {
 //    CheckTypeVisitor.Result e = typeCheckExpr("(\\lam (x: Nat) => suc) zero zero", null);
     CheckTypeVisitor.Result e = typeCheckExpr("\\lam (p : suc = suc) => (p @ left) zero", null);
+    ok(e.expression);
     System.err.println(e.expression.getType());
   }
 
+  @Test
+  public void testLet() {
+    FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\function\n" +
+            "f : Nat => \\let | n : Nat => 2 \\in n");
+    ok(fun.getElimTree(), Nat());
+  }
+
+  @Test
+  public void testCase() {
+    FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\function\n" +
+            "isZero (n : Nat) : Nat => \\case n | zero => 1 | suc _ => 0");
+    ok(fun.getElimTree(), Nat());
+  }
+
+  @Test
+  public void testProj() {
+    FunctionDefinition fun = (FunctionDefinition) typeCheckDef(
+            "\\function f : Nat => (\\lam (p : \\Sigma Nat Nat) => p.2) (1, 2)"
+    );
+    ok(fun.getElimTree(), Nat());
+  }
+
+  @Test
+  public void testIIsContr() {
+    NamespaceMember member = typeCheckClass(
+            "\\static \\function squeeze1 (i j : I) : I\n" +
+            "    <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
+            "\\static \\function squeeze (i j : I)\n" +
+            "    <= coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
+            "\\static \\function isContr (A : \\Type0) => \\Sigma (a : A) (\\Pi (a' : A) -> a = a')\n" +
+            "\\static \\function I-isContr : isContr I => (left, \\lam i => path (\\lam j => squeeze i j))\n"
+            );
+    FunctionDefinition isContr = (FunctionDefinition) member.namespace.getMember("isContr").definition;
+    FunctionDefinition iIsContr = (FunctionDefinition) member.namespace.getMember("I-isContr").definition;
+    Expression type = Apps(FunCall(isContr), DataCall(Prelude.INTERVAL));
+    ok(iIsContr.getElimTree(), type);
+  }
 }
