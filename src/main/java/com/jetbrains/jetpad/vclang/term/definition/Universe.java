@@ -1,12 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public interface Universe {
-  enum Cmp { EQUALS, UNKNOWN, LESS, GREATER, NOT_COMPARABLE }
+  enum Cmp { EQUALS, LESS, GREATER, NOT_COMPARABLE }
 
   interface Level<L> {
-    Cmp compare(L other, CompareVisitor visitor);
+    Cmp compare(L other);
+    boolean compare(L other, CompareVisitor visitor, Equations.CMP expectedCMP);
     L max(L other);
     L succ();
   }
@@ -27,6 +29,7 @@ public interface Universe {
     public boolean isLessOrEquals() { return Result == Cmp.LESS || Result == Cmp.EQUALS; }
   }
 
-  CompareResult compare(Universe other, CompareVisitor visitor);
+  CompareResult compare(Universe other);
+  boolean compare(Universe other, CompareVisitor visitor, Equations.CMP expectedCMP);
   Universe succ();
 }

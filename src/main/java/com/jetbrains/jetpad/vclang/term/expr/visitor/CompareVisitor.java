@@ -11,6 +11,8 @@ import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.EtaNormalization;
+import com.jetbrains.jetpad.vclang.typechecking.exprorder.ExpressionOrder;
+import com.jetbrains.jetpad.vclang.typechecking.exprorder.StandardOrder;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
   private final Abstract.SourceNode mySourceNode;
+  private final ExpressionOrder order = new StandardOrder();
   private Equations.CMP myCMP;
 
   private CompareVisitor(Equations equations, Equations.CMP cmp, Abstract.SourceNode sourceNode) {
@@ -86,6 +89,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (ref2 != null && ref2.getBinding() instanceof InferenceBinding) {
       return compareReference(ref2, expr1, false);
     }
+
+    if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null) {
+      if (order.compare(expr1, expr2, this, myCMP)) return true;
+    }
+
     return expr1.accept(this, expr2);
   }
 
@@ -309,10 +317,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
     UniverseExpression universe2 = expr2.toUniverse();
     if (universe2 == null || universe2.getUniverse() == null) return false;
-    Universe.Cmp expectedCMP = myCMP.toUniverseCmp();
-    myCMP = Equations.CMP.EQ;
-    Universe.CompareResult cmp = expr1.getUniverse().compare(universe2.getUniverse(), this);
-    return cmp != null && (cmp.Result == Universe.Cmp.EQUALS || cmp.Result == expectedCMP);
+    return expr1.getUniverse().compare(universe2.getUniverse(), this, myCMP);
+    //return cmp != null && (cmp.Result == Universe.Cmp.EQUALS || cmp.Result == expectedCMP);
   }
 
   @Override

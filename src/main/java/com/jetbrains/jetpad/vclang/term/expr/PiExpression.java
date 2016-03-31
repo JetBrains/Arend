@@ -34,7 +34,7 @@ public class PiExpression extends DependentTypeExpression {
     type = type.normalize(NormalizeVisitor.Mode.WHNF);
     Universe codomainUniverse = type.toUniverse().getUniverse();
     if (codomainUniverse == null) return null;
-    return codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : universe.compare(codomainUniverse, null).MaxUniverse;
+    return codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : universe.compare(codomainUniverse).MaxUniverse;
   }
 
   @Override

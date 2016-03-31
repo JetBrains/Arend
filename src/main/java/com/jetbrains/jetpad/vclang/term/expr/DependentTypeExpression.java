@@ -26,7 +26,7 @@ public abstract class DependentTypeExpression extends Expression {
         if (universe == null) {
           universe = type.getUniverse();
         } else {
-          Universe.CompareResult cmp = universe.compare(type.getUniverse(), null);
+          Universe.CompareResult cmp = universe.compare(type.getUniverse());
           if (cmp == null) return null;
           universe = cmp.MaxUniverse;
         }

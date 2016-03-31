@@ -221,6 +221,8 @@ public class ExpressionFactory {
 
   public static Expression MaxLvl(Expression expr1, Expression expr2) { return Apps(MaxLvl(), expr1, expr2); }
 
+  public static Expression MaxNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_NAT), expr1, expr2); }
+
   public static DataCallExpression CNat() {
     return DataCall(Preprelude.CNAT);
   }

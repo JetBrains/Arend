@@ -5,6 +5,11 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.exprorder.CNatOrder;
+import com.jetbrains.jetpad.vclang.typechecking.exprorder.ExpressionOrder;
+import com.jetbrains.jetpad.vclang.typechecking.exprorder.LevelOrder;
+import com.jetbrains.jetpad.vclang.typechecking.exprorder.StandardOrder;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLevel> {
   public static final TypeUniverse PROP = new TypeUniverse(new TypeLevel(HomotopyLevel.PROP, true));
@@ -36,19 +41,26 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
 
     @Override
     public boolean equals(Object other) {
-      return (other instanceof PredicativeLevel) && checkLevelExprsAreEqual(myLevel.normalize(NormalizeVisitor.Mode.NF), ((PredicativeLevel) other).getValue().normalize(NormalizeVisitor.Mode.NF), null);
+      return (other instanceof PredicativeLevel) && compare((PredicativeLevel) other) == Cmp.EQUALS;
     }
 
     @Override
-    public Cmp compare(PredicativeLevel other, CompareVisitor visitor) {
+    public Cmp compare(PredicativeLevel other) {
       Expression otherLevel = other.myLevel;
       myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
       otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
-      if (checkLevelExprsAreEqual(myLevel, otherLevel, visitor)) return Cmp.EQUALS;
-      Expression maxUlevel = MaxLvl(myLevel, otherLevel).normalize(NormalizeVisitor.Mode.NF);
-      if (checkLevelExprsAreEqual(myLevel, maxUlevel, visitor)) return Cmp.GREATER;
-      if (checkLevelExprsAreEqual(otherLevel, maxUlevel, visitor)) return Cmp.LESS;
-      return Cmp.UNKNOWN;
+      if (Expression.compare(myLevel, otherLevel)) return Cmp.EQUALS;
+      if (Expression.compare(myLevel, otherLevel, Equations.CMP.GE)) return Cmp.GREATER;
+      if (Expression.compare(myLevel, otherLevel, Equations.CMP.LE)) return Cmp.LESS;
+      return Cmp.NOT_COMPARABLE;
+    }
+
+    @Override
+    public boolean compare(PredicativeLevel other, CompareVisitor visitor, Equations.CMP expectedCMP) {
+      Expression otherLevel = other.myLevel;
+      myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
+      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
+      return visitor.compare(myLevel, otherLevel);
     }
 
     @Override
@@ -91,12 +103,23 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
 
     @Override
     public boolean equals(Object other) {
-      return (other instanceof HomotopyLevel) && checkLevelExprsAreEqual(myLevel.normalize(NormalizeVisitor.Mode.NF), ((HomotopyLevel) other).getValue().normalize(NormalizeVisitor.Mode.NF), null);
+      return (other instanceof HomotopyLevel) && compare((HomotopyLevel) other) == Cmp.EQUALS;
     }
 
     @Override
-    public Cmp compare(HomotopyLevel other, CompareVisitor visitor) {
+    public Cmp compare(HomotopyLevel other) {
+      Expression otherLevel = other.myLevel;
       myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
+      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
+      if (Expression.compare(myLevel, otherLevel)) return Cmp.EQUALS;
+      if (Expression.compare(myLevel, otherLevel, Equations.CMP.GE)) return Cmp.GREATER;
+      if (Expression.compare(myLevel, otherLevel, Equations.CMP.LE)) return Cmp.LESS;
+      return Cmp.NOT_COMPARABLE;
+    }
+
+    @Override
+    public boolean compare(HomotopyLevel other, CompareVisitor visitor, Equations.CMP expectedCMP) {
+      /*myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
       other.myLevel = other.myLevel.normalize(NormalizeVisitor.Mode.NF);
       if (checkLevelExprsAreEqual(myLevel, other.myLevel, visitor)) return Cmp.EQUALS;
 
@@ -109,12 +132,16 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
       Expression maxHlevel = MaxCNat(myLevel, other.myLevel).normalize(NormalizeVisitor.Mode.NF);
       if (checkLevelExprsAreEqual(myLevel, maxHlevel, visitor)) return Cmp.GREATER;
       if (checkLevelExprsAreEqual(other.myLevel, maxHlevel, visitor)) return Cmp.LESS;
-      return Cmp.UNKNOWN;
+      return Cmp.UNKNOWN;/**/
+      Expression otherLevel = other.myLevel;
+      myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
+      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
+      return visitor.compare(myLevel, otherLevel);
     }
 
     @Override
     public HomotopyLevel max(HomotopyLevel other) {
-      return new HomotopyLevel(MaxCNat(myLevel, other.myLevel));
+      return new HomotopyLevel(CNatOrder.maxCNat(myLevel, other.myLevel));
     }
 
     @Override
@@ -189,12 +216,20 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
     //public boolean getIgnorePLevel() { return myIgnorePLevel || getHLevel().equals(HomotopyLevel.PROP); }
 
     @Override
-    public Cmp compare(TypeLevel other, CompareVisitor visitor) {
-      // if ((myLevel == null && other.myLevel != null) || (other.myLevel == null && myLevel != null)) return Cmp.NOT_COMPARABLE;
-      // if (myLevel != null) return Expression.compare(myLevel, other.myLevel) ? Cmp.EQUALS : Cmp.UNKNOWN;
-      if (checkLevelExprsAreEqual(getValue(), other.getValue(), visitor)) {
-        return Cmp.EQUALS;
+    public Cmp compare(TypeLevel other) {
+      if (myIgnorePLevel || other.myIgnorePLevel) {
+        return getHLevel().compare(other.getHLevel());
       }
+
+      Expression otherLevel = other.getValue();
+      myLevel = getValue().normalize(NormalizeVisitor.Mode.NF);
+      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
+      if (Expression.compare(myLevel, otherLevel)) return Cmp.EQUALS;
+      if (Expression.compare(myLevel, otherLevel, Equations.CMP.GE)) return Cmp.GREATER;
+      if (Expression.compare(myLevel, otherLevel, Equations.CMP.LE)) return Cmp.LESS;
+      return Cmp.NOT_COMPARABLE;
+
+      /*
 
       Cmp r1 = myIgnorePLevel || other.myIgnorePLevel ? Cmp.EQUALS : getPLevel().compare(other.getPLevel(), visitor);
       Cmp r2 = getHLevel().compare(other.getHLevel(), visitor);
@@ -207,7 +242,19 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
       if (r1 == Cmp.GREATER) {
         return r2 == Cmp.GREATER || r2 == Cmp.EQUALS ? Cmp.GREATER : Cmp.NOT_COMPARABLE;
       }
-      return r2;
+      return r2; /**/
+    }
+
+    @Override
+    public boolean compare(TypeLevel other, CompareVisitor visitor, Equations.CMP expectedCMP) {
+      if (myIgnorePLevel || other.myIgnorePLevel) {
+        return getHLevel().compare(other.getHLevel(), visitor, expectedCMP);
+      }
+
+      Expression otherLevel = other.getValue();
+      myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
+      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
+      return visitor.compare(myLevel, otherLevel);
     }
 
     @Override
@@ -218,7 +265,7 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
       if (other.myIgnorePLevel) {
         return new TypeLevel(getPLevel(), getHLevel().max(other.getHLevel()));
       }
-      return new TypeLevel(getPLevel().max(other.getPLevel()), getHLevel().max(other.getHLevel()));
+      return new TypeLevel(LevelOrder.maxLevel(getValue(), other.getValue()));
     }
 
     @Override

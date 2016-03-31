@@ -563,7 +563,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         universe = argUniverse;
         continue;
       }
-      Universe.CompareResult cmp = universe.compare(argUniverse, null);
+      Universe.CompareResult cmp = universe.compare(argUniverse);
       if (cmp == null) {
         String msg = "Universe " + argUniverse + " of " + ordinal(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
         TypeCheckingError error = new TypeCheckingError(msg, expr);
@@ -576,7 +576,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (codomainResult != null) {
       Universe codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
       if (universe != null) {
-        Universe.CompareResult cmp = universe.compare(codomainUniverse, null);
+        Universe.CompareResult cmp = universe.compare(codomainUniverse);
         if (cmp == null) {
           String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
           TypeCheckingError error = new TypeCheckingError(msg, expr);
