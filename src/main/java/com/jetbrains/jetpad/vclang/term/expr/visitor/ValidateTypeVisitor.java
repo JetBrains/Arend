@@ -232,11 +232,9 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitProj(ProjExpression expr, Expression expectedType) {
-    Expression tuple = expr.getExpression().normalize(NormalizeVisitor.Mode.WHNF);
+    Expression tuple = expr.getExpression().normalize(NormalizeVisitor.Mode.NF);
     tuple.accept(this, tuple.getType());
-    if (!(tuple instanceof TupleExpression)) {
-      myErrorReporter.addError(tuple, "Tuple expected");
-    } else {
+    if (tuple instanceof TupleExpression) {
       List<Expression> fields = ((TupleExpression)tuple).getFields();
       if (fields.size() <= expr.getField()) {
         myErrorReporter.addError(tuple, "Too few fields (at least " + (expr.getField() + 1) + " expected)");
@@ -244,6 +242,8 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
         Expression field = fields.get(expr.getField());
         checkType(field, expectedType);
       }
+    } else if (!(tuple instanceof AppExpression)) {
+      myErrorReporter.addError(tuple, "Tuple or App expected");
     }
     return null;
   }

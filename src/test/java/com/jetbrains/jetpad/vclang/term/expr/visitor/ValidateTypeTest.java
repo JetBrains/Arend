@@ -183,4 +183,22 @@ public class ValidateTypeTest {
     Expression type = Apps(FunCall(isContr), DataCall(Prelude.INTERVAL));
     ok(iIsContr.getElimTree(), type);
   }
+
+  @Test
+  public void testOfHlevel1IsProp() {
+    NamespaceMember member = typeCheckClass("" +
+            "\\static \\function isContr (A : \\Type0) => \\Sigma (a : A) (\\Pi (a' : A) -> a = a')\n" +
+            "\\static \\function isProp (A : \\Type0) => \\Pi (a a' : A) -> a = a'\n" +
+            "\\static \\function ofHlevel (n : Nat) (A : \\Type0) : \\Type0 <= \\elim n\n" +
+            "    | zero => isContr A\n" +
+            "    | suc n => \\Pi (a a' : A) -> ofHlevel n (a = a')\n" +
+            "\\static \\function ofHlevel1-isProp (A : \\Type0) (f : ofHlevel (suc zero) A) : isProp A => \\lam a a' => (f a a').1\n"
+    );
+    FunctionDefinition ofHlevel1IsProp = (FunctionDefinition) member.namespace.getMember("ofHlevel1-isProp").definition;
+    FunctionDefinition ofHlevel = (FunctionDefinition) member.namespace.getMember("ofHlevel").definition;
+    Expression e = Apps(FunCall(ofHlevel), Suc(Zero()), Nat());
+    System.err.println(e);
+    System.err.println(e.normalize(NormalizeVisitor.Mode.NF));
+    ok(ofHlevel1IsProp.getElimTree(), ofHlevel1IsProp.getResultType());
+  }
 }
