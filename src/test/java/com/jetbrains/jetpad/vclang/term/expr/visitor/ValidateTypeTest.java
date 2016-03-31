@@ -219,4 +219,41 @@ public class ValidateTypeTest {
     FunctionDefinition isContrIsProp = (FunctionDefinition) member.namespace.getMember("isContr-isProp").definition;
     ok(isContrIsProp.getElimTree(), isContrIsProp.getResultType());
   }
+
+  @Test
+  public void testIsPropIsSet() {
+    NamespaceMember member = typeCheckClass("" +
+            "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
+            "\\static \\function squeeze1 (i j : I) : I\n" +
+            "    <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
+            "\\static \\function squeeze (i j : I)\n" +
+            "    <= coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
+            "\\static \\function psqueeze {A : \\Type0} {a a' : A} (p : a = a') (i : I) : a = p @ i\n" +
+            "    => path (\\lam j => p @ squeeze i j)\n" +
+            "\\static \\function Jl {A : \\Type0} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type0) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
+            "    <= coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
+            "\\static \\function transport {A : \\Type0} (B : A -> \\Type0) {a a' : A} (p : a = a') (b : B a)\n" +
+            "    <= coe (\\lam i => B (p @ i)) b right\n" +
+            "\\static \\function inv {A : \\Type0} {a a' : A} (p : a = a')\n" +
+            "    <= transport (\\lam a'' => a'' = a) p idp\n" +
+            "\\static \\function concat {A : I -> \\Type0} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'')\n" +
+            "    <= transport (Path A a) q p\n" +
+            "\\static \\function \\infixr 9\n" +
+            "(*>) {A : \\Type0} {a a' a'' : A} (p : a = a') (q : a' = a'')\n" +
+            "    <= concat p q\n" +
+            "\\static \\function inv-concat {A : \\Type0} {a a' : A} (p : a = a') : inv p *> p = idp\n" +
+            "    <= Jl (\\lam _ q => inv q *> q = idp) idp p\n" +
+            "\\static \\function isContr (A : \\Type0) => \\Sigma (a : A) (\\Pi (a' : A) -> a = a')\n" +
+            "\\static \\function isProp (A : \\Type0) => \\Pi (a a' : A) -> a = a'\n" +
+            "\\static \\function isSet (A : \\Type0) => \\Pi (a a' : A) -> isProp (a = a')\n" +
+            "\\static \\function ofHlevel (n : Nat) (A : \\Type0) : \\Type0 <= \\elim n\n" +
+            "    | zero => isContr A\n" +
+            "    | suc n => \\Pi (a a' : A) -> ofHlevel n (a = a')\n" +
+            "\\static \\function isProp-ofHlevel1 (A : \\Type0) (f : isProp A) : ofHlevel (suc zero) A => \\lam a a' => (inv (f a a) *> f a a', Jl (\\lam x q => inv (f a a) *> f a x = q) (inv-concat (f a a)))\n" +
+            "\\static \\function isContr-isProp (A : \\Type0) (c : isContr A) : isProp A => \\lam a a' => inv (c.2 a) *> c.2 a'\n" +
+            "\\static \\function isProp-isSet (A : \\Type0) (p : isProp A) : isSet A => \\lam a a' => isContr-isProp (a = a') (isProp-ofHlevel1 A p a a')\n"
+    );
+    FunctionDefinition isPropIsSet = (FunctionDefinition) member.namespace.getMember("isProp-isSet").definition;
+    ok(isPropIsSet.getElimTree(), isPropIsSet.getResultType());
+  }
 }
