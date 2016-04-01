@@ -8,9 +8,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
@@ -83,7 +82,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
         }
       } else {
         String name = expr.getName();
-        if (new Name(name).fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(name)) {
+        if (!myContext.contains(name)) {
           NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, false);
           if (member != null) {
             myResolveListener.nameResolved(expr, member.getResolvedDefinition());

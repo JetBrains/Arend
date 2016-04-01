@@ -1,27 +1,22 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-
 public class Name {
-  public String name;
-  public Abstract.Definition.Fixity fixity;
+  public enum Fixity { PREFIX, INFIX }
 
-  public Name(String name, Abstract.Definition.Fixity fixity) {
-    this.name = name;
-    this.fixity = fixity;
-  }
+  public String name;
+  public Fixity fixity;
 
   public Name(String name) {
     this.name = name;
-    this.fixity = name.isEmpty() || name.charAt(0) == '_' || Character.isLetter(name.charAt(0)) || name.charAt(0) == '?' || name.charAt(0) == '\\' || Character.isLetter(name.charAt(0)) ? Abstract.Definition.Fixity.PREFIX : Abstract.Definition.Fixity.INFIX;
+    this.fixity = name.isEmpty() || name.charAt(0) == '_' || Character.isLetter(name.charAt(0)) || name.charAt(0) == '?' || name.charAt(0) == '\\' || Character.isLetter(name.charAt(0)) ? Fixity.PREFIX : Fixity.INFIX;
   }
 
   public String getPrefixName() {
-    return fixity == Abstract.Definition.Fixity.PREFIX ? name : "(" + name + ")";
+    return fixity == Fixity.PREFIX ? name : "(" + name + ")";
   }
 
   public String getInfixName() {
-    return fixity == Abstract.Definition.Fixity.PREFIX ? "`" + name + "`" : name;
+    return fixity == Fixity.PREFIX ? "`" + name + "`" : name;
   }
 
   @Override

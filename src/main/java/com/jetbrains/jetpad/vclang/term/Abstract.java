@@ -239,7 +239,6 @@ public final class Abstract {
 
   public interface Definition extends Referable, SourceNode {
     enum Arrow { LEFT, RIGHT }
-    enum Fixity { PREFIX, INFIX }
 
     DefineStatement getParentStatement();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
