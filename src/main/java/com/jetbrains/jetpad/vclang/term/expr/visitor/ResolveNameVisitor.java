@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
@@ -57,12 +57,12 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       expression.accept(this, null);
     }
 
-    if (expr.getResolvedDefinition() == null) {
+    if (expr.getReferent() == null) {
       if (expression != null) {
         if (expression instanceof Abstract.DefCallExpression || expression instanceof Abstract.ModuleCallExpression) {
-          BaseDefinition parent;
+          Referable parent;
           if (expression instanceof Abstract.DefCallExpression) {
-            parent = ((Abstract.DefCallExpression) expression).getResolvedDefinition();
+            parent = ((Abstract.DefCallExpression) expression).getReferent();
           } else {
             parent = ((Abstract.ModuleCallExpression) expression).getModule();
           }

@@ -79,21 +79,21 @@ public class Prelude extends Namespace {
   static {
     PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID));
 
-    NAT = new DataDefinition(new DefinitionResolvedName(PRELUDE, "Nat"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), EmptyDependentLink.getInstance());
+    NAT = new DataDefinition(new DefinitionResolvedName(PRELUDE, "Nat"), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), EmptyDependentLink.getInstance());
     Namespace natNamespace = PRELUDE.getChild(NAT.getName());
-    ZERO = new Constructor(new DefinitionResolvedName(natNamespace, "zero"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), NAT);
-    SUC = new Constructor(new DefinitionResolvedName(natNamespace, "suc"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), param(DataCall(NAT)), NAT);
+    ZERO = new Constructor(new DefinitionResolvedName(natNamespace, "zero"), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), NAT);
+    SUC = new Constructor(new DefinitionResolvedName(natNamespace, "suc"), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), param(DataCall(NAT)), NAT);
 
     PRELUDE.addDefinition(NAT);
     PRELUDE.addMember(NAT.addConstructor(ZERO));
     PRELUDE.addMember(NAT.addConstructor(SUC));
 
 
-    INTERVAL = new DataDefinition(new DefinitionResolvedName(PRELUDE, "I"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance());
+    INTERVAL = new DataDefinition(new DefinitionResolvedName(PRELUDE, "I"), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance());
     Namespace intervalNamespace = PRELUDE.getChild(INTERVAL.getName());
-    LEFT = new Constructor(new DefinitionResolvedName(intervalNamespace, "left"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
-    RIGHT = new Constructor(new DefinitionResolvedName(intervalNamespace, "right"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
-    ABSTRACT = new Constructor(new DefinitionResolvedName(intervalNamespace, "<abstract>"), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
+    LEFT = new Constructor(new DefinitionResolvedName(intervalNamespace, "left"), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
+    RIGHT = new Constructor(new DefinitionResolvedName(intervalNamespace, "right"), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
+    ABSTRACT = new Constructor(new DefinitionResolvedName(intervalNamespace, "<abstract>"), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), EmptyDependentLink.getInstance(), INTERVAL);
 
     PRELUDE.addDefinition(INTERVAL);
     PRELUDE.addMember(INTERVAL.addConstructor(LEFT));
@@ -112,7 +112,7 @@ public class Prelude extends Namespace {
             clause(LEFT, EmptyDependentLink.getInstance(), Reference(isoParameter1)),
             clause(RIGHT, EmptyDependentLink.getInstance(), Reference(isoParameter1.getNext()))
     ));
-    FunctionDefinition iso = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "isoP"), Abstract.Definition.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree);
+    FunctionDefinition iso = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "isoP"), Abstract.Binding.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree);
     PRELUDE.addDefinition(iso);
 
     generateLevel(0);
@@ -176,13 +176,13 @@ public class Prelude extends Namespace {
     DependentLink PathParameter3 = param("a'", Apps(Reference(PathParameter1), ConCall(RIGHT)));
     PathParameter1.setNext(PathParameter2);
     PathParameter2.setNext(PathParameter3);
-    DataDefinition path = new DataDefinition(new DefinitionResolvedName(PRELUDE, "Path" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), PathParameter1);
+    DataDefinition path = new DataDefinition(new DefinitionResolvedName(PRELUDE, "Path" + suffix), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), PathParameter1);
     PRELUDE.addDefinition(path);
     defToLevel.put(path, i);
 
     DependentLink piParam = param("i", DataCall(INTERVAL));
     DependentLink pathParameters = param(Pi(piParam, Apps(Reference(PathParameter1), Reference(piParam))));
-    Constructor pathCon = new Constructor(new DefinitionResolvedName(PRELUDE.getChild(path.getName()), "path" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), pathParameters, path);
+    Constructor pathCon = new Constructor(new DefinitionResolvedName(PRELUDE.getChild(path.getName()), "path" + suffix), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), pathParameters, path);
     PRELUDE.addMember(path.addConstructor(pathCon));
     defToLevel.put(pathCon, i);
 
@@ -193,7 +193,7 @@ public class Prelude extends Namespace {
     pathInfixParameter1.setNext(pathInfixParameter2);
     Expression pathInfixTerm = Apps(DataCall((DataDefinition) PRELUDE.getDefinition("Path" + suffix)), Lam(param("_", DataCall(INTERVAL)), Reference(pathInfixParameter1)), Reference(pathInfixParameter2), Reference(pathInfixParameter2.getNext()));
     Arrays.fill(chars, '=');
-    FunctionDefinition pathInfix = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, new String(chars)), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.NON_ASSOC, (byte) 0), pathInfixParameter1, Universe(i), top(pathInfixParameter1, leaf(pathInfixTerm)));
+    FunctionDefinition pathInfix = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, new String(chars)), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.NON_ASSOC, (byte) 0), pathInfixParameter1, Universe(i), top(pathInfixParameter1, leaf(pathInfixTerm)));
 
     PRELUDE.addDefinition(pathInfix);
     defToLevel.put(pathInfix, i);
@@ -216,7 +216,7 @@ public class Prelude extends Namespace {
           clause((Constructor) PRELUDE.getDefinition("path" + suffix), atPath, Apps(Reference(atPath), Reference(atParameter5)))))
     ));
     Arrays.fill(chars, '@');
-    FunctionDefinition at = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, new String(chars)), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree);
+    FunctionDefinition at = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, new String(chars)), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree);
     PRELUDE.addDefinition(at);
     defToLevel.put(at, i);
 
@@ -227,7 +227,7 @@ public class Prelude extends Namespace {
     coerceParameter2.setNext(coerceParameter3);
     ElimTreeNode coerceElimTreeNode = top(coerceParameter1, branch(coerceParameter3, tail(),
         clause(LEFT, EmptyDependentLink.getInstance(), Abstract.Definition.Arrow.RIGHT, Reference(coerceParameter2))));
-    FunctionDefinition coe = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "coe" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode);
+    FunctionDefinition coe = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "coe" + suffix), Abstract.Binding.DEFAULT_PRECEDENCE, coerceParameter1, Apps(Reference(coerceParameter1), Reference(coerceParameter3)), coerceElimTreeNode);
     PRELUDE.addDefinition(coe);
     defToLevel.put(coe, i);
 
@@ -257,22 +257,22 @@ public class Prelude extends Namespace {
       clause(LEFT, EmptyDependentLink.getInstance(), Reference(isoParameter1)),
       clause(RIGHT, EmptyDependentLink.getInstance(), Reference(isoParameter1.getNext()))
     ));
-    FunctionDefinition iso = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "iso" + suffix), Abstract.Definition.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree);
+    FunctionDefinition iso = new FunctionDefinition(new DefinitionResolvedName(PRELUDE, "iso" + suffix), Abstract.Binding.DEFAULT_PRECEDENCE, isoParameter1, isoResultType, isoElimTree);
     PRELUDE.addDefinition(iso);
     defToLevel.put(iso, i);
 
     DependentLink truncParameter = param("A", Universe(i, Universe.Type.NOT_TRUNCATED));
-    DataDefinition propTrunc = new DataDefinition(PRELUDE.getChild("TrP" + suffix).getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), truncParameter);
+    DataDefinition propTrunc = new DataDefinition(PRELUDE.getChild("TrP" + suffix).getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.PROP), truncParameter);
     PRELUDE.addDefinition(propTrunc);
     defToLevel.put(propTrunc, i);
 
-    Constructor propTruncInCon = new Constructor(PRELUDE.getChild(propTrunc.getName()).getChild("inP" + suffix).getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), param("inP", Reference(truncParameter)), propTrunc);
+    Constructor propTruncInCon = new Constructor(PRELUDE.getChild(propTrunc.getName()).getChild("inP" + suffix).getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), param("inP", Reference(truncParameter)), propTrunc);
     DependentLink propTruncConParameter1 = param("a", Apps(DataCall(propTrunc), Reference(truncParameter)));
     DependentLink propTruncConParameter2 = param("a'", Apps(DataCall(propTrunc), Reference(truncParameter)));
     DependentLink propTruncConParameter3 = param("i", DataCall(INTERVAL));
     propTruncConParameter1.setNext(propTruncConParameter2);
     propTruncConParameter2.setNext(propTruncConParameter3);
-    Constructor propTruncPathCon = new Constructor(PRELUDE.getChild(propTrunc.getName()).getChild("truncP" + suffix).getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), propTruncConParameter1, propTrunc);
+    Constructor propTruncPathCon = new Constructor(PRELUDE.getChild(propTrunc.getName()).getChild("truncP" + suffix).getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.NOT_TRUNCATED), propTruncConParameter1, propTrunc);
     PRELUDE.addMember(propTrunc.addConstructor(propTruncInCon));
     PRELUDE.addMember(propTrunc.addConstructor(propTruncPathCon));
     Condition propTruncPathCond = new Condition(propTruncPathCon, top(propTruncConParameter1, branch(propTruncConParameter3, tail(),
@@ -283,11 +283,11 @@ public class Prelude extends Namespace {
     defToLevel.put(propTruncInCon, i);
     defToLevel.put(propTruncPathCon, i);
 
-    DataDefinition setTrunc = new DataDefinition(PRELUDE.getChild("TrS" + suffix).getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), truncParameter);
+    DataDefinition setTrunc = new DataDefinition(PRELUDE.getChild("TrS" + suffix).getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), truncParameter);
     PRELUDE.addDefinition(setTrunc);
     defToLevel.put(setTrunc, i);
 
-    Constructor setTruncInCon = new Constructor(PRELUDE.getChild(setTrunc.getName()).getChild("inS" + suffix).getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), param("inS", Reference(truncParameter)), setTrunc);
+    Constructor setTruncInCon = new Constructor(PRELUDE.getChild(setTrunc.getName()).getChild("inS" + suffix).getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(i, Universe.Type.NOT_TRUNCATED), param("inS", Reference(truncParameter)), setTrunc);
     DependentLink setTruncConParameter1 = param("a", Apps(DataCall(setTrunc), Reference(truncParameter)));
     DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(setTrunc), Reference(truncParameter)));
     Expression setTruncConParameter3type = FunCall(pathInfix)
@@ -307,7 +307,7 @@ public class Prelude extends Namespace {
     setTruncConParameter3.setNext(setTruncConParameter4);
     setTruncConParameter4.setNext(setTruncConParameter5);
     setTruncConParameter5.setNext(setTruncConParameter6);
-    Constructor setTruncPathCon = new Constructor(PRELUDE.getChild(setTrunc.getName()).getChild("truncS" + suffix).getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), setTruncConParameter1, setTrunc);
+    Constructor setTruncPathCon = new Constructor(PRELUDE.getChild(setTrunc.getName()).getChild("truncS" + suffix).getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), setTruncConParameter1, setTrunc);
     PRELUDE.addMember(setTrunc.addConstructor(setTruncInCon));
     PRELUDE.addMember(setTrunc.addConstructor(setTruncPathCon));
     Condition setTruncPathCond = new Condition(setTruncPathCon, top(setTruncConParameter1, branch(setTruncConParameter6, tail(),

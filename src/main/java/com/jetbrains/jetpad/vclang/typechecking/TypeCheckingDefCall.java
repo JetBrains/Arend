@@ -45,7 +45,7 @@ public class TypeCheckingDefCall {
   }
 
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
-    BaseDefinition resolvedDefinition = expr.getResolvedDefinition();
+    Referable resolvedDefinition = expr.getReferent();
     if (resolvedDefinition != null) {
       NamespaceMember member = toNamespaceMember(resolvedDefinition);
       if (member == null || member.definition == null) {

@@ -218,7 +218,7 @@ public class ModuleSerialization {
   public static void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {
     stream.writeInt(DefinitionCodes.getDefinitionCode(definition).ordinal());
     if (!(definition instanceof ClassDefinition)) {
-      stream.write(definition.getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 1 : 2);
+      stream.write(definition.getPrecedence().associativity == Abstract.Binding.Associativity.LEFT_ASSOC ? 0 : definition.getPrecedence().associativity == Abstract.Binding.Associativity.RIGHT_ASSOC ? 1 : 2);
       stream.writeByte(definition.getPrecedence().priority);
     }
   }

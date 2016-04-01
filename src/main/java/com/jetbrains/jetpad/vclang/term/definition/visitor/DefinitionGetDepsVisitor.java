@@ -1,14 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
 
 import java.util.*;
 
-public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boolean, Set<BaseDefinition>> {
+public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boolean, Set<Referable>> {
   private final Namespace myNamespace;
   private final Queue<Abstract.Definition> myOthers;
   private final Map<Abstract.Definition, List<Abstract.Definition>> myClassToNonStatics;
@@ -20,12 +19,12 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Set<BaseDefinition> visitFunction(Abstract.FunctionDefinition def, Boolean isStatic) {
+  public Set<Referable> visitFunction(Abstract.FunctionDefinition def, Boolean isStatic) {
     if (isStatic) {
       return visitStatements(def, def.getStatements(), true);
     }
 
-    Set<BaseDefinition> result = new HashSet<>();
+    Set<Referable> result = new HashSet<>();
 
     visitStatements(def, def.getStatements(), false);
 
@@ -49,12 +48,12 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Set<BaseDefinition> visitAbstract(Abstract.AbstractDefinition def, Boolean params) {
+  public Set<Referable> visitAbstract(Abstract.AbstractDefinition def, Boolean params) {
     throw new IllegalStateException();
   }
 
-  private Set<BaseDefinition> visitAbstract(Abstract.AbstractDefinition def) {
-    Set<BaseDefinition> result = new HashSet<>();
+  private Set<Referable> visitAbstract(Abstract.AbstractDefinition def) {
+    Set<Referable> result = new HashSet<>();
 
     for (Abstract.Argument arg : def.getArguments()) {
       if (arg instanceof Abstract.TypeArgument) {
@@ -71,11 +70,11 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Set<BaseDefinition> visitData(Abstract.DataDefinition def, Boolean isStatic) {
+  public Set<Referable> visitData(Abstract.DataDefinition def, Boolean isStatic) {
     if (isStatic)
       return Collections.emptySet();
 
-    Set<BaseDefinition> result = new HashSet<>();
+    Set<Referable> result = new HashSet<>();
 
     for (Abstract.TypeArgument param : def.getParameters()) {
       result.addAll(param.getType().accept(new CollectDefCallsVisitor(), null));
@@ -89,12 +88,12 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Set<BaseDefinition> visitConstructor(Abstract.Constructor def, Boolean isStatic) {
+  public Set<Referable> visitConstructor(Abstract.Constructor def, Boolean isStatic) {
     throw new IllegalStateException();
   }
 
-  private Set<BaseDefinition> visitConstructor(Abstract.Constructor def) {
-    Set<BaseDefinition> result = new HashSet<>();
+  private Set<Referable> visitConstructor(Abstract.Constructor def) {
+    Set<Referable> result = new HashSet<>();
     for (Abstract.TypeArgument arg : def.getArguments()) {
       result.addAll(arg.getType().accept(new CollectDefCallsVisitor(), null));
     }
@@ -109,8 +108,8 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
     return result;
   }
 
-  public Set<BaseDefinition> visitStatements(Abstract.Definition parent, Collection<? extends Abstract.Statement> statements, boolean isStatic) {
-    Set<BaseDefinition> result = new HashSet<>();
+  public Set<Referable> visitStatements(Abstract.Definition parent, Collection<? extends Abstract.Statement> statements, boolean isStatic) {
+    Set<Referable> result = new HashSet<>();
     Set<Abstract.Definition> nonStatic = !isStatic && parent instanceof Abstract.ClassDefinition ? new HashSet<Abstract.Definition>() : null;
     for (Abstract.Statement statement : statements) {
       if (statement instanceof Abstract.DefineStatement) {
@@ -129,7 +128,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
             myOthers.add(defineStatement.getDefinition());
             if (parent instanceof Abstract.ClassDefinition && ((Abstract.DefineStatement) statement).getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
               nonStatic.add(defineStatement.getDefinition());
-              for (BaseDefinition def : ((Abstract.DefineStatement) statement).getDefinition().accept(new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true)) {
+              for (Referable def : ((Abstract.DefineStatement) statement).getDefinition().accept(new DefinitionGetDepsVisitor(myNamespace.getChild(defineStatement.getDefinition().getName()), myOthers, null), true)) {
                 nonStatic.add((Abstract.Definition) def);
               }
             }
@@ -144,7 +143,7 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
   }
 
   @Override
-  public Set<BaseDefinition> visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
+  public Set<Referable> visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
     return visitStatements(def, def.getStatements(), isStatic);
   }
 }

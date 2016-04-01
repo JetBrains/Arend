@@ -631,7 +631,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     visiting.add(constructor);
     if (condMap.containsKey(constructor)) {
       for (Abstract.Condition condition : condMap.get(constructor)) {
-        for (BaseDefinition def : condition.getTerm().accept(new CollectDefCallsVisitor(), null)) {
+        for (Referable def : condition.getTerm().accept(new CollectDefCallsVisitor(), null)) {
           NamespaceMember member = toNamespaceMember(def);
           if (member.definition != null && member.definition != constructor && member.definition instanceof Constructor && ((Constructor) member.definition).getDataType().equals(constructor.getDataType())) {
             List<Constructor> cycle = searchConditionCycle(condMap, (Constructor) member.definition, visited, visiting);

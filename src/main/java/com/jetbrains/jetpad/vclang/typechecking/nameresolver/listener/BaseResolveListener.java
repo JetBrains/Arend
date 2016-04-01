@@ -1,26 +1,26 @@
 package com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 public class BaseResolveListener implements ResolveListener {
   @Override
-  public void nameResolved(Abstract.DefCallExpression defCallExpression, BaseDefinition resolvedDefinition) {
+  public void nameResolved(Abstract.DefCallExpression defCallExpression, Referable resolvedDefinition) {
 
   }
 
   @Override
-  public void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, BaseDefinition module) {
+  public void moduleResolved(Abstract.ModuleCallExpression moduleCallExpression, Referable module) {
 
   }
 
   @Override
-  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, BaseDefinition definition) {
+  public void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Referable definition) {
 
   }
 
   @Override
-  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, BaseDefinition definition, Abstract.DefCallExpression var, Abstract.Expression right) {
+  public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Referable definition, Abstract.DefCallExpression var, Abstract.Expression right) {
     return null;
   }
 

@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
-public abstract class Definition extends NamedBinding implements BaseDefinition {
+public abstract class Definition extends NamedBinding implements Referable {
   private final Abstract.Definition.Fixity myFixity;
   private Abstract.Definition.Precedence myPrecedence;
   private Universe myUniverse;

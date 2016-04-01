@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 public class NamespaceMember {
@@ -20,7 +20,7 @@ public class NamespaceMember {
     return namespace.getResolvedName();
   }
 
-  public BaseDefinition getResolvedDefinition() {
+  public Referable getResolvedDefinition() {
     return definition == null ? abstractDefinition : definition;
   }
 
@@ -28,7 +28,7 @@ public class NamespaceMember {
     return definition != null;
   }
 
-  public static NamespaceMember toNamespaceMember(BaseDefinition ref) {
+  public static NamespaceMember toNamespaceMember(Referable ref) {
     if (ref instanceof Definition) {
       return ((Definition) ref).getResolvedName().toNamespaceMember();
     } else if (ref instanceof Abstract.Definition){
