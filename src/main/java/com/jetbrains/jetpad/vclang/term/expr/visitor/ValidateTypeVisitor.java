@@ -151,14 +151,14 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   public Void visitLam(LamExpression expr, Expression expectedType) {
     checkType(expr, expectedType);
     visitDependentLink(expr.getParameters());
-    Expression normType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression normType = expectedType.normalize(NormalizeVisitor.Mode.NF);
     if (!(normType instanceof PiExpression)) {
       myErrorReporter.addError(expr, "Expected type " + normType + " is expected to be Pi-type");
     } else {
       ArrayList<DependentLink> params = new ArrayList<>();
       expr.getLamParameters(params);
       ArrayList<DependentLink> piParams = new ArrayList<>();
-      normType.getPiParameters(piParams, true, false);
+      Expression cod = normType.getPiParameters(piParams, true, false);
       if (params.size() > piParams.size()) {
         myErrorReporter.addError(expr, "Type " + expectedType + " has less Pi-abstractions than term's Lam abstractions");
       }
@@ -167,7 +167,10 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
       for (int i = 0; i < size; i++) {
         subst.add(piParams.get(i), Reference(params.get(i)));
       }
-      Expression expectedBodyType = ((PiExpression) normType).getCodomain().subst(subst);
+
+      Expression expectedBodyType = cod
+              .fromPiParameters(piParams.subList(size, piParams.size()))
+              .subst(subst);
       expr.getBody().accept(this, expectedBodyType);
     }
     return null;

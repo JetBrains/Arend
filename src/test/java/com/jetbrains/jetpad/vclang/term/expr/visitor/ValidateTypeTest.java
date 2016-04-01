@@ -275,6 +275,67 @@ public class ValidateTypeTest {
             "  ((x.1, x.2), (x.1, x.3))\n");
     FunctionDefinition qinvToEquiv = (FunctionDefinition) member.namespace.getMember("qinv-to-equiv").definition;
     ok(qinvToEquiv.getElimTree(), qinvToEquiv.getResultType());
+  }
 
+  @Test
+  public void testEquivSymm() {
+    NamespaceMember member = typeCheckClass("" +
+            "\\static \\function pmap {A B : \\Type0} (f : A -> B) {a a' : A} (p : a = a')\n" +
+            "    => path (\\lam i => f (p @ i))\n" +
+            "\\static \\function transport {A : \\Type0} (B : A -> \\Type0) {a a' : A} (p : a = a') (b : B a)\n" +
+            "    <= coe (\\lam i => B (p @ i)) b right\n" +
+            "\\static \\function concat {A : I -> \\Type0} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'')\n" +
+            "    <= transport (Path A a) q p\n" +
+            "\\static \\function \\infixr 9\n" +
+            "(*>) {A : \\Type0} {a a' a'' : A} (p : a = a') (q : a' = a'')\n" +
+            "    <= concat p q\n" +
+            "\\static \\function id {X : \\Type0} (x : X) => x\n" +
+            "\\static \\function \\infixr 1\n" +
+            "($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+            "\\static \\function \\infixr 8\n" +
+            "o {X Y Z : \\Type0} (g : Y -> Z) (f : X -> Y) (x : X) => g $ f x\n" +
+            "\\static \\function \\infix 2\n" +
+            "(~) {A B : \\Type0} (f : A -> B) (g : A -> B) <= \\Pi (x : A) -> f x = g x\n" +
+            "\\static \\function linv {A B : \\Type0} (f : A -> B) <= \\Sigma (g : B -> A) (g `o` f ~ id)\n" +
+            "\\static \\function rinv {A B : \\Type0} (f : A -> B) <= \\Sigma (g : B -> A) (f `o` g ~ id)\n" +
+            "\\static \\function isequiv {A B : \\Type0} (f : A -> B) <= \\Sigma (linv f) (rinv f)\n" +
+            "\\static \\function \\infix 2\n" +
+            "(=~=) (A : \\Type0) (B : \\Type0) <= \\Sigma (f : A -> B) (isequiv f)\n" +
+            "\\static \\function qinv {A B : \\Type0} (f : A -> B) <= \\Sigma (g : B -> A) (g `o` f ~ id) (f `o` g ~ id)\n" +
+            "\\static \\function qinv-to-equiv {A B : \\Type0} (f : A -> B) (x : qinv f) : isequiv f => \n" +
+            "  ((x.1, x.2), (x.1, x.3))\n" +
+            "\\static \\function equiv-to-qinv {A B : \\Type0} (f : A -> B) (x : isequiv f) : qinv f => \n" +
+            "  (x.1.1 `o` f `o` x.2.1, \n" +
+            "   \\lam x' => pmap x.1.1 (x.2.2 (f x')) *> x.1.2 x',\n" +
+            "   \\lam x' => pmap f (x.1.2 (x.2.1 x')) *> x.2.2 x'\n" +
+            "  )\n" +
+            "\\static \\function equiv-symm {A B : \\Type0} (e : A =~= B) : B =~= A =>\n" +
+            "  \\let | qe => equiv-to-qinv e.1 e.2 \n" +
+            "  \\in (qe.1, qinv-to-equiv qe.1 (e.1, qe.3, qe.2))\n"
+    );
+    FunctionDefinition equivSymm = (FunctionDefinition) member.namespace.getMember("equiv-symm").definition;
+    ok(equivSymm.getElimTree(), equivSymm.getResultType());
+  }
+
+  @Test
+  public void testAxiomKImplIsSet() {
+    NamespaceMember member = typeCheckClass("" +
+            "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
+            "\\static \\function squeeze1 (i j : I) : I\n" +
+            "    <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
+            "\\static \\function squeeze (i j : I)\n" +
+            "    <= coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
+            "\\static \\function psqueeze {A : \\Type0} {a a' : A} (p : a = a') (i : I) : a = p @ i\n" +
+            "    => path (\\lam j => p @ squeeze i j)\n" +
+            "\\static \\function Jl {A : \\Type0} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type0) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
+            "    <= coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
+            "\\static \\function isProp (A : \\Type0) => \\Pi (a a' : A) -> a = a'\n" +
+            "\\static \\function isSet (A : \\Type0) => \\Pi (a a' : A) -> isProp (a = a')\n" +
+            "\\static \\function axiomK (A : \\Type0) => \\Pi (x : A) (p : x = x) -> (idp = p)\n" +
+            "\\static \\function axK-impl-isSet (A : \\Type0) (axK : axiomK A) : (isSet A) => \n" +
+            "    \\lam x y p => (Jl (\\lam z (p' : x = z) => \\Pi (q : x = z) ->  p' = q) (axK x) p)      \n"
+    );
+    FunctionDefinition axiomKImplIsSet = (FunctionDefinition) member.namespace.getMember("axK-impl-isSet").definition;
+    ok(axiomKImplIsSet.getElimTree(), axiomKImplIsSet.getResultType());
   }
 }
