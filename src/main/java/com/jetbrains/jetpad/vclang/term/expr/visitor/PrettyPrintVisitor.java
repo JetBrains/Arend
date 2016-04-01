@@ -15,7 +15,6 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.context.Utils.removeFromList;
 import static com.jetbrains.jetpad.vclang.term.context.Utils.trimToSize;
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
 
 // TODO: Simplify pretty printer
 // TODO: move myNames to ToAbstractVisitor

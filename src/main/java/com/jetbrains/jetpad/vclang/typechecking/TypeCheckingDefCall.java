@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
+import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 

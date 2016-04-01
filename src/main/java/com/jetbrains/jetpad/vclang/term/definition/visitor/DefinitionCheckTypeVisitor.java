@@ -32,7 +32,7 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
+import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;

@@ -19,7 +19,7 @@ import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.ModuleResolv
 
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
+import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 
 public class StatementResolveNameVisitor implements AbstractStatementVisitor<StatementResolveNameVisitor.Flag, Object>, AutoCloseable {
   private final ErrorReporter myErrorReporter;

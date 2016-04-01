@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporte
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
+import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 
 public class TypecheckingOrdering {
   public static abstract class Result {
