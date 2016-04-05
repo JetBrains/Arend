@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.exprorder.StandardOrder;
 
 import java.util.*;
 
@@ -73,10 +74,110 @@ public class ListEquations implements Equations {
     }
   }
 
+  private interface Solution {
+    TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding);
+    Expression solve(ListEquations equations, InferenceBinding binding, Substitution substitution);
+    void subst(Binding binding, Expression subst);
+  }
+
+  private static class ExpressionSolution implements Solution {
+    public Expression expression;
+
+    public ExpressionSolution(Expression expression) {
+      this.expression = expression;
+    }
+
+    @Override
+    public TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding) {
+      if (expression.findBinding(binding)) {
+        return new SolveEquationsError(Reference(infBinding), expression, binding, infBinding.getSourceNode());
+      }
+      return null;
+    }
+
+    @Override
+    public Expression solve(ListEquations equations, InferenceBinding binding, Substitution substitution) {
+      return expression;
+    }
+
+    @Override
+    public void subst(Binding binding, Expression subst) {
+      expression = expression.subst(binding, subst);
+    }
+  }
+
+  private static class EqSetSolution implements Solution {
+    public List<Expression> geSet;
+    public List<Expression> leSet;
+
+    @Override
+    public TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding) {
+      for (Expression expr : geSet) {
+        if (expr.findBinding(binding)) {
+          return new SolveEquationsError(Reference(infBinding), expr, binding, infBinding.getSourceNode());
+        }
+      }
+      for (Expression expr : leSet) {
+        if (expr.findBinding(binding)) {
+          return new SolveEquationsError(Reference(infBinding), expr, binding, infBinding.getSourceNode());
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public Expression solve(ListEquations equations, InferenceBinding binding, Substitution substitution) {
+      if (geSet.isEmpty()) {
+        Expression result = leSet.get(0).subst(substitution).normalize(NormalizeVisitor.Mode.NF);
+        for (int i = 1; i < leSet.size(); i++) {
+          Expression expr = leSet.get(i).subst(substitution).normalize(NormalizeVisitor.Mode.NF);
+          if (!CompareVisitor.compare(equations, CMP.LE, result, expr, null)) {
+            binding.reportErrorInfer(equations.getErrorReporter(), result, expr);
+            return null;
+          }
+        }
+        return result;
+      } else {
+        Expression result = geSet.get(0);
+        if (geSet.size() > 1) {
+          StandardOrder order = new StandardOrder();
+          for (int i = 1; i < geSet.size(); i++) {
+            result = order.max(result, geSet.get(i));
+          }
+        }
+
+        result = result.subst(substitution).normalize(NormalizeVisitor.Mode.NF);
+        if (!leSet.isEmpty()) {
+          for (Expression expr : leSet) {
+            expr = expr.subst(substitution).normalize(NormalizeVisitor.Mode.NF);
+            if (!CompareVisitor.compare(equations, CMP.LE, result, expr, null)) {
+              binding.reportErrorInfer(equations.getErrorReporter(), result, expr);
+              return null;
+            }
+          }
+        }
+        return result;
+      }
+    }
+
+    @Override
+    public void subst(Binding binding, Expression subst) {
+      for (int i = 0; i < geSet.size(); i++) {
+        geSet.set(i, geSet.get(i).subst(binding, subst));
+      }
+      for (int i = 0; i < leSet.size(); i++) {
+        leSet.set(i, leSet.get(i).subst(binding, subst));
+      }
+    }
+  }
+
   private final List<Equation> myEquations = new ArrayList<>();
-  // TODO: add <=, => solutions
-  private final Map<InferenceBinding, Expression> mySolutions = new HashMap<>();
+  private final Map<InferenceBinding, Solution> mySolutions = new HashMap<>();
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
+
+  public ErrorReporter getErrorReporter() {
+    return myErrorReporter;
+  }
 
   @Override
   public boolean add(Equations equations) {
@@ -104,10 +205,10 @@ public class ListEquations implements Equations {
     }
 
     if (isInf1 && !isInf2) {
-      addSolution((InferenceBinding) ref1.getBinding(), expr2);
+      addSolution((InferenceBinding) ref1.getBinding(), cmp, expr2);
     } else
     if (isInf2 && !isInf1) {
-      addSolution((InferenceBinding) ref2.getBinding(), expr1);
+      addSolution((InferenceBinding) ref2.getBinding(), cmp.not(), expr1);
     } else {
       myEquations.add(new CmpEquation(expr1, expr2, cmp, sourceNode));
     }
@@ -115,19 +216,88 @@ public class ListEquations implements Equations {
     return true;
   }
 
-  private void addSolution(InferenceBinding binding, Expression expression) {
-    Expression expr = mySolutions.get(binding);
-    if (expr != null) {
-      if (!CompareVisitor.compare(this, CMP.EQ, expression, expr, binding.getSourceNode())) {
-        binding.reportErrorInfer(myErrorReporter, expression, expr);
-      }
+  private void addSolution(InferenceBinding binding, CMP cmp, Expression expr) {
+    if (cmp == CMP.EQ) {
+      addSolution(binding, new ExpressionSolution(expr));
     } else {
-      mySolutions.put(binding, expression);
+      List<Expression> expressions = new ArrayList<>();
+      expressions.add(expr);
+      EqSetSolution sol = new EqSetSolution();
+      if (cmp == CMP.GE) {
+        sol.geSet = expressions;
+        sol.leSet = Collections.emptyList();
+      } else {
+        sol.geSet = Collections.emptyList();
+        sol.leSet = expressions;
+      }
+      addSolution(binding, sol);
     }
   }
 
-  private void addSolutions(Map<InferenceBinding, Expression> solutions) {
-    for (Map.Entry<InferenceBinding, Expression> entry : solutions.entrySet()) {
+  private void addSolution(InferenceBinding binding, Solution sol2) {
+    Solution sol1 = mySolutions.get(binding);
+    if (sol1 != null) {
+      if (sol1 instanceof ExpressionSolution) {
+        if (sol2 instanceof ExpressionSolution) {
+          if (!CompareVisitor.compare(this, CMP.EQ, ((ExpressionSolution) sol2).expression, ((ExpressionSolution) sol1).expression, binding.getSourceNode())) {
+            binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol2).expression, ((ExpressionSolution) sol1).expression);
+          }
+        } else
+        if (sol2 instanceof EqSetSolution) {
+          for (Expression expr : ((EqSetSolution) sol2).geSet) {
+            if (!CompareVisitor.compare(this, CMP.GE, ((ExpressionSolution) sol1).expression, expr, binding.getSourceNode())) {
+              binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol1).expression, expr);
+            }
+          }
+          for (Expression expr : ((EqSetSolution) sol2).leSet) {
+            if (!CompareVisitor.compare(this, CMP.LE, ((ExpressionSolution) sol1).expression, expr, binding.getSourceNode())) {
+              binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol1).expression, expr);
+            }
+          }
+        } else {
+          throw new IllegalStateException();
+        }
+      } else
+      if (sol1 instanceof EqSetSolution) {
+        if (sol2 instanceof ExpressionSolution) {
+          mySolutions.put(binding, sol2);
+          for (Expression expr : ((EqSetSolution) sol1).geSet) {
+            if (!CompareVisitor.compare(this, CMP.GE, ((ExpressionSolution) sol2).expression, expr, binding.getSourceNode())) {
+              binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol2).expression, expr);
+            }
+          }
+          for (Expression expr : ((EqSetSolution) sol1).leSet) {
+            if (!CompareVisitor.compare(this, CMP.LE, ((ExpressionSolution) sol2).expression, expr, binding.getSourceNode())) {
+              binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol2).expression, expr);
+            }
+          }
+        } else
+        if (sol2 instanceof EqSetSolution) {
+          if (!((EqSetSolution) sol2).geSet.isEmpty()) {
+            if (((EqSetSolution) sol1).geSet.isEmpty()) {
+              ((EqSetSolution) sol1).geSet = new ArrayList<>();
+            }
+            ((EqSetSolution) sol1).geSet.addAll(((EqSetSolution) sol2).geSet);
+          }
+          if (!((EqSetSolution) sol2).leSet.isEmpty()) {
+            if (((EqSetSolution) sol1).leSet.isEmpty()) {
+              ((EqSetSolution) sol1).leSet = new ArrayList<>();
+            }
+            ((EqSetSolution) sol1).leSet.addAll(((EqSetSolution) sol2).leSet);
+          }
+        } else {
+          throw new IllegalStateException();
+        }
+      } else {
+        throw new IllegalStateException();
+      }
+    } else {
+      mySolutions.put(binding, sol2);
+    }
+  }
+
+  private void addSolutions(Map<InferenceBinding, Solution> solutions) {
+    for (Map.Entry<InferenceBinding, Solution> entry : solutions.entrySet()) {
       addSolution(entry.getKey(), entry.getValue());
     }
   }
@@ -154,10 +324,11 @@ public class ListEquations implements Equations {
       }
     }
 
-    for (Iterator<Map.Entry<InferenceBinding, Expression>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
-      Map.Entry<InferenceBinding, Expression> entry = it.next();
-      if (entry.getValue().findBinding(binding)) {
-        myErrorReporter.report(new SolveEquationsError(Reference(entry.getKey()), entry.getValue(), binding, entry.getKey().getSourceNode()));
+    for (Iterator<Map.Entry<InferenceBinding, Solution>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
+      Map.Entry<InferenceBinding, Solution> entry = it.next();
+      TypeCheckingError error = entry.getValue().abstractBinding(entry.getKey(), binding);
+      if (error != null) {
+        myErrorReporter.report(error);
         it.remove();
       }
     }
@@ -180,21 +351,23 @@ public class ListEquations implements Equations {
       was = false;
       InferenceBinding binding = null;
       Expression subst = null;
-      for (Iterator<Map.Entry<InferenceBinding, Expression>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
-        Map.Entry<InferenceBinding, Expression> entry = it.next();
+      for (Iterator<Map.Entry<InferenceBinding, Solution>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
+        Map.Entry<InferenceBinding, Solution> entry = it.next();
         if (bindings.remove(entry.getKey())) {
           was = true;
           it.remove();
-          subst = entry.getValue();
-          if (subst.findBinding(entry.getKey())) {
-            entry.getKey().reportErrorInfer(myErrorReporter, subst);
-          } else {
-            Expression expectedType = entry.getKey().getType().subst(result);
-            Expression actualType = subst.getType().subst(result);
-            if (CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
-              binding = entry.getKey();
+          subst = entry.getValue().solve(this, entry.getKey(), result);
+          if (subst != null) {
+            if (subst.findBinding(entry.getKey())) {
+              entry.getKey().reportErrorInfer(myErrorReporter, subst);
             } else {
-              entry.getKey().reportErrorMismatch(myErrorReporter, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF), subst);
+              Expression expectedType = entry.getKey().getType().subst(result);
+              Expression actualType = subst.getType().subst(result);
+              if (CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
+                binding = entry.getKey();
+              } else {
+                entry.getKey().reportErrorMismatch(myErrorReporter, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF), subst);
+              }
             }
           }
           break;
@@ -211,17 +384,19 @@ public class ListEquations implements Equations {
   }
 
   public void subst(Binding binding, Expression subst) {
-    for (Iterator<Map.Entry<InferenceBinding, Expression>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
-      Map.Entry<InferenceBinding, Expression> entry = it.next();
-      Expression expr = entry.getValue().subst(binding, subst).normalize(NormalizeVisitor.Mode.NF);
-      entry.setValue(expr);
-      ReferenceExpression ref = expr.toReference();
-      if (ref != null) {
-        Binding binding1 = ref.getBinding();
-        if (binding1 instanceof InferenceBinding) {
-          it.remove();
-          if (binding1 != entry.getKey()) {
-            add(Reference(entry.getKey()), expr, CMP.EQ, entry.getKey().getSourceNode());
+    for (Iterator<Map.Entry<InferenceBinding, Solution>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
+      Map.Entry<InferenceBinding, Solution> entry = it.next();
+      Solution solution = entry.getValue();
+      solution.subst(binding, subst);
+      if (solution instanceof ExpressionSolution) {
+        ReferenceExpression expr = ((ExpressionSolution) solution).expression.normalize(NormalizeVisitor.Mode.NF).toReference();
+        if (expr != null) {
+          Binding binding1 = expr.getBinding();
+          if (binding1 instanceof InferenceBinding) {
+            it.remove();
+            if (binding1 != entry.getKey()) {
+              add(Reference(entry.getKey()), expr, CMP.EQ, entry.getKey().getSourceNode());
+            }
           }
         }
       }

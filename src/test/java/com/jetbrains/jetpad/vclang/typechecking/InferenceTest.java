@@ -98,4 +98,14 @@ public class InferenceTest {
         "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function f => con {0} idp idp", 1);
   }
+
+  @Test
+  public void equations() {
+    typeCheckClass(
+        "\\static \\data E {l : Level} (A B : \\Type l) | inl A | inr B\n" +
+        "\\static \\data Empty : \\Prop\n" +
+        "\\static \\function neg {l : Level} (A : \\Type l) => A -> Empty\n" +
+        "\\static \\function test {l : Level} (A : \\Type l) => E (neg A) A"
+    );
+  }
 }
