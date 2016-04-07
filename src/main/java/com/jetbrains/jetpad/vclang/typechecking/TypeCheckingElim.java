@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
@@ -81,8 +81,10 @@ public class TypeCheckingElim {
       @Override
       public void process(Substitution argsSubst) {
         for (Binding binding : argsSubst.getDomain()) {
-          if (!argsSubst.get(binding).normalize(NormalizeVisitor.Mode.NF).equals(argsSubst.get(binding)))
+          Expression expr = argsSubst.get(binding);
+          if (!expr.normalize(NormalizeVisitor.Mode.NF).equals(expr)) {
             return;
+          }
         }
 
         incompleteCoverageMessage.append("\n ").append(def.getName());
@@ -249,7 +251,7 @@ public class TypeCheckingElim {
       CheckTypeVisitor.Result exprResult = myVisitor.getTypeCheckingDefCall().getLocalVar((Abstract.DefCallExpression) expression);
       if (exprResult == null)
         return null;
-      return (ReferenceExpression) exprResult.expression;
+      return exprResult.expression.toReference();
     } else {
       TypeCheckingError error = new TypeCheckingError("\\elim can be applied only to a local variable", expression);
       myVisitor.getErrorReporter().report(error);
@@ -289,8 +291,7 @@ public class TypeCheckingElim {
           return null;
         }
 
-        Expression ftype = refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction();
-        if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
+        if (refExpr.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall() == null) {
           error = new TypeCheckingError("Elimination is allowed only for a data type variable.", var);
           myVisitor.getErrorReporter().report(error);
           var.setWellTyped(argsBindings, Error(null, error));
@@ -347,15 +348,15 @@ public class TypeCheckingElim {
 
       Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
       List<? extends Expression> parameters = type.getArguments();
-      Expression ftype = type.getFunction();
+      DataCallExpression fType = type.getFunction().toDataCall();
 
-      if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
+      if (fType == null) {
         error = new TypeCheckingError("Pattern expected a data type, got: " + type, pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
 
-      DataDefinition dataType = (DataDefinition) ((DefCallExpression) ftype).getDefinition();
+      DataDefinition dataType = fType.getDefinition();
 
       if (mode == PatternExpansionMode.DATATYPE && !dataType.getConditions().isEmpty()) {
         error = new TypeCheckingError("Pattern matching on a data type with conditions is not allowed here: " + type, pattern);

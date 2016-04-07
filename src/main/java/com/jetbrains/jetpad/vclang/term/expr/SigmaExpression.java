@@ -13,4 +13,9 @@ public class SigmaExpression extends DependentTypeExpression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitSigma(this, params);
   }
+
+  @Override
+  public SigmaExpression toSigma() {
+    return this;
+  }
 }

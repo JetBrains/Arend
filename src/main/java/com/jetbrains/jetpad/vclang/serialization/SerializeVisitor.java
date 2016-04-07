@@ -286,6 +286,14 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     return null;
   }
 
+  @Override
+  public Void visitOfType(OfTypeExpression expr, Void params) {
+    myStream.write(16);
+    expr.getExpression().accept(this, null);
+    expr.getType().accept(this, null);
+    return null;
+  }
+
   private void visitLetClause(LetClause clause) {
     try {
       myDataStream.writeUTF(clause.getName());

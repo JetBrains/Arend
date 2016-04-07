@@ -22,4 +22,9 @@ public class FunCallExpression extends DefCallExpression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitFunCall(this, params);
   }
+
+  @Override
+  public FunCallExpression toFunCall() {
+    return this;
+  }
 }

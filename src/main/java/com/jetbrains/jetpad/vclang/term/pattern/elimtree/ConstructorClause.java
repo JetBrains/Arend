@@ -27,7 +27,7 @@ public class ConstructorClause implements Clause {
     myParameters = parameters;
     myTailBindings = tailBindings;
     myParent = parent;
-    setChild(EmptyElimTreeNode.getInstance());
+    myChild = EmptyElimTreeNode.getInstance();
   }
 
   public BranchElimTreeNode getParent() {

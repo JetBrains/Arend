@@ -37,7 +37,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Expression fun = expr.getFunction();
     List<? extends Expression> args = expr.getArguments();
 
-    if (!(args.size() == 3 && fun instanceof DefCallExpression && Prelude.isPath(((DefCallExpression) fun).getDefinition()))) {
+    DataCallExpression dataCall = fun.toDataCall();
+    if (!(args.size() == 3 && dataCall != null && Prelude.isPath(dataCall.getDefinition()))) {
       return null;
     }
     for (EnumSet<AppExpression.Flag> flag : expr.getFlags()) {
@@ -45,10 +46,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         return null;
       }
     }
-    if (args.get(2) instanceof LamExpression) {
-      LamExpression expr1 = (LamExpression) args.get(2);
+    LamExpression expr1 = args.get(2).toLam();
+    if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.getLevelDefs(Prelude.getLevel(((DefCallExpression) fun).getDefinition())).pathInfix, args.get(0).accept(this, null));
+        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.getLevelDefs(Prelude.getLevel(dataCall.getDefinition())).pathInfix, args.get(0).accept(this, null));
       }
     }
     return null;
@@ -56,8 +57,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private Abstract.Expression checkBinOp(AppExpression expr) {
     Expression fun = expr.getFunction();
+    DefCallExpression defCall = fun.toDefCall();
 
-    if (!(fun instanceof DefCallExpression && ((DefCallExpression) fun).getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX)) {
+    if (!(defCall != null && defCall.getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX)) {
       return null;
     }
     if (expr.getFlags().size() < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!expr.getFlags().get(0).contains(AppExpression.Flag.EXPLICIT) || !expr.getFlags().get(1).contains(AppExpression.Flag.EXPLICIT))) {
@@ -74,7 +76,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         visibleArgs[i++] = expr.getArguments().get(j);
       }
     }
-    return i < 0 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), ((DefCallExpression) fun).getDefinition(), visibleArgs[1].accept(this, null)) : null;
+    return i < 0 ? myFactory.makeBinOp(visibleArgs[0].accept(this, null), defCall.getDefinition(), visibleArgs[1].accept(this, null)) : null;
   }
 
   @Override
@@ -92,8 +94,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     }
 
     int index;
-    if (expr.getFunction() instanceof FieldCallExpression) {
-      result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), ((FieldCallExpression) expr.getFunction()).getDefinition());
+    FieldCallExpression fieldCall = expr.getFunction().toFieldCall();
+    if (fieldCall != null) {
+      result = myFactory.makeDefCall(expr.getArguments().get(0).accept(this, null), fieldCall.getDefinition());
       index = 1;
     } else {
       result = expr.getFunction().accept(this, null);
@@ -227,9 +230,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   private Abstract.Expression checkCase(LetExpression letExpression) {
     if (letExpression.getClauses().size() == 1 && Abstract.CaseExpression.FUNCTION_NAME.equals(letExpression.getClauses().get(0).getName()) && letExpression.getClauses().get(0).getElimTree() instanceof BranchElimTreeNode) {
-      Expression expr = letExpression.getExpression().getFunction();
+      ReferenceExpression ref = letExpression.getExpression().getFunction().toReference();
       List<? extends Expression> args = letExpression.getExpression().getArguments();
-      if (expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getBinding() == letExpression.getClauses().get(0)) {
+      if (ref != null && ref.getBinding() == letExpression.getClauses().get(0)) {
         for (Expression arg : args) {
           if (arg.findBinding(letExpression.getClauses().get(0))) {
             return null;
@@ -257,6 +260,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       clauses.add(myFactory.makeLetClause(clause.getName(), visitTypeArguments(clause.getParameters()), clause.getResultType() == null ? null : clause.getResultType().accept(this, null), getTopLevelArrow(clause.getElimTree()), visitElimTree(clause.getElimTree(), clause.getParameters())));
     }
     return myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
+  }
+
+  @Override
+  public Abstract.Expression visitOfType(OfTypeExpression expr, Void params) {
+    return expr.getExpression().accept(this, null);
   }
 
   private List<Abstract.Clause> visitBranch(BranchElimTreeNode branchNode) {

@@ -22,4 +22,9 @@ public class DataCallExpression extends DefCallExpression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitDataCall(this, params);
   }
+
+  @Override
+  public DataCallExpression toDataCall() {
+    return this;
+  }
 }

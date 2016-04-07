@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.context.binding.IgnoreBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
@@ -96,17 +95,19 @@ public class ListEquations implements Equations {
 
   @Override
   public boolean add(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
-    boolean isInf1 = expr1 instanceof ReferenceExpression && ((ReferenceExpression) expr1).getBinding() instanceof InferenceBinding;
-    boolean isInf2 = expr2 instanceof ReferenceExpression && ((ReferenceExpression) expr2).getBinding() instanceof InferenceBinding;
-    if (isInf1 && isInf2 && ((ReferenceExpression) expr1).getBinding() == ((ReferenceExpression) expr2).getBinding()) {
+    ReferenceExpression ref1 = expr1.toReference();
+    ReferenceExpression ref2 = expr2.toReference();
+    boolean isInf1 = ref1 != null && ref1.getBinding() instanceof InferenceBinding;
+    boolean isInf2 = ref2 != null && ref2.getBinding() instanceof InferenceBinding;
+    if (isInf1 && isInf2 && ref1.getBinding() == ref2.getBinding()) {
       return true;
     }
 
     if (isInf1 && !isInf2) {
-      addSolution((InferenceBinding) ((ReferenceExpression) expr1).getBinding(), expr2);
+      addSolution((InferenceBinding) ref1.getBinding(), expr2);
     } else
     if (isInf2 && !isInf1) {
-      addSolution((InferenceBinding) ((ReferenceExpression) expr2).getBinding(), expr1);
+      addSolution((InferenceBinding) ref2.getBinding(), expr1);
     } else {
       myEquations.add(new CmpEquation(expr1, expr2, cmp, sourceNode));
     }
@@ -115,15 +116,13 @@ public class ListEquations implements Equations {
   }
 
   private void addSolution(InferenceBinding binding, Expression expression) {
-    if (!(binding instanceof IgnoreBinding)) {
-      Expression expr = mySolutions.get(binding);
-      if (expr != null) {
-        if (!CompareVisitor.compare(this, CMP.EQ, expression, expr, binding.getSourceNode())) {
-          binding.reportError(myErrorReporter, expression, expr);
-        }
-      } else {
-        mySolutions.put(binding, expression);
+    Expression expr = mySolutions.get(binding);
+    if (expr != null) {
+      if (!CompareVisitor.compare(this, CMP.EQ, expression, expr, binding.getSourceNode())) {
+        binding.reportErrorInfer(myErrorReporter, expression, expr);
       }
+    } else {
+      mySolutions.put(binding, expression);
     }
   }
 
@@ -188,9 +187,15 @@ public class ListEquations implements Equations {
           it.remove();
           subst = entry.getValue();
           if (subst.findBinding(entry.getKey())) {
-            entry.getKey().reportError(myErrorReporter, subst);
+            entry.getKey().reportErrorInfer(myErrorReporter, subst);
           } else {
-            binding = entry.getKey();
+            Expression expectedType = entry.getKey().getType().subst(result);
+            Expression actualType = subst.getType().subst(result);
+            if (CompareVisitor.compare(this, CMP.GE, expectedType.normalize(NormalizeVisitor.Mode.NF), actualType.normalize(NormalizeVisitor.Mode.NF), entry.getKey().getSourceNode())) {
+              binding = entry.getKey();
+            } else {
+              entry.getKey().reportErrorMismatch(myErrorReporter, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), actualType.normalize(NormalizeVisitor.Mode.HUMAN_NF), subst);
+            }
           }
           break;
         }
@@ -210,8 +215,9 @@ public class ListEquations implements Equations {
       Map.Entry<InferenceBinding, Expression> entry = it.next();
       Expression expr = entry.getValue().subst(binding, subst).normalize(NormalizeVisitor.Mode.NF);
       entry.setValue(expr);
-      if (expr instanceof ReferenceExpression) {
-        Binding binding1 = ((ReferenceExpression) expr).getBinding();
+      ReferenceExpression ref = expr.toReference();
+      if (ref != null) {
+        Binding binding1 = ref.getBinding();
         if (binding1 instanceof InferenceBinding) {
           it.remove();
           if (binding1 != entry.getKey()) {

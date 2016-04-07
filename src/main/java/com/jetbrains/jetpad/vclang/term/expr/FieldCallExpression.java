@@ -22,4 +22,9 @@ public class FieldCallExpression extends DefCallExpression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitFieldCall(this, params);
   }
+
+  @Override
+  public FieldCallExpression toFieldCall() {
+    return this;
+  }
 }

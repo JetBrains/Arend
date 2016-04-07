@@ -50,6 +50,10 @@ public abstract class Expression implements PrettyPrintable {
     return accept(new FindBindingVisitor(bindings), null);
   }
 
+  public Expression strip() {
+    return accept(new StripVisitor(), null);
+  }
+
   public final Expression subst(Binding binding, Expression substExpr) {
     return accept(new SubstVisitor(new Substitution(binding, substExpr)), null);
   }
@@ -72,14 +76,15 @@ public abstract class Expression implements PrettyPrintable {
 
   public Expression getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
     Expression cod = normalize ? normalize(NormalizeVisitor.Mode.WHNF) : this;
-    while (cod instanceof PiExpression) {
+    PiExpression piCod = cod.toPi();
+    while (piCod != null) {
       if (implicitOnly) {
-        if (((PiExpression) cod).getParameters().isExplicit()) {
+        if (piCod.getParameters().isExplicit()) {
           break;
         }
-        for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
+        for (DependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
           if (link.isExplicit()) {
-            return new PiExpression(link, ((PiExpression) cod).getCodomain());
+            return new PiExpression(link, piCod.getCodomain());
           }
           if (params != null) {
             params.add(link);
@@ -87,16 +92,17 @@ public abstract class Expression implements PrettyPrintable {
         }
       } else {
         if (params != null) {
-          for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
+          for (DependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
             params.add(link);
           }
         }
       }
 
-      cod = ((PiExpression) cod).getCodomain();
+      cod = piCod.getCodomain();
       if (normalize) {
         cod = cod.normalize(NormalizeVisitor.Mode.WHNF);
       }
+      piCod = cod.toPi();
     }
     return cod;
   }
@@ -120,13 +126,15 @@ public abstract class Expression implements PrettyPrintable {
 
   public Expression getLamParameters(List<DependentLink> params) {
     Expression body = this;
-    while (body instanceof LamExpression) {
+    LamExpression lamBody = body.toLam();
+    while (lamBody != null) {
       if (params != null) {
-        for (DependentLink link = ((LamExpression) body).getParameters(); link.hasNext(); link = link.getNext()) {
+        for (DependentLink link = lamBody.getParameters(); link.hasNext(); link = link.getNext()) {
           params.add(link);
         }
       }
-      body = ((LamExpression) body).getBody();
+      body = lamBody.getBody();
+      lamBody = body.toLam();
     }
     return body;
   }
@@ -168,5 +176,81 @@ public abstract class Expression implements PrettyPrintable {
 
   public Expression addArguments(Collection<? extends Expression> arguments, Collection<? extends EnumSet<AppExpression.Flag>> flags) {
     return arguments.isEmpty() ? this : new AppExpression(this, arguments, flags);
+  }
+
+  public AppExpression toApp() {
+    return null;
+  }
+
+  public ClassCallExpression toClassCall() {
+    return null;
+  }
+
+  public ConCallExpression toConCall() {
+    return null;
+  }
+
+  public DataCallExpression toDataCall() {
+    return null;
+  }
+
+  public DefCallExpression toDefCall() {
+    return null;
+  }
+
+  public DependentTypeExpression toDependentType() {
+    return null;
+  }
+
+  public ErrorExpression toError() {
+    return null;
+  }
+
+  public FieldCallExpression toFieldCall() {
+    return null;
+  }
+
+  public FunCallExpression toFunCall() {
+    return null;
+  }
+
+  public LamExpression toLam() {
+    return null;
+  }
+
+  public LetExpression toLet() {
+    return null;
+  }
+
+  public NewExpression toNew() {
+    return null;
+  }
+
+  public OfTypeExpression toOfType() {
+    return null;
+  }
+
+  public PiExpression toPi() {
+    return null;
+  }
+
+  public ProjExpression toProj() {
+    return null;
+  }
+
+  public ReferenceExpression toReference() {
+    return null;
+  }
+
+  public SigmaExpression toSigma() {
+    return null;
+  }
+
+  public TupleExpression toTuple() {
+    return null;
+  }
+
+  public UniverseExpression toUniverse() {
+    return null;
   }
 }

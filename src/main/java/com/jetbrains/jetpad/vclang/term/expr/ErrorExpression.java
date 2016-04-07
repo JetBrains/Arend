@@ -29,4 +29,9 @@ public class ErrorExpression extends Expression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitError(this, params);
   }
+
+  @Override
+  public ErrorExpression toError() {
+    return this;
+  }
 }
