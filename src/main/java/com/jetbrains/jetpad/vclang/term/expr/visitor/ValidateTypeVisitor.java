@@ -17,7 +17,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
     private final ArrayList<Expression> expressions = new ArrayList<>();
     private final ArrayList<String> reasons = new ArrayList<>();
 
-    public void addError(Expression expr, String reason) {
+    void addError(Expression expr, String reason) {
       expressions.add(expr);
       reasons.add(reason);
     }
@@ -50,39 +50,48 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
     this.myErrorReporter = errorReporter;
   }
 
-  private void checkType(Expression expr, Expression expectedType) {
+  private void checkType(Expression actualType, Expression expectedType, Expression comment) {
     if (expectedType == null) {
       return;
     }
     expectedType = expectedType.normalize(NormalizeVisitor.Mode.NF);
-    Expression actualType = expr.getType().normalize(NormalizeVisitor.Mode.NF);
+    actualType = actualType.normalize(NormalizeVisitor.Mode.NF);
     if (!typesCompatible(expectedType, actualType)) {
-      myErrorReporter.addError(expr, "Expected type: " + expectedType + ", actual: " + actualType);
+      myErrorReporter.addError(comment, "Expected type: " + expectedType + ", actual: " + actualType);
     }
+
+  }
+
+  private void checkExprType(Expression expr, Expression expectedType) {
+    checkType(expr.getType(), expectedType, expr);
   }
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Expression expectedType) {
-    checkType(expr, expectedType);
+    checkExprType(expr, expectedType);
     return null;
   }
 
   private boolean typesCompatible(Expression expected, Expression actual) {
-    if (expected instanceof UniverseExpression) {
-      if (actual instanceof UniverseExpression) {
-        Universe expectedU = ((UniverseExpression) expected).getUniverse();
-        Universe actualU = ((UniverseExpression) actual).getUniverse();
+    UniverseExpression expectedUniverse = expected.toUniverse();
+    PiExpression expectedPi = expected.toPi();
+    if (expectedUniverse != null) {
+      UniverseExpression actualUniverse = actual.toUniverse();
+      if (actualUniverse != null) {
+        Universe expectedU = expectedUniverse.getUniverse();
+        Universe actualU = actualUniverse.getUniverse();
         return actualU.lessOrEquals(expectedU);
       } else {
         return false;
       }
-    } else if (expected instanceof PiExpression) {
-      if (actual instanceof PiExpression) {
-        Expression expectedCod = ((PiExpression) expected).getCodomain();
-        if (expectedCod instanceof UniverseExpression) {
-          Expression actualCod = ((PiExpression) actual).getCodomain();
+    } else if (expectedPi != null) {
+      PiExpression actualPi = actual.toPi();
+      if (actualPi != null) {
+        UniverseExpression expectedCod = expectedPi.getCodomain().toUniverse();
+        if (expectedCod != null) {
+          Expression actualCod = actualPi.getCodomain();
           return typesCompatible(expectedCod, actualCod)
-                  && expected.equals(Pi(((PiExpression) actual).getParameters(), expectedCod));
+                  && expected.equals(Pi(actualPi.getParameters(), expectedCod));
         }
       } else {
         return false;
@@ -92,11 +101,12 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   }
 
   private void visitApp(Expression funType, List<? extends Expression> args,
-                        List<? extends EnumSet<AppExpression.Flag>> flags, Expression expectedType) {
+                        List<? extends EnumSet<AppExpression.Flag>> flags) {
     if (args.isEmpty()) {
       return;
     }
-    if (!(funType instanceof PiExpression)) {
+    PiExpression funTypePi = funType.toPi();
+    if (funTypePi == null) {
       myErrorReporter.addError(funType, "Function type " + funType + " is not Pi");
     } else {
       ArrayList<DependentLink> links = new ArrayList<>();
@@ -119,41 +129,42 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
       }
       if (args.size() > links.size()) {
         cod = cod.subst(subst).normalize(NormalizeVisitor.Mode.WHNF);
-        visitApp(cod, args.subList(size, args.size()), flags.subList(size, flags.size()), expectedType);
+        visitApp(cod, args.subList(size, args.size()), flags.subList(size, flags.size()));
       }
     }
   }
 
   @Override
   public Void visitApp(AppExpression expr, Expression expectedType) {
-    checkType(expr, expectedType);
+    checkExprType(expr, expectedType);
     List<? extends Expression> args = expr.getArguments();
     List<? extends EnumSet<AppExpression.Flag>> flags = expr.getFlags();
     Expression fun = expr.getFunction();
     Expression funType = fun.getType().normalize(NormalizeVisitor.Mode.NF);
-    visitApp(funType, args, flags, expectedType);
+    visitApp(funType, args, flags);
 
     return null;
   }
 
   @Override
   public Void visitReference(ReferenceExpression expr, Expression expectedType) {
-    checkType(expr, expectedType);
+    checkExprType(expr, expectedType);
     return null;
   }
 
   @Override
   public Void visitLam(LamExpression expr, Expression expectedType) {
-    checkType(expr, expectedType);
+    checkExprType(expr, expectedType);
     visitDependentLink(expr.getParameters());
     Expression normType = expectedType.normalize(NormalizeVisitor.Mode.NF);
-    if (!(normType instanceof PiExpression)) {
+    PiExpression normTypePi = normType.toPi();
+    if (normTypePi == null) {
       myErrorReporter.addError(expr, "Expected type " + normType + " is expected to be Pi-type");
     } else {
       ArrayList<DependentLink> params = new ArrayList<>();
       expr.getLamParameters(params);
       ArrayList<DependentLink> piParams = new ArrayList<>();
-      Expression cod = normType.getPiParameters(piParams, true, false);
+      Expression cod = normTypePi.getPiParameters(piParams, true, false);
       if (params.size() > piParams.size()) {
         myErrorReporter.addError(expr, "Type " + expectedType + " has less Pi-abstractions than term's Lam abstractions");
       }
@@ -181,7 +192,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitPi(PiExpression expr, Expression expectedType) {
-    checkType(expr, expectedType);
+    checkExprType(expr, expectedType);
     visitDependentLink(expr.getParameters());
     expr.getCodomain().accept(this, expectedType);
     return null;
@@ -189,7 +200,7 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitSigma(SigmaExpression expr, Expression expectedType) {
-    checkType(expr, expectedType);
+    checkExprType(expr, expectedType);
     visitDependentLink(expr.getParameters());
     return null;
   }
@@ -207,9 +218,13 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitTuple(TupleExpression expr, Expression expectedType) {
-    checkType(expr, expectedType);
+    checkExprType(expr, expectedType);
     SigmaExpression type = expr.getType();
-    type = (SigmaExpression) type.normalize(NormalizeVisitor.Mode.NF);
+    type = type.normalize(NormalizeVisitor.Mode.NF).toSigma();
+    if (type == null) {
+      myErrorReporter.addError(expr, "Sigma-type " + expr.getType() + " was normalized to non-Sigma");
+      return null;
+    }
     DependentLink link = type.getParameters();
     Substitution subst = new Substitution();
     for (Expression field : expr.getFields()) {
@@ -230,23 +245,30 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitProj(ProjExpression expr, Expression expectedType) {
-    Expression tuple = expr.getExpression().normalize(NormalizeVisitor.Mode.NF);
-    tuple.accept(this, tuple.getType());
-    if (tuple instanceof TupleExpression) {
-      List<Expression> fields = ((TupleExpression)tuple).getFields();
-      if (fields.size() <= expr.getField()) {
-        myErrorReporter.addError(tuple, "Too few fields (at least " + (expr.getField() + 1) + " expected)");
-      } else {
-        Expression field = fields.get(expr.getField());
-        checkType(field, expectedType);
-      }
-    } else if (!(tuple instanceof AppExpression)
-            && !(tuple instanceof ReferenceExpression)
-            && !(tuple instanceof ProjExpression)) {
-      myErrorReporter.addError(tuple, "Tuple or App or Proj (or maybe I missed some more cases) expected, " +
-        tuple.getClass() + " found"
-      );
+    Expression tuple = expr.getExpression();
+    Expression tupleType = tuple.getType();
+    tuple.accept(this, tupleType);
+    // TODO figure out how to check field type
+    /*
+    SigmaExpression tupleTypeSigma = tupleType.normalize(NormalizeVisitor.Mode.NF).toSigma();
+    if (tupleTypeSigma == null) {
+      myErrorReporter.addError(expr, "Tuple type is not Sigma: " + tupleType);
+      return null;
     }
+    DependentLink param = tupleTypeSigma.getParameters();
+    int i;
+    for (i = 0; i < expr.getField(); i++) {
+      if (!param.hasNext()) {
+        break;
+      }
+      param = param.getNext();
+    }
+    if (i == expr.getField()) {
+      checkType(param.getType(), expectedType, expr);
+    } else {
+      myErrorReporter.addError(tuple, "Too few fields (at least " + (expr.getField() + 1) + " expected)");
+    }
+    */
     return null;
   }
 
@@ -258,11 +280,17 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitLet(LetExpression letExpression, Expression expectedType) {
-    checkType(letExpression, expectedType);
+    checkExprType(letExpression, expectedType);
     for (LetClause clause : letExpression.getClauses()) {
       clause.getElimTree().accept(this, clause.getResultType());
     }
     letExpression.getExpression().accept(this, expectedType);
+    return null;
+  }
+
+  @Override
+  public Void visitOfType(OfTypeExpression expr, Expression params) {
+    myErrorReporter.addError(expr, "OfTypeExpression found");
     return null;
   }
 

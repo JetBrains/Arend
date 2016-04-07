@@ -1,16 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
@@ -44,6 +42,12 @@ public class ValidateTypeTest {
     elimTree.accept(visitor, type);
     assertEquals(0, visitor.myErrorReporter.errors());
     return visitor.myErrorReporter;
+  }
+
+  private void checkFunction(String function, String classCode) {
+    NamespaceMember member = typeCheckClass(classCode);
+    FunctionDefinition fun = (FunctionDefinition) member.namespace.getMember(function).definition;
+    ok(fun.getElimTree(), fun.getResultType());
   }
 
   @Test
@@ -170,7 +174,7 @@ public class ValidateTypeTest {
 
   @Test
   public void testIIsContr() {
-    NamespaceMember member = typeCheckClass(
+    checkFunction("I-isContr", "" +
             "\\static \\function squeeze1 (i j : I) : I\n" +
             "    <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
             "\\static \\function squeeze (i j : I)\n" +
@@ -178,15 +182,11 @@ public class ValidateTypeTest {
             "\\static \\function isContr (A : \\Type0) => \\Sigma (a : A) (\\Pi (a' : A) -> a = a')\n" +
             "\\static \\function I-isContr : isContr I => (left, \\lam i => path (\\lam j => squeeze i j))\n"
             );
-    FunctionDefinition isContr = (FunctionDefinition) member.namespace.getMember("isContr").definition;
-    FunctionDefinition iIsContr = (FunctionDefinition) member.namespace.getMember("I-isContr").definition;
-    Expression type = Apps(FunCall(isContr), DataCall(Prelude.INTERVAL));
-    ok(iIsContr.getElimTree(), type);
   }
 
   @Test
   public void testOfHlevel1IsProp() {
-    NamespaceMember member = typeCheckClass("" +
+    checkFunction("ofHlevel1-isProp", "" +
             "\\static \\function isContr (A : \\Type0) => \\Sigma (a : A) (\\Pi (a' : A) -> a = a')\n" +
             "\\static \\function isProp (A : \\Type0) => \\Pi (a a' : A) -> a = a'\n" +
             "\\static \\function ofHlevel (n : Nat) (A : \\Type0) : \\Type0 <= \\elim n\n" +
@@ -194,15 +194,11 @@ public class ValidateTypeTest {
             "    | suc n => \\Pi (a a' : A) -> ofHlevel n (a = a')\n" +
             "\\static \\function ofHlevel1-isProp (A : \\Type0) (f : ofHlevel (suc zero) A) : isProp A => \\lam a a' => (f a a').1\n"
     );
-    FunctionDefinition ofHlevel1IsProp = (FunctionDefinition) member.namespace.getMember("ofHlevel1-isProp").definition;
-    FunctionDefinition ofHlevel = (FunctionDefinition) member.namespace.getMember("ofHlevel").definition;
-    Expression e = Apps(FunCall(ofHlevel), Suc(Zero()), Nat());
-    ok(ofHlevel1IsProp.getElimTree(), ofHlevel1IsProp.getResultType());
   }
 
   @Test
   public void testIsContrIsProp() {
-    NamespaceMember member = typeCheckClass("" +
+    checkFunction("isContr-isProp", "" +
             "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
             "\\static \\function transport {A : \\Type0} (B : A -> \\Type0) {a a' : A} (p : a = a') (b : B a)\n" +
             "    <= coe (\\lam i => B (p @ i)) b right\n" +
@@ -216,13 +212,11 @@ public class ValidateTypeTest {
             "\\static \\function isContr (A : \\Type0) => \\Sigma (a : A) (\\Pi (a' : A) -> a = a')\n" +
             "\\static \\function isProp (A : \\Type0) => \\Pi (aa aa' : A) -> aa = aa'\n" +
             "\\static \\function isContr-isProp (A : \\Type0) (c : isContr A) : isProp A => \\lam aaa aaa' => inv (c.2 aaa) *> c.2 aaa'\n");
-    FunctionDefinition isContrIsProp = (FunctionDefinition) member.namespace.getMember("isContr-isProp").definition;
-    ok(isContrIsProp.getElimTree(), isContrIsProp.getResultType());
   }
 
   @Test
   public void testIsPropIsSet() {
-    NamespaceMember member = typeCheckClass("" +
+    checkFunction("isProp-isSet", "" +
             "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
             "\\static \\function squeeze1 (i j : I) : I\n" +
             "    <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
@@ -253,13 +247,11 @@ public class ValidateTypeTest {
             "\\static \\function isContr-isProp (A : \\Type0) (c : isContr A) : isProp A => \\lam a a' => inv (c.2 a) *> c.2 a'\n" +
             "\\static \\function isProp-isSet (A : \\Type0) (p : isProp A) : isSet A => \\lam a a' => isContr-isProp (a = a') (isProp-ofHlevel1 A p a a')\n"
     );
-    FunctionDefinition isPropIsSet = (FunctionDefinition) member.namespace.getMember("isProp-isSet").definition;
-    ok(isPropIsSet.getElimTree(), isPropIsSet.getResultType());
   }
 
   @Test
   public void testQinvToEquiv() {
-    NamespaceMember member = typeCheckClass("" +
+    checkFunction("qinv-to-equiv", "" +
             "\\static \\function id {X : \\Type0} (x : X) => x\n" +
             "\\static \\function \\infixr 1\n" +
             "($) {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
@@ -273,13 +265,11 @@ public class ValidateTypeTest {
             "\\static \\function qinv {A B : \\Type0} (f : A -> B) <= \\Sigma (g : B -> A) (g `o` f ~ id) (f `o` g ~ id)\n" +
             "\\static \\function qinv-to-equiv {A B : \\Type0} (f : A -> B) (x : qinv f) : isequiv f => \n" +
             "  ((x.1, x.2), (x.1, x.3))\n");
-    FunctionDefinition qinvToEquiv = (FunctionDefinition) member.namespace.getMember("qinv-to-equiv").definition;
-    ok(qinvToEquiv.getElimTree(), qinvToEquiv.getResultType());
   }
 
   @Test
   public void testEquivSymm() {
-    NamespaceMember member = typeCheckClass("" +
+    checkFunction("equiv-symm", "" +
             "\\static \\function pmap {A B : \\Type0} (f : A -> B) {a a' : A} (p : a = a')\n" +
             "    => path (\\lam i => f (p @ i))\n" +
             "\\static \\function transport {A : \\Type0} (B : A -> \\Type0) {a a' : A} (p : a = a') (b : B a)\n" +
@@ -313,13 +303,11 @@ public class ValidateTypeTest {
             "  \\let | qe => equiv-to-qinv e.1 e.2 \n" +
             "  \\in (qe.1, qinv-to-equiv qe.1 (e.1, qe.3, qe.2))\n"
     );
-    FunctionDefinition equivSymm = (FunctionDefinition) member.namespace.getMember("equiv-symm").definition;
-    ok(equivSymm.getElimTree(), equivSymm.getResultType());
   }
 
   @Test
   public void testAxiomKImplIsSet() {
-    NamespaceMember member = typeCheckClass("" +
+    checkFunction("axK-impl-isSet", "" +
             "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
             "\\static \\function squeeze1 (i j : I) : I\n" +
             "    <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
@@ -335,7 +323,13 @@ public class ValidateTypeTest {
             "\\static \\function axK-impl-isSet (A : \\Type0) (axK : axiomK A) : (isSet A) => \n" +
             "    \\lam x y p => (Jl (\\lam z (p' : x = z) => \\Pi (q : x = z) ->  p' = q) (axK x) p)      \n"
     );
-    FunctionDefinition axiomKImplIsSet = (FunctionDefinition) member.namespace.getMember("axK-impl-isSet").definition;
-    ok(axiomKImplIsSet.getElimTree(), axiomKImplIsSet.getResultType());
+  }
+
+  @Test
+  public void testIdpOver() {
+    checkFunction("idpOver", "" +
+            "\\function\n" +
+            "idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n"
+    );
   }
 }
