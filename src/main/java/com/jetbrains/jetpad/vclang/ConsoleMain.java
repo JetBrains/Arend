@@ -7,6 +7,9 @@ import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ValidateTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
@@ -135,7 +138,16 @@ public class ConsoleMain {
 
     TypecheckingOrdering.typecheck(modulesToTypeCheck, errorReporter, new TypecheckedReporter() {
       @Override
-      public void typecheckingSucceeded(Abstract.Definition definition) {
+      public void typecheckingSucceeded(Abstract.Definition abstractDefinition, Definition definition) {
+        if (definition instanceof FunctionDefinition) {
+          ValidateTypeVisitor visitor = new ValidateTypeVisitor();
+          ((FunctionDefinition) definition).getElimTree().accept(visitor, ((FunctionDefinition) definition).getResultType());
+          if (visitor.myErrorReporter.errors() > 0) {
+            System.err.println("Checking " + definition.getName());
+            System.err.println(((FunctionDefinition) definition).getElimTree());
+            System.err.println(visitor.myErrorReporter);
+          }
+        }
       }
 
       @Override

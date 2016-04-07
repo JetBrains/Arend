@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -32,15 +31,15 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
   public Boolean visitBranch(BranchElimTreeNode branchNode, Substitution argsSubst) {
     Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
     List<? extends Expression> parameters = type.getArguments();
-    DefCallExpression ftype = (DefCallExpression) type.getFunction();
+    DataCallExpression ftype = type.getFunction().toDataCall();
 
     boolean result = true;
-    for (ConCallExpression conCall : ((DataDefinition)ftype.getDefinition()).getMatchedConstructors(parameters)) {
-      if (((UniverseExpression) myResultType.getType()).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.PROP))) {
+    for (ConCallExpression conCall : ftype.getDefinition().getMatchedConstructors(parameters)) {
+      if (myResultType.getType().toUniverse().getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.PROP))) {
         if (Prelude.isTruncP(conCall.getDefinition())) {
           continue;
         }
-      } else if (((UniverseExpression) myResultType.getType()).getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.SET))) {
+      } else if (myResultType.getType().toUniverse().getUniverse().lessOrEquals(new Universe.Type(0, Universe.Type.SET))) {
         if (Prelude.isTruncS(conCall.getDefinition())) {
           continue;
         }
@@ -64,8 +63,9 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
   public Boolean visitEmpty(EmptyElimTreeNode emptyNode, Substitution argsSubst) {
     List<Binding> tailContext = new ArrayList<>();
     for (Binding binding : argsSubst.getDomain()) {
-      if (argsSubst.get(binding) instanceof ReferenceExpression) {
-        tailContext.add(((ReferenceExpression) argsSubst.get(binding)).getBinding());
+      ReferenceExpression ref = argsSubst.get(binding).toReference();
+      if (ref != null) {
+        tailContext.add(ref.getBinding());
       }
     }
     return checkEmptyContext(tailContext, argsSubst);
@@ -79,12 +79,12 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
 
     Expression ftype = tailContext.get(0).getType().normalize(NormalizeVisitor.Mode.WHNF);
     List<? extends Expression> parameters = ftype.getArguments();
-    ftype = ftype.getFunction();
+    DataCallExpression dtype = ftype.getFunction().toDataCall();
 
-    if (!(ftype instanceof DefCallExpression && ((DefCallExpression) ftype).getDefinition() instanceof DataDefinition)) {
+    if (dtype == null) {
       return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), argsSubst);
     }
-    List<ConCallExpression> validConCalls = ((DataDefinition) ((DefCallExpression) ftype).getDefinition()).getMatchedConstructors(parameters);
+    List<ConCallExpression> validConCalls = dtype.getDefinition().getMatchedConstructors(parameters);
     if (validConCalls == null) {
       return checkEmptyContext(new ArrayList<>(tailContext.subList(1, tailContext.size())), argsSubst);
     }

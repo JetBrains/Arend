@@ -20,13 +20,14 @@ public class AppExpression extends Expression {
     assert !arguments.isEmpty();
 
     myFunction = function.getFunction();
-    if (function instanceof AppExpression) {
-      myArguments = new ArrayList<>(function.getArguments().size() + arguments.size());
-      myArguments.addAll(function.getArguments());
+    AppExpression app = function.toApp();
+    if (app != null) {
+      myArguments = new ArrayList<>(app.getArguments().size() + arguments.size());
+      myArguments.addAll(app.getArguments());
       myArguments.addAll(arguments);
 
-      myFlags = new ArrayList<>(((AppExpression) function).myFlags.size() + arguments.size());
-      myFlags.addAll(((AppExpression) function).myFlags);
+      myFlags = new ArrayList<>(app.myFlags.size() + arguments.size());
+      myFlags.addAll(app.myFlags);
     } else {
       myFlags = new ArrayList<>(arguments.size());
     }
@@ -41,14 +42,15 @@ public class AppExpression extends Expression {
 
   public AppExpression(Expression function, Collection<? extends Expression> arguments, Collection<? extends EnumSet<Flag>> flags) {
     initialize(function, arguments, flags);
-    if (!(function instanceof AppExpression)) {
+    if (myArguments == null) {
       myArguments = new ArrayList<>(arguments);
     }
   }
 
   public AppExpression(Expression function, List<Expression> arguments, Collection<? extends EnumSet<Flag>> flags) {
+    assert arguments.size() >= flags.size();
     initialize(function, arguments, flags);
-    if (!(function instanceof AppExpression)) {
+    if (myArguments == null) {
       myArguments = arguments;
     }
   }
@@ -94,5 +96,10 @@ public class AppExpression extends Expression {
     } else {
       return null;
     }
+  }
+
+  @Override
+  public AppExpression toApp() {
+    return this;
   }
 }

@@ -11,17 +11,32 @@ import java.util.ArrayList;
 public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
   private final Expression[] myCandidates;
+  private final Expression myExpected;
+  private final Expression myActual;
 
   public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
     super(resolvedName, message, expression);
     myWhere = where;
     myCandidates = candidates;
+    myExpected = null;
+    myActual = null;
   }
 
   public ArgInferenceError(String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
     super(message, expression);
     myWhere = where;
     myCandidates = candidates;
+    myExpected = null;
+    myActual = null;
+  }
+
+  public ArgInferenceError(String message, Expression expected, Expression actual, Abstract.SourceNode expression, PrettyPrintable where, Expression candidate) {
+    super(message, expression);
+    myWhere = where;
+    myCandidates = new Expression[1];
+    myCandidates[0] = candidate;
+    myExpected = expected;
+    myActual = actual;
   }
 
   public static String functionArg(int index) {
@@ -87,6 +102,18 @@ public class ArgInferenceError extends TypeCheckingError {
       for (Expression candidate : myCandidates) {
         builder.append("\n\t");
         candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+      }
+    }
+
+    if (myExpected != null || myActual != null) {
+      builder.append("\nSince types of the candidates are not less or equal to the expected type");
+      if (myExpected != null) {
+        builder.append("\nExpected type: ");
+        myExpected.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+      }
+      if (myActual != null) {
+        builder.append("\n  Actual type: ");
+        myActual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
       }
     }
 

@@ -44,4 +44,9 @@ public class ConCallExpression extends DefCallExpression {
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitConCall(this, params);
   }
+
+  @Override
+  public ConCallExpression toConCall() {
+    return this;
+  }
 }

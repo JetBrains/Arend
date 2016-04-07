@@ -21,8 +21,10 @@ import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ValidateTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeDeserialization;
+import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.io.*;
@@ -180,6 +182,16 @@ public class ModuleDeserialization {
 
     if (definition instanceof FunctionDefinition) {
       deserializeFunctionDefinition(stream, definitionMap, (FunctionDefinition) definition);
+      ValidateTypeVisitor.ErrorReporter errorReporter = new ValidateTypeVisitor.ErrorReporter();
+      ValidateTypeVisitor visitor = new ValidateTypeVisitor(errorReporter);
+      ElimTreeNode elimTreeNode = ((FunctionDefinition) definition).getElimTree();
+      if (elimTreeNode != null) {
+        System.err.println("Checking " + elimTreeNode);
+        elimTreeNode.accept(visitor, null);
+      }
+      if (errorReporter.errors() > 0) {
+        System.err.println(errorReporter.getExpressions() + ", " + errorReporter.getReasons());
+      }
     } else if (definition instanceof DataDefinition) {
       deserializeDataDefinition(stream, definitionMap, (DataDefinition) definition);
     } else if (definition instanceof ClassDefinition) {
@@ -430,7 +442,11 @@ public class ModuleDeserialization {
         for (int i = 0; i < size; ++i) {
           fields.add(readExpression(stream, definitionMap));
         }
-        return Tuple(fields, (SigmaExpression) readExpression(stream, definitionMap));
+        SigmaExpression sigma = readExpression(stream, definitionMap).toSigma();
+        if (sigma == null) {
+          throw new IncorrectFormat();
+        }
+        return Tuple(fields, sigma);
       }
       case 11: {
         return Sigma(readParameters(stream, definitionMap));
@@ -450,6 +466,11 @@ public class ModuleDeserialization {
         }
         final Expression expr = readExpression(stream, definitionMap);
         return Let(clauses, expr);
+      }
+      case 16: {
+        Expression expr = readExpression(stream, definitionMap);
+        Expression type = readExpression(stream, definitionMap);
+        return new OfTypeExpression(expr, type);
       }
       default: {
         throw new IncorrectFormat();

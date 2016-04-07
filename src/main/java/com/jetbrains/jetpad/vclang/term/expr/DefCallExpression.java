@@ -20,4 +20,9 @@ public abstract class DefCallExpression extends Expression {
   public Expression getType() {
     return myDefinition.getType();
   }
+
+  @Override
+  public DefCallExpression toDefCall() {
+    return this;
+  }
 }

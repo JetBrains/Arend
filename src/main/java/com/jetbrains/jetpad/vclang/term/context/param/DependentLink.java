@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +96,19 @@ public interface DependentLink extends Binding {
 
     public static DependentLink subst(DependentLink link, Substitution substitution) {
       return link.subst(substitution, Integer.MAX_VALUE);
+    }
+
+    public static <P> DependentLink accept(DependentLink link, Substitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
+      link = DependentLink.Helper.subst(link, substitution);
+      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
+        link1 = link1.getNextTyped(null);
+        link1.setType(link1.getType().accept(visitor, params));
+      }
+      return link;
+    }
+
+    public static <P> DependentLink accept(DependentLink link, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
+      return accept(link, new Substitution(), visitor, params);
     }
   }
 }
