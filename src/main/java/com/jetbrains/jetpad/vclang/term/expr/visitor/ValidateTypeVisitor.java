@@ -52,7 +52,6 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   private void checkType(Expression expr, Expression expectedType) {
     if (expectedType == null) {
-      myErrorReporter.addError(expr, "Expected type is null");
       return;
     }
     expectedType = expectedType.normalize(NormalizeVisitor.Mode.NF);
@@ -95,9 +94,6 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   private void visitApp(Expression funType, List<? extends Expression> args,
                         List<? extends EnumSet<AppExpression.Flag>> flags, Expression expectedType) {
     if (args.isEmpty()) {
-      if (!typesCompatible(expectedType, funType)) {
-        myErrorReporter.addError(funType, "Result expected type: " + expectedType + ", actual: " + funType);
-      }
       return;
     }
     if (!(funType instanceof PiExpression)) {
@@ -131,7 +127,6 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   @Override
   public Void visitApp(AppExpression expr, Expression expectedType) {
     checkType(expr, expectedType);
-//    List<? extends Expression> args = expr.normalize(NormalizeVisitor.Mode.WHNF).getArguments();
     List<? extends Expression> args = expr.getArguments();
     List<? extends EnumSet<AppExpression.Flag>> flags = expr.getFlags();
     Expression fun = expr.getFunction();
@@ -257,7 +252,6 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
 
   @Override
   public Void visitNew(NewExpression expr, Expression expectedType) {
-    checkType(expr, expectedType);
     expr.getExpression().accept(this, expectedType.getType());
     return null;
   }
@@ -265,8 +259,6 @@ public class ValidateTypeVisitor extends BaseExpressionVisitor<Expression, Void>
   @Override
   public Void visitLet(LetExpression letExpression, Expression expectedType) {
     checkType(letExpression, expectedType);
-    // TODO subst
-    Substitution subst = new Substitution();
     for (LetClause clause : letExpression.getClauses()) {
       clause.getElimTree().accept(this, clause.getResultType());
     }
