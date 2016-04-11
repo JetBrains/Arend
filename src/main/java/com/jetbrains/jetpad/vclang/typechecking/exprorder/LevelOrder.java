@@ -38,14 +38,30 @@ public class LevelOrder implements ExpressionOrder {
       return false;
     }
 
-    boolean cmp1 = LvlOrder.compareLvl(classCall1.getImplementStatements().get(Preprelude.PLEVEL).term, classCall2.getImplementStatements().get(Preprelude.PLEVEL).term, visitor, expectedCMP);
-    boolean cmp2 = CNatOrder.compareCNat(classCall1.getImplementStatements().get(Preprelude.HLEVEL).term, classCall2.getImplementStatements().get(Preprelude.HLEVEL).term, visitor, expectedCMP);
+    Expression hlevel1 = classCall1.getImplementStatements().get(Preprelude.HLEVEL).term;
+    Expression hlevel2 = classCall2.getImplementStatements().get(Preprelude.HLEVEL).term;
+
+    boolean cmp1 = CNatOrder.compareCNat(hlevel1, hlevel2, visitor, expectedCMP);
+
+    if (CNatOrder.isZero(hlevel1) || CNatOrder.isZero(hlevel2)) {
+      return cmp1;
+    }
+
+    boolean cmp2 = LvlOrder.compareLvl(classCall1.getImplementStatements().get(Preprelude.PLEVEL).term, classCall2.getImplementStatements().get(Preprelude.PLEVEL).term, visitor, expectedCMP);
 
     return cmp1 && cmp2;
   }
 
   @Override
   public Expression max(Expression expr1, Expression expr2) {
+    if (Expression.compare(expr1, expr2, Equations.CMP.GE)) {
+      return expr1;
+    }
+
+    if (Expression.compare(expr1, expr2, Equations.CMP.LE)) {
+      return expr2;
+    }
+
     NewExpression new1 = expr1.toNew();
     NewExpression new2 = expr2.toNew();
     Expression plevel1, plevel2, hlevel1, hlevel2;

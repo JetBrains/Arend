@@ -39,7 +39,7 @@ public class LvlOrder implements ExpressionOrder {
     AppExpression app2 = expr2.toApp();
 
     if (app1 == null || app2 == null || app1.getFunction().toConCall() == null || app2.getFunction().toConCall() == null ||
-            app1.getFunction().toConCall().getDefinition() != Preprelude.FIN || app2.getFunction().toConCall().getDefinition() != Preprelude.FIN ||
+            app1.getFunction().toConCall().getDefinition() != Preprelude.SUC_LVL || app2.getFunction().toConCall().getDefinition() != Preprelude.SUC_LVL ||
             app1.getArguments().size() != 1 || app2.getArguments().size() != 1) {
       return false;
     }
@@ -49,6 +49,12 @@ public class LvlOrder implements ExpressionOrder {
 
   @Override
   public Expression max(Expression expr1, Expression expr2) {
+    if (Expression.compare(expr1, expr2, Equations.CMP.GE)) {
+      return expr1;
+    }
+    if (Expression.compare(expr1, expr2, Equations.CMP.LE)) {
+      return expr2;
+    }
     return ExpressionFactory.MaxLvl(expr1, expr2);
   }
 }

@@ -247,14 +247,15 @@ public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLe
 
     @Override
     public boolean compare(TypeLevel other, CompareVisitor visitor, Equations.CMP expectedCMP) {
-      if (myIgnorePLevel || other.myIgnorePLevel) {
-        return getHLevel().compare(other.getHLevel(), visitor, expectedCMP);
+      if (myIgnorePLevel) {
+        myPLevel = other.myPLevel;
+      } else if (other.myIgnorePLevel) {
+        other.myPLevel = myPLevel;
       }
 
-      Expression otherLevel = other.getValue();
-      myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
-      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
-      return visitor.compare(myLevel, otherLevel);
+      Expression otherLevel = other.getValue().normalize(NormalizeVisitor.Mode.NF);
+      Expression thisLevel = getValue().normalize(NormalizeVisitor.Mode.NF);
+      return visitor.compare(thisLevel, otherLevel);
     }
 
     @Override

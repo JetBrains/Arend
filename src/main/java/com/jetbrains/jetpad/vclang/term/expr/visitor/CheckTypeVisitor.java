@@ -584,8 +584,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           myErrorReporter.report(error);
           return null;
         }
-        Universe prop = new TypeUniverse(new TypeUniverse.TypeLevel(TypeUniverse.HomotopyLevel.PROP, false));
-        universe = codomainUniverse.equals(prop) ? prop : cmp.MaxUniverse;
+        universe = codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : cmp.MaxUniverse;
       } else {
         universe = codomainUniverse;
       }

@@ -15,6 +15,19 @@ public class CNatOrder implements ExpressionOrder {
     return new CNatOrder().max(expr1, expr2);
   }
 
+  public static boolean isZero(Expression expr) {
+    AppExpression app = expr.toApp();
+
+    if (app == null || app.getFunction().toConCall() == null ||
+            app.getFunction().toConCall().getDefinition() != Preprelude.FIN ||
+            app.getArguments().size() != 1) {
+      return false;
+    }
+
+    ConCallExpression mbZero = app.getArguments().get(0).toConCall();
+    return mbZero != null && mbZero.getDefinition() == Preprelude.ZERO;
+  }
+
   @Override
   public boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
     ReferenceExpression ref1 = expr1.toReference();
@@ -32,6 +45,14 @@ public class CNatOrder implements ExpressionOrder {
     }
 
     if (conCall2 != null && conCall2.getDefinition() == Preprelude.INF) {
+      return expectedCMP == Equations.CMP.LE;
+    }
+
+    if (isZero(expr2)) {
+      return expectedCMP == Equations.CMP.GE || (expectedCMP == Equations.CMP.EQ && isZero(expr1));
+    }
+
+    if (isZero(expr1)) {
       return expectedCMP == Equations.CMP.LE;
     }
 
@@ -59,6 +80,15 @@ public class CNatOrder implements ExpressionOrder {
             expr2.toApp().getArguments().get(0).toConCall() != null && expr2.toApp().getArguments().get(0).toConCall().getDefinition() == Preprelude.ZERO) {
       return expr1;
     }
+
+    if (Expression.compare(expr1, expr2, Equations.CMP.GE)) {
+      return expr1;
+    }
+
+    if (Expression.compare(expr1, expr2, Equations.CMP.LE)) {
+      return expr2;
+    }
+
     return ExpressionFactory.MaxCNat(expr1, expr2);
   }
 }

@@ -90,7 +90,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return compareReference(ref2, expr1, false);
     }
 
-    if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null) {
+    if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null && expr1.toUniverse() == null) {
       if (order.compare(expr1, expr2, this, myCMP)) return true;
     }
 
