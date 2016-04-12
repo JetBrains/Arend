@@ -34,4 +34,13 @@ public class UniverseExpression extends Expression {
   public boolean isAnyUniverse() {
     return myUniverse instanceof TypeUniverse && ((TypeUniverse) myUniverse).getLevel() == null;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof UniverseExpression)) {
+      return false;
+    }
+    UniverseExpression expr = (UniverseExpression)obj;
+    return myUniverse.equals(expr.getUniverse());
+  }
 }
