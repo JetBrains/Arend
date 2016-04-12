@@ -49,7 +49,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(Set<InferenceBinding> binding) {
+  public Substitution getInferenceVariables(Set<InferenceBinding> binding, boolean onlyPreciseSolutions) {
     throw new Exception();
   }
 

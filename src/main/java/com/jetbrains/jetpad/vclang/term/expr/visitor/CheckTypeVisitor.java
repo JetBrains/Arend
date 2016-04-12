@@ -219,7 +219,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   public Result checkType(Abstract.Expression expr, Expression expectedType) {
     Result result = typeCheck(expr, expectedType);
     if (result == null) return null;
-    result.update();
+    result.update(false);
     result.reportErrors(myErrorReporter);
     result.expression = result.expression.strip();
     result.type = result.type.strip();
@@ -398,7 +398,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         if (bindingType != null) {
           result.addUnsolvedVariable((InferenceBinding) ((TypeUniverse) bindingType.getType().toUniverse().getUniverse()).getLevel().getValue().toReference().getBinding());
           result.addUnsolvedVariable(bindingType);
-          Substitution substitution = result.getSubstitution();
+          Substitution substitution = result.getSubstitution(false);
           if (!substitution.getDomain().isEmpty()) {
             bodyResult.expression = bodyResult.expression.subst(substitution);
             bodyResult.type = bodyResult.type.subst(substitution);
@@ -515,7 +515,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     tupleResult.expression = Tuple(fields, type);
     tupleResult.type = type;
     tupleResult = checkResult(expectedTypeNorm, tupleResult, expr);
-    tupleResult.update();
+    tupleResult.update(true);
     return tupleResult;
   }
 
@@ -592,7 +592,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     argsResult.expression = codomainResult == null ? Sigma(list.getFirst()) : Pi(list.getFirst(), codomainResult.expression);
     argsResult.type = new UniverseExpression(universe);
-    argsResult.update();
+    argsResult.update(false);
     return argsResult;
   }
 
@@ -660,7 +660,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     letBinding.setElimTree(elimResult.elimTree);
 
     caseResult.expression = Let(lets(letBinding), Apps(Reference(letBinding), letArguments));
-    caseResult.update();
+    caseResult.update(false);
     expr.setWellTyped(myContext, caseResult.expression);
     return caseResult;
   }
@@ -774,7 +774,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     ClassCallExpression resultExpr = ClassCall(baseClass, typeCheckedStatements);
     classExtResult.expression = resultExpr;
     classExtResult.type = new UniverseExpression(resultExpr.getUniverse());
-    classExtResult.update();
+    classExtResult.update(true);
     return checkResult(expectedType, classExtResult, expr);
   }
 
@@ -882,7 +882,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     letResult.letClause = new LetClause(clause.getName(), links.getFirst(), resultType, elimTree);
-    letResult.update();
+    letResult.update(false);
     myContext.add(letResult.letClause);
     return letResult;
   }
@@ -910,7 +910,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
       letResult.expression = Let(clauses, result.expression);
       letResult.type = Let(clauses, result.type);
-      letResult.update();
+      letResult.update(false);
       return letResult;
     }
   }

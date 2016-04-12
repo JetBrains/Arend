@@ -17,7 +17,7 @@ public interface Equations {
   boolean isEmpty();
   void abstractBinding(Binding binding);
   Equations newInstance();
-  Substitution getInferenceVariables(Set<InferenceBinding> binding);
+  Substitution getInferenceVariables(Set<InferenceBinding> binding, boolean onlyPreciseSolutions);
   void reportErrors(ErrorReporter errorReporter);
 
   enum CMP {

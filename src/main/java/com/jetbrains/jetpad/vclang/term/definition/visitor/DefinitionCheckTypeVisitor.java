@@ -295,7 +295,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         context.subList(context.size() - size(list.getFirst()), context.size()).clear();
         TypeCheckingElim.Result elimResult = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedType, false);
         if (elimResult != null) {
-          elimResult.update();
+          elimResult.update(false);
           elimResult.reportErrors(myErrorReporter);
           typedDef.setElimTree(elimResult.elimTree);
         }

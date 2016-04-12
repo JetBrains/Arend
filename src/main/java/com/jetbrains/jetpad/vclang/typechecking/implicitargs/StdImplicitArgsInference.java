@@ -82,7 +82,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             .addArgument(argResult.expression, AppExpression.DEFAULT);
         result.type = result.type.applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         result.add(argResult);
-        result.update();
+        result.update(true);
         return result;
       }
 
@@ -118,7 +118,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     result.expression = result.expression.addArgument(argResult.expression, isExplicit ? EnumSet.of(AppExpression.Flag.EXPLICIT, AppExpression.Flag.VISIBLE) : EnumSet.of(AppExpression.Flag.VISIBLE));
     result.type = actualType.applyExpressions(Collections.singletonList(argResult.expression));
     result.add(argResult);
-    result.update();
+    result.update(true);
     return result;
   }
 
@@ -206,7 +206,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     result = myVisitor.checkResult(expectedType, result, expr);
     if (result != null) {
-      result.update();
+      result.update(true);
     }
     return result;
   }

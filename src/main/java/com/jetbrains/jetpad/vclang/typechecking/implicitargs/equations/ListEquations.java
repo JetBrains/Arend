@@ -347,7 +347,7 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(Set<InferenceBinding> bindings) {
+  public Substitution getInferenceVariables(Set<InferenceBinding> bindings, boolean onlyPreciseSolutions) {
     Substitution result = new Substitution();
     if (mySolutions.isEmpty() || bindings.isEmpty()) {
       return result;
@@ -360,6 +360,10 @@ public class ListEquations implements Equations {
       Expression subst = null;
       for (Iterator<Map.Entry<InferenceBinding, Solution>> it = mySolutions.entrySet().iterator(); it.hasNext(); ) {
         Map.Entry<InferenceBinding, Solution> entry = it.next();
+        if (onlyPreciseSolutions && entry.getValue() instanceof EqSetSolution) {
+          continue;
+        }
+
         if (bindings.remove(entry.getKey())) {
           was = true;
           it.remove();
