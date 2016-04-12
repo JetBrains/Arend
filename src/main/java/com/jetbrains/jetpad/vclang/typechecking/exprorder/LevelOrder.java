@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class LevelOrder implements ExpressionOrder {
-  public static boolean compareLevel(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
+  public static Boolean compareLevel(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
     return new LevelOrder().compare(expr1, expr2, visitor, expectedCMP);
   }
 
@@ -16,38 +16,36 @@ public class LevelOrder implements ExpressionOrder {
   }
 
   @Override
-  public boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
-    ReferenceExpression ref1 = expr1.toReference();
-    ReferenceExpression ref2 = expr2.toReference();
-
-    if ((ref1 != null && ref1.getBinding() instanceof InferenceBinding) || (ref2 != null && ref2.getBinding() instanceof InferenceBinding)) {
-      return visitor.compare(expr1, expr2);
-    }
-
+  public Boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
     NewExpression new1 = expr1.toNew();
     NewExpression new2 = expr2.toNew();
 
     if (new1 == null || new2 == null) {
-      return false;
+      return null;
     }
 
     ClassCallExpression classCall1 = new1.getExpression().toClassCall();
     ClassCallExpression classCall2 = new2.getExpression().toClassCall();
 
     if (classCall1 == null || classCall2 == null) {
-      return false;
+      return null;
+    }
+
+    if (!classCall1.getImplementStatements().containsKey(Preprelude.HLEVEL) || !classCall1.getImplementStatements().containsKey(Preprelude.PLEVEL) ||
+            !classCall2.getImplementStatements().containsKey(Preprelude.HLEVEL) || !classCall2.getImplementStatements().containsKey(Preprelude.PLEVEL)) {
+      return null;
     }
 
     Expression hlevel1 = classCall1.getImplementStatements().get(Preprelude.HLEVEL).term;
     Expression hlevel2 = classCall2.getImplementStatements().get(Preprelude.HLEVEL).term;
 
-    boolean cmp1 = CNatOrder.compareCNat(hlevel1, hlevel2, visitor, expectedCMP);
+    boolean cmp1 = visitor.compare(hlevel1, hlevel2); // CNatOrder.compareCNat(hlevel1, hlevel2, visitor, expectedCMP);
 
     if (CNatOrder.isZero(hlevel1) || CNatOrder.isZero(hlevel2)) {
       return cmp1;
     }
 
-    boolean cmp2 = LvlOrder.compareLvl(classCall1.getImplementStatements().get(Preprelude.PLEVEL).term, classCall2.getImplementStatements().get(Preprelude.PLEVEL).term, visitor, expectedCMP);
+    boolean cmp2 = visitor.compare(classCall1.getImplementStatements().get(Preprelude.PLEVEL).term, classCall2.getImplementStatements().get(Preprelude.PLEVEL).term);
 
     return cmp1 && cmp2;
   }

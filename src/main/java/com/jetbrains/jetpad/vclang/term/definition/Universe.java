@@ -8,7 +8,6 @@ public interface Universe {
 
   interface Level<L> {
     Cmp compare(L other);
-    boolean compare(L other, CompareVisitor visitor, Equations.CMP expectedCMP);
     L max(L other);
     L succ();
   }
@@ -30,6 +29,5 @@ public interface Universe {
   }
 
   CompareResult compare(Universe other);
-  boolean compare(Universe other, CompareVisitor visitor, Equations.CMP expectedCMP);
   Universe succ();
 }

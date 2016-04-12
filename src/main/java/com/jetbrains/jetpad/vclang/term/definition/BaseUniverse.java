@@ -12,6 +12,7 @@ public abstract class BaseUniverse<U extends Universe, L extends Universe.Level<
 
   public L getLevel() { return myLevel; }
 
+  /*
   @Override
   public boolean compare(Universe other, CompareVisitor visitor, Equations.CMP expectedCMP) {
     if (getClass() != other.getClass()) return false;
@@ -21,7 +22,7 @@ public abstract class BaseUniverse<U extends Universe, L extends Universe.Level<
     if (otherLevel == null)
       return expectedCMP == Equations.CMP.LE;
     return myLevel.compare(otherLevel, visitor, expectedCMP);
-  }
+  } /**/
 
   @Override
   public CompareResult compare(Universe other) {

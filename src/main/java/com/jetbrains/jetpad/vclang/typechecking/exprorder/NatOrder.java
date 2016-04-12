@@ -7,19 +7,12 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class NatOrder implements ExpressionOrder {
-  public static boolean compareNat(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
+  public static Boolean compareNat(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
     return new NatOrder().compare(expr1, expr2, visitor, expectedCMP);
   }
 
   @Override
-  public boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
-    ReferenceExpression ref1 = expr1.toReference();
-    ReferenceExpression ref2 = expr2.toReference();
-
-    if ((ref1 != null && ref1.getBinding() instanceof InferenceBinding) || (ref2 != null && ref2.getBinding() instanceof InferenceBinding)) {
-      return visitor.compare(expr1, expr2);
-    }
-
+  public Boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
     ConCallExpression conCall1 = expr1.toConCall();
     ConCallExpression conCall2 = expr2.toConCall();
 
@@ -34,13 +27,28 @@ public class NatOrder implements ExpressionOrder {
     AppExpression app1 = expr1.toApp();
     AppExpression app2 = expr2.toApp();
 
-    if (app1 == null || app2 == null || app1.getFunction().toConCall() == null || app2.getFunction().toConCall() == null ||
-            app1.getFunction().toConCall().getDefinition() != Preprelude.FIN || app2.getFunction().toConCall().getDefinition() != Preprelude.FIN ||
-            app1.getArguments().size() != 1 || app2.getArguments().size() != 1) {
-      return false;
+    if (app1 == null && app2 == null) {
+      return null;
     }
 
-    return compare(app1.getArguments().get(0), app2.getArguments().get(0), visitor, expectedCMP);
+    if (app1 != null && (app1.getFunction().toConCall() == null || app1.getFunction().toConCall().getDefinition() != Preprelude.SUC ||
+              app1.getArguments().size() != 1)) {
+        return null;
+    }
+
+    if (app2 != null && (app2.getFunction().toConCall() == null || app2.getFunction().toConCall().getDefinition() != Preprelude.SUC ||
+            app2.getArguments().size() != 1)) {
+      return null;
+    }
+
+    if (app1 != null) {
+      if (app2 != null) {
+        return visitor.compare(app1.getArguments().get(0), app2.getArguments().get(0));
+      }
+      return expectedCMP == Equations.CMP.GE && visitor.compare(app1.getArguments().get(0), expr2);
+    }
+
+    return expectedCMP == Equations.CMP.LE && visitor.compare(expr1, app2.getArguments().get(0));
   }
 
   @Override
