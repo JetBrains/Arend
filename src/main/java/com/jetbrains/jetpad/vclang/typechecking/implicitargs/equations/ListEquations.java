@@ -238,20 +238,24 @@ public class ListEquations implements Equations {
     Solution sol1 = mySolutions.get(binding);
     if (sol1 != null) {
       if (sol1 instanceof ExpressionSolution) {
+        Expression expr1 = ((ExpressionSolution) sol1).expression.normalize(NormalizeVisitor.Mode.NF);
         if (sol2 instanceof ExpressionSolution) {
-          if (!CompareVisitor.compare(this, CMP.EQ, ((ExpressionSolution) sol2).expression, ((ExpressionSolution) sol1).expression, binding.getSourceNode())) {
-            binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol2).expression, ((ExpressionSolution) sol1).expression);
+          Expression expr2 = ((ExpressionSolution) sol2).expression.normalize(NormalizeVisitor.Mode.NF);
+          if (!CompareVisitor.compare(this, CMP.EQ, expr2, expr1, binding.getSourceNode())) {
+            binding.reportErrorInfer(myErrorReporter, expr2, expr1);
           }
         } else
         if (sol2 instanceof EqSetSolution) {
           for (Expression expr : ((EqSetSolution) sol2).geSet) {
-            if (!CompareVisitor.compare(this, CMP.GE, ((ExpressionSolution) sol1).expression, expr, binding.getSourceNode())) {
-              binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol1).expression, expr);
+            expr = expr.normalize(NormalizeVisitor.Mode.NF);
+            if (!CompareVisitor.compare(this, CMP.GE, expr1, expr, binding.getSourceNode())) {
+              binding.reportErrorInfer(myErrorReporter, expr1, expr);
             }
           }
           for (Expression expr : ((EqSetSolution) sol2).leSet) {
-            if (!CompareVisitor.compare(this, CMP.LE, ((ExpressionSolution) sol1).expression, expr, binding.getSourceNode())) {
-              binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol1).expression, expr);
+            expr = expr.normalize(NormalizeVisitor.Mode.NF);
+            if (!CompareVisitor.compare(this, CMP.LE, expr1, expr, binding.getSourceNode())) {
+              binding.reportErrorInfer(myErrorReporter, expr1, expr);
             }
           }
         } else {
@@ -260,15 +264,18 @@ public class ListEquations implements Equations {
       } else
       if (sol1 instanceof EqSetSolution) {
         if (sol2 instanceof ExpressionSolution) {
+          Expression expr2 = ((ExpressionSolution) sol2).expression.normalize(NormalizeVisitor.Mode.NF);
           mySolutions.put(binding, sol2);
           for (Expression expr : ((EqSetSolution) sol1).geSet) {
-            if (!CompareVisitor.compare(this, CMP.GE, ((ExpressionSolution) sol2).expression, expr, binding.getSourceNode())) {
-              binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol2).expression, expr);
+            expr = expr.normalize(NormalizeVisitor.Mode.NF);
+            if (!CompareVisitor.compare(this, CMP.GE, expr2, expr, binding.getSourceNode())) {
+              binding.reportErrorInfer(myErrorReporter, expr2, expr);
             }
           }
           for (Expression expr : ((EqSetSolution) sol1).leSet) {
-            if (!CompareVisitor.compare(this, CMP.LE, ((ExpressionSolution) sol2).expression, expr, binding.getSourceNode())) {
-              binding.reportErrorInfer(myErrorReporter, ((ExpressionSolution) sol2).expression, expr);
+            expr = expr.normalize(NormalizeVisitor.Mode.NF);
+            if (!CompareVisitor.compare(this, CMP.LE, expr2, expr, binding.getSourceNode())) {
+              binding.reportErrorInfer(myErrorReporter, expr2, expr);
             }
           }
         } else
