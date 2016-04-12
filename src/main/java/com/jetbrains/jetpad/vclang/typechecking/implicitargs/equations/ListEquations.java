@@ -142,7 +142,10 @@ public class ListEquations implements Equations {
         if (geSet.size() > 1) {
           StandardOrder order = new StandardOrder();
           for (int i = 1; i < geSet.size(); i++) {
-            result = order.max(result, geSet.get(i));
+            Expression max = order.max(result, geSet.get(i));
+            if (max != null) {
+              result = max;
+            }
           }
         }
 
