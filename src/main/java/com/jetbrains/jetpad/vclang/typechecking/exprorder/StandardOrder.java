@@ -80,8 +80,8 @@ public class StandardOrder implements ExpressionOrder {
       }
     }
 
-    UniverseExpression uni1 = type1.toUniverse();
-    UniverseExpression uni2 = type2.toUniverse();
+    UniverseExpression uni1 = expr1.toUniverse();
+    UniverseExpression uni2 = expr2.toUniverse();
 
     if (uni1 == null || uni2 == null || !(uni1.getUniverse() instanceof TypeUniverse) || !(uni2.getUniverse() instanceof TypeUniverse)) {
       return null;
