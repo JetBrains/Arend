@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class LevelOrder implements ExpressionOrder {
@@ -13,6 +14,16 @@ public class LevelOrder implements ExpressionOrder {
 
   public static Expression maxLevel(Expression expr1, Expression expr2) {
     return new LevelOrder().max(expr1, expr2);
+  }
+
+  @Override
+  public boolean comparable(Expression expr1, Expression expr2) {
+    Expression type1 = expr1.getType().normalize(NormalizeVisitor.Mode.NF);
+    Expression type2 = expr2.getType().normalize(NormalizeVisitor.Mode.NF);
+    ClassCallExpression classCall1 = type1.toClassCall();
+    ClassCallExpression classCall2 = type2.toClassCall();
+
+    return classCall1 != null && classCall2 != null && classCall1.getDefinition() == Preprelude.LEVEL && classCall2.getDefinition() == Preprelude.LEVEL;
   }
 
   @Override

@@ -10,6 +10,13 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 public class StandardOrder implements ExpressionOrder {
 
   @Override
+  public boolean comparable(Expression expr1, Expression expr2) {
+    return new CNatOrder().comparable(expr1, expr2) || new LvlOrder().comparable(expr1, expr2) ||
+            new LevelOrder().comparable(expr1, expr2) || new NatOrder().comparable(expr1, expr2) ||
+            (expr1 instanceof UniverseExpression && expr2 instanceof UniverseExpression);
+  }
+
+  @Override
   public Boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
     Boolean cmpRes = CNatOrder.compareCNat(expr1, expr2, visitor, expectedCMP);
     if (cmpRes != null) {

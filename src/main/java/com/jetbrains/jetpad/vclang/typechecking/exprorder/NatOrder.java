@@ -1,14 +1,24 @@
 package com.jetbrains.jetpad.vclang.typechecking.exprorder;
 
 import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class NatOrder implements ExpressionOrder {
   public static Boolean compareNat(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
     return new NatOrder().compare(expr1, expr2, visitor, expectedCMP);
+  }
+
+  @Override
+  public boolean comparable(Expression expr1, Expression expr2) {
+    Expression type1 = expr1.getType().normalize(NormalizeVisitor.Mode.NF);
+    Expression type2 = expr2.getType().normalize(NormalizeVisitor.Mode.NF);
+    DataCallExpression dataCall1 = type1.toDataCall();
+    DataCallExpression dataCall2 = type2.toDataCall();
+
+    return dataCall1 != null && dataCall2 != null && dataCall1.getDefinition() == Preprelude.NAT && dataCall2.getDefinition() == Preprelude.NAT;
   }
 
   @Override
