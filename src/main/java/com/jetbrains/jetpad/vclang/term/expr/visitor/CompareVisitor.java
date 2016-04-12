@@ -104,9 +104,17 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return new2.accept(this, expr1);
     }
 
-    if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null) {
-      if (order.compare(expr1, expr2, this, myCMP)) return true;
+    if (myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) {
+      Boolean ordCmpResult = order.compare(expr1, expr2, this, myCMP);
+
+      if (ordCmpResult != null) {
+        return ordCmpResult;
+      }
     }
+
+   // if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null) {
+   //   if (order.compare(expr1, expr2, this, myCMP)) return true;
+   // }
 
     return expr1.accept(this, expr2);
   }
@@ -327,13 +335,26 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return !params1.hasNext() && !params2.hasNext();
   }
 
+
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
     UniverseExpression universe2 = expr2.toUniverse();
     if (universe2 == null || universe2.getUniverse() == null) return false;
-    return expr1.getUniverse().compare(universe2.getUniverse(), this, myCMP);
+    TypeUniverse.TypeLevel level1 = ((TypeUniverse) expr1.getUniverse()).getLevel();
+    TypeUniverse.TypeLevel level2 = ((TypeUniverse) universe2.getUniverse()).getLevel();
+
+    if (level1 == null) {
+      return myCMP == Equations.CMP.GE || (level2 == null && myCMP == Equations.CMP.EQ);
+    }
+
+    if (level2 == null) {
+      return myCMP == Equations.CMP.LE;
+    }
+
+    return level1.getValue().accept(this, level2.getValue());
+    // return expr1.getUniverse().compare(universe2.getUniverse(), this, myCMP);
     //return cmp != null && (cmp.Result == Universe.Cmp.EQUALS || cmp.Result == expectedCMP);
-  }
+  }/**/
 
   @Override
   public Boolean visitError(ErrorExpression expr1, Expression expr2) {

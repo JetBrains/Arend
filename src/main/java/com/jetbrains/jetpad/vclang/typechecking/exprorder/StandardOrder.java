@@ -10,12 +10,41 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 public class StandardOrder implements ExpressionOrder {
 
   @Override
-  public boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
-    if(CNatOrder.compareCNat(expr1, expr2, visitor, expectedCMP) || LvlOrder.compareLvl(expr1, expr2, visitor, expectedCMP) ||
-            LevelOrder.compareLevel(expr1, expr2, visitor, expectedCMP) || NatOrder.compareNat(expr1, expr2, visitor, expectedCMP)) return true;
+  public Boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
+    Boolean cmpRes = CNatOrder.compareCNat(expr1, expr2, visitor, expectedCMP);
+    if (cmpRes != null) {
+      return cmpRes;
+    }
+    cmpRes = LvlOrder.compareLvl(expr1, expr2, visitor, expectedCMP);
+    if (cmpRes != null) {
+      return cmpRes;
+    }
+    cmpRes = LevelOrder.compareLevel(expr1, expr2, visitor, expectedCMP);
+    if (cmpRes != null) {
+      return cmpRes;
+    }
+    cmpRes = NatOrder.compareNat(expr1, expr2, visitor, expectedCMP);
+    if (cmpRes != null) {
+      return cmpRes;
+    }
     UniverseExpression uni1 = expr1.toUniverse();
     UniverseExpression uni2 = expr2.toUniverse();
-    return uni1 != null && uni2 != null && uni1.getUniverse().compare(uni2.getUniverse(), visitor, expectedCMP);
+    if (uni1 == null || uni2 == null  || !(uni1.getUniverse() instanceof TypeUniverse) || !(uni2.getUniverse() instanceof TypeUniverse)) {
+      return null;
+    }
+
+    TypeUniverse.TypeLevel level1 = ((TypeUniverse) uni1.getUniverse()).getLevel();
+    TypeUniverse.TypeLevel level2 = ((TypeUniverse) uni2.getUniverse()).getLevel();
+
+    if (level1 == null) {
+      return expectedCMP == Equations.CMP.GE;
+    }
+
+    if (level2 == null) {
+      return expectedCMP == Equations.CMP.LE;
+    }
+
+    return visitor.compare(level1.getValue(), level2.getValue());
   }
 
   @Override
