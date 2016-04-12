@@ -226,7 +226,7 @@ public class ListEquations implements Equations {
   }
 
   private void addSolution(InferenceBinding binding, CMP cmp, Expression expr) {
-    if (!StandardOrder.getInstance().comparable(expr, expr)) {
+    if (!StandardOrder.getInstance().isComparable(expr)) {
       cmp = CMP.EQ;
     }
 

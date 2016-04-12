@@ -15,10 +15,10 @@ public class StandardOrder implements ExpressionOrder {
   }
 
   @Override
-  public boolean comparable(Expression expr1, Expression expr2) {
-    return new CNatOrder().comparable(expr1, expr2) || new LvlOrder().comparable(expr1, expr2) ||
-            new LevelOrder().comparable(expr1, expr2) || new NatOrder().comparable(expr1, expr2) ||
-            (expr1 instanceof UniverseExpression && expr2 instanceof UniverseExpression);
+  public boolean isComparable(Expression expr) {
+    return new CNatOrder().isComparable(expr) || new LvlOrder().isComparable(expr) ||
+            new LevelOrder().isComparable(expr) || new NatOrder().isComparable(expr) ||
+            (expr instanceof UniverseExpression);
   }
 
   @Override

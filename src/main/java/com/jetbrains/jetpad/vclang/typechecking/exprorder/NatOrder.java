@@ -12,13 +12,11 @@ public class NatOrder implements ExpressionOrder {
   }
 
   @Override
-  public boolean comparable(Expression expr1, Expression expr2) {
-    Expression type1 = expr1.getType().normalize(NormalizeVisitor.Mode.NF);
-    Expression type2 = expr2.getType().normalize(NormalizeVisitor.Mode.NF);
-    DataCallExpression dataCall1 = type1.toDataCall();
-    DataCallExpression dataCall2 = type2.toDataCall();
+  public boolean isComparable(Expression expr) {
+    Expression type = expr.getType().normalize(NormalizeVisitor.Mode.NF);
+    DataCallExpression dataCall = type.toDataCall();
 
-    return dataCall1 != null && dataCall2 != null && dataCall1.getDefinition() == Preprelude.NAT && dataCall2.getDefinition() == Preprelude.NAT;
+    return dataCall != null && dataCall.getDefinition() == Preprelude.NAT;
   }
 
   @Override
