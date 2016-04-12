@@ -157,7 +157,7 @@ public class DefinitionTest {
     def.addConstructor(con);
 
     Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
-    CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build(), null);
+    CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
     assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
     assertNotNull(result);
     assertEquals(Apps(DataCall(def), Nat()), result.type);

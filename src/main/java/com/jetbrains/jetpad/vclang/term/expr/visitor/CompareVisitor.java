@@ -27,7 +27,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
   private final Abstract.SourceNode mySourceNode;
-  private final ExpressionOrder order = new StandardOrder();
+  private final ExpressionOrder order = StandardOrder.getInstance();
   private Equations.CMP myCMP;
 
   private CompareVisitor(Equations equations, Equations.CMP cmp, Abstract.SourceNode sourceNode) {

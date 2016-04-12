@@ -140,11 +140,17 @@ public class ListEquations implements Equations {
       } else {
         Expression result = geSet.get(0);
         if (geSet.size() > 1) {
-          StandardOrder order = new StandardOrder();
           for (int i = 1; i < geSet.size(); i++) {
-            Expression max = order.max(result, geSet.get(i));
+            Expression max = StandardOrder.getInstance().max(result, geSet.get(i));
             if (max != null) {
               result = max;
+            } else {
+              Expression result1 = result.subst(substitution).normalize(NormalizeVisitor.Mode.NF);
+              Expression expr = geSet.get(i).subst(substitution).normalize(NormalizeVisitor.Mode.NF);
+              if (!CompareVisitor.compare(equations, CMP.GE, result1, expr, null)) {
+                binding.reportErrorInfer(equations.getErrorReporter(), result1, expr);
+                return null;
+              }
             }
           }
         }
@@ -220,6 +226,10 @@ public class ListEquations implements Equations {
   }
 
   private void addSolution(InferenceBinding binding, CMP cmp, Expression expr) {
+    if (!StandardOrder.getInstance().comparable(expr, expr)) {
+      cmp = CMP.EQ;
+    }
+
     if (cmp == CMP.EQ) {
       addSolution(binding, new ExpressionSolution(expr));
     } else {

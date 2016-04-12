@@ -8,6 +8,11 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class StandardOrder implements ExpressionOrder {
+  private static StandardOrder INSTANCE = new StandardOrder();
+
+  public static StandardOrder getInstance() {
+    return INSTANCE;
+  }
 
   @Override
   public boolean comparable(Expression expr1, Expression expr2) {
