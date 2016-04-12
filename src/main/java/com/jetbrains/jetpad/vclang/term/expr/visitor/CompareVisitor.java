@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -20,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> implements ElimTreeNodeVisitor<ElimTreeNode,Boolean> {
@@ -88,6 +88,20 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     ReferenceExpression ref2 = expr2.toReference();
     if (ref2 != null && ref2.getBinding() instanceof InferenceBinding) {
       return compareReference(ref2, expr1, false);
+    }
+    ReferenceExpression ref1 = expr1.toReference();
+    if (ref1 != null && ref1.getBinding() instanceof InferenceBinding) {
+      return compareReference(ref1, expr2, true);
+    }
+
+    NewExpression new1 = expr1.toNew();
+    NewExpression new2 = expr2.toNew();
+    if (new1 != null && new2 == null) {
+      return new1.accept(this, expr2);
+    }
+    if (new2 != null && new1 == null) {
+      myCMP = myCMP.not();
+      return new2.accept(this, expr1);
     }
 
     if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null) {
@@ -373,10 +387,27 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return compare(expr1.getExpression(), proj2.getExpression());
   }
 
+  private boolean compareNew(NewExpression expr1, Expression expr2) {
+    ClassCallExpression classCall = expr1.getExpression().toClassCall();
+    if (classCall == null) {
+      return false;
+    }
+
+    for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : classCall.getImplementStatements().entrySet()) {
+      if (entry.getValue().term == null || !compare(entry.getValue().term, FieldCall(entry.getKey()).applyThis(expr2))) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   @Override
   public Boolean visitNew(NewExpression expr1, Expression expr2) {
     NewExpression new2 = expr2.toNew();
-    if (new2 == null) return false;
+    if (new2 == null) {
+      return compareNew(expr1, expr2);
+    }
     myCMP = Equations.CMP.EQ;
     return compare(expr1.getExpression(), new2.getExpression());
   }
