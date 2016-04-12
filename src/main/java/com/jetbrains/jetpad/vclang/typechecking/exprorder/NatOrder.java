@@ -24,31 +24,25 @@ public class NatOrder implements ExpressionOrder {
       return expectedCMP == Equations.CMP.GE;
     }
 
-    AppExpression app1 = expr1.toApp();
-    AppExpression app2 = expr2.toApp();
+    Expression fun1 = expr1.getFunction();
+    Expression fun2 = expr2.getFunction();
+    boolean isSuc1 = fun1.toConCall() != null && fun1.toConCall().getDefinition() == Preprelude.SUC &&
+            expr1.getArguments().size() == 1;
+    boolean isSuc2 = fun2.toConCall() != null && fun2.toConCall().getDefinition() == Preprelude.SUC &&
+            expr2.getArguments().size() == 1;
 
-    if (app1 == null && app2 == null) {
-      return null;
-    }
-
-    if (app1 != null && (app1.getFunction().toConCall() == null || app1.getFunction().toConCall().getDefinition() != Preprelude.SUC ||
-              app1.getArguments().size() != 1)) {
-        return null;
-    }
-
-    if (app2 != null && (app2.getFunction().toConCall() == null || app2.getFunction().toConCall().getDefinition() != Preprelude.SUC ||
-            app2.getArguments().size() != 1)) {
-      return null;
-    }
-
-    if (app1 != null) {
-      if (app2 != null) {
-        return visitor.compare(app1.getArguments().get(0), app2.getArguments().get(0));
+    if (isSuc1) {
+      if (isSuc2) {
+        return visitor.compare(expr1.getArguments().get(0), expr2.getArguments().get(0));
       }
-      return expectedCMP == Equations.CMP.GE && visitor.compare(app1.getArguments().get(0), expr2);
+      return expectedCMP == Equations.CMP.GE && visitor.compare(expr1.getArguments().get(0), expr2);
     }
 
-    return expectedCMP == Equations.CMP.LE && visitor.compare(expr1, app2.getArguments().get(0));
+    if (isSuc2) {
+      return expectedCMP == Equations.CMP.LE && visitor.compare(expr1, expr2.getArguments().get(0));
+    }
+
+    return null;
   }
 
   @Override
