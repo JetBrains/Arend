@@ -372,6 +372,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
     Universe universe = null;
+    ClassField typedDef = new ClassField(myNamespaceMember.getResolvedName(), def.getPrecedence(), null, thisClass, thisParameter);
 
     int index = 0;
     LinkList list = new LinkList();
@@ -379,7 +380,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (argument instanceof Abstract.TypeArgument) {
         CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
         if (result == null) {
-          return null;
+          return typedDef;
         }
 
         DependentLink param;
@@ -402,24 +403,24 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           if (cmp == null) {
             String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
             myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
-            return null;
+            return typedDef;
           } else {
             universe = cmp.MaxUniverse;
           }
         }
       } else {
         myErrorReporter.report(new ArgInferenceError(myNamespaceMember.getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
-        return null;
+        return typedDef;
       }
     }
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType == null) {
-      return null;
+      return typedDef;
     }
     CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
     if (typeResult == null) {
-      return null;
+      return typedDef;
     }
     typedResultType = typeResult.expression;
 
@@ -431,13 +432,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (cmp == null) {
         String error = "Universe " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
         myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
-        return null;
+        return typedDef;
       } else {
         universe = cmp.MaxUniverse;
       }
     }
 
-    ClassField typedDef = new ClassField(myNamespaceMember.getResolvedName(), def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass, thisParameter);
+    typedDef.hasErrors(false);
+    typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
     typedDef.setUniverse(universe);
     typedDef.setThisClass(thisClass);
     myNamespaceMember.definition = typedDef;
