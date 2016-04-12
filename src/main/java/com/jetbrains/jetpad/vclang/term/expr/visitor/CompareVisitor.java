@@ -151,6 +151,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
+    Equations.CMP cmp = myCMP;
     myCMP = Equations.CMP.EQ;
     if (!compare(fun1, fun2)) {
       return false;
@@ -160,6 +161,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
         return false;
       }
     }
+    myCMP = cmp;
     return true;
   }
 
@@ -370,12 +372,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
+    Equations.CMP cmp = myCMP;
     myCMP = Equations.CMP.EQ;
     for (int i = 0; i < expr1.getFields().size(); i++) {
       if (!compare(expr1.getFields().get(i), tuple2.getFields().get(i))) {
         return false;
       }
     }
+    myCMP = cmp;
     return true;
   }
 
@@ -405,8 +409,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (expr1.getField() != proj2.getField()) {
       return false;
     }
+
+    Equations.CMP cmp = myCMP;
     myCMP = Equations.CMP.EQ;
-    return compare(expr1.getExpression(), proj2.getExpression());
+    boolean result = compare(expr1.getExpression(), proj2.getExpression());
+    myCMP = cmp;
+    return result;
   }
 
   private boolean compareNew(NewExpression expr1, Expression expr2) {
@@ -430,8 +438,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (new2 == null) {
       return compareNew(expr1, expr2);
     }
+
+    Equations.CMP cmp = myCMP;
     myCMP = Equations.CMP.EQ;
-    return compare(expr1.getExpression(), new2.getExpression());
+    boolean result = compare(expr1.getExpression(), new2.getExpression());
+    myCMP = cmp;
+    return result;
   }
 
   @Override
