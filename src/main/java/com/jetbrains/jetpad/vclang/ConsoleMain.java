@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
+import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 
 public class ConsoleMain {
   public static void main(String[] args) {

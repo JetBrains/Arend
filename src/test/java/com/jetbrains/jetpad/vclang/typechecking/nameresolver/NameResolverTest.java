@@ -26,8 +26,8 @@ public class NameResolverTest {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
     ModuleID moduleID = new NameModuleID("test");
     Namespace namespace = new Namespace(moduleID);
-    Definition plus = new FunctionDefinition(namespace.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition(namespace.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition(namespace.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(namespace.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), parameters, Nat(), EmptyElimTreeNode.getInstance());
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
@@ -41,8 +41,8 @@ public class NameResolverTest {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
     ModuleID moduleID = new NameModuleID("test");
     Namespace namespace = new Namespace(moduleID);
-    Definition plus = new FunctionDefinition(namespace.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition(namespace.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.RIGHT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition(namespace.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition(namespace.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.RIGHT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 

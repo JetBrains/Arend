@@ -1,26 +1,26 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, Set<BaseDefinition>> {
-  private final Set<BaseDefinition> myDependencies = new HashSet<>();
+public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, Set<Referable>> {
+  private final Set<Referable> myDependencies = new HashSet<>();
 
   @Override
-  public Set<BaseDefinition> visitApp(Abstract.AppExpression expr, Void ignore) {
+  public Set<Referable> visitApp(Abstract.AppExpression expr, Void ignore) {
     expr.getFunction().accept(this, null);
     expr.getArgument().getExpression().accept(this, null);
     return myDependencies;
   }
 
   @Override
-  public Set<BaseDefinition> visitDefCall(Abstract.DefCallExpression expr, Void ignore) {
-    if (expr.getResolvedDefinition() != null) {
-      myDependencies.add(expr.getResolvedDefinition());
+  public Set<Referable> visitDefCall(Abstract.DefCallExpression expr, Void ignore) {
+    if (expr.getReferent() != null) {
+      myDependencies.add(expr.getReferent());
     } else if (expr.getExpression() != null) {
       expr.getExpression().accept(this, null);
     }
@@ -28,14 +28,14 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
-  public Set<BaseDefinition> visitModuleCall(Abstract.ModuleCallExpression expr, Void params) {
+  public Set<Referable> visitModuleCall(Abstract.ModuleCallExpression expr, Void params) {
     if (expr.getModule() != null)
       myDependencies.add(expr.getModule());
     return myDependencies;
   }
 
   @Override
-  public Set<BaseDefinition> visitLam(Abstract.LamExpression expr, Void ignore) {
+  public Set<Referable> visitLam(Abstract.LamExpression expr, Void ignore) {
     visitArguments(expr.getArguments());
     expr.getBody().accept(this, null);
     return myDependencies;
@@ -50,29 +50,29 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
-  public Set<BaseDefinition> visitPi(Abstract.PiExpression expr, Void ignore) {
+  public Set<Referable> visitPi(Abstract.PiExpression expr, Void ignore) {
     visitArguments(expr.getArguments());
     expr.getCodomain().accept(this, null);
     return myDependencies;
   }
 
   @Override
-  public Set<BaseDefinition> visitUniverse(Abstract.UniverseExpression expr, Void ignore) {
+  public Set<Referable> visitUniverse(Abstract.UniverseExpression expr, Void ignore) {
     return myDependencies;
   }
 
   @Override
-  public Set<BaseDefinition> visitInferHole(Abstract.InferHoleExpression expr, Void ignore) {
+  public Set<Referable> visitInferHole(Abstract.InferHoleExpression expr, Void ignore) {
     return myDependencies;
   }
 
   @Override
-  public Set<BaseDefinition> visitError(Abstract.ErrorExpression expr, Void ignore) {
+  public Set<Referable> visitError(Abstract.ErrorExpression expr, Void ignore) {
     return myDependencies;
   }
 
   @Override
-  public Set<BaseDefinition> visitTuple(Abstract.TupleExpression expr, Void ignore) {
+  public Set<Referable> visitTuple(Abstract.TupleExpression expr, Void ignore) {
     for (Abstract.Expression comp : expr.getFields()) {
       comp.accept(this, null);
     }
@@ -80,13 +80,13 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
-  public Set<BaseDefinition> visitSigma(Abstract.SigmaExpression expr, Void ignore) {
+  public Set<Referable> visitSigma(Abstract.SigmaExpression expr, Void ignore) {
     visitArguments(expr.getArguments());
     return myDependencies;
   }
 
   @Override
-  public Set<BaseDefinition> visitBinOp(Abstract.BinOpExpression expr, Void ignore) {
+  public Set<Referable> visitBinOp(Abstract.BinOpExpression expr, Void ignore) {
     if (expr.getResolvedBinOp() != null) {
       myDependencies.add(expr.getResolvedBinOp());
     }
@@ -96,7 +96,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
-  public Set<BaseDefinition> visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Void ignore) {
+  public Set<Referable> visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Void ignore) {
     expr.getLeft().accept(this, null);
     for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
       visitDefCall(elem.binOp, null);
@@ -106,7 +106,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
-  public Set<BaseDefinition> visitElim(Abstract.ElimExpression expr, Void ignore) {
+  public Set<Referable> visitElim(Abstract.ElimExpression expr, Void ignore) {
     for (Abstract.Clause clause : expr.getClauses()) {
       if (clause.getExpression() != null)
         clause.getExpression().accept(this, null);
@@ -115,7 +115,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
-  public Set<BaseDefinition> visitCase(Abstract.CaseExpression expr, Void ignore) {
+  public Set<Referable> visitCase(Abstract.CaseExpression expr, Void ignore) {
     for (Abstract.Expression caseExpr : expr.getExpressions()) {
       caseExpr.accept(this, null);
     }
@@ -127,13 +127,13 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
-  public Set<BaseDefinition> visitProj(Abstract.ProjExpression expr, Void ignore) {
+  public Set<Referable> visitProj(Abstract.ProjExpression expr, Void ignore) {
     expr.getExpression().accept(this, null);
     return myDependencies;
   }
 
   @Override
-  public Set<BaseDefinition> visitClassExt(Abstract.ClassExtExpression expr, Void ignore) {
+  public Set<Referable> visitClassExt(Abstract.ClassExtExpression expr, Void ignore) {
     expr.getBaseClassExpression().accept(this, null);
     for (Abstract.ImplementStatement statement : expr.getStatements()) {
       statement.getExpression().accept(this, null);
@@ -142,13 +142,13 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
-  public Set<BaseDefinition> visitNew(Abstract.NewExpression expr, Void ignore) {
+  public Set<Referable> visitNew(Abstract.NewExpression expr, Void ignore) {
     expr.getExpression().accept(this, null);
     return myDependencies;
   }
 
   @Override
-  public Set<BaseDefinition> visitLet(Abstract.LetExpression letExpression, Void ignore) {
+  public Set<Referable> visitLet(Abstract.LetExpression letExpression, Void ignore) {
     for (Abstract.LetClause clause : letExpression.getClauses()) {
       visitArguments(clause.getArguments());
       if (clause.getResultType() != null) {
@@ -161,7 +161,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
-  public Set<BaseDefinition> visitNumericLiteral(Abstract.NumericLiteral expr, Void ignore) {
+  public Set<Referable> visitNumericLiteral(Abstract.NumericLiteral expr, Void ignore) {
     return myDependencies;
   }
 }

@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionGetDepsVisitor;
@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporte
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
+import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 
 public class TypecheckingOrdering {
   public static abstract class Result {
@@ -71,7 +71,7 @@ public class TypecheckingOrdering {
     }
 
     myVisiting.add(definition);
-    for (final BaseDefinition def : member.abstractDefinition.accept(new DefinitionGetDepsVisitor(member.namespace, myOthers, myClassToNonStatic), false)) {
+    for (final Referable def : member.abstractDefinition.accept(new DefinitionGetDepsVisitor(member.namespace, myOthers, myClassToNonStatic), false)) {
       if (def instanceof Abstract.Definition) {
         Boolean good = ((Abstract.Definition) def).accept(new AbstractDefinitionVisitor<Void, Boolean>() {
           @Override

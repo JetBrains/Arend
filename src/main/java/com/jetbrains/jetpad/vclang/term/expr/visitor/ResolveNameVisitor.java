@@ -8,9 +8,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
@@ -22,7 +21,7 @@ import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.ModuleResolv
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.toNamespaceMember;
+import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 
 public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
   private final ErrorReporter myErrorReporter;
@@ -57,12 +56,12 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       expression.accept(this, null);
     }
 
-    if (expr.getResolvedDefinition() == null) {
+    if (expr.getReferent() == null) {
       if (expression != null) {
         if (expression instanceof Abstract.DefCallExpression || expression instanceof Abstract.ModuleCallExpression) {
-          BaseDefinition parent;
+          Referable parent;
           if (expression instanceof Abstract.DefCallExpression) {
-            parent = ((Abstract.DefCallExpression) expression).getResolvedDefinition();
+            parent = ((Abstract.DefCallExpression) expression).getReferent();
           } else {
             parent = ((Abstract.ModuleCallExpression) expression).getModule();
           }
@@ -83,7 +82,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
         }
       } else {
         String name = expr.getName();
-        if (new Name(name).fixity == Abstract.Definition.Fixity.INFIX || !myContext.contains(name)) {
+        if (!myContext.contains(name)) {
           NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, false);
           if (member != null) {
             myResolveListener.nameResolved(expr, member.getResolvedDefinition());

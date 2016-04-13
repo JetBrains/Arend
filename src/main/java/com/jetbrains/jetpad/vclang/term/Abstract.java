@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.term.definition.BaseDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
@@ -62,14 +62,14 @@ public final class Abstract {
   public interface ModuleCallExpression extends Expression {
     byte PREC = 12;
     List<String> getPath();
-    BaseDefinition getModule();
+    Referable getModule();
   }
 
   public interface DefCallExpression extends Expression {
     byte PREC = 12;
     String getName();
     Expression getExpression();
-    BaseDefinition getResolvedDefinition();
+    Referable getReferent();
   }
 
   public interface ClassExtExpression extends Expression {
@@ -121,7 +121,7 @@ public final class Abstract {
   }
 
   public interface BinOpExpression extends Expression {
-    BaseDefinition getResolvedBinOp();
+    Referable getResolvedBinOp();
     Expression getLeft();
     Expression getRight();
   }
@@ -190,25 +190,6 @@ public final class Abstract {
   }
 
   public interface Binding extends SourceNode {
-    String getName();
-  }
-
-  public interface Statement extends SourceNode {
-    <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params);
-  }
-
-  public interface DefineStatement extends Statement {
-    enum StaticMod { STATIC, DYNAMIC, DEFAULT }
-
-    //boolean isStatic();
-    StaticMod getStaticMod();
-    Definition getParentDefinition();
-    Definition getDefinition();
-  }
-
-  public interface Definition extends BaseDefinition, SourceNode {
-    enum Arrow { LEFT, RIGHT }
-    enum Fixity { PREFIX, INFIX }
     enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
     class Precedence {
@@ -237,8 +218,27 @@ public final class Abstract {
         return this == obj || obj instanceof Precedence && associativity == ((Precedence) obj).associativity && priority == ((Precedence) obj).priority;
       }
     }
-
     Precedence DEFAULT_PRECEDENCE = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10);
+
+    String getName();
+    Precedence getPrecedence();
+  }
+
+  public interface Statement extends SourceNode {
+    <P, R> R accept(AbstractStatementVisitor<? super P, ? extends R> visitor, P params);
+  }
+
+  public interface DefineStatement extends Statement {
+    enum StaticMod { STATIC, DYNAMIC, DEFAULT }
+
+    //boolean isStatic();
+    StaticMod getStaticMod();
+    Definition getParentDefinition();
+    Definition getDefinition();
+  }
+
+  public interface Definition extends Referable, SourceNode {
+    enum Arrow { LEFT, RIGHT }
 
     DefineStatement getParentStatement();
     <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
@@ -319,7 +319,7 @@ public final class Abstract {
     List<String> getModulePath();
     List<String> getPath();
 
-    BaseDefinition getResolvedClass();
+    Referable getResolvedClass();
 
     List<String> getNames();
   }
