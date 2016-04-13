@@ -43,6 +43,28 @@ public class LvlOrder implements ExpressionOrder {
             expr1.getArguments().size() == 1;
     boolean isSuc2 = fun2.toConCall() != null && fun2.toConCall().getDefinition() == Preprelude.SUC_LVL &&
             expr2.getArguments().size() == 1;
+    boolean isMax1 = fun1.toFunCall() != null && fun1.toFunCall().getDefinition() == Preprelude.MAX_LVL &&
+            expr1.getArguments().size() == 2;
+    boolean isMax2 = fun2.toFunCall() != null && fun2.toFunCall().getDefinition() == Preprelude.MAX_LVL &&
+            expr2.getArguments().size() == 2;
+
+    if (isMax1) {
+      if (expectedCMP == Equations.CMP.LE) {
+        return visitor.compare(expr1.getArguments().get(0), expr2) && visitor.compare(expr1.getArguments().get(1), expr2);
+      }
+      if (expectedCMP == Equations.CMP.GE) {
+        return visitor.compare(expr1.getArguments().get(0), expr2) || visitor.compare(expr1.getArguments().get(1), expr2);
+      }
+    }
+
+    if (isMax2) {
+      if (expectedCMP == Equations.CMP.GE) {
+        return visitor.compare(expr1, expr2.getArguments().get(0)) && visitor.compare(expr1, expr2.getArguments().get(1));
+      }
+      if (expectedCMP == Equations.CMP.LE) {
+        return visitor.compare(expr1, expr2.getArguments().get(0)) || visitor.compare(expr1, expr2.getArguments().get(1));
+      }
+    }
 
     if (isSuc1) {
       if (isSuc2) {
@@ -65,7 +87,7 @@ public class LvlOrder implements ExpressionOrder {
     }
     if (Expression.compare(expr1, expr2, Equations.CMP.LE)) {
       return expr2;
-    }
+    }/**/
     return ExpressionFactory.MaxLvl(expr1, expr2);
   }
 }

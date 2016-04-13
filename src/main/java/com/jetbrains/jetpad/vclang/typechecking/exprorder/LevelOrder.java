@@ -67,7 +67,7 @@ public class LevelOrder implements ExpressionOrder {
 
     if (Expression.compare(expr1, expr2, Equations.CMP.LE)) {
       return expr2;
-    }
+    }/**/
 
     NewExpression new1 = expr1.toNew();
     NewExpression new2 = expr2.toNew();
