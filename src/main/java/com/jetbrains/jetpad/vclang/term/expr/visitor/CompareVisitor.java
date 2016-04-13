@@ -105,13 +105,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return new2.accept(this, expr1);
     }
 
-    if (myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) {
+   // if (myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) {
       Boolean ordCmpResult = order.compare(expr1, expr2, this, myCMP);
 
       if (ordCmpResult != null) {
         return ordCmpResult;
       }
-    }
+    //}
 
    // if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null) {
    //   if (order.compare(expr1, expr2, this, myCMP)) return true;

@@ -25,11 +25,17 @@ public class NatOrder implements ExpressionOrder {
     ConCallExpression conCall2 = expr2.toConCall();
 
     if (conCall1 != null && conCall1.getDefinition() == Preprelude.ZERO) {
-      return (conCall2 != null && conCall2.getDefinition() == Preprelude.ZERO) || expectedCMP == Equations.CMP.LE;
+      if ((conCall2 != null && conCall2.getDefinition() == Preprelude.ZERO) || expectedCMP == Equations.CMP.LE) {
+        return true;
+      }
+      return null;
     }
 
     if (conCall2 != null && conCall2.getDefinition() == Preprelude.ZERO) {
-      return expectedCMP == Equations.CMP.GE;
+      if (expectedCMP == Equations.CMP.GE) {
+        return true;
+      }
+      return null;
     }
 
     Expression fun1 = expr1.getFunction();
@@ -43,11 +49,16 @@ public class NatOrder implements ExpressionOrder {
       if (isSuc2) {
         return visitor.compare(expr1.getArguments().get(0), expr2.getArguments().get(0));
       }
-      return expectedCMP == Equations.CMP.GE && visitor.compare(expr1.getArguments().get(0), expr2);
+      if (expectedCMP == Equations.CMP.GE) {
+        return visitor.compare(expr1.getArguments().get(0), expr2);
+      }
+      return null;
     }
 
     if (isSuc2) {
-      return expectedCMP == Equations.CMP.LE && visitor.compare(expr1, expr2.getArguments().get(0));
+      if (expectedCMP == Equations.CMP.LE) {
+        return visitor.compare(expr1, expr2.getArguments().get(0));
+      }
     }
 
     return null;

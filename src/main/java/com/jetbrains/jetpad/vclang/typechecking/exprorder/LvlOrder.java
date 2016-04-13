@@ -30,11 +30,17 @@ public class LvlOrder implements ExpressionOrder {
     ConCallExpression conCall2 = expr2.toConCall();
 
     if (conCall1 != null && conCall1.getDefinition() == Preprelude.ZERO_LVL) {
-      return (conCall2 != null && conCall2.getDefinition() == Preprelude.ZERO_LVL) || expectedCMP == Equations.CMP.LE;
+      if((conCall2 != null && conCall2.getDefinition() == Preprelude.ZERO_LVL) || expectedCMP == Equations.CMP.LE) {
+        return true;
+      }
+      return null;
     }
 
     if (conCall2 != null && conCall2.getDefinition() == Preprelude.ZERO_LVL) {
-      return expectedCMP == Equations.CMP.GE;
+      if (expectedCMP == Equations.CMP.GE) {
+        return true;
+      }
+      return null;
     }
 
     Expression fun1 = expr1.getFunction();
@@ -49,7 +55,7 @@ public class LvlOrder implements ExpressionOrder {
             expr2.getArguments().size() == 2;
 
     if (isMax1) {
-      if (expectedCMP == Equations.CMP.LE) {
+      if (expectedCMP == Equations.CMP.LE || expectedCMP == Equations.CMP.EQ) {
         return visitor.compare(expr1.getArguments().get(0), expr2) && visitor.compare(expr1.getArguments().get(1), expr2);
       }
       if (expectedCMP == Equations.CMP.GE) {
@@ -58,7 +64,7 @@ public class LvlOrder implements ExpressionOrder {
     }
 
     if (isMax2) {
-      if (expectedCMP == Equations.CMP.GE) {
+      if (expectedCMP == Equations.CMP.GE || expectedCMP == Equations.CMP.EQ) {
         return visitor.compare(expr1, expr2.getArguments().get(0)) && visitor.compare(expr1, expr2.getArguments().get(1));
       }
       if (expectedCMP == Equations.CMP.LE) {
@@ -70,11 +76,16 @@ public class LvlOrder implements ExpressionOrder {
       if (isSuc2) {
         return visitor.compare(expr1.getArguments().get(0), expr2.getArguments().get(0));
       }
-      return expectedCMP == Equations.CMP.GE && visitor.compare(expr1.getArguments().get(0), expr2);
+      if (expectedCMP == Equations.CMP.GE) {
+        return visitor.compare(expr1.getArguments().get(0), expr2);
+      }
+      return null;
     }
 
     if (isSuc2) {
-      return expectedCMP == Equations.CMP.LE && visitor.compare(expr1, expr2.getArguments().get(0));
+      if (expectedCMP == Equations.CMP.LE) {
+        return visitor.compare(expr1, expr2.getArguments().get(0));
+      }
     }
 
     return null;
