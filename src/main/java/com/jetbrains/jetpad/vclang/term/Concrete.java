@@ -23,6 +23,11 @@ public final class Concrete {
       this.line = line;
       this.column = column + 1;
     }
+
+    @Override
+    public String toString() {
+      return line + ":" + column;
+    }
   }
 
   public static class SourceNode implements Abstract.SourceNode {

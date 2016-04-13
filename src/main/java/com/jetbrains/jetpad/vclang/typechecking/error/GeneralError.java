@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.io.IOException;
 
@@ -10,7 +10,7 @@ public class GeneralError {
   private final String myMessage;
   private Level myLevel;
 
-  public enum Level { ERROR, WARNING, INFO }
+  public enum Level { ERROR, GOAL, WARNING, INFO }
 
   public GeneralError(ResolvedName resolvedName, String message) {
     myResolvedName = resolvedName;

@@ -44,5 +44,13 @@ public class PathsTest {
         "\\static \\function squeeze (i j : I) <= coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j"
     );
   }
+
+  @Test
+  public void concatTest() {
+    typeCheckClass(
+        "\\static \\function transport {l : Level} {A : \\Type l} (B : A -> \\Type l) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
+        "\\static \\function concat {l : Level} {A : I -> \\Type l} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'') <= transport (Path A a) q p\n" +
+        "\\static \\function (*>) {l : Level} {A : \\Type l} {a a' a'' : A} (p : a = a') (q : a' = a'') <= concat p q");
+  }
 }
 

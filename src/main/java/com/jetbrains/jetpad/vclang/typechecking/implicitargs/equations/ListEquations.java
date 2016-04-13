@@ -10,6 +10,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.UnsolvedBindings;
+import com.jetbrains.jetpad.vclang.typechecking.error.UnsolvedEquations;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.exprorder.StandardOrder;
@@ -19,17 +21,17 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
 public class ListEquations implements Equations {
-  private interface Equation {
+  public interface Equation {
     TypeCheckingError abstractBinding(Binding binding);
     void subst(Binding binding, Expression subst);
     void solveIn(ListEquations equations);
   }
 
-  private static class CmpEquation implements Equation {
-    Expression expr1;
-    Expression expr2;
-    CMP cmp;
-    Abstract.SourceNode sourceNode;
+  public static class CmpEquation implements Equation {
+    public Expression expr1;
+    public Expression expr2;
+    public CMP cmp;
+    public Abstract.SourceNode sourceNode;
 
     public CmpEquation(Expression expr1, Expression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
       this.expr1 = expr1;
@@ -37,19 +39,6 @@ public class ListEquations implements Equations {
       this.cmp = cmp;
       this.sourceNode = sourceNode;
     }
-
-    /*
-    List<Binding> bindings = Collections.emptyList();
-
-    void abstractBinding(Binding binding) {
-      if (expr1.findBinding(binding) || expr2.findBinding(binding)) {
-        if (bindings.isEmpty()) {
-          bindings = new ArrayList<>(3);
-        }
-        bindings.add(binding);
-      }
-    }
-    */
 
     @Override
     public TypeCheckingError abstractBinding(Binding binding) {
@@ -438,5 +427,23 @@ public class ListEquations implements Equations {
   public void reportErrors(ErrorReporter errorReporter) {
     myErrorReporter.reportTo(errorReporter);
     myErrorReporter.getErrorList().clear();
+
+    if (!myEquations.isEmpty()) {
+      List<CmpEquation> equations = new ArrayList<>(myEquations.size());
+      for (Equation equation : myEquations) {
+        equations.add((CmpEquation) equation);
+      }
+      errorReporter.report(new UnsolvedEquations(equations));
+    }
+
+    if (!mySolutions.isEmpty()) {
+      List<InferenceBinding> bindings = new ArrayList<>(mySolutions.size());
+      for (InferenceBinding binding : mySolutions.keySet()) {
+        bindings.add(binding);
+      }
+      errorReporter.report(new UnsolvedBindings(bindings));
+    }
+
+    clear();
   }
 }
