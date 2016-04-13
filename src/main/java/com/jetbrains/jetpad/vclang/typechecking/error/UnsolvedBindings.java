@@ -18,7 +18,7 @@ public class UnsolvedBindings extends TypeCheckingError {
     StringBuilder builder = new StringBuilder();
     builder.append(printHeader()).append(getMessage());
     for (InferenceBinding binding : myBindings) {
-      builder.append('\n').append(binding);
+      builder.append("\n\t").append(binding);
       if (binding.getSourceNode() instanceof Concrete.SourceNode) {
         builder.append(" at ").append(((Concrete.SourceNode) binding.getSourceNode()).getPosition());
       }

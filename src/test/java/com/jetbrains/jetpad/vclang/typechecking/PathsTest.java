@@ -48,9 +48,38 @@ public class PathsTest {
   @Test
   public void concatTest() {
     typeCheckClass(
+        "\\static \\function transport {A : \\Type0} (B : A -> \\Type0) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
+        "\\static \\function concat {A : I -> \\Type0} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'') <= transport (Path A a) q p\n" +
+        "\\static \\function (*>) {A : \\Type0} {a a' a'' : A} (p : a = a') (q : a' = a'') <= concat p q");
+  }
+
+  @Test
+  public void inv0Test() {
+    typeCheckClass(
+        "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function transport {A : \\Type0} (B : A -> \\Type0) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
+        "\\static \\function inv {A : \\Type0} {a a' : A} (p : a = a') <= transport (\\lam a'' => a'' = a) p idp\n" +
+        "\\static \\function squeeze1 (i j : I) : I <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
+        "\\static \\function squeeze (i j : I) <= coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
+        "\\static \\function psqueeze {A : \\Type0} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
+        "\\static \\function Jl {A : \\Type0} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type0) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
+        "  <= coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
+        "\\static \\function inv-inv {A : \\Type0} {a a' : A} (p : a = a') : inv (inv p) = p <= Jl (\\lam _ p => inv (inv p) = p) idp p\n" +
+        "\\static \\function path-sym {A : \\Type0} (a a' : A) : (a = a') = (a' = a) => path (iso inv inv inv-inv inv-inv)");
+  }
+
+  @Test
+  public void invTest() {
+    typeCheckClass(
+        "\\static \\function idp {l : Level} {A : \\Type l} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function transport {l : Level} {A : \\Type l} (B : A -> \\Type l) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
-        "\\static \\function concat {l : Level} {A : I -> \\Type l} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'') <= transport (Path A a) q p\n" +
-        "\\static \\function (*>) {l : Level} {A : \\Type l} {a a' a'' : A} (p : a = a') (q : a' = a'') <= concat p q");
+        "\\static \\function inv {l : Level} {A : \\Type l} {a a' : A} (p : a = a') <= transport (\\lam a'' => a'' = a) p idp\n" +
+        "\\static \\function squeeze1 (i j : I) : I <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
+        "\\static \\function squeeze (i j : I) <= coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
+        "\\static \\function psqueeze {l : Level} {A : \\Type l} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
+        "\\static \\function Jl {l : Level} {A : \\Type l} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type l) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
+        "  <= coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
+        "\\static \\function inv-inv {l : Level} {A : \\Type l} {a a' : A} (p : a = a') : inv (inv p) = p <= Jl (\\lam _ p => inv (inv p) = p) idp p\n" +
+        "\\static \\function path-sym {l : Level} {A : \\Type l} (a a' : A) : (a = a') = (a' = a) => path (iso inv inv inv-inv inv-inv)");
   }
 }
-

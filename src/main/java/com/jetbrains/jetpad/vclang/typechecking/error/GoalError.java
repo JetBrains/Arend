@@ -37,11 +37,11 @@ public class GoalError extends TypeCheckingError {
   @Override
   public String toString() {
     if (myContext.isEmpty() && myType == null) {
-      return printHeader() + getMessage();
+      return printHeader();
     }
 
     StringBuilder builder = new StringBuilder();
-    builder.append(printHeader()).append(getMessage());
+    builder.append(printHeader());
     if (myType != null) {
       builder.append("\n\tExpected type: ");
       List<String> names = new ArrayList<>(myContext.size());
