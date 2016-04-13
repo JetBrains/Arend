@@ -21,7 +21,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   private final StringBuilder myBuilder;
   private final List<String> myNames;
   private int myIndent;
-  private static final int INDENT = 4;
+  public static final int INDENT = 4;
 
   public PrettyPrintVisitor(StringBuilder builder, List<String> names, int indent) {
     myBuilder = builder;
@@ -436,6 +436,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public void printIndent() {
     for (int i = 0; i < myIndent; ++i) {
       myBuilder.append(' ');
+    }
+  }
+
+  public static void printIndent(StringBuilder builder, int indent) {
+    for (int i = 0; i < indent; i++) {
+      builder.append(' ');
     }
   }
 

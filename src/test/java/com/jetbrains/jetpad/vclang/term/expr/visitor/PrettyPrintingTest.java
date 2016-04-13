@@ -25,7 +25,7 @@ public class PrettyPrintingTest {
     // \x. x x
     DependentLink x = param("x", Nat());
     Expression expr = Lam(x, Apps(Reference(x), Reference(x)));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
+    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC, 0);
   }
 
   @Test
@@ -36,7 +36,7 @@ public class PrettyPrintingTest {
     DependentLink z = param("z", Nat());
     DependentLink w = param("w", Nat());
     Expression expr = Lam(x, Apps(Reference(x), Lam(y, Apps(Reference(y), Reference(x))), Lam(params(z, w), Apps(Reference(x), Reference(w), Reference(z)))));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
+    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC, 0);
   }
 
   @Test
@@ -44,7 +44,7 @@ public class PrettyPrintingTest {
     // (X : Type0) -> X -> X
     DependentLink X = param("x", Universe(0));
     Expression expr = Pi(X, Pi(param(Reference(X)), Reference(X)));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
+    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC, 0);
   }
 
   @Test
@@ -56,7 +56,7 @@ public class PrettyPrintingTest {
     DependentLink w = param("w", Pi(param(Nat()), Nat()));
     DependentLink s = param("s", Nat());
     Expression expr = Pi(params(x, y, z, w), Pi(param(Pi(s, Apps(Nat(), Apps(Reference(z), Reference(s)), Apps(Reference(w), Reference(x))))), Nat()));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
+    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC, 0);
   }
 
   @Test
@@ -76,7 +76,7 @@ public class PrettyPrintingTest {
     DependentLink y = param("y", Reference(A));
     LetClause clause = let("x", params(A, y), Reference(A));
     LetExpression expr = Let(lets(clause), Apps(Reference(clause), Zero()));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
+    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC, 0);
   }
 
   @Test
@@ -86,7 +86,7 @@ public class PrettyPrintingTest {
     DependentLink y = param("y", Reference(A));
     LetClause clause = let("x", params(A, y), Reference(A), EmptyElimTreeNode.getInstance());
     LetExpression expr = Let(lets(clause), Apps(Reference(clause), Zero()));
-    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC);
+    expr.prettyPrint(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC, 0);
   }
 
   @Test

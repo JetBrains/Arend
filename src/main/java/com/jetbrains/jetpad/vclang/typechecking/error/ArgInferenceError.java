@@ -90,7 +90,7 @@ public class ArgInferenceError extends TypeCheckingError {
     if (getCause() != null) {
       if (myWhere != null) {
         builder.append(' ');
-        myWhere.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+        myWhere.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
       } else {
         builder.append(' ');
         new PrettyPrintVisitor(builder, new ArrayList<String>(), 0).prettyPrint(getCause(), Abstract.Expression.PREC);
@@ -100,20 +100,23 @@ public class ArgInferenceError extends TypeCheckingError {
     if (myCandidates.length > 0) {
       builder.append("\nCandidates are:");
       for (Expression candidate : myCandidates) {
-        builder.append("\n\t");
-        candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+        builder.append("\n");
+        PrettyPrintVisitor.printIndent(builder, PrettyPrintVisitor.INDENT / 2);
+        candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, PrettyPrintVisitor.INDENT / 2);
       }
     }
 
     if (myExpected != null || myActual != null) {
       builder.append("\nSince types of the candidates are not less or equal to the expected type");
       if (myExpected != null) {
-        builder.append("\nExpected type: ");
-        myExpected.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+        String msg = "Expected type: ";
+        builder.append('\n').append(msg);
+        myExpected.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, msg.length());
       }
       if (myActual != null) {
-        builder.append("\n  Actual type: ");
-        myActual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+        String msg = "  Actual type: ";
+        builder.append('\n').append(msg);
+        myActual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, msg.length());
       }
     }
 

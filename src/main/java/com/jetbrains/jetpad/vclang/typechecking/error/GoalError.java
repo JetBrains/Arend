@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class GoalError extends TypeCheckingError {
       for (Binding binding : myContext) {
         names.add(binding.getName() == null ? null : binding.getName());
       }
-      myType.prettyPrint(builder, names, Abstract.Expression.PREC);
+      myType.prettyPrint(builder, names, Abstract.Expression.PREC, 0);
     }
 
     if (!myContext.isEmpty()) {
@@ -56,7 +56,7 @@ public class GoalError extends TypeCheckingError {
         builder.append("\n\t\t").append(binding.getName() == null ? "_" : binding.getName()).append(" : ");
         Expression type = binding.getType();
         if (type != null) {
-          type.prettyPrint(builder, names, Abstract.Expression.PREC);
+          type.prettyPrint(builder, names, Abstract.Expression.PREC, 0);
         } else {
           builder.append("{!error}");
         }

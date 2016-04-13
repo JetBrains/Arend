@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -213,8 +213,8 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     return null;
   }
 
-  private void visitClass(Abstract.ClassDefinition def, boolean isStatic, Namespace classNamepace) {
-    try (StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, classNamepace, myNameResolver, myModuleResolver, myContext)) {
+  private void visitClass(Abstract.ClassDefinition def, boolean isStatic, Namespace classNamespace) {
+    try (StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, classNamespace, myNameResolver, myModuleResolver, myContext)) {
       visitor.setResolveListener(myResolveListener);
       for (Abstract.Statement statement : def.getStatements()) {
         statement.accept(visitor, null);
