@@ -13,7 +13,8 @@ import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.EnumSet;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -121,12 +122,14 @@ public class Prelude extends Namespace {
     DependentLink piParamA = param("a", Reference(isoParameter2));
     DependentLink piParamB = param("b", Reference(isoParameter2.getNext()));
     Expression isoParameters5type = FunCall(PATH_INFIX)
-            .addArgument(Reference(isoParameter2), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Reference(isoParameter1), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Reference(isoParameter2), EnumSet.of(AppExpression.Flag.VISIBLE))
             .addArgument(Apps(Reference(isoParameter4), Apps(Reference(isoParameter3), Reference(piParamA))), AppExpression.DEFAULT)
             .addArgument(Reference(piParamA), AppExpression.DEFAULT);
     DependentLink isoParameter5 = param("linv", Pi(piParamA, isoParameters5type));
     Expression isoParameters6type = FunCall(PATH_INFIX)
-            .addArgument(Reference(isoParameter2.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Reference(isoParameter1), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Reference(isoParameter2.getNext()), EnumSet.of(AppExpression.Flag.VISIBLE))
             .addArgument(Apps(Reference(isoParameter3), Apps(Reference(isoParameter4), Reference(piParamB))), AppExpression.DEFAULT)
             .addArgument(Reference(piParamB), AppExpression.DEFAULT);
     DependentLink isoParameter6 = param("rinv", Pi(piParamB, isoParameters6type));
