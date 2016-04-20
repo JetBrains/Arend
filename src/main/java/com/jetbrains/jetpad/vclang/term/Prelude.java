@@ -76,7 +76,7 @@ public class Prelude extends Namespace {
   }
 
   static {
-    PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID));
+    PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID), PRELUDE);
 
     /* Nat, zero, suc */
     DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), EmptyDependentLink.getInstance());
@@ -373,7 +373,7 @@ public class Prelude extends Namespace {
 
       Data(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, Universe.Type universe, DependentLink parameters) {
         myParentNs = parentNs;
-        myResolvedName = new DefinitionResolvedName(parentNs, name);
+        myResolvedName = new DefinitionResolvedName(parentNs.getResolvedName(), name);
         myDefinition = new DataDefinition(myResolvedName, precedence, universe, parameters);
         myNs = myParentNs.addDefinition(myDefinition).namespace;
       }
@@ -383,7 +383,7 @@ public class Prelude extends Namespace {
       }
 
       Constructor addConstructor(String name, Abstract.Binding.Precedence precedence, Universe.Type universe, DependentLink parameters) {
-        Constructor constructor = new Constructor(new DefinitionResolvedName(myNs, name), precedence, universe, parameters, myDefinition);
+        Constructor constructor = new Constructor(new DefinitionResolvedName(myNs.getResolvedName(), name), precedence, universe, parameters, myDefinition);
         myDefinition.addConstructor(constructor);
         myNs.addDefinition(constructor);
         myParentNs.addDefinition(constructor);
@@ -396,7 +396,7 @@ public class Prelude extends Namespace {
       private final FunctionDefinition myDefinition;
 
       public Function(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
-        myResolvedName = new DefinitionResolvedName(parentNs, name);
+        myResolvedName = new DefinitionResolvedName(parentNs.getResolvedName(), name);
         myDefinition = new FunctionDefinition(myResolvedName, precedence, parameters, resultType, elimTree);
         parentNs.addDefinition(myDefinition);
       }

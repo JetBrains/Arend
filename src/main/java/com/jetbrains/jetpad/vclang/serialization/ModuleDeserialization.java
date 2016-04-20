@@ -221,8 +221,9 @@ public class ModuleDeserialization {
         constructor.setParameters(readParameters(stream, definitionMap));
       }
 
-      definition.addConstructor(constructor);
-      definition.getParentNamespace().addDefinition(constructor);
+      // FIXME[serial]
+//      definition.addConstructor(constructor);
+//      definition.getParentNamespace().addDefinition(constructor);
     }
 
     int conditionsNumber = stream.readInt();

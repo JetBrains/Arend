@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
@@ -22,6 +22,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -32,7 +33,6 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
-import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
@@ -40,78 +40,81 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.o
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Void, Definition> {
-  private NamespaceMember myNamespaceMember;
+  private final Map<Abstract.Definition, Definition> myTypecheckMap;
+  private ResolvedName myResolvedName;
   private final ErrorReporter myErrorReporter;
 
-  public DefinitionCheckTypeVisitor(ErrorReporter errorReporter) {
-    myNamespaceMember = null;
+  public DefinitionCheckTypeVisitor(Map<Abstract.Definition, Definition> typecheckMap, ErrorReporter errorReporter) {
+    myTypecheckMap = typecheckMap;
     myErrorReporter = errorReporter;
   }
 
-  private DefinitionCheckTypeVisitor(NamespaceMember namespaceMember, ErrorReporter errorReporter) {
-    myNamespaceMember = namespaceMember;
+  private DefinitionCheckTypeVisitor(Map<Abstract.Definition, Definition> typecheckMap, ResolvedName resolvedName, ErrorReporter errorReporter) {
+    myResolvedName = resolvedName;
+    myTypecheckMap = typecheckMap;
     myErrorReporter = errorReporter;
   }
 
   public void setNamespaceMember(NamespaceMember namespaceMember) {
-    myNamespaceMember = namespaceMember;
+    myResolvedName = namespaceMember.getResolvedName();
   }
 
-  public static void typeCheck(NamespaceMember namespaceMember, ErrorReporter errorReporter) {
-    if (namespaceMember != null && !namespaceMember.isTypeChecked()) {
-      DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(namespaceMember, errorReporter);
-      namespaceMember.definition = namespaceMember.abstractDefinition.accept(visitor, null);
+  public static void typeCheck(Map<Abstract.Definition, Definition> typecheckMap, Abstract.Definition definition, ResolvedName resolvedName, ErrorReporter errorReporter) {
+    if (typecheckMap.get(definition) == null) {
+      DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(typecheckMap, resolvedName, errorReporter);
+      Definition result = definition.accept(visitor, null);
+      if (typecheckMap.get(definition) != result) {
+        throw new IllegalStateException(); // TODO[debug]
+      }
     }
   }
 
-  private ClassDefinition getNamespaceClass(Namespace namespace) {
-    Definition parent = namespace.getResolvedName().toDefinition();
-    return parent instanceof ClassDefinition ? (ClassDefinition) parent : null;
+  private ClassDefinition getParentClass(Abstract.Definition definition) {
+    Definition typechecked = myTypecheckMap.get(definition);
+    return typechecked instanceof ClassDefinition ? (ClassDefinition) typechecked : null;
   }
 
-  private ClassDefinition getParentClass(Abstract.Definition definition, Namespace namespace, Abstract.DefineStatement dynamicStatement) {
+  private ClassDefinition getParentClass(Abstract.Definition definition, Abstract.DefineStatement dynamicStatement) {
     if (definition instanceof Abstract.ClassDefinition) {
-      ClassDefinition classDefinition = getNamespaceClass(namespace);
-      if (classDefinition == null) {
-        myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), "Internal error: definition '" + definition.getName() + "' is not a class", definition));
+      Definition classDefinition = myTypecheckMap.get(definition);
+      if (classDefinition instanceof ClassDefinition) {
+        return (ClassDefinition) classDefinition;
+      } else {
+        myErrorReporter.report(new TypeCheckingError(myResolvedName, "Internal error: definition '" + definition.getName() + "' is not a class", definition));
+        return null;
       }
-      return classDefinition;
     }
 
     Abstract.DefineStatement statement = definition == null ? null : definition.getParentStatement();
     Abstract.Definition parentDefinition = statement == null ? null : statement.getParentDefinition();
-    Namespace parentNamespace = namespace.getParent();
-    if (statement == null || parentDefinition == null || parentNamespace == null) {
-      myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), "Non-static definitions are allowed only inside a class definition", dynamicStatement));
+    if (statement == null || parentDefinition == null) {
+      myErrorReporter.report(new TypeCheckingError(myResolvedName, "Non-static definitions are allowed only inside a class definition", dynamicStatement));
       return null;
     }
 
-    return getParentClass(parentDefinition, parentNamespace, dynamicStatement);
+    return getParentClass(parentDefinition, dynamicStatement);
   }
 
-  private ClassDefinition getThisClass(Abstract.Definition definition, Namespace namespace) {
+  private ClassDefinition getThisClass(Abstract.Definition definition) {
     Abstract.DefineStatement statement = definition.getParentStatement();
     if (statement == null) {
       return null;
     }
+    Abstract.Definition parentDefinition = statement.getParentDefinition();
 
     if (statement.getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC) {
-      return getParentClass(statement.getParentDefinition(), namespace.getParent(), statement);
+      return getParentClass(parentDefinition, statement);
+    } else {
+      return parentDefinition != null ? getThisClass(parentDefinition) : null;
     }
-
-    Abstract.Definition parentDefinition = statement.getParentDefinition();
-    Namespace parentNamespace = namespace.getParent();
-    if (parentDefinition == null || parentNamespace == null) {
-      return null;
-    }
-
-    return getThisClass(parentDefinition, parentNamespace);
   }
 
   @Override
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, Void params) {
     Abstract.Definition.Arrow arrow = def.getArrow();
-    final FunctionDefinition typedDef = new FunctionDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence());
+    final FunctionDefinition typedDef = new FunctionDefinition(myResolvedName, def.getPrecedence());
+    // TODO[scopes] Fill namespace
+
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
@@ -123,8 +126,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     List<? extends Abstract.Argument> arguments = def.getArguments();
     final List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
-    ClassDefinition thisClass = getThisClass(def, myNamespaceMember.namespace);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myTypecheckMap, context, myErrorReporter).build();
+    ClassDefinition thisClass = getThisClass(def);
     LinkList list = new LinkList();
     if (thisClass != null) {
       DependentLink thisParam = param("\\this", ClassCall(thisClass));
@@ -232,7 +235,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     */
       } else {
         // if (splitArgs == null) {
-        myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
+        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null));
         return typedDef;
     /*
     } else {
@@ -289,7 +292,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     typedDef.setResultType(expectedType);
     typedDef.typeHasErrors(typedDef.getResultType() == null);
 
-    myNamespaceMember.definition = typedDef;
+    myTypecheckMap.put(def, typedDef);
     Abstract.Expression term = def.getTerm();
 
     if (term != null) {
@@ -372,7 +375,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     DependentLink thisParameter = param("\\this", ClassCall(thisClass));
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myTypecheckMap, context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
 
     int index = 0;
@@ -400,13 +403,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
           String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
-          myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
+          myErrorReporter.report(new TypeCheckingError(myResolvedName, error, def));
           return null;
         } else {
           universe = maxUniverse;
         }
       } else {
-        myErrorReporter.report(new ArgInferenceError(myNamespaceMember.getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
+        myErrorReporter.report(new ArgInferenceError(myResolvedName, typeOfFunctionArg(index + 1), argument, null));
         return null;
       }
     }
@@ -425,16 +428,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Universe maxUniverse = universe.max(resultTypeUniverse);
     if (maxUniverse == null) {
       String error = "Universe " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
-      myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
+      myErrorReporter.report(new TypeCheckingError(myResolvedName, error, def));
       return null;
     } else {
       universe = maxUniverse;
     }
 
-    ClassField typedDef = new ClassField(myNamespaceMember.getResolvedName(), def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass, thisParameter);
+    ClassField typedDef = new ClassField(myResolvedName, def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass, thisParameter);
     typedDef.setUniverse(universe);
     typedDef.setThisClass(thisClass);
-    myNamespaceMember.definition = typedDef;
+    myTypecheckMap.put(def, typedDef);
     return typedDef;
   }
 
@@ -445,8 +448,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Universe typedUniverse = new Universe.Type(0, Universe.Type.PROP);
 
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).build();
-    ClassDefinition thisClass = getThisClass(def, myNamespaceMember.namespace);
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myTypecheckMap, context, myErrorReporter).build();
+    ClassDefinition thisClass = getThisClass(def);
     LinkList list = new LinkList();
     if (thisClass != null) {
       DependentLink thisParam = param("\\this", ClassCall(thisClass));
@@ -455,7 +458,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), null);
+    DataDefinition dataDefinition = new DataDefinition(myResolvedName, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), null);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
@@ -477,7 +480,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     dataDefinition.setParameters(list.getFirst());
     dataDefinition.hasErrors(false);
     dataDefinition.setThisClass(thisClass);
-    myNamespaceMember.definition = dataDefinition;
+    myTypecheckMap.put(def, dataDefinition);
 
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
@@ -485,11 +488,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         continue;
       }
 
-      NamespaceMember member = myNamespaceMember.namespace.getMember(constructor.getName());
-      if (member == null) {
-        continue;
-      }
-      member.definition = typedConstructor;
+      myTypecheckMap.put(constructor, typedConstructor);
 
       Universe maxUniverse = typedUniverse.max(typedConstructor.getUniverse());
       if (maxUniverse == null) {
@@ -632,9 +631,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     if (condMap.containsKey(constructor)) {
       for (Abstract.Condition condition : condMap.get(constructor)) {
         for (Referable def : condition.getTerm().accept(new CollectDefCallsVisitor(), null)) {
-          NamespaceMember member = toNamespaceMember(def);
-          if (member.definition != null && member.definition != constructor && member.definition instanceof Constructor && ((Constructor) member.definition).getDataType().equals(constructor.getDataType())) {
-            List<Constructor> cycle = searchConditionCycle(condMap, (Constructor) member.definition, visited, visiting);
+          final Definition typeCheckedDef = TypecheckerState.getTypechecked(myTypecheckMap, def);
+          if (typeCheckedDef != null && typeCheckedDef != constructor && typeCheckedDef instanceof Constructor && ((Constructor) typeCheckedDef).getDataType().equals(constructor.getDataType())) {
+            List<Constructor> cycle = searchConditionCycle(condMap, (Constructor) typeCheckedDef, visited, visiting);
             if (cycle != null)
               return cycle;
           }
@@ -659,7 +658,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       int index = 1;
       boolean ok = true;
 
-      Constructor constructor = new Constructor(new DefinitionResolvedName(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name), def.getPrecedence(), universe, null, dataDefinition, null);
+      Constructor constructor = new Constructor(new DefinitionResolvedName(dataDefinition.getResolvedName(), name), def.getPrecedence(), universe, null, dataDefinition, null);
       constructor.hasErrors(true);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
@@ -696,7 +695,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
           String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
-          myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), error, def));
+          myErrorReporter.report(new TypeCheckingError(error, def));
           ok = false;
         } else {
           universe = maxUniverse;
@@ -765,7 +764,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       constructor.hasErrors(false);
       constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
-      dataDefinition.getParentNamespace().addDefinition(constructor);
+
+      myTypecheckMap.put(def, constructor);
       return constructor;
     }
   }
@@ -791,7 +791,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
 
     String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
-    myErrorReporter.report(new TypeCheckingError(dataDefinition.getParentNamespace().getResolvedName(), msg, argument == null ? constructor : argument));
+    myErrorReporter.report(new TypeCheckingError(msg, argument == null ? constructor : argument));
     return false;
   }
 
@@ -812,30 +812,29 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     return processedPatterns;
   }
 
-  private void typeCheckStatements(ClassDefinition classDefinition, Collection<? extends Abstract.Statement> statements, Namespace namespace) {
+  private void typeCheckStatements(ClassDefinition classDefinition, Collection<? extends Abstract.Statement> statements) {
     for (Abstract.Statement statement : statements) {
       if (statement instanceof Abstract.DefineStatement) {
         Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
         if (definition instanceof Abstract.AbstractDefinition) {
-          NamespaceMember member = namespace.getMember(definition.getName());
-          if (member != null) {
-            if (!member.isTypeChecked()) {
-              DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(member, myErrorReporter);
-              member.definition = visitor.visitAbstract((Abstract.AbstractDefinition) definition, classDefinition);
-            }
+          Definition memberDefinition = myTypecheckMap.get(definition);
 
-            if (member.definition instanceof ClassField) {
-              ClassField field = (ClassField) member.definition;
-              Universe oldUniverse = classDefinition.getUniverse();
-              Universe newUniverse = field.getUniverse();
-              Universe maxUniverse = oldUniverse.max(newUniverse);
-              if (maxUniverse == null) {
-                String error = "Universe " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
-                myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, definition));
-              } else {
-                classDefinition.setUniverse(maxUniverse);
-                classDefinition.addField(field);
-              }
+          if (memberDefinition == null) {
+            DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(myTypecheckMap, new DefinitionResolvedName(myResolvedName, definition.getName()), myErrorReporter);
+            memberDefinition = visitor.visitAbstract((Abstract.AbstractDefinition) definition, classDefinition);
+          }
+
+          if (memberDefinition instanceof ClassField) {
+            ClassField field = (ClassField) memberDefinition;
+            Universe oldUniverse = classDefinition.getUniverse();
+            Universe newUniverse = field.getUniverse();
+            Universe maxUniverse = oldUniverse.max(newUniverse);
+            if (maxUniverse == null) {
+              String error = "Universe " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
+              myErrorReporter.report(new TypeCheckingError(myResolvedName, error, definition));
+            } else {
+              classDefinition.setUniverse(maxUniverse);
+              classDefinition.addField(field);
             }
           }
         }
@@ -845,12 +844,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
-    ClassDefinition typedDef = new ClassDefinition(myNamespaceMember.getResolvedName());
-    ClassDefinition thisClass = getThisClass(def, myNamespaceMember.namespace);
+    ClassDefinition typedDef = new ClassDefinition(myResolvedName, def);
+    ClassDefinition thisClass = getThisClass(def);
     if (thisClass != null) {
       typedDef.addParentField(thisClass);
     }
-    typeCheckStatements(typedDef, def.getStatements(), myNamespaceMember.namespace);
+    typeCheckStatements(typedDef, def.getStatements());
+    myTypecheckMap.put(def, typedDef);
     return typedDef;
   }
 }

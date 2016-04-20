@@ -150,7 +150,7 @@ public class ModuleSerialization {
     CLASS_CODE {
       @Override
       ClassDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new ClassDefinition(rn);
+        return new ClassDefinition(rn, (Namespace) null);  // FIXME[serial]
       }
     },
     CONSTRUCTOR_CODE {
@@ -200,7 +200,7 @@ public class ModuleSerialization {
   private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
 
-    serializeNamespace(visitor, definition.getStaticNamespace());
+    //serializeNamespace(visitor, definition.getNamespace());
 
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {

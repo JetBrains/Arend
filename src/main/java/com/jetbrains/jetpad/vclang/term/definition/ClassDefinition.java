@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.provider.StatelessNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -14,11 +17,18 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ClassDefinition extends Definition {
+  private final Namespace myNamespace;
+
   private Map<String, ClassField> myFields = null;
 
-  public ClassDefinition(ResolvedName rn) {
+  public ClassDefinition(ResolvedName rn, Namespace namespace) {
     super(rn, Abstract.Binding.DEFAULT_PRECEDENCE);
     super.hasErrors(false);
+    myNamespace = namespace;
+  }
+
+  public ClassDefinition(ResolvedName myResolvedName, Abstract.ClassDefinition def) {
+    this(myResolvedName, new StatelessNamespaceProvider().forDefinition(def));
   }
 
   @Override
@@ -74,9 +84,10 @@ public class ClassDefinition extends Definition {
 
   public void addParentField(ClassDefinition parentClass) {
     setThisClass(parentClass);
-    ClassField field = new ClassField(getResolvedName().toNamespace().getChild("\\parent").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this)));
+    ClassField field = new ClassField(new DefinitionResolvedName(getResolvedName(), "\\parent"), Abstract.Binding.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this)));
     addField(field);
-    getResolvedName().toNamespace().addDefinition(field);
+    // TODO[\\parent] is this required?
+    //getResolvedName().toNamespace().addDefinition(field);
   }
 
   @Override
@@ -86,5 +97,10 @@ public class ClassDefinition extends Definition {
       type = Pi(getThisClass().getDefCall(), type);
     }
     return type;
+  }
+
+  @Override
+  public Namespace getNamespace() {
+    return myNamespace;
   }
 }

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -98,9 +97,8 @@ public class DataDefinition extends Definition {
     return null;
   }
 
-  public NamespaceMember addConstructor(Constructor constructor) {
+  public void addConstructor(Constructor constructor) {
     myConstructors.add(constructor);
-    return constructor.getParentNamespace().addDefinition(constructor);
   }
 
   @Override

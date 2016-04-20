@@ -34,6 +34,7 @@ public class NamespaceMember {
     } else if (ref instanceof Abstract.Definition){
       return abstractToNamespaceMember((Abstract.Definition) ref);
     } else {
+      // FIXME[referable]
       throw new IllegalStateException();
     }
   }

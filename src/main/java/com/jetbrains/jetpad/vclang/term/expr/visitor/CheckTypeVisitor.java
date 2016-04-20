@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.StringPrettyPrintable;
@@ -15,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -31,13 +31,13 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
-import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.expression;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.ordinal;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
+  private final Map<Abstract.Definition, Definition> myTypecheckMap;
   private final List<Binding> myContext;
   private final ErrorReporter myErrorReporter;
   private TypeCheckingDefCall myTypeCheckingDefCall;
@@ -73,7 +73,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private CheckTypeVisitor(List<Binding> localContext, ErrorReporter errorReporter, TypeCheckingDefCall typeCheckingDefCall, ImplicitArgsInference argsInference) {
+  private CheckTypeVisitor(Map<Abstract.Definition, Definition> typecheckMap, List<Binding> localContext, ErrorReporter errorReporter, TypeCheckingDefCall typeCheckingDefCall, ImplicitArgsInference argsInference) {
+    myTypecheckMap = typecheckMap;
     myContext = localContext;
     myErrorReporter = errorReporter;
     myTypeCheckingDefCall = typeCheckingDefCall;
@@ -81,6 +82,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   public static class Builder {
+    private final Map<Abstract.Definition, Definition> myTypecheckMap;
     private final List<Binding> myLocalContext;
     private final ErrorReporter myErrorReporter;
     private TypeCheckingDefCall myTypeCheckingDefCall;
@@ -89,6 +91,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     private Expression myThisExpr;
 
     public Builder(List<Binding> localContext, ErrorReporter errorReporter) {
+      this(new HashMap<Abstract.Definition, Definition>(), localContext, errorReporter);
+    }
+
+    public Builder(Map<Abstract.Definition, Definition> typecheckMap, List<Binding> localContext, ErrorReporter errorReporter) {
+      this.myTypecheckMap = typecheckMap;
       myLocalContext = localContext;
       myErrorReporter = errorReporter;
     }
@@ -110,9 +117,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     public CheckTypeVisitor build() {
-      CheckTypeVisitor visitor = new CheckTypeVisitor(myLocalContext, myErrorReporter, myTypeCheckingDefCall, myArgsInference);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(myTypecheckMap, myLocalContext, myErrorReporter, myTypeCheckingDefCall, myArgsInference);
       if (myTypeCheckingDefCall == null) {
-        visitor.myTypeCheckingDefCall = new TypeCheckingDefCall(visitor);
+        visitor.myTypeCheckingDefCall = new TypeCheckingDefCall(myTypecheckMap, visitor);
         visitor.myTypeCheckingDefCall.setThisClass(myThisClass, myThisExpr);
       }
       visitor.myTypeCheckingElim = new TypeCheckingElim(visitor);
@@ -270,15 +277,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrorReporter.report(error);
       return null;
     }
-    NamespaceMember member = toNamespaceMember(expr.getModule());
-    if (member == null) {
+    Definition typechecked = myTypecheckMap.get(expr.getModule());
+    if (typechecked == null) {
       assert false;
       TypeCheckingError error = new TypeCheckingError("Internal error: module '" + new ModulePath(expr.getPath()) + "' is not available yet", expr);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
     }
-    return new Result(ClassCall((ClassDefinition) member.definition), new UniverseExpression(member.definition.getUniverse()));
+    return new Result(ClassCall((ClassDefinition) typechecked), new UniverseExpression(typechecked.getUniverse()));
   }
 
   @Override

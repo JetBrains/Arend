@@ -1,17 +1,17 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 public abstract class Definition extends NamedBinding implements Referable {
+  private final ResolvedName myResolvedName;
   private Abstract.Definition.Precedence myPrecedence;
   private Universe myUniverse;
   private boolean myHasErrors;
-  private final ResolvedName myResolvedName;
   private ClassDefinition myThisClass;
 
   public Definition(ResolvedName resolvedName, Abstract.Definition.Precedence precedence) {
@@ -25,10 +25,6 @@ public abstract class Definition extends NamedBinding implements Referable {
   @Override
   public Abstract.Definition.Precedence getPrecedence() {
     return myPrecedence;
-  }
-
-  public Namespace getParentNamespace() {
-    return myResolvedName.getParent() == null ? null : myResolvedName.getParent().toNamespace();
   }
 
   public abstract DefCallExpression getDefCall();
@@ -67,5 +63,10 @@ public abstract class Definition extends NamedBinding implements Referable {
 
   public boolean isAbstract() {
     return false;
+  }
+
+  // FIXME[scopes] HACK
+  public Namespace getNamespace() {
+    return null;
   }
 }

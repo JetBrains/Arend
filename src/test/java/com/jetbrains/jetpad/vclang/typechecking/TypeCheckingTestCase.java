@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
@@ -13,6 +14,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
@@ -70,7 +72,7 @@ public class TypeCheckingTestCase {
 
   public static Definition typeCheckDef(Concrete.Definition definition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(errorReporter);
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(new HashMap<Abstract.Definition, Definition>(), errorReporter);
     visitor.setNamespaceMember(Root.getModule(new NameModuleID("test")).namespace.getMember(definition.getName()));
     Definition result = definition.accept(visitor, null);
     if (errors >= 0) {
@@ -97,7 +99,8 @@ public class TypeCheckingTestCase {
     } else {
       assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
     }
-    return Root.getModule(new NameModuleID(classDefinition.getName()));
+    NamespaceMember nsMember = Root.getModule(new NameModuleID(classDefinition.getName()));
+    return nsMember;
   }
 
   public static NamespaceMember typeCheckClass(String name, String text, int errors) {

@@ -1,7 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
@@ -19,9 +21,9 @@ public class TypecheckingOrdering {
   }
 
   public static class OKResult extends Result {
-    public final Map<Abstract.Definition, NamespaceMember> order;
+    public final Map<Abstract.Definition, ResolvedName> order;
 
-    OKResult(Map<Abstract.Definition, NamespaceMember> order) {
+    OKResult(Map<Abstract.Definition, ResolvedName> order) {
       this.order = order;
     }
   }
@@ -36,7 +38,7 @@ public class TypecheckingOrdering {
 
   private List<Abstract.Definition> myCycle;
   private final Queue<Abstract.Definition> myOthers;
-  private final Map<Abstract.Definition, NamespaceMember> myResult;
+  private final Map<Abstract.Definition, ResolvedName> myResult;
   private final Set<Abstract.Definition> myVisited;
   private final Set<Abstract.Definition> myVisiting;
 
@@ -59,10 +61,11 @@ public class TypecheckingOrdering {
     }
 
     NamespaceMember member = toNamespaceMember(definition);
-    if (toNamespaceMember(definition).isTypeChecked()) {
-      myVisited.add(definition);
-      return true;
-    }
+    // TODO
+    //if (toNamespaceMember(definition).isTypeChecked()) {
+    //  myVisited.add(definition);
+    //  return true;
+    //}
 
     if (myVisiting.contains(definition)) {
       myCycle = new ArrayList<>(myVisiting);
@@ -71,7 +74,7 @@ public class TypecheckingOrdering {
     }
 
     myVisiting.add(definition);
-    for (final Referable def : member.abstractDefinition.accept(new DefinitionGetDepsVisitor(member.namespace, myOthers, myClassToNonStatic), false)) {
+    for (final Referable def : definition.accept(new DefinitionGetDepsVisitor(myOthers, myClassToNonStatic), false)) {
       if (def instanceof Abstract.Definition) {
         Boolean good = ((Abstract.Definition) def).accept(new AbstractDefinitionVisitor<Void, Boolean>() {
           @Override
@@ -120,7 +123,7 @@ public class TypecheckingOrdering {
     }
 
     myVisiting.remove(definition);
-    myResult.put(definition, member);
+    myResult.put(definition, member.getResolvedName());
 
     myVisited.add(definition);
     return true;
@@ -147,10 +150,12 @@ public class TypecheckingOrdering {
 
   private static void typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (result instanceof OKResult) {
+      Map<Abstract.Definition, Definition> typecheckMap = new HashMap<>();
       for (Abstract.Definition def : ((OKResult) result).order.keySet()) {
-        NamespaceMember member = ((OKResult) result).order.get(def);
-        DefinitionCheckTypeVisitor.typeCheck(member, new LocalErrorReporter(member.getResolvedName(), errorReporter));
-        if (member.definition == null || member.definition.hasErrors()) {
+        ResolvedName resolvedName = ((OKResult) result).order.get(def);
+        DefinitionCheckTypeVisitor.typeCheck(typecheckMap, def, resolvedName, new LocalErrorReporter(resolvedName, errorReporter));
+        Definition typechecked = typecheckMap.get(def);
+        if (typechecked == null || typechecked.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);
         } else {
           typecheckedReporter.typecheckingSucceeded(def);
@@ -159,8 +164,10 @@ public class TypecheckingOrdering {
     } else if (result instanceof CycleResult) {
       StringBuilder errorMessage = new StringBuilder();
       errorMessage.append("Definition dependencies form a cycle: ");
-      for (Abstract.Definition def : ((CycleResult) result).cycle)
+      // FIXME[errors]
+      for (Abstract.Definition def : ((CycleResult) result).cycle) {
         errorMessage.append(toNamespaceMember(def).getResolvedName().getFullName()).append(" - ");
+      }
       errorMessage.append(toNamespaceMember(((CycleResult) result).cycle.get(0)).getResolvedName().getFullName());
       errorReporter.report(new GeneralError(errorMessage.toString()));
     }

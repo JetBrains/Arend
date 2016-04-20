@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -16,6 +16,7 @@ public class FunctionDefinition extends Definition implements Function {
   private Expression myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
+  private Namespace myNamespace;
 
   public FunctionDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
     super(rn, precedence);
@@ -32,10 +33,6 @@ public class FunctionDefinition extends Definition implements Function {
     myResultType = resultType;
     myTypeHasErrors = false;
     myElimTree = elimTree;
-  }
-
-  public Namespace getStaticNamespace() {
-    return getParentNamespace().getChild(getName());
   }
 
   @Override
@@ -95,5 +92,15 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public FunCallExpression getDefCall() {
     return FunCall(this);
+  }
+
+  @Override
+  public Namespace getNamespace() {
+    return myNamespace;
+  }
+
+  public void setNamespace(Namespace namespace) {
+    if (myNamespace != null) throw new IllegalStateException();
+    myNamespace = namespace;
   }
 }

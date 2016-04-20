@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -13,21 +11,19 @@ import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class TypeCheckingDefCall {
+  private final Map<Abstract.Definition, Definition> myTypecheckMap;
   private final CheckTypeVisitor myVisitor;
   private ClassDefinition myThisClass;
   private Expression myThisExpr;
 
-  public TypeCheckingDefCall(CheckTypeVisitor visitor) {
+  public TypeCheckingDefCall(Map<Abstract.Definition, Definition> typecheckMap, CheckTypeVisitor visitor) {
+    this.myTypecheckMap = typecheckMap;
     myVisitor = visitor;
   }
 
@@ -47,8 +43,8 @@ public class TypeCheckingDefCall {
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
     Referable resolvedDefinition = expr.getReferent();
     if (resolvedDefinition != null) {
-      NamespaceMember member = toNamespaceMember(resolvedDefinition);
-      if (member == null || member.definition == null) {
+      final Definition typecheckedDefinition = TypecheckerState.getTypechecked(myTypecheckMap, resolvedDefinition);
+      if (typecheckedDefinition == null) {
         assert false;
         TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + resolvedDefinition + "' is not available yet", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
@@ -56,9 +52,9 @@ public class TypeCheckingDefCall {
         return null;
       }
       Expression thisExpr = null;
-      if (member.definition.getThisClass() != null) {
+      if (typecheckedDefinition.getThisClass() != null) {
         if (myThisClass != null) {
-          thisExpr = findParent(myThisClass, member.definition, myThisExpr, expr);
+          thisExpr = findParent(myThisClass, typecheckedDefinition, myThisExpr, expr);
           if (thisExpr == null) {
             return null;
           }
@@ -69,7 +65,7 @@ public class TypeCheckingDefCall {
           return null;
         }
       }
-      return applyThis(new CheckTypeVisitor.Result(member.definition.getDefCall(), member.definition.getTypeWithThis()), thisExpr, expr);
+      return applyThis(new CheckTypeVisitor.Result(typecheckedDefinition.getDefCall(), typecheckedDefinition.getTypeWithThis()), thisExpr, expr);
     }
 
     Abstract.Expression left = expr.getExpression();
@@ -89,9 +85,10 @@ public class TypeCheckingDefCall {
     if (type instanceof ClassCallExpression) {
       ClassDefinition classDefinition = ((ClassCallExpression) type).getDefinition();
       String name = expr.getName();
-      Definition definition = classDefinition.getResolvedName().toNamespace().getDefinition(name);
+      // FIXME[scope]
+      Definition definition = TypecheckerState.getDynamicTypecheckedMember(myTypecheckMap, classDefinition, name);
       if (definition == null) {
-        TypeCheckingError error = new TypeCheckingError("Cannot find definition '" + name + "' in class '" + classDefinition.getName() + "'", expr);
+        TypeCheckingError error = new TypeCheckingError("Cannot find dynamic definition '" + name + "' in class '" + classDefinition.getResolvedName() + "'", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
         return null;
@@ -157,23 +154,15 @@ public class TypeCheckingDefCall {
     }
 
     String name = expr.getName();
-    ResolvedName resolvedName = definition.getResolvedName();
-    NamespaceMember member = resolvedName.toNamespace().getMember(name);
+    Definition member = TypecheckerState.getTypecheckedMember(myTypecheckMap, definition, name);
     if (member == null) {
-      TypeCheckingError error = new TypeCheckingError("Cannot find definition '" + name + "' in '" + resolvedName + "'", expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-      myVisitor.getErrorReporter().report(error);
-      return null;
-    }
-    if (member.definition == null) {
-      assert false;
-      TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + member.namespace + "' is not available yet", expr);
+      TypeCheckingError error = new TypeCheckingError("Cannot find definition '" + name + "' in '" + definition.getResolvedName() + "'", expr);
       expr.setWellTyped(myVisitor.getContext(), Error(null, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
 
-    return applyThis(new CheckTypeVisitor.Result(member.definition.getDefCall(), member.definition.getTypeWithThis()), thisExpr, expr);
+    return applyThis(new CheckTypeVisitor.Result(member.getDefCall(), member.getTypeWithThis()), thisExpr, expr);
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result, Abstract.Expression expr) {
