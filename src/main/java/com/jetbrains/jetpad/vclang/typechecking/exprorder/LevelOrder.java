@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking.exprorder;
 
 import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.NewExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -49,12 +51,11 @@ public class LevelOrder implements ExpressionOrder {
     Expression hlevel2 = classCall2.getImplementStatements().get(Preprelude.HLEVEL).term;
 
     boolean cmp1 = visitor.compare(hlevel1, hlevel2); // CNatOrder.compareCNat(hlevel1, hlevel2, visitor, expectedCMP);
+    boolean cmp2 = visitor.compare(classCall1.getImplementStatements().get(Preprelude.PLEVEL).term, classCall2.getImplementStatements().get(Preprelude.PLEVEL).term);
 
     if (CNatOrder.isZero(hlevel1) || CNatOrder.isZero(hlevel2)) {
       return cmp1;
     }
-
-    boolean cmp2 = visitor.compare(classCall1.getImplementStatements().get(Preprelude.PLEVEL).term, classCall2.getImplementStatements().get(Preprelude.PLEVEL).term);
 
     return cmp1 && cmp2;
   }
