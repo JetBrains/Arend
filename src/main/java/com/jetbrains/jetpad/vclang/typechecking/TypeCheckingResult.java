@@ -39,7 +39,9 @@ public abstract class TypeCheckingResult {
   }
 
   public void reportErrors(ErrorReporter errorReporter) {
-    myEquations.reportErrors(errorReporter);
+    if (myUnsolvedVariables.isEmpty()) {
+      myEquations.reportErrors(errorReporter);
+    }
     for (InferenceBinding unsolvedVariable : myUnsolvedVariables) {
       unsolvedVariable.reportErrorInfer(errorReporter);
     }

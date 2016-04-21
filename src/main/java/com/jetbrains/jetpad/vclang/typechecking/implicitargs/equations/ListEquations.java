@@ -170,7 +170,7 @@ public class ListEquations implements Equations {
   }
 
   private final List<Equation> myEquations = new ArrayList<>();
-  private final Map<InferenceBinding, Solution> mySolutions = new HashMap<>();
+  private final Map<InferenceBinding, Solution> mySolutions = new LinkedHashMap<>();
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
 
   public ErrorReporter getErrorReporter() {
@@ -388,6 +388,7 @@ public class ListEquations implements Equations {
       }
 
       if (binding != null) {
+        result.subst(binding, subst);
         result.add(binding, subst);
         subst(binding, subst);
       }
@@ -426,22 +427,24 @@ public class ListEquations implements Equations {
   @Override
   public void reportErrors(ErrorReporter errorReporter) {
     myErrorReporter.reportTo(errorReporter);
-    myErrorReporter.getErrorList().clear();
-
-    if (!myEquations.isEmpty()) {
-      List<CmpEquation> equations = new ArrayList<>(myEquations.size());
-      for (Equation equation : myEquations) {
-        equations.add((CmpEquation) equation);
+    if (myErrorReporter.getErrorList().isEmpty()) {
+      if (!myEquations.isEmpty()) {
+        List<CmpEquation> equations = new ArrayList<>(myEquations.size());
+        for (Equation equation : myEquations) {
+          equations.add((CmpEquation) equation);
+        }
+        errorReporter.report(new UnsolvedEquations(equations));
       }
-      errorReporter.report(new UnsolvedEquations(equations));
-    }
 
-    if (!mySolutions.isEmpty()) {
-      List<InferenceBinding> bindings = new ArrayList<>(mySolutions.size());
-      for (InferenceBinding binding : mySolutions.keySet()) {
-        bindings.add(binding);
+      if (!mySolutions.isEmpty()) {
+        List<InferenceBinding> bindings = new ArrayList<>(mySolutions.size());
+        for (InferenceBinding binding : mySolutions.keySet()) {
+          bindings.add(binding);
+        }
+        errorReporter.report(new UnsolvedBindings(bindings));
       }
-      errorReporter.report(new UnsolvedBindings(bindings));
+    } else {
+      myErrorReporter.getErrorList().clear();
     }
 
     clear();
