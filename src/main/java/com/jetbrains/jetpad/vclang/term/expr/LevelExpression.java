@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.exprorder.LevelExprOrder;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.*;
@@ -56,14 +55,14 @@ public class LevelExpression extends Expression {
   public LevelExpression max(LevelExpression other) {
     if (other.isInfinity()) return new LevelExpression(other);
     if (isInfinity()) return new LevelExpression(this);
-    LevelExpression result = new LevelExpression(other.myNumSucsOfVars, Integer.max(myConstant, other.myConstant), Integer.min(myOuterSucs, other.myOuterSucs), other.myConv);
-    int thisSucDiff = Integer.max(myOuterSucs - other.myOuterSucs, 0);
-    int otherSucDiff = Integer.max(other.myOuterSucs - myOuterSucs, 0);
+    LevelExpression result = new LevelExpression(other.myNumSucsOfVars, Math.max(myConstant, other.myConstant), Math.min(myOuterSucs, other.myOuterSucs), other.myConv);
+    int thisSucDiff = Math.max(myOuterSucs - other.myOuterSucs, 0);
+    int otherSucDiff = Math.max(other.myOuterSucs - myOuterSucs, 0);
 
     for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
       Integer sucs = result.myNumSucsOfVars.get(var.getKey());
       if (sucs != null) {
-        result.myNumSucsOfVars.put(var.getKey(), Integer.max(var.getValue() + thisSucDiff, sucs + otherSucDiff));
+        result.myNumSucsOfVars.put(var.getKey(), Math.max(var.getValue() + thisSucDiff, sucs + otherSucDiff));
       } else {
         result.myNumSucsOfVars.put(var.getKey(), var.getValue() + thisSucDiff);
       }
@@ -109,7 +108,7 @@ public class LevelExpression extends Expression {
   }
 
   public List<LevelExpression> toListOfMaxArgs() {
-    if (isInfinity()) return Arrays.asList(new LevelExpression(myConv));
+    if (isInfinity()) return Collections.singletonList(new LevelExpression(myConv));
     ArrayList<LevelExpression> list = new ArrayList<>();
     list.add(new LevelExpression(myConstant + myOuterSucs, myConv));
     for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
@@ -205,7 +204,7 @@ public class LevelExpression extends Expression {
       myConstant = 0;
       return;
     }
-    int minSucs = Integer.min(myConstant, Collections.min(myNumSucsOfVars.values()));
+    int minSucs = Math.min(myConstant, Collections.min(myNumSucsOfVars.values()));
     if (minSucs > 0) {
       myOuterSucs += minSucs;
       myConstant -= minSucs;

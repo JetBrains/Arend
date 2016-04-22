@@ -11,7 +11,9 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.*;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -361,12 +363,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
-              assert false;
-              // TODO: replace commented code to smth else
-              /*InferenceBinding levelInferenceBinding = new LambdaInferenceBinding("level-of-" + name, Level(), argIndex, expr, true);
-              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(Reference(levelInferenceBinding)), argIndex, expr, false);
+              InferenceBinding pLvlInferenceBinding = new LambdaInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), argIndex, expr, true);
+              InferenceBinding hLvlInferenceBinding = new LambdaInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), argIndex, expr, true);
+              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(Reference(pLvlInferenceBinding), Reference(hLvlInferenceBinding)), argIndex, expr, false);
               link.setType(Reference(inferenceBinding));
-              bindingTypes.put(link, inferenceBinding); /**/
+              bindingTypes.put(link, inferenceBinding);
             }
             if (actualPiLink == null) {
               actualPiLink = link;
@@ -400,10 +401,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         result.getEquations().abstractBinding(myContext.get(i));
         InferenceBinding bindingType = bindingTypes.get(myContext.get(i));
         if (bindingType != null) {
-          assert false;
-          // TODO: and here
-          /*
-          result.addUnsolvedVariable((InferenceBinding) (bindingType.getType().toUniverse().getUniverse()).getLevel().toReference().getBinding());
+          result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getUniverse().getPLevel().getUnitBinding());
+          result.addUnsolvedVariable((InferenceBinding) bindingType.getType().toUniverse().getUniverse().getHLevel().getUnitBinding());
           result.addUnsolvedVariable(bindingType);
           Substitution substitution = result.getSubstitution(false);
           if (!substitution.getDomain().isEmpty()) {
@@ -411,7 +410,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             bodyResult.type = bodyResult.type.subst(substitution);
             ((DependentLink) myContext.get(i)).setType(myContext.get(i).getType().subst(substitution));
           }
-          /**/
         }
       }
     }
@@ -567,8 +565,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     LevelExpression plevel = null;
-    for (int i = 0; i < domainTypes.length; ++i) {
-      LevelExpression argPLevel = domainTypes[i].normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse().getPLevel();
+    for (Expression domainType : domainTypes) {
+      LevelExpression argPLevel = domainType.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse().getPLevel();
       if (plevel == null) {
         plevel = argPLevel;
         continue;
