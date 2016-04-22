@@ -15,7 +15,7 @@ public class TypeUniverseNew {
   public static final TypeUniverseNew SET = new TypeUniverseNew(ANY_LEVEL, -1);
 
   public static TypeUniverseNew SetOfLevel(int level) {
-    return new TypeUniverseNew(level, -1);
+    return new TypeUniverseNew(level, 0);
   }
 
   private static class LvlConverter implements LevelExpression.Converter {

@@ -564,11 +564,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    LevelExpression plevel = null;
+    //LevelExpression plevel = null;
+    //LevelExpression hlevel = null;
+    TypeUniverseNew maxDomainUni = null;
     for (Expression domainType : domainTypes) {
-      LevelExpression argPLevel = domainType.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse().getPLevel();
-      if (plevel == null) {
-        plevel = argPLevel;
+      TypeUniverseNew argUniverse = domainType.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
+      if (maxDomainUni == null) {
+        maxDomainUni = argUniverse;
         continue;
       }
       /*Universe.CompareResult cmp = universe.compare(argUniverse);
@@ -579,12 +581,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         myErrorReporter.report(error);
         return null;
       }/**/
-      plevel = plevel.max(argPLevel);
+      maxDomainUni = maxDomainUni.max(argUniverse);
     }
     TypeUniverseNew codomainUniverse = null;
     if (codomainResult != null) {
       codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
-      if (plevel != null) {
+      /*if (maxDomainUni != null) {
         /*Universe.CompareResult cmp = universe.compare(codomainUniverse);
         if (cmp == null) {
           String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
@@ -592,15 +594,25 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           expr.setWellTyped(myContext, Error(null, error));
           myErrorReporter.report(error);
           return null;
-        }/**/
+        }
         plevel = codomainUniverse.getHLevel().equals(TypeUniverseNew.PROP.getHLevel()) ? TypeUniverseNew.PROP.getPLevel() : plevel.max(codomainUniverse.getPLevel());
       } else {
         plevel = codomainUniverse.getPLevel();
-      }
+      }/**/
+    }
+
+    TypeUniverseNew finalUniverse = null;
+
+    if (codomainUniverse != null) {
+      finalUniverse = new TypeUniverseNew(maxDomainUni != null ? maxDomainUni.getPLevel().max(codomainUniverse.getPLevel()) : codomainUniverse.getPLevel(),
+                          codomainUniverse.getHLevel());
+    } else if (maxDomainUni != null){
+      finalUniverse = new TypeUniverseNew(maxDomainUni.getPLevel(),
+                         maxDomainUni.getHLevel());
     }
 
     argsResult.expression = codomainResult == null ? Sigma(list.getFirst()) : Pi(list.getFirst(), codomainResult.expression);
-    argsResult.type = new UniverseExpression(new TypeUniverseNew(plevel, codomainUniverse == null ? TypeUniverseNew.PROP.getHLevel() : codomainUniverse.getHLevel()));
+    argsResult.type = new UniverseExpression(finalUniverse);
     argsResult.update(false);
     return argsResult;
   }

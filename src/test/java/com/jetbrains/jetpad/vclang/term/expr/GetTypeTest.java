@@ -70,7 +70,8 @@ public class GetTypeTest {
   public void tupleTest() {
     Definition def = typeCheckDef("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    assertEquals(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX), Level(ZeroLvl(), Fin(Suc(Zero()))), Nat(), Reference(xy), Reference(xy.getNext()))))), ((LeafElimTreeNode)((FunctionDefinition) def).getElimTree()).getExpression().getType());
+    assertEquals(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))), ((LeafElimTreeNode)((FunctionDefinition) def).getElimTree()).getExpression().getType());
   }
 
   @Test
