@@ -52,8 +52,11 @@ public class LevelExprOrder implements ExpressionOrder {
       if (sucs1 == 0) {
         if (sucs2 != 0) return null;
         if (level2.isClosed()) return true;
-        if (expectedCMP == Equations.CMP.GE ? visitor.compare(ExpressionFactory.Reference(level1.getUnitBinding()), ExpressionFactory.Reference(level2.getUnitBinding())) :
-                visitor.compare(ExpressionFactory.Reference(level2.getUnitBinding()), ExpressionFactory.Reference(level1.getUnitBinding()))) return true;
+        if (level1.getUnitBinding().equals(level2.getUnitBinding())) {
+          return true;
+        }
+  //      if (expectedCMP == Equations.CMP.GE ? visitor.compare(ExpressionFactory.Reference(level1.getUnitBinding()), ExpressionFactory.Reference(level2.getUnitBinding())) :
+   //             visitor.compare(ExpressionFactory.Reference(level2.getUnitBinding()), ExpressionFactory.Reference(level1.getUnitBinding()))) return true;
         return null;
       }
       return expectedCMP == Equations.CMP.GE ? visitor.compare(level1.subtract(sucs1), level2.subtract(sucs1)) : visitor.compare(level2.subtract(sucs1), level1.subtract(sucs1));

@@ -28,13 +28,14 @@ public class PathsTest {
     A.setNext(param("a", Reference(A)));
     DependentLink C = param((String) null, DataCall(Preprelude.INTERVAL));
     Expression pathCall = ConCall(Prelude.PATH_CON)
-            .addArgument(Level(ZeroLvl(), Inf()), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Inf(), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Lam(C, Reference(A)), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Reference(A.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Reference(A.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
     assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.expression);
-    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX).addArgument(Level(ZeroLvl(), Inf()), EnumSet.noneOf(AppExpression.Flag.class)), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Inf(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
@@ -71,15 +72,15 @@ public class PathsTest {
   @Test
   public void invTest() {
     typeCheckClass(
-        "\\static \\function idp {l : Level} {A : \\Type l} {a : A} => path (\\lam _ => a)\n" +
-        "\\static \\function transport {l : Level} {A : \\Type l} (B : A -> \\Type l) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
-        "\\static \\function inv {l : Level} {A : \\Type l} {a a' : A} (p : a = a') <= transport (\\lam a'' => a'' = a) p idp\n" +
+        "\\static \\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function transport {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} (B : A -> \\Type (lp, lh)) {a a' : A} (p : a = a') (b : B a) <= coe (\\lam i => B (p @ i)) b right\n" +
+        "\\static \\function inv {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a a' : A} (p : a = a') <= transport (\\lam a'' => a'' = a) p idp\n" +
         "\\static \\function squeeze1 (i j : I) : I <= coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
         "\\static \\function squeeze (i j : I) <= coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
-        "\\static \\function psqueeze {l : Level} {A : \\Type l} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
-        "\\static \\function Jl {l : Level} {A : \\Type l} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type l) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
+        "\\static \\function psqueeze {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
+        "\\static \\function Jl {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type (lp, lh)) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
         "  <= coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
-        "\\static \\function inv-inv {l : Level} {A : \\Type l} {a a' : A} (p : a = a') : inv (inv p) = p <= Jl (\\lam _ p => inv (inv p) = p) idp p\n" +
-        "\\static \\function path-sym {l : Level} {A : \\Type l} (a a' : A) : (a = a') = (a' = a) => path (iso inv inv inv-inv inv-inv)");
+        "\\static \\function inv-inv {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a a' : A} (p : a = a') : inv (inv p) = p <= Jl (\\lam _ p => inv (inv p) = p) idp p\n" +
+        "\\static \\function path-sym {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} (a a' : A) : (a = a') = (a' = a) => path (iso inv inv inv-inv inv-inv)");
   }
 }
