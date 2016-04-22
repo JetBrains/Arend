@@ -81,9 +81,9 @@ public class LevelExpression extends Expression {
     }
     if (level.isInfinity()) return new LevelExpression(myConv);
     result.myNumSucsOfVars.remove(var);
-    result.myConstant += level.myConstant;
+    result.myConstant += level.myConstant + level.myOuterSucs;
     for (Map.Entry<Binding, Integer> var_ : level.myNumSucsOfVars.entrySet()) {
-      result = result.max(new LevelExpression(var_.getKey(), var_.getValue() + sucs, myConv));
+      result = result.max(new LevelExpression(var_.getKey(), var_.getValue() + sucs + level.myOuterSucs, myConv));
     }
     result.extractOuterSucs();
     return result; /**/
