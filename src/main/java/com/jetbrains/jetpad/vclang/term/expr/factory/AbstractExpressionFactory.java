@@ -18,7 +18,7 @@ public interface AbstractExpressionFactory {
   Abstract.TypeArgument makeTelescopeArgument(boolean explicit, List<String> names, Abstract.Expression type);
   Abstract.Expression makeLam(List<? extends Abstract.Argument> arguments, Abstract.Expression body);
   Abstract.Expression makePi(List<? extends Abstract.TypeArgument> arguments, Abstract.Expression codomain);
-  Abstract.Expression makeUniverse(Abstract.Expression level);
+  Abstract.Expression makeUniverse(Abstract.Expression plevel, Abstract.Expression hlevel);
   Abstract.Expression makeUniverse(int pLevel, int hLevel);
   Abstract.Expression makeInferHole();
   Abstract.Expression makeError(Abstract.Expression expr);

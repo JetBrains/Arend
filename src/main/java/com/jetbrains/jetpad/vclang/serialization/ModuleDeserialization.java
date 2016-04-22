@@ -280,8 +280,11 @@ public class ModuleDeserialization {
     }
   }
 
-  public Universe readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    Expression level = readExpression(stream, definitionMap);
+  public TypeUniverseNew readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    int isNotNull = stream.readInt();
+    Expression plevel = isNotNull == 1 ? readExpression(stream, definitionMap) : TypeUniverseNew.intToPLevel(TypeUniverseNew.ANY_LEVEL);
+    stream.readInt();
+    Expression hlevel = readExpression(stream, definitionMap);
     /*Expression plevel, hlevel;
     NewExpression newLevel = level.toNew();
     if (newLevel != null) {
@@ -290,7 +293,7 @@ public class ModuleDeserialization {
       return new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel));
     }
     throw new IncorrectFormat(); /**/
-    return new TypeUniverse(new TypeUniverse.TypeLevel(level));
+    return new TypeUniverseNew(plevel, hlevel);
   }
 
   public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {

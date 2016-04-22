@@ -11,10 +11,7 @@ import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.*;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -182,9 +179,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         return true;
       }
 
-      InferenceBinding lvl = new LevelInferenceBinding("lvl", Level(), expr);
+      /*InferenceBinding lvl = new LevelInferenceBinding("lvl", Level(), expr);
       result.addUnsolvedVariable(lvl);
-      expectedType1 = Universe(Reference(lvl));
+      expectedType1 = Universe(Reference(lvl)); /**/
+      InferenceBinding lp = new LevelInferenceBinding("lp", Lvl(), expr);
+      InferenceBinding lh = new LevelInferenceBinding("lh", CNat(), expr);
+      result.addUnsolvedVariable(lp);
+      result.addUnsolvedVariable(lh);
+      expectedType1 = Universe(TypeUniverseNew.exprToPLevel(Reference(lp)), TypeUniverseNew.exprToHLevel(Reference(lh)));
     }
 
     if (CompareVisitor.compare(result.getEquations(), cmp, expectedType1, actualType, expr)) {
@@ -359,10 +361,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             piLamSubst.add(piLink, Reference(link));
           } else {
             if (argResult == null) {
-              InferenceBinding levelInferenceBinding = new LambdaInferenceBinding("level-of-" + name, Level(), argIndex, expr, true);
+              assert false;
+              // TODO: replace commented code to smth else
+              /*InferenceBinding levelInferenceBinding = new LambdaInferenceBinding("level-of-" + name, Level(), argIndex, expr, true);
               InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(Reference(levelInferenceBinding)), argIndex, expr, false);
               link.setType(Reference(inferenceBinding));
-              bindingTypes.put(link, inferenceBinding);
+              bindingTypes.put(link, inferenceBinding); /**/
             }
             if (actualPiLink == null) {
               actualPiLink = link;
@@ -396,7 +400,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         result.getEquations().abstractBinding(myContext.get(i));
         InferenceBinding bindingType = bindingTypes.get(myContext.get(i));
         if (bindingType != null) {
-          result.addUnsolvedVariable((InferenceBinding) ((TypeUniverse) bindingType.getType().toUniverse().getUniverse()).getLevel().getValue().toReference().getBinding());
+          assert false;
+          // TODO: and here
+          /*
+          result.addUnsolvedVariable((InferenceBinding) (bindingType.getType().toUniverse().getUniverse()).getLevel().toReference().getBinding());
           result.addUnsolvedVariable(bindingType);
           Substitution substitution = result.getSubstitution(false);
           if (!substitution.getDomain().isEmpty()) {
@@ -404,6 +411,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             bodyResult.type = bodyResult.type.subst(substitution);
             ((DependentLink) myContext.get(i)).setType(myContext.get(i).getType().subst(substitution));
           }
+          /**/
         }
       }
     }
@@ -420,26 +428,28 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
-    TypeUniverse.HomotopyLevel hlevel = expr.getUniverse().myHLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? TypeUniverse.HomotopyLevel.NOT_TRUNCATED : new TypeUniverse.HomotopyLevel(expr.getUniverse().myHLevel);
+    int hlevel = expr.getUniverse().myHLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? TypeUniverseNew.NOT_TRUNCATED : expr.getUniverse().myHLevel;
     UniverseExpression universe = Universe(expr.getUniverse().myPLevel, hlevel);
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
 
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Expression expectedType) {
-    Result result = typeCheck(expr.getLevel(), Level());
-    if (result == null) return null;
-    Expression level = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
-    UniverseExpression universe;
-    NewExpression newLevel = level.toNew();
+    Result resultP = typeCheck(expr.getPLevel(), Lvl());
+    Result resultH = typeCheck(expr.getHLevel(), CNat());
+    if (resultP == null || resultH == null) return null;
+    //Expression level = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
+    UniverseExpression universe = Universe(new TypeUniverseNew(resultP.expression, resultH.expression));
+    /*NewExpression newLevel = level.toNew();
 
     if (newLevel == null) {
-      universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
+      //universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
+      return null;
     } else {
       Expression plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.PLEVEL).term;
       Expression hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.HLEVEL).term;
-      universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
-    }
+      universe = new UniverseExpression(new TypeUniverseNew(TypeUniverseNew.exprToPLevel(plevel), TypeUniverseNew.exprToHLevel(hlevel)));
+    }/**/
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
 
@@ -556,42 +566,43 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    Universe universe = null;
+    LevelExpression plevel = null;
     for (int i = 0; i < domainTypes.length; ++i) {
-      Universe argUniverse = domainTypes[i].normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
-      if (universe == null) {
-        universe = argUniverse;
+      LevelExpression argPLevel = domainTypes[i].normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse().getPLevel();
+      if (plevel == null) {
+        plevel = argPLevel;
         continue;
       }
-      Universe.CompareResult cmp = universe.compare(argUniverse);
+      /*Universe.CompareResult cmp = universe.compare(argUniverse);
       if (cmp == null) {
         String msg = "Universe " + argUniverse + " of " + ordinal(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
         TypeCheckingError error = new TypeCheckingError(msg, expr);
         expr.setWellTyped(myContext, Error(null, error));
         myErrorReporter.report(error);
         return null;
-      }
-      universe = cmp.MaxUniverse;
+      }/**/
+      plevel = plevel.max(argPLevel);
     }
+    TypeUniverseNew codomainUniverse = null;
     if (codomainResult != null) {
-      Universe codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
-      if (universe != null) {
-        Universe.CompareResult cmp = universe.compare(codomainUniverse);
+      codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
+      if (plevel != null) {
+        /*Universe.CompareResult cmp = universe.compare(codomainUniverse);
         if (cmp == null) {
           String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
           TypeCheckingError error = new TypeCheckingError(msg, expr);
           expr.setWellTyped(myContext, Error(null, error));
           myErrorReporter.report(error);
           return null;
-        }
-        universe = codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : cmp.MaxUniverse;
+        }/**/
+        plevel = codomainUniverse.getHLevel().equals(TypeUniverseNew.PROP.getHLevel()) ? TypeUniverseNew.PROP.getPLevel() : plevel.max(codomainUniverse.getPLevel());
       } else {
-        universe = codomainUniverse;
+        plevel = codomainUniverse.getPLevel();
       }
     }
 
     argsResult.expression = codomainResult == null ? Sigma(list.getFirst()) : Pi(list.getFirst(), codomainResult.expression);
-    argsResult.type = new UniverseExpression(universe);
+    argsResult.type = new UniverseExpression(new TypeUniverseNew(plevel, codomainUniverse == null ? TypeUniverseNew.PROP.getHLevel() : codomainUniverse.getHLevel()));
     argsResult.update(false);
     return argsResult;
   }

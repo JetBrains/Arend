@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
@@ -14,7 +11,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
 
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
-  private Universe myUniverse;
+  private TypeUniverseNew myUniverse;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
@@ -43,7 +40,7 @@ public class ClassCallExpression extends DefCallExpression {
     return myStatements;
   }
 
-  public Universe getUniverse() {
+  public TypeUniverseNew getUniverse() {
     if (myUniverse == null) {
       Substitution substitution = null;
       for (ClassField field : getDefinition().getFields()) {
@@ -58,19 +55,19 @@ public class ClassCallExpression extends DefCallExpression {
           }
 
           UniverseExpression expr = field.getBaseType().subst(substitution).getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-          Universe fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
+          TypeUniverseNew fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
           if (myUniverse == null) {
             myUniverse = fieldUniverse;
             continue;
           }
-          myUniverse = myUniverse.compare(fieldUniverse).MaxUniverse;
+          myUniverse = myUniverse.max(fieldUniverse);
           assert expr != null;
         }
       }
     }
 
     if (myUniverse == null) {
-      myUniverse = TypeUniverse.PROP;
+      myUniverse = TypeUniverseNew.PROP;
     }
 
     return myUniverse;

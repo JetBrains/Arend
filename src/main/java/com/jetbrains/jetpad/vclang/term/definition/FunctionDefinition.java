@@ -33,7 +33,7 @@ public class FunctionDefinition extends Definition implements Function {
     myElimTree = elimTree;
   }
 
-  public FunctionDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, Universe universe) {
+  public FunctionDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, TypeUniverseNew universe) {
     super(rn, precedence, universe);
     assert parameters != null;
     hasErrors(false);

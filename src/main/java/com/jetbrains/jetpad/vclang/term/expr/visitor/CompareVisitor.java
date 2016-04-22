@@ -341,7 +341,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
-    UniverseExpression universe2 = expr2.toUniverse();
+    /*UniverseExpression universe2 = expr2.toUniverse();
     if (universe2 == null || universe2.getUniverse() == null) return false;
     TypeUniverse.TypeLevel level1 = ((TypeUniverse) expr1.getUniverse()).getLevel();
     TypeUniverse.TypeLevel level2 = ((TypeUniverse) universe2.getUniverse()).getLevel();
@@ -355,9 +355,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     }
 
     return level1.getValue().accept(this, level2.getValue());
-    // return expr1.getUniverse().compare(universe2.getUniverse(), this, myCMP);
-    //return cmp != null && (cmp.Result == Universe.Cmp.EQUALS || cmp.Result == expectedCMP);
-  }/**/
+    /**/
+    //return order.compare(expr1, expr2, this, myCMP);
+    return false;
+  }
 
   @Override
   public Boolean visitError(ErrorExpression expr1, Expression expr2) {
@@ -491,6 +492,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitOfType(OfTypeExpression expr, Expression params) {
     return expr.getExpression().accept(this, params);
+  }
+
+  @Override
+  public Boolean visitLevel(LevelExpression expr, Expression params) {
+    return order.compare(expr, params, this, myCMP);
   }
 
   @Override

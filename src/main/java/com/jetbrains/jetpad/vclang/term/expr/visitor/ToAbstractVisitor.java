@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.factory.AbstractExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -43,7 +44,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<? extends Expression> args = expr.getArguments();
 
     DataCallExpression dataCall = fun.toDataCall();
-    if (!(args.size() == 3 && dataCall != null && Prelude.isPath(dataCall.getDefinition()))) {
+    if (!(args.size() == 4 && dataCall != null && Prelude.isPath(dataCall.getDefinition()))) {
       return null;
     }
     for (EnumSet<AppExpression.Flag> flag : expr.getFlags()) {
@@ -51,7 +52,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         return null;
       }
     }
-    LamExpression expr1 = args.get(2).toLam();
+    LamExpression expr1 = args.get(3).toLam();
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
         return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.PATH_INFIX, args.get(0).accept(this, null));
@@ -222,39 +223,26 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return null;
   }
 
-  private Integer getHNum(Expression expr) {
-    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Preprelude.INF) {
-      return Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
-    }
-    if (expr.toApp() != null && expr.toApp().getArguments().size() == 1 && expr.toApp().getFunction().toConCall() != null && expr.toApp().getFunction().toConCall().getDefinition() == Preprelude.FIN) {
-      return getNum(expr.toApp().getArguments().get(0));
+  private Integer getHNum(LevelExpression expr) {
+    if (expr.isClosed()) {
+      if (expr.isInfinity()) {
+        return Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
+      }
+      return expr.getOuterSucs();
     }
     return null;
   }
 
-  private Integer getPNum(Expression expr) {
-    if (expr.toConCall() != null && expr.toConCall().getDefinition() == Preprelude.ZERO_LVL) {
-      return 0;
-    }
-    if (expr.toApp() != null && expr.toApp().getArguments().size() == 1 && expr.toApp().getFunction().toConCall() != null && expr.toApp().getFunction().toConCall().getDefinition() == Preprelude.SUC_LVL) {
-      Integer result = getNum(expr.toApp().getArguments().get(0));
-      if (result != null) {
-        return result + 1;
-      }
-    }
+  private Integer getPNum(LevelExpression expr) {
+    if (expr.isClosed()) { return expr.getOuterSucs(); }
     return null;
   }
 
   @Override
   public Abstract.Expression visitUniverse(UniverseExpression expr, Void params) {
-    if (!(expr.getUniverse() instanceof TypeUniverse)) {
-      return null;
-    }
-    TypeUniverse universe = (TypeUniverse) expr.getUniverse();
-    if (universe.getLevel() == null) {
-      return myFactory.makeUniverse(null);
-    }
+    TypeUniverseNew universe = expr.getUniverse();
 
+    /*
     Expression level = universe.getLevel().getValue();
     if (level.toNew() != null && level.toNew().getExpression().toClassCall() != null) {
       ClassCallExpression classCall = level.toNew().getExpression().toClassCall();
@@ -268,7 +256,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         }
       }
     }
-    return myFactory.makeUniverse(level.accept(this, null));
+    return myFactory.makeUniverse(level.accept(this, null)); /**/
+    Integer pNum = getPNum(universe.getPLevel());
+    Integer hNum = getHNum(universe.getHLevel());
+    if (pNum != null && hNum != null) return myFactory.makeUniverse(pNum, hNum);
+    return myFactory.makeUniverse(universe.getPLevel().accept(this, null), universe.getHLevel().accept(this, null));
   }
 
   @Override
@@ -337,6 +329,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   @Override
   public Abstract.Expression visitOfType(OfTypeExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
+  }
+
+  @Override
+  public Abstract.Expression visitLevel(LevelExpression expr, Void params) {
+    return expr.getExpr(0).accept(this, null);
   }
 
   private List<Abstract.Clause> visitBranch(BranchElimTreeNode branchNode) {

@@ -63,7 +63,8 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
 
   @Override
   public Set<BaseDefinition> visitPolyUniverse(Abstract.PolyUniverseExpression expr, Void ignore) {
-    return expr.getLevel().accept(this, null);
+    expr.getPLevel().accept(this, null);
+    return expr.getHLevel().accept(this, null);
   }
 
   @Override

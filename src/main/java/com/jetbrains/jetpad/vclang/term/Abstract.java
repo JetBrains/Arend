@@ -177,7 +177,8 @@ public final class Abstract {
   public interface PolyUniverseExpression extends Expression {
     byte PREC = 12;
 
-    Expression getLevel();
+    Expression getPLevel();
+    Expression getHLevel();
   }
 
   public interface InferHoleExpression extends Expression {

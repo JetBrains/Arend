@@ -21,7 +21,7 @@ public class ClassDefinition extends Definition {
     super.hasErrors(false);
   }
 
-  public ClassDefinition(ResolvedName rn, Universe universe) {
+  public ClassDefinition(ResolvedName rn, TypeUniverseNew universe) {
     super(rn, Abstract.Definition.DEFAULT_PRECEDENCE, universe);
     super.hasErrors(false);
   }

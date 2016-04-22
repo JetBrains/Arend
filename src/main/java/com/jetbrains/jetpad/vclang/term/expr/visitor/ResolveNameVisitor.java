@@ -152,7 +152,8 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
 
   @Override
   public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Void params) {
-    return expr.getLevel().accept(this, null);
+    expr.getPLevel().accept(this, null);
+    return expr.getHLevel().accept(this, null);
   }
 
   @Override

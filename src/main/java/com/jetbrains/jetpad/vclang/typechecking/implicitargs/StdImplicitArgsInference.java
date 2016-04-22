@@ -66,18 +66,23 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
       if (conCall != null && Prelude.isPathCon(conCall.getDefinition()) && result.expression.getArguments().size() <= 1) {
         Expression interval = DataCall(Preprelude.INTERVAL);
-        Expression lvl;
+        // TODO: check if it's correct!
+        Expression lp, lh;
         if (result.expression.getArguments().isEmpty()) {
-          InferenceBinding inferenceBinding = new FunctionInferenceBinding("lvl", Level(), 1, fun);
-          result.addUnsolvedVariable(inferenceBinding);
-          lvl = Reference(inferenceBinding);
-          result.expression = result.expression.addArgument(lvl, EnumSet.noneOf(AppExpression.Flag.class));
-          result.type = result.type.applyExpressions(Collections.singletonList(lvl));
+          InferenceBinding inferenceBinding1 = new FunctionInferenceBinding("lp", Lvl(), 1, fun);
+          InferenceBinding inferenceBinding2 = new FunctionInferenceBinding("lh", CNat(), 2, fun);
+          result.addUnsolvedVariable(inferenceBinding1);
+          result.addUnsolvedVariable(inferenceBinding2);
+          lp = Reference(inferenceBinding1);
+          lh = Reference(inferenceBinding2);
+          result.expression = result.expression.addArgument(lp, EnumSet.noneOf(AppExpression.Flag.class)).addArgument(lh, EnumSet.noneOf(AppExpression.Flag.class));
+          result.type = result.type.applyExpressions(Arrays.asList(lp, lh));
         } else {
-          lvl = result.expression.getArguments().get(0);
+          lp = result.expression.getArguments().get(0);
+          lh = result.expression.getArguments().get(1);
         }
 
-        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", Universe(lvl), 2, fun);
+        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", Universe(lp, lh), 3, fun);
         result.addUnsolvedVariable(inferenceBinding);
         DependentLink lamParam = param("i", interval);
         Expression binding = Reference(inferenceBinding);

@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
+import java.util.List;
+
 public interface Universe {
   enum Cmp { EQUALS, LESS, GREATER, NOT_COMPARABLE }
 
@@ -15,6 +17,13 @@ public interface Universe {
   interface LeveledUniverseFactory<U extends Universe, L extends Level<L>> {
     U createUniverse(L level);
   }
+
+  /*
+  interface Operations {
+    Universe pi(List<Universe> domainUni, Universe codomain);
+    Universe sigma(List<Universe> domainUni);
+    Universe dataType();
+  } /**/
 
   class CompareResult {
     public Universe MaxUniverse;

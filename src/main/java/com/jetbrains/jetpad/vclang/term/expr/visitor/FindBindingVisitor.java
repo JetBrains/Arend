@@ -135,6 +135,11 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> imp
     return expr.getExpression().accept(this, null) || expr.getType().accept(this, null);
   }
 
+  @Override
+  public Boolean visitLevel(LevelExpression expr, Void params) {
+    return false;
+  }
+
   public boolean visitLetClause(LetClause clause) {
     if (visitDependentLink(clause.getParameters())) return true;
     if (clause.getResultType() != null && clause.getResultType().accept(this, null)) return true;

@@ -159,8 +159,8 @@ public class RecordsTest {
     NamespaceMember member = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
-    assertEquals(TypeUniverse.SetOfLevel(0), member.namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), member.namespace.getDefinition("C").getType());
+    assertEquals(TypeUniverseNew.SetOfLevel(0), member.namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(TypeUniverseNew.SetOfLevel(0)), member.namespace.getDefinition("C").getType());
   }
 
   @Test
@@ -168,8 +168,8 @@ public class RecordsTest {
     NamespaceMember member = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
-    assertEquals(TypeUniverse.SetOfLevel(0), member.namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(TypeUniverse.PROP), member.namespace.getDefinition("C").getType());
+    assertEquals(TypeUniverseNew.SetOfLevel(0), member.namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(TypeUniverseNew.PROP), member.namespace.getDefinition("C").getType());
   }
 
   @Test
@@ -177,8 +177,8 @@ public class RecordsTest {
     NamespaceMember member = typeCheckClass(
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
-    assertEquals(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(4), TypeUniverse.HomotopyLevel.NOT_TRUNCATED)), member.namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(2), TypeUniverse.HomotopyLevel.NOT_TRUNCATED))), member.namespace.getDefinition("C").getType());
+    assertEquals(new TypeUniverseNew(4, TypeUniverseNew.NOT_TRUNCATED), member.namespace.getDefinition("Point").getUniverse());
+    assertEquals(Universe(new TypeUniverseNew(2, TypeUniverseNew.NOT_TRUNCATED)), member.namespace.getDefinition("C").getType());
   }
 
   @Test

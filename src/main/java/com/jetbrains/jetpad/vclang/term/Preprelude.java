@@ -9,9 +9,12 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.Collection;
+import java.util.EnumSet;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -154,22 +157,22 @@ public class Preprelude extends Namespace {
   }
 
   public static void setUniverses() {
-    NAT.setUniverse(TypeUniverse.SetOfLevel(0));
-    ZERO.setUniverse(TypeUniverse.SetOfLevel(0));
-    SUC.setUniverse(TypeUniverse.SetOfLevel(0));
-    LVL.setUniverse(TypeUniverse.SetOfLevel(0));
-    ZERO_LVL.setUniverse(TypeUniverse.SetOfLevel(0));
-    SUC_LVL.setUniverse(TypeUniverse.SetOfLevel(0));
-    CNAT.setUniverse(TypeUniverse.SetOfLevel(0));
-    FIN.setUniverse(TypeUniverse.SetOfLevel(0));
-    INF.setUniverse(TypeUniverse.SetOfLevel(0));
-    LEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
-    PLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
-    HLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
-    INTERVAL.setUniverse(TypeUniverse.PROP);
-    LEFT.setUniverse(TypeUniverse.PROP);
-    RIGHT.setUniverse(TypeUniverse.PROP);
-    ABSTRACT.setUniverse(TypeUniverse.PROP);
+    NAT.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    ZERO.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    SUC.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    LVL.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    ZERO_LVL.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    SUC_LVL.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    CNAT.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    FIN.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    INF.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    LEVEL.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    PLEVEL.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    HLEVEL.setUniverse(TypeUniverseNew.SetOfLevel(0));
+    INTERVAL.setUniverse(TypeUniverseNew.PROP);
+    LEFT.setUniverse(TypeUniverseNew.PROP);
+    RIGHT.setUniverse(TypeUniverseNew.PROP);
+    ABSTRACT.setUniverse(TypeUniverseNew.PROP);
   }
 
   public Preprelude() {
@@ -180,4 +183,52 @@ public class Preprelude extends Namespace {
   public Collection<NamespaceMember> getMembers() {
     throw new IllegalStateException();
   }
+
+  public static class SucExtrResult {
+    public int NumSuc;
+    public Expression Arg;
+
+    public SucExtrResult(int numSuc, Expression arg) {
+      NumSuc = numSuc;
+      Arg = arg;
+    }
+
+    public SucExtrResult incr() {
+      return new SucExtrResult(NumSuc + 1, Arg);
+    }
+  }
+
+  public static SucExtrResult extractSuc(Expression expr, Constructor suc) {
+    Expression fun = expr.getFunction();
+    if (fun.toConCall() != null && fun.toConCall().getDefinition() == suc &&
+            expr.getArguments().size() == 1) {
+      return extractSuc(expr.getArguments().get(0), suc).incr();
+    }
+    return new SucExtrResult(0, expr);
+  }
+
+  public static SucExtrResult extractSuc(Expression expr, FunctionDefinition suc) {
+    Expression fun = expr.getFunction();
+    if (fun.toFunCall() != null && fun.toFunCall().getDefinition() == suc &&
+            expr.getArguments().size() == 1) {
+      return extractSuc(expr.getArguments().get(0), suc).incr();
+    }
+    return new SucExtrResult(0, expr);
+  }
+
+  public static Expression applyNumberOfSuc(Expression expr, FunctionDefinition suc, int num) {
+    if (num <= 0) {
+      return expr;
+    }
+    return FunCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), EnumSet.noneOf(AppExpression.Flag.class));
+  }
+
+  public static Expression applyNumberOfSuc(Expression expr, Constructor suc, int num) {
+    if (num <= 0) {
+      return expr;
+    }
+    return ConCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), EnumSet.noneOf(AppExpression.Flag.class));
+  }
+
+
 }

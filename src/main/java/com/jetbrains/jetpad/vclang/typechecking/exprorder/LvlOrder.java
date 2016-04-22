@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking.exprorder;
 
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -26,7 +28,13 @@ public class LvlOrder implements ExpressionOrder {
 
   @Override
   public Boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
-    ConCallExpression conCall1 = expr1.toConCall();
+    DefCallExpression type1 = expr1.getType().normalize(NormalizeVisitor.Mode.NF).toDefCall();
+    DefCallExpression type2 = expr2.getType().normalize(NormalizeVisitor.Mode.NF).toDefCall();
+    if (type1 == null || type2 == null || type1.getDefinition() != Preprelude.LVL || type2.getDefinition() != Preprelude.LVL) {
+      return null;
+    }
+    return LevelExprOrder.compareLevel(TypeUniverseNew.exprToPLevel(expr1), TypeUniverseNew.exprToPLevel(expr2), visitor, expectedCMP);
+    /*ConCallExpression conCall1 = expr1.toConCall();
     ConCallExpression conCall2 = expr2.toConCall();
 
     if (conCall1 != null && conCall1.getDefinition() == Preprelude.ZERO_LVL) {
@@ -88,7 +96,7 @@ public class LvlOrder implements ExpressionOrder {
       }
     }
 
-    return null;
+    return null; /**/
   }
 
   @Override
@@ -99,6 +107,6 @@ public class LvlOrder implements ExpressionOrder {
     if (Expression.compare(expr1, expr2, Equations.CMP.LE)) {
       return expr2;
     }/**/
-    return ExpressionFactory.MaxLvl(expr1, expr2);
+    return LevelExprOrder.maxLevel(TypeUniverseNew.exprToPLevel(expr1), TypeUniverseNew.exprToPLevel(expr2));
   }
 }

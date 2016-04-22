@@ -31,32 +31,16 @@ public class StandardOrder implements ExpressionOrder {
     if (cmpRes != null) {
       return cmpRes;
     }
-    cmpRes = LevelOrder.compareLevel(expr1, expr2, visitor, expectedCMP);
+    /*cmpRes = LevelOrder.compareLevel(expr1, expr2, visitor, expectedCMP);
     if (cmpRes != null) {
       return cmpRes;
-    }
+    } /**/
     cmpRes = NatOrder.compareNat(expr1, expr2, visitor, expectedCMP);
     if (cmpRes != null) {
       return cmpRes;
     }
-    UniverseExpression uni1 = expr1.toUniverse();
-    UniverseExpression uni2 = expr2.toUniverse();
-    if (uni1 == null || uni2 == null  || !(uni1.getUniverse() instanceof TypeUniverse) || !(uni2.getUniverse() instanceof TypeUniverse)) {
-      return null;
-    }
 
-    TypeUniverse.TypeLevel level1 = ((TypeUniverse) uni1.getUniverse()).getLevel();
-    TypeUniverse.TypeLevel level2 = ((TypeUniverse) uni2.getUniverse()).getLevel();
-
-    if (level1 == null) {
-      return expectedCMP == Equations.CMP.GE;
-    }
-
-    if (level2 == null) {
-      return expectedCMP == Equations.CMP.LE;
-    }
-
-    return visitor.compare(level1.getValue(), level2.getValue());
+    return UniverseOrder.compareUni(expr1, expr2, visitor, expectedCMP);
   }
 
   @Override
@@ -95,17 +79,10 @@ public class StandardOrder implements ExpressionOrder {
     UniverseExpression uni1 = expr1.toUniverse();
     UniverseExpression uni2 = expr2.toUniverse();
 
-    if (uni1 == null || uni2 == null || !(uni1.getUniverse() instanceof TypeUniverse) || !(uni2.getUniverse() instanceof TypeUniverse)) {
+    if (uni1 == null || uni2 == null) {
       return null;
     }
 
-    TypeUniverse.TypeLevel level1 = ((TypeUniverse) uni1.getUniverse()).getLevel();
-    TypeUniverse.TypeLevel level2 = ((TypeUniverse) uni2.getUniverse()).getLevel();
-
-    if (level1 == null || level2 == null) {
-      return null;
-    }
-
-    return ExpressionFactory.Universe(level1.max(level2).getValue());
+    return UniverseOrder.maxUni(uni1, uni2);
   }
 }

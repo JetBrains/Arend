@@ -3,13 +3,12 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.exprorder.CNatOrder;
-import com.jetbrains.jetpad.vclang.typechecking.exprorder.ExpressionOrder;
 import com.jetbrains.jetpad.vclang.typechecking.exprorder.LevelOrder;
-import com.jetbrains.jetpad.vclang.typechecking.exprorder.StandardOrder;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+
+import java.util.List;
 
 public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLevel> {
   public static final TypeUniverse PROP = new TypeUniverse(new TypeLevel(HomotopyLevel.PROP, true));

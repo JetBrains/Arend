@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -25,16 +26,16 @@ public class PiExpression extends DependentTypeExpression {
   }
 
   @Override
-  public Universe getUniverse() {
-    Universe universe = super.getUniverse();
+  public TypeUniverseNew getUniverse() {
+    TypeUniverseNew universe = super.getUniverse();
     Expression type = myCodomain.getType();
     if (type == null || universe == null) {
       return null;
     }
     type = type.normalize(NormalizeVisitor.Mode.WHNF);
-    Universe codomainUniverse = type.toUniverse().getUniverse();
+    TypeUniverseNew codomainUniverse = type.toUniverse().getUniverse();
     if (codomainUniverse == null) return null;
-    return codomainUniverse.equals(TypeUniverse.PROP) ? TypeUniverse.PROP : universe.compare(codomainUniverse).MaxUniverse;
+    return codomainUniverse.equals(TypeUniverseNew.PROP) ? TypeUniverseNew.PROP : new TypeUniverseNew(universe.getPLevel().max(codomainUniverse.getPLevel()), codomainUniverse.getHLevel());
   }
 
   @Override

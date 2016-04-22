@@ -294,6 +294,22 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     return null;
   }
 
+  @Override
+  public Void visitLevel(LevelExpression expr, Void params) {
+    Expression level = expr.getExpr(0);
+    try {
+      if (level == null) {
+        myDataStream.writeInt(0);
+      } else {
+        myDataStream.writeInt(1);
+        return expr.getExpr(0).accept(this, params);
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+    return null;
+  }
+
   private void visitLetClause(LetClause clause) {
     try {
       myDataStream.writeUTF(clause.getName());

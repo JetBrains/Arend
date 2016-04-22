@@ -1,17 +1,18 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class UniverseExpression extends Expression {
-  private final Universe myUniverse;
+  private final TypeUniverseNew myUniverse;
 
-  public UniverseExpression(Universe universe) {
+  public UniverseExpression(TypeUniverseNew universe) {
     myUniverse = universe;
   }
 
-  public Universe getUniverse() {
+  public TypeUniverseNew getUniverse() {
     return myUniverse;
   }
 
@@ -32,7 +33,7 @@ public class UniverseExpression extends Expression {
 
   @Override
   public boolean isAnyUniverse() {
-    return myUniverse instanceof TypeUniverse && ((TypeUniverse) myUniverse).getLevel() == null;
+    return myUniverse.getPLevel().isInfinity();
   }
 
   @Override

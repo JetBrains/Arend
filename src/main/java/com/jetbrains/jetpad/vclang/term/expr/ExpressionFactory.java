@@ -251,30 +251,30 @@ public class ExpressionFactory {
   public static FieldCallExpression HLevel() { return new FieldCallExpression(Preprelude.HLEVEL); }
 
   public static UniverseExpression Universe() {
-    return new UniverseExpression(new TypeUniverse());
+    return new UniverseExpression(new TypeUniverseNew(TypeUniverseNew.ANY_LEVEL, TypeUniverseNew.ANY_LEVEL));
   }
 
   public static UniverseExpression Universe(int plevel) {
-    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(plevel), TypeUniverse.HomotopyLevel.NOT_TRUNCATED)));
+    return new UniverseExpression(new TypeUniverseNew(plevel, TypeUniverseNew.NOT_TRUNCATED));
   }
 
   public static UniverseExpression Universe(int plevel, int hlevel) {
-    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
+    return new UniverseExpression(new TypeUniverseNew(plevel, hlevel));
   }
 
-  public static UniverseExpression Universe(int plevel, TypeUniverse.HomotopyLevel hlevel) {
-    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(new TypeUniverse.PredicativeLevel(plevel), hlevel)));
+  public static UniverseExpression Universe(int plevel, LevelExpression hlevel) {
+    return new UniverseExpression(new TypeUniverseNew(TypeUniverseNew.intToPLevel(plevel), hlevel));
   }
 
-  public static UniverseExpression Universe(Expression level) {
-    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
-  }
+  //public static UniverseExpression Universe(Expression level) {
+   // return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
+ // }
 
   public static UniverseExpression Universe(Expression plevel, Expression hlevel) {
-    return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel)));
+    return new UniverseExpression(new TypeUniverseNew(TypeUniverseNew.exprToPLevel(plevel), TypeUniverseNew.exprToHLevel(hlevel)));
   }
 
-  public static UniverseExpression Universe(Universe universe) {
+  public static UniverseExpression Universe(TypeUniverseNew universe) {
     return new UniverseExpression(universe);
   }
 

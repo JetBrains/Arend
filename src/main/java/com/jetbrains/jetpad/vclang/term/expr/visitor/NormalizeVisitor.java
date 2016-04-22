@@ -233,9 +233,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitUniverse(UniverseExpression expr, Mode mode) {
     if (mode == Mode.TOP) return null;
-    if ((mode == Mode.NF || mode == Mode.HUMAN_NF) && expr.getUniverse() instanceof TypeUniverse) {
+    /*if ((mode == Mode.NF || mode == Mode.HUMAN_NF)) {
       return ((TypeUniverse) expr.getUniverse()).getLevel() != null ? Universe(((TypeUniverse) expr.getUniverse()).getLevel().getValue().accept(this, mode)) : expr;
-    }
+    } /**/
     return expr;
   }
 
@@ -284,5 +284,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitOfType(OfTypeExpression expr, Mode mode) {
     return mode == Mode.NF ? new OfTypeExpression(expr.getExpression().accept(this, mode), expr.getType()) : expr.getExpression().accept(this, mode);
+  }
+
+  @Override
+  public Expression visitLevel(LevelExpression expr, Mode mode) {
+    return mode == Mode.TOP ? null : expr;
   }
 }

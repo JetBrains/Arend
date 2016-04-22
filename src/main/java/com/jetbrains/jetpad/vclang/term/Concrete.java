@@ -601,16 +601,23 @@ public final class Concrete {
   }
 
   public static class PolyUniverseExpression extends Expression implements Abstract.PolyUniverseExpression {
-    private final Expression myLevel;
+    private final Expression myPLevel;
+    private final Expression myHLevel;
 
-    public PolyUniverseExpression(Position position, Expression level) {
+    public PolyUniverseExpression(Position position, Expression plevel, Expression hlevel) {
       super(position);
-      myLevel = level;
+      myPLevel = plevel;
+      myHLevel = hlevel;
     }
 
     @Override
-    public Expression getLevel() {
-      return myLevel;
+    public Expression getPLevel() {
+      return myPLevel;
+    }
+
+    @Override
+    public Expression getHLevel() {
+      return myHLevel;
     }
 
     @Override

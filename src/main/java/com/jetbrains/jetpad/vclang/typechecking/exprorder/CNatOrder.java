@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.exprorder;
 
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -16,7 +17,7 @@ public class CNatOrder implements ExpressionOrder {
     return new CNatOrder().max(expr1, expr2);
   }
 
-  public static boolean isZero(Expression expr) {
+ /* public static boolean isZero(Expression expr) {
     AppExpression app = expr.toApp();
 
     if (app == null || app.getFunction().toConCall() == null ||
@@ -27,7 +28,7 @@ public class CNatOrder implements ExpressionOrder {
 
     ConCallExpression mbZero = app.getArguments().get(0).toConCall();
     return mbZero != null && mbZero.getDefinition() == Preprelude.ZERO;
-  }
+  } /**/
 
   @Override
   public boolean isComparable(Expression expr) {
@@ -39,7 +40,13 @@ public class CNatOrder implements ExpressionOrder {
 
   @Override
   public Boolean compare(Expression expr1, Expression expr2, CompareVisitor visitor, Equations.CMP expectedCMP) {
-    ConCallExpression conCall1 = expr1.toConCall();
+    DefCallExpression type1 = expr1.getType().normalize(NormalizeVisitor.Mode.NF).toDefCall();
+    DefCallExpression type2 = expr2.getType().normalize(NormalizeVisitor.Mode.NF).toDefCall();
+    if (type1 == null || type2 == null || type1.getDefinition() != Preprelude.CNAT || type2.getDefinition() != Preprelude.CNAT) {
+      return null;
+    }
+    return LevelExprOrder.compareLevel(TypeUniverseNew.exprToHLevel(expr1), TypeUniverseNew.exprToHLevel(expr2), visitor, expectedCMP);
+    /*ConCallExpression conCall1 = expr1.toConCall();
     ConCallExpression conCall2 = expr2.toConCall();
 
     if (conCall1 != null && conCall1.getDefinition() == Preprelude.INF) {
@@ -126,12 +133,12 @@ public class CNatOrder implements ExpressionOrder {
       return visitor.compare(expr1.getArguments().get(0), expr2.getArguments().get(0));
     }
 
-    return null;
+    return null; /**/
   }
 
   @Override
   public Expression max(Expression expr1, Expression expr2) {
-    if (expr1.toApp() != null && expr1.toApp().getFunction().toConCall() != null && expr1.toApp().getFunction().toConCall().getDefinition() == Preprelude.FIN &&
+    /*if (expr1.toApp() != null && expr1.toApp().getFunction().toConCall() != null && expr1.toApp().getFunction().toConCall().getDefinition() == Preprelude.FIN &&
             expr1.toApp().getArguments().size() == 1 &&
             expr1.toApp().getArguments().get(0).toConCall() != null && expr1.toApp().getArguments().get(0).toConCall().getDefinition() == Preprelude.ZERO) {
       return expr2;
@@ -140,7 +147,7 @@ public class CNatOrder implements ExpressionOrder {
             expr2.toApp().getArguments().size() == 1 &&
             expr2.toApp().getArguments().get(0).toConCall() != null && expr2.toApp().getArguments().get(0).toConCall().getDefinition() == Preprelude.ZERO) {
       return expr1;
-    }
+    } /**/
 
     if (Expression.compare(expr1, expr2, Equations.CMP.GE)) {
       return expr1;
@@ -150,6 +157,6 @@ public class CNatOrder implements ExpressionOrder {
       return expr2;
     }/**/
 
-    return ExpressionFactory.MaxCNat(expr1, expr2);
+    return LevelExprOrder.maxLevel(TypeUniverseNew.exprToHLevel(expr1), TypeUniverseNew.exprToHLevel(expr2));
   }
 }

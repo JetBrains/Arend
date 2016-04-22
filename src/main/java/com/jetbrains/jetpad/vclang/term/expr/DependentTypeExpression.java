@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.definition.Universe;
 
 public abstract class DependentTypeExpression extends Expression {
@@ -15,9 +16,9 @@ public abstract class DependentTypeExpression extends Expression {
     return myLink;
   }
 
-  public Universe getUniverse() {
+  public TypeUniverseNew getUniverse() {
     DependentLink link = myLink;
-    Universe universe = null;
+    TypeUniverseNew universe = null;
 
     while (link.hasNext()) {
       if (!(link instanceof UntypedDependentLink)) {
@@ -26,9 +27,9 @@ public abstract class DependentTypeExpression extends Expression {
         if (universe == null) {
           universe = type.getUniverse();
         } else {
-          Universe.CompareResult cmp = universe.compare(type.getUniverse());
-          if (cmp == null) return null;
-          universe = cmp.MaxUniverse;
+          //Universe.CompareResult cmp = universe.compare(type.getUniverse());
+          //if (cmp == null) return null;
+          universe = universe.max(type.getUniverse());
         }
       }
       link = link.getNext();
@@ -39,7 +40,7 @@ public abstract class DependentTypeExpression extends Expression {
 
   @Override
   public Expression getType() {
-    Universe universe = getUniverse();
+    TypeUniverseNew universe = getUniverse();
     return universe == null ? null : new UniverseExpression(universe);
   }
 

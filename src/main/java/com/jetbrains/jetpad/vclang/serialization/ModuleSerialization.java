@@ -223,12 +223,9 @@ public class ModuleSerialization {
     }
   }
 
-  public static void writeUniverse(SerializeVisitor visitor, Universe universe) throws IOException {
-    if (universe instanceof TypeUniverse) {
-      ((TypeUniverse) universe).getLevel().getValue().accept(visitor, null);
-    } else {
-      throw new IllegalStateException();
-    }
+  public static void writeUniverse(SerializeVisitor visitor, TypeUniverseNew universe) throws IOException {
+    universe.getPLevel().accept(visitor, null);
+    universe.getHLevel().accept(visitor, null);
   }
 
   private static void writeString(SerializeVisitor visitor, String str) throws IOException {
