@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -192,9 +193,9 @@ public class DefinitionTest {
     DependentLink A = param("A", Universe(0));
     ModuleID moduleID = new NameModuleID("test");
     Namespace namespace = new Namespace(moduleID);
-    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, null, A);
+    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverseNew.SetOfLevel(0), A);
     namespace.addDefinition(def);
-    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, null, param(Reference(A)), def);
+    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverseNew.SetOfLevel(0), param(Reference(A)), def);
     def.addConstructor(con);
 
     Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con));

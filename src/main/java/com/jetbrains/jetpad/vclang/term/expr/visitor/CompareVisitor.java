@@ -496,7 +496,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
 
   @Override
   public Boolean visitLevel(LevelExpression expr, Expression params) {
-    return order.compare(expr, params, this, myCMP);
+    ReferenceExpression ref1 = expr.toReference();
+    ReferenceExpression ref2 = expr.toReference();
+    if (ref1 == null && ref2 == null) return false;
+    if (!(ref1 != null && ref1.getBinding() instanceof InferenceBinding) && !(ref2 != null && ref2.getBinding() instanceof InferenceBinding)) return false;
+    return compare(ref1, ref2);
   }
 
   @Override
