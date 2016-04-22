@@ -472,6 +472,15 @@ public class ModuleDeserialization {
         Expression type = readExpression(stream, definitionMap);
         return new OfTypeExpression(expr, type);
       }
+      case 17: {
+        boolean hasExpr = stream.readBoolean();
+        if (hasExpr) {
+          return readExpression(stream, definitionMap);
+        } else {
+          // TODO
+          return null;
+        }
+      }
       default: {
         throw new IncorrectFormat();
       }

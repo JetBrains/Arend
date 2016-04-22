@@ -296,13 +296,14 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
 
   @Override
   public Void visitLevel(LevelExpression expr, Void params) {
+    myStream.write(17);
     Expression level = expr.getExpr(0);
     try {
       if (level == null) {
-        myDataStream.writeInt(0);
+        myDataStream.writeBoolean(false);
       } else {
-        myDataStream.writeInt(1);
-        return expr.getExpr(0).accept(this, params);
+        myDataStream.writeBoolean(true);
+        return level.accept(this, params);
       }
     } catch (IOException e) {
       throw new IllegalStateException();
