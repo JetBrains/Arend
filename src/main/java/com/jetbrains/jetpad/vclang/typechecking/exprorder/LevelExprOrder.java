@@ -38,7 +38,7 @@ public class LevelExprOrder implements ExpressionOrder {
     }
 
     if (level1.isInfinity()) {
-      return level2.isInfinity();
+      return (expectedCMP != Equations.CMP.EQ || level2.isInfinity());
     }
 
     if (level2.isInfinity()) return false;
