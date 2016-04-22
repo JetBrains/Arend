@@ -231,4 +231,12 @@ public class LevelExpression extends Expression {
 
   @Override
   public LevelExpression toLevel() { return this; }
+
+  @Override
+  public ReferenceExpression toReference() {
+    if (isUnit() && !isClosed() && myNumSucsOfVars.entrySet().iterator().next().getValue() == 0) {
+      return ExpressionFactory.Reference(myNumSucsOfVars.entrySet().iterator().next().getKey());
+    }
+    return null;
+  }
 }

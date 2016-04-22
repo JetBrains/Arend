@@ -30,10 +30,10 @@ public class UniverseOrder implements ExpressionOrder {
       return null;
     }
 
-    Expression hlevel1 = uni1.getUniverse().getHLevel().getExpr(0);
-    Expression hlevel2 = uni2.getUniverse().getHLevel().getExpr(0);
-    Expression plevel1 = uni1.getUniverse().getPLevel().getExpr(0);
-    Expression plevel2 = uni2.getUniverse().getPLevel().getExpr(0);
+    Expression hlevel1 = uni1.getUniverse().getHLevel();
+    Expression hlevel2 = uni2.getUniverse().getHLevel();
+    Expression plevel1 = uni1.getUniverse().getPLevel();
+    Expression plevel2 = uni2.getUniverse().getPLevel();
 
     Boolean cmp1 = visitor.compare(hlevel1, hlevel2);//LevelExprOrder.compareLevel(hlevel1, hlevel2, visitor, expectedCMP); // CNatOrder.compareCNat(hlevel1, hlevel2, visitor, expectedCMP);
     Boolean cmp2 = visitor.compare(plevel1, plevel2);//LevelExprOrder.compareLevel(plevel1, plevel2, visitor, expectedCMP); // CNatOrder.compareCNat(hlevel1, hlevel2, visitor, expectedCMP);
