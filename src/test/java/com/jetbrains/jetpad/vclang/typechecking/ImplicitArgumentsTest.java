@@ -74,7 +74,7 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", Pi(A, Pi(Pi(Pi(Reference(A), Nat()), Nat()), Reference(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam g => g 0)", null);
-    DependentLink g = param("g", Nat());
+    DependentLink g = param("g", Pi(Nat(), Nat()));
     Expression expr = Reference(context.get(0))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Lam(g, Apps(Reference(g), Zero())), AppExpression.DEFAULT);

@@ -154,7 +154,7 @@ public class NormalizationTest {
   @Test
   public void normalizeNelimOne() {
     // normalize( N-elim (suc zero) (\x y. (var(0)) y) (suc zero) ) = var(0) (suc zero)
-    DependentLink var0 = param("var0", Universe(0));
+    DependentLink var0 = param("var0", Pi(Nat(), Nat()));
     DependentLink x = param("x", Nat());
     DependentLink y = param("y", Nat());
     Expression expr = Apps(FunCall(nelim), Suc(Zero()), Lam(x, Lam(y, Apps(Reference(var0), Reference(y)))), Suc(Zero()));
