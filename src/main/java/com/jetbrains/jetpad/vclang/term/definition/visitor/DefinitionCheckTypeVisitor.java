@@ -463,6 +463,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
+    LevelExpression inferredHLevel = def.getConditions() != null && !def.getConditions().isEmpty() ? TypeUniverseNew.intToHLevel(2) : def.getConstructors().size() > 1 ? TypeUniverseNew.SET.getHLevel() : TypeUniverseNew.PROP.getHLevel();
+    LevelExpression inferredPLevel = TypeUniverseNew.intToPLevel(0);
     DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), TypeUniverseNew.PROP, null);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
@@ -471,6 +473,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (result == null) {
           return dataDefinition;
         }
+        TypeUniverseNew paramUniverse = result.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
+        inferredPLevel = inferredPLevel.max(paramUniverse.getPLevel());
+        inferredHLevel = inferredHLevel.max(paramUniverse.getHLevel());
         DependentLink param;
         if (parameter instanceof Abstract.TelescopeArgument) {
           param = param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression);
@@ -499,11 +504,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     dataDefinition.hasErrors(false);
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
-
-    //TypeUniverse.HomotopyLevel hlevelEstim = def.getConditions() != null && !def.getConditions().isEmpty() ? new TypeUniverse.HomotopyLevel(2) : def.getConstructors().size() > 1 ? TypeUniverse.HomotopyLevel.SET : TypeUniverse.HomotopyLevel.PROP;
-    LevelExpression inferredHLevel = def.getConditions() != null && !def.getConditions().isEmpty() ? TypeUniverseNew.intToHLevel(2) : def.getConstructors().size() > 1 ? TypeUniverseNew.SET.getHLevel() : TypeUniverseNew.PROP.getHLevel();
-    //Universe inferredUniverse = new TypeUniverse(new TypeUniverse.TypeLevel(hlevelEstim, false));
-    LevelExpression inferredPLevel = TypeUniverseNew.intToPLevel(0);
 
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
@@ -550,6 +550,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       } else {
         dataDefinition.setUniverse(userUniverse);
       }
+    } else {
+      dataDefinition.setUniverse(inferredUniverse);
     }
 
     context.clear();

@@ -37,7 +37,7 @@ public class TypeCheckingTest {
   public void typeCheckConstructor1() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
-        "\\static \\function idp {l : Level} {A : \\Type l} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
   }
 
@@ -45,7 +45,7 @@ public class TypeCheckingTest {
   public void typeCheckConstructor1d() {
     typeCheckClass(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
-        "\\function idp {l : Level} {A : \\Type l} {a : A} => path (\\lam _ => a)\n" +
+        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
   }
 
@@ -53,7 +53,7 @@ public class TypeCheckingTest {
   public void typeCheckConstructor2() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
-        "\\static \\function idp {l : Level} {A : \\Type l} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
   }
 
@@ -61,7 +61,7 @@ public class TypeCheckingTest {
   public void typeCheckConstructor2d() {
     typeCheckClass(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
-        "\\function idp {l : Level} {A : \\Type l} {a : A} => path (\\lam _ => a)\n" +
+        "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
   }
 
@@ -94,7 +94,7 @@ public class TypeCheckingTest {
   @Test
   public void testTransport1() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B ((@) {\\new Level {PLevel => sucLvl zeroLvl|HLevel => inf}} {\\lam _ => A} {a} {a'} p i)) b right");
+        "coe (\\lam i => B ((@) {sucLvl zeroLvl} {inf} {\\lam _ => A} {a} {a'} p i)) b right");
   }
 
   @Test

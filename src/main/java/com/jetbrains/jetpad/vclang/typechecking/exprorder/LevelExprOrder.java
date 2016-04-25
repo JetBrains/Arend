@@ -67,11 +67,11 @@ public class LevelExprOrder implements ExpressionOrder {
 
     for (LevelExpression maxArg1 : level1MaxArgs) {
       boolean feasibleArg = true;
-      int numSucs = maxArg1.getOuterSucs();
+      int numSucs = maxArg1.extractOuterSucs();
       //Expression maxArgExpr1 = maxArg1.getExpr(numSucs);
       //if (maxArgExpr1 == null) return true;
       for (LevelExpression maxArg2 : level2MaxArgs) {
-        if (numSucs < maxArg2.getOuterSucs()) {
+        if (numSucs < maxArg2.extractOuterSucs()) {
           feasibleArg = false;
           break;
         }
@@ -100,6 +100,15 @@ public class LevelExprOrder implements ExpressionOrder {
   public Expression max(Expression expr1, Expression expr2) {
     LevelExpression level1 = expr1.toLevel();
     LevelExpression level2 = expr2.toLevel();
+
+    LevelExpression.CMP cmp = level1.compare(level2);
+
+    if (cmp == LevelExpression.CMP.LESS) {
+      return level2;
+    } else if (cmp == LevelExpression.CMP.GREATER || cmp == LevelExpression.CMP.EQUAL) {
+      return level1;
+    }
+
     return level1.max(level2);
   }
 }

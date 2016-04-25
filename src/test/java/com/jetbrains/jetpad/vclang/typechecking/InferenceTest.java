@@ -72,7 +72,7 @@ public class InferenceTest {
   public void inferConstructor1b() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (n = k) (k = m)\n" +
-        "\\static \\function idp {l : Level} {A : \\Type l} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp ,lh)} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function f => con {0} idp idp");
   }
 
@@ -87,7 +87,7 @@ public class InferenceTest {
   public void inferConstructor2b() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (n = k) (k = m)\n" +
-        "\\static \\function idp {l : Level} {A : \\Type l} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function f => (D 0).con idp idp");
   }
 
@@ -102,10 +102,10 @@ public class InferenceTest {
   @Test
   public void equations() {
     typeCheckClass(
-        "\\static \\data E {l : Level} (A B : \\Type l) | inl A | inr B\n" +
+        "\\static \\data E {lp : Lvl} {lh : CNat} (A B : \\Type (lp, lh)) | inl A | inr B\n" +
         "\\static \\data Empty : \\Prop\n" +
-        "\\static \\function neg {l : Level} (A : \\Type l) => A -> Empty\n" +
-        "\\static \\function test {l : Level} (A : \\Type l) => E (neg A) A"
+        "\\static \\function neg {lp : Lvl} {lh : CNat} (A : \\Type (lp, lh)) => A -> Empty\n" +
+        "\\static \\function test {lp : Lvl} {lh : CNat} (A : \\Type (lp, lh)) => E (neg A) A"
     );
   }
 }

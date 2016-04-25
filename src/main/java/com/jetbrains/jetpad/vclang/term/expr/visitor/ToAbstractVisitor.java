@@ -227,13 +227,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
       if (expr.isInfinity()) {
         return Abstract.UniverseExpression.Universe.NOT_TRUNCATED;
       }
-      return expr.getOuterSucs();
+      return expr.extractOuterSucs() - 1;
     }
     return null;
   }
 
   private Integer getPNum(LevelExpression expr) {
-    if (expr.isClosed()) { return expr.getOuterSucs(); }
+    if (expr.isClosed()) { return expr.extractOuterSucs(); }
     return null;
   }
 
@@ -332,7 +332,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
   @Override
   public Abstract.Expression visitLevel(LevelExpression expr, Void params) {
-    return expr.getExpr(0).accept(this, null);
+    return expr.getExpr().accept(this, null);
   }
 
   private List<Abstract.Clause> visitBranch(BranchElimTreeNode branchNode) {

@@ -18,7 +18,7 @@ public class TypeUniverseNew {
     return new TypeUniverseNew(level, 0);
   }
 
-  private static class LvlConverter implements LevelExpression.Converter {
+  public static class LvlConverter implements LevelExpression.Converter {
     @Override
     public Expression getType() {
       return ExpressionFactory.Lvl();
@@ -50,7 +50,7 @@ public class TypeUniverseNew {
     }
   }
 
-  private static class CNatConverter implements LevelExpression.Converter {
+  public static class CNatConverter implements LevelExpression.Converter {
     @Override
     public Expression getType() {
       return ExpressionFactory.CNat();

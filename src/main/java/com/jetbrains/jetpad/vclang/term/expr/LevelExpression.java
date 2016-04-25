@@ -8,7 +8,6 @@ import java.util.*;
 
 public class LevelExpression extends Expression {
   private int myConstant = 0;
-  private int myOuterSucs = 0;
   private Map<Binding, Integer> myNumSucsOfVars = new HashMap<>();
   private Converter myConv;
   private boolean myIsInfinity = true;
@@ -25,7 +24,7 @@ public class LevelExpression extends Expression {
   public LevelExpression(Converter conv) { myConv = conv; }
 
   public LevelExpression(int constant, Converter conv) {
-    myOuterSucs = constant;
+    myConstant = constant;
     myConv = conv;
     myIsInfinity = false;
   }
@@ -36,10 +35,9 @@ public class LevelExpression extends Expression {
     myIsInfinity = false;
   }
 
-  public LevelExpression(Map<Binding, Integer> numSucsOfVars, int constant, int outerSucs, Converter conv) {
+  public LevelExpression(Map<Binding, Integer> numSucsOfVars, int constant, Converter conv) {
     myNumSucsOfVars = new HashMap<>(numSucsOfVars);
     myConstant = constant;
-    myOuterSucs = outerSucs;
     myConv = conv;
     myIsInfinity = false;
   }
@@ -47,7 +45,6 @@ public class LevelExpression extends Expression {
   public LevelExpression(LevelExpression level) {
     myNumSucsOfVars = new HashMap<>(level.myNumSucsOfVars);
     myConstant = level.myConstant;
-    myOuterSucs = level.myOuterSucs;
     myConv = level.myConv;
     myIsInfinity = level.myIsInfinity;
   }
@@ -55,37 +52,45 @@ public class LevelExpression extends Expression {
   public LevelExpression max(LevelExpression other) {
     if (other.isInfinity()) return new LevelExpression(other);
     if (isInfinity()) return new LevelExpression(this);
-    LevelExpression result = new LevelExpression(other.myNumSucsOfVars, Math.max(myConstant, other.myConstant), Math.min(myOuterSucs, other.myOuterSucs), other.myConv);
-    int thisSucDiff = Math.max(myOuterSucs - other.myOuterSucs, 0);
-    int otherSucDiff = Math.max(other.myOuterSucs - myOuterSucs, 0);
+
+    /*CMP cmp = compare(other);
+
+    if (cmp == CMP.LESS) {
+      return new LevelExpression(other);
+    } else if (cmp == CMP.GREATER || cmp == CMP.EQUAL) {
+      return new LevelExpression(this);
+    }/**/
+
+    LevelExpression result = new LevelExpression(other.myNumSucsOfVars, Math.max(myConstant, other.myConstant), other.myConv);
 
     for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
       Integer sucs = result.myNumSucsOfVars.get(var.getKey());
       if (sucs != null) {
-        result.myNumSucsOfVars.put(var.getKey(), Math.max(var.getValue() + thisSucDiff, sucs + otherSucDiff));
+        result.myNumSucsOfVars.put(var.getKey(), Math.max(var.getValue(), sucs));
       } else {
-        result.myNumSucsOfVars.put(var.getKey(), var.getValue() + thisSucDiff);
+        result.myNumSucsOfVars.put(var.getKey(), var.getValue());
       }
     }
 
-    result.extractOuterSucs();
     return result;
   }
 
   public LevelExpression subst(Binding var, LevelExpression level) {
     if (isInfinity()) return new LevelExpression(myConv);
-    LevelExpression result = new LevelExpression(myNumSucsOfVars, myConstant, myOuterSucs, myConv);
+    LevelExpression result = new LevelExpression(myNumSucsOfVars, myConstant, myConv);
     Integer sucs = myNumSucsOfVars.get(var);
     if (sucs == null) {
       return result;
     }
     if (level.isInfinity()) return new LevelExpression(myConv);
     result.myNumSucsOfVars.remove(var);
-    result.myConstant += level.myConstant + level.myOuterSucs;
+    result.myConstant += level.myConstant;
     for (Map.Entry<Binding, Integer> var_ : level.myNumSucsOfVars.entrySet()) {
-      result = result.max(new LevelExpression(var_.getKey(), var_.getValue() + sucs + level.myOuterSucs, myConv));
+      result = result.max(new LevelExpression(var_.getKey(), var_.getValue() + sucs, myConv));
     }
-    result.extractOuterSucs();
+    if (!result.myNumSucsOfVars.isEmpty() && result.extractOuterSucs() == result.myConstant) {
+      result.myConstant = 0;
+    }
     return result; /**/
     /*if (isInfinity()) return this;
     Integer sucs = myNumSucsOfVars.get(var);
@@ -110,21 +115,17 @@ public class LevelExpression extends Expression {
   public List<LevelExpression> toListOfMaxArgs() {
     if (isInfinity()) return Collections.singletonList(new LevelExpression(myConv));
     ArrayList<LevelExpression> list = new ArrayList<>();
-    list.add(new LevelExpression(myConstant + myOuterSucs, myConv));
+    list.add(new LevelExpression(myConstant, myConv));
     for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
-      list.add(new LevelExpression(var.getKey(), var.getValue() + myOuterSucs, myConv));
+      list.add(new LevelExpression(var.getKey(), var.getValue(), myConv));
     }
     return list;
-  }
-
-  public int getOuterSucs() {
-    return myOuterSucs;
   }
 
   public Converter getConverter() { return myConv; }
 
   public boolean isZero() {
-    return !myIsInfinity && myOuterSucs == 0 && myConstant == 0 && myNumSucsOfVars.isEmpty();
+    return !myIsInfinity && myConstant == 0 && myNumSucsOfVars.isEmpty();
   }
 
   public boolean isClosed() {
@@ -132,12 +133,12 @@ public class LevelExpression extends Expression {
   }
 
   public boolean isUnit() {
-    return isClosed() || (myNumSucsOfVars.size() == 1 && (myConstant == 0 && myOuterSucs == 0));
+    return isClosed() || (myNumSucsOfVars.size() == 1 && (myConstant == 0));
   }
 
   public int getUnitSucs() {
     if (isClosed() || !isUnit()) {
-      return myOuterSucs;
+      return myConstant;
     }
     return myNumSucsOfVars.entrySet().iterator().next().getValue();
   }
@@ -149,22 +150,18 @@ public class LevelExpression extends Expression {
 
   public LevelExpression subtract(int val) {
     LevelExpression result = new LevelExpression(this);
-    if (myOuterSucs >= val) {
-      result.myOuterSucs -= val;
-      return result;
-    }
-    val -= myOuterSucs;
+    result.myConstant = Math.max(myConstant - val, 0);
     for (Map.Entry<Binding, Integer> var : result.myNumSucsOfVars.entrySet()) {
-      var.setValue(var.getValue() - val);
+      var.setValue(Math.max(var.getValue() - val, 0));
     }
     return result;
   }
 
-  public Expression getExpr(int subtract) {
+  public Expression getExpr() {
     if (myIsInfinity) return myConv.convert();
-    Expression result = myConstant + myOuterSucs - subtract > 0 ? myConv.convert(myConstant + myOuterSucs - subtract) : null;
+    Expression result = myConstant > 0 ? myConv.convert(myConstant) : null;
     for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
-      Expression expr = myConv.convert(var.getKey(), var.getValue() + myOuterSucs - subtract);
+      Expression expr = myConv.convert(var.getKey(), var.getValue());
       if (result == null) {
         result = expr;
       } else {
@@ -193,31 +190,23 @@ public class LevelExpression extends Expression {
   }
 
   public LevelExpression succ() {
-    return new LevelExpression(myNumSucsOfVars, myConstant, myOuterSucs + 1, myConv);
+    return subtract(-1);
   }
 
   public boolean isInfinity() { return myIsInfinity; }
 
-  private void extractOuterSucs() {
+  public int extractOuterSucs() {
     if (myNumSucsOfVars.isEmpty()) {
-      myOuterSucs += myConstant;
-      myConstant = 0;
-      return;
+      return myConstant;
     }
-    int minSucs = Math.min(myConstant, Collections.min(myNumSucsOfVars.values()));
-    if (minSucs > 0) {
-      myOuterSucs += minSucs;
-      myConstant -= minSucs;
-      for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
-        var.setValue(var.getValue() - minSucs);
-      }
-    }
+    return myConstant > 0 ? Math.min(myConstant, Collections.min(myNumSucsOfVars.values())) : Collections.min(myNumSucsOfVars.values());
   }
 
-  @Override
-  public boolean equals(Object other) {
-    return (other instanceof LevelExpression) && this.compare((LevelExpression) other) == CMP.EQUAL;
-  }
+ // @Override
+  //public boolean equals(Object other) {
+  //  if (!(other instanceof Expression) || ((Expression) other).toLevel() == null) return false;
+  //  return this.compare((LevelExpression) other) == CMP.EQUAL;
+ // }
 
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {

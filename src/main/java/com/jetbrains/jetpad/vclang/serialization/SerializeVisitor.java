@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -17,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implements ElimTreeNodeVisitor<Void, Void> {
@@ -297,13 +299,29 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   @Override
   public Void visitLevel(LevelExpression expr, Void params) {
     myStream.write(17);
-    Expression level = expr.getExpr(0);
     try {
-      if (level == null) {
-        myDataStream.writeBoolean(false);
+      if (expr.getConverter() instanceof TypeUniverseNew.LvlConverter) {
+        myDataStream.writeInt(0);
+      } else if (expr.getConverter() instanceof TypeUniverseNew.CNatConverter) {
+        myDataStream.writeInt(1);
       } else {
+        throw new IllegalStateException();
+      }
+      if (expr.isInfinity()) {
         myDataStream.writeBoolean(true);
-        return level.accept(this, params);
+      } else {
+        myDataStream.writeBoolean(false);
+        List<LevelExpression> maxArgs = expr.toListOfMaxArgs();
+        myDataStream.writeInt(maxArgs.size());
+        for (LevelExpression arg : maxArgs) {
+          myDataStream.writeInt(arg.getUnitSucs());
+          if (arg.isClosed()) {
+            myDataStream.writeBoolean(true);
+          } else {
+            myDataStream.writeBoolean(false);
+            writeBinding(arg.getUnitBinding());
+          }
+        }
       }
     } catch (IOException e) {
       throw new IllegalStateException();

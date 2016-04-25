@@ -59,7 +59,8 @@ public class GetTypeTest {
     NamespaceMember member = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), member.namespace.getDefinition("C").getDefCall()));
     Expression type = FunCall(Prelude.PATH_INFIX)
-      .addArgument(Level(ZeroLvl(), Fin(Suc(Zero()))), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Zero(), AppExpression.DEFAULT)
       .addArgument(Apps(member.namespace.getMember("C").namespace.getDefinition("x").getDefCall(), Apps(Reference(p), Zero())), AppExpression.DEFAULT);

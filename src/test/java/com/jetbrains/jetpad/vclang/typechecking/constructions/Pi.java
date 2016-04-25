@@ -21,7 +21,7 @@ public class Pi {
     context.add(new TypedBinding("A", Universe(3, 7)));
     context.add(new TypedBinding("B", Universe(4, 6)));
     CheckTypeVisitor.Result result = typeCheckExpr(context, "A -> B", null);
-    assertEquals(Universe(4, 7), result.type);
+    assertEquals(Universe(4, 6), result.type);
   }
 
   @Test
@@ -36,7 +36,7 @@ public class Pi {
   @Test
   public void piTest() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Pi (x y : Nat) {z : \\4-Type3} -> \\Pi (w : \\5-Type2) -> Nat", null);
-    assertEquals(Universe(4, 6), result.type);
+    assertEquals(Universe(4, 0), result.type);
   }
 
   @Test

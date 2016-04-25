@@ -280,19 +280,31 @@ public class ModuleDeserialization {
     }
   }
 
-  public TypeUniverseNew readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int isNotNull = stream.readInt();
-    Expression plevel = isNotNull == 1 ? readExpression(stream, definitionMap) : TypeUniverseNew.intToPLevel(TypeUniverseNew.ANY_LEVEL);
-    stream.readInt();
-    Expression hlevel = readExpression(stream, definitionMap);
-    /*Expression plevel, hlevel;
-    NewExpression newLevel = level.toNew();
-    if (newLevel != null) {
-      plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.PLEVEL).term;
-      hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.HLEVEL).term;
-      return new TypeUniverse(new TypeUniverse.TypeLevel(plevel, hlevel));
+  public LevelExpression readLevel(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    int convCode = stream.readInt();
+    LevelExpression.Converter conv = convCode == 0 ? new TypeUniverseNew.LvlConverter() : new TypeUniverseNew.CNatConverter();
+    boolean isInfinity = stream.readBoolean();
+    if (isInfinity) {
+      return new LevelExpression(conv);
+    } else {
+      LevelExpression result = new LevelExpression(0, conv);
+      int numMaxArgs = stream.readInt();
+      for (int i = 0; i < numMaxArgs; ++i) {
+        int numSucs = stream.readInt();
+        boolean isClosed = stream.readBoolean();
+        if (isClosed) {
+          result = result.max(new LevelExpression(numSucs, conv));
+        } else {
+          result = result.max(new LevelExpression(readBinding(stream, definitionMap), numSucs, conv));
+        }
+      }
+      return result;
     }
-    throw new IncorrectFormat(); /**/
+  }
+
+  public TypeUniverseNew readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    LevelExpression plevel = readExpression(stream, definitionMap).toLevel();
+    LevelExpression hlevel = readExpression(stream, definitionMap).toLevel();
     return new TypeUniverseNew(plevel, hlevel);
   }
 
@@ -473,13 +485,7 @@ public class ModuleDeserialization {
         return new OfTypeExpression(expr, type);
       }
       case 17: {
-        boolean hasExpr = stream.readBoolean();
-        if (hasExpr) {
-          return readExpression(stream, definitionMap);
-        } else {
-          // TODO
-          return null;
-        }
+        return readLevel(stream, definitionMap);
       }
       default: {
         throw new IncorrectFormat();
