@@ -23,7 +23,7 @@ public class EtaEquivalence {
     assertNotNull(member);
     assertTrue(member.namespace.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) member.namespace.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters().getNext()), null));
   }
 
   @Test
@@ -34,7 +34,7 @@ public class EtaEquivalence {
     assertNotNull(member);
     assertTrue(member.namespace.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) member.namespace.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters().getNext()), null));
   }
 
   @Test
@@ -45,7 +45,7 @@ public class EtaEquivalence {
     assertNotNull(member);
     assertTrue(member.namespace.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) member.namespace.getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTreeNode) f.getElimTree()).getExpression(), Reference(f.getParameters().getNext()), null));
   }
   @Test
   public void pathEtaLeftTest() {

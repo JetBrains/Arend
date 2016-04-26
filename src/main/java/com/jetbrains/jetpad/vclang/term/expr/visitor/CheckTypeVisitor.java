@@ -774,6 +774,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     Result classExtResult = new Result(null, null);
     Map<ClassField, ClassCallExpression.ImplementStatement> typeCheckedStatements = Collections.emptyMap();
+    if (!classCallExpr.getImplementStatements().isEmpty()) {
+      typeCheckedStatements = new HashMap<>(classCallExpr.getImplementStatements());
+    }
+
     for (int i = 0; i < fields.size(); i++) {
       ImplementStatement field = fields.get(i);
       Expression thisExpr = New(ClassCall(baseClass, typeCheckedStatements));

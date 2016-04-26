@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -274,15 +273,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
+    Map<Binding, Binding> substitution = new HashMap<>(mySubstitution);
     for (int i = 0; i < params1.size(); i++) {
-      mySubstitution.put(params1.get(i), params2.get(i));
+      substitution.put(params1.get(i), params2.get(i));
     }
     Equations equations = myEquations.newInstance();
-    if (!new CompareVisitor(mySubstitution, equations, Equations.CMP.EQ).compare(body1, body2)) {
+    if (!new CompareVisitor(substitution, equations, Equations.CMP.EQ).compare(body1, body2)) {
       return false;
     }
     for (int i = 0; i < params1.size(); i++) {
-      mySubstitution.remove(params1.get(i));
       equations.abstractBinding(params2.get(i));
     }
     myEquations.add(equations);
@@ -424,8 +423,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
+    ClassCallExpression classCall2 = expr2.getType().toClassCall();
+
     for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> entry : classCall.getImplementStatements().entrySet()) {
-      if (entry.getValue().term == null || !compare(entry.getValue().term, FieldCall(entry.getKey()).applyThis(expr2))) {
+      if (entry.getValue().term == null) {
+        return false;
+      }
+
+      ClassCallExpression.ImplementStatement stat2 = classCall2.getImplementStatements().get(entry.getKey());
+      if (!compare(entry.getValue().term, stat2 != null && stat2.term != null ? stat2.term : FieldCall(entry.getKey()).applyThis(expr2))) {
         return false;
       }
     }
