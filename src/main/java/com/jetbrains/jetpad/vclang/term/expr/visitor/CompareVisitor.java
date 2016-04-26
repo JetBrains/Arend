@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -155,11 +156,50 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     if (!compare(fun1, fun2)) {
       return false;
     }
-    for (int i = 0; i < args1.size(); i++) {
+
+    int i = 0;
+    if (fun1.toDataCall() != null && fun2.toDataCall() != null) {
+      if (args1.isEmpty()) {
+        myCMP = cmp;
+        return true;
+      }
+      if (fun1.toDataCall().getDefinition().getThisClass() != null) {
+        if (!compare(args1.get(i), args2.get(i))) {
+          return false;
+        }
+        if (++i >= args1.size()) {
+          myCMP = cmp;
+          return true;
+        }
+      }
+
+      Expression type1 = args1.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
+      if (type1.toDataCall() != null && type1.toDataCall().getDefinition() == Preprelude.LVL) {
+        Expression type2 = args2.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
+        if (type2.toDataCall() != null && type2.toDataCall().getDefinition() == Preprelude.LVL) {
+          compare(args1.get(i), args2.get(i));
+          if (++i >= args1.size()) {
+            myCMP = cmp;
+            return true;
+          }
+          type1 = args1.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
+          if (type1.toDataCall() != null && type1.toDataCall().getDefinition() == Preprelude.CNAT) {
+            type2 = args2.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
+            if (type2.toDataCall() != null && type2.toDataCall().getDefinition() == Preprelude.CNAT) {
+              compare(args1.get(i), args2.get(i));
+              i++;
+            }
+          }
+        }
+      }
+    }
+
+    for (; i < args1.size(); i++) {
       if (!compare(args1.get(i), args2.get(i))) {
         return false;
       }
     }
+
     myCMP = cmp;
     return true;
   }
