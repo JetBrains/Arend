@@ -788,12 +788,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           DataCallExpression dataCall = type.toDataCall();
           if (dataCall != null) {
             DataDefinition typeDef = dataCall.getDefinition();
-            if (Prelude.isPath(typeDef) && !exprs.isEmpty()) {
+            if (Prelude.isPath(typeDef) && exprs.size() >= 3) {
               LamExpression lam = exprs.get(2).normalize(NormalizeVisitor.Mode.WHNF).toLam();
               if (lam != null) {
                 check = true;
                 type = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
-                exprs = exprs.subList(2, exprs.size());
+                exprs = exprs.subList(3, exprs.size());
               }
             }
           } else {
