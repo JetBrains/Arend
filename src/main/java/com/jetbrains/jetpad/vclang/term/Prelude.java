@@ -2,10 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -13,11 +10,14 @@ import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
-public class Prelude extends Namespace {
+public class Prelude extends SimpleNamespace {
   public static ModuleID moduleID = new ModuleID() {
     @Override
     public ModulePath getModulePath() {
@@ -27,7 +27,7 @@ public class Prelude extends Namespace {
 
   public static ClassDefinition PRELUDE_CLASS;
 
-  public static Namespace PRELUDE = new Prelude();
+  public static SimpleNamespace PRELUDE = new Prelude();
 
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
@@ -76,7 +76,7 @@ public class Prelude extends Namespace {
   }
 
   static {
-    PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID), PRELUDE);
+    PRELUDE_CLASS = new ClassDefinition("Prelude", PRELUDE);
 
     /* Nat, zero, suc */
     DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, new Universe.Type(0, Universe.Type.SET), EmptyDependentLink.getInstance());
@@ -116,17 +116,11 @@ public class Prelude extends Namespace {
   }
 
   private Prelude() {
-    super(moduleID);
   }
 
   @Override
-  public Collection<NamespaceMember> getMembers() {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public NamespaceMember getMember(String name) {
-    NamespaceMember result = super.getMember(name);
+  public Referable resolveName(String name) {
+    Referable result = super.resolveName(name);
     if (result != null)
       return result;
     for (char sc : specInfix) {
@@ -136,21 +130,21 @@ public class Prelude extends Namespace {
             return null;
         }
         generateLevel(name.length() - 1);
-        return getMember(name);
+        return resolveName(name);
       }
     }
     for (String sname : specPrefix) {
       if (name.startsWith(sname)) {
         if (name.length() == sname.length()) {
           generateLevel(0);
-          return getMember(name);
+          return resolveName(name);
         }
         String suffix = name.substring(sname.length());
         try {
           Integer level = Integer.parseInt(suffix);
           if (level > 0) {
             generateLevel(level);
-            return getMember(name);
+            return resolveName(name);
           }
         } catch (NumberFormatException e) {
           return null;
@@ -193,7 +187,7 @@ public class Prelude extends Namespace {
     DependentLink atParameter1 = param(false, "A", PathParameter1.getType());
     DependentLink atParameter2 = param(false, "a", Apps(Reference(atParameter1), ConCall(LEFT)));
     DependentLink atParameter3 = param(false, "a'", Apps(Reference(atParameter1), ConCall(RIGHT)));
-    DependentLink atParameter4 = param("p", Apps(DataCall((DataDefinition) PRELUDE.getDefinition("Path" + suffix)), Reference(atParameter1), Reference(atParameter2), Reference(atParameter3)));
+    DependentLink atParameter4 = param("p", Apps(DataCall((DataDefinition) PRELUDE.resolveName("Path" + suffix)), Reference(atParameter1), Reference(atParameter2), Reference(atParameter3)));
     DependentLink atParameter5 = param("i", DataCall(INTERVAL));
     atParameter1.setNext(atParameter2);
     atParameter2.setNext(atParameter3);
@@ -205,7 +199,7 @@ public class Prelude extends Namespace {
       clause(LEFT, EmptyDependentLink.getInstance(), Reference(atParameter2)),
       clause(RIGHT, EmptyDependentLink.getInstance(), Reference(atParameter3)),
       clause(branch(atParameter4, tail(atParameter5),
-          clause((Constructor) PRELUDE.getDefinition("path" + suffix), atPath, Apps(Reference(atPath), Reference(atParameter5)))))
+          clause((Constructor) PRELUDE.resolveName("path" + suffix), atPath, Apps(Reference(atPath), Reference(atParameter5)))))
     ));
     Arrays.fill(chars, '@');
     DefinitionBuilder.Function at = new DefinitionBuilder.Function(PRELUDE, new String(chars), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree);
@@ -366,16 +360,14 @@ public class Prelude extends Namespace {
 
   private static class DefinitionBuilder {
     static class Data {
-      private final Namespace myParentNs;
-      private final DefinitionResolvedName myResolvedName;
+      private final SimpleNamespace myParentNs;
       private final DataDefinition myDefinition;
-      private final Namespace myNs;
+      private final SimpleNamespace myNs = new SimpleNamespace();
 
-      Data(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, Universe.Type universe, DependentLink parameters) {
+      Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, Universe.Type universe, DependentLink parameters) {
         myParentNs = parentNs;
-        myResolvedName = new DefinitionResolvedName(parentNs.getResolvedName(), name);
-        myDefinition = new DataDefinition(myResolvedName, precedence, universe, parameters);
-        myNs = myParentNs.addDefinition(myDefinition).namespace;
+        myDefinition = new DataDefinition(name, precedence, universe, parameters);
+        myParentNs.addDefinition(myDefinition);
       }
 
       DataDefinition definition() {
@@ -383,7 +375,7 @@ public class Prelude extends Namespace {
       }
 
       Constructor addConstructor(String name, Abstract.Binding.Precedence precedence, Universe.Type universe, DependentLink parameters) {
-        Constructor constructor = new Constructor(new DefinitionResolvedName(myNs.getResolvedName(), name), precedence, universe, parameters, myDefinition);
+        Constructor constructor = new Constructor(name, precedence, universe, parameters, myDefinition);
         myDefinition.addConstructor(constructor);
         myNs.addDefinition(constructor);
         myParentNs.addDefinition(constructor);
@@ -392,12 +384,10 @@ public class Prelude extends Namespace {
     }
 
     static class Function {
-      private final DefinitionResolvedName myResolvedName;
       private final FunctionDefinition myDefinition;
 
-      public Function(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
-        myResolvedName = new DefinitionResolvedName(parentNs.getResolvedName(), name);
-        myDefinition = new FunctionDefinition(myResolvedName, precedence, parameters, resultType, elimTree);
+      public Function(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+        myDefinition = new FunctionDefinition(name, precedence, parameters, resultType, elimTree);
         parentNs.addDefinition(myDefinition);
       }
 

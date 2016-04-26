@@ -3,12 +3,13 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-public class Namespace implements com.jetbrains.jetpad.vclang.naming.namespace.Namespace {
+public class Namespace {
   final private ResolvedName myResolvedName;
   private Map<String, NamespaceMember> myMembers;
 
@@ -190,23 +191,5 @@ public class Namespace implements com.jetbrains.jetpad.vclang.naming.namespace.N
   @Override
   public int hashCode() {
     return myResolvedName.hashCode();
-  }
-
-  @Override
-  public Set<String> getNames() {
-    throw new NotImplementedException();
-  }
-
-  @Override
-  public Referable resolveName(String name) {
-    NamespaceMember member = getMember(name);
-    if (member.abstractDefinition != null) return member.abstractDefinition;
-    if (member.definition != null) return member.definition;
-    return null;
-  }
-
-  @Override
-  public Referable resolveInstanceName(String name) {
-    return resolveName(name);
   }
 }

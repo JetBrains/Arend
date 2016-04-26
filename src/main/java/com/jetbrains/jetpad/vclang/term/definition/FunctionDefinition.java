@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -18,14 +17,14 @@ public class FunctionDefinition extends Definition implements Function {
   private boolean myTypeHasErrors;
   private Namespace myNamespace;
 
-  public FunctionDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-    super(rn, precedence);
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence) {
+    super(name, precedence);
     myTypeHasErrors = true;
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public FunctionDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
-    super(rn, precedence);
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+    super(name, precedence);
     assert parameters != null;
     setUniverse(new Universe.Type(0, Universe.Type.PROP));
     hasErrors(false);

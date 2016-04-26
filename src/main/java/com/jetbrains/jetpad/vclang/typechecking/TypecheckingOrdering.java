@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
@@ -60,7 +59,6 @@ public class TypecheckingOrdering {
       return true;
     }
 
-    NamespaceMember member = toNamespaceMember(definition);
     // TODO
     //if (toNamespaceMember(definition).isTypeChecked()) {
     //  myVisited.add(definition);
@@ -123,7 +121,7 @@ public class TypecheckingOrdering {
     }
 
     myVisiting.remove(definition);
-    myResult.put(definition, member.getResolvedName());
+    myResult.put(definition, null);  // FIXME[error]
 
     myVisited.add(definition);
     return true;

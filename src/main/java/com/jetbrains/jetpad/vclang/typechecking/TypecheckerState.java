@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
@@ -22,14 +23,15 @@ public class TypecheckerState {
   }
 
   public static Definition getTypecheckedMember(Map<Abstract.Definition, Definition> myTypecheckMap, Definition definition, String name) {
-    com.jetbrains.jetpad.vclang.naming.namespace.Namespace ns = definition.getNamespace();
+    Namespace ns = definition.getNamespace();
     Referable resolved = ns.resolveName(name);
     return resolved != null ? getTypechecked(myTypecheckMap, resolved) : null;
   }
 
   public static Definition getDynamicTypecheckedMember(Map<Abstract.Definition, Definition> myTypecheckMap, ClassDefinition classDefinition, String name) {
-    com.jetbrains.jetpad.vclang.naming.namespace.Namespace ns = classDefinition.getNamespace();
-    Referable resolved = ns.resolveInstanceName(name);
-    return resolved != null ? getTypechecked(myTypecheckMap, resolved) : null;
+    Namespace ns = classDefinition.getNamespace();
+    //Referable resolved = ns.resolveInstanceName(name);
+    //return resolved != null ? getTypechecked(myTypecheckMap, resolved) : null;
+    return null;  // FIXME[state]
   }
 }

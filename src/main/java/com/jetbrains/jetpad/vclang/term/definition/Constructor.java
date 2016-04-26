@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -28,14 +27,14 @@ public class Constructor extends Definition implements Function {
   private DependentLink myParameters;
   private Patterns myPatterns;
 
-  public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
-    super(rn, precedence);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
+    super(name, precedence);
     myDataType = dataType;
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
-    super(rn, precedence);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
+    super(name, precedence);
     setUniverse(universe);
     hasErrors(false);
     myDataType = dataType;
@@ -43,8 +42,8 @@ public class Constructor extends Definition implements Function {
     myPatterns = patterns;
   }
 
-  public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType) {
-    this(rn, precedence, universe, parameters, dataType, null);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters, DataDefinition dataType) {
+    this(name, precedence, universe, parameters, dataType, null);
   }
 
   public Patterns getPatterns() {

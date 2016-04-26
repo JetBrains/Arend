@@ -1,12 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.namespace;
 
-import com.jetbrains.jetpad.vclang.term.definition.Referable;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 
-import java.util.Set;
-
-public interface Namespace {
-  Set<String> getNames();
-  Referable resolveName(String name);
-
-  Referable resolveInstanceName(String name);
+public interface Namespace extends Scope {
 }

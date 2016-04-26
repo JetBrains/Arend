@@ -8,15 +8,13 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 public abstract class Definition extends NamedBinding implements Referable {
-  private final ResolvedName myResolvedName;
   private Abstract.Definition.Precedence myPrecedence;
   private Universe myUniverse;
   private boolean myHasErrors;
   private ClassDefinition myThisClass;
 
-  public Definition(ResolvedName resolvedName, Abstract.Definition.Precedence precedence) {
-    super(resolvedName.getName());
-    myResolvedName = resolvedName;
+  public Definition(String name, Abstract.Definition.Precedence precedence) {
+    super(name);
     myPrecedence = precedence;
     myUniverse = new Universe.Type(0, Universe.Type.PROP);
     myHasErrors = true;
@@ -41,8 +39,9 @@ public abstract class Definition extends NamedBinding implements Referable {
     myThisClass = thisClass;
   }
 
+  @Deprecated
   public ResolvedName getResolvedName() {
-    return myResolvedName;
+    throw new IllegalStateException();
   }
 
   public Universe getUniverse() {

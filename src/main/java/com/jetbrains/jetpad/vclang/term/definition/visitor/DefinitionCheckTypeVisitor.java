@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -41,7 +39,6 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.t
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Void, Definition> {
   private final Map<Abstract.Definition, Definition> myTypecheckMap;
-  private ResolvedName myResolvedName;
   private final ErrorReporter myErrorReporter;
 
   public DefinitionCheckTypeVisitor(Map<Abstract.Definition, Definition> typecheckMap, ErrorReporter errorReporter) {
@@ -49,19 +46,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     myErrorReporter = errorReporter;
   }
 
-  private DefinitionCheckTypeVisitor(Map<Abstract.Definition, Definition> typecheckMap, ResolvedName resolvedName, ErrorReporter errorReporter) {
-    myResolvedName = resolvedName;
-    myTypecheckMap = typecheckMap;
-    myErrorReporter = errorReporter;
-  }
-
-  public void setNamespaceMember(NamespaceMember namespaceMember) {
-    myResolvedName = namespaceMember.getResolvedName();
-  }
-
   public static void typeCheck(Map<Abstract.Definition, Definition> typecheckMap, Abstract.Definition definition, ResolvedName resolvedName, ErrorReporter errorReporter) {
     if (typecheckMap.get(definition) == null) {
-      DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(typecheckMap, resolvedName, errorReporter);
+      DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(typecheckMap, errorReporter);
       Definition result = definition.accept(visitor, null);
       if (typecheckMap.get(definition) != result) {
         throw new IllegalStateException(); // TODO[debug]
@@ -80,7 +67,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (classDefinition instanceof ClassDefinition) {
         return (ClassDefinition) classDefinition;
       } else {
-        myErrorReporter.report(new TypeCheckingError(myResolvedName, "Internal error: definition '" + definition.getName() + "' is not a class", definition));
+        myErrorReporter.report(new TypeCheckingError("Internal error: definition '" + definition.getName() + "' is not a class", definition));
         return null;
       }
     }
@@ -88,7 +75,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Abstract.DefineStatement statement = definition == null ? null : definition.getParentStatement();
     Abstract.Definition parentDefinition = statement == null ? null : statement.getParentDefinition();
     if (statement == null || parentDefinition == null) {
-      myErrorReporter.report(new TypeCheckingError(myResolvedName, "Non-static definitions are allowed only inside a class definition", dynamicStatement));
+      myErrorReporter.report(new TypeCheckingError("Non-static definitions are allowed only inside a class definition", dynamicStatement));
       return null;
     }
 
@@ -112,7 +99,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, Void params) {
     Abstract.Definition.Arrow arrow = def.getArrow();
-    final FunctionDefinition typedDef = new FunctionDefinition(myResolvedName, def.getPrecedence());
+    final FunctionDefinition typedDef = new FunctionDefinition(def.getName(), def.getPrecedence());
     // TODO[scopes] Fill namespace
 
     /*
@@ -403,13 +390,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         Universe maxUniverse = universe.max(argUniverse);
         if (maxUniverse == null) {
           String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
-          myErrorReporter.report(new TypeCheckingError(myResolvedName, error, def));
+          myErrorReporter.report(new TypeCheckingError(error, def));
           return null;
         } else {
           universe = maxUniverse;
         }
       } else {
-        myErrorReporter.report(new ArgInferenceError(myResolvedName, typeOfFunctionArg(index + 1), argument, null));
+        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null));
         return null;
       }
     }
@@ -428,13 +415,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Universe maxUniverse = universe.max(resultTypeUniverse);
     if (maxUniverse == null) {
       String error = "Universe " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
-      myErrorReporter.report(new TypeCheckingError(myResolvedName, error, def));
+      myErrorReporter.report(new TypeCheckingError(error, def));
       return null;
     } else {
       universe = maxUniverse;
     }
 
-    ClassField typedDef = new ClassField(myResolvedName, def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass, thisParameter);
+    ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass, thisParameter);
     typedDef.setUniverse(universe);
     typedDef.setThisClass(thisClass);
     myTypecheckMap.put(def, typedDef);
@@ -458,7 +445,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    DataDefinition dataDefinition = new DataDefinition(myResolvedName, def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), null);
+    DataDefinition dataDefinition = new DataDefinition(def.getName(), def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), null);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
@@ -658,7 +645,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       int index = 1;
       boolean ok = true;
 
-      Constructor constructor = new Constructor(new DefinitionResolvedName(dataDefinition.getResolvedName(), name), def.getPrecedence(), universe, null, dataDefinition, null);
+      Constructor constructor = new Constructor(def.getName(), def.getPrecedence(), universe, null, dataDefinition, null);
       constructor.hasErrors(true);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
@@ -820,7 +807,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           Definition memberDefinition = myTypecheckMap.get(definition);
 
           if (memberDefinition == null) {
-            DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(myTypecheckMap, new DefinitionResolvedName(myResolvedName, definition.getName()), myErrorReporter);
+            DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(myTypecheckMap, myErrorReporter);
             memberDefinition = visitor.visitAbstract((Abstract.AbstractDefinition) definition, classDefinition);
           }
 
@@ -831,7 +818,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
             Universe maxUniverse = oldUniverse.max(newUniverse);
             if (maxUniverse == null) {
               String error = "Universe " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
-              myErrorReporter.report(new TypeCheckingError(myResolvedName, error, definition));
+              myErrorReporter.report(new TypeCheckingError(error, definition));
             } else {
               classDefinition.setUniverse(maxUniverse);
               classDefinition.addField(field);
@@ -844,7 +831,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
-    ClassDefinition typedDef = new ClassDefinition(myResolvedName, def);
+    ClassDefinition typedDef = new ClassDefinition(def.getName(), def);
     ClassDefinition thisClass = getThisClass(def);
     if (thisClass != null) {
       typedDef.addParentField(thisClass);

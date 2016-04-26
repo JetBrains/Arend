@@ -4,13 +4,20 @@ import com.jetbrains.jetpad.vclang.module.*;
 import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.DefinitionResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteResolveListener;
+import com.jetbrains.jetpad.vclang.typechecking.staticmodresolver.ConcreteStaticModListener;
 import org.apache.commons.cli.*;
 
 import java.io.File;
@@ -71,7 +78,10 @@ public class ConsoleMain {
       libDirs.add(new File(workingPath, "lib"));
     }
 
-    Root.initialize();
+    final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
+    final NameResolver nameResolver = new NameResolver(moduleNsProvider, new SimpleStaticNamespaceProvider());
+
+    final ListErrorReporter errorReporter = new ListErrorReporter();
     final List<ModuleID> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
@@ -86,20 +96,28 @@ public class ConsoleMain {
       }
 
       @Override
-      public void loadingSucceeded(ModuleID module, NamespaceMember nsMember, boolean compiled) {
-        if (nsMember.abstractDefinition != null) {
-          modulesToTypeCheck.add(nsMember.abstractDefinition);
+      public void loadingSucceeded(ModuleID module, Abstract.ClassDefinition abstractDefinition, ClassDefinition compiledDefinition, boolean compiled) {
+        if (abstractDefinition != null) {
+          DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
+          rsmVisitor.visitClass(abstractDefinition, true);
+
+          DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, nameResolver, new SimpleStaticNamespaceProvider());
+          visitor.setResolveListener(new ConcreteResolveListener());
+          visitor.visitClass(abstractDefinition, null);
+
+          modulesToTypeCheck.add(abstractDefinition);
         }
         if (compiled) {
+          moduleNsProvider.registerModule(module.getModulePath(), abstractDefinition);
           loadedModules.add(module);
           System.out.println("[Resolved] " + module.getModulePath());
         } else {
+          moduleNsProvider.registerModule(module.getModulePath(), compiledDefinition);
           System.out.println("[Loaded] " + module.getModulePath());
         }
       }
     };
 
-    final ListErrorReporter errorReporter = new ListErrorReporter();
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
     moduleLoader.setSourceSupplier(new FileSourceSupplier(moduleLoader, errorReporter, sourceDir));
     moduleLoader.setOutputSupplier(new FileOutputSupplier(moduleDeserialization, outputDir, libDirs));
@@ -161,7 +179,7 @@ public class ConsoleMain {
     }
 
     for (ModuleID moduleID : loadedModules) {
-      moduleLoader.save(moduleID);
+      //moduleLoader.save(moduleID);  // FIXME[serial]
     }
   }
 

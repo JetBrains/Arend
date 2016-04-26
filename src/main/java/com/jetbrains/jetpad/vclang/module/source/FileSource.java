@@ -11,7 +11,7 @@ public class FileSource extends ParseSource {
   private final File myFile;
 
   public FileSource(ModuleLoader moduleLoader, ErrorReporter errorReporter, FileModuleID module, File file) {
-    super(moduleLoader, errorReporter, module);
+    super(errorReporter, module);
     myFile = file;
   }
 

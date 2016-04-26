@@ -1,43 +1,27 @@
-package com.jetbrains.jetpad.vclang.term.expr.visitor;
+package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.parser.BinOpParser;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
-import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
-import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolver;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NamespaceNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.module.ModuleResolver;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
-
-public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
+public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
   private final ErrorReporter myErrorReporter;
   private final NameResolver myNameResolver;
-  private final ModuleResolver myModuleResolver;
+  private final Scope myParentScope;
   private final List<String> myContext;
   private final ResolveListener myResolveListener;
 
-  public ResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, ModuleResolver moduleResolver, List<String> context, ResolveListener resolveListener) {
-    myModuleResolver = moduleResolver;
+  public ExpressionResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, Scope parentScope, List<String> context, ResolveListener resolveListener) {
     assert resolveListener != null;
     myErrorReporter = errorReporter;
-    CompositeNameResolver compositeNameResolver = new CompositeNameResolver();
-    compositeNameResolver.pushNameResolver(nameResolver);
-    compositeNameResolver.pushNameResolver(new NamespaceNameResolver(Prelude.PRELUDE));
-    myNameResolver = compositeNameResolver;
+    myNameResolver = nameResolver;
+    myParentScope = parentScope;
     myContext = context;
     myResolveListener = resolveListener;
   }
@@ -57,36 +41,10 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
     }
 
     if (expr.getReferent() == null) {
-      if (expression != null) {
-        if (expression instanceof Abstract.DefCallExpression || expression instanceof Abstract.ModuleCallExpression) {
-          Referable parent;
-          if (expression instanceof Abstract.DefCallExpression) {
-            parent = ((Abstract.DefCallExpression) expression).getReferent();
-          } else {
-            parent = ((Abstract.ModuleCallExpression) expression).getModule();
-          }
-
-          if (parent == null) {
-            return null;
-          }
-
-          Namespace parentNamespace = toNamespaceMember(parent).namespace;
-          if (parentNamespace == null) {
-            return null;
-          }
-          
-          NamespaceMember member = myNameResolver.getMember(parentNamespace, expr.getName());
-          if (member != null) {
-            myResolveListener.nameResolved(expr, member.getResolvedDefinition());
-          }
-        }
-      } else {
-        String name = expr.getName();
-        if (!myContext.contains(name)) {
-          NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, false);
-          if (member != null) {
-            myResolveListener.nameResolved(expr, member.getResolvedDefinition());
-          }
+      if (!myContext.contains(expr.getName())) {
+        Referable ref = myNameResolver.resolveDefCall(myParentScope, expr);
+        if (ref != null) {
+          myResolveListener.nameResolved(expr, ref);
         }
       }
     }
@@ -96,9 +54,9 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
   @Override
   public Void visitModuleCall(Abstract.ModuleCallExpression expr, Void params) {
     if (expr.getModule() == null) {
-      NamespaceMember member = myModuleResolver.locateModule(new ModulePath(expr.getPath()));
-      if (member != null) {
-        myResolveListener.moduleResolved(expr, member.getResolvedDefinition());
+      Referable ref = myNameResolver.resolveModuleCall(myParentScope, expr);
+      if (ref != null) {
+        myResolveListener.moduleResolved(expr, ref);
       }
     }
     return null;
@@ -195,7 +153,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
 
   @Override
   public Void visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Void params) {
-    if (expr.getSequence().isEmpty()) {
+/*    if (expr.getSequence().isEmpty()) {
       Abstract.Expression left = expr.getLeft();
       left.accept(this, null);
       myResolveListener.replaceBinOp(expr, left);
@@ -223,7 +181,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       } else {
         myResolveListener.replaceBinOp(expr, myResolveListener.makeError(expr, error.getCause()));
       }
-    }
+    }*/
     return null;
   }
 
@@ -258,7 +216,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
   }
 
   public boolean visitPattern(Abstract.Pattern pattern) {
-    if (pattern instanceof Abstract.NamePattern) {
+/*    if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
       if (name == null)
         return false;
@@ -295,7 +253,7 @@ public class ResolveNameVisitor implements AbstractExpressionVisitor<Void, Void>
       }
     } else if (!(pattern instanceof Abstract.AnyConstructorPattern)) {
       throw new IllegalStateException();
-    }
+    }*/
     return false;
   }
 

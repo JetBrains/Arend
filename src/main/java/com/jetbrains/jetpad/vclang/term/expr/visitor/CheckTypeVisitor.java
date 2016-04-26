@@ -21,6 +21,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingResult;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInference;
@@ -277,7 +278,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrorReporter.report(error);
       return null;
     }
-    Definition typechecked = myTypecheckMap.get(expr.getModule());
+    Definition typechecked = TypecheckerState.getTypechecked(myTypecheckMap, expr.getModule());
     if (typechecked == null) {
       assert false;
       TypeCheckingError error = new TypeCheckingError("Internal error: module '" + new ModulePath(expr.getPath()) + "' is not available yet", expr);

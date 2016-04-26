@@ -18,6 +18,7 @@ import java.util.*;
 
 public abstract class BaseModuleLoader implements ModuleLoader {
   private final List<ModuleID> myLoadingModules = new ArrayList<>();
+  private final Map<ModuleID, Result> myLoadedModules = new HashMap<>();
 
   private SourceSupplier mySourceSupplier;
   private OutputSupplier myOutputSupplier;
@@ -56,7 +57,8 @@ public abstract class BaseModuleLoader implements ModuleLoader {
 
   @Override
   public Result load(ModuleID module) {
-    if (Root.getModule(module) != null) {
+    Result loaded = myLoadedModules.get(module);
+    if (loaded != null) {
       return null;
     }
 
@@ -84,6 +86,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
 
         Result result = source.load();
         Helper.processLoaded(this, module, result);
+        myLoadedModules.put(module, result);
 
         return result;
       } finally {
