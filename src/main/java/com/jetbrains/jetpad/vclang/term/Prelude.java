@@ -166,12 +166,16 @@ public class Prelude extends Namespace {
     DependentLink truncParameter3 = param("A", Universe(Reference(truncParameter1), Reference(truncParameter2)));
     truncParameter1.setNext(truncParameter2);
     truncParameter2.setNext(truncParameter3);
-    PROP_TRUNC = new DataDefinition(PRELUDE.getChild("TrP").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(truncParameter1), Reference(truncParameter2)), truncParameter1);
+    PROP_TRUNC = new DataDefinition(PRELUDE.getChild("TrP").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverseNew.PROP, truncParameter1);
     PRELUDE.addDefinition(PROP_TRUNC);
 
     Constructor propTruncInCon = new Constructor(PRELUDE.getChild(PROP_TRUNC.getName()).getChild("inP").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(truncParameter1), Reference(truncParameter2)), param("inP", Reference(truncParameter3)), PROP_TRUNC);
-    DependentLink propTruncConParameter1 = param("a", Apps(DataCall(PROP_TRUNC), Reference(truncParameter2)));
-    DependentLink propTruncConParameter2 = param("a'", Apps(DataCall(PROP_TRUNC), Reference(truncParameter2)));
+    Expression propTruncConParameterType = DataCall(PROP_TRUNC)
+        .addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(Reference(truncParameter2), EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(Reference(truncParameter3), AppExpression.DEFAULT);
+    DependentLink propTruncConParameter1 = param("a", propTruncConParameterType);
+    DependentLink propTruncConParameter2 = param("a'", propTruncConParameterType);
     DependentLink propTruncConParameter3 = param("i", Interval());
     propTruncConParameter1.setNext(propTruncConParameter2);
     propTruncConParameter2.setNext(propTruncConParameter3);
@@ -183,22 +187,23 @@ public class Prelude extends Namespace {
             clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter2)))));
     PROP_TRUNC.addCondition(propTruncPathCond);
 
-    SET_TRUNC = new DataDefinition(PRELUDE.getChild("TrS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(truncParameter1), Reference(truncParameter2)), truncParameter1);
+    SET_TRUNC = new DataDefinition(PRELUDE.getChild("TrS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverseNew.SET /* TODO: Fix pLevel */, truncParameter1);
     PRELUDE.addDefinition(SET_TRUNC);
 
     Constructor setTruncInCon = new Constructor(PRELUDE.getChild(SET_TRUNC.getName()).getChild("inS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(truncParameter1), Reference(truncParameter2)), param("inS", Reference(truncParameter3)), SET_TRUNC);
-    DependentLink setTruncConParameter1 = param("a", Apps(DataCall(SET_TRUNC), Reference(truncParameter2)));
-    DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(SET_TRUNC), Reference(truncParameter2)));;
+    Expression setTruncConParameterType = DataCall(SET_TRUNC)
+        .addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(Reference(truncParameter2), EnumSet.noneOf(AppExpression.Flag.class));
+    DependentLink setTruncConParameter1 = param("a", Apps(DataCall(SET_TRUNC), setTruncConParameterType));
+    DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(SET_TRUNC), setTruncConParameterType));
     Expression setTruncConParameter3type = FunCall(PATH_INFIX)
-            .addArgument(DataCall(SET_TRUNC).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(truncParameter2), AppExpression.DEFAULT), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Reference(setTruncConParameter1), AppExpression.DEFAULT)
-            .addArgument(Reference(setTruncConParameter2), AppExpression.DEFAULT);
+        .addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(Fin(Zero()), EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(setTruncConParameterType, EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(Reference(setTruncConParameter1), AppExpression.DEFAULT)
+        .addArgument(Reference(setTruncConParameter2), AppExpression.DEFAULT);
     DependentLink setTruncConParameter3 = param("p", setTruncConParameter3type);
-    Expression setTruncConParameter4type = FunCall(PATH_INFIX)
-            .addArgument(DataCall(SET_TRUNC).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(truncParameter2), AppExpression.DEFAULT), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Reference(setTruncConParameter1), AppExpression.DEFAULT)
-            .addArgument(Reference(setTruncConParameter2), AppExpression.DEFAULT);
-    DependentLink setTruncConParameter4 = param("q", setTruncConParameter4type);
+    DependentLink setTruncConParameter4 = param("q", setTruncConParameter3type);
     DependentLink setTruncConParameter5 = param("i", Interval());
     DependentLink setTruncConParameter6 = param("j", Interval());
     setTruncConParameter1.setNext(setTruncConParameter2);

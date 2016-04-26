@@ -209,6 +209,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result == null) return null;
     if (expectedType == null) {
       expression.setWellTyped(myContext, result.expression);
+      result.update(true);
       return result;
     }
     return myArgsInference.inferTail(result, expectedType, expression);

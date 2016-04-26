@@ -112,7 +112,11 @@ public class TypeCheckingDefCall {
         myVisitor.getErrorReporter().report(error);
         return null;
       }
-      return applyThis(new CheckTypeVisitor.Result(definition.getDefCall(), definition.getTypeWithThis()), result.expression, expr);
+
+      Expression thisExpr = result.expression;
+      result.expression = definition.getDefCall();
+      result.type = definition.getTypeWithThis();
+      return applyThis(result, thisExpr, expr);
     }
 
     List<? extends Expression> arguments = result.expression.getArguments();
@@ -123,7 +127,9 @@ public class TypeCheckingDefCall {
       String name = expr.getName();
       Constructor constructor = dataDefinition.getConstructor(name);
       if (constructor != null) {
-        return new CheckTypeVisitor.Result(ConCall(constructor, new ArrayList<>(arguments)), constructor.getType().applyExpressions(arguments));
+        result.expression = ConCall(constructor, new ArrayList<>(arguments));
+        result.type = constructor.getType().applyExpressions(arguments);
+        return result;
       }
 
       if (!arguments.isEmpty()) {
@@ -178,7 +184,9 @@ public class TypeCheckingDefCall {
       return null;
     }
 
-    return applyThis(new CheckTypeVisitor.Result(member.definition.getDefCall(), member.definition.getTypeWithThis()), thisExpr, expr);
+    result.expression = member.definition.getDefCall();
+    result.type = member.definition.getTypeWithThis();
+    return applyThis(result, thisExpr, expr);
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result, Abstract.Expression expr) {

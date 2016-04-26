@@ -33,7 +33,6 @@ import static com.jetbrains.jetpad.vclang.term.definition.BaseDefinition.Helper.
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.ordinal;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Void, Definition> {
@@ -463,8 +462,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    LevelExpression inferredHLevel = def.getConditions() != null && !def.getConditions().isEmpty() ? TypeUniverseNew.intToHLevel(2) : def.getConstructors().size() > 1 ? TypeUniverseNew.SET.getHLevel() : TypeUniverseNew.PROP.getHLevel();
-    LevelExpression inferredPLevel = TypeUniverseNew.intToPLevel(0);
     DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), TypeUniverseNew.PROP, null);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
@@ -473,9 +470,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (result == null) {
           return dataDefinition;
         }
-        TypeUniverseNew paramUniverse = result.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
-        inferredPLevel = inferredPLevel.max(paramUniverse.getPLevel());
-        inferredHLevel = inferredHLevel.max(paramUniverse.getHLevel());
+
         DependentLink param;
         if (parameter instanceof Abstract.TelescopeArgument) {
           param = param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression);
@@ -505,6 +500,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
+    LevelExpression inferredHLevel = def.getConditions() != null && !def.getConditions().isEmpty() ? TypeUniverseNew.intToHLevel(2) : def.getConstructors().size() > 1 ? TypeUniverseNew.SET.getHLevel() : TypeUniverseNew.PROP.getHLevel();
+    LevelExpression inferredPLevel = TypeUniverseNew.intToPLevel(0);
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
       if (typedConstructor == null) {
