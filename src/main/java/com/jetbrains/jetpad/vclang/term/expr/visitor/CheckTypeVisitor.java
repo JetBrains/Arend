@@ -193,6 +193,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     if (CompareVisitor.compare(result.getEquations(), cmp, expectedType1, actualType, expr)) {
       result.expression = new OfTypeExpression(result.expression, expectedType1);
+      if (expectedType1.toUniverse() != null && actualType.toUniverse() == null) {
+        result.type = expectedType1;
+      }
       return true;
     } else {
       TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
