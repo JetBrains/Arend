@@ -617,9 +617,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression()));
             DependentLink params = constructor.getParameters();
-            if (constructor.getThisClass() != null) {
-              params = params.getNext();
-            }
+            //if (constructor.getThisClass() != null) {
+            //  params = params.getNext();
+           // }
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns());
             if (processedPatterns == null)
               continue;
