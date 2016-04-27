@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 
 public class ReportingModuleLoader extends BaseModuleLoader {
   private ErrorReporter myErrorReporter;

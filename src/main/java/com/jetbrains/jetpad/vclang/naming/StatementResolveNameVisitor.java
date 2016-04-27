@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
 
 import java.util.List;

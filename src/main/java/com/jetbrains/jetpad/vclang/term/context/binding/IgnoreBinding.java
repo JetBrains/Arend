@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.context.binding;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 
 public class IgnoreBinding extends InferenceBinding {
   public IgnoreBinding(String name, Expression type) {

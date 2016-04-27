@@ -1,6 +1,11 @@
 package com.jetbrains.jetpad.vclang;
 
-import com.jetbrains.jetpad.vclang.module.*;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.ModuleLoader;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
@@ -14,8 +19,6 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.typechecking.staticmodresolver.ConcreteStaticModListener;
 import org.apache.commons.cli.*;
@@ -28,8 +31,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 
 public class ConsoleMain {
   public static void main(String[] args) {
@@ -158,7 +159,8 @@ public class ConsoleMain {
 
       @Override
       public void typecheckingFailed(Abstract.Definition definition) {
-        failedModules.add(toNamespaceMember(definition).getResolvedName().getModuleID());
+        // FIXME[error] ModuleID from definition
+        //failedModules.add(toNamespaceMember(definition).getResolvedName().getModuleID());
         for (GeneralError error : errorReporter.getErrorList()) {
           System.err.println(error);
         }
@@ -166,13 +168,14 @@ public class ConsoleMain {
       }
     });
 
-    for (ModuleID moduleID : failedModules) {
-      if (failedModules.contains(moduleID)) {
-        System.out.println("[FAILED] " + moduleID.getModulePath());
-      } else {
-        System.out.println("[OK] " + moduleID.getModulePath());
-      }
-    }
+// FIXME[error] report module status
+//    for (ModuleID moduleID : failedModules) {
+//      if (failedModules.contains(moduleID)) {
+//        System.out.println("[FAILED] " + moduleID.getModulePath());
+//      } else {
+//        System.out.println("[OK] " + moduleID.getModulePath());
+//      }
+//    }
 
     for (GeneralError error : errorReporter.getErrorList()) {
       System.err.println(error);

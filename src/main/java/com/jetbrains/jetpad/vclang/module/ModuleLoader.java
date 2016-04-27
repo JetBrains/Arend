@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
 import com.jetbrains.jetpad.vclang.module.utils.LoadModulesRecursively;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 
 public interface ModuleLoader {
   Result load(ModuleID module);
@@ -18,8 +18,7 @@ public interface ModuleLoader {
   class Helper {
     static void processLoaded(ModuleLoader moduleLoader, ModuleID module, Result result) {
       if (result == null || result.errorsNumber != 0) {
-        GeneralError error = new GeneralError(new ModuleResolvedName(module), result == null ? "cannot load module '" + module.getModulePath().getName() + "'" : "module '" + module.getModulePath().getName() + "' contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
-        error.setLevel(GeneralError.Level.INFO);
+        GeneralError error = new ModuleLoadingError(module, result == null ? "Cannot load module" : "Module  contains " + result.errorsNumber + (result.errorsNumber == 1 ? " error" : " errors"));
         moduleLoader.loadingError(error);
       } else {
         if (result.abstractDefinition != null) {

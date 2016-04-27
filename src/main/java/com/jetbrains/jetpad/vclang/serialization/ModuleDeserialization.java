@@ -423,7 +423,7 @@ public class ModuleDeserialization {
         return new UniverseExpression(readUniverse(stream));
       }
       case 9: {
-        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(new ModuleResolvedName(myModuleID), "Deserialization error", null));
+        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myModuleID + " deserialization error", null));  // FIXME[error] bad error
       }
       case 10: {
         int size = stream.readInt();

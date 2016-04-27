@@ -12,7 +12,7 @@ public class SolveEquationsError extends TypeCheckingError {
   private final Binding myBinding;
 
   public SolveEquationsError(Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression) {
-    super(null, expression);
+    super("Cannot solve equation", expression);
     myExpr1 = expr1;
     myExpr2 = expr2;
     myBinding = binding;
@@ -21,8 +21,8 @@ public class SolveEquationsError extends TypeCheckingError {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append(printHeader());
-    builder.append("Cannot solve equation:\n")
+    builder.append(printHeader()).append(getMessage());
+    builder.append(":\n")
         .append("\t1st expression: ");
     myExpr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
     builder.append('\n')

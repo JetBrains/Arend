@@ -11,8 +11,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 
 import java.util.*;
 

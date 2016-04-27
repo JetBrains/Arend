@@ -7,9 +7,9 @@ import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionGetDepsVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.*;
 
@@ -151,7 +151,7 @@ public class TypecheckingOrdering {
       TypecheckerState state = new TypecheckerState();
       for (Abstract.Definition def : ((OKResult) result).order.keySet()) {
         ResolvedName resolvedName = ((OKResult) result).order.get(def);
-        DefinitionCheckTypeVisitor.typeCheck(state, def,new LocalErrorReporter(resolvedName, errorReporter));
+        DefinitionCheckTypeVisitor.typeCheck(state, def,new LocalErrorReporter(def, errorReporter));
         Definition typechecked = state.getTypechecked(def);
         if (typechecked == null || typechecked.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.module.*;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 
 import java.io.File;
 import java.io.FileInputStream;

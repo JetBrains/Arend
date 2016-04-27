@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
 import com.jetbrains.jetpad.vclang.module.output.Output;
 import com.jetbrains.jetpad.vclang.module.output.OutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Source;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 
 import java.io.IOException;
 import java.util.*;
@@ -51,7 +51,7 @@ public class SerializedLoader {
         myDeserializingModules.remove(deserializedModule);
         Root.removeModule(deserializedModule);
       }
-      myModuleLoader.loadingError(new GeneralError(new ModuleResolvedName(module), GeneralError.ioError(e)));
+      myModuleLoader.loadingError(new ModuleLoadingError(module, GeneralError.ioError(e)));
       return false;
     }
 
@@ -86,7 +86,7 @@ public class SerializedLoader {
     try {
       header = output.readHeader();
     } catch (IOException e) {
-      myModuleLoader.loadingError(new GeneralError(new ModuleResolvedName(module), GeneralError.ioError(e)));
+      myModuleLoader.loadingError(new ModuleLoadingError(module, GeneralError.ioError(e)));
       return null;
     }
 
@@ -140,7 +140,7 @@ public class SerializedLoader {
             myDeserializingModules.remove(loaded);
             Root.removeModule(loaded);
           }
-          myModuleLoader.loadingError(new GeneralError(new ModuleResolvedName(nestedModule), GeneralError.ioError(e)));
+          myModuleLoader.loadingError(new ModuleLoadingError(nestedModule, GeneralError.ioError(e)));
           return null;
         }
       }

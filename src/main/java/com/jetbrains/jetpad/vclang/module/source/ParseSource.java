@@ -1,19 +1,17 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
+import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
+import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.parser.BuildVisitor;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarLexer;
 import com.jetbrains.jetpad.vclang.parser.VcgrammarParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.CompositeErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.CountingErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.LocalErrorReporter;
 import org.antlr.v4.runtime.*;
 
 import java.io.IOException;
@@ -45,7 +43,7 @@ public abstract class ParseSource implements Source {
   public ModuleLoader.Result load() throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     final CompositeErrorReporter errorReporter = new CompositeErrorReporter();
-    errorReporter.addErrorReporter(new LocalErrorReporter(new ModuleResolvedName(myModule), myErrorReporter));
+    errorReporter.addErrorReporter(myErrorReporter);
     errorReporter.addErrorReporter(countingErrorReporter);
 
     VcgrammarLexer lexer = new VcgrammarLexer(new ANTLRInputStream(myStream));
@@ -53,7 +51,7 @@ public abstract class ParseSource implements Source {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new ModuleResolvedName(myModule), new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(myModule, new Concrete.Position(line, pos), msg));
       }
     });
 
@@ -62,7 +60,7 @@ public abstract class ParseSource implements Source {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new ModuleResolvedName(myModule), new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(myModule, new Concrete.Position(line, pos), msg));
       }
     });
 

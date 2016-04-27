@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -11,12 +10,6 @@ import java.util.ArrayList;
 public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
   private final Expression[] myCandidates;
-
-  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
-    super(resolvedName, message, expression);
-    myWhere = where;
-    myCandidates = candidates;
-  }
 
   public ArgInferenceError(String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
     super(message, expression);
