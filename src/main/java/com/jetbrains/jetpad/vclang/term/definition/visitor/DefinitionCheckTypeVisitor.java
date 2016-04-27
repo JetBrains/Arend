@@ -499,8 +499,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
-    LevelExpression inferredHLevel = def.getConditions() != null && !def.getConditions().isEmpty() ? TypeUniverseNew.intToHLevel(2) : def.getConstructors().size() > 1 ? TypeUniverseNew.SET.getHLevel() : TypeUniverseNew.PROP.getHLevel();
+    LevelExpression inferredHLevel = def.getConstructors().size() > 1 ? TypeUniverseNew.SET.getHLevel() : TypeUniverseNew.PROP.getHLevel();
     LevelExpression inferredPLevel = TypeUniverseNew.intToPLevel(0);
+    TypeUniverseNew inferredUniverse = new TypeUniverseNew(inferredPLevel, inferredHLevel);
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
       if (typedConstructor == null) {
@@ -520,8 +521,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       } else {
         inferredUniverse = cmp.MaxUniverse;
       }/**/
-      inferredPLevel = inferredPLevel.max(typedConstructor.getUniverse().getPLevel());
-      inferredHLevel = inferredHLevel.max(typedConstructor.getUniverse().getHLevel());
+      //inferredPLevel = inferredPLevel.max(typedConstructor.getUniverse().getPLevel());
+      //inferredHLevel = inferredHLevel.max(typedConstructor.getUniverse().getHLevel());
+      inferredUniverse = inferredUniverse.max(typedConstructor.getUniverse());
     }
 
     /*if (userUniverse != null) {
@@ -535,10 +537,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     } else {
       dataDefinition.setUniverse(inferredUniverse);
     } /**/
-    TypeUniverseNew inferredUniverse = new TypeUniverseNew(inferredPLevel, inferredHLevel);
     if (userUniverse != null) {
-      LevelExpression.CMP cmpP = inferredPLevel.compare(userUniverse.getPLevel());
-      LevelExpression.CMP cmpH = inferredHLevel.compare(userUniverse.getHLevel());
+      LevelExpression.CMP cmpP = inferredUniverse.getPLevel().compare(userUniverse.getPLevel());
+      LevelExpression.CMP cmpH = inferredUniverse.getHLevel().compare(userUniverse.getHLevel());
       if (cmpP == LevelExpression.CMP.NOT_COMPARABLE || cmpP == LevelExpression.CMP.GREATER ||
               cmpH == LevelExpression.CMP.NOT_COMPARABLE || cmpH == LevelExpression.CMP.GREATER) {
         String msg = "Actual universe " + new UniverseExpression(inferredUniverse) + " is not compatible with expected universe " + new UniverseExpression(userUniverse);
@@ -548,7 +549,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         dataDefinition.setUniverse(userUniverse);
       }
     } else {
-      dataDefinition.setUniverse(inferredUniverse);
+      if (def.getConditions() != null && !def.getConditions().isEmpty()) {
+        dataDefinition.setUniverse(new TypeUniverseNew(inferredUniverse.getPLevel(), TypeUniverseNew.intToHLevel(TypeUniverseNew.NOT_TRUNCATED)));
+      } else {
+        dataDefinition.setUniverse(inferredUniverse);
+      }
     }
 
     context.clear();

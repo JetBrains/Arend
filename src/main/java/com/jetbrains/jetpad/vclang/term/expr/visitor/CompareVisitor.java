@@ -105,13 +105,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return new2.accept(this, expr1);
     }
 
-   // if (myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) {
+    if (order.isComparable(expr1)) {
       Boolean ordCmpResult = order.compare(expr1, expr2, this, myCMP);
 
       if (ordCmpResult != null) {
         return ordCmpResult;
       }
-    //}
+
+      if (expr1.toUniverse() != null) return false;
+    }
 
    // if ((myCMP == Equations.CMP.GE || myCMP == Equations.CMP.LE) && expr1.toReference() == null) {
    //   if (order.compare(expr1, expr2, this, myCMP)) return true;
@@ -396,7 +398,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     return level1.getValue().accept(this, level2.getValue());
     /**/
     //return order.compare(expr1, expr2, this, myCMP);
-    return false;
+    return compare(expr1, expr2);
   }
 
   @Override

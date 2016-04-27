@@ -187,7 +187,7 @@ public class Prelude extends Namespace {
             clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter2)))));
     PROP_TRUNC.addCondition(propTruncPathCond);
 
-    SET_TRUNC = new DataDefinition(PRELUDE.getChild("TrS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverseNew.SET /* TODO: Fix pLevel */, truncParameter1);
+    SET_TRUNC = new DataDefinition(PRELUDE.getChild("TrS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverseNew.SetOfLevel(Reference(truncParameter1)), truncParameter1);
     PRELUDE.addDefinition(SET_TRUNC);
 
     Constructor setTruncInCon = new Constructor(PRELUDE.getChild(SET_TRUNC.getName()).getChild("inS").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(truncParameter1), Reference(truncParameter2)), param("inS", Reference(truncParameter3)), SET_TRUNC);

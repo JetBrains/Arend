@@ -47,7 +47,7 @@ public class LevelExprOrder implements ExpressionOrder {
       int sucs1 = level1.getUnitSucs();
       int sucs2 = level2.getUnitSucs();
       if (level1.isClosed()) {
-        return level2.isClosed() && sucs1 >= sucs2;
+        return level2.isClosed() && (expectedCMP == Equations.CMP.EQ ? sucs1 == sucs2 : sucs1 >= sucs2);
       }
       if (sucs1 == 0) {
         if (sucs2 != 0) return null;

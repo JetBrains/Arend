@@ -18,7 +18,7 @@ public class StandardOrder implements ExpressionOrder {
   public boolean isComparable(Expression expr) {
     return new CNatOrder().isComparable(expr) || new LvlOrder().isComparable(expr) ||
             new LevelOrder().isComparable(expr) || new NatOrder().isComparable(expr) ||
-            (expr instanceof UniverseExpression);
+            new UniverseOrder().isComparable(expr) || new LevelExprOrder().isComparable(expr);
   }
 
   @Override

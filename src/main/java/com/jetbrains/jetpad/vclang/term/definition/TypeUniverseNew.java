@@ -12,10 +12,13 @@ public class TypeUniverseNew {
   public static final int ANY_LEVEL = -10;
   public static final int NOT_TRUNCATED = -10;
   public static final TypeUniverseNew PROP = new TypeUniverseNew(0, -1);
-  public static final TypeUniverseNew SET = new TypeUniverseNew(ANY_LEVEL, -1);
+  public static final TypeUniverseNew SET = new TypeUniverseNew(ANY_LEVEL, 0);
 
   public static TypeUniverseNew SetOfLevel(int level) {
     return new TypeUniverseNew(level, 0);
+  }
+  public static TypeUniverseNew SetOfLevel(Expression level) {
+    return new TypeUniverseNew(exprToPLevel(level), SET.getHLevel());
   }
 
   public static class LvlConverter implements LevelExpression.Converter {
@@ -83,6 +86,9 @@ public class TypeUniverseNew {
   }
 
   public TypeUniverseNew(int plevel, int hlevel) {
+    if (hlevel == -1) {
+      plevel = 0;
+    }
     if (plevel != ANY_LEVEL) {
       myPLevel = new LevelExpression(plevel, new LvlConverter());
     } else {
@@ -96,13 +102,14 @@ public class TypeUniverseNew {
   }
 
   public TypeUniverseNew(LevelExpression plevel, LevelExpression hlevel) {
-    myPLevel = plevel;
+    myPLevel = hlevel.isZero() ? new LevelExpression(0, new LvlConverter()) : plevel;
     myHLevel = hlevel;
   }
 
   public TypeUniverseNew(Expression plevel, Expression hlevel) {
-    myPLevel = exprToPLevel(plevel);
-    myHLevel = exprToHLevel(hlevel);
+    LevelExpression hlevel_conv = exprToHLevel(hlevel);
+    myHLevel = hlevel_conv == null ? new LevelExpression(0, new CNatConverter()) : hlevel_conv;
+    myPLevel = myHLevel.isZero() ? new LevelExpression(0, new LvlConverter()) : exprToPLevel(plevel);
   }
 
   public LevelExpression getPLevel() {
@@ -126,7 +133,8 @@ public class TypeUniverseNew {
   }
 
   public static LevelExpression intToHLevel(int hlevel) {
-    return new LevelExpression(hlevel, new CNatConverter());
+    if (hlevel == NOT_TRUNCATED) return new LevelExpression(new CNatConverter());
+    return new LevelExpression(hlevel + 1, new CNatConverter());
   }
 
   public static LevelExpression exprToPLevel(Expression plevel) {
