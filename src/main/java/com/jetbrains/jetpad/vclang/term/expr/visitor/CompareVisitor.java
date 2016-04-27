@@ -177,7 +177,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       if (type1.toDataCall() != null && type1.toDataCall().getDefinition() == Preprelude.LVL) {
         Expression type2 = args2.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
         if (type2.toDataCall() != null && type2.toDataCall().getDefinition() == Preprelude.LVL) {
-          compare(args1.get(i), args2.get(i));
+          compare(myEquations, cmp, args1.get(i), args2.get(i), null);
           if (++i >= args1.size()) {
             myCMP = cmp;
             return true;
@@ -186,7 +186,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
           if (type1.toDataCall() != null && type1.toDataCall().getDefinition() == Preprelude.CNAT) {
             type2 = args2.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
             if (type2.toDataCall() != null && type2.toDataCall().getDefinition() == Preprelude.CNAT) {
-              compare(args1.get(i), args2.get(i));
+              compare(myEquations, cmp, args1.get(i), args2.get(i), null);
               i++;
             }
           }

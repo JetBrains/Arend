@@ -116,4 +116,15 @@ public class TypeCheckingTest {
         "\\function f {l : Lvl} (d : D {l} {fin 0}) => d\n" +
         "\\function g {l : Lvl} (d : D {l} {inf}) => f d");
   }
+
+  @Test
+  public void universeInference() {
+    typeCheckClass(
+        "\\static \\function\n" +
+        "transport {lp : Lvl} {lh : CNat} {A : \\Type (lp,lh)} (B : A -> \\Type (lp,lh)) {a a' : A} (p : a = a') (b : B a)\n" +
+        "  <= coe (\\lam i => B (p @ i)) b right\n" +
+        "\n" +
+        "\\static \\function\n" +
+        "foo (A : \\1-Type0) (B : A -> \\Type0) (a a' : A) (p : a = a') => transport B p");
+  }
 }

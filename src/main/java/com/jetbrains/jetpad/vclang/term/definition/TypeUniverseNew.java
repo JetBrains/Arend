@@ -192,4 +192,9 @@ public class TypeUniverseNew {
     if (myPLevel.isInfinity() || ((TypeUniverseNew) other).getPLevel().isInfinity()) return myHLevel.equals(((TypeUniverseNew) other).getHLevel());
     return myPLevel.equals(((TypeUniverseNew) other).getPLevel()) && myHLevel.equals(((TypeUniverseNew) other).getHLevel());
   }
+
+  @Override
+  public String toString() {
+    return "\\Type (" + myPLevel + "," + myHLevel + ")";
+  }
 }

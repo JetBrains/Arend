@@ -66,7 +66,6 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
       if (conCall != null && Prelude.isPathCon(conCall.getDefinition()) && result.expression.getArguments().size() <= 1) {
         Expression interval = DataCall(Preprelude.INTERVAL);
-        // TODO: check if it's correct!
         Expression lp, lh;
         if (result.expression.getArguments().isEmpty()) {
           InferenceBinding inferenceBinding1 = new FunctionInferenceBinding("lp", Lvl(), 1, fun);

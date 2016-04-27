@@ -1,9 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
+import static org.junit.Assert.assertEquals;
 
 public class Truncations {
   @Test
@@ -24,10 +27,10 @@ public class Truncations {
         "    | truncS' _ _ _ q i right => q @ i\n" +
         "\n" +
         "\\static \\function\n" +
-        "set_trunc_test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left'n\n" +
+        "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left'n\n" +
         "\n" +
         "\\static \\function\n" +
-        "set_trunc_test' (A : \\Type0) (a a' : TrS' A) (p q : a = a') : p = q => path (\\lam i => path (\\lam j => truncS' a a' p q j i))");
+        "set-trunc-test' (A : \\Type0) (a a' : TrS' A) (p q : a = a') : p = q => path (\\lam i => path (\\lam j => truncS' a a' p q j i))");
   }
 
   @Test
@@ -43,9 +46,19 @@ public class Truncations {
         "    | truncS' _ _ _ q i right => q @ i\n" +
         "\n" +
         "\\dynamic \\function\n" +
-        "set_trunc_test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left'n\n" +
+        "set-trunc-test (A : \\Type0) (a a' : TrS' A) (p q : a = a') : TrS' A => truncS' a a' p q left left'n\n" +
         "\n" +
         "\\dynamic \\function\n" +
-        "set_trunc_test' (A : \\Type0) (a a' : TrS' A) (p q : a = a') : p = q => path (\\lam i => path (\\lam j => truncS' a a' p q j i))");
+        "set-trunc-test' (A : \\Type0) (a a' : TrS' A) (p q : a = a') : p = q => path (\\lam i => path (\\lam j => truncS' a a' p q j i))");
+  }
+
+  @Test
+  public void S1Level() {
+    Definition definition = typeCheckDef(
+        "\\data S1 | base | loop I\n" +
+        "\\with\n" +
+        "  | loop left => base\n" +
+        "  | loop right => base");
+    assertEquals(new TypeUniverseNew(0, TypeUniverseNew.NOT_TRUNCATED), definition.getUniverse());
   }
 }
