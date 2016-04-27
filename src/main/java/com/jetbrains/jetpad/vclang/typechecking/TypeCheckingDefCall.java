@@ -17,13 +17,13 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 
 public class TypeCheckingDefCall {
-  private final Map<Abstract.Definition, Definition> myTypecheckMap;
+  private final TypecheckerState myState;
   private final CheckTypeVisitor myVisitor;
   private ClassDefinition myThisClass;
   private Expression myThisExpr;
 
-  public TypeCheckingDefCall(Map<Abstract.Definition, Definition> typecheckMap, CheckTypeVisitor visitor) {
-    this.myTypecheckMap = typecheckMap;
+  public TypeCheckingDefCall(TypecheckerState state, CheckTypeVisitor visitor) {
+    myState = state;
     myVisitor = visitor;
   }
 
@@ -43,7 +43,7 @@ public class TypeCheckingDefCall {
   public CheckTypeVisitor.Result typeCheckDefCall(Abstract.DefCallExpression expr) {
     Referable resolvedDefinition = expr.getReferent();
     if (resolvedDefinition != null) {
-      final Definition typecheckedDefinition = TypecheckerState.getTypechecked(myTypecheckMap, resolvedDefinition);
+      final Definition typecheckedDefinition = myState.getTypechecked(resolvedDefinition);
       if (typecheckedDefinition == null) {
         assert false;
         TypeCheckingError error = new TypeCheckingError("Internal error: definition '" + resolvedDefinition + "' is not available yet", expr);
@@ -85,8 +85,7 @@ public class TypeCheckingDefCall {
     if (type instanceof ClassCallExpression) {
       ClassDefinition classDefinition = ((ClassCallExpression) type).getDefinition();
       String name = expr.getName();
-      // FIXME[scope]
-      Definition definition = TypecheckerState.getDynamicTypecheckedMember(myTypecheckMap, classDefinition, name);
+      Definition definition = myState.getDynamicTypecheckedMember(classDefinition, name);
       if (definition == null) {
         TypeCheckingError error = new TypeCheckingError("Cannot find dynamic definition '" + name + "' in class '" + classDefinition.getResolvedName() + "'", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
@@ -154,7 +153,7 @@ public class TypeCheckingDefCall {
     }
 
     String name = expr.getName();
-    Definition member = TypecheckerState.getTypecheckedMember(myTypecheckMap, definition, name);
+    Definition member = myState.getTypecheckedMember(definition, name);
     if (member == null) {
       TypeCheckingError error = new TypeCheckingError("Cannot find definition '" + name + "' in '" + definition.getResolvedName() + "'", expr);
       expr.setWellTyped(myVisitor.getContext(), Error(null, error));

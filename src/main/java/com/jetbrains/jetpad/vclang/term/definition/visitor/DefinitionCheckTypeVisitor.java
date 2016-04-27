@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
@@ -38,32 +37,32 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.o
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Void, Definition> {
-  private final Map<Abstract.Definition, Definition> myTypecheckMap;
+  private final TypecheckerState myState;
   private final ErrorReporter myErrorReporter;
 
-  public DefinitionCheckTypeVisitor(Map<Abstract.Definition, Definition> typecheckMap, ErrorReporter errorReporter) {
-    myTypecheckMap = typecheckMap;
+  public DefinitionCheckTypeVisitor(TypecheckerState state, ErrorReporter errorReporter) {
+    myState = state;
     myErrorReporter = errorReporter;
   }
 
-  public static void typeCheck(Map<Abstract.Definition, Definition> typecheckMap, Abstract.Definition definition, ResolvedName resolvedName, ErrorReporter errorReporter) {
-    if (typecheckMap.get(definition) == null) {
-      DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(typecheckMap, errorReporter);
+  public static void typeCheck(TypecheckerState state, Abstract.Definition definition, ErrorReporter errorReporter) {
+    if (state.getTypechecked(definition) == null) {
+      DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, errorReporter);
       Definition result = definition.accept(visitor, null);
-      if (typecheckMap.get(definition) != result) {
+      if (state.getTypechecked(definition) != result) {
         throw new IllegalStateException(); // TODO[debug]
       }
     }
   }
 
   private ClassDefinition getParentClass(Abstract.Definition definition) {
-    Definition typechecked = myTypecheckMap.get(definition);
+    Definition typechecked = myState.getTypechecked(definition);
     return typechecked instanceof ClassDefinition ? (ClassDefinition) typechecked : null;
   }
 
   private ClassDefinition getParentClass(Abstract.Definition definition, Abstract.DefineStatement dynamicStatement) {
     if (definition instanceof Abstract.ClassDefinition) {
-      Definition classDefinition = myTypecheckMap.get(definition);
+      Definition classDefinition = myState.getTypechecked(definition);
       if (classDefinition instanceof ClassDefinition) {
         return (ClassDefinition) classDefinition;
       } else {
@@ -113,7 +112,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     List<? extends Abstract.Argument> arguments = def.getArguments();
     final List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myTypecheckMap, context, myErrorReporter).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def);
     LinkList list = new LinkList();
     if (thisClass != null) {
@@ -279,7 +278,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     typedDef.setResultType(expectedType);
     typedDef.typeHasErrors(typedDef.getResultType() == null);
 
-    myTypecheckMap.put(def, typedDef);
+    myState.record(def, typedDef);
     Abstract.Expression term = def.getTerm();
 
     if (term != null) {
@@ -362,7 +361,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     DependentLink thisParameter = param("\\this", ClassCall(thisClass));
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myTypecheckMap, context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
     Universe universe = new Universe.Type(0, Universe.Type.PROP);
 
     int index = 0;
@@ -424,7 +423,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass, thisParameter);
     typedDef.setUniverse(universe);
     typedDef.setThisClass(thisClass);
-    myTypecheckMap.put(def, typedDef);
+    myState.record(def, typedDef);
     return typedDef;
   }
 
@@ -435,7 +434,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Universe typedUniverse = new Universe.Type(0, Universe.Type.PROP);
 
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myTypecheckMap, context, myErrorReporter).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build();
     ClassDefinition thisClass = getThisClass(def);
     LinkList list = new LinkList();
     if (thisClass != null) {
@@ -467,7 +466,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     dataDefinition.setParameters(list.getFirst());
     dataDefinition.hasErrors(false);
     dataDefinition.setThisClass(thisClass);
-    myTypecheckMap.put(def, dataDefinition);
+    myState.record(def, dataDefinition);
 
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
@@ -475,7 +474,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         continue;
       }
 
-      myTypecheckMap.put(constructor, typedConstructor);
+      myState.record(constructor, typedConstructor);
 
       Universe maxUniverse = typedUniverse.max(typedConstructor.getUniverse());
       if (maxUniverse == null) {
@@ -618,7 +617,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     if (condMap.containsKey(constructor)) {
       for (Abstract.Condition condition : condMap.get(constructor)) {
         for (Referable def : condition.getTerm().accept(new CollectDefCallsVisitor(), null)) {
-          final Definition typeCheckedDef = TypecheckerState.getTypechecked(myTypecheckMap, def);
+          final Definition typeCheckedDef = myState.getTypechecked(def);
           if (typeCheckedDef != null && typeCheckedDef != constructor && typeCheckedDef instanceof Constructor && ((Constructor) typeCheckedDef).getDataType().equals(constructor.getDataType())) {
             List<Constructor> cycle = searchConditionCycle(condMap, (Constructor) typeCheckedDef, visited, visiting);
             if (cycle != null)
@@ -752,7 +751,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
 
-      myTypecheckMap.put(def, constructor);
+      myState.record(def, constructor);
       return constructor;
     }
   }
@@ -804,10 +803,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (statement instanceof Abstract.DefineStatement) {
         Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
         if (definition instanceof Abstract.AbstractDefinition) {
-          Definition memberDefinition = myTypecheckMap.get(definition);
+          Definition memberDefinition = myState.getTypechecked(definition);
 
           if (memberDefinition == null) {
-            DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(myTypecheckMap, myErrorReporter);
+            DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(myState, myErrorReporter);
             memberDefinition = visitor.visitAbstract((Abstract.AbstractDefinition) definition, classDefinition);
           }
 
@@ -837,7 +836,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       typedDef.addParentField(thisClass);
     }
     typeCheckStatements(typedDef, def.getStatements());
-    myTypecheckMap.put(def, typedDef);
+    myState.record(def, typedDef);
     return typedDef;
   }
 }

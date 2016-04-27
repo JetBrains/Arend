@@ -148,11 +148,11 @@ public class TypecheckingOrdering {
 
   private static void typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (result instanceof OKResult) {
-      Map<Abstract.Definition, Definition> typecheckMap = new HashMap<>();
+      TypecheckerState state = new TypecheckerState();
       for (Abstract.Definition def : ((OKResult) result).order.keySet()) {
         ResolvedName resolvedName = ((OKResult) result).order.get(def);
-        DefinitionCheckTypeVisitor.typeCheck(typecheckMap, def, resolvedName, new LocalErrorReporter(resolvedName, errorReporter));
-        Definition typechecked = typecheckMap.get(def);
+        DefinitionCheckTypeVisitor.typeCheck(state, def,new LocalErrorReporter(resolvedName, errorReporter));
+        Definition typechecked = state.getTypechecked(def);
         if (typechecked == null || typechecked.hasErrors()) {
           typecheckedReporter.typecheckingFailed(def);
         } else {

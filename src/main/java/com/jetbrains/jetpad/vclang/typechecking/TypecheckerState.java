@@ -6,15 +6,26 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class TypecheckerState {
-  public static Definition getTypechecked(Map<Abstract.Definition, Definition> myTypecheckMap, Referable ref) {
+  private final Map<Abstract.Definition, Definition> myTypechecked = new HashMap<>();
+
+  public void record(Abstract.Definition def, Definition res) {
+    myTypechecked.put(def, res);
+  }
+
+  public Definition getTypechecked(Abstract.Definition def) {
+    return myTypechecked.get(def);
+  }
+
+  public Definition getTypechecked(Referable ref) {
     final Definition res;
     if (ref instanceof Definition) {
       res = (Definition) ref;
     } else if (ref instanceof Abstract.Definition) {
-      res = myTypecheckMap.get(ref);
+      res = getTypechecked((Abstract.Definition) ref);
     } else {
       // FIXME[referable]
       throw new IllegalStateException();
@@ -22,16 +33,13 @@ public class TypecheckerState {
     return res;
   }
 
-  public static Definition getTypecheckedMember(Map<Abstract.Definition, Definition> myTypecheckMap, Definition definition, String name) {
+  public Definition getTypecheckedMember(Definition definition, String name) {
     Namespace ns = definition.getNamespace();
     Referable resolved = ns.resolveName(name);
-    return resolved != null ? getTypechecked(myTypecheckMap, resolved) : null;
+    return resolved != null ? getTypechecked(resolved) : null;
   }
 
-  public static Definition getDynamicTypecheckedMember(Map<Abstract.Definition, Definition> myTypecheckMap, ClassDefinition classDefinition, String name) {
-    Namespace ns = classDefinition.getNamespace();
-    //Referable resolved = ns.resolveInstanceName(name);
-    //return resolved != null ? getTypechecked(myTypecheckMap, resolved) : null;
-    return null;  // FIXME[state]
+  public Definition getDynamicTypecheckedMember(ClassDefinition classDefinition, String name) {
+    return getTypecheckedMember(classDefinition, name);  // TODO dynamic only?
   }
 }

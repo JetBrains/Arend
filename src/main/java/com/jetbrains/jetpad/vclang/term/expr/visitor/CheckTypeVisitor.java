@@ -38,7 +38,7 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.e
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.ordinal;
 
 public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, CheckTypeVisitor.Result> {
-  private final Map<Abstract.Definition, Definition> myTypecheckMap;
+  private final TypecheckerState myState;
   private final List<Binding> myContext;
   private final ErrorReporter myErrorReporter;
   private TypeCheckingDefCall myTypeCheckingDefCall;
@@ -74,8 +74,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
   }
 
-  private CheckTypeVisitor(Map<Abstract.Definition, Definition> typecheckMap, List<Binding> localContext, ErrorReporter errorReporter, TypeCheckingDefCall typeCheckingDefCall, ImplicitArgsInference argsInference) {
-    myTypecheckMap = typecheckMap;
+  private CheckTypeVisitor(TypecheckerState state, List<Binding> localContext, ErrorReporter errorReporter, TypeCheckingDefCall typeCheckingDefCall, ImplicitArgsInference argsInference) {
+    myState = state;
     myContext = localContext;
     myErrorReporter = errorReporter;
     myTypeCheckingDefCall = typeCheckingDefCall;
@@ -83,7 +83,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   }
 
   public static class Builder {
-    private final Map<Abstract.Definition, Definition> myTypecheckMap;
+    private final TypecheckerState myTypecheckerState;
     private final List<Binding> myLocalContext;
     private final ErrorReporter myErrorReporter;
     private TypeCheckingDefCall myTypeCheckingDefCall;
@@ -91,12 +91,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     private ClassDefinition myThisClass;
     private Expression myThisExpr;
 
-    public Builder(List<Binding> localContext, ErrorReporter errorReporter) {
-      this(new HashMap<Abstract.Definition, Definition>(), localContext, errorReporter);
-    }
-
-    public Builder(Map<Abstract.Definition, Definition> typecheckMap, List<Binding> localContext, ErrorReporter errorReporter) {
-      this.myTypecheckMap = typecheckMap;
+    public Builder(TypecheckerState typecheckerState, List<Binding> localContext, ErrorReporter errorReporter) {
+      this.myTypecheckerState = typecheckerState;
       myLocalContext = localContext;
       myErrorReporter = errorReporter;
     }
@@ -118,9 +114,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     public CheckTypeVisitor build() {
-      CheckTypeVisitor visitor = new CheckTypeVisitor(myTypecheckMap, myLocalContext, myErrorReporter, myTypeCheckingDefCall, myArgsInference);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(myTypecheckerState, myLocalContext, myErrorReporter, myTypeCheckingDefCall, myArgsInference);
       if (myTypeCheckingDefCall == null) {
-        visitor.myTypeCheckingDefCall = new TypeCheckingDefCall(myTypecheckMap, visitor);
+        visitor.myTypeCheckingDefCall = new TypeCheckingDefCall(myTypecheckerState, visitor);
         visitor.myTypeCheckingDefCall.setThisClass(myThisClass, myThisExpr);
       }
       visitor.myTypeCheckingElim = new TypeCheckingElim(visitor);
@@ -278,7 +274,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrorReporter.report(error);
       return null;
     }
-    Definition typechecked = TypecheckerState.getTypechecked(myTypecheckMap, expr.getModule());
+    Definition typechecked = myState.getTypechecked(expr.getModule());
     if (typechecked == null) {
       assert false;
       TypeCheckingError error = new TypeCheckingError("Internal error: module '" + new ModulePath(expr.getPath()) + "' is not available yet", expr);
