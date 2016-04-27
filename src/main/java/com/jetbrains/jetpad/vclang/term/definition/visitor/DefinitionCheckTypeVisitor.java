@@ -22,7 +22,6 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.*;
@@ -488,7 +487,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       if (result == null || result.expression.toUniverse() == null) {
         String msg = "Specified type " + def.getUniverse().accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), Abstract.Expression.PREC) + " of '" + def.getName() + "' is not a universe";
-        myErrorReporter.report(new TypeCheckingError(msg, null));
+        myErrorReporter.report(new TypeCheckingError(msg, def.getUniverse()));
       } else {
         userUniverse = result.expression.toUniverse().getUniverse();
       }
@@ -542,7 +541,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       LevelExpression.CMP cmpH = inferredHLevel.compare(userUniverse.getHLevel());
       if (cmpP == LevelExpression.CMP.NOT_COMPARABLE || cmpP == LevelExpression.CMP.GREATER ||
               cmpH == LevelExpression.CMP.NOT_COMPARABLE || cmpH == LevelExpression.CMP.GREATER) {
-        myErrorReporter.report(new TypeMismatchError(new UniverseExpression(userUniverse), new UniverseExpression(inferredUniverse), null));
+        String msg = "Actual universe " + new UniverseExpression(inferredUniverse) + " is not compatible with expected universe " + new UniverseExpression(userUniverse);
+        myErrorReporter.report(new TypeCheckingError(msg, def.getUniverse()));
         dataDefinition.setUniverse(inferredUniverse);
       } else {
         dataDefinition.setUniverse(userUniverse);

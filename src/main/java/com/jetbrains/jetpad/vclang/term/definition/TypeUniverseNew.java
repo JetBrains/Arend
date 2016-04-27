@@ -171,7 +171,7 @@ public class TypeUniverseNew {
   }
 
   public TypeUniverseNew succ() {
-    return new TypeUniverseNew(getPLevel().succ(), getHLevel().succ());
+    return isProp() ? SetOfLevel(0) : new TypeUniverseNew(getPLevel().succ(), getHLevel().succ());
   }
 
   public boolean isProp() {
