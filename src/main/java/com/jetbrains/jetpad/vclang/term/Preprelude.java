@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.Collection;
-import java.util.EnumSet;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -220,14 +219,14 @@ public class Preprelude extends Namespace {
     if (num <= 0) {
       return expr;
     }
-    return FunCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), EnumSet.noneOf(AppExpression.Flag.class));
+    return FunCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), AppExpression.DEFAULT);
   }
 
   public static Expression applyNumberOfSuc(Expression expr, Constructor suc, int num) {
     if (num <= 0) {
       return expr;
     }
-    return ConCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), EnumSet.noneOf(AppExpression.Flag.class));
+    return ConCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), AppExpression.DEFAULT);
   }
 
 

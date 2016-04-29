@@ -397,4 +397,11 @@ public class ImplicitArgumentsTest {
         "\\function test {A : \\Type0} (P : A -> \\Type0) {a : A} (pa : P a) (i : I)\n" +
         "  => \\lam (a' : A) (q : a = a') => idpOver (\\lam (j : I) => P (q @ j)) pa @ i");
   }
+
+  @Test
+  public void differentLevels() {
+    typeCheckClass(
+        "\\static \\function F {lp : Lvl} (X : \\Type (lp,inf)) (B : X -> \\Type (lp,inf)) => zero\n" +
+        "\\static \\function g {lp : Lvl} (X : \\Type (lp,inf)) => F X (\\lam _ => (=) X X)");
+  }
 }
