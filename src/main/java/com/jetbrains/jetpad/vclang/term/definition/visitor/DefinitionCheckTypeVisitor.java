@@ -397,14 +397,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (plevel == null) {
           plevel = argPLevel;
         } else {
-          /*Universe.CompareResult cmp = universe.compare(argUniverse);
-          if (cmp == null) {
-            String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
-            myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
-            return typedDef;
-          } else {
-            universe = cmp.MaxUniverse;
-          } /**/
           plevel = plevel.max(argPLevel);
         }
       } else {
@@ -427,14 +419,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     if (plevel == null) {
       plevel = resultTypeUniverse.getPLevel();
     } else {
-      /*Universe.CompareResult cmp = universe.compare(resultTypeUniverse);
-      if (cmp == null) {
-        String error = "Universe " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
-        myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, def));
-        return typedDef;
-      } else {
-        universe = cmp.MaxUniverse;
-      } /**/
       plevel = plevel.max(resultTypeUniverse.getPLevel());
     }
 
@@ -514,29 +498,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
       member.definition = typedConstructor;
 
-      /*Universe.CompareResult cmp = inferredUniverse.compare(typedConstructor.getUniverse());
-      if (cmp == null) {
-        String msg = "Universe " + typedConstructor.getUniverse() + " of constructor '" + constructor.getName() + "' is not compatible with universe " + inferredUniverse + " of previous constructors";
-        myErrorReporter.report(new TypeCheckingError(msg, null));
-      } else {
-        inferredUniverse = cmp.MaxUniverse;
-      }/**/
-      //inferredPLevel = inferredPLevel.max(typedConstructor.getUniverse().getPLevel());
-      //inferredHLevel = inferredHLevel.max(typedConstructor.getUniverse().getHLevel());
       inferredUniverse = inferredUniverse.max(typedConstructor.getUniverse());
     }
 
-    /*if (userUniverse != null) {
-      Universe.CompareResult cmp = inferredUniverse.compare(userUniverse);
-      if (cmp == null || cmp.Result == Universe.Cmp.GREATER) {
-        myErrorReporter.report(new TypeMismatchError(new UniverseExpression(userUniverse), new UniverseExpression(inferredUniverse), null));
-        dataDefinition.setUniverse(inferredUniverse);
-      } else {
-        dataDefinition.setUniverse(cmp.MaxUniverse);
-      }
-    } else {
-      dataDefinition.setUniverse(inferredUniverse);
-    } /**/
     if (userUniverse != null) {
       LevelExpression.CMP cmpP = inferredUniverse.getPLevel().compare(userUniverse.getPLevel());
       LevelExpression.CMP cmpH = inferredUniverse.getHLevel().compare(userUniverse.getHLevel());
@@ -617,9 +581,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression()));
             DependentLink params = constructor.getParameters();
-            //if (constructor.getThisClass() != null) {
-            //  params = params.getNext();
-           // }
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns());
             if (processedPatterns == null)
               continue;

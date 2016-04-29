@@ -53,14 +53,6 @@ public class LevelExpression extends Expression {
     if (other.isInfinity()) return new LevelExpression(other);
     if (isInfinity()) return new LevelExpression(this);
 
-    /*CMP cmp = compare(other);
-
-    if (cmp == CMP.LESS) {
-      return new LevelExpression(other);
-    } else if (cmp == CMP.GREATER || cmp == CMP.EQUAL) {
-      return new LevelExpression(this);
-    }/**/
-
     LevelExpression result = new LevelExpression(other.myNumSucsOfVars, Math.max(myConstant, other.myConstant), other.myConv);
 
     for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
@@ -92,24 +84,6 @@ public class LevelExpression extends Expression {
       result.myConstant = 0;
     }
     return result; /**/
-    /*if (isInfinity()) return this;
-    Integer sucs = myNumSucsOfVars.get(var);
-    if (sucs == null) {
-      return this;
-    }
-    if (level.isInfinity()) return new LevelExpression(myConv);
-    myNumSucsOfVars.remove(var);
-    myConstant += level.myConstant;
-    for (Map.Entry<Binding, Integer> var_ : level.myNumSucsOfVars.entrySet()) {
-      Integer thisSucs = myNumSucsOfVars.get(var_.getKey());
-      if (thisSucs == null) {
-        myNumSucsOfVars.put(var_.getKey(), var_.getValue() + sucs);
-      } else {
-        myNumSucsOfVars.put(var_.getKey(), Integer.max(var_.getValue() + sucs, thisSucs));
-      }
-    }
-    extractOuterSucs();
-    return this; /**/
   }
 
   public List<LevelExpression> toListOfMaxArgs() {

@@ -440,18 +440,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result resultP = typeCheck(expr.getPLevel(), Lvl());
     Result resultH = typeCheck(expr.getHLevel(), CNat());
     if (resultP == null || resultH == null) return null;
-    //Expression level = result.expression.normalize(NormalizeVisitor.Mode.WHNF);
     UniverseExpression universe = Universe(new TypeUniverseNew(resultP.expression, resultH.expression));
-    /*NewExpression newLevel = level.toNew();
 
-    if (newLevel == null) {
-      //universe = new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
-      return null;
-    } else {
-      Expression plevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.PLEVEL).term;
-      Expression hlevel = newLevel.getExpression().toClassCall().getImplementStatements().get(Preprelude.HLEVEL).term;
-      universe = new UniverseExpression(new TypeUniverseNew(TypeUniverseNew.exprToPLevel(plevel), TypeUniverseNew.exprToHLevel(hlevel)));
-    }/**/
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
 
@@ -568,8 +558,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    //LevelExpression plevel = null;
-    //LevelExpression hlevel = null;
     TypeUniverseNew maxDomainUni = null;
     for (Expression domainType : domainTypes) {
       TypeUniverseNew argUniverse = domainType.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
@@ -577,32 +565,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         maxDomainUni = argUniverse;
         continue;
       }
-      /*Universe.CompareResult cmp = universe.compare(argUniverse);
-      if (cmp == null) {
-        String msg = "Universe " + argUniverse + " of " + ordinal(i + 1) + " argument is not compatible with universe " + universe + " of previous arguments";
-        TypeCheckingError error = new TypeCheckingError(msg, expr);
-        expr.setWellTyped(myContext, Error(null, error));
-        myErrorReporter.report(error);
-        return null;
-      }/**/
       maxDomainUni = maxDomainUni.max(argUniverse);
     }
     TypeUniverseNew codomainUniverse = null;
     if (codomainResult != null) {
       codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
-      /*if (maxDomainUni != null) {
-        /*Universe.CompareResult cmp = universe.compare(codomainUniverse);
-        if (cmp == null) {
-          String msg = "Universe " + codomainUniverse + " the codomain is not compatible with universe " + universe + " of arguments";
-          TypeCheckingError error = new TypeCheckingError(msg, expr);
-          expr.setWellTyped(myContext, Error(null, error));
-          myErrorReporter.report(error);
-          return null;
-        }
-        plevel = codomainUniverse.getHLevel().equals(TypeUniverseNew.PROP.getHLevel()) ? TypeUniverseNew.PROP.getPLevel() : plevel.max(codomainUniverse.getPLevel());
-      } else {
-        plevel = codomainUniverse.getPLevel();
-      }/**/
     }
 
     TypeUniverseNew finalUniverse = null;
