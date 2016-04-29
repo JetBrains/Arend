@@ -47,10 +47,6 @@ public class Preprelude extends Namespace {
   public static FunctionDefinition MAX_CNAT;
   public static FunctionDefinition SUC_CNAT;
 
-  public static ClassDefinition LEVEL;
-  public static ClassField PLEVEL;
-  public static ClassField HLEVEL;
-
   static {
     PRE_PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID), null);
 
@@ -124,15 +120,6 @@ public class Preprelude extends Namespace {
             clause(FIN, finCNatParameter, Apps(ConCall(FIN), Apps(ConCall(SUC), Reference(finCNatParameter))))));
     SUC_CNAT = new DefinitionBuilder.Function(PRE_PRELUDE, "sucCNat", Abstract.Binding.DEFAULT_PRECEDENCE, sucCNatParameter, DataCall(CNAT), sucCNatElimTree).definition();
 
-    LEVEL = new ClassDefinition(new DefinitionResolvedName(PRE_PRELUDE, "Level"), null);
-    PLEVEL = new ClassField(new DefinitionResolvedName(PRE_PRELUDE.getChild(LEVEL.getName()), "PLevel"), Abstract.Binding.DEFAULT_PRECEDENCE, DataCall(LVL), LEVEL, param("\\this", ClassCall(LEVEL)), null);
-    HLEVEL = new ClassField(new DefinitionResolvedName(PRE_PRELUDE.getChild(LEVEL.getName()), "HLevel"), Abstract.Binding.DEFAULT_PRECEDENCE, DataCall(CNAT), LEVEL, param("\\this", ClassCall(LEVEL)), null);
-    LEVEL.addField(PLEVEL);
-    LEVEL.addField(HLEVEL);
-    PRE_PRELUDE.addDefinition(LEVEL);
-    PRE_PRELUDE.getChild(LEVEL.getName()).addDefinition(PLEVEL);
-    PRE_PRELUDE.getChild(LEVEL.getName()).addDefinition(HLEVEL);
-
     /* I, left, right */
     DefinitionBuilder.Data interval = new DefinitionBuilder.Data(PRE_PRELUDE, "I", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
     INTERVAL = interval.definition();
@@ -151,9 +138,6 @@ public class Preprelude extends Namespace {
     CNAT.setUniverse(TypeUniverse.SetOfLevel(0));
     FIN.setUniverse(TypeUniverse.SetOfLevel(0));
     INF.setUniverse(TypeUniverse.SetOfLevel(0));
-    LEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
-    PLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
-    HLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
     INTERVAL.setUniverse(TypeUniverse.PROP);
     LEFT.setUniverse(TypeUniverse.PROP);
     RIGHT.setUniverse(TypeUniverse.PROP);

@@ -237,19 +237,6 @@ public class ExpressionFactory {
 
   public static Expression MaxCNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_CNAT), expr1, expr2); }
 
-  public static ClassCallExpression Level() { return new ClassCallExpression(Preprelude.LEVEL); }
-
-  public static NewExpression Level(Expression plevel, Expression hlevel) {
-    HashMap<ClassField, ClassCallExpression.ImplementStatement> map = new HashMap<>();
-    map.put(Preprelude.PLEVEL, new ClassCallExpression.ImplementStatement(Lvl(), plevel));
-    map.put(Preprelude.HLEVEL, new ClassCallExpression.ImplementStatement(CNat(), hlevel));
-    return new NewExpression(new ClassCallExpression(Preprelude.LEVEL, map));
-  }
-
-  public static FieldCallExpression PLevel() { return new FieldCallExpression(Preprelude.PLEVEL); }
-
-  public static FieldCallExpression HLevel() { return new FieldCallExpression(Preprelude.HLEVEL); }
-
   public static UniverseExpression Universe() {
     return new UniverseExpression(new TypeUniverse(TypeUniverse.ANY_LEVEL, TypeUniverse.ANY_LEVEL));
   }
@@ -266,9 +253,7 @@ public class ExpressionFactory {
     return new UniverseExpression(new TypeUniverse(TypeUniverse.intToPLevel(plevel), hlevel));
   }
 
-  //public static UniverseExpression Universe(Expression level) {
-   // return new UniverseExpression(new TypeUniverse(new TypeUniverse.TypeLevel(level)));
- // }
+
 
   public static UniverseExpression Universe(Expression plevel, Expression hlevel) {
     return new UniverseExpression(new TypeUniverse(TypeUniverse.exprToPLevel(plevel), TypeUniverse.exprToHLevel(hlevel)));

@@ -16,7 +16,7 @@ public class StandardOrder implements ExpressionOrder {
   @Override
   public boolean isComparable(Expression expr) {
     return new CNatOrder().isComparable(expr) || new LvlOrder().isComparable(expr) ||
-            new LevelOrder().isComparable(expr) || new NatOrder().isComparable(expr) ||
+            new NatOrder().isComparable(expr) ||
             new UniverseOrder().isComparable(expr) || new LevelExprOrder().isComparable(expr);
   }
 
@@ -30,10 +30,6 @@ public class StandardOrder implements ExpressionOrder {
     if (cmpRes != null) {
       return cmpRes;
     }
-    /*cmpRes = LevelOrder.compareLevel(expr1, expr2, visitor, expectedCMP);
-    if (cmpRes != null) {
-      return cmpRes;
-    } /**/
     cmpRes = NatOrder.compareNat(expr1, expr2, visitor, expectedCMP);
     if (cmpRes != null) {
       return cmpRes;
@@ -60,18 +56,6 @@ public class StandardOrder implements ExpressionOrder {
 
       if (dataCall1.getDefinition() == Preprelude.LVL && dataCall2.getDefinition() == Preprelude.LVL) {
         return LvlOrder.maxLvl(expr1, expr2);
-      }
-    }
-
-    ClassCallExpression classCall1 = type1.toClassCall();
-    ClassCallExpression classCall2 = type2.toClassCall();
-
-    if (classCall1 != null) {
-      if (classCall2 == null) {
-        return null;
-      }
-      if (classCall1.getDefinition() == Preprelude.LEVEL && classCall2.getDefinition() == Preprelude.LEVEL) {
-        return LevelOrder.maxLevel(expr1, expr2);
       }
     }
 
