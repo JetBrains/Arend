@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
+import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.factory.AbstractExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -64,7 +65,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Expression fun = expr.getFunction();
     DefCallExpression defCall = fun.toDefCall();
 
-    if (!(defCall != null && defCall.getDefinition().getFixity() == Abstract.Definition.Fixity.INFIX)) {
+    if (!(defCall != null && new Name(defCall.getDefinition().getName()).fixity == Name.Fixity.INFIX)) {
       return null;
     }
     if (expr.getFlags().size() < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!expr.getFlags().get(0).contains(AppExpression.Flag.EXPLICIT) || !expr.getFlags().get(1).contains(AppExpression.Flag.EXPLICIT))) {

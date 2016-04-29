@@ -152,9 +152,9 @@ public class DefinitionTest {
 
     ModuleID moduleID = new NameModuleID("test");
     Namespace namespace = new Namespace(moduleID);
-    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverseNew(1, TypeUniverseNew.NOT_TRUNCATED), A);
+    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(1, TypeUniverseNew.NOT_TRUNCATED), A);
     namespace.addDefinition(def);
-    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverseNew(1, TypeUniverseNew.NOT_TRUNCATED), params(B, param(Reference(A)), param(Reference(B))), def);
+    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(1, TypeUniverseNew.NOT_TRUNCATED), params(B, param(Reference(A)), param(Reference(B))), def);
     def.addConstructor(con);
 
     Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
@@ -172,9 +172,9 @@ public class DefinitionTest {
 
     ModuleID moduleID = new NameModuleID("test");
     Namespace namespace = new Namespace(moduleID);
-    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverseNew(1, TypeUniverseNew.NOT_TRUNCATED), A);
+    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(1, TypeUniverseNew.NOT_TRUNCATED), A);
     namespace.addDefinition(def);
-    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverseNew(1, TypeUniverseNew.NOT_TRUNCATED), params(B, param(Reference(A)), param(Reference(B))), def);
+    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(1, TypeUniverseNew.NOT_TRUNCATED), params(B, param(Reference(A)), param(Reference(B))), def);
     def.addConstructor(con);
 
     Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con), cNat(), cLam("x", cVar("x")), cZero()));
@@ -193,9 +193,9 @@ public class DefinitionTest {
     DependentLink A = param("A", Universe(0));
     ModuleID moduleID = new NameModuleID("test");
     Namespace namespace = new Namespace(moduleID);
-    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverseNew.SetOfLevel(0), A);
+    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, TypeUniverseNew.SetOfLevel(0), A);
     namespace.addDefinition(def);
-    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverseNew.SetOfLevel(0), param(Reference(A)), def);
+    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, TypeUniverseNew.SetOfLevel(0), param(Reference(A)), def);
     def.addConstructor(con);
 
     Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con));

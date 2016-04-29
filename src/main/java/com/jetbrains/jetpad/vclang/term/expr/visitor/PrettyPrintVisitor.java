@@ -266,9 +266,9 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitBinOp(Abstract.BinOpExpression expr, Byte prec) {
     if (prec > expr.getResolvedBinOp().getPrecedence().priority) myBuilder.append('(');
-    expr.getLeft().accept(this, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Definition.Associativity.LEFT_ASSOC ? 0 : 1)));
+    expr.getLeft().accept(this, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.LEFT_ASSOC ? 0 : 1)));
     myBuilder.append(' ').append(new Name(expr.getResolvedBinOp().getName()).getInfixName()).append(' ');
-    expr.getRight().accept(this, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Definition.Associativity.RIGHT_ASSOC ? 0 : 1)));
+    expr.getRight().accept(this, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.RIGHT_ASSOC ? 0 : 1)));
     if (prec > expr.getResolvedBinOp().getPrecedence().priority) myBuilder.append(')');
     return null;
   }
@@ -453,10 +453,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitFunction(Abstract.FunctionDefinition def, Void ignored) {
     myBuilder.append("\\function");
     Abstract.Definition.Precedence precedence = def.getPrecedence();
-    if (precedence != null && !precedence.equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
+    if (precedence != null && !precedence.equals(Abstract.Binding.DEFAULT_PRECEDENCE)) {
       myBuilder.append(" \\infix");
-      if (precedence.associativity == Abstract.Definition.Associativity.LEFT_ASSOC) myBuilder.append('l');
-      if (precedence.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC) myBuilder.append('r');
+      if (precedence.associativity == Abstract.Binding.Associativity.LEFT_ASSOC) myBuilder.append('l');
+      if (precedence.associativity == Abstract.Binding.Associativity.RIGHT_ASSOC) myBuilder.append('r');
       myBuilder.append(' ');
       myBuilder.append(precedence.priority);
     }
@@ -516,10 +516,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitAbstract(Abstract.AbstractDefinition def, Void params) {
     myBuilder.append("\\abstract ");
     Abstract.Definition.Precedence precedence = def.getPrecedence();
-    if (precedence != null && !precedence.equals(Abstract.Definition.DEFAULT_PRECEDENCE)) {
+    if (precedence != null && !precedence.equals(Abstract.Binding.DEFAULT_PRECEDENCE)) {
       myBuilder.append("\\infix");
-      if (precedence.associativity == Abstract.Definition.Associativity.LEFT_ASSOC) myBuilder.append('l');
-      if (precedence.associativity == Abstract.Definition.Associativity.RIGHT_ASSOC) myBuilder.append('r');
+      if (precedence.associativity == Abstract.Binding.Associativity.LEFT_ASSOC) myBuilder.append('l');
+      if (precedence.associativity == Abstract.Binding.Associativity.RIGHT_ASSOC) myBuilder.append('r');
       myBuilder.append(' ');
       myBuilder.append(precedence.priority);
       myBuilder.append(' ');

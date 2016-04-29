@@ -79,7 +79,7 @@ public class PrettyPrintingParserTest {
   @Test
   public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
     // f {x : Nat} (A : Nat -> \Type0) : A x -> (Nat -> Nat) -> Nat -> Nat => \t y z. y z;
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Definition.DEFAULT_PRECEDENCE, cargs(cTele(false, cvars("x"), cNat()), cTele(cvars("A"), cPi(cNat(), cUniverse(0)))), cPi(cApps(cVar("A"), cVar("x")), cPi(cPi(cNat(), cNat()), cPi(cNat(), cNat()))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName("t"), cName("y"), cName("z")), cApps(cVar("y"), cVar("z"))), false, null, new ArrayList<Concrete.Statement>());
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(POSITION, "f", Abstract.Binding.DEFAULT_PRECEDENCE, cargs(cTele(false, cvars("x"), cNat()), cTele(cvars("A"), cPi(cNat(), cUniverse(0)))), cPi(cApps(cVar("A"), cVar("x")), cPi(cPi(cNat(), cNat()), cPi(cNat(), cNat()))), Abstract.Definition.Arrow.RIGHT, cLam(cargs(cName("t"), cName("y"), cName("z")), cApps(cVar("y"), cVar("z"))), false, null, new ArrayList<Concrete.Statement>());
     testDef(def, def);
   }
 }

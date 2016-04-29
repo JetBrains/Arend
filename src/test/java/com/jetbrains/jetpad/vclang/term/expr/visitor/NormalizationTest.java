@@ -51,7 +51,7 @@ public class NormalizationTest {
   public NormalizationTest() {
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
-    plus = new FunctionDefinition(testNS.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 6), params(xPlus, yPlus), Nat(), null);
+    plus = new FunctionDefinition(testNS.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), params(xPlus, yPlus), Nat(), null);
 
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
@@ -62,7 +62,7 @@ public class NormalizationTest {
 
     DependentLink xMul = param("x", Nat());
     DependentLink yMul = param("y", Nat());
-    mul = new FunctionDefinition(testNS.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Definition.Associativity.LEFT_ASSOC, (byte) 7), params(xMul, yMul), Nat(), null);
+    mul = new FunctionDefinition(testNS.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), params(xMul, yMul), Nat(), null);
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
@@ -72,7 +72,7 @@ public class NormalizationTest {
     testNS.addDefinition(mul);
 
     DependentLink xFac = param("x", Nat());
-    fac = new FunctionDefinition(testNS.getChild("fac").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, xFac, Nat(), null);
+    fac = new FunctionDefinition(testNS.getChild("fac").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, xFac, Nat(), null);
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
@@ -84,7 +84,7 @@ public class NormalizationTest {
     DependentLink zNElim = param("z", Nat());
     DependentLink sNElim = param("s", Pi(param(Nat()), Pi(param(Nat()), Nat())));
     DependentLink xNElim = param("x", Nat());
-    nelim = new FunctionDefinition(testNS.getChild("nelim").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, params(zNElim, sNElim, xNElim), Nat(), null);
+    nelim = new FunctionDefinition(testNS.getChild("nelim").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, params(zNElim, sNElim, xNElim), Nat(), null);
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),

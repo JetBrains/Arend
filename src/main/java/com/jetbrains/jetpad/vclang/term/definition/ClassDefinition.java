@@ -17,7 +17,7 @@ public class ClassDefinition extends Definition {
   private Map<String, ClassField> myFields = null;
 
   public ClassDefinition(ResolvedName rn) {
-    super(rn, Abstract.Definition.DEFAULT_PRECEDENCE);
+    super(rn, Abstract.Binding.DEFAULT_PRECEDENCE);
     super.hasErrors(false);
   }
 
@@ -79,7 +79,7 @@ public class ClassDefinition extends Definition {
 
   public void addParentField(ClassDefinition parentClass) {
     setThisClass(parentClass);
-    ClassField field = new ClassField(getResolvedName().toNamespace().getChild("\\parent").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this)));
+    ClassField field = new ClassField(getResolvedName().toNamespace().getChild("\\parent").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, ClassCall(parentClass), this, param("\\this", ClassCall(this)));
     addField(field);
     getResolvedName().toNamespace().addDefinition(field);
   }

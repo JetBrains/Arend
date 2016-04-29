@@ -97,11 +97,11 @@ public class ModuleDeserialization {
       Abstract.Definition.Associativity associativity;
       int assoc = stream.read();
       if (assoc == 0) {
-        associativity = Abstract.Definition.Associativity.LEFT_ASSOC;
+        associativity = Abstract.Binding.Associativity.LEFT_ASSOC;
       } else if (assoc == 1) {
-        associativity = Abstract.Definition.Associativity.RIGHT_ASSOC;
+        associativity = Abstract.Binding.Associativity.RIGHT_ASSOC;
       } else {
-        associativity = Abstract.Definition.Associativity.NON_ASSOC;
+        associativity = Abstract.Binding.Associativity.NON_ASSOC;
       }
       byte priority = stream.readByte();
       precedence = new Abstract.Definition.Precedence(associativity, priority);

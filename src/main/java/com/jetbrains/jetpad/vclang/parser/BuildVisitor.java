@@ -219,7 +219,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Abstract.Definition.Precedence visitNoPrecedence(NoPrecedenceContext ctx) {
-    return Abstract.Definition.DEFAULT_PRECEDENCE;
+    return Abstract.Binding.DEFAULT_PRECEDENCE;
   }
 
   @Override
@@ -241,17 +241,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Abstract.Definition.Associativity visitNonAssoc(NonAssocContext ctx) {
-    return Abstract.Definition.Associativity.NON_ASSOC;
+    return Abstract.Binding.Associativity.NON_ASSOC;
   }
 
   @Override
   public Abstract.Definition.Associativity visitLeftAssoc(LeftAssocContext ctx) {
-    return Abstract.Definition.Associativity.LEFT_ASSOC;
+    return Abstract.Binding.Associativity.LEFT_ASSOC;
   }
 
   @Override
   public Abstract.Definition.Associativity visitRightAssoc(RightAssocContext ctx) {
-    return Abstract.Definition.Associativity.RIGHT_ASSOC;
+    return Abstract.Binding.Associativity.RIGHT_ASSOC;
   }
 
   @Override
