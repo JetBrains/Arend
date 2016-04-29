@@ -221,6 +221,29 @@ public class ListEquations implements Equations {
       cmp = CMP.EQ;
     }
 
+    if (expr.toLevel() != null) {
+      if (expr.toLevel().isZero()) {
+        /* TODO
+        if (cmp == CMP.GE) {
+          return;
+        }
+        */
+        if (cmp == CMP.LE) {
+          cmp = CMP.EQ;
+        }
+      }
+      if (expr.toLevel().isInfinity()) {
+        /* TODO
+        if (cmp == CMP.LE) {
+          return;
+        }
+        */
+        if (cmp == CMP.GE) {
+          cmp = CMP.EQ;
+        }
+      }
+    }
+
     if (cmp == CMP.EQ) {
       addSolution(binding, new ExactSolution(expr));
     } else {
