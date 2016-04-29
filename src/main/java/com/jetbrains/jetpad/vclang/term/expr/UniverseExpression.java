@@ -1,18 +1,16 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class UniverseExpression extends Expression {
-  private final TypeUniverseNew myUniverse;
+  private final TypeUniverse myUniverse;
 
-  public UniverseExpression(TypeUniverseNew universe) {
+  public UniverseExpression(TypeUniverse universe) {
     myUniverse = universe;
   }
 
-  public TypeUniverseNew getUniverse() {
+  public TypeUniverse getUniverse() {
     return myUniverse;
   }
 

@@ -415,7 +415,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     typedResultType = typeResult.expression;
 
-    TypeUniverseNew resultTypeUniverse = typeResult.type.toUniverse().getUniverse();
+    TypeUniverse resultTypeUniverse = typeResult.type.toUniverse().getUniverse();
     if (plevel == null) {
       plevel = resultTypeUniverse.getPLevel();
     } else {
@@ -424,7 +424,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
     typedDef.hasErrors(false);
     typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
-    typedDef.setUniverse(new TypeUniverseNew(plevel, resultTypeUniverse.getHLevel()));
+    typedDef.setUniverse(new TypeUniverse(plevel, resultTypeUniverse.getHLevel()));
     typedDef.setThisClass(thisClass);
     myNamespaceMember.definition = typedDef;
     return typedDef;
@@ -445,7 +445,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), TypeUniverseNew.PROP, null);
+    DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), TypeUniverse.PROP, null);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
@@ -465,7 +465,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
     }
 
-    TypeUniverseNew userUniverse = null;
+    TypeUniverse userUniverse = null;
     if (def.getUniverse() != null) {
       CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
 
@@ -483,9 +483,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
-    LevelExpression inferredHLevel = def.getConstructors().size() > 1 ? TypeUniverseNew.SET.getHLevel() : TypeUniverseNew.PROP.getHLevel();
-    LevelExpression inferredPLevel = TypeUniverseNew.intToPLevel(0);
-    TypeUniverseNew inferredUniverse = new TypeUniverseNew(inferredPLevel, inferredHLevel);
+    LevelExpression inferredHLevel = def.getConstructors().size() > 1 ? TypeUniverse.SET.getHLevel() : TypeUniverse.PROP.getHLevel();
+    LevelExpression inferredPLevel = TypeUniverse.intToPLevel(0);
+    TypeUniverse inferredUniverse = new TypeUniverse(inferredPLevel, inferredHLevel);
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
       if (typedConstructor == null) {
@@ -514,7 +514,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
     } else {
       if (def.getConditions() != null && !def.getConditions().isEmpty()) {
-        dataDefinition.setUniverse(new TypeUniverseNew(inferredUniverse.getPLevel(), TypeUniverseNew.intToHLevel(TypeUniverseNew.NOT_TRUNCATED)));
+        dataDefinition.setUniverse(new TypeUniverse(inferredUniverse.getPLevel(), TypeUniverse.intToHLevel(TypeUniverse.NOT_TRUNCATED)));
       } else {
         dataDefinition.setUniverse(inferredUniverse);
       }
@@ -664,7 +664,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       int index = 1;
       boolean ok = true;
 
-      Constructor constructor = new Constructor(new DefinitionResolvedName(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name), def.getPrecedence(), TypeUniverseNew.PROP, null, dataDefinition, null);
+      Constructor constructor = new Constructor(new DefinitionResolvedName(dataDefinition.getParentNamespace().getChild(dataDefinition.getName()), name), def.getPrecedence(), TypeUniverse.PROP, null, dataDefinition, null);
       constructor.hasErrors(true);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
@@ -699,7 +699,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           return constructor;
         }
 
-        TypeUniverseNew argUniverse = result.type.toUniverse().getUniverse();
+        TypeUniverse argUniverse = result.type.toUniverse().getUniverse();
         if (plevel == null) {
           plevel = argUniverse.getPLevel();
           hlevel = argUniverse.getHLevel();
@@ -778,7 +778,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       constructor.setParameters(list.getFirst());
       constructor.setPatterns(typedPatterns);
-      if (plevel != null) constructor.setUniverse(new TypeUniverseNew(plevel, hlevel));
+      if (plevel != null) constructor.setUniverse(new TypeUniverse(plevel, hlevel));
       constructor.hasErrors(false);
       constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
@@ -843,14 +843,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
             if (member.definition instanceof ClassField) {
               ClassField field = (ClassField) member.definition;
-              TypeUniverseNew oldUniverse = classDefinition.getUniverse();
-              TypeUniverseNew newUniverse = field.getUniverse();
+              TypeUniverse oldUniverse = classDefinition.getUniverse();
+              TypeUniverse newUniverse = field.getUniverse();
               //Universe.CompareResult cmp = oldUniverse.compare(newUniverse);
              // if (cmp == null) {
              //   String error = "UniverseOld " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
              //   myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, definition));
              // } else {
-                classDefinition.setUniverse(new TypeUniverseNew(oldUniverse.getPLevel().max(newUniverse.getPLevel()), oldUniverse.getHLevel().max(newUniverse.getHLevel())));
+                classDefinition.setUniverse(new TypeUniverse(oldUniverse.getPLevel().max(newUniverse.getPLevel()), oldUniverse.getHLevel().max(newUniverse.getHLevel())));
                 classDefinition.addField(field);
              // }
             }

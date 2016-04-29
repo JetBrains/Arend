@@ -1,317 +1,208 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.exprorder.CNatOrder;
-import com.jetbrains.jetpad.vclang.typechecking.exprorder.LevelOrder;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.util.List;
+public class TypeUniverse {
+  private LevelExpression myPLevel;
+  private LevelExpression myHLevel;
 
-public class TypeUniverse extends BaseUniverse<TypeUniverse, TypeUniverse.TypeLevel> {
-  public static final TypeUniverse PROP = new TypeUniverse(new TypeLevel(HomotopyLevel.PROP, true));
-  public static final TypeUniverse SET = new TypeUniverse(new TypeLevel(HomotopyLevel.SET, true));
+  public static final int ANY_LEVEL = -10;
+  public static final int NOT_TRUNCATED = -10;
+  public static final TypeUniverse PROP = new TypeUniverse(0, -1);
+  public static final TypeUniverse SET = new TypeUniverse(ANY_LEVEL, 0);
 
-  public static TypeUniverse SetOfLevel(int level) { return new TypeUniverse(new TypeLevel(level, 0)); }
+  public static TypeUniverse SetOfLevel(int level) {
+    return new TypeUniverse(level, 0);
+  }
+  public static TypeUniverse SetOfLevel(Expression level) {
+    return new TypeUniverse(exprToPLevel(level), SET.getHLevel());
+  }
 
-  public static class PredicativeLevel implements Universe.Level<PredicativeLevel> {
-    private Expression myLevel;
-
-    public PredicativeLevel() {
-      myLevel = ZeroLvl();
-    }
-
-    public PredicativeLevel(Expression level) {
-      myLevel = level;
-    }
-
-    public PredicativeLevel(int level) {
-      myLevel = ZeroLvl();
-      for (int i = 0; i < level; ++i) {
-        myLevel = SucLvl(myLevel);
-      }
-    }
-
-    public Expression getValue() {
-      return myLevel;
+  public static class LvlConverter implements LevelExpression.Converter {
+    @Override
+    public Expression getType() {
+      return ExpressionFactory.Lvl();
     }
 
     @Override
-    public boolean equals(Object other) {
-      return (other instanceof PredicativeLevel) && compare((PredicativeLevel) other) == Cmp.EQUALS;
+    public Expression convert(Binding var, int sucs) {
+      return Preprelude.applyNumberOfSuc(ExpressionFactory.Reference(var), Preprelude.SUC_LVL, sucs);
     }
 
     @Override
-    public Cmp compare(PredicativeLevel other) {
-      Expression otherLevel = other.myLevel;
-      myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
-      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
-      if (Expression.compare(myLevel, otherLevel)) return Cmp.EQUALS;
-      if (Expression.compare(myLevel, otherLevel, Equations.CMP.GE)) return Cmp.GREATER;
-      if (Expression.compare(myLevel, otherLevel, Equations.CMP.LE)) return Cmp.LESS;
-      return Cmp.NOT_COMPARABLE;
-    }
-
-    /*
-    @Override
-    public boolean compare(PredicativeLevel other, CompareVisitor visitor, Equations.CMP expectedCMP) {
-      Expression otherLevel = other.myLevel;
-      myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
-      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
-      return visitor.compare(myLevel, otherLevel);
-    } /**/
-
-    @Override
-    public PredicativeLevel max(PredicativeLevel other) {
-      return new PredicativeLevel(MaxLvl(myLevel, other.myLevel));
+    public Expression convert(int sucs) {
+      return Preprelude.applyNumberOfSuc(ExpressionFactory.ZeroLvl(), Preprelude.SUC_LVL, sucs);
     }
 
     @Override
-    public PredicativeLevel succ() {
-      return new PredicativeLevel(SucLvl(myLevel));
+    public Expression convert() {
+      return null;
+    }
+
+    @Override
+    public LevelExpression convert(Expression expr) {
+      return TypeUniverse.exprToPLevel(expr);
+    }
+
+    @Override
+    public Expression max(Expression expr1, Expression expr2) {
+      return ExpressionFactory.MaxLvl(expr1, expr2);
     }
   }
 
-  public static class HomotopyLevel implements Universe.Level<HomotopyLevel> {
-    private Expression myLevel;
-
-    public static final HomotopyLevel NOT_TRUNCATED = new HomotopyLevel(Inf());
-    public static final HomotopyLevel PROP = new HomotopyLevel(Fin(Zero()));
-    public static final HomotopyLevel SET = new HomotopyLevel(Fin(Suc(Zero())));
-
-    public HomotopyLevel() {
-      myLevel = PROP.myLevel;
-    }
-
-    public HomotopyLevel(Expression level) {
-      myLevel = level;
-    }
-
-    public HomotopyLevel(int level) {
-      myLevel = Zero();
-      for (int i = -1; i < level; ++i) {
-        myLevel = Suc(myLevel);
-      }
-      myLevel = Fin(myLevel);
-    }
-
-    public Expression getValue() {
-      myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
-      return myLevel;
+  public static class CNatConverter implements LevelExpression.Converter {
+    @Override
+    public Expression getType() {
+      return ExpressionFactory.CNat();
     }
 
     @Override
-    public boolean equals(Object other) {
-      return (other instanceof HomotopyLevel) && compare((HomotopyLevel) other) == Cmp.EQUALS;
+    public Expression convert(Binding var, int sucs) {
+      return Preprelude.applyNumberOfSuc(ExpressionFactory.Reference(var), Preprelude.SUC_CNAT, sucs);
     }
 
     @Override
-    public Cmp compare(HomotopyLevel other) {
-      Expression otherLevel = other.myLevel;
-      myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
-      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
-      if (Expression.compare(myLevel, otherLevel)) return Cmp.EQUALS;
-      if (Expression.compare(myLevel, otherLevel, Equations.CMP.GE)) return Cmp.GREATER;
-      if (Expression.compare(myLevel, otherLevel, Equations.CMP.LE)) return Cmp.LESS;
-      return Cmp.NOT_COMPARABLE;
-    }
-
-    /*
-    @Override
-    public Boolean compare(HomotopyLevel other, CompareVisitor visitor, Equations.CMP expectedCMP) {
-      /*myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
-      other.myLevel = other.myLevel.normalize(NormalizeVisitor.Mode.NF);
-      if (checkLevelExprsAreEqual(myLevel, other.myLevel, visitor)) return Cmp.EQUALS;
-
-      if (checkLevelExprsAreEqual(myLevel, PROP.getValue(), visitor)) return Cmp.LESS;
-      if (checkLevelExprsAreEqual(other.myLevel, PROP.getValue(), visitor)) return Cmp.GREATER;
-
-      if (checkLevelExprsAreEqual(myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.GREATER;
-      if (checkLevelExprsAreEqual(other.myLevel, NOT_TRUNCATED.myLevel, visitor)) return Cmp.LESS;
-
-      Expression maxHlevel = MaxCNat(myLevel, other.myLevel).normalize(NormalizeVisitor.Mode.NF);
-      if (checkLevelExprsAreEqual(myLevel, maxHlevel, visitor)) return Cmp.GREATER;
-      if (checkLevelExprsAreEqual(other.myLevel, maxHlevel, visitor)) return Cmp.LESS;
-      return Cmp.UNKNOWN; /*
-      Expression otherLevel = other.myLevel;
-      myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
-      otherLevel = otherLevel.normalize(NormalizeVisitor.Mode.NF);
-      return visitor.compare(myLevel, otherLevel);
-    } /**/
-
-    @Override
-    public HomotopyLevel max(HomotopyLevel other) {
-      return new HomotopyLevel(CNatOrder.maxCNat(myLevel, other.myLevel));
+    public Expression convert(int sucs) {
+      return Preprelude.applyNumberOfSuc(ExpressionFactory.Fin(ExpressionFactory.Zero()), Preprelude.SUC_CNAT, sucs);
     }
 
     @Override
-    public HomotopyLevel succ() {
-      return new HomotopyLevel(SucCNat(myLevel));
+    public Expression convert() {
+      return ExpressionFactory.Inf();
+    }
+
+    @Override
+    public LevelExpression convert(Expression expr) {
+      return TypeUniverse.exprToHLevel(expr);
+    }
+
+    @Override
+    public Expression max(Expression expr1, Expression expr2) {
+      return ExpressionFactory.MaxCNat(expr1, expr2);
     }
   }
 
-  public static class TypeLevel implements Universe.Level<TypeLevel> {
-    private PredicativeLevel myPLevel;
-    private HomotopyLevel myHLevel;
-    private boolean myIgnorePLevel = false;
-
-    private Expression myLevel = null;
-
-    public TypeLevel() {
-      myPLevel = new PredicativeLevel();
-      myHLevel = new HomotopyLevel();
-      myIgnorePLevel = true;
+  public TypeUniverse(int plevel, int hlevel) {
+    if (hlevel == -1) {
+      plevel = 0;
     }
-
-    public TypeLevel(HomotopyLevel hlevel, boolean ignorePLevel) {
-      myPLevel = new PredicativeLevel();
-      myHLevel = hlevel;
-      myIgnorePLevel = ignorePLevel;
+    if (plevel != ANY_LEVEL) {
+      myPLevel = new LevelExpression(plevel, new LvlConverter());
+    } else {
+      myPLevel = new LevelExpression(new LvlConverter());
     }
-
-    public TypeLevel(Expression plevel, Expression hlevel) {
-      myPLevel = new PredicativeLevel(plevel);
-      myHLevel = new HomotopyLevel(hlevel);
-      myIgnorePLevel = myHLevel.equals(HomotopyLevel.PROP);
-    }
-
-    public TypeLevel(Expression level) {
-      myLevel = level;
-      myIgnorePLevel = getHLevel().equals(HomotopyLevel.PROP);
-    }
-
-    public TypeLevel(int plevel, int hlevel) {
-      myPLevel = new PredicativeLevel(plevel);
-      myHLevel = new HomotopyLevel(hlevel);
-      myIgnorePLevel = getHLevel().equals(HomotopyLevel.PROP);
-    }
-
-    public TypeLevel(PredicativeLevel plevel, HomotopyLevel hlevel) {
-      myPLevel = plevel;
-      myHLevel = hlevel;
-      myIgnorePLevel = getHLevel().equals(HomotopyLevel.PROP);
-    }
-
-    public PredicativeLevel getPLevel() {
-      if (myPLevel != null) {
-        return myPLevel;
-      }
-      myPLevel = new PredicativeLevel(PLevel().applyThis(myLevel).normalize(NormalizeVisitor.Mode.NF));
-      return myPLevel;
-    }
-
-    public HomotopyLevel getHLevel() {
-      if (myHLevel != null) {
-        return myHLevel;
-      }
-      myHLevel = new HomotopyLevel(HLevel().applyThis(myLevel).normalize(NormalizeVisitor.Mode.NF));
-      return myHLevel;
-    }
-
-    public Expression getValue() {
-      if (myLevel != null) {
-        myLevel = myLevel.normalize(NormalizeVisitor.Mode.NF);
-        return myLevel;
-      }
-      return Level(myPLevel.getValue(), myHLevel.getValue());
-    }
-
-    //public boolean getIgnorePLevel() { return myIgnorePLevel || getHLevel().equals(HomotopyLevel.PROP); }
-
-    @Override
-    public Cmp compare(TypeLevel other) {
-      if (myIgnorePLevel || other.myIgnorePLevel) {
-        return getHLevel().compare(other.getHLevel());
-      }
-
-      Expression otherLevel = other.getValue();
-      myLevel = getValue();
-      if (Expression.compare(myLevel, otherLevel)) return Cmp.EQUALS;
-      if (Expression.compare(myLevel, otherLevel, Equations.CMP.GE)) return Cmp.GREATER;
-      if (Expression.compare(myLevel, otherLevel, Equations.CMP.LE)) return Cmp.LESS;
-      return Cmp.NOT_COMPARABLE;
-
-      /*
-
-      Cmp r1 = myIgnorePLevel || other.myIgnorePLevel ? Cmp.EQUALS : getPLevel().compare(other.getPLevel(), visitor);
-      Cmp r2 = getHLevel().compare(other.getHLevel(), visitor);
-      if (r1 == Cmp.UNKNOWN || r2 == Cmp.UNKNOWN) {
-        return Cmp.UNKNOWN;
-      }
-      if (r1 == Cmp.LESS) {
-        return r2 == Cmp.LESS || r2 == Cmp.EQUALS ? Cmp.LESS : Cmp.NOT_COMPARABLE;
-      }
-      if (r1 == Cmp.GREATER) {
-        return r2 == Cmp.GREATER || r2 == Cmp.EQUALS ? Cmp.GREATER : Cmp.NOT_COMPARABLE;
-      }
-      return r2; /**/
-    }
-
-    /*
-    @Override
-    public boolean compare(TypeLevel other, CompareVisitor visitor, Equations.CMP expectedCMP) {
-      if (myIgnorePLevel) {
-        myPLevel = other.myPLevel;
-      } else if (other.myIgnorePLevel) {
-        other.myPLevel = myPLevel;
-      }
-
-      Expression otherLevel = other.getValue().normalize(NormalizeVisitor.Mode.NF);
-      Expression thisLevel = getValue().normalize(NormalizeVisitor.Mode.NF);
-      return visitor.compare(thisLevel, otherLevel);
-    } /**/
-
-    @Override
-    public TypeLevel max(TypeLevel other) {
-      if (myIgnorePLevel) {
-        return new TypeLevel(other.getPLevel(), getHLevel().max(other.getHLevel()));
-      }
-      if (other.myIgnorePLevel) {
-        return new TypeLevel(getPLevel(), getHLevel().max(other.getHLevel()));
-      }
-      return new TypeLevel(LevelOrder.maxLevel(getValue(), other.getValue()));
-    }
-
-    @Override
-    public TypeLevel succ() {
-      if (myIgnorePLevel) {
-        if (getHLevel().equals(HomotopyLevel.PROP)) {
-          return new TypeLevel(0, 0);
-        }
-        return new TypeLevel(getPLevel(), getHLevel().succ());
-      }
-      return new TypeLevel(getPLevel().succ(), getHLevel().succ());
-    }
-
-    /*
-    @Override
-    public boolean equals(Object other) {
-      return this == other || (other instanceof TypeLevel && ((TypeLevel) other).compare(this, new CompareVisitor(DummyEquations.getInstance(), Equations.CMP.EQ, null)) == Cmp.EQUALS);
-    }
-    /**/
-
-    @Override
-    public String toString() {
-      return getValue().toString();
+    if (hlevel != NOT_TRUNCATED)
+      myHLevel = new LevelExpression(hlevel + 1, new CNatConverter());
+    else {
+      myHLevel = new LevelExpression(new CNatConverter());
     }
   }
 
-  public TypeUniverse() { }
+  public TypeUniverse(LevelExpression plevel, LevelExpression hlevel) {
+    myPLevel = hlevel.isZero() ? new LevelExpression(0, new LvlConverter()) : plevel;
+    myHLevel = hlevel;
+  }
 
-  public TypeUniverse(TypeLevel typeLevel) {
-    super(typeLevel);
+  public TypeUniverse(Expression plevel, Expression hlevel) {
+    LevelExpression hlevel_conv = exprToHLevel(hlevel);
+    myHLevel = hlevel_conv == null ? new LevelExpression(0, new CNatConverter()) : hlevel_conv;
+    myPLevel = myHLevel.isZero() ? new LevelExpression(0, new LvlConverter()) : exprToPLevel(plevel);
+  }
+
+  public LevelExpression getPLevel() {
+    return myPLevel;
+  }
+
+  public LevelExpression getHLevel() {
+    return myHLevel;
+  }
+
+  /*public Expression getLevel() {
+    return ExpressionFactory.Level(myPLevel, myHLevel);
+  } /**/
+
+  public TypeUniverse max(TypeUniverse other) {
+    return new TypeUniverse(myPLevel.max(other.getPLevel()), myHLevel.max(other.getHLevel()));
+  }
+
+  public static LevelExpression intToPLevel(int plevel) {
+    return new LevelExpression(plevel, new LvlConverter());
+  }
+
+  public static LevelExpression intToHLevel(int hlevel) {
+    if (hlevel == NOT_TRUNCATED) return new LevelExpression(new CNatConverter());
+    return new LevelExpression(hlevel + 1, new CNatConverter());
+  }
+
+  public static LevelExpression exprToPLevel(Expression plevel) {
+    LevelExpression alreadyLevel = plevel.toLevel();
+    if (alreadyLevel != null) return alreadyLevel;
+    Preprelude.SucExtrResult extrResult = Preprelude.extractSuc(plevel, Preprelude.SUC_LVL);
+    ConCallExpression conCall = extrResult.Arg.toConCall();
+    if (conCall != null && conCall.getDefinition() == Preprelude.ZERO_LVL) {
+      return new LevelExpression(extrResult.NumSuc, new LvlConverter());
+    }
+    ReferenceExpression ref = extrResult.Arg.toReference();
+    if (ref == null) {
+      return null;
+    }
+    return new LevelExpression(ref.getBinding(), extrResult.NumSuc, new LvlConverter());
+  }
+
+  public static LevelExpression exprToHLevel(Expression hlevel) {
+    LevelExpression alreadyLevel = hlevel.toLevel();
+    if (alreadyLevel != null) return alreadyLevel;
+    Preprelude.SucExtrResult extrCNatSuc = Preprelude.extractSuc(hlevel, Preprelude.SUC_CNAT);
+    ConCallExpression conCall = extrCNatSuc.Arg.getFunction().toConCall();
+    if (conCall != null && conCall.getDefinition() == Preprelude.INF) {
+      return new LevelExpression(new CNatConverter());
+    }
+    if (conCall != null && conCall.getDefinition() == Preprelude.FIN) {
+      if (extrCNatSuc.Arg.getArguments().size() != 1) {
+        return null;
+      }
+      Preprelude.SucExtrResult extrNatSuc = Preprelude.extractSuc(extrCNatSuc.Arg.getArguments().get(0), Preprelude.SUC);
+      ConCallExpression mustBeZero = extrNatSuc.Arg.toConCall();
+      if (mustBeZero == null || mustBeZero.getDefinition() != Preprelude.ZERO) {
+        return null;
+      }
+      return new LevelExpression(extrCNatSuc.NumSuc + extrNatSuc.NumSuc, new CNatConverter());
+    }
+    ReferenceExpression ref = extrCNatSuc.Arg.toReference();
+    if (ref == null) {
+      return null;
+    }
+    return new LevelExpression(ref.getBinding(), extrCNatSuc.NumSuc, new CNatConverter());
+  }
+
+  public TypeUniverse succ() {
+    return isProp() ? SetOfLevel(0) : new TypeUniverse(getPLevel().succ(), getHLevel().succ());
+  }
+
+  public boolean isProp() {
+    return myHLevel.equals(PROP.getHLevel());
+  }
+
+  public boolean isLessOrEquals(TypeUniverse other) {
+    if (equals(other)) return true;
+    UniverseExpression uni1 = new UniverseExpression(this);
+    UniverseExpression uni2 = new UniverseExpression(other);
+    return Expression.compare(uni1, uni2, Equations.CMP.LE);
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (!(other instanceof TypeUniverse)) return false;
+    if (isProp() || ((TypeUniverse) other).isProp()) return myHLevel.equals(((TypeUniverse) other).getHLevel());
+    if (myPLevel.isInfinity() || ((TypeUniverse) other).getPLevel().isInfinity()) return myHLevel.equals(((TypeUniverse) other).getHLevel());
+    return myPLevel.equals(((TypeUniverse) other).getPLevel()) && myHLevel.equals(((TypeUniverse) other).getHLevel());
   }
 
   @Override
   public String toString() {
-    if (getLevel() == null) return "\\Type";
-    return "\\Type " + getLevel();
-  }
-
-  @Override
-  public TypeUniverse createUniverse(TypeLevel level) {
-    return new TypeUniverse(level);
+    return "\\Type (" + myPLevel + "," + myHLevel + ")";
   }
 }

@@ -35,7 +35,7 @@ public class GetTypeTest {
     NamespaceMember member = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
     assertEquals(Universe(1), member.namespace.getDefinition("Test").getType());
     assertEquals(Universe(0), member.namespace.getDefinition("test").getType());
-    assertEquals(Universe(TypeUniverseNew.SetOfLevel(0)), ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
+    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
   @Test

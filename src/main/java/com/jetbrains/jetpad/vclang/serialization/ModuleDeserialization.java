@@ -282,7 +282,7 @@ public class ModuleDeserialization {
 
   public LevelExpression readLevel(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int convCode = stream.readInt();
-    LevelExpression.Converter conv = convCode == 0 ? new TypeUniverseNew.LvlConverter() : new TypeUniverseNew.CNatConverter();
+    LevelExpression.Converter conv = convCode == 0 ? new TypeUniverse.LvlConverter() : new TypeUniverse.CNatConverter();
     boolean isInfinity = stream.readBoolean();
     if (isInfinity) {
       return new LevelExpression(conv);
@@ -302,10 +302,10 @@ public class ModuleDeserialization {
     }
   }
 
-  public TypeUniverseNew readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+  public TypeUniverse readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     LevelExpression plevel = readExpression(stream, definitionMap).toLevel();
     LevelExpression hlevel = readExpression(stream, definitionMap).toLevel();
-    return new TypeUniverseNew(plevel, hlevel);
+    return new TypeUniverse(plevel, hlevel);
   }
 
   public TypedBinding readTypedBinding(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {

@@ -3,8 +3,6 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -37,11 +35,11 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
 
     boolean result = true;
     for (ConCallExpression conCall : ftype.getDefinition().getMatchedConstructors(parameters)) {
-      if (myResultType.getType().toUniverse().getUniverse().equals(TypeUniverseNew.PROP)) {
+      if (myResultType.getType().toUniverse().getUniverse().equals(TypeUniverse.PROP)) {
         if (Prelude.isTruncP(conCall.getDefinition())) {
           continue;
         }
-      } else if (myResultType.getType().toUniverse().getUniverse().isLessOrEquals(TypeUniverseNew.SET)) {
+      } else if (myResultType.getType().toUniverse().getUniverse().isLessOrEquals(TypeUniverse.SET)) {
         if (Prelude.isTruncS(conCall.getDefinition())) {
           continue;
         }

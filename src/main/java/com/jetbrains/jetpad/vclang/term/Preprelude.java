@@ -142,22 +142,22 @@ public class Preprelude extends Namespace {
   }
 
   public static void setUniverses() {
-    NAT.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    ZERO.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    SUC.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    LVL.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    ZERO_LVL.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    SUC_LVL.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    CNAT.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    FIN.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    INF.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    LEVEL.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    PLEVEL.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    HLEVEL.setUniverse(TypeUniverseNew.SetOfLevel(0));
-    INTERVAL.setUniverse(TypeUniverseNew.PROP);
-    LEFT.setUniverse(TypeUniverseNew.PROP);
-    RIGHT.setUniverse(TypeUniverseNew.PROP);
-    ABSTRACT.setUniverse(TypeUniverseNew.PROP);
+    NAT.setUniverse(TypeUniverse.SetOfLevel(0));
+    ZERO.setUniverse(TypeUniverse.SetOfLevel(0));
+    SUC.setUniverse(TypeUniverse.SetOfLevel(0));
+    LVL.setUniverse(TypeUniverse.SetOfLevel(0));
+    ZERO_LVL.setUniverse(TypeUniverse.SetOfLevel(0));
+    SUC_LVL.setUniverse(TypeUniverse.SetOfLevel(0));
+    CNAT.setUniverse(TypeUniverse.SetOfLevel(0));
+    FIN.setUniverse(TypeUniverse.SetOfLevel(0));
+    INF.setUniverse(TypeUniverse.SetOfLevel(0));
+    LEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
+    PLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
+    HLEVEL.setUniverse(TypeUniverse.SetOfLevel(0));
+    INTERVAL.setUniverse(TypeUniverse.PROP);
+    LEFT.setUniverse(TypeUniverse.PROP);
+    RIGHT.setUniverse(TypeUniverse.PROP);
+    ABSTRACT.setUniverse(TypeUniverse.PROP);
   }
 
   public Preprelude() {
@@ -222,7 +222,7 @@ public class Preprelude extends Namespace {
       private final DataDefinition myDefinition;
       private final Namespace myNs;
 
-      Data(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverseNew universe, DependentLink parameters) {
+      Data(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
         myParentNs = parentNs;
         myResolvedName = new DefinitionResolvedName(parentNs, name);
         myDefinition = new DataDefinition(myResolvedName, precedence, universe, parameters);
@@ -233,7 +233,7 @@ public class Preprelude extends Namespace {
         return myDefinition;
       }
 
-      Constructor addConstructor(String name, Abstract.Binding.Precedence precedence, TypeUniverseNew universe, DependentLink parameters) {
+      Constructor addConstructor(String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
         Constructor constructor = new Constructor(new DefinitionResolvedName(myNs, name), precedence, universe, parameters, myDefinition);
         myDefinition.addConstructor(constructor);
         myNs.addDefinition(constructor);

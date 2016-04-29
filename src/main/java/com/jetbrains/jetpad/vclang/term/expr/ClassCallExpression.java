@@ -11,7 +11,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
 
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
-  private TypeUniverseNew myUniverse;
+  private TypeUniverse myUniverse;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
@@ -40,7 +40,7 @@ public class ClassCallExpression extends DefCallExpression {
     return myStatements;
   }
 
-  public TypeUniverseNew getUniverse() {
+  public TypeUniverse getUniverse() {
     if (myUniverse == null) {
       Substitution substitution = null;
       for (ClassField field : getDefinition().getFields()) {
@@ -55,7 +55,7 @@ public class ClassCallExpression extends DefCallExpression {
           }
 
           UniverseExpression expr = field.getBaseType().subst(substitution).getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
-          TypeUniverseNew fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
+          TypeUniverse fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
           if (myUniverse == null) {
             myUniverse = fieldUniverse;
             continue;
@@ -67,7 +67,7 @@ public class ClassCallExpression extends DefCallExpression {
     }
 
     if (myUniverse == null) {
-      myUniverse = TypeUniverseNew.PROP;
+      myUniverse = TypeUniverse.PROP;
     }
 
     return myUniverse;

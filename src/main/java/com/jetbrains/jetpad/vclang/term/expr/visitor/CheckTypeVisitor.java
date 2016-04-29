@@ -13,7 +13,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
@@ -188,7 +188,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       InferenceBinding lh = new LevelInferenceBinding("lh", CNat(), expr);
       result.addUnsolvedVariable(lp);
       result.addUnsolvedVariable(lh);
-      expectedType1 = Universe(TypeUniverseNew.exprToPLevel(Reference(lp)), TypeUniverseNew.exprToHLevel(Reference(lh)));
+      expectedType1 = Universe(TypeUniverse.exprToPLevel(Reference(lp)), TypeUniverse.exprToHLevel(Reference(lh)));
     }
 
     if (CompareVisitor.compare(result.getEquations(), cmp, expectedType1, actualType, expr)) {
@@ -430,7 +430,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitUniverse(Abstract.UniverseExpression expr, Expression expectedType) {
-    int hlevel = expr.getUniverse().myHLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? TypeUniverseNew.NOT_TRUNCATED : expr.getUniverse().myHLevel;
+    int hlevel = expr.getUniverse().myHLevel == Abstract.UniverseExpression.Universe.NOT_TRUNCATED ? TypeUniverse.NOT_TRUNCATED : expr.getUniverse().myHLevel;
     UniverseExpression universe = Universe(expr.getUniverse().myPLevel, hlevel);
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
@@ -440,7 +440,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     Result resultP = typeCheck(expr.getPLevel(), Lvl());
     Result resultH = typeCheck(expr.getHLevel(), CNat());
     if (resultP == null || resultH == null) return null;
-    UniverseExpression universe = Universe(new TypeUniverseNew(resultP.expression, resultH.expression));
+    UniverseExpression universe = Universe(new TypeUniverse(resultP.expression, resultH.expression));
 
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
@@ -558,27 +558,27 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
     }
 
-    TypeUniverseNew maxDomainUni = null;
+    TypeUniverse maxDomainUni = null;
     for (Expression domainType : domainTypes) {
-      TypeUniverseNew argUniverse = domainType.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
+      TypeUniverse argUniverse = domainType.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
       if (maxDomainUni == null) {
         maxDomainUni = argUniverse;
         continue;
       }
       maxDomainUni = maxDomainUni.max(argUniverse);
     }
-    TypeUniverseNew codomainUniverse = null;
+    TypeUniverse codomainUniverse = null;
     if (codomainResult != null) {
       codomainUniverse = codomainResult.type.normalize(NormalizeVisitor.Mode.NF).toUniverse().getUniverse();
     }
 
-    TypeUniverseNew finalUniverse = null;
+    TypeUniverse finalUniverse = null;
 
     if (codomainUniverse != null) {
-      finalUniverse = new TypeUniverseNew(maxDomainUni != null ? maxDomainUni.getPLevel().max(codomainUniverse.getPLevel()) : codomainUniverse.getPLevel(),
+      finalUniverse = new TypeUniverse(maxDomainUni != null ? maxDomainUni.getPLevel().max(codomainUniverse.getPLevel()) : codomainUniverse.getPLevel(),
                           codomainUniverse.getHLevel());
     } else if (maxDomainUni != null){
-      finalUniverse = new TypeUniverseNew(maxDomainUni.getPLevel(),
+      finalUniverse = new TypeUniverse(maxDomainUni.getPLevel(),
                          maxDomainUni.getHLevel());
     }
 

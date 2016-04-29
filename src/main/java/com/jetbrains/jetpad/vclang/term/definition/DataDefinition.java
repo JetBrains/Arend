@@ -26,7 +26,7 @@ public class DataDefinition extends Definition {
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public DataDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, TypeUniverseNew universe, DependentLink parameters) {
+  public DataDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
     super(rn, precedence, universe);
     hasErrors(false);
     myParameters = parameters;

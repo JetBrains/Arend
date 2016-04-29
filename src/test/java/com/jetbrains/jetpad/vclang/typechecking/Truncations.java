@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
@@ -59,6 +59,6 @@ public class Truncations {
         "\\with\n" +
         "  | loop left => base\n" +
         "  | loop right => base");
-    assertEquals(new TypeUniverseNew(0, TypeUniverseNew.NOT_TRUNCATED), definition.getUniverse());
+    assertEquals(new TypeUniverse(0, TypeUniverse.NOT_TRUNCATED), definition.getUniverse());
   }
 }

@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.exprorder;
 
 import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -33,70 +31,7 @@ public class LvlOrder implements ExpressionOrder {
     if (type1 == null || type2 == null || type1.getDefinition() != Preprelude.LVL || type2.getDefinition() != Preprelude.LVL) {
       return null;
     }
-    return LevelExprOrder.compareLevel(TypeUniverseNew.exprToPLevel(expr1), TypeUniverseNew.exprToPLevel(expr2), visitor, expectedCMP);
-    /*ConCallExpression conCall1 = expr1.toConCall();
-    ConCallExpression conCall2 = expr2.toConCall();
-
-    if (conCall1 != null && conCall1.getDefinition() == Preprelude.ZERO_LVL) {
-      if((conCall2 != null && conCall2.getDefinition() == Preprelude.ZERO_LVL) || expectedCMP == Equations.CMP.LE) {
-        return true;
-      }
-      return null;
-    }
-
-    if (conCall2 != null && conCall2.getDefinition() == Preprelude.ZERO_LVL) {
-      if (expectedCMP == Equations.CMP.GE) {
-        return true;
-      }
-      return null;
-    }
-
-    Expression fun1 = expr1.getFunction();
-    Expression fun2 = expr2.getFunction();
-    boolean isSuc1 = fun1.toConCall() != null && fun1.toConCall().getDefinition() == Preprelude.SUC_LVL &&
-            expr1.getArguments().size() == 1;
-    boolean isSuc2 = fun2.toConCall() != null && fun2.toConCall().getDefinition() == Preprelude.SUC_LVL &&
-            expr2.getArguments().size() == 1;
-    boolean isMax1 = fun1.toFunCall() != null && fun1.toFunCall().getDefinition() == Preprelude.MAX_LVL &&
-            expr1.getArguments().size() == 2;
-    boolean isMax2 = fun2.toFunCall() != null && fun2.toFunCall().getDefinition() == Preprelude.MAX_LVL &&
-            expr2.getArguments().size() == 2;
-
-    if (isMax1) {
-      if (expectedCMP == Equations.CMP.LE || expectedCMP == Equations.CMP.EQ) {
-        return visitor.compare(expr1.getArguments().get(0), expr2) && visitor.compare(expr1.getArguments().get(1), expr2);
-      }
-      if (expectedCMP == Equations.CMP.GE) {
-        return visitor.compare(expr1.getArguments().get(0), expr2) || visitor.compare(expr1.getArguments().get(1), expr2);
-      }
-    }
-
-    if (isMax2) {
-      if (expectedCMP == Equations.CMP.GE || expectedCMP == Equations.CMP.EQ) {
-        return visitor.compare(expr1, expr2.getArguments().get(0)) && visitor.compare(expr1, expr2.getArguments().get(1));
-      }
-      if (expectedCMP == Equations.CMP.LE) {
-        return visitor.compare(expr1, expr2.getArguments().get(0)) || visitor.compare(expr1, expr2.getArguments().get(1));
-      }
-    }
-
-    if (isSuc1) {
-      if (isSuc2) {
-        return visitor.compare(expr1.getArguments().get(0), expr2.getArguments().get(0));
-      }
-      if (expectedCMP == Equations.CMP.GE) {
-        return visitor.compare(expr1.getArguments().get(0), expr2);
-      }
-      return null;
-    }
-
-    if (isSuc2) {
-      if (expectedCMP == Equations.CMP.LE) {
-        return visitor.compare(expr1, expr2.getArguments().get(0));
-      }
-    }
-
-    return null; /**/
+    return LevelExprOrder.compareLevel(TypeUniverse.exprToPLevel(expr1), TypeUniverse.exprToPLevel(expr2), visitor, expectedCMP);
   }
 
   @Override
@@ -107,6 +42,6 @@ public class LvlOrder implements ExpressionOrder {
     if (Expression.compare(expr1, expr2, Equations.CMP.LE)) {
       return expr2;
     }/**/
-    return LevelExprOrder.maxLevel(TypeUniverseNew.exprToPLevel(expr1), TypeUniverseNew.exprToPLevel(expr2));
+    return LevelExprOrder.maxLevel(TypeUniverse.exprToPLevel(expr1), TypeUniverse.exprToPLevel(expr2));
   }
 }

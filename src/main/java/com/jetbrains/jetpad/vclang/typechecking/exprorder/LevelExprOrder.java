@@ -55,8 +55,6 @@ public class LevelExprOrder implements ExpressionOrder {
         if (level1.getUnitBinding().equals(level2.getUnitBinding())) {
           return true;
         }
-  //      if (expectedCMP == Equations.CMP.GE ? visitor.compare(ExpressionFactory.Reference(level1.getUnitBinding()), ExpressionFactory.Reference(level2.getUnitBinding())) :
-   //             visitor.compare(ExpressionFactory.Reference(level2.getUnitBinding()), ExpressionFactory.Reference(level1.getUnitBinding()))) return true;
         return null;
       }
       return expectedCMP == Equations.CMP.GE ? visitor.compare(level1.subtract(sucs1), level2.subtract(sucs1)) : visitor.compare(level2.subtract(sucs1), level1.subtract(sucs1));
@@ -68,8 +66,6 @@ public class LevelExprOrder implements ExpressionOrder {
     for (LevelExpression maxArg1 : level1MaxArgs) {
       boolean feasibleArg = true;
       int numSucs = maxArg1.extractOuterSucs();
-      //Expression maxArgExpr1 = maxArg1.getExpr(numSucs);
-      //if (maxArgExpr1 == null) return true;
       for (LevelExpression maxArg2 : level2MaxArgs) {
         if (numSucs < maxArg2.extractOuterSucs()) {
           feasibleArg = false;
@@ -82,7 +78,6 @@ public class LevelExprOrder implements ExpressionOrder {
           feasibleArg = false;
           break;
         }
-        //Expression maxArgExpr2 = maxArg2.getExpr(numSucs);
         if (!(expectedCMP == Equations.CMP.GE ? visitor.compare(maxArg1, maxArg2) : visitor.compare(maxArg2, maxArg1))) {
           feasibleArg = false;
           break;

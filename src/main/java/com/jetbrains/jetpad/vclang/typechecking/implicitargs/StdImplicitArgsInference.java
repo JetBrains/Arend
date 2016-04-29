@@ -30,23 +30,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     List<EnumSet<AppExpression.Flag>> flags = new ArrayList<>();
     for (int i = 0; i < parameters.size(); i++) {
       DependentLink parameter = parameters.get(i);
-      ClassCallExpression classCall = parameter.getType().toClassCall();
       Expression binding;
-      if (classCall != null && classCall.getDefinition() == Preprelude.LEVEL) {
-        InferenceBinding pLvl = new FunctionInferenceBinding("pLvl", DataCall(Preprelude.LVL), i + 1, expr);
-        InferenceBinding hLvl = new FunctionInferenceBinding("hLvl", DataCall(Preprelude.CNAT), i + 1, expr);
-        result.addUnsolvedVariable(pLvl);
-        result.addUnsolvedVariable(hLvl);
-
-        Map<ClassField, ClassCallExpression.ImplementStatement> statements = new HashMap<>();
-        statements.put(Preprelude.PLEVEL, new ClassCallExpression.ImplementStatement(null, Reference(pLvl)));
-        statements.put(Preprelude.HLEVEL, new ClassCallExpression.ImplementStatement(null, Reference(hLvl)));
-        binding = New(ClassCall(Preprelude.LEVEL, statements));
-      } else {
-        InferenceBinding inferenceBinding = new FunctionInferenceBinding(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr);
-        result.addUnsolvedVariable(inferenceBinding);
-        binding = Reference(inferenceBinding);
-      }
+      InferenceBinding inferenceBinding = new FunctionInferenceBinding(parameter.getName(), parameter.getType().subst(substitution), i + 1, expr);
+      result.addUnsolvedVariable(inferenceBinding);
+      binding = Reference(inferenceBinding);
 
       arguments.add(binding);
       flags.add(EnumSet.noneOf(AppExpression.Flag.class));

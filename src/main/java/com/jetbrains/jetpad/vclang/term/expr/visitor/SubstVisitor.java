@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -155,7 +154,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public Expression visitUniverse(UniverseExpression expr, Void params) {
     //return expr.getUniverse() instanceof TypeUniverse && ((TypeUniverse) expr.getUniverse()).getLevel() != null ? Universe(((TypeUniverse) expr.getUniverse()).getLevel().getValue().accept(this, null)) : expr;
-    return ExpressionFactory.Universe(new TypeUniverseNew(expr.getUniverse().getPLevel().accept(this, params), expr.getUniverse().getHLevel().accept(this, params)));
+    return ExpressionFactory.Universe(new TypeUniverse(expr.getUniverse().getPLevel().accept(this, params), expr.getUniverse().getHLevel().accept(this, params)));
   }
 
   @Override

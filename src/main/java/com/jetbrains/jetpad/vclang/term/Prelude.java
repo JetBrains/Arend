@@ -59,13 +59,13 @@ public class Prelude extends Namespace {
     PathParameter2.setNext(PathParameter3);
     PathParameter3.setNext(PathParameter4);
     PathParameter4.setNext(PathParameter5);
-    Preprelude.DefinitionBuilder.Data path = new Preprelude.DefinitionBuilder.Data(PRELUDE, "Path", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(PathParameter1), Reference(PathParameter2)), PathParameter1);
+    Preprelude.DefinitionBuilder.Data path = new Preprelude.DefinitionBuilder.Data(PRELUDE, "Path", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(Reference(PathParameter1), Reference(PathParameter2)), PathParameter1);
     PATH = path.definition();
 
     /* path */
     DependentLink piParam = param("i", Interval());
     DependentLink pathParameter = param(Pi(piParam, Apps(Reference(PathParameter3), Reference(piParam))));
-    PATH_CON = path.addConstructor("path", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(PathParameter1), Reference(PathParameter2)), pathParameter);
+    PATH_CON = path.addConstructor("path", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(Reference(PathParameter1), Reference(PathParameter2)), pathParameter);
 
     /* = */
     DependentLink pathInfixParameter1 = param(false, "lp", Lvl());
@@ -164,9 +164,9 @@ public class Prelude extends Namespace {
     DependentLink truncParameter3 = param("A", Universe(Reference(truncParameter1), Reference(truncParameter2)));
     truncParameter1.setNext(truncParameter2);
     truncParameter2.setNext(truncParameter3);
-    Preprelude.DefinitionBuilder.Data propTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrP", Abstract.Binding.DEFAULT_PRECEDENCE, TypeUniverseNew.PROP, truncParameter1);
+    Preprelude.DefinitionBuilder.Data propTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrP", Abstract.Binding.DEFAULT_PRECEDENCE, TypeUniverse.PROP, truncParameter1);
     PROP_TRUNC = propTrunc.definition();
-    propTrunc.addConstructor("inP", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(truncParameter1), Reference(truncParameter2)), param("inP", Reference(truncParameter3)));
+    propTrunc.addConstructor("inP", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(Reference(truncParameter1), Reference(truncParameter2)), param("inP", Reference(truncParameter3)));
 
     /* truncP */
     Expression propTruncConParameterType = DataCall(PROP_TRUNC)
@@ -178,16 +178,16 @@ public class Prelude extends Namespace {
     DependentLink propTruncConParameter3 = param("i", Interval());
     propTruncConParameter1.setNext(propTruncConParameter2);
     propTruncConParameter2.setNext(propTruncConParameter3);
-    PROP_TRUNC_PATH_CON = propTrunc.addConstructor("truncP", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(truncParameter1), Reference(truncParameter2)), propTruncConParameter1);
+    PROP_TRUNC_PATH_CON = propTrunc.addConstructor("truncP", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(Reference(truncParameter1), Reference(truncParameter2)), propTruncConParameter1);
     Condition propTruncPathCond = new Condition(PROP_TRUNC_PATH_CON, top(propTruncConParameter1, branch(propTruncConParameter3, tail(),
         clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter1)),
         clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(propTruncConParameter2)))));
     PROP_TRUNC.addCondition(propTruncPathCond);
 
     /* TrS, inS */
-    Preprelude.DefinitionBuilder.Data setTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrS", Abstract.Binding.DEFAULT_PRECEDENCE, TypeUniverseNew.SetOfLevel(Reference(truncParameter1)), truncParameter1);
+    Preprelude.DefinitionBuilder.Data setTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrS", Abstract.Binding.DEFAULT_PRECEDENCE, TypeUniverse.SetOfLevel(Reference(truncParameter1)), truncParameter1);
     SET_TRUNC = setTrunc.definition();
-    setTrunc.addConstructor("inS", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(truncParameter1), Reference(truncParameter2)), param("inS", Reference(truncParameter3)));
+    setTrunc.addConstructor("inS", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(Reference(truncParameter1), Reference(truncParameter2)), param("inS", Reference(truncParameter3)));
 
     /* truncS */
     Expression setTruncConParameterType = DataCall(SET_TRUNC)
@@ -210,7 +210,7 @@ public class Prelude extends Namespace {
     setTruncConParameter3.setNext(setTruncConParameter4);
     setTruncConParameter4.setNext(setTruncConParameter5);
     setTruncConParameter5.setNext(setTruncConParameter6);
-    SET_TRUNC_PATH_CON = setTrunc.addConstructor("truncS", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverseNew(Reference(truncParameter1), Reference(truncParameter2)), setTruncConParameter1);
+    SET_TRUNC_PATH_CON = setTrunc.addConstructor("truncS", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(Reference(truncParameter1), Reference(truncParameter2)), setTruncConParameter1);
     Condition setTruncPathCond = new Condition(SET_TRUNC_PATH_CON, top(setTruncConParameter1, branch(setTruncConParameter6, tail(),
         clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter3), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
         clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), FunCall(AT).addArgument(Reference(truncParameter1), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Reference(setTruncConParameter4), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),

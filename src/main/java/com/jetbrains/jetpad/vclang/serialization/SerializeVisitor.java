@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -300,9 +300,9 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitLevel(LevelExpression expr, Void params) {
     myStream.write(17);
     try {
-      if (expr.getConverter() instanceof TypeUniverseNew.LvlConverter) {
+      if (expr.getConverter() instanceof TypeUniverse.LvlConverter) {
         myDataStream.writeInt(0);
-      } else if (expr.getConverter() instanceof TypeUniverseNew.CNatConverter) {
+      } else if (expr.getConverter() instanceof TypeUniverse.CNatConverter) {
         myDataStream.writeInt(1);
       } else {
         throw new IllegalStateException();

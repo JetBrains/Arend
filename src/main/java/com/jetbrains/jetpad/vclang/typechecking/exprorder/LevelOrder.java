@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.exprorder;
 
 import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverseNew;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
@@ -48,10 +48,10 @@ public class LevelOrder implements ExpressionOrder {
       return null;
     }
 
-    Expression hlevel1 = TypeUniverseNew.exprToHLevel(classCall1.getImplementStatements().get(Preprelude.HLEVEL).term);
-    Expression hlevel2 = TypeUniverseNew.exprToHLevel(classCall2.getImplementStatements().get(Preprelude.HLEVEL).term);
-    Expression plevel1 = TypeUniverseNew.exprToPLevel(classCall1.getImplementStatements().get(Preprelude.PLEVEL).term);
-    Expression plevel2 = TypeUniverseNew.exprToPLevel(classCall2.getImplementStatements().get(Preprelude.PLEVEL).term);
+    Expression hlevel1 = TypeUniverse.exprToHLevel(classCall1.getImplementStatements().get(Preprelude.HLEVEL).term);
+    Expression hlevel2 = TypeUniverse.exprToHLevel(classCall2.getImplementStatements().get(Preprelude.HLEVEL).term);
+    Expression plevel1 = TypeUniverse.exprToPLevel(classCall1.getImplementStatements().get(Preprelude.PLEVEL).term);
+    Expression plevel2 = TypeUniverse.exprToPLevel(classCall2.getImplementStatements().get(Preprelude.PLEVEL).term);
 
     boolean cmp1 = LevelExprOrder.compareLevel(hlevel1, hlevel2, visitor, expectedCMP); // CNatOrder.compareCNat(hlevel1, hlevel2, visitor, expectedCMP);
     boolean cmp2 = LevelExprOrder.compareLevel(plevel1, plevel2, visitor, expectedCMP); // CNatOrder.compareCNat(hlevel1, hlevel2, visitor, expectedCMP);

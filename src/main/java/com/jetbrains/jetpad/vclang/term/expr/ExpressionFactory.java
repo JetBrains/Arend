@@ -251,19 +251,19 @@ public class ExpressionFactory {
   public static FieldCallExpression HLevel() { return new FieldCallExpression(Preprelude.HLEVEL); }
 
   public static UniverseExpression Universe() {
-    return new UniverseExpression(new TypeUniverseNew(TypeUniverseNew.ANY_LEVEL, TypeUniverseNew.ANY_LEVEL));
+    return new UniverseExpression(new TypeUniverse(TypeUniverse.ANY_LEVEL, TypeUniverse.ANY_LEVEL));
   }
 
   public static UniverseExpression Universe(int plevel) {
-    return new UniverseExpression(new TypeUniverseNew(plevel, TypeUniverseNew.NOT_TRUNCATED));
+    return new UniverseExpression(new TypeUniverse(plevel, TypeUniverse.NOT_TRUNCATED));
   }
 
   public static UniverseExpression Universe(int plevel, int hlevel) {
-    return new UniverseExpression(new TypeUniverseNew(plevel, hlevel));
+    return new UniverseExpression(new TypeUniverse(plevel, hlevel));
   }
 
   public static UniverseExpression Universe(int plevel, LevelExpression hlevel) {
-    return new UniverseExpression(new TypeUniverseNew(TypeUniverseNew.intToPLevel(plevel), hlevel));
+    return new UniverseExpression(new TypeUniverse(TypeUniverse.intToPLevel(plevel), hlevel));
   }
 
   //public static UniverseExpression Universe(Expression level) {
@@ -271,10 +271,10 @@ public class ExpressionFactory {
  // }
 
   public static UniverseExpression Universe(Expression plevel, Expression hlevel) {
-    return new UniverseExpression(new TypeUniverseNew(TypeUniverseNew.exprToPLevel(plevel), TypeUniverseNew.exprToHLevel(hlevel)));
+    return new UniverseExpression(new TypeUniverse(TypeUniverse.exprToPLevel(plevel), TypeUniverse.exprToHLevel(hlevel)));
   }
 
-  public static UniverseExpression Universe(TypeUniverseNew universe) {
+  public static UniverseExpression Universe(TypeUniverse universe) {
     return new UniverseExpression(universe);
   }
 
