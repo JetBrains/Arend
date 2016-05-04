@@ -209,7 +209,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitPolyUniverse(Abstract.PolyUniverseExpression expr, Byte prec) {
-    myBuilder.append("Type (");
+    myBuilder.append("\\Type (");
     if (expr.getPLevel() == null) {
       myBuilder.append("_");
     } else {
@@ -392,6 +392,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         prettyPrintArgument(arg, Abstract.LetExpression.PREC);
       }
 
+      if (letClause.getResultType()!=null) {
+        myBuilder.append(" : ");
+        letClause.getResultType().accept(this, Abstract.Expression.PREC);
+      }
+
       myBuilder.append(prettyArrow(letClause.getArrow()));
       letClause.getTerm().accept(this, Abstract.LetExpression.PREC);
     }
@@ -428,6 +433,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myIndent -= INDENT;
 
     trimToSize(myNames, oldNamesSize);
+    if (prec > Abstract.LetExpression.PREC) myBuilder.append(')');
     return null;
   }
 
@@ -449,9 +455,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
   }
 
-  @Override
-  public Void visitFunction(Abstract.FunctionDefinition def, Void ignored) {
-    myBuilder.append("\\function");
+  private Void prettyPrintBinding (Abstract.Binding def) {
     Abstract.Definition.Precedence precedence = def.getPrecedence();
     if (precedence != null && !precedence.equals(Abstract.Binding.DEFAULT_PRECEDENCE)) {
       myBuilder.append(" \\infix");
@@ -460,10 +464,17 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append(' ');
       myBuilder.append(precedence.priority);
     }
-    myBuilder.append('\n');
-    printIndent();
 
-    myBuilder.append(def.getName());
+    myBuilder.append(' ');
+    myBuilder.append(new Name(def.getName()).getPrefixName());
+    return null;
+  }
+
+  @Override
+  public Void visitFunction(Abstract.FunctionDefinition def, Void ignored) {
+    myBuilder.append("\\function");
+    prettyPrintBinding(def);
+
     List<? extends Abstract.Argument> arguments = def.getArguments();
     if (arguments != null) {
       for (Abstract.Argument argument : arguments) {
@@ -565,7 +576,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitData(Abstract.DataDefinition def, Void ignored) {
     myBuilder.append("\\data ");
-    myBuilder.append(def.getName());
+    prettyPrintBinding(def);
 
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
     if (parameters != null) {
@@ -596,6 +607,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       for (Abstract.Condition condition : def.getConditions()) {
         myBuilder.append('\n');
         printIndent();
+        printIndent();
         myBuilder.append("| ");
         prettyPrintCondition(condition);
       }
@@ -625,7 +637,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     } else if (pattern instanceof Abstract.AnyConstructorPattern) {
       myBuilder.append("_!");
     } else if (pattern instanceof Abstract.ConstructorPattern) {
-      myBuilder.append(((Abstract.ConstructorPattern) pattern).getConstructorName());
+      myBuilder.append(new Name(((Abstract.ConstructorPattern) pattern).getConstructorName()).getPrefixName());
       for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
         if (!patternArg.isHidden()) {
           myBuilder.append(' ');
@@ -640,9 +652,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     List<String> tail = new ArrayList<>();
     int origSize = myNames.size();
     List<? extends Abstract.PatternArgument> patternArgs = def.getPatterns();
-    if (patternArgs == null) {
-      myBuilder.append("_ ");
-    } else {
+    if (patternArgs != null) {
       if (!myNames.isEmpty()) { //Inside data def, so remove previous
         tail.addAll(myNames.subList(myNames.size() - patternArgs.size(), myNames.size()));
         myNames.subList(myNames.size() -  patternArgs.size(), myNames.size()).clear();
@@ -656,9 +666,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
           myBuilder.append(' ');
         }
       }
+      myBuilder.append("=> ");
     }
-    myBuilder.append("=> ");
-    myBuilder.append(def.getName());
+
+    prettyPrintBinding(def);
     List<? extends Abstract.TypeArgument> arguments = def.getArguments();
     if (arguments == null) {
       myBuilder.append("{!error}");
