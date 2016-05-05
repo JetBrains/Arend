@@ -34,8 +34,8 @@ public abstract class TypeCheckingResult {
     myUnsolvedVariables.add(binding);
   }
 
-  public boolean removeUnsolvedVariable(InferenceBinding binding) {
-    return myUnsolvedVariables.remove(binding);
+  public boolean hasUnsolvedVariables() {
+    return !myUnsolvedVariables.isEmpty();
   }
 
   public void reportErrors(ErrorReporter errorReporter) {
