@@ -28,8 +28,8 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
+import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.expression;
@@ -229,6 +229,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (result == null) return null;
     result.update(false);
     result.reportErrors(myErrorReporter);
+    if (result.hasUnsolvedVariables()) {
+      return null;
+    }
+
     result.expression = result.expression.strip();
     result.type = result.type.strip();
     return result;
