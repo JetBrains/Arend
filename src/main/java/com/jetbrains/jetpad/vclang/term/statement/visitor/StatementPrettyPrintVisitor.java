@@ -19,6 +19,11 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
 
   @Override
   public Void visitDefine(Abstract.DefineStatement stat, Void params) {
+    if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC) {
+      myBuilder.append("\\static ");
+    } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.DYNAMIC) {
+      myBuilder.append("\\dynamic ");
+    }
     stat.getDefinition().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), null);
     return null;
   }
