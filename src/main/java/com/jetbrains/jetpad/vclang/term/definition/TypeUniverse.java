@@ -120,10 +120,6 @@ public class TypeUniverse {
     return myHLevel;
   }
 
-  /*public Expression getLevel() {
-    return ExpressionFactory.Level(myPLevel, myHLevel);
-  } /**/
-
   public TypeUniverse max(TypeUniverse other) {
     return new TypeUniverse(myPLevel.max(other.getPLevel()), myHLevel.max(other.getHLevel()));
   }

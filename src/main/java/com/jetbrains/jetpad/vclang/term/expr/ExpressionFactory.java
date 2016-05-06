@@ -213,10 +213,6 @@ public class ExpressionFactory {
 
   public static ConCallExpression ZeroLvl() { return ConCall(Preprelude.ZERO_LVL); }
 
-  public static ConCallExpression SucLvl() { return ConCall(Preprelude.SUC_LVL); }
-
-  public static Expression SucLvl(Expression expr) { return Apps(SucLvl(), expr); }
-
   public static FunCallExpression MaxLvl() { return FunCall(Preprelude.MAX_LVL); }
 
   public static Expression MaxLvl(Expression expr1, Expression expr2) { return Apps(MaxLvl(), expr1, expr2); }
@@ -234,6 +230,8 @@ public class ExpressionFactory {
   }
 
   public static Expression SucCNat(Expression expr) { return Apps(FunCall(Preprelude.SUC_CNAT), expr); }
+
+  public static Expression PredCNat(Expression expr) { return Apps(FunCall(Preprelude.PRED_CNAT), expr); }
 
   public static Expression MaxCNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_CNAT), expr1, expr2); }
 

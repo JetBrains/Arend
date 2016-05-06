@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
 import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
@@ -225,11 +224,6 @@ public class Prelude extends Namespace {
     super(moduleID);
   }
 
-  @Override
-  public Collection<NamespaceMember> getMembers() {
-    throw new IllegalStateException();
-  }
-
   public static boolean isAt(Definition definition) {
     return AT == definition;
   }
@@ -256,5 +250,10 @@ public class Prelude extends Namespace {
 
   public static boolean isTruncS(Definition definition) {
     return SET_TRUNC_PATH_CON == definition;
+  }
+
+  @Override
+  public Collection<NamespaceMember> getMembers() {
+    throw new IllegalStateException();
   }
 }

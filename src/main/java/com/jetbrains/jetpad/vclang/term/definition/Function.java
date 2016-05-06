@@ -9,6 +9,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public interface Function {
   ElimTreeNode getElimTree();
+  DependentLink getLevelParams();
   DependentLink getParameters();
   Expression getResultType();
   int getNumberOfRequiredArguments();

@@ -439,6 +439,31 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
 
+  private LevelExpression typeCheckLevel(Abstract.Expression expr, Expression expectedType) {
+    int num_sucs = 0;
+    TypeCheckingError error = null;
+    LevelExpression.Converter conv = expectedType.toDefCall().getDefinition() == Preprelude.LVL ? new TypeUniverse.LvlConverter() : new TypeUniverse.CNatConverter();
+
+    while (expr instanceof Abstract.AppExpression) {
+      Abstract.AppExpression app = (Abstract.AppExpression) expr;
+      Abstract.Expression suc = app.getFunction();
+      if (!(suc instanceof Abstract.DefCallExpression) || !((Abstract.DefCallExpression) suc).getName().equals("suc")) {
+        error = new TypeCheckingError("Expression " + suc + " is invalid, 'suc' expected", expr);
+        break;
+      }
+      expr = app.getArgument().getExpression();
+      ++num_sucs;
+    }
+
+    if (error == null) {
+      if (expr instanceof Abstract.NumericLiteral) {
+        int val = ((Abstract.NumericLiteral) expr).getNumber();
+        return new LevelExpression(val + num_sucs, conv);
+      }
+
+    }
+  }
+
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Expression expectedType) {
     Result resultP = typeCheck(expr.getPLevel(), Lvl());

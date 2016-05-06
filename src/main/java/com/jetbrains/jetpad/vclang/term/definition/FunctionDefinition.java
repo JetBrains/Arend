@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Function {
+  private DependentLink myLevelParams;
   private DependentLink myParameters;
   private Expression myResultType;
   private ElimTreeNode myElimTree;
@@ -64,6 +65,11 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public DependentLink getParameters() {
     return myParameters;
+  }
+
+  @Override
+  public DependentLink getLevelParams() {
+    return myLevelParams;
   }
 
   public void setParameters(DependentLink parameters) {

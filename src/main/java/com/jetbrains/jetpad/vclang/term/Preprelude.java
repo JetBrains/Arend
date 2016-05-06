@@ -44,8 +44,10 @@ public class Preprelude extends Namespace {
   public static Constructor FIN, INF;
 
   public static FunctionDefinition MAX_NAT;
+  public static FunctionDefinition PRED_NAT;
   public static FunctionDefinition MAX_CNAT;
   public static FunctionDefinition SUC_CNAT;
+  public static FunctionDefinition PRED_CNAT;
 
   static {
     PRE_PRELUDE_CLASS = new ClassDefinition(new ModuleResolvedName(moduleID), null);
@@ -100,6 +102,14 @@ public class Preprelude extends Namespace {
                     clause(SUC, sucNatParameterPrime, Apps(ConCall(SUC), Apps(FunCall(MAX_NAT), Reference(sucNatParameter), Reference(sucNatParameterPrime))))))));
     MAX_NAT.setElimTree(maxNatElimTree);
 
+    /* predNat */
+    DependentLink predNatParameter = param("n", DataCall(NAT));
+    PRED_NAT = new DefinitionBuilder.Function(PRE_PRELUDE, "predNat", Abstract.Binding.DEFAULT_PRECEDENCE, predNatParameter, DataCall(NAT), null).definition();
+    ElimTreeNode predNatElimTree = top(predNatParameter, branch(predNatParameter, tail(),
+            clause(ZERO, EmptyDependentLink.getInstance(), Zero()),
+            clause(SUC, sucNatParameter, Reference(sucNatParameter))));
+    PRED_NAT.setElimTree(predNatElimTree);
+
     /* maxCNat */
     DependentLink maxCNatParameter1 = param(DataCall(CNAT));
     DependentLink maxCNatParameter2 = param(DataCall(CNAT));
@@ -114,11 +124,20 @@ public class Preprelude extends Namespace {
                     clause(FIN, finCNatParameterPrime, Apps(ConCall(FIN), Apps(FunCall(MAX_NAT), Reference(finCNatParameter), Reference(finCNatParameterPrime))))))));
     MAX_CNAT = new DefinitionBuilder.Function(PRE_PRELUDE, "maxCNat", Abstract.Binding.DEFAULT_PRECEDENCE, maxCNatParameter1, DataCall(CNAT), maxCNatElimTree).definition();
 
+    /* sucCNat */
     DependentLink sucCNatParameter = param(DataCall(CNAT));
     ElimTreeNode sucCNatElimTree = top(sucCNatParameter, branch(sucCNatParameter, tail(),
             clause(INF, EmptyDependentLink.getInstance(), ConCall(INF)),
             clause(FIN, finCNatParameter, Apps(ConCall(FIN), Apps(ConCall(SUC), Reference(finCNatParameter))))));
     SUC_CNAT = new DefinitionBuilder.Function(PRE_PRELUDE, "sucCNat", Abstract.Binding.DEFAULT_PRECEDENCE, sucCNatParameter, DataCall(CNAT), sucCNatElimTree).definition();
+
+    /* predCNat */
+    DependentLink predCNatParameter = param("n", DataCall(CNAT));
+    PRED_CNAT = new DefinitionBuilder.Function(PRE_PRELUDE, "predCNat", Abstract.Binding.DEFAULT_PRECEDENCE, predNatParameter, DataCall(CNAT), null).definition();
+    ElimTreeNode predCNatElimTree = top(predCNatParameter, branch(predCNatParameter, tail(),
+            clause(INF, EmptyDependentLink.getInstance(), ConCall(INF)),
+            clause(FIN, finCNatParameter, Apps(ConCall(FIN), Apps(FunCall(PRED_NAT), Reference(finCNatParameter))))));
+    PRED_CNAT.setElimTree(predCNatElimTree);
 
     /* I, left, right */
     DefinitionBuilder.Data interval = new DefinitionBuilder.Data(PRE_PRELUDE, "I", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
