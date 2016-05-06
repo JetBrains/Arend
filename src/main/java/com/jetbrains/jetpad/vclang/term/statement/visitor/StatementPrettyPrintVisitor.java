@@ -4,16 +4,12 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
-import java.util.List;
-
 public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Void, Void> {
   private final StringBuilder myBuilder;
-  private final List<String> myNames;
   private int myIndent;
 
-  public StatementPrettyPrintVisitor(StringBuilder builder, List<String> names, int indent) {
+  public StatementPrettyPrintVisitor(StringBuilder builder, int indent) {
     myBuilder = builder;
-    myNames = names;
     myIndent = indent;
   }
 
@@ -24,7 +20,7 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
     } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.DYNAMIC) {
       myBuilder.append("\\dynamic ");
     }
-    stat.getDefinition().accept(new PrettyPrintVisitor(myBuilder, myNames, myIndent), null);
+    stat.getDefinition().accept(new PrettyPrintVisitor(myBuilder, myIndent), null);
     return null;
   }
 

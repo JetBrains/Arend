@@ -34,7 +34,7 @@ public class TypeCheckingError extends GeneralError {
 
   protected String prettyPrint(Abstract.SourceNode node) {
     StringBuilder builder = new StringBuilder();
-    return new PrettyPrintVisitor(builder, new ArrayList<String>(), 0).prettyPrint(node, Abstract.Expression.PREC) ? builder.toString() : null;
+    return new PrettyPrintVisitor(builder, 0).prettyPrint(node, Abstract.Expression.PREC) ? builder.toString() : null;
   }
 
   @Override

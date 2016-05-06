@@ -93,7 +93,7 @@ public class ArgInferenceError extends TypeCheckingError {
         myWhere.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
       } else {
         builder.append(' ');
-        new PrettyPrintVisitor(builder, new ArrayList<String>(), 0).prettyPrint(getCause(), Abstract.Expression.PREC);
+        new PrettyPrintVisitor(builder, 0).prettyPrint(getCause(), Abstract.Expression.PREC);
       }
     }
 

@@ -6,14 +6,13 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Pattern implements Abstract.Pattern {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    new PrettyPrintVisitor(builder, new ArrayList<String>(), 0).prettyPrintPattern(this);
+    new PrettyPrintVisitor(builder, 0).prettyPrintPattern(this);
     return builder.toString();
   }
 

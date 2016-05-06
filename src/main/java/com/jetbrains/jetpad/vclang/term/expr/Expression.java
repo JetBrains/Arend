@@ -22,7 +22,7 @@ public abstract class Expression implements PrettyPrintable {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
     visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
-    accept(visitor, null).accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
+    accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     return builder.toString();
   }
 
@@ -33,9 +33,9 @@ public abstract class Expression implements PrettyPrintable {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
     visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
-    accept(visitor, null).accept(new PrettyPrintVisitor(builder, names, indent), prec);
+    accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
   public boolean findBinding(Binding binding) {
