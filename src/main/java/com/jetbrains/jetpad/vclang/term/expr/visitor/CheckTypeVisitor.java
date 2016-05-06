@@ -462,6 +462,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       }
 
     }
+
+    return null;
   }
 
   @Override
