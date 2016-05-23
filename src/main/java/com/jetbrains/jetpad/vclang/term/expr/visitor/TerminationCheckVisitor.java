@@ -88,7 +88,7 @@ public class TerminationCheckVisitor extends BaseExpressionVisitor<Void, Boolean
     Expression fun = expr.getFunction();
     ConCallExpression conCall = fun.toConCall();
     if (conCall != null) {
-      List<Expression> dataTypeArguments = conCall.getDataTypeArguments();
+      List<? extends Expression> dataTypeArguments = conCall.getDataTypeArguments();
       if (!dataTypeArguments.isEmpty()) {
         List<Expression> newArgs = new ArrayList<>(args.size() + dataTypeArguments.size());
         newArgs.addAll(dataTypeArguments);

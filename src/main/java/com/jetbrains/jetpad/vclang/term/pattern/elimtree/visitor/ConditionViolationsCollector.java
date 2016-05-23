@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;

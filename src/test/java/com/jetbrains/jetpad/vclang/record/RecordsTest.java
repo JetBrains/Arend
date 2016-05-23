@@ -3,7 +3,10 @@ package com.jetbrains.jetpad.vclang.record;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
@@ -307,7 +310,7 @@ public class RecordsTest {
 
     ConCallExpression paramConCall = parameterFunction.toConCall();
     assertNotNull(paramConCall);
-    List<Expression> parameters = paramConCall.getDataTypeArguments();
+    List<? extends Expression> parameters = paramConCall.getDataTypeArguments();
     assertEquals(5, parameters.size());
 
     LamExpression param0 = parameters.get(2).toLam();

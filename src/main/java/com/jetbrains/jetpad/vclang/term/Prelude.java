@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
 import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
@@ -102,7 +101,7 @@ public class Prelude extends Namespace {
     ElimTreeNode atElimTree = top(atParameter1, branch(atParameter7, tail(),
         clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(atParameter4)),
         clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(atParameter5)),
-        clause(branch(atParameter5, tail(atParameter7),
+        clause(branch(atParameter6, tail(atParameter7),
             clause(PATH_CON, atPath, Apps(Reference(atPath), Reference(atParameter7)))))
     ));
     AT = new Preprelude.DefinitionBuilder.Function(PRELUDE, "@", new Abstract.Binding.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 9), atParameter1, atResultType, atElimTree).definition();

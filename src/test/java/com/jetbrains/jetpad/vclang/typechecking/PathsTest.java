@@ -9,7 +9,9 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
@@ -27,13 +29,13 @@ public class PathsTest {
     DependentLink A = param(false, "A", Universe(0));
     A.setNext(param("a", Reference(A)));
     DependentLink C = param((String) null, DataCall(Preprelude.INTERVAL));
-    Expression pathCall = ConCall(Prelude.PATH_CON)
-            .addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Inf(), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Lam(C, Reference(A)), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Reference(A.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Reference(A.getNext()), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
+    List<Expression> pathArgs = new ArrayList<>();
+    pathArgs.add(ZeroLvl());
+    pathArgs.add(Inf());
+    pathArgs.add(Lam(C, Reference(A)));
+    pathArgs.add(Reference(A.getNext()));
+    pathArgs.add(Reference(A.getNext()));
+    Expression pathCall = ConCall(Prelude.PATH_CON, pathArgs).addArgument(Lam(C, Reference(A.getNext())), AppExpression.DEFAULT);
     assertEquals(Lam(A, pathCall).normalize(NormalizeVisitor.Mode.NF), idp.expression);
     assertEquals(Pi(A, Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Inf(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(A), Reference(A.getNext()), Reference(A.getNext()))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
   }

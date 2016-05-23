@@ -14,13 +14,8 @@ public class ConCallExpression extends DefCallExpression {
     myDataTypeArguments = dataTypeArguments;
   }
 
-  public List<Expression> getDataTypeArguments() {
+  public List<? extends Expression> getDataTypeArguments() {
     return myDataTypeArguments;
-  }
-
-  public void setDataTypeArguments(List<Expression> parameters) {
-    assert parameters != null;
-    myDataTypeArguments = parameters;
   }
 
   @Override
