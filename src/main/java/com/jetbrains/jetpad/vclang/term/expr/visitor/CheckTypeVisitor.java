@@ -460,7 +460,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         int val = ((Abstract.NumericLiteral) expr).getNumber();
         return new LevelExpression(val + num_sucs, conv);
       }
-
+      Result refResult = typeCheck(expr, expectedType);
+      if (refResult != null) {
+        ReferenceExpression ref = refResult.expression.toReference();
+        if (ref != null) {
+          return new LevelExpression(ref.getBinding(), num_sucs, conv);
+        }
+      }
     }
 
     return null;
@@ -468,11 +474,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
   @Override
   public Result visitPolyUniverse(Abstract.PolyUniverseExpression expr, Expression expectedType) {
-    Result resultP = typeCheck(expr.getPLevel(), Lvl());
-    Result resultH = typeCheck(expr.getHLevel(), CNat());
-    if (resultP == null || resultH == null) return null;
-    UniverseExpression universe = Universe(new TypeUniverse(resultP.expression, resultH.expression));
-
+    LevelExpression levelP = typeCheckLevel(expr.getPLevel(), Lvl());
+    LevelExpression levelH = typeCheckLevel(expr.getHLevel(), CNat());
+    if (levelP == null || levelH == null) return null;
+    UniverseExpression universe = Universe(new TypeUniverse(levelP, levelH));
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
 

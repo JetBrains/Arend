@@ -1,15 +1,18 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
+import java.util.List;
+
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
 
 public interface Function {
   ElimTreeNode getElimTree();
-  DependentLink getLevelParams();
+  List<TypedBinding> getLevelParams();
   DependentLink getParameters();
   Expression getResultType();
   int getNumberOfRequiredArguments();
