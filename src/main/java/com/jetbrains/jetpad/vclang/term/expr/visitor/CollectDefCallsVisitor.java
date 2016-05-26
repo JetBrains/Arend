@@ -62,6 +62,12 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
+  public Set<Referable> visitPolyUniverse(Abstract.PolyUniverseExpression expr, Void ignore) {
+    expr.getPLevel().accept(this, null);
+    return expr.getHLevel().accept(this, null);
+  }
+
+  @Override
   public Set<Referable> visitInferHole(Abstract.InferHoleExpression expr, Void ignore) {
     return myDependencies;
   }

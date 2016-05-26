@@ -1,7 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -73,8 +77,9 @@ public class ComparisonTest {
     DependentLink y = param("y", Nat());
     DependentLink xy = param(true, vars("x", "y"), Nat());
     DependentLink _Impl = param(false, (String) null, Nat());
-    Expression expr1 = Pi(params(xy, _Impl), Apps(Nat(), Reference(xy), Reference(xy.getNext())));
-    Expression expr2 = Pi(params(x, y), Pi(_Impl, Apps(Nat(), Reference(x), Reference(y))));
+    Binding A = new TypedBinding("A", Pi(Nat(), Pi(Nat(), Universe(0))));
+    Expression expr1 = Pi(params(xy, _Impl), Apps(Reference(A), Reference(xy), Reference(xy.getNext())));
+    Expression expr2 = Pi(params(x, y), Pi(_Impl, Apps(Reference(A), Reference(x), Reference(y))));
     assertEquals(expr1, expr2);
   }
 
@@ -113,8 +118,8 @@ public class ComparisonTest {
 
   @Test
   public void compareLeq() {
-    // Expression expr1 = Pi("X", Universe(1), Pi(Index(0), Index(0)));
-    // Expression expr2 = Pi("X", Universe(0), Pi(Index(0), Index(0)));
+    // Expression expr1 = Pi("X", UniverseOld(1), Pi(Index(0), Index(0)));
+    // Expression expr2 = Pi("X", UniverseOld(0), Pi(Index(0), Index(0)));
     Expression expr1 = Universe(0);
     Expression expr2 = Universe(1);
     assertTrue(compare(expr1, expr2, Equations.CMP.LE));
@@ -132,10 +137,10 @@ public class ComparisonTest {
   @Test
   public void letsNotEqual() {
     DependentLink y = param("y", Nat());
-    LetClause let1 = let("x", y, Reference(y));
+    LetClause let1 = let("x", y, Nat(), Reference(y));
     Expression expr1 = Let(lets(let1), Apps(Reference(let1), Zero()));
     DependentLink y_ = param("y", Universe(0));
-    LetClause let2 = let("x", y_, Reference(y_));
+    LetClause let2 = let("x", y_, Universe(0), Reference(y_));
     Expression expr2 = Let(lets(let2), Apps(Reference(let2), Nat()));
     assertNotEquals(expr1, expr2);
   }
@@ -146,9 +151,9 @@ public class ComparisonTest {
     DependentLink yz = param(true, vars("y", "z"), Reference(A));
     DependentLink y = param("y", Reference(A));
     DependentLink z = param("z", Reference(A));
-    LetClause let1 = let("x", yz, Reference(A));
+    LetClause let1 = let("x", yz, Universe(0), Reference(A));
     Expression expr1 = Let(lets(let1), Apps(Reference(let1), Zero()));
-    LetClause let2 = let("x", params(y, z), Reference(A));
+    LetClause let2 = let("x", params(y, z), Universe(0), Reference(A));
     Expression expr2 = Let(lets(let2), Apps(Reference(let2), Zero()));
     assertEquals(expr1, expr2);
     assertEquals(expr2, expr1);
@@ -160,9 +165,9 @@ public class ComparisonTest {
     DependentLink yz = param(true, vars("y", "z"), Reference(A));
     DependentLink y = param("y", Reference(A));
     DependentLink z = param("z", Reference(y));
-    LetClause let1 = let("x", yz, Reference(A));
+    LetClause let1 = let("x", yz, Universe(0), Reference(A));
     Expression expr1 = Let(lets(let1), Apps(Reference(let1), Zero()));
-    LetClause let2 = let("x", params(y, z), Reference(A));
+    LetClause let2 = let("x", params(y, z), Universe(0), Reference(A));
     Expression expr2 = Let(lets(let2), Apps(Reference(let2), Zero()));
     assertNotEquals(expr1, expr2);
     assertNotEquals(expr2, expr1);
@@ -170,9 +175,9 @@ public class ComparisonTest {
 
   @Test
   public void letsNotEquiv() {
-    LetClause let1 = let("x", Universe(0));
+    LetClause let1 = let("x", EmptyDependentLink.getInstance(), Universe(1), Universe(0));
     Expression expr1 = Let(lets(let1), Reference(let1));
-    LetClause let2 = let("x", Universe(1));
+    LetClause let2 = let("x", EmptyDependentLink.getInstance(), Universe(2), Universe(1));
     Expression expr2 = Let(lets(let2), Reference(let2));
     assertNotEquals(expr1, expr2);
   }
@@ -193,7 +198,7 @@ public class ComparisonTest {
 
   @Test
   public void etaLam() {
-    Expression type = Pi(param(Nat()), Apps(Prelude.PATH.getDefCall(), Lam(param("i", Prelude.INTERVAL.getDefCall()), Nat()), Zero(), Zero()));
+    Expression type = Pi(param(Nat()), Apps(Prelude.PATH.getDefCall(), ZeroLvl(), Fin(Suc(Zero())), Lam(param("i", Preprelude.INTERVAL.getDefCall()), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
     assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
@@ -204,7 +209,7 @@ public class ComparisonTest {
   @Test
   public void etaPath() {
     DependentLink x = param("x", Nat());
-    Expression type = Apps(Prelude.PATH.getDefCall(), Lam(param(Prelude.INTERVAL.getDefCall()), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
+    Expression type = Apps(Prelude.PATH.getDefCall(), ZeroLvl(), Fin(Suc(Zero())), Lam(param(Preprelude.INTERVAL.getDefCall()), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
     assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));

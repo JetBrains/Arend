@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -59,9 +61,21 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
+  public Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    Expression result = mySubstitution.get(expr.getDefinition());
+    return result != null ? result : expr;
+  }
+
+  @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     Expression result = mySubstitution.get(expr.getBinding());
-    return result != null ? result : expr;
+    if (result != null) {
+      return result;
+    }
+    if (expr.getBinding() instanceof InferenceBinding) {
+      ((InferenceBinding) expr.getBinding()).setType(expr.getBinding().getType().accept(this, null));
+    }
+    return expr;
   }
 
   @Override
@@ -89,10 +103,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public BranchElimTreeNode visitBranch(BranchElimTreeNode branchNode, Void params) {
-    Binding newReference = ((ReferenceExpression) Reference(branchNode.getReference()).accept(this, null)).getBinding();
+    Binding newReference = visitReference(Reference(branchNode.getReference()), null).toReference().getBinding();
     List<Binding> newContextTail = new ArrayList<>(branchNode.getContextTail().size());
     for (Binding binding : branchNode.getContextTail()) {
-      newContextTail.add(((ReferenceExpression) Reference(binding).accept(this, null)).getBinding());
+      newContextTail.add(visitReference(Reference(binding), null).toReference().getBinding());
     }
 
     BranchElimTreeNode newNode = new BranchElimTreeNode(newReference, newContextTail);
@@ -125,7 +139,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     if (leafNode.getMatched() != null) {
       List<Binding> matched = new ArrayList<>(leafNode.getMatched().size());
       for (Binding binding : leafNode.getMatched()) {
-        matched.add(mySubstitution.getDomain().contains (binding) ? ((ReferenceExpression) mySubstitution.get(binding)).getBinding() : binding);
+        matched.add(mySubstitution.getDomain().contains(binding) ? mySubstitution.get(binding).toReference().getBinding() : binding);
       }
       result.setMatched(matched);
     }
@@ -139,7 +153,8 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public Expression visitUniverse(UniverseExpression expr, Void params) {
-    return expr;
+    //return expr.getUniverse() instanceof TypeUniverse && ((TypeUniverse) expr.getUniverse()).getLevel() != null ? Universe(((TypeUniverse) expr.getUniverse()).getLevel().getValue().accept(this, null)) : expr;
+    return ExpressionFactory.Universe(new TypeUniverse(expr.getUniverse().getPLevel().accept(this, params), expr.getUniverse().getHLevel().accept(this, params)));
   }
 
   @Override
@@ -177,6 +192,24 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
     LetExpression result = Let(clauses, letExpression.getExpression().subst(mySubstitution));
     for (LetClause clause : letExpression.getClauses()) {
       mySubstitution.getDomain().remove(clause);
+    }
+    return result;
+  }
+
+  @Override
+  public Expression visitOfType(OfTypeExpression expr, Void params) {
+    return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getType().accept(this, null));
+  }
+
+  @Override
+  public Expression visitLevel(LevelExpression expr, Void params) {
+    LevelExpression result = expr;
+    for (Binding var : mySubstitution.getDomain()) {
+      LevelExpression substTo = expr.getConverter().convert(mySubstitution.get(var));
+      if (substTo == null) {
+        continue;
+      }
+      result = result.subst(var, substTo);
     }
     return result;
   }

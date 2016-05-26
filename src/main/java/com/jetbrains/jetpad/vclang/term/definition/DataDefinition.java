@@ -24,9 +24,8 @@ public class DataDefinition extends Definition {
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public DataDefinition(String name, Abstract.Definition.Precedence precedence, Universe universe, DependentLink parameters) {
-    super(name, precedence);
-    setUniverse(universe);
+  public DataDefinition(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
+    super(name, precedence, universe);
     hasErrors(false);
     myParameters = parameters;
     myConstructors = new ArrayList<>();

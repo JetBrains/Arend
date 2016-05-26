@@ -17,7 +17,15 @@ public class ClassField extends Definition {
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
-    hasErrors(false);
+    hasErrors(type == null);
+  }
+
+  public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, TypeUniverse universe) {
+    super(name, precedence, universe);
+    myThisParameter = thisParameter;
+    myType = type;
+    setThisClass(thisClass);
+    hasErrors(type == null);
   }
 
   public DependentLink getThisParameter() {
@@ -34,7 +42,7 @@ public class ClassField extends Definition {
 
   @Override
   public Expression getType() {
-    return Pi(myThisParameter, myType);
+    return myType == null ? null : Pi(myThisParameter, myType);
   }
 
   @Override

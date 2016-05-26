@@ -9,7 +9,12 @@ public abstract class InferenceBinding extends TypedBinding {
     super(name, type);
   }
 
+  public void setType(Expression type) {
+    myType = type;
+  }
+
   public abstract Abstract.SourceNode getSourceNode();
 
-  public abstract void reportError(ErrorReporter errorReporter, Expression... candidates);
+  public abstract void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates);
+  public abstract void reportErrorMismatch(ErrorReporter errorReporter, Expression expectedType, Expression actualType, Expression candidate);
 }

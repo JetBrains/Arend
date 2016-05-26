@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
@@ -8,10 +9,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.CollectDefCallsVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.TerminationCheckVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.term.pattern.NamePattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
@@ -23,8 +21,6 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 
 import java.util.*;
 
@@ -33,7 +29,6 @@ import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helpe
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
-import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.ordinal;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Void, Definition> {
@@ -94,6 +89,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, Void params) {
+    String name = def.getName();
     Abstract.Definition.Arrow arrow = def.getArrow();
     final FunctionDefinition typedDef = new FunctionDefinition(def.getName(), def.getPrecedence());
     // TODO[scopes] Fill namespace
@@ -283,7 +279,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         context.subList(context.size() - size(list.getFirst()), context.size()).clear();
         TypeCheckingElim.Result elimResult = visitor.getTypeCheckingElim().typeCheckElim((Abstract.ElimExpression) term, def.getArrow() == Abstract.Definition.Arrow.LEFT ? list.getFirst() : null, expectedType, false);
         if (elimResult != null) {
-          elimResult.update();
+          elimResult.update(false);
           elimResult.reportErrors(myErrorReporter);
           typedDef.setElimTree(elimResult.elimTree);
         }
@@ -331,9 +327,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     Expression type = typedDef.getType();
     if (type != null) {
-      type = type.getType().normalize(NormalizeVisitor.Mode.WHNF);
-      if (type instanceof UniverseExpression) {
-        typedDef.setUniverse(((UniverseExpression) type).getUniverse());
+      UniverseExpression universeType = type.getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+      if (universeType != null) {
+        typedDef.setUniverse(universeType.getUniverse());
       } else {
         throw new IllegalStateException();
       }
@@ -359,7 +355,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
-    Universe universe = new Universe.Type(0, Universe.Type.PROP);
+    LevelExpression plevel = null;
+    ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), null, thisClass, thisParameter);
 
     int index = 0;
     LinkList list = new LinkList();
@@ -367,7 +364,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (argument instanceof Abstract.TypeArgument) {
         CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
         if (result == null) {
-          return null;
+          return typedDef;
         }
 
         DependentLink param;
@@ -382,43 +379,38 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         list.append(param);
         context.addAll(toContext(param));
 
-        Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
-        Universe maxUniverse = universe.max(argUniverse);
-        if (maxUniverse == null) {
-          String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
-          myErrorReporter.report(new TypeCheckingError(error, def));
-          return null;
+        LevelExpression argPLevel = result.type.toUniverse().getUniverse().getPLevel();
+        if (plevel == null) {
+          plevel = argPLevel;
         } else {
-          universe = maxUniverse;
+          plevel = plevel.max(argPLevel);
         }
       } else {
         myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null));
-        return null;
+        return typedDef;
       }
     }
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType == null) {
-      return null;
+      return typedDef;
     }
     CheckTypeVisitor.Result typeResult = visitor.checkType(resultType, Universe());
     if (typeResult == null) {
-      return null;
+      return typedDef;
     }
     typedResultType = typeResult.expression;
 
-    Universe resultTypeUniverse = ((UniverseExpression) typeResult.type).getUniverse();
-    Universe maxUniverse = universe.max(resultTypeUniverse);
-    if (maxUniverse == null) {
-      String error = "Universe " + resultTypeUniverse + " of the result type is not compatible with universe " + universe + " of arguments";
-      myErrorReporter.report(new TypeCheckingError(error, def));
-      return null;
+    TypeUniverse resultTypeUniverse = typeResult.type.toUniverse().getUniverse();
+    if (plevel == null) {
+      plevel = resultTypeUniverse.getPLevel();
     } else {
-      universe = maxUniverse;
+      plevel = plevel.max(resultTypeUniverse.getPLevel());
     }
 
-    ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType), thisClass, thisParameter);
-    typedDef.setUniverse(universe);
+    typedDef.hasErrors(false);
+    typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
+    typedDef.setUniverse(new TypeUniverse(plevel, resultTypeUniverse.getHLevel()));
     typedDef.setThisClass(thisClass);
     myState.record(def, typedDef);
     return typedDef;
@@ -427,8 +419,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public DataDefinition visitData(Abstract.DataDefinition def, Void params) {
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
-    Universe universe = def.getUniverse();
-    Universe typedUniverse = new Universe.Type(0, Universe.Type.PROP);
 
     List<Binding> context = new ArrayList<>();
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build();
@@ -441,7 +431,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    DataDefinition dataDefinition = new DataDefinition(def.getName(), def.getPrecedence(), universe != null ? universe : new Universe.Type(0, Universe.Type.PROP), null);
+    DataDefinition dataDefinition = new DataDefinition(def.getName(), def.getPrecedence(), TypeUniverse.PROP, null);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
@@ -449,6 +439,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (result == null) {
           return dataDefinition;
         }
+
         DependentLink param;
         if (parameter instanceof Abstract.TelescopeArgument) {
           param = param(parameter.getExplicit(), ((Abstract.TelescopeArgument) parameter).getNames(), result.expression);
@@ -460,11 +451,27 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
     }
 
+    TypeUniverse userUniverse = null;
+    if (def.getUniverse() != null) {
+      CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
+
+      if (result == null || result.expression.toUniverse() == null) {
+        String msg = "Specified type " + def.getUniverse().accept(new PrettyPrintVisitor(new StringBuilder(), 0), Abstract.Expression.PREC) + " of '" + def.getName() + "' is not a universe";
+        myErrorReporter.report(new TypeCheckingError(msg, def.getUniverse()));
+      } else {
+        userUniverse = result.expression.toUniverse().getUniverse();
+      }
+    }
+
     dataDefinition.setParameters(list.getFirst());
+    if (userUniverse != null) dataDefinition.setUniverse(userUniverse);
     dataDefinition.hasErrors(false);
     dataDefinition.setThisClass(thisClass);
     myState.record(def, dataDefinition);
 
+    LevelExpression inferredHLevel = def.getConstructors().size() > 1 ? TypeUniverse.SET.getHLevel() : TypeUniverse.PROP.getHLevel();
+    LevelExpression inferredPLevel = TypeUniverse.intToPLevel(0);
+    TypeUniverse inferredUniverse = new TypeUniverse(inferredPLevel, inferredHLevel);
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
       if (typedConstructor == null) {
@@ -473,24 +480,26 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       myState.record(constructor, typedConstructor);
 
-      Universe maxUniverse = typedUniverse.max(typedConstructor.getUniverse());
-      if (maxUniverse == null) {
-        String msg = "Universe " + typedConstructor.getUniverse() + " of constructor '" + constructor.getName() + "' is not compatible with universe " + typedUniverse + " of previous constructors";
-        myErrorReporter.report(new TypeCheckingError(msg, null));
-      } else {
-        typedUniverse = maxUniverse;
-      }
+      inferredUniverse = inferredUniverse.max(typedConstructor.getUniverse());
     }
 
-    if (universe != null) {
-      if (typedUniverse.lessOrEquals(universe)) {
-        dataDefinition.setUniverse(universe);
+    if (userUniverse != null) {
+      LevelExpression.CMP cmpP = inferredUniverse.getPLevel().compare(userUniverse.getPLevel());
+      LevelExpression.CMP cmpH = inferredUniverse.getHLevel().compare(userUniverse.getHLevel());
+      if (cmpP == LevelExpression.CMP.NOT_COMPARABLE || cmpP == LevelExpression.CMP.GREATER ||
+              cmpH == LevelExpression.CMP.NOT_COMPARABLE || cmpH == LevelExpression.CMP.GREATER) {
+        String msg = "Actual universe " + new UniverseExpression(inferredUniverse) + " is not compatible with expected universe " + new UniverseExpression(userUniverse);
+        myErrorReporter.report(new TypeCheckingError(msg, def.getUniverse()));
+        dataDefinition.setUniverse(inferredUniverse);
       } else {
-        myErrorReporter.report(new TypeMismatchError(new UniverseExpression(universe), new UniverseExpression(typedUniverse), null));
-        dataDefinition.setUniverse(typedUniverse);
+        dataDefinition.setUniverse(userUniverse);
       }
     } else {
-      dataDefinition.setUniverse(typedUniverse);
+      if (def.getConditions() != null && !def.getConditions().isEmpty()) {
+        dataDefinition.setUniverse(new TypeUniverse(inferredUniverse.getPLevel(), TypeUniverse.intToHLevel(TypeUniverse.NOT_TRUNCATED)));
+      } else {
+        dataDefinition.setUniverse(inferredUniverse);
+      }
     }
 
     context.clear();
@@ -554,9 +563,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression()));
             DependentLink params = constructor.getParameters();
-            if (constructor.getThisClass() != null) {
-              params = params.getNext();
-            }
             List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns());
             if (processedPatterns == null)
               continue;
@@ -637,11 +643,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
-      Universe universe = new Universe.Type(0, Universe.Type.PROP);
       int index = 1;
       boolean ok = true;
 
-      Constructor constructor = new Constructor(def.getName(), def.getPrecedence(), universe, null, dataDefinition, null);
+      Constructor constructor = new Constructor(name, def.getPrecedence(), TypeUniverse.PROP, null, dataDefinition, null);
       constructor.hasErrors(true);
       List<? extends Abstract.PatternArgument> patterns = def.getPatterns();
       Patterns typedPatterns = null;
@@ -667,6 +672,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         visitor.setThisClass(dataDefinition.getThisClass(), Reference(typedPatterns.getParameters()));
       }
 
+      LevelExpression plevel = null;
+      LevelExpression hlevel = null;
       LinkList list = new LinkList();
       for (Abstract.TypeArgument argument : arguments) {
         CheckTypeVisitor.Result result = visitor.checkType(argument.getType(), Universe());
@@ -674,14 +681,21 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           return constructor;
         }
 
-        Universe argUniverse = ((UniverseExpression) result.type).getUniverse();
-        Universe maxUniverse = universe.max(argUniverse);
-        if (maxUniverse == null) {
-          String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
-          myErrorReporter.report(new TypeCheckingError(error, def));
-          ok = false;
+        TypeUniverse argUniverse = result.type.toUniverse().getUniverse();
+        if (plevel == null) {
+          plevel = argUniverse.getPLevel();
+          hlevel = argUniverse.getHLevel();
         } else {
-          universe = maxUniverse;
+          /*Universe.CompareResult cmp = universe.compare(argUniverse);
+          if (cmp == null) {
+            String error = "Universe " + argUniverse + " of " + ordinal(index) + " argument is not compatible with universe " + universe + " of previous arguments";
+            myErrorReporter.report(new TypeCheckingError(error, def));
+            ok = false;
+          } else {
+            universe = cmp.MaxUniverse;
+          }/**/
+          plevel = plevel.max(argUniverse.getPLevel());
+          hlevel = hlevel.max(argUniverse.getHLevel());
         }
 
         DependentLink param;
@@ -702,14 +716,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext()) {
         Expression type = link.getType().normalize(NormalizeVisitor.Mode.WHNF);
-        while (type instanceof PiExpression) {
-          for (DependentLink link1 = ((PiExpression) type).getParameters(); link1.hasNext(); link1 = link1.getNext()) {
+        PiExpression pi = type.toPi();
+        while (pi != null) {
+          for (DependentLink link1 = pi.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
             link1 = link1.getNextTyped(null);
             if (!checkNonPositiveError(link1.getType(), dataDefinition, name, list.getFirst(), link, arguments, def)) {
               return constructor;
             }
           }
-          type = ((PiExpression) type).getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+          type = pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+          pi = type.toPi();
         }
 
         boolean check = true;
@@ -717,14 +733,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           check = false;
           List<? extends Expression> exprs = type.getArguments();
           type = type.getFunction();
-          if (type instanceof DataCallExpression) {
-            DataDefinition typeDef = ((DataCallExpression) type).getDefinition();
-            if (Prelude.isPath(typeDef) && !exprs.isEmpty()) {
-              Expression expr = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF);
-              if (expr instanceof LamExpression) {
+          DataCallExpression dataCall = type.toDataCall();
+          if (dataCall != null) {
+            DataDefinition typeDef = dataCall.getDefinition();
+            if (Prelude.isPath(typeDef) && exprs.size() >= 3) {
+              LamExpression lam = exprs.get(2).normalize(NormalizeVisitor.Mode.WHNF).toLam();
+              if (lam != null) {
                 check = true;
-                type = ((LamExpression) expr).getBody().normalize(NormalizeVisitor.Mode.WHNF);
-                exprs = exprs.subList(1, exprs.size());
+                type = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
+                exprs = exprs.subList(3, exprs.size());
               }
             }
           } else {
@@ -743,7 +760,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       constructor.setParameters(list.getFirst());
       constructor.setPatterns(typedPatterns);
-      constructor.setUniverse(universe);
+      if (plevel != null) constructor.setUniverse(new TypeUniverse(plevel, hlevel));
       constructor.hasErrors(false);
       constructor.setThisClass(dataDefinition.getThisClass());
       dataDefinition.addConstructor(constructor);
@@ -809,16 +826,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
           if (memberDefinition instanceof ClassField) {
             ClassField field = (ClassField) memberDefinition;
-            Universe oldUniverse = classDefinition.getUniverse();
-            Universe newUniverse = field.getUniverse();
-            Universe maxUniverse = oldUniverse.max(newUniverse);
-            if (maxUniverse == null) {
-              String error = "Universe " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
-              myErrorReporter.report(new TypeCheckingError(error, definition));
-            } else {
-              classDefinition.setUniverse(maxUniverse);
+            TypeUniverse oldUniverse = classDefinition.getUniverse();
+            TypeUniverse newUniverse = field.getUniverse();
+            //Universe.CompareResult cmp = oldUniverse.compare(newUniverse);
+           // if (cmp == null) {
+           //   String error = "UniverseOld " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
+           //   myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, definition));
+           // } else {
+              classDefinition.setUniverse(new TypeUniverse(oldUniverse.getPLevel().max(newUniverse.getPLevel()), oldUniverse.getHLevel().max(newUniverse.getHLevel())));
               classDefinition.addField(field);
-            }
+           // }
           }
         }
       }

@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import org.junit.Test;
@@ -37,8 +34,8 @@ public class GetTypeTest {
   public void classExtTest() {
     NamespaceMember member = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
     assertEquals(Universe(1), member.namespace.getDefinition("Test").getType());
-    assertEquals(Universe(0, Universe.Type.SET), member.namespace.getDefinition("test").getType());
-    assertEquals(Universe(0, Universe.Type.SET), ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
+    assertEquals(Universe(0), member.namespace.getDefinition("test").getType());
+    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
   @Test
@@ -62,6 +59,8 @@ public class GetTypeTest {
     NamespaceMember member = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), member.namespace.getDefinition("C").getDefCall()));
     Expression type = FunCall(Prelude.PATH_INFIX)
+      .addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Zero(), AppExpression.DEFAULT)
       .addArgument(Apps(member.namespace.getMember("C").namespace.getDefinition("x").getDefCall(), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
@@ -72,7 +71,8 @@ public class GetTypeTest {
   public void tupleTest() {
     Definition def = typeCheckDef("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    assertEquals(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX), Nat(), Reference(xy), Reference(xy.getNext()))))), ((LeafElimTreeNode)((FunctionDefinition) def).getElimTree()).getExpression().getType());
+    assertEquals(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))), ((LeafElimTreeNode)((FunctionDefinition) def).getElimTree()).getExpression().getType());
   }
 
   @Test

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -69,12 +69,16 @@ public class ExpressionFactory {
     return Apps(binOp.getDefCall(), left, right);
   }
 
+  public static DataCallExpression Interval() {
+    return DataCall(Preprelude.INTERVAL);
+  }
+
   public static ConCallExpression Left() {
-    return ConCall(Prelude.LEFT);
+    return ConCall(Preprelude.LEFT);
   }
 
   public static ConCallExpression Right() {
-    return ConCall(Prelude.RIGHT);
+    return ConCall(Preprelude.RIGHT);
   }
 
   public static NewExpression New(Expression expression) {
@@ -190,31 +194,73 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return DataCall(Prelude.NAT);
+    return DataCall(Preprelude.NAT);
   }
 
   public static ConCallExpression Zero() {
-    return ConCall(Prelude.ZERO);
+    return ConCall(Preprelude.ZERO);
   }
 
   public static ConCallExpression Suc() {
-    return ConCall(Prelude.SUC);
+    return ConCall(Preprelude.SUC);
   }
 
   public static Expression Suc(Expression expr) {
     return Apps(Suc(), expr);
   }
 
+  public static DataCallExpression Lvl() {return DataCall(Preprelude.LVL); }
+
+  public static ConCallExpression ZeroLvl() { return ConCall(Preprelude.ZERO_LVL); }
+
+  public static ConCallExpression SucLvl() { return ConCall(Preprelude.SUC_LVL); }
+
+  public static Expression SucLvl(Expression expr) { return Apps(SucLvl(), expr); }
+
+  public static FunCallExpression MaxLvl() { return FunCall(Preprelude.MAX_LVL); }
+
+  public static Expression MaxLvl(Expression expr1, Expression expr2) { return Apps(MaxLvl(), expr1, expr2); }
+
+  public static Expression MaxNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_NAT), expr1, expr2); }
+
+  public static DataCallExpression CNat() {
+    return DataCall(Preprelude.CNAT);
+  }
+
+  public static Expression Fin(Expression expr) { return Apps(ConCall(Preprelude.FIN), expr); }
+
+  public static ConCallExpression Inf() {
+    return ConCall(Preprelude.INF);
+  }
+
+  public static Expression SucCNat(Expression expr) { return Apps(FunCall(Preprelude.SUC_CNAT), expr); }
+
+  public static Expression MaxCNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_CNAT), expr1, expr2); }
+
   public static UniverseExpression Universe() {
-    return new UniverseExpression(new Universe.Type());
+    return new UniverseExpression(new TypeUniverse(TypeUniverse.ANY_LEVEL, TypeUniverse.ANY_LEVEL));
   }
 
-  public static UniverseExpression Universe(int level) {
-    return new UniverseExpression(new Universe.Type(level));
+  public static UniverseExpression Universe(int plevel) {
+    return new UniverseExpression(new TypeUniverse(plevel, TypeUniverse.NOT_TRUNCATED));
   }
 
-  public static UniverseExpression Universe(int level, int truncated) {
-    return new UniverseExpression(new Universe.Type(level, truncated));
+  public static UniverseExpression Universe(int plevel, int hlevel) {
+    return new UniverseExpression(new TypeUniverse(plevel, hlevel));
+  }
+
+  public static UniverseExpression Universe(int plevel, LevelExpression hlevel) {
+    return new UniverseExpression(new TypeUniverse(TypeUniverse.intToPLevel(plevel), hlevel));
+  }
+
+
+
+  public static UniverseExpression Universe(Expression plevel, Expression hlevel) {
+    return new UniverseExpression(new TypeUniverse(TypeUniverse.exprToPLevel(plevel), TypeUniverse.exprToHLevel(hlevel)));
+  }
+
+  public static UniverseExpression Universe(TypeUniverse universe) {
+    return new UniverseExpression(universe);
   }
 
   public static ErrorExpression Error(Expression expr, TypeCheckingError error) {

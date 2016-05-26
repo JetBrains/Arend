@@ -14,9 +14,11 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.scope.SubScope;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
@@ -101,7 +103,7 @@ public class ConsoleMain {
           DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
           rsmVisitor.visitClass(abstractDefinition, true);
 
-          DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, nameResolver, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider(), Prelude.PRELUDE);
+          DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, nameResolver, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider(), new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE));
           visitor.setResolveListener(new ConcreteResolveListener());
           visitor.visitClass(abstractDefinition, null);
 

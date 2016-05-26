@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -376,15 +375,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return null;
     }
 
-    Universe universe = null;
-    if (ctx.literal() != null) {
-      Concrete.Expression expression = (Concrete.Expression) visit(ctx.literal());
+    /* Abstract.UniverseExpression.Universe universe = null;
+    if (ctx.expr() != null) {
+      Concrete.Expression expression = (Concrete.Expression) visit(ctx.expr());
       if (expression instanceof Concrete.UniverseExpression) {
         universe = ((Concrete.UniverseExpression) expression).getUniverse();
       } else {
         myErrorReporter.report(new ParserError(expression.getPosition(), "Expected a universe"));
       }
-    }
+    } /**/
+
+    Concrete.Expression universe = ctx.expr() == null ? null : (Concrete.Expression) visit(ctx.expr());
 
     List<Concrete.Constructor> constructors = new ArrayList<>(ctx.constructorDef().size());
     List<Concrete.Condition> conditions = ctx.conditionDef() != null ? visitConditionDef(ctx.conditionDef()) : null;
@@ -579,9 +580,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public Concrete.PolyUniverseExpression visitPolyUniverse(PolyUniverseContext ctx) {
+    Concrete.Expression plevel = visitExpr(ctx.expr(0));
+    Concrete.Expression hlevel = visitExpr(ctx.expr(1));
+    return new Concrete.PolyUniverseExpression(tokenPosition(ctx.getStart()), plevel, hlevel);
+  }
+
+  @Override
   public Concrete.UniverseExpression visitUniverse(UniverseContext ctx) {
     if (ctx == null) return null;
-    return new Concrete.UniverseExpression(tokenPosition(ctx.UNIVERSE().getSymbol()), new Universe.Type(Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length()))));
+    Abstract.UniverseExpression.Universe universe = new Abstract.UniverseExpression.Universe(Integer.valueOf(ctx.UNIVERSE().getText().substring("\\Type".length())), Abstract.UniverseExpression.Universe.NOT_TRUNCATED);
+    return new Concrete.UniverseExpression(tokenPosition(ctx.UNIVERSE().getSymbol()), universe);
   }
 
   @Override
@@ -589,19 +598,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx == null) return null;
     String text = ctx.TRUNCATED_UNIVERSE().getText();
     int indexOfMinusSign = text.indexOf('-');
-    return new Concrete.UniverseExpression(tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol()), new Universe.Type(Integer.valueOf(text.substring(indexOfMinusSign + "-Type".length())), Integer.valueOf(text.substring(1, indexOfMinusSign))));
+    return new Concrete.UniverseExpression(tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol()), new Abstract.UniverseExpression.Universe(Integer.valueOf(text.substring(indexOfMinusSign + "-Type".length())), Integer.valueOf(text.substring(1, indexOfMinusSign))));
   }
 
   @Override
   public Concrete.UniverseExpression visitProp(PropContext ctx) {
     if (ctx == null) return null;
-    return new Concrete.UniverseExpression(tokenPosition(ctx.PROP().getSymbol()), new Universe.Type(0, Universe.Type.PROP));
+    return new Concrete.UniverseExpression(tokenPosition(ctx.PROP().getSymbol()), new Abstract.UniverseExpression.Universe(0, Abstract.UniverseExpression.Universe.PROP));
   }
 
   @Override
   public Concrete.UniverseExpression visitSet(SetContext ctx) {
     if (ctx == null) return null;
-    return new Concrete.UniverseExpression(tokenPosition(ctx.SET().getSymbol()), new Universe.Type(Integer.valueOf(ctx.SET().getText().substring("\\Set".length())), Universe.Type.SET));
+    return new Concrete.UniverseExpression(tokenPosition(ctx.SET().getSymbol()), new Abstract.UniverseExpression.Universe(Integer.valueOf(ctx.SET().getText().substring("\\Set".length())), Abstract.UniverseExpression.Universe.SET));
   }
 
   private List<Concrete.TypeArgument> visitTeles(List<TeleContext> teles) {

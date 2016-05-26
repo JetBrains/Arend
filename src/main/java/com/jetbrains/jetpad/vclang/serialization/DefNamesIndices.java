@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.serialization;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.SerializableModuleID;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 
@@ -43,8 +44,8 @@ public class DefNamesIndices {
           ModuleSerialization.writeDefinition(stream, rn.toDefinition());
         }
       } else {
-        stream.writeBoolean(moduleID != Prelude.moduleID);
-        if (moduleID != Prelude.moduleID) {
+        stream.writeInt(moduleID == Prelude.moduleID ? 0 : moduleID == Preprelude.moduleID ? 1 : 2);
+        if (moduleID != Prelude.moduleID && moduleID != Preprelude.moduleID) {
           ((SerializableModuleID) moduleID).serialize(stream);
         }
         ModuleSerialization.serializeResolvedName(stream, rn);
@@ -57,7 +58,7 @@ public class DefNamesIndices {
 
     for (ResolvedName resolvedName : myDefinitionsList) {
       ModuleID moduleID = resolvedName.getModuleID();
-      if (!moduleID.equals(Prelude.moduleID) && !curModuleID.equals(moduleID)) {
+      if (!moduleID.equals(Prelude.moduleID) && !moduleID.equals(Preprelude.moduleID) && !curModuleID.equals(moduleID)) {
         dependencies.add((SerializableModuleID) moduleID);
       }
     }

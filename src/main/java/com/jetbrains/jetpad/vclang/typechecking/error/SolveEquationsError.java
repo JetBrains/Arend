@@ -21,13 +21,13 @@ public class SolveEquationsError extends TypeCheckingError {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append(printHeader()).append(getMessage());
-    builder.append(":\n")
-        .append("\t1st expression: ");
-    myExpr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+    builder.append(printHeader()).append(getMessage()).append(":\n");
+    String msg = "\t1st expression: ";
+    builder.append(msg);
+    myExpr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, msg.length());
     builder.append('\n')
         .append("\t2nd expression: ");
-    myExpr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC);
+    myExpr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, msg.length());
     if (myBinding != null) {
       builder.append('\n')
           .append("\tSince '").append(myBinding).append("' is free in these expressions");

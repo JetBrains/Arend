@@ -3,7 +3,10 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.BranchElimTreeNode;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
@@ -45,15 +48,16 @@ public class SubstituteExpander {
     tree.matchUntilStuck(nestedSubstitution, false).accept(new ElimTreeNodeVisitor<Void, Void>() {
       @Override
       public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
-        if (!(nestedSubstitution.get(branchNode.getReference()) instanceof ReferenceExpression)) {
+        ReferenceExpression reference = nestedSubstitution.get(branchNode.getReference()).toReference();
+        if (reference == null) {
           return null;
         }
-        Binding binding = ((ReferenceExpression) nestedSubstitution.get(branchNode.getReference())).getBinding();
+        Binding binding = reference.getBinding();
         Expression ftype = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
         List<? extends Expression> arguments = ftype.getArguments();
         ftype = ftype.getFunction();
 
-        for (ConCallExpression conCall : ((DataCallExpression) ftype).getDefinition().getMatchedConstructors(arguments)) {
+        for (ConCallExpression conCall : ftype.toDataCall().getDefinition().getMatchedConstructors(arguments)) {
           DependentLink constructorArgs = DependentLink.Helper.subst(conCall.getDefinition().getParameters(), toSubstitution(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments()));
           List<Expression> args = new ArrayList<>();
           for (DependentLink link = constructorArgs; link.hasNext(); link = link.getNext()) {

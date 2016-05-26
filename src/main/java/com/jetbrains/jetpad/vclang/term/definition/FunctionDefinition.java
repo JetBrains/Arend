@@ -26,7 +26,16 @@ public class FunctionDefinition extends Definition implements Function {
   public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(name, precedence);
     assert parameters != null;
-    setUniverse(new Universe.Type(0, Universe.Type.PROP));
+    hasErrors(false);
+    myParameters = parameters;
+    myResultType = resultType;
+    myTypeHasErrors = false;
+    myElimTree = elimTree;
+  }
+
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, TypeUniverse universe) {
+    super(name, precedence, universe);
+    assert parameters != null;
     hasErrors(false);
     myParameters = parameters;
     myResultType = resultType;

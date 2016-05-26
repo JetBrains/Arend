@@ -10,7 +10,7 @@ public class StringPrettyPrintable implements PrettyPrintable {
   }
 
   @Override
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
+  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
     builder.append(myString);
   }
 }

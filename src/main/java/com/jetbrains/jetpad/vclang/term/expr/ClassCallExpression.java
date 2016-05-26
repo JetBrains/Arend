@@ -1,17 +1,17 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.Collections;
 import java.util.Map;
 
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
+
 public class ClassCallExpression extends DefCallExpression {
   private final Map<ClassField, ImplementStatement> myStatements;
-  private Universe myUniverse;
+  private TypeUniverse myUniverse;
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
@@ -40,16 +40,34 @@ public class ClassCallExpression extends DefCallExpression {
     return myStatements;
   }
 
-  public Universe getUniverse() {
+  public TypeUniverse getUniverse() {
     if (myUniverse == null) {
-      myUniverse = new Universe.Type(0, Universe.Type.PROP);
+      Substitution substitution = null;
       for (ClassField field : getDefinition().getFields()) {
         if (!myStatements.containsKey(field)) {
-          Expression expr = field.getBaseType().getType().normalize(NormalizeVisitor.Mode.WHNF);
-          myUniverse = myUniverse.max(expr instanceof UniverseExpression ? ((UniverseExpression) expr).getUniverse() : field.getUniverse());
-          assert expr instanceof UniverseExpression;
+          if (substitution == null) {
+            substitution = new Substitution();
+            for (Map.Entry<ClassField, ImplementStatement> entry : myStatements.entrySet()) {
+              if (entry.getValue().term != null) {
+                substitution.add(entry.getKey(), Lam(entry.getKey().getThisParameter(), entry.getValue().term));
+              }
+            }
+          }
+
+          UniverseExpression expr = field.getBaseType().subst(substitution).getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+          TypeUniverse fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
+          if (myUniverse == null) {
+            myUniverse = fieldUniverse;
+            continue;
+          }
+          myUniverse = myUniverse.max(fieldUniverse);
+          assert expr != null;
         }
       }
+    }
+
+    if (myUniverse == null) {
+      myUniverse = TypeUniverse.PROP;
     }
 
     return myUniverse;
@@ -73,5 +91,10 @@ public class ClassCallExpression extends DefCallExpression {
       this.type = type;
       this.term = term;
     }
+  }
+
+  @Override
+  public ClassCallExpression toClassCall() {
+    return this;
   }
 }

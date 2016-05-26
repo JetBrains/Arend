@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -26,7 +27,15 @@ public class ClassDefinition extends Definition {
   }
 
   public ClassDefinition(String name, Abstract.ClassDefinition def) {
-    this(name, new SimpleStaticNamespaceProvider().forDefinition(def));
+    super(name, Abstract.Binding.DEFAULT_PRECEDENCE);
+    super.hasErrors(false);
+    myNamespace = new SimpleStaticNamespaceProvider().forDefinition(def);  // TODO: is this the right way?
+  }
+
+  public ClassDefinition(String name, Namespace namespace, TypeUniverse universe) {
+    super(name, Abstract.Binding.DEFAULT_PRECEDENCE, universe);
+    super.hasErrors(false);
+    myNamespace = namespace;
   }
 
   @Override

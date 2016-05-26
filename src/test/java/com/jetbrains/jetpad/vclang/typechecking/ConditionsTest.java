@@ -217,7 +217,7 @@ public class ConditionsTest {
   public void whatIfNormalizeError() {
     typeCheckClass(
         "\\static \\data Z | pos Nat | neg Nat \\with neg zero => pos zero\n" +
-        "\\statoc \\function test (x : Z) : Nat <= \\elim x\n" +
+        "\\static \\function test (x : Z) : Nat <= \\elim x\n" +
         " | neg x => 1\n" +
         " | pos x => 2\n"
     , 1);

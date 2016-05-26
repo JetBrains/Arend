@@ -21,8 +21,8 @@ public abstract class Expression implements PrettyPrintable {
   public String toString() {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
-    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
-    accept(visitor, null).accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
+    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
+    accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     return builder.toString();
   }
 
@@ -32,8 +32,10 @@ public abstract class Expression implements PrettyPrintable {
   }
 
   @Override
-  public void prettyPrint(StringBuilder builder, List<String> names, byte prec) {
-    accept(new ToAbstractVisitor(new ConcreteExpressionFactory()), null).accept(new PrettyPrintVisitor(builder, names, 0), prec);
+  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), names);
+    visitor.addFlags(ToAbstractVisitor.Flag.SHOW_HIDDEN_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS).addFlags(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM);
+    accept(visitor, null).accept(new PrettyPrintVisitor(builder, indent), prec);
   }
 
   public boolean findBinding(Binding binding) {
@@ -42,6 +44,10 @@ public abstract class Expression implements PrettyPrintable {
 
   public boolean findBinding(Set<Binding> bindings) {
     return accept(new FindBindingVisitor(bindings), null);
+  }
+
+  public Expression strip() {
+    return accept(new StripVisitor(), null);
   }
 
   public final Expression subst(Binding binding, Expression substExpr) {
@@ -66,14 +72,15 @@ public abstract class Expression implements PrettyPrintable {
 
   public Expression getPiParameters(List<DependentLink> params, boolean normalize, boolean implicitOnly) {
     Expression cod = normalize ? normalize(NormalizeVisitor.Mode.WHNF) : this;
-    while (cod instanceof PiExpression) {
+    PiExpression piCod = cod.toPi();
+    while (piCod != null) {
       if (implicitOnly) {
-        if (((PiExpression) cod).getParameters().isExplicit()) {
+        if (piCod.getParameters().isExplicit()) {
           break;
         }
-        for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
+        for (DependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
           if (link.isExplicit()) {
-            return new PiExpression(link, ((PiExpression) cod).getCodomain());
+            return new PiExpression(link, piCod.getCodomain());
           }
           if (params != null) {
             params.add(link);
@@ -81,16 +88,17 @@ public abstract class Expression implements PrettyPrintable {
         }
       } else {
         if (params != null) {
-          for (DependentLink link = ((PiExpression) cod).getParameters(); link.hasNext(); link = link.getNext()) {
+          for (DependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
             params.add(link);
           }
         }
       }
 
-      cod = ((PiExpression) cod).getCodomain();
+      cod = piCod.getCodomain();
       if (normalize) {
         cod = cod.normalize(NormalizeVisitor.Mode.WHNF);
       }
+      piCod = cod.toPi();
     }
     return cod;
   }
@@ -114,13 +122,15 @@ public abstract class Expression implements PrettyPrintable {
 
   public Expression getLamParameters(List<DependentLink> params) {
     Expression body = this;
-    while (body instanceof LamExpression) {
+    LamExpression lamBody = body.toLam();
+    while (lamBody != null) {
       if (params != null) {
-        for (DependentLink link = ((LamExpression) body).getParameters(); link.hasNext(); link = link.getNext()) {
+        for (DependentLink link = lamBody.getParameters(); link.hasNext(); link = link.getNext()) {
           params.add(link);
         }
       }
-      body = ((LamExpression) body).getBody();
+      body = lamBody.getBody();
+      lamBody = body.toLam();
     }
     return body;
   }
@@ -162,5 +172,87 @@ public abstract class Expression implements PrettyPrintable {
 
   public Expression addArguments(Collection<? extends Expression> arguments, Collection<? extends EnumSet<AppExpression.Flag>> flags) {
     return arguments.isEmpty() ? this : new AppExpression(this, arguments, flags);
+  }
+
+  public AppExpression toApp() {
+    return null;
+  }
+
+  public ClassCallExpression toClassCall() {
+    return null;
+  }
+
+  public ConCallExpression toConCall() {
+    return null;
+  }
+
+  public DataCallExpression toDataCall() {
+    return null;
+  }
+
+  public DefCallExpression toDefCall() {
+    return null;
+  }
+
+  public DependentTypeExpression toDependentType() {
+    return null;
+  }
+
+  public ErrorExpression toError() {
+    return null;
+  }
+
+  public FieldCallExpression toFieldCall() {
+    return null;
+  }
+
+  public FunCallExpression toFunCall() {
+    return null;
+  }
+
+  public LamExpression toLam() {
+    return null;
+  }
+
+  public LetExpression toLet() {
+    return null;
+  }
+
+  public NewExpression toNew() {
+    return null;
+  }
+
+  public OfTypeExpression toOfType() {
+    return null;
+  }
+
+  public PiExpression toPi() {
+    return null;
+  }
+
+  public ProjExpression toProj() {
+    return null;
+  }
+
+  public ReferenceExpression toReference() {
+    return null;
+  }
+
+  public SigmaExpression toSigma() {
+    return null;
+  }
+
+  public TupleExpression toTuple() {
+    return null;
+  }
+
+  public UniverseExpression toUniverse() {
+    return null;
+  }
+
+  public LevelExpression toLevel() { return null; }
+
+  public boolean isAnyUniverse() {
+    return false;
   }
 }

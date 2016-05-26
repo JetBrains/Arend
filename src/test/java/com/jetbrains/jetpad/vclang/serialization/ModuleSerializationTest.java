@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.module.ReportingModuleLoader;
 import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
@@ -133,13 +134,13 @@ public class ModuleSerializationTest {
     assertTrue(con0.getPatterns() != null);
     assertEquals(con0.getPatterns().getPatterns().size(), 1);
     assertTrue(con0.getPatterns().getPatterns().get(0).getPattern() instanceof ConstructorPattern);
-    assertTrue(((ConstructorPattern) con0.getPatterns().getPatterns().get(0).getPattern()).getConstructor() == Prelude.ZERO);
+    assertTrue(((ConstructorPattern) con0.getPatterns().getPatterns().get(0).getPattern()).getConstructor() == Preprelude.ZERO);
     assertTrue(con0.getPatterns().getParameters() == EmptyDependentLink.getInstance());
     Constructor con1 = newDef.getConstructor("con1");
     assertTrue(con1.getPatterns() != null);
     assertEquals(con1.getPatterns().getPatterns().size(), 1);
     assertTrue(con1.getPatterns().getPatterns().get(0).getPattern() instanceof ConstructorPattern);
-    assertTrue(((ConstructorPattern) con1.getPatterns().getPatterns().get(0).getPattern()).getConstructor() == Prelude.SUC);
+    assertTrue(((ConstructorPattern) con1.getPatterns().getPatterns().get(0).getPattern()).getConstructor() == Preprelude.SUC);
     assertTrue(con1.getPatterns().getParameters() instanceof TypedDependentLink);
   }
 

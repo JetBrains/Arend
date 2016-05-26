@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -13,34 +12,35 @@ import static org.junit.Assert.assertEquals;
 public class SubstTest {
   @Test
   public void substConst() {
-    // zero -> N x [y := S] = zero -> N x
-    Expression expr = Pi(Zero(), Apps(DataCall(Prelude.NAT), Reference(new TypedBinding("x", Nat()))));
+    // Nat -> A x [y := S] = Nat -> A x
+    Expression expr = Pi(Nat(), Apps(Reference(new TypedBinding("A", Pi(Nat(), Universe(0)))), Reference(new TypedBinding("x", Nat()))));
     assertEquals(expr, expr.subst(new TypedBinding("x", Nat()), Suc()));
   }
 
   @Test
   public void substIndexEquals() {
-    // zero -> N x [x := S] = zero -> N S
-    Binding x = new TypedBinding("x", Nat());
-    Expression expr = Pi(Zero(), Apps(DataCall(Prelude.NAT), Reference(x)));
-    assertEquals(Pi(Zero(), Apps(DataCall(Prelude.NAT), Suc())), expr.subst(x, Suc()));
+    // Nat -> A x [x := S] = Nat -> A S
+    Binding x = new TypedBinding("x", Pi(Nat(), Nat()));
+    Binding A = new TypedBinding("A", Pi(Pi(Nat(), Nat()), Universe(0)));
+    Expression expr = Pi(Nat(), Apps(Reference(A), Reference(x)));
+    assertEquals(Pi(Nat(), Apps(Reference(A), Suc())), expr.subst(x, Suc()));
   }
 
   @Test
   public void substLam() {
     // \x y. y x [y := suc zero] = \x y. y x
-    DependentLink xy = param(true, vars("x", "y"), Nat());
+    DependentLink xy = params(param("x", Nat()), param("y", Pi(Nat(), Nat())));
     Expression expr = Lam(xy, Apps(Reference(xy.getNext()), Reference(xy)));
     assertEquals(expr, expr.subst(xy.getNext(), Suc(Zero())));
   }
 
   @Test
   public void substLamConst() {
-    // \x y. z y x [x := suc zero] = \x. suc zero
+    // \x y. z y x [z := suc zero] = \x. suc zero
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    Binding z = new TypedBinding("z", Nat());
+    Binding z = new TypedBinding("z", Pi(Nat(), Pi(Nat(), Nat())));
     Expression expr = Lam(xy, Apps(Reference(z), Reference(xy.getNext()), Reference(xy)));
-    assertEquals(Lam(xy, Apps(Suc(Zero()), Reference(xy.getNext()), Reference(xy))), expr.subst(z, Suc(Zero())));
+    assertEquals(Lam(xy, Apps(Lam(xy, Suc(Zero())), Reference(xy.getNext()), Reference(xy))), expr.subst(z, Lam(xy, Suc(Zero()))));
   }
 
   @Test
@@ -58,12 +58,12 @@ public class SubstTest {
   @Test
   public void substComplex() {
     // \x y. x b (\z. a z y) [a := \w t. t b (w c)] = \x y. x b (\z. (\w t. t b (w c)) z y)
-    Binding a = new TypedBinding("a", Nat());
+    Binding a = new TypedBinding("a", Pi(Nat(), Pi(Nat(), Nat())));
     Binding b = new TypedBinding("b", Nat());
     Binding c = new TypedBinding("c", Nat());
-    DependentLink xy = param(true, vars("x", "y"), Nat());
+    DependentLink xy = params(param("x", Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat()))), param("y", Nat()));
     DependentLink z = param("z", Nat());
-    DependentLink wt = param(true, vars("w", "t"), Nat());
+    DependentLink wt = params(param("w", Pi(Nat(), Nat())), param("t", Pi(Nat(), Pi(Nat(), Nat()))));
 
     Expression expr = Lam(xy, Apps(Reference(xy), Reference(b), Lam(z, Apps(Reference(a), Reference(z), Reference(xy.getNext())))));
     Expression substExpr = Lam(wt, Apps(Reference(wt.getNext()), Reference(b), Apps(Reference(wt), Reference(c))));
@@ -73,28 +73,30 @@ public class SubstTest {
 
   @Test
   public void substPiClosed() {
-    // (x : N) -> N x [x := zero] = (x : N) -> N x
+    // (x : Nat) -> A x [x := zero] = (x : Nat) -> A x
     DependentLink x = param("x", Nat());
-    Expression expr = Pi(x, Apps(Nat(), Reference(x)));
+    Expression expr = Pi(x, Apps(Reference(new TypedBinding("A", Pi(Nat(), Universe(0)))), Reference(x)));
     assertEquals(expr, expr.subst(x, Zero()));
   }
 
   @Test
   public void substPiOpen() {
-    // (x : N) -> N z [z := zero] = (y : N) -> N zero
+    // (x : Nat) -> A z [z := zero] = (y : Nat) -> A zero
     DependentLink x = param("x", Nat());
     DependentLink z = param("z", Nat());
-    Expression expr1 = Pi(x, Apps(Nat(), Reference(z)));
-    Expression expr2 = Pi(x, Apps(Nat(), Zero()));
+    Binding A = new TypedBinding("A", Pi(Nat(), Universe(0)));
+    Expression expr1 = Pi(x, Apps(Reference(A), Reference(z)));
+    Expression expr2 = Pi(x, Apps(Reference(A), Zero()));
     assertEquals(expr2, expr1.subst(z, Zero()));
   }
 
   @Test
   public void substArr() {
-    // N -> N z [z := zero] = N -> N zero
+    // Nat -> A z [z := zero] = Nat -> A zero
     DependentLink z = param("z", Nat());
-    Expression expr1 = Pi(Nat(), Apps(Nat(), Reference(z)));
-    Expression expr2 = Pi(Nat(), Apps(Nat(), Zero()));
+    Binding A = new TypedBinding("A", Pi(Nat(), Universe(0)));
+    Expression expr1 = Pi(Nat(), Apps(Reference(A), Reference(z)));
+    Expression expr2 = Pi(Nat(), Apps(Reference(A), Zero()));
     assertEquals(expr2, expr1.subst(z, Zero()));
   }
 

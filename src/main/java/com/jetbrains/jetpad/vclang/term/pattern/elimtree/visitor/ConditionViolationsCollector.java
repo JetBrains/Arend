@@ -1,12 +1,11 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor;
 
-import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -38,7 +37,7 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
   public Void visitBranch(final BranchElimTreeNode branchNode, final Substitution argSubst) {
     Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
     List<? extends Expression> parameters = type.getArguments();
-    DataDefinition dataType = ((DataCallExpression) type.getFunction()).getDefinition();
+    DataDefinition dataType = type.getFunction().toDataCall().getDefinition();
 
     for (final ConCallExpression conCall : dataType.getMatchedConstructors(parameters)) {
       if (branchNode.getClause(conCall.getDefinition()) != null) {
@@ -81,11 +80,11 @@ public class ConditionViolationsCollector implements ElimTreeNodeVisitor<Substit
             }
           });
         }
-        if (conCall.getDefinition() == Prelude.ABSTRACT) {
-          if (branchNode.getClause(Prelude.LEFT) != branchNode.getOtherwiseClause()) {
+        if (conCall.getDefinition() == Preprelude.ABSTRACT) {
+          if (branchNode.getClause(Preprelude.LEFT) != branchNode.getOtherwiseClause()) {
             checkInterval(branchNode, argSubst, Left());
           }
-          if (branchNode.getClause(Prelude.RIGHT) != branchNode.getOtherwiseClause()) {
+          if (branchNode.getClause(Preprelude.RIGHT) != branchNode.getOtherwiseClause()) {
             checkInterval(branchNode, argSubst, Right());
           }
         }

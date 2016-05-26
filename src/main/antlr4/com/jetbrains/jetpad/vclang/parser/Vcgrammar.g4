@@ -12,7 +12,7 @@ nsCmdRoot : modulePath | name;
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
             | '\\abstract' precedence name tele* ':' expr                                 # defAbstract
             // | '\\override' name ('\\as' name)? tele* typeTermOpt where?                   # defOverride
-            | '\\data' precedence name tele* (':' literal)? constructorDef* conditionDef? # defData
+            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef? # defData
             | classKindMod ID '{' statement* '}'                                          # defClass
             ;
 
@@ -81,10 +81,11 @@ name  : ID                              # nameId
       | '(' BIN_OP ')'               # nameBinOp
       ;
 
-expr  : (binOpLeft+ | ) maybeNew atomFieldsAcc argument*     # binOp
+expr  : (binOpLeft+ | ) maybeNew atomFieldsAcc argument*    # binOp
       | <assoc=right> expr '->' expr                        # arr
       | '\\Pi' tele+ '->' expr                              # pi
       | '\\Sigma' tele+                                     # sigma
+      | '\\Type' '(' expr ',' expr ')'                      # polyUniverse
       | '\\lam' tele+ '=>' expr                             # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr # let
       | elimCase expr (',' expr)* clause* ';'?              # exprElim

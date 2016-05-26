@@ -2,14 +2,12 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -23,6 +21,11 @@ public final class Concrete {
     public Position(int line, int column) {
       this.line = line;
       this.column = column + 1;
+    }
+
+    @Override
+    public String toString() {
+      return line + ":" + column;
     }
   }
 
@@ -50,7 +53,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
+      accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
       return builder.toString();
     }
 
@@ -601,6 +604,32 @@ public final class Concrete {
     }
   }
 
+  public static class PolyUniverseExpression extends Expression implements Abstract.PolyUniverseExpression {
+    private final Expression myPLevel;
+    private final Expression myHLevel;
+
+    public PolyUniverseExpression(Position position, Expression plevel, Expression hlevel) {
+      super(position);
+      myPLevel = plevel;
+      myHLevel = hlevel;
+    }
+
+    @Override
+    public Expression getPLevel() {
+      return myPLevel;
+    }
+
+    @Override
+    public Expression getHLevel() {
+      return myHLevel;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitPolyUniverse(this, params);
+    }
+  }
+
   public static class ProjExpression extends Expression implements Abstract.ProjExpression {
     private final Expression myExpression;
     private final int myField;
@@ -816,7 +845,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
+      accept(new PrettyPrintVisitor(builder, 0), null);
       return builder.toString();
     }
   }
@@ -940,9 +969,9 @@ public final class Concrete {
     private final List<Constructor> myConstructors;
     private final List<TypeArgument> myParameters;
     private final List<Condition> myConditions;
-    private final Universe myUniverse;
+    private final Expression myUniverse;
 
-    public DataDefinition(Position position, String name, Precedence precedence, List<TypeArgument> parameters, Universe universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
+    public DataDefinition(Position position, String name, Precedence precedence, List<TypeArgument> parameters, Expression universe, List<Concrete.Constructor> constructors, List<Condition> conditions) {
       super(position, name, precedence);
       myParameters = parameters;
       myConstructors = constructors;
@@ -966,7 +995,7 @@ public final class Concrete {
     }
 
     @Override
-    public Universe getUniverse() {
+    public Expression getUniverse() {
       return myUniverse;
     }
 

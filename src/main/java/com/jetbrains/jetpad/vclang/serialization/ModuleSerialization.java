@@ -102,7 +102,7 @@ public class ModuleSerialization {
   private static int serializeDataDefinition(SerializeVisitor visitor, DataDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
     if (!definition.hasErrors()) {
-      writeUniverse(visitor.getDataStream(), definition.getUniverse());
+      writeUniverse(visitor, definition.getUniverse());
       writeParameters(visitor, definition.getParameters());
     }
 
@@ -119,7 +119,7 @@ public class ModuleSerialization {
             visitor.visitPatternArg(patternArg);
           }
         }
-        writeUniverse(visitor.getDataStream(), constructor.getUniverse());
+        writeUniverse(visitor, constructor.getUniverse());
         writeParameters(visitor, constructor.getParameters());
       } else {
         errors += 1;
@@ -181,7 +181,7 @@ public class ModuleSerialization {
   private static int serializeClassDefinition(SerializeVisitor visitor, ClassDefinition definition) throws IOException {
     int errors = serializeNamespace(visitor, definition.getResolvedName().toNamespace());
 
-    writeUniverse(visitor.getDataStream(), definition.getUniverse());
+    writeUniverse(visitor, definition.getUniverse());
 
     visitor.getDataStream().writeInt(definition.getFields().size());
     for (ClassField field : definition.getFields()) {
@@ -189,7 +189,7 @@ public class ModuleSerialization {
       writeParameters(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());
       if (!field.hasErrors()) {
-        writeUniverse(visitor.getDataStream(), field.getUniverse());
+        writeUniverse(visitor, field.getUniverse());
         field.getType().accept(visitor, null);
       }
     }
@@ -223,13 +223,9 @@ public class ModuleSerialization {
     }
   }
 
-  public static void writeUniverse(DataOutputStream stream, Universe universe) throws IOException {
-    stream.writeInt(universe.getLevel());
-    if (universe instanceof Universe.Type) {
-      stream.writeInt(((Universe.Type) universe).getTruncated());
-    } else {
-      throw new IllegalStateException();
-    }
+  public static void writeUniverse(SerializeVisitor visitor, TypeUniverse universe) throws IOException {
+    universe.getPLevel().accept(visitor, null);
+    universe.getHLevel().accept(visitor, null);
   }
 
   private static void writeString(SerializeVisitor visitor, String str) throws IOException {

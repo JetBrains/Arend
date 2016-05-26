@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -33,8 +34,8 @@ public class BranchElimTreeNode extends ElimTreeNode {
     myReference = reference;
     myContextTail = contextTail;
 
-    Expression ftype = reference.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction();
-    myIsInterval = ftype instanceof DataCallExpression && ((DataCallExpression) ftype).getDefinition() == Prelude.INTERVAL;
+    DataCallExpression ftype = reference.getType().normalize(NormalizeVisitor.Mode.WHNF).getFunction().toDataCall();
+    myIsInterval = ftype != null && ftype.getDefinition() == Preprelude.INTERVAL;
   }
 
   @Override
@@ -110,9 +111,9 @@ public class BranchElimTreeNode extends ElimTreeNode {
       func = func.normalize(NormalizeVisitor.Mode.WHNF);
     }
     List<? extends Expression> arguments = func.getArguments();
-    func = func.getFunction();
+    ConCallExpression conFunc = func.getFunction().toConCall();
 
-    if (!(func instanceof ConCallExpression)) {
+    if (conFunc == null) {
       if (myIsInterval && myOtherwiseClause != null) {
         return myOtherwiseClause.getChild().matchUntilStuck(subst, normalize);
       } else {
@@ -120,7 +121,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
       }
     }
 
-    ConstructorClause clause = myClauses.get(((ConCallExpression) func).getDefinition());
+    ConstructorClause clause = myClauses.get(conFunc.getDefinition());
     if (clause == null) {
       return myOtherwiseClause == null ? this : myOtherwiseClause.getChild().matchUntilStuck(subst, normalize);
     }
@@ -171,9 +172,9 @@ public class BranchElimTreeNode extends ElimTreeNode {
     int idx = expressions.size() - 1 - myContextTail.size();
     Expression func = expressions.get(idx).normalize(NormalizeVisitor.Mode.WHNF);
     List<? extends Expression> arguments = func.getArguments();
-    func = func.getFunction();
+    ConCallExpression conFunc = func.getFunction().toConCall();
 
-    if (!(func instanceof ConCallExpression)) {
+    if (conFunc == null) {
       if (myIsInterval && myOtherwiseClause != null) {
         return myOtherwiseClause.getChild().match(expressions);
       } else {
@@ -181,7 +182,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
       }
     }
 
-    ConstructorClause clause = myClauses.get(((ConCallExpression) func).getDefinition());
+    ConstructorClause clause = myClauses.get(conFunc.getDefinition());
     if (clause == null) {
       return myOtherwiseClause == null ? null : myOtherwiseClause.getChild().match(expressions);
     }

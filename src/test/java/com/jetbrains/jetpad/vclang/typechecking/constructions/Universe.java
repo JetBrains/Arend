@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -69,30 +70,30 @@ public class Universe {
   public void prop() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Prop", null);
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(3, com.jetbrains.jetpad.vclang.term.definition.Universe.Type.PROP), result.expression);
-    assertEquals(ExpressionFactory.Universe(0, com.jetbrains.jetpad.vclang.term.definition.Universe.Type.SET), result.type);
-    assertEquals(ExpressionFactory.Universe(0, com.jetbrains.jetpad.vclang.term.definition.Universe.Type.SET), result.expression.getType());
+    assertEquals(ExpressionFactory.Universe(3, -1), result.expression);
+    assertEquals(ExpressionFactory.Universe(TypeUniverse.SetOfLevel(0)), result.type);
+    assertEquals(ExpressionFactory.Universe(TypeUniverse.SetOfLevel(0)), result.expression.getType());
   }
 
   @Test
   public void propExpected() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Prop", ExpressionFactory.Universe(8, 9));
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(3, com.jetbrains.jetpad.vclang.term.definition.Universe.Type.PROP), result.expression);
-    assertEquals(ExpressionFactory.Universe(0, com.jetbrains.jetpad.vclang.term.definition.Universe.Type.SET), result.type);
-    assertEquals(ExpressionFactory.Universe(0, com.jetbrains.jetpad.vclang.term.definition.Universe.Type.SET), result.expression.getType());
+    assertEquals(ExpressionFactory.Universe(3, -1), result.expression);
+    assertEquals(ExpressionFactory.Universe(TypeUniverse.SetOfLevel(0)), result.type);
+    assertEquals(ExpressionFactory.Universe(TypeUniverse.SetOfLevel(0)), result.expression.getType());
   }
 
   @Test
   public void propError() {
-    typeCheckExpr("\\Prop", ExpressionFactory.Universe(5, com.jetbrains.jetpad.vclang.term.definition.Universe.Type.PROP), 1);
+    typeCheckExpr("\\Prop", ExpressionFactory.Universe(5, -1), 1);
   }
 
   @Test
   public void set() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Set7", null);
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(7, com.jetbrains.jetpad.vclang.term.definition.Universe.Type.SET), result.expression);
+    assertEquals(ExpressionFactory.Universe(TypeUniverse.SetOfLevel(7)), result.expression);
     assertEquals(ExpressionFactory.Universe(8, 1), result.type);
     assertEquals(ExpressionFactory.Universe(8, 1), result.expression.getType());
   }
@@ -101,7 +102,7 @@ public class Universe {
   public void setExpected() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\Set7", ExpressionFactory.Universe(11, 4));
     assertNotNull(result);
-    assertEquals(ExpressionFactory.Universe(7, com.jetbrains.jetpad.vclang.term.definition.Universe.Type.SET), result.expression);
+    assertEquals(ExpressionFactory.Universe(TypeUniverse.SetOfLevel(7)), result.expression);
     assertEquals(ExpressionFactory.Universe(8, 1), result.type);
     assertEquals(ExpressionFactory.Universe(8, 1), result.expression.getType());
   }

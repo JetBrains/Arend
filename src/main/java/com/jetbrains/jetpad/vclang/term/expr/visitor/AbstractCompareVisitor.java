@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 
 import java.util.Iterator;
 import java.util.List;
@@ -59,7 +58,14 @@ public class AbstractCompareVisitor implements AbstractExpressionVisitor<Abstrac
 
   @Override
   public Boolean visitUniverse(Abstract.UniverseExpression expr1, Abstract.Expression expr2) {
-    return expr2 instanceof Abstract.UniverseExpression && expr1.getUniverse().compare(((Abstract.UniverseExpression) expr2).getUniverse()) == Universe.Cmp.EQUALS;
+    //return expr2 instanceof Abstract.UniverseExpression && expr1.getUniverse().compare(((Abstract.UniverseExpression) expr2).getUniverse()) == UniverseOld.Cmp.EQUALS;
+    return expr2 instanceof Abstract.UniverseExpression && expr1.getUniverse().equals(((Abstract.UniverseExpression) expr2).getUniverse());
+  }
+
+  @Override
+  public Boolean visitPolyUniverse(Abstract.PolyUniverseExpression expr1, Abstract.Expression expr2) {
+    return expr2 instanceof Abstract.PolyUniverseExpression && expr1.getPLevel().accept(this, ((Abstract.PolyUniverseExpression) expr2).getPLevel()) &&
+            expr1.getHLevel().accept(this, ((Abstract.PolyUniverseExpression) expr2).getHLevel());
   }
 
   @Override

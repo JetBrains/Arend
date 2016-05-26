@@ -43,6 +43,12 @@ public class Substitution {
     }
   }
 
+  public void subst(Binding binding, Expression expression) {
+    for (Map.Entry<Binding, Expression> entry : mySubstExprs.entrySet()) {
+      entry.setValue(entry.getValue().subst(binding, expression));
+    }
+  }
+
   public List<Expression> substExprs(List<Expression> expressions) {
     List<Expression> result = new ArrayList<>();
     for (Expression expr : expressions) {

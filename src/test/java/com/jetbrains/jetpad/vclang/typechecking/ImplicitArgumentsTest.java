@@ -74,7 +74,7 @@ public class ImplicitArgumentsTest {
     context.add(new TypedBinding("f", Pi(A, Pi(Pi(Pi(Reference(A), Nat()), Nat()), Reference(A)))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "f (\\lam g => g 0)", null);
-    DependentLink g = param("g", Nat());
+    DependentLink g = param("g", Pi(Nat(), Nat()));
     Expression expr = Reference(context.get(0))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Lam(g, Apps(Reference(g), Zero())), AppExpression.DEFAULT);
@@ -263,7 +263,7 @@ public class ImplicitArgumentsTest {
   @Test
   public void untypedLambda1() {
     // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x1 x2
-    DependentLink A = param("A", Universe());
+    DependentLink A = param("A", Universe(0));
     Expression type = Pi(params(A, param("a", Reference(A))), Nat());
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
@@ -273,8 +273,8 @@ public class ImplicitArgumentsTest {
   @Test
   public void untypedLambda2() {
     // f : (A : Type) (B : A -> Type) (a : A) -> B a |- \x1 x2 x3. f x1 x2 x3
-    DependentLink A = param("A", Universe());
-    DependentLink params = params(A, param("B", Pi(Reference(A), Universe())), param("a", Reference(A)));
+    DependentLink A = param("A", Universe(0));
+    DependentLink params = params(A, param("B", Pi(Reference(A), Universe(0))), param("a", Reference(A)));
     Expression type = Pi(params, Apps(Reference(params.getNext()), Reference(params.getNext().getNext())));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
@@ -286,7 +286,7 @@ public class ImplicitArgumentsTest {
   @Test
   public void untypedLambdaError1() {
     // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x2 x1
-    DependentLink A = param("A", Universe());
+    DependentLink A = param("A", Universe(0));
     Expression type = Pi(params(A, param("a", Reference(A))), Nat());
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
@@ -295,9 +295,9 @@ public class ImplicitArgumentsTest {
 
   @Test
   public void untypedLambdaError2() {
-    // f : (A : Type) (B : A -> Type) (a : A) -> B a |- \x1 x2 x3. f x2 x1 x3
-    DependentLink A = param("A", Universe());
-    DependentLink params = params(A, param("B", Pi(Reference(A), Universe())), param("a", Reference(A)));
+    // f : (A : Type0) (B : A -> Type0) (a : A) -> B a |- \x1 x2 x3. f x2 x1 x3
+    DependentLink A = param("A", Universe(0));
+    DependentLink params = params(A, param("B", Pi(Reference(A), Universe(0))), param("a", Reference(A)));
     Expression type = Pi(params, Apps(Reference(params.getNext()), Reference(params.getNext().getNext())));
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("f", type));
@@ -385,7 +385,7 @@ public class ImplicitArgumentsTest {
   @Test
   public void orderTest1() {
     typeCheckClass(
-        "\\function idpOver (A : I -> \\Type0) (a : A left) => path (coe A a)\n" +
+        "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
         "\\function test {A : \\Type0} (P : A -> \\Type0) {a a' : A} (q : a = a') (pa : P a) (i : I)\n" +
         "  => idpOver (\\lam (j : I) => P (q @ j)) pa @ i\n");
   }
@@ -393,8 +393,15 @@ public class ImplicitArgumentsTest {
   @Test
   public void orderTest2() {
     typeCheckClass(
-        "\\function idpOver (A : I -> \\Type0) (a : A left) => path (coe A a)\n" +
+        "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
         "\\function test {A : \\Type0} (P : A -> \\Type0) {a : A} (pa : P a) (i : I)\n" +
         "  => \\lam (a' : A) (q : a = a') => idpOver (\\lam (j : I) => P (q @ j)) pa @ i");
+  }
+
+  @Test
+  public void differentLevels() {
+    typeCheckClass(
+        "\\static \\function F {lp : Lvl} (X : \\Type (lp,inf)) (B : X -> \\Type (lp,inf)) => zero\n" +
+        "\\static \\function g {lp : Lvl} (X : \\Type (lp,inf)) => F X (\\lam _ => (=) X X)");
   }
 }

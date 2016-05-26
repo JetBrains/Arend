@@ -8,7 +8,7 @@ public class GeneralError {
   private final String myMessage;
   private Level myLevel;
 
-  public enum Level { ERROR, WARNING, INFO }
+  public enum Level { ERROR, GOAL, WARNING, INFO }
 
   public GeneralError(String message) {
     myMessage = message;

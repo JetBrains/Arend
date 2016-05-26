@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
-import com.jetbrains.jetpad.vclang.term.definition.Universe;
 
 import java.util.List;
 
@@ -67,8 +66,16 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   }
 
   @Override
-  public Abstract.Expression makeUniverse(Universe universe) {
-    return cUniverse(universe);
+  public Abstract.Expression makeUniverse(Abstract.Expression plevel, Abstract.Expression hlevel) {
+    if (plevel != null)
+      return cPolyUniverse((Concrete.Expression)plevel, (Concrete.Expression)hlevel);
+    else
+      return cPolyUniverse(null, (Concrete.Expression)hlevel);
+  }
+
+  @Override
+  public Abstract.Expression makeUniverse(int pLevel, int hLevel) {
+    return cUniverse(pLevel, hLevel);
   }
 
   @Override
@@ -99,6 +106,11 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Override
   public Abstract.Expression makeNew(Abstract.Expression expr) {
     return cNew((Concrete.Expression) expr);
+  }
+
+  @Override
+  public Abstract.Expression makeNumericalLiteral(int num) {
+    return cNum(num);
   }
 
   @Override

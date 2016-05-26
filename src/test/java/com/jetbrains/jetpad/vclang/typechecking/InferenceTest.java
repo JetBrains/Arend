@@ -1,9 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.NameModuleID;
-import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.GeneralError;
 import com.jetbrains.jetpad.vclang.typechecking.error.GoalError;
@@ -76,7 +72,7 @@ public class InferenceTest {
   public void inferConstructor1b() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (n = k) (k = m)\n" +
-        "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp ,lh)} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function f => con {0} idp idp");
   }
 
@@ -91,7 +87,7 @@ public class InferenceTest {
   public void inferConstructor2b() {
     typeCheckClass(
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (n = k) (k = m)\n" +
-        "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
+        "\\static \\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp, lh)} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function f => (D 0).con idp idp");
   }
 
@@ -101,5 +97,15 @@ public class InferenceTest {
         "\\static \\data D (n : Nat) {k : Nat} (m : Nat) | con (n = k) (k = n)\n" +
         "\\static \\function idp {A : \\Type0} {a : A} => path (\\lam _ => a)\n" +
         "\\static \\function f => con {0} idp idp", 1);
+  }
+
+  @Test
+  public void equations() {
+    typeCheckClass(
+        "\\static \\data E {lp : Lvl} {lh : CNat} (A B : \\Type (lp, lh)) | inl A | inr B\n" +
+        "\\static \\data Empty : \\Prop\n" +
+        "\\static \\function neg {lp : Lvl} {lh : CNat} (A : \\Type (lp, lh)) => A -> Empty\n" +
+        "\\static \\function test {lp : Lvl} {lh : CNat} (A : \\Type (lp, lh)) => E (neg A) A"
+    );
   }
 }
