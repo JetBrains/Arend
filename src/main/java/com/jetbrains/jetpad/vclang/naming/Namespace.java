@@ -48,11 +48,6 @@ public class Namespace {
     return addChild(new Namespace(name, this)).namespace;
   }
 
-  public Namespace findChild(String name) {
-    NamespaceMember member = getMember(name);
-    return member == null ? null : member.namespace;
-  }
-
   public NamespaceMember addChild(Namespace child) {
     if (myMembers == null) {
       myMembers = new HashMap<>();

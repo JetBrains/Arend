@@ -49,9 +49,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     if (state.getTypechecked(definition) == null) {
       DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, errorReporter);
       Definition result = definition.accept(visitor, null);
-      if (state.getTypechecked(definition) != result) {
-        throw new IllegalStateException(); // TODO[debug]
-      }
     }
   }
 
@@ -531,7 +528,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     for (Abstract.Condition cond : def.getConditions()) {
       Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName());
       if (constructor == null) {
-        myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));
+        myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));  // TODO: refer by reference
         continue;
       }
       if (constructor.hasErrors()) {

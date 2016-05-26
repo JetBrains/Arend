@@ -269,7 +269,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   @Override
   public Result visitModuleCall(Abstract.ModuleCallExpression expr, Expression params) {
     if (expr.getModule() == null) {
-      TypeCheckingError error = new NotInScopeError(expr, new ModulePath(expr.getPath()).toString());
+      TypeCheckingError error = new UnresolvedReferenceError(expr, new ModulePath(expr.getPath()).toString());
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
@@ -40,6 +41,7 @@ public class TypecheckerState {
   }
 
   public Definition getDynamicTypecheckedMember(ClassDefinition classDefinition, String name) {
-    return getTypecheckedMember(classDefinition, name);  // TODO dynamic only?
+    ClassField field = classDefinition.getField(name);
+    return field != null ? field : getTypecheckedMember(classDefinition, name);  // TODO dynamic only?
   }
 }

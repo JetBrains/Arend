@@ -20,14 +20,7 @@ public class NamespaceMember {
     return namespace.getResolvedName();
   }
 
-  public Referable getResolvedDefinition() {
-    return definition == null ? abstractDefinition : definition;
-  }
-
-  public boolean isTypeChecked() {
-    return definition != null;
-  }
-
+  @Deprecated
   public static NamespaceMember toNamespaceMember(Referable ref) {
     if (ref instanceof Definition) {
       return ((Definition) ref).getResolvedName().toNamespaceMember();

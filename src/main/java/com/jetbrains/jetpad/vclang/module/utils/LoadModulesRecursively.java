@@ -152,7 +152,7 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
       for (Abstract.Argument argument : letClause.getArguments()) {
         visitArgument(argument);
       }
-      letClause.getResultType().accept(this, null);
+      if (letClause.getResultType() != null) letClause.getResultType().accept(this, null);
       letClause.getTerm().accept(this, null);
     }
     expr.getExpression().accept(this, null);
@@ -172,7 +172,7 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
 
   @Override
   public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Void params) {
-    myModuleLoader.load(new FileModuleID(new ModulePath(stat.getPath())));
+    myModuleLoader.load(new FileModuleID(new ModulePath(stat.getModulePath())));
     return null;
   }
 
@@ -213,8 +213,10 @@ public class LoadModulesRecursively implements AbstractStatementVisitor<Void, Vo
         typeArgument.getType().accept(this, null);
       }
     }
-    for (Abstract.Condition condition : def.getConditions()) {
-      condition.getTerm().accept(this, null);
+    if (def.getConditions() != null) {
+      for (Abstract.Condition condition : def.getConditions()) {
+        condition.getTerm().accept(this, null);
+      }
     }
     return null;
   }

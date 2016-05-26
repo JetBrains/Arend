@@ -27,7 +27,7 @@ public class MergeScope implements Scope {
 
     if (ref1 == null) return ref2;
     else if (ref2 == null) return ref1;
-    else throw new IllegalStateException(); // FIXME[error]
+    else return ref2;  // FIXME[error]
   }
 
 }

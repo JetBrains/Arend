@@ -255,7 +255,8 @@ public class ModuleDeserialization {
       if (stream.readBoolean()) {
         deserializeDefinition(stream, definitionMap);
       } else {
-        parent.getResolvedName().toNamespace().addMember(definitionMap.get(stream.readInt()).getResolvedName().toNamespaceMember());
+        // FIXME[serial]
+        //parent.getResolvedName().toNamespace().addMember(definitionMap.get(stream.readInt()).getResolvedName().toNamespaceMember());
       }
     }
   }

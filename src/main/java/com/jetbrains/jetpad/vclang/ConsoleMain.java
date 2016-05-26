@@ -11,10 +11,12 @@ import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
 import com.jetbrains.jetpad.vclang.naming.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
@@ -27,10 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ConsoleMain {
   public static void main(String[] args) {
@@ -102,7 +101,7 @@ public class ConsoleMain {
           DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
           rsmVisitor.visitClass(abstractDefinition, true);
 
-          DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, nameResolver, new SimpleStaticNamespaceProvider());
+          DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, nameResolver, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider(), Prelude.PRELUDE);
           visitor.setResolveListener(new ConcreteResolveListener());
           visitor.visitClass(abstractDefinition, null);
 

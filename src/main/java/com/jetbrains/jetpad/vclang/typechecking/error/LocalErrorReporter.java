@@ -15,11 +15,12 @@ public class LocalErrorReporter implements ErrorReporter {
 
   @Override
   public void report(GeneralError error) {
-    myErrorReporter.report(error);
-  }
-
-  public void report(TypeCheckingError error) {
-    error.setDefinition(myDefinition);
+    if (error instanceof TypeCheckingError) {  // FIXME: HACK
+      if (((TypeCheckingError) error).getDefinition() != null) {
+        throw new IllegalStateException();
+      }
+      ((TypeCheckingError) error).setDefinition(myDefinition);
+    }
     myErrorReporter.report(error);
   }
 }

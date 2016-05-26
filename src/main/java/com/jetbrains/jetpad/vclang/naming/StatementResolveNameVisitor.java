@@ -1,9 +1,14 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
@@ -14,15 +19,17 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
   private final ErrorReporter myErrorReporter;
   private final NameResolver myNameResolver;
   private final StaticNamespaceProvider myStaticNsProvider;
-  private final Scope myParentScope;
+  private final DynamicNamespaceProvider myDynamicNsProvider;
   private final List<String> myContext;
+  private Scope myScope;
   private ResolveListener myResolveListener;
 
-  public StatementResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, Scope parentScope, List<String> context) {
+  public StatementResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Scope parentScope, List<String> context) {
     myErrorReporter = errorReporter;
     myNameResolver = nameResolver;
     myStaticNsProvider = staticNsProvider;
-    myParentScope = parentScope;
+    myDynamicNsProvider = dynamicNsProvider;
+    myScope = parentScope;
     myContext = context;
   }
 
@@ -44,7 +51,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
       myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat));
       return null;
     }
-    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myErrorReporter, myNameResolver, myStaticNsProvider, myParentScope, myContext);
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myErrorReporter, myNameResolver, myStaticNsProvider, myDynamicNsProvider, myScope, myContext);
     visitor.setResolveListener(myResolveListener);
     stat.getDefinition().accept(visitor, stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC);
     return null;
@@ -52,92 +59,32 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
 
   @Override
   public Void visitNamespaceCommand(Abstract.NamespaceCommandStatement stat, Flag flag) {
-    /*
     if (flag == Flag.MUST_BE_DYNAMIC) {
       myErrorReporter.report(new TypeCheckingError("Namespace commands are not allowed in this context", stat));
       return null;
     }
 
-    boolean export = false, remove = false;
-    switch (stat.getKind()) {
-      case OPEN:
-        break;
-      case CLOSE:
-        remove = true;
-        break;
-      case EXPORT:
-        export = true;
-        break;
-      default:
-        throw new IllegalStateException();
+    if (Abstract.NamespaceCommandStatement.Kind.EXPORT.equals(stat.getKind())) {
+      throw new UnsupportedOperationException();
     }
 
-    NamespaceMember member;
-    if (stat.getResolvedClass() == null) {
-      if (stat.getModulePath() != null) {
-        member = myModuleResolver.locateModule(new ModulePath(stat.getModulePath()));
-        if (member == null) {
-          myErrorReporter.report(new NotInScopeError(stat, new ModulePath(stat.getModulePath()).toString()));
-          return null;
-        }
-      } else {
-        member = null;
-      }
-
-      List<String> path = stat.getPath();
-      for (String aPath : path) {
-        //NamespaceMember member1 = member == null ? NameResolver.Helper.locateName(myNameResolver, aPath, false) : myNameResolver.getMember(member.namespace, aPath);
-        if (member1 == null) {
-          if (member != null) {
-            myErrorReporter.report(new NameDefinedError(false, stat, aPath, member.namespace.getResolvedName()));
-          } else {
-            myErrorReporter.report(new NotInScopeError(stat, aPath));
-          }
-          return null;
-        }
-        member = member1;
-      }
-      if (member == null) return null;
-
-      myResolveListener.nsCmdResolved(stat, member.getResolvedDefinition());
-    } else {
-      member = toNamespaceMember(stat.getResolvedClass());
+    ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
+    if (moduleNamespace == null || moduleNamespace.getRegisteredClass() == null) {
+      myErrorReporter.report(new NotInScopeError(null, stat.getModulePath().toString()));  // FIXME: null? really?
+      return null;
     }
 
-    List<String> names = stat.getNames();
-    if (names != null) {
-      for (String name1 : names) {
-        NamespaceMember member1 = myNameResolver.getMember(member.namespace, name1);
-        if (member1 == null) {
-          myErrorReporter.report(new NameDefinedError(false, stat, name1, member.namespace.getResolvedName()));
-        } else {
-          if (member1.abstractDefinition != null) {
-            Abstract.DefineStatement parentStatement = member1.abstractDefinition.getParentStatement();
-            if (parentStatement != null && parentStatement.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC) {
-              processNamespaceCommand(member1, export, remove, stat);
-            } else {
-              myErrorReporter.report(new TypeCheckingError("Definition '" + name1 + "' is not static", stat));
-            }
-          } else if (member1.definition != null && member1.definition.getThisClass() == null) {
-            processNamespaceCommand(member1, export, remove, stat);
-          }
-        }
-      }
-    } else {
-      for (NamespaceMember member1 : member.namespace.getMembers()) {
-        if (member1.abstractDefinition != null) {
-          Abstract.DefineStatement parentStatement = member1.abstractDefinition.getParentStatement();
-          if (parentStatement != null && parentStatement.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC) {
-            processNamespaceCommand(member1, export, remove, stat);
-          }
-        } else if (member1.definition != null && member1.definition.getThisClass() == null) {
-          processNamespaceCommand(member1, export, remove, stat);
-        }
-      }
+    Referable ref = stat.getPath().isEmpty() ? moduleNamespace.getRegisteredClass() : myNameResolver.resolveDefinition(myNameResolver.staticNamespaceFor(moduleNamespace.getRegisteredClass()), stat.getPath());
+    if (ref == null) {
+      myErrorReporter.report(new NotInScopeError(null, stat.getPath().toString()));  // FIXME: report proper error
+      return null;
     }
+
+    if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
+      myScope = new MergeScope(myScope, myNameResolver.staticNamespaceFor(ref));
+    }
+
     return null;
-    */
-    return null;//
   }
 
   @Override

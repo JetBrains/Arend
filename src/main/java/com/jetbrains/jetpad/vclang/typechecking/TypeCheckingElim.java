@@ -394,7 +394,7 @@ public class TypeCheckingElim {
       }
 
       if (constructor == null) {
-        error = new NotInScopeError(pattern, constructorPattern.getConstructorName());
+        error = new NotInScopeError(pattern, constructorPattern.getConstructorName());  // TODO: refer by reference
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }

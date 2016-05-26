@@ -1,13 +1,17 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
@@ -41,10 +45,13 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     }
 
     if (expr.getReferent() == null) {
-      if (!myContext.contains(expr.getName())) {
+      if (expression != null || !myContext.contains(expr.getName())) {
         Referable ref = myNameResolver.resolveDefCall(myParentScope, expr);
         if (ref != null) {
           myResolveListener.nameResolved(expr, ref);
+        } else if (expression == null) {
+          // TODO: uncomment when patterns add to context
+          //myErrorReporter.report(new NotInScopeError(expr, expr.getName()));
         }
       }
     }
@@ -153,7 +160,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
 
   @Override
   public Void visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Void params) {
-/*    if (expr.getSequence().isEmpty()) {
+    if (expr.getSequence().isEmpty()) {
       Abstract.Expression left = expr.getLeft();
       left.accept(this, null);
       myResolveListener.replaceBinOp(expr, left);
@@ -166,9 +173,9 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       NotInScopeError error = null;
       for (Abstract.BinOpSequenceElem elem : sequence) {
         String name = elem.binOp.getName();
-        NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, name, true);
-        if (member != null) {
-          parser.pushOnStack(stack, expression, member.getResolvedDefinition(), member.getResolvedDefinition().getPrecedence(), elem.binOp);
+        Referable ref = myParentScope.resolveName(name);
+        if (ref != null) {
+          parser.pushOnStack(stack, expression, ref, ref.getPrecedence(), elem.binOp);
           expression = elem.argument;
           expression.accept(this, null);
         } else {
@@ -181,7 +188,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
       } else {
         myResolveListener.replaceBinOp(expr, myResolveListener.makeError(expr, error.getCause()));
       }
-    }*/
+    }
     return null;
   }
 
@@ -216,45 +223,28 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
   }
 
   public boolean visitPattern(Abstract.Pattern pattern) {
-/*    if (pattern instanceof Abstract.NamePattern) {
+    if (pattern instanceof Abstract.NamePattern) {
       String name = ((Abstract.NamePattern) pattern).getName();
-      if (name == null)
+      if (name == null) return false;
+      Referable ref = myParentScope.resolveName(name);
+      if (ref != null && (ref instanceof Constructor || ref instanceof Abstract.Constructor)) {
+        return true;
+      } else {
+        myContext.add(name);
         return false;
-      NamespaceMember namespaceMember = myNameResolver.locateName(name);
-      if (namespaceMember != null && (namespaceMember.definition instanceof Constructor || namespaceMember.abstractDefinition instanceof Abstract.Constructor)) {
-        boolean hasExplicit = false;
-        if (namespaceMember.definition instanceof Constructor && !namespaceMember.definition.hasErrors()) {
-          for (DependentLink link = ((Constructor) namespaceMember.definition).getParameters(); link.hasNext(); link = link.getNext()) {
-            if (link.isExplicit()) {
-              hasExplicit = true;
-              break;
-            }
-          }
-        } else {
-          if (namespaceMember.abstractDefinition instanceof Abstract.Constructor) {
-            for (Abstract.TypeArgument argument : ((Abstract.Constructor) namespaceMember.abstractDefinition).getArguments()) {
-              if (argument.getExplicit()) {
-                hasExplicit = true;
-                break;
-              }
-            }
-          }
-        }
-        if (!hasExplicit) {
-          return true;
-        }
       }
-      myContext.add(name);
     } else if (pattern instanceof Abstract.ConstructorPattern) {
       for (Abstract.PatternArgument patternArg : ((Abstract.ConstructorPattern) pattern).getArguments()) {
         if (visitPattern(patternArg.getPattern())) {
           myResolveListener.replaceWithConstructor(patternArg);
         }
       }
-    } else if (!(pattern instanceof Abstract.AnyConstructorPattern)) {
+      return false;
+    } else if (pattern instanceof Abstract.AnyConstructorPattern) {
+      return false;
+    } else {
       throw new IllegalStateException();
-    }*/
-    return false;
+    }
   }
 
   @Override
