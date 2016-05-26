@@ -19,15 +19,17 @@ public class GetTypeTest {
   @Test
   public void constructorTest() {
     NamespaceMember member = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => cons 0 nil");
-    assertEquals(Apps(member.namespace.getDefinition("List").getDefCall(), Nat()), member.namespace.getDefinition("test").getType());
-    assertEquals(Apps(member.namespace.getDefinition("List").getDefCall(), Nat()), ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
+    Expression list = Apps(DataCall((DataDefinition) member.namespace.getDefinition("List")), Nat());
+    assertEquals(list, member.namespace.getDefinition("test").getType());
+    assertEquals(list, ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
   @Test
   public void nilConstructorTest() {
     NamespaceMember member = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => (List Nat).nil");
-    assertEquals(Apps(member.namespace.getDefinition("List").getDefCall(), Nat()), member.namespace.getDefinition("test").getType());
-    assertEquals(Apps(member.namespace.getDefinition("List").getDefCall(), Nat()), ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
+    Expression list = Apps(DataCall((DataDefinition) member.namespace.getDefinition("List")), Nat());
+    assertEquals(list, member.namespace.getDefinition("test").getType());
+    assertEquals(list, ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
   @Test
@@ -57,13 +59,13 @@ public class GetTypeTest {
   @Test
   public void fieldAccTest() {
     NamespaceMember member = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
-    DependentLink p = param("p", Pi(Nat(), member.namespace.getDefinition("C").getDefCall()));
+    DependentLink p = param("p", Pi(Nat(), ClassCall((ClassDefinition) member.namespace.getDefinition("C"))));
     Expression type = FunCall(Prelude.PATH_INFIX)
       .addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Zero(), AppExpression.DEFAULT)
-      .addArgument(Apps(member.namespace.getMember("C").namespace.getDefinition("x").getDefCall(), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
+      .addArgument(Apps(FieldCall((ClassField) member.namespace.getMember("C").namespace.getDefinition("x")), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), member.namespace.getDefinition("test").getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -71,8 +73,10 @@ public class GetTypeTest {
   public void tupleTest() {
     Definition def = typeCheckDef("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    assertEquals(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))), ((LeafElimTreeNode)((FunctionDefinition) def).getElimTree()).getExpression().getType());
+    assertEquals(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))),
+        ((LeafElimTreeNode)((FunctionDefinition) def).getElimTree()).getExpression().getType());
   }
 
   @Test
@@ -89,10 +93,10 @@ public class GetTypeTest {
     NamespaceMember member = typeCheckClass(
         "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     DataDefinition data = (DataDefinition) member.namespace.getMember("C").definition;
-    assertEquals(Apps(data.getDefCall(), Zero()), data.getConstructor("c1").getType());
+    assertEquals(Apps(DataCall(data), Zero()), data.getConstructor("c1").getType());
     DependentLink params = data.getConstructor("c2").getDataTypeParameters();
     assertEquals(
-        Pi(params, Pi(param(Nat()), Apps(data.getDefCall(), Suc(Reference(params))))),
+        Pi(params, Pi(param(Nat()), Apps(DataCall(data), Suc(Reference(params))))),
         data.getConstructor("c2").getType()
     );
   }

@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -81,8 +80,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           return null;
         }
 
-        Expression expr1 = Apps(argResult.expression, ConCall(Preprelude.LEFT));
-        Expression expr2 = Apps(argResult.expression, ConCall(Preprelude.RIGHT));
+        Expression expr1 = Apps(argResult.expression, Left());
+        Expression expr2 = Apps(argResult.expression, Right());
         result.expression
             .addArgument(expr1, EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(expr2, EnumSet.noneOf(AppExpression.Flag.class))

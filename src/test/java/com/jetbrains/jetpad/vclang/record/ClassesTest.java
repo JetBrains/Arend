@@ -341,7 +341,7 @@ public class ClassesTest {
         "    \\function k => h + (p + q)" +
         "  }\n" +
         "}");
-    Definition plus = member.namespace.getDefinition("+");
+    FunctionDefinition plus = (FunctionDefinition) member.namespace.getDefinition("+");
 
     NamespaceMember aMember = member.namespace.getMember("A");
     ClassDefinition aClass = (ClassDefinition) aMember.definition;
@@ -361,7 +361,7 @@ public class ClassesTest {
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), fFun.getElimTree());
     FunctionDefinition gFun = (FunctionDefinition) bMember.namespace.getDefinition("g");
     assertEquals(Pi(ClassCall(bClass), Nat()), gFun.getType());
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
 
     NamespaceMember cMember = aMember.namespace.getMember("C");
     ClassDefinition cClass = (ClassDefinition) cMember.definition;
@@ -370,11 +370,11 @@ public class ClassesTest {
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) cMember.namespace.getDefinition("h");
     assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType());
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), FunCall(pFun), Apps(FunCall(qFun), Reference(hFun.getParameters())))), hFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), Reference(hFun.getParameters())))), hFun.getElimTree());
     FunctionDefinition kFun = (FunctionDefinition) cMember.namespace.getDefinition("k");
     assertEquals(Pi(ClassCall(cClass), Nat()), kFun.getType());
     Expression aRef = Apps(FieldCall(cParent), Reference(kFun.getParameters()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), Apps(FunCall(hFun), aRef), Apps(plus.getDefCall(), FunCall(pFun), Apps(FunCall(qFun), aRef)))), kFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), Apps(FunCall(hFun), aRef), Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), aRef)))), kFun.getElimTree());
   }
 
   @Test

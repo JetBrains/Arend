@@ -11,6 +11,8 @@ public class ConCallExpression extends DefCallExpression {
   public ConCallExpression(Constructor definition, List<Expression> dataTypeArguments) {
     super(definition);
     assert dataTypeArguments != null;
+    // TODO: constructors
+    // assert dataTypeArguments.size() == DependentLink.Helper.size(definition.getDataTypeParameters());
     myDataTypeArguments = dataTypeArguments;
   }
 
@@ -20,6 +22,10 @@ public class ConCallExpression extends DefCallExpression {
 
   @Override
   public Expression applyThis(Expression thisExpr) {
+    /* TODO: constructors
+    assert !myDataTypeArguments.isEmpty() && myDataTypeArguments.get(0) == null;
+    myDataTypeArguments.set(0, thisExpr);
+    */
     assert myDataTypeArguments.isEmpty();
     myDataTypeArguments.add(thisExpr);
     return this;

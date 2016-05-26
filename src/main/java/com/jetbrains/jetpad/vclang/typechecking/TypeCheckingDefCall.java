@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
@@ -127,6 +128,15 @@ public class TypeCheckingDefCall {
       String name = expr.getName();
       Constructor constructor = dataDefinition.getConstructor(name);
       if (constructor != null) {
+        /* TODO: constructors
+        int size = DependentLink.Helper.size(constructor.getDataTypeParameters());
+        List<Expression> args = new ArrayList<>(size);
+        args.addAll(arguments);
+        for (int i = args.size(); i < size; i++) {
+          args.add(null);
+        }
+        result.expression = ConCall(constructor, args);
+        */
         result.expression = ConCall(constructor, new ArrayList<>(arguments));
         result.type = constructor.getType().applyExpressions(arguments);
         return result;

@@ -57,16 +57,16 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression ConCall(Constructor definition) {
+    /* TODO: constructors
+    assert !definition.hasErrors() && !definition.getDataTypeParameters().hasNext();
+    return new ConCallExpression(definition, Collections.<Expression>emptyList());
+    */
     int size = definition.hasErrors() ? 1 : size(definition.getDataTypeParameters());
     return new ConCallExpression(definition, size == 0 ? Collections.<Expression>emptyList() : new ArrayList<Expression>(size));
   }
 
   public static ConCallExpression ConCall(Constructor definition, Expression... parameters) {
     return ConCall(definition, Arrays.asList(parameters));
-  }
-
-  public static Expression BinOp(Expression left, Definition binOp, Expression right) {
-    return Apps(binOp.getDefCall(), left, right);
   }
 
   public static DataCallExpression Interval() {

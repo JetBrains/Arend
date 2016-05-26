@@ -264,8 +264,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
 
         List<? extends Expression> args = result.expression.getFunction().toConCall().getDataTypeArguments();
-        if (!compareExpressions(result, args.get(3), Apps(result.expression.getArguments().get(0), ConCall(Preprelude.LEFT)), expr) ||
-            !compareExpressions(result, args.get(4), Apps(result.expression.getArguments().get(0), ConCall(Preprelude.RIGHT)), expr)) {
+        if (!compareExpressions(result, args.get(3), Apps(result.expression.getArguments().get(0), Left()), expr) ||
+            !compareExpressions(result, args.get(4), Apps(result.expression.getArguments().get(0), Right()), expr)) {
           return false;
         }
       }
@@ -282,6 +282,38 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResultImplicit(expectedType, result, expr);
   }
 
+  /* TODO: constructors
+  public Result typeCheckDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
+    Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
+    if (result != null) {
+      expr.setWellTyped(myContext, result.expression);
+      ConCallExpression conCall = result.expression.toConCall();
+      if (expectedType != null && conCall != null) {
+        List<? extends Expression> args = result.expression.toConCall().getDataTypeArguments();
+        if (!args.isEmpty() && args.get(args.size() - 1) == null) {
+          expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+          if (expectedType.getFunction().toDataCall() != null) {
+            List<? extends Expression> dataTypeArgs = expectedType.getArguments();
+            List<Expression> args1 = new ArrayList<>(dataTypeArgs.size());
+            args1.addAll(result.expression.getArguments());
+            args1.addAll(dataTypeArgs.subList(result.expression.getArguments().size(), dataTypeArgs.size()));
+            dataTypeArgs = conCall.getDefinition().matchDataTypeArguments(args1);
+            if (!conCall.getDataTypeArguments().isEmpty()) {
+              dataTypeArgs = dataTypeArgs.subList(conCall.getDataTypeArguments().size(), dataTypeArgs.size());
+            }
+            if (!dataTypeArgs.isEmpty()) {
+              result.expression = Apps(result.expression, dataTypeArgs, Collections.nCopies(dataTypeArgs.size(), EnumSet.noneOf(AppExpression.Flag.class)));
+              result.type = result.type.applyExpressions(dataTypeArgs);
+            }
+            return inferArg(result, arg, true, fun);
+          }
+        }
+      }
+    }
+    return result;
+  }
+  */
+
   @Override
   public Result visitDefCall(Abstract.DefCallExpression expr, Expression expectedType) {
     Result result = myTypeCheckingDefCall.typeCheckDefCall(expr);
@@ -289,6 +321,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
     return checkResultImplicit(expectedType, result, expr);
+    /* TODO: constructors
+    if (expectedType == null) {
+      result.update(true);
+      return result;
+    }
+    return myArgsInference.inferTail(result, expectedType, expr);
+    */
   }
 
   @Override

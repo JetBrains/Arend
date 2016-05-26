@@ -161,6 +161,14 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public ConCallExpression getDefCall() {
+    /* TODO: constructors
+    int size = DependentLink.Helper.size(getDataTypeParameters());
+    List<Expression> params = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      params.add(null);
+    }
+    return ConCall(this, params);
+    */
     return ConCall(this);
   }
 }

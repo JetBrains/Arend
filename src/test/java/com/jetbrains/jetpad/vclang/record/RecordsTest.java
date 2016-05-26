@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.record;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import org.junit.Test;
@@ -18,6 +15,7 @@ import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.type
 import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.resolveNamesClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class RecordsTest {
   @Test
@@ -234,7 +232,7 @@ public class RecordsTest {
 
     assertEquals(1, domArguments.get(3).getArguments().size());
     assertEquals(Reference(testFun.getParameters()), domArguments.get(3).getArguments().get(0));
-    assertEquals(member.namespace.findChild("A").getDefinition("x").getDefCall(), domArguments.get(3).getFunction());
+    assertEquals(FieldCall((ClassField) member.namespace.findChild("A").getDefinition("x")), domArguments.get(3).getFunction());
 
     ConCallExpression domArg2 = domArguments.get(4).toConCall();
     assertNotNull(domArg2);
@@ -252,7 +250,7 @@ public class RecordsTest {
       "\\static \\function test (q : A) => q.y");
     FunctionDefinition testFun = (FunctionDefinition) member.namespace.getDefinition("test");
     Expression resultType = testFun.getResultType();
-    Expression xCall = member.namespace.findChild("A").getDefinition("x").getDefCall();
+    Expression xCall = FieldCall((ClassField) member.namespace.findChild("A").getDefinition("x"));
     PiExpression resultTypePi = resultType.toPi();
     assertNotNull(resultTypePi);
     Expression function = resultTypePi.getParameters().getType().normalize(NormalizeVisitor.Mode.NF);
@@ -296,13 +294,14 @@ public class RecordsTest {
 
     LamExpression arg0 = arguments.get(2).toLam();
     assertNotNull(arg0);
-    assertEquals(Foo.getDefCall(), arg0.getBody().getFunction());
+    assertEquals(DataCall(Foo), arg0.getBody().getFunction());
     assertEquals(Reference(testFun.getParameters()), arg0.getBody().getArguments().get(0));
     Expression parameterFunction = arg0.getBody().getArguments().get(1);
     List<? extends Expression> parameterArguments = parameterFunction.getArguments();
     parameterFunction = parameterFunction.getFunction();
     assertEquals(1, parameterArguments.size());
-    assertEquals(ConCall(Prelude.PATH_CON), parameterFunction);
+    assertNotNull(parameterFunction.toConCall());
+    assertTrue(Prelude.isPathCon(parameterFunction.toConCall().getDefinition()));
     LamExpression paramArg0 = parameterArguments.get(0).toLam();
     assertNotNull(paramArg0);
     assertEquals(xCall, paramArg0.getBody().getFunction());

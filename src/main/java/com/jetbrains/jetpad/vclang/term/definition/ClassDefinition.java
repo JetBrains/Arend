@@ -88,7 +88,7 @@ public class ClassDefinition extends Definition {
   public Expression getTypeWithThis() {
     Expression type = getType();
     if (getThisClass() != null) {
-      type = Pi(getThisClass().getDefCall(), type);
+      type = Pi(ClassCall(getThisClass()), type);
     }
     return type;
   }
