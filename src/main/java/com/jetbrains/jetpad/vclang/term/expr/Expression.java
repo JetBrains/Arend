@@ -58,6 +58,10 @@ public abstract class Expression implements PrettyPrintable {
     return subst.getDomain().isEmpty() ? this : accept(new SubstVisitor(subst), null);
   }
 
+  public final Expression subst(LevelSubstitution subst) {
+
+  }
+
   public final Expression normalize(NormalizeVisitor.Mode mode) {
     return accept(new NormalizeVisitor(new EvalNormalizer()), mode);
   }

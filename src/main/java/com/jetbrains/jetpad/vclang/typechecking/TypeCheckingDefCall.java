@@ -218,6 +218,10 @@ public class TypeCheckingDefCall {
     return result;
   }
 
+  private CheckTypeVisitor.Result setPolyVars(Definition def) {
+
+  }
+
   public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {
     String name = expr.getName();
     ListIterator<Binding> it = myVisitor.getContext().listIterator(myVisitor.getContext().size());

@@ -3,19 +3,15 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
-import java.util.List;
-
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
 
 public class FunctionDefinition extends Definition implements Function {
-  private List<TypedBinding> myLevelParams;
   private DependentLink myParameters;
   private Expression myResultType;
   private ElimTreeNode myElimTree;
@@ -68,11 +64,6 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public DependentLink getParameters() {
     return myParameters;
-  }
-
-  @Override
-  public List<TypedBinding> getLevelParams() {
-    return myLevelParams;
   }
 
   public void setParameters(DependentLink parameters) {

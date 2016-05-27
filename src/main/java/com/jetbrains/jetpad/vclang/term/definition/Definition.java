@@ -4,10 +4,15 @@ import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
+import java.util.List;
+
 public abstract class Definition extends NamedBinding implements Referable {
+  protected TypedBinding myPLevelParam;
+  protected TypedBinding myHLevelParam;
   private Abstract.Definition.Precedence myPrecedence;
   private TypeUniverse myUniverse;
   private boolean myHasErrors;
@@ -64,6 +69,13 @@ public abstract class Definition extends NamedBinding implements Referable {
   public void setUniverse(TypeUniverse universe) {
     myUniverse = universe;
   }
+
+  public void setPolyParams(TypedBinding plev, TypedBinding hlev) {
+    myPLevelParam = plev;
+    myHLevelParam = hlev;
+  }
+
+  public boolean isPolymorphic() { return myPLevelParam != null && myHLevelParam != null; }
 
   public boolean hasErrors() {
     return myHasErrors;
