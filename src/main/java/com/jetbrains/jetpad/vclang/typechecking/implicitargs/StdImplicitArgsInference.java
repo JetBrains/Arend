@@ -156,14 +156,16 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(result.expression.getArguments());
             args1.addAll(args.subList(result.expression.getArguments().size(), args.size()));
             args = conCall.getDefinition().matchDataTypeArguments(args1);
-            if (!conCall.getDataTypeArguments().isEmpty()) {
-              args = args.subList(conCall.getDataTypeArguments().size(), args.size());
+            if (args != null) {
+              if (!conCall.getDataTypeArguments().isEmpty()) {
+                args = args.subList(conCall.getDataTypeArguments().size(), args.size());
+              }
+              if (!args.isEmpty()) {
+                result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
+                result.type = result.type.applyExpressions(args);
+              }
+              return inferArg(result, arg, true, fun);
             }
-            if (!args.isEmpty()) {
-              result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
-              result.type = result.type.applyExpressions(args);
-            }
-            return inferArg(result, arg, true, fun);
           }
         }
       }

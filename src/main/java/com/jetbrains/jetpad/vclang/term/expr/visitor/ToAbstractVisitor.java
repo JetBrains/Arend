@@ -153,11 +153,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
 
     Abstract.Expression conParams = null;
     if (!expr.getDefinition().hasErrors() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
+      Substitution substitution = new Substitution();
+      DependentLink link = expr.getDefinition().getDataTypeParameters();
+      for (int i = 0; i < expr.getDataTypeArguments().size() && link.hasNext(); i++, link = link.getNext()) {
+        substitution.add(link, expr.getDataTypeArguments().get(i));
+      }
+      conParams = expr.getDefinition().getDataTypeExpression(substitution).accept(this, null);
+      /*
       conParams = myFactory.makeDefCall(null, expr.getDefinition().getDataType());
       DependentLink link = expr.getDefinition().getDataTypeParameters();
       for (int i = 0; i < expr.getDataTypeArguments().size() && link.hasNext(); i++, link = link.getNext()) {
         conParams = myFactory.makeApp(conParams, link.isExplicit(), expr.getDataTypeArguments().get(i).accept(this, null));
       }
+      */
     }
     return myFactory.makeDefCall(conParams, expr.getDefinition());
   }
