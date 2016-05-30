@@ -128,15 +128,6 @@ public class TypeCheckingDefCall {
       String name = expr.getName();
       Constructor constructor = dataDefinition.getConstructor(name);
       if (constructor != null) {
-        /* TODO: constructors
-        int size = DependentLink.Helper.size(constructor.getDataTypeParameters());
-        List<Expression> args = new ArrayList<>(size);
-        args.addAll(arguments);
-        for (int i = args.size(); i < size; i++) {
-          args.add(null);
-        }
-        result.expression = ConCall(constructor, args);
-        */
         result.expression = ConCall(constructor, new ArrayList<>(arguments));
         result.type = constructor.getType().applyExpressions(arguments);
         return result;

@@ -57,10 +57,6 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression ConCall(Constructor definition) {
-    /* TODO: constructors
-    assert !definition.hasErrors() && !definition.getDataTypeParameters().hasNext();
-    return new ConCallExpression(definition, Collections.<Expression>emptyList());
-    */
     int size = definition.hasErrors() ? 1 : size(definition.getDataTypeParameters());
     return new ConCallExpression(definition, size == 0 ? Collections.<Expression>emptyList() : new ArrayList<Expression>(size));
   }
