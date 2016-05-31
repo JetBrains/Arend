@@ -1,28 +1,25 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionGetDepsVisitor;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.*;
-
-import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMember;
 
 public class TypecheckingOrdering {
   public static abstract class Result {
   }
 
   public static class OKResult extends Result {
-    public final Map<Abstract.Definition, ResolvedName> order;
+    public final LinkedHashSet<Abstract.Definition> order;
 
-    OKResult(Map<Abstract.Definition, ResolvedName> order) {
+    OKResult(LinkedHashSet<Abstract.Definition> order) {
       this.order = order;
     }
   }
@@ -37,16 +34,16 @@ public class TypecheckingOrdering {
 
   private List<Abstract.Definition> myCycle;
   private final Queue<Abstract.Definition> myOthers;
-  private final Map<Abstract.Definition, ResolvedName> myResult;
+  private final LinkedHashSet<Abstract.Definition> myResult;
   private final Set<Abstract.Definition> myVisited;
-  private final Set<Abstract.Definition> myVisiting;
+  private final LinkedHashSet<Abstract.Definition> myVisiting;
 
   private final HashMap<Abstract.Definition, List<Abstract.Definition>> myClassToNonStatic;
 
   private TypecheckingOrdering(Queue<Abstract.Definition> queue) {
     myCycle = null;
     myOthers = queue;
-    myResult = new LinkedHashMap<>();
+    myResult = new LinkedHashSet<>();
     myVisited = new HashSet<>();
     myVisiting = new LinkedHashSet<>();
     myClassToNonStatic = new HashMap<>();
@@ -121,7 +118,7 @@ public class TypecheckingOrdering {
     }
 
     myVisiting.remove(definition);
-    myResult.put(definition, null);  // FIXME[error]
+    myResult.add(definition);
 
     myVisited.add(definition);
     return true;
@@ -149,8 +146,7 @@ public class TypecheckingOrdering {
   private static void typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (result instanceof OKResult) {
       TypecheckerState state = new TypecheckerState();
-      for (Abstract.Definition def : ((OKResult) result).order.keySet()) {
-        ResolvedName resolvedName = ((OKResult) result).order.get(def);
+      for (Abstract.Definition def : ((OKResult) result).order) {
         DefinitionCheckTypeVisitor.typeCheck(state, def,new LocalErrorReporter(def, errorReporter));
         Definition typechecked = state.getTypechecked(def);
         if (typechecked == null || typechecked.hasErrors()) {
@@ -160,14 +156,9 @@ public class TypecheckingOrdering {
         }
       }
     } else if (result instanceof CycleResult) {
-      StringBuilder errorMessage = new StringBuilder();
-      errorMessage.append("Definition dependencies form a cycle: ");
-      // FIXME[errors]
-      for (Abstract.Definition def : ((CycleResult) result).cycle) {
-        errorMessage.append(toNamespaceMember(def).getResolvedName().getFullName()).append(" - ");
-      }
-      errorMessage.append(toNamespaceMember(((CycleResult) result).cycle.get(0)).getResolvedName().getFullName());
-      errorReporter.report(new GeneralError(errorMessage.toString()));
+      errorReporter.report(new CycleError(((CycleResult) result).cycle));
+    } else {
+      throw new IllegalStateException();
     }
   }
   public static void typecheck(Abstract.Definition definition, ErrorReporter errorReporter) {
