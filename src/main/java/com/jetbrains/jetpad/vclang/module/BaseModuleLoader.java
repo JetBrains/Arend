@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.module.error.CycleError;
+import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleNotFoundError;
 import com.jetbrains.jetpad.vclang.module.output.DummyOutputSupplier;
@@ -53,7 +53,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
       try {
         output.write();
       } catch (IOException e) {
-        savingError(new GeneralError("Saving module '" + module.getModulePath() + "': " + GeneralError.ioError(e)));
+        savingError(new GeneralError("Saving module '" + module.getModulePath() + "': " + GeneralError.ioError(e), null));
       }
     }
   }
@@ -67,7 +67,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
 
     int index = myLoadingModules.indexOf(module);
     if (index != -1) {
-      loadingError(new CycleError(new ArrayList<>(myLoadingModules.subList(index, myLoadingModules.size()))));
+      loadingError(new ModuleCycleError(new ArrayList<>(myLoadingModules.subList(index, myLoadingModules.size()))));
       return null;
     }
 

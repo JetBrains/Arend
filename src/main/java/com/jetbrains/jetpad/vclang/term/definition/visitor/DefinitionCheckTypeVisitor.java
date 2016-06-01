@@ -58,7 +58,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (classDefinition instanceof ClassDefinition) {
         return (ClassDefinition) classDefinition;
       } else {
-        myErrorReporter.report(new TypeCheckingError("Internal error: definition '" + definition.getName() + "' is not a class", definition));
+        myErrorReporter.report(new TypeCheckingError(definition, "Internal error: definition '" + definition.getName() + "' is not a class", null));
         return null;
       }
     }
@@ -66,7 +66,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     Abstract.DefineStatement statement = definition == null ? null : definition.getParentStatement();
     Abstract.Definition parentDefinition = statement == null ? null : statement.getParentDefinition();
     if (statement == null || parentDefinition == null) {
-      myErrorReporter.report(new TypeCheckingError("Non-static definitions are allowed only inside a class definition", dynamicStatement));
+      // FIXME[errorformat] report dynamicStatement
+      myErrorReporter.report(new TypeCheckingError(definition, "Non-static definitions are allowed only inside a class definition", null));
       return null;
     }
 
@@ -97,15 +98,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     /*
     if (overriddenFunction == null && def.isOverridden()) {
       // TODO
-      // myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Cannot find function " + name + " in the parent class", def, getNames(myContext)));
-      myErrorReporter.report(new TypeCheckingError("Overridden function " + name + " cannot be defined in a base class", def, getNames(myContext)));
+      // myModuleLoader.getTypeCheckingErrors().add(new TypeCheckingError("Cannot find function " + name + " in the parent class", def, getNames(context)));
+      myErrorReporter.report(new TypeCheckingError("Overridden function " + name + " cannot be defined in a base class", def, getNames(context)));
       return null;
     }
     */
 
     List<? extends Abstract.Argument> arguments = def.getArguments();
     final List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
     ClassDefinition thisClass = getThisClass(def);
     LinkList list = new LinkList();
     if (thisClass != null) {
@@ -214,14 +215,14 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     */
       } else {
         // if (splitArgs == null) {
-        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null));
+        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument));
         return typedDef;
     /*
     } else {
       List<String> names = new ArrayList<>(1);
       names.add(((Abstract.NameArgument) argument).getName());
       typedParameters.add(Tele(argument.getExplicit(), names, splitArgs.get(index).getType()));
-      myContext.add(new TypedBinding(names.get(0), splitArgs.get(index).getType()));
+      context.add(new TypedBinding(names.get(0), splitArgs.get(index).getType()));
     }
     */
       }
@@ -294,7 +295,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       if (typedDef.getElimTree() != null) {
         if (!typedDef.getElimTree().accept(new TerminationCheckVisitor(typedDef, typedDef.getParameters()), null)) {
-          myErrorReporter.report(new TypeCheckingError("Termination check failed", term));
+          // FIXME[errorformat]
+          myErrorReporter.report(new TypeCheckingError(def, "Termination check failed", term));
           typedDef.setElimTree(null);
         }
       }
@@ -354,7 +356,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     DependentLink thisParameter = param("\\this", ClassCall(thisClass));
     List<Binding> context = new ArrayList<>();
     context.add(thisParameter);
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build(def);
     LevelExpression plevel = null;
     ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), null, thisClass, thisParameter);
 
@@ -386,7 +388,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           plevel = plevel.max(argPLevel);
         }
       } else {
-        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument, null));
+        myErrorReporter.report(new ArgInferenceError(typeOfFunctionArg(index + 1), argument));
         return typedDef;
       }
     }
@@ -421,7 +423,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
 
     List<Binding> context = new ArrayList<>();
-    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build();
+    CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).build(def);
     ClassDefinition thisClass = getThisClass(def);
     LinkList list = new LinkList();
     if (thisClass != null) {
@@ -457,7 +459,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
       if (result == null || result.expression.toUniverse() == null) {
         String msg = "Specified type " + def.getUniverse().accept(new PrettyPrintVisitor(new StringBuilder(), 0), Abstract.Expression.PREC) + " of '" + def.getName() + "' is not a universe";
-        myErrorReporter.report(new TypeCheckingError(msg, def.getUniverse()));
+        // FIXME[errorformat]
+        myErrorReporter.report(new TypeCheckingError(def, msg, def.getUniverse()));
       } else {
         userUniverse = result.expression.toUniverse().getUniverse();
       }
@@ -473,7 +476,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     LevelExpression inferredPLevel = TypeUniverse.intToPLevel(0);
     TypeUniverse inferredUniverse = new TypeUniverse(inferredPLevel, inferredHLevel);
     for (Abstract.Constructor constructor : def.getConstructors()) {
-      Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
+      Constructor typedConstructor = visitConstructor(constructor, def, dataDefinition, visitor);
       if (typedConstructor == null) {
         continue;
       }
@@ -489,7 +492,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (cmpP == LevelExpression.CMP.NOT_COMPARABLE || cmpP == LevelExpression.CMP.GREATER ||
               cmpH == LevelExpression.CMP.NOT_COMPARABLE || cmpH == LevelExpression.CMP.GREATER) {
         String msg = "Actual universe " + new UniverseExpression(inferredUniverse) + " is not compatible with expected universe " + new UniverseExpression(userUniverse);
-        myErrorReporter.report(new TypeCheckingError(msg, def.getUniverse()));
+        // FIXME[errorformat]
+        myErrorReporter.report(new TypeCheckingError(def, msg, def.getUniverse()));
         dataDefinition.setUniverse(inferredUniverse);
       } else {
         dataDefinition.setUniverse(userUniverse);
@@ -512,7 +516,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           cycleConditionsError.append(constructor.getName()).append(" - ");
         }
         cycleConditionsError.append(cycle.get(0).getName());
-        TypeCheckingError error = new TypeCheckingError(cycleConditionsError.toString(), def);
+        // FIXME[errorformat]
+        TypeCheckingError error = new TypeCheckingError(def, cycleConditionsError.toString(), def);
         myErrorReporter.report(error);
       }
     }
@@ -537,7 +542,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     for (Abstract.Condition cond : def.getConditions()) {
       Constructor constructor = dataDefinition.getConstructor(cond.getConstructorName());
       if (constructor == null) {
-        myErrorReporter.report(new NotInScopeError(cond, cond.getConstructorName()));  // TODO: refer by reference
+        myErrorReporter.report(new NotInScopeError(def, cond.getConstructorName()));  // TODO: refer by reference
         continue;
       }
       if (constructor.hasErrors()) {
@@ -563,7 +568,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           try (Utils.ContextSaver saver = new Utils.ContextSaver(visitor.getContext())) {
             List<Expression> resultType = new ArrayList<>(Collections.singletonList(constructor.getDataTypeExpression()));
             DependentLink params = constructor.getParameters();
-            List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns());
+            List<Abstract.PatternArgument> processedPatterns = processImplicitPatterns(cond, params, cond.getPatterns(), def);
             if (processedPatterns == null)
               continue;
 
@@ -585,7 +590,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         PatternsToElimTreeConversion.OKResult elimTreeResult = (PatternsToElimTreeConversion.OKResult) PatternsToElimTreeConversion.convert(constructor.getParameters(), patterns, expressions, arrows);
 
         if (!elimTreeResult.elimTree.accept(new TerminationCheckVisitor(constructor, constructor.getDataTypeParameters(), constructor.getParameters()), null)) {
-          myErrorReporter.report(new TypeCheckingError("Termination check failed", def));
+          // FIXME[errorformat]
+          myErrorReporter.report(new TypeCheckingError(def, "Termination check failed", null));
           continue;
         }
 
@@ -639,7 +645,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     throw new IllegalStateException();
   }
 
-  public Constructor visitConstructor(Abstract.Constructor def, DataDefinition dataDefinition, CheckTypeVisitor visitor) {
+  public Constructor visitConstructor(Abstract.Constructor def, Abstract.DataDefinition abstractData, DataDefinition dataDefinition, CheckTypeVisitor visitor) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(visitor.getContext())) {
       List<? extends Abstract.TypeArgument> arguments = def.getArguments();
       String name = def.getName();
@@ -655,7 +661,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (dataDefinition.getThisClass() != null) {
           processedPatterns.add(0, new PatternArgument(new NamePattern(dataDefinition.getParameters()), true, true));
         }
-        processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), processedPatterns);
+        processedPatterns = processImplicitPatterns(def, dataDefinition.getParameters(), processedPatterns, abstractData);
         if (processedPatterns == null) {
           return constructor;
         }
@@ -720,7 +726,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         while (pi != null) {
           for (DependentLink link1 = pi.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
             link1 = link1.getNextTyped(null);
-            if (!checkNonPositiveError(link1.getType(), dataDefinition, name, list.getFirst(), link, arguments, def)) {
+            if (!checkNonPositiveError(link1.getType(), abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
               return constructor;
             }
           }
@@ -745,13 +751,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               }
             }
           } else {
-            if (!checkNonPositiveError(type, dataDefinition, name, list.getFirst(), link, arguments, def)) {
+            if (!checkNonPositiveError(type, abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
               return constructor;
             }
           }
 
           for (Expression expr : exprs) {
-            if (!checkNonPositiveError(expr, dataDefinition, name, list.getFirst(), link, arguments, def)) {
+            if (!checkNonPositiveError(expr, abstractData, dataDefinition, name, list.getFirst(), link, arguments, def)) {
               return constructor;
             }
           }
@@ -770,7 +776,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
   }
 
-  private boolean checkNonPositiveError(Expression expr, DataDefinition dataDefinition, String name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor) {
+  private boolean checkNonPositiveError(Expression expr, Abstract.DataDefinition abstractData, DataDefinition dataDefinition, String name, DependentLink params, DependentLink param, List<? extends Abstract.Argument> args, Abstract.Constructor constructor) {
     if (!expr.findBinding(dataDefinition)) {
       return true;
     }
@@ -791,20 +797,24 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
 
     String msg = "Non-positive recursive occurrence of data type " + dataDefinition.getName() + " in constructor " + name;
-    myErrorReporter.report(new TypeCheckingError(msg, argument == null ? constructor : argument));
+    // FIXME[errorformat]
+    myErrorReporter.report(new TypeCheckingError(abstractData, msg, argument == null ? constructor : argument));
     return false;
   }
 
-  private List<Abstract.PatternArgument> processImplicitPatterns(Abstract.SourceNode expression, DependentLink parameters, List<? extends Abstract.PatternArgument> patterns) {
+  private List<Abstract.PatternArgument> processImplicitPatterns(Abstract.SourceNode expression, DependentLink parameters, List<? extends Abstract.PatternArgument> patterns, Abstract.DataDefinition abstractData) {
     List<Abstract.PatternArgument> processedPatterns = null;
     ProcessImplicitResult processImplicitResult = processImplicit(patterns, parameters);
     if (processImplicitResult.patterns == null) {
       if (processImplicitResult.numExcessive != 0) {
-        myErrorReporter.report(new TypeCheckingError("Too many arguments: " + processImplicitResult.numExcessive + " excessive", expression));
+        // FIXME[errorformat]
+        myErrorReporter.report(new TypeCheckingError(abstractData, "Too many arguments: " + processImplicitResult.numExcessive + " excessive", expression));
       } else if (processImplicitResult.wrongImplicitPosition < patterns.size()) {
-        myErrorReporter.report(new TypeCheckingError("Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition)));
+        // FIXME[errorformat]
+        myErrorReporter.report(new TypeCheckingError(abstractData, "Unexpected implicit argument", patterns.get(processImplicitResult.wrongImplicitPosition)));
       } else {
-        myErrorReporter.report(new TypeCheckingError("Too few explicit arguments, expected: " + processImplicitResult.numExplicit, expression));
+        // FIXME[errorformat]
+        myErrorReporter.report(new TypeCheckingError(abstractData, "Too few explicit arguments, expected: " + processImplicitResult.numExplicit, expression));
       }
     } else {
       processedPatterns = processImplicitResult.patterns;

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -42,7 +43,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
   @Override
   public Void visitDefine(Abstract.DefineStatement stat, Flag flag) {
     if (stat.getStaticMod() != Abstract.DefineStatement.StaticMod.STATIC && flag == Flag.MUST_BE_STATIC) {
-      myErrorReporter.report(new TypeCheckingError("Non-static definition in a static context", stat));
+      myErrorReporter.report(new GeneralError("Non-static definition in a static context", stat));
       return null;
     } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC && flag == Flag.MUST_BE_DYNAMIC) {
       myErrorReporter.report(new TypeCheckingError("Static definitions are not allowed in this context", stat));

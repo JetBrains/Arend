@@ -20,11 +20,11 @@ public class ExpressionInferenceBinding extends InferenceBinding {
 
   @Override
   public void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates) {
-    errorReporter.report(new ArgInferenceError(ArgInferenceError.expression(), mySourceNode, null, candidates));
+    errorReporter.report(new ArgInferenceError(ArgInferenceError.expression(), mySourceNode, candidates));
   }
 
   @Override
   public void reportErrorMismatch(ErrorReporter errorReporter, Expression expectedType, Expression actualType, Expression candidate) {
-    errorReporter.report(new ArgInferenceError(ArgInferenceError.expression(), expectedType, actualType, mySourceNode, null, candidate));
+    errorReporter.report(new ArgInferenceError(ArgInferenceError.expression(), expectedType, actualType, mySourceNode, candidate));
   }
 }

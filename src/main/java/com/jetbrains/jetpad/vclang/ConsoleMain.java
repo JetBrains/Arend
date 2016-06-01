@@ -163,7 +163,7 @@ public class ConsoleMain {
         // FIXME[error] ModuleID from definition
         //failedModules.add(toNamespaceMember(definition).getResolvedName().getModuleID());
         for (GeneralError error : errorReporter.getErrorList()) {
-          System.err.println(error);
+          System.err.println(new ErrorFormatter().printError(error));
         }
         errorReporter.getErrorList().clear();
       }

@@ -24,11 +24,11 @@ public class LambdaInferenceBinding extends InferenceBinding {
 
   @Override
   public void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates) {
-    errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), mySourceNode, null, candidates));
+    errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), mySourceNode, candidates));
   }
 
   @Override
   public void reportErrorMismatch(ErrorReporter errorReporter, Expression expectedType, Expression actualType, Expression candidate) {
-    errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, mySourceNode, null, candidate));
+    errorReporter.report(new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, mySourceNode, candidate));
   }
 }

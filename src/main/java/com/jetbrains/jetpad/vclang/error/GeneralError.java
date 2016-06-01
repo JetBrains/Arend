@@ -5,42 +5,40 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import java.io.IOException;
 
 public class GeneralError {
-  private final String myMessage;
-  private Level myLevel;
+  public final Abstract.SourceNode cause;
+  public final String message;
+  public final Level level;
 
   public enum Level { ERROR, GOAL, WARNING, INFO }
 
-  public GeneralError(String message) {
-    myMessage = message;
-    myLevel = Level.ERROR;
+  public GeneralError(String message, Abstract.SourceNode cause) {
+    this(Level.ERROR, message, cause);
+  }
+
+  public GeneralError(Level level, String message, Abstract.SourceNode cause) {
+    this.level = level;
+    this.message = message;
+    this.cause = cause;
   }
 
   public Level getLevel() {
-    return myLevel;
-  }
-
-  public void setLevel(Level level) {
-    myLevel = level;
+    return level;
   }
 
   public Abstract.SourceNode getCause() {
-    return null;
+    return cause;
   }
 
   public String getMessage() {
-    return myMessage;
-  }
-
-  public String printHeader() {
-    return "[" + myLevel + "] ";
-  }
-
-  public static String ioError(IOException e) {
-    return "I/O error: " + e.getMessage();
+    return message;
   }
 
   @Override
   public String toString() {
-    return printHeader() + (myMessage == null ? "Unknown error" : myMessage);
+    return "ERROR: " + getMessage();
+  }
+
+  public static String ioError(IOException e) {
+    return "I/O error: " + e.getMessage();
   }
 }
