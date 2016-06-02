@@ -1,8 +1,11 @@
 package com.jetbrains.jetpad.vclang.module;
 
 
+import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +53,6 @@ public class FileModuleID implements SerializableModuleID {
 
   @Override
   public String toString() {
-    return myModulePath.toString();
+    return FileOperations.getFile(new File("."), myModulePath, "{" + FileOperations.EXTENSION + "," + FileOperations.SERIALIZED_EXTENSION + "}").toString();
   }
 }

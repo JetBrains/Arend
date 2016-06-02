@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
@@ -10,7 +11,6 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.output.FileOutputSupplier;
 import com.jetbrains.jetpad.vclang.module.source.FileSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.utils.FileOperations;
-import com.jetbrains.jetpad.vclang.naming.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
@@ -105,7 +105,7 @@ public class ConsoleMain {
           DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
           rsmVisitor.visitClass(abstractDefinition, true);
 
-          DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(errorReporter, nameResolver, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider(), new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE));
+          OneshotNameResolver.DefinitionResolveNameVisitor visitor = new OneshotNameResolver.DefinitionResolveNameVisitor(errorReporter, nameResolver, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider(), new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE));
           visitor.setResolveListener(new ConcreteResolveListener());
           visitor.visitClass(abstractDefinition, null);
 
