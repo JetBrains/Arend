@@ -723,7 +723,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     ClassDefinition baseClass = classCallExpr.getDefinition();
     if (baseClass.hasErrors()) {
-      TypeCheckingError error = new HasErrors(myParentDefinition, baseClass.getName(), baseClassExpr);
+      TypeCheckingError error = new HasErrors(myParentDefinition, baseClass.getName(), expr);
       expr.setWellTyped(myContext, Error(classCallExpr, error));
       myErrorReporter.report(error);
       return null;

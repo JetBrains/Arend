@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
@@ -84,17 +85,18 @@ public class ConsoleMain {
     final NameResolver nameResolver = new NameResolver(moduleNsProvider, new SimpleStaticNamespaceProvider());
 
     final ListErrorReporter errorReporter = new ListErrorReporter();
+    final ErrorFormatter errf = new ErrorFormatter(new SourceInfoProvider.Null());
     final List<ModuleID> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
       @Override
       public void savingError(GeneralError error) {
-        System.err.println(error);
+        System.err.println(errf.printError(error));
       }
 
       @Override
       public void loadingError(GeneralError error) {
-        System.err.println(error);
+        System.err.println(errf.printError(error));
       }
 
       @Override
@@ -131,7 +133,7 @@ public class ConsoleMain {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
             if (path.getFileName().toString().endsWith(FileOperations.EXTENSION)) {
-              processFile(moduleLoader, errorReporter, path, sourceDir);
+              processFile(moduleLoader, errorReporter, errf, path, sourceDir);
             }
             return FileVisitResult.CONTINUE;
           }
@@ -147,7 +149,7 @@ public class ConsoleMain {
       }
     } else {
       for (String fileName : cmdLine.getArgList()) {
-        processFile(moduleLoader, errorReporter, Paths.get(fileName), sourceDir);
+        processFile(moduleLoader, errorReporter, errf, Paths.get(fileName), sourceDir);
       }
     }
 
@@ -163,7 +165,7 @@ public class ConsoleMain {
         // FIXME[error] ModuleID from definition
         //failedModules.add(toNamespaceMember(definition).getResolvedName().getModuleID());
         for (GeneralError error : errorReporter.getErrorList()) {
-          System.err.println(new ErrorFormatter().printError(error));
+          System.err.println(errf.printError(error));
         }
         errorReporter.getErrorList().clear();
       }
@@ -179,7 +181,7 @@ public class ConsoleMain {
 //    }
 
     for (GeneralError error : errorReporter.getErrorList()) {
-      System.err.println(error);
+      System.err.println(errf.printError(error));
     }
 
     for (ModuleID moduleID : loadedModules) {
@@ -207,7 +209,7 @@ public class ConsoleMain {
     return new ModulePath(names);
   }
 
-  static private void processFile(ModuleLoader moduleLoader, ListErrorReporter errorReporter, Path fileName, File sourceDir) {
+  static private void processFile(ModuleLoader moduleLoader, ListErrorReporter errorReporter, ErrorFormatter errf, Path fileName, File sourceDir) {
     Path relativePath = sourceDir != null && fileName.startsWith(sourceDir.toPath()) ? sourceDir.toPath().relativize(fileName) : fileName;
     ModulePath modulePath = getModule(relativePath);
     if (modulePath == null) {
@@ -222,7 +224,7 @@ public class ConsoleMain {
     moduleLoader.load(moduleID);
 
     for (GeneralError error : errorReporter.getErrorList()) {
-      System.err.println(error);
+      System.err.println(errf.printError(error));
     }
 
     errorReporter.getErrorList().clear();

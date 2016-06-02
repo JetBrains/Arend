@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -71,7 +72,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Sta
 
     ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
     if (moduleNamespace == null || moduleNamespace.getRegisteredClass() == null) {
-      myErrorReporter.report(new NotInScopeError(null, stat.getModulePath().toString()));  // FIXME: null? really?
+      myErrorReporter.report(new NotInScopeError(null, new ModulePath(stat.getModulePath()).toString()));  // FIXME: null? really?
       return null;
     }
 

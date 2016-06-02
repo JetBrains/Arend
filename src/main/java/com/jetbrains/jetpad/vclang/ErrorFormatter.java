@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
 import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
 import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ErrorFormatter {
+  private final SourceInfoProvider mySrc;
+
+  public ErrorFormatter(SourceInfoProvider src) {
+    mySrc = src;
+  }
+
   private String printLevel(GeneralError error) {
     return "[" + error.getLevel() + "]";
   }
@@ -27,9 +33,27 @@ public class ErrorFormatter {
     StringBuilder builder = new StringBuilder();
     builder.append(printLevel(error));
     if (error instanceof TypeCheckingError) {
-      builder.append(' ');
-      builder.append("<Definition name>");
-      builder.append(':').append("<Loc>");
+      Abstract.Definition def = ((TypeCheckingError) error).getDefinition();
+      if (def != null) {
+        ModuleID module = mySrc.moduleOf(def);
+        builder.append(' ').append(module != null ? module : "<Unknown module>");
+
+        String name = mySrc.nameFor(def);
+        if (name == null && def.getName() != null) {
+          name = "???." + def.getName();
+        }
+
+        if (name != null) {
+          builder.append('(').append(name).append(')');
+        }
+
+        if (module != null) {
+          if (error.getCause() instanceof Concrete.SourceNode) {
+            Concrete.Position pos = ((Concrete.SourceNode) error.getCause()).getPosition();
+            builder.append(':').append(pos.line).append(':').append(pos.column);
+          }
+        }
+      }
     } else if (error instanceof ModuleLoadingError) {
       builder.append(' ');
       if (((ModuleLoadingError) error).module == null) {
