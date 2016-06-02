@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -588,8 +587,8 @@ public class OneshotNameResolver {
       return null;
     }
 
+    /*
     private void processNamespaceCommand(NamespaceMember member, boolean export, boolean remove, Abstract.SourceNode sourceNode) {
-      /*
       boolean ok;
       if (export) {
         ok = myNamespace.addMember(member) == null;
@@ -607,7 +606,7 @@ public class OneshotNameResolver {
         error.setLevel(GeneralError.Level.WARNING);
         myErrorReporter.report(error);
       }
-      */
     }
+    */
   }
 }
