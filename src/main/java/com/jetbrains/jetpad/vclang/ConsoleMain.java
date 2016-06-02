@@ -91,12 +91,12 @@ public class ConsoleMain {
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
       @Override
       public void savingError(GeneralError error) {
-        System.err.println(errf.printError(error));
+        errorReporter.report(error);
       }
 
       @Override
       public void loadingError(GeneralError error) {
-        System.err.println(errf.printError(error));
+        errorReporter.report(error);
       }
 
       @Override
