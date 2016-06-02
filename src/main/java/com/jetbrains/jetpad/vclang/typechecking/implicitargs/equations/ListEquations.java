@@ -397,12 +397,13 @@ public class ListEquations implements Equations {
       for (Iterator<Map.Entry<InferenceBinding, ExactSolution>> it = myExactSolutions.entrySet().iterator(); it.hasNext(); ) {
         Map.Entry<InferenceBinding, ExactSolution> entry = it.next();
 
-        if (bindings.remove(entry.getKey())) {
+        if (bindings.contains(entry.getKey())) {
           was = true;
           it.remove();
           subst = entry.getValue().solve(this, entry.getKey(), result);
           if (update(entry.getKey(), subst, result)) {
             binding = entry.getKey();
+            bindings.remove(binding);
           }
           break;
         }
@@ -412,12 +413,13 @@ public class ListEquations implements Equations {
         for (Iterator<Map.Entry<InferenceBinding, EqSetSolution>> it = myEqSolutions.entrySet().iterator(); it.hasNext(); ) {
           Map.Entry<InferenceBinding, EqSetSolution> entry = it.next();
 
-          if (bindings.remove(entry.getKey())) {
+          if (bindings.contains(entry.getKey())) {
             was = true;
             it.remove();
             subst = entry.getValue().solve(this, entry.getKey(), result);
             if (update(entry.getKey(), subst, result)) {
               binding = entry.getKey();
+              bindings.remove(binding);
             }
             break;
           }
