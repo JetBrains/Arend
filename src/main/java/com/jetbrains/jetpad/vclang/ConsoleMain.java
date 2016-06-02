@@ -82,10 +82,10 @@ public class ConsoleMain {
     }
 
     final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
-    final NameResolver nameResolver = new NameResolver(moduleNsProvider, new SimpleStaticNamespaceProvider());
-
     final ListErrorReporter errorReporter = new ListErrorReporter();
-    final ErrorFormatter errf = new ErrorFormatter(new SourceInfoProvider.Null());
+    final NameResolver nameResolver = new NameResolver(moduleNsProvider, new SimpleStaticNamespaceProvider());
+    final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, nameResolver, new ConcreteResolveListener(), new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
+    final ErrorFormatter errf = new ErrorFormatter(oneshotNameResolver.getSourceInfoProvider());
     final List<ModuleID> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
@@ -105,9 +105,7 @@ public class ConsoleMain {
           DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
           rsmVisitor.visitClass(abstractDefinition, true);
 
-          OneshotNameResolver.DefinitionResolveNameVisitor visitor = new OneshotNameResolver.DefinitionResolveNameVisitor(errorReporter, nameResolver, new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider(), new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE));
-          visitor.setResolveListener(new ConcreteResolveListener());
-          visitor.visitClass(abstractDefinition, null);
+          oneshotNameResolver.visitModule(module, abstractDefinition);
 
           modulesToTypeCheck.add(abstractDefinition);
         }

@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.oneshot;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
@@ -11,13 +13,15 @@ import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.parser.BinOpParser;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
@@ -26,34 +30,48 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OneshotNameResolver {
-  public static class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
-    private final ErrorReporter myErrorReporter;
-    private final NameResolver myNameResolver;
-    private final StaticNamespaceProvider myStaticNsProvider;
-    private final DynamicNamespaceProvider myDynamicNsProvider;
+  private final ErrorReporter myErrorReporter;
+  private final NameResolver myNameResolver;
+  private final ResolveListener myResolveListener;
+  private final StaticNamespaceProvider myStaticNsProvider;
+  private final DynamicNamespaceProvider myDynamicNsProvider;
+  private final OneshotSourceInfoProvider mySourceInfoProvider = new OneshotSourceInfoProvider();
+  private ModuleID myCurrentModuleID;
+
+  public OneshotNameResolver(ErrorReporter errorReporter, NameResolver nameResolver, ResolveListener listener, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider) {
+    myErrorReporter = errorReporter;
+    myNameResolver = nameResolver;
+    myResolveListener = listener;
+    myStaticNsProvider = staticNsProvider;
+    myDynamicNsProvider = dynamicNsProvider;
+  }
+
+  public void visitModule(ModuleID moduleID, Abstract.ClassDefinition module) {
+    myCurrentModuleID = moduleID;
+    DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE), null);
+    visitor.visitClass(module, null);
+  }
+
+  public SourceInfoProvider getSourceInfoProvider() {
+    return mySourceInfoProvider;
+  }
+
+
+  public enum Flag { MUST_BE_STATIC, MUST_BE_DYNAMIC }
+
+  public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
     private final Scope myParentScope;
+    private final FullName myFullName;
     private List<String> myContext;
-    private ResolveListener myResolveListener;
 
-    public DefinitionResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider) {
-      this(errorReporter, nameResolver, staticNsProvider, dynamicNsProvider, new EmptyScope());
+    public DefinitionResolveNameVisitor(Scope parentScope, FullName fullName) {
+      this(parentScope, fullName, new ArrayList<String>());
     }
 
-    public DefinitionResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Scope parentScope) {
-      this(errorReporter, nameResolver, staticNsProvider, dynamicNsProvider, parentScope, new ArrayList<String>());
-    }
-
-    public DefinitionResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Scope parentScope, List<String> context) {
-      myErrorReporter = errorReporter;
-      myNameResolver = nameResolver;
-      myStaticNsProvider = staticNsProvider;
-      myDynamicNsProvider = dynamicNsProvider;
+    public DefinitionResolveNameVisitor(Scope parentScope, FullName fullName, List<String> context) {
       myParentScope = parentScope;
+      myFullName = fullName;
       myContext = context;
-    }
-
-    public void setResolveListener(ResolveListener resolveListener) {
-      myResolveListener = resolveListener;
     }
 
     @Override
@@ -63,7 +81,7 @@ public class OneshotNameResolver {
       }
       final FunctionScope scope = new FunctionScope(myParentScope, myStaticNsProvider.forDefinition(def));
 
-      ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(new LocalErrorReporter(def, myErrorReporter), myNameResolver, scope, myContext, myResolveListener);
+      ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, myContext);
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         for (Abstract.Argument argument : def.getArguments()) {
           if (argument instanceof Abstract.TypeArgument) {
@@ -88,8 +106,7 @@ public class OneshotNameResolver {
         }
       }
 
-      StatementResolveNameVisitor statementVisitor = new StatementResolveNameVisitor(myErrorReporter, myNameResolver, myStaticNsProvider, myDynamicNsProvider, scope, myContext);
-      statementVisitor.setResolveListener(myResolveListener);
+      StatementResolveNameVisitor statementVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, scope, myFullName, myContext);
       for (Abstract.Statement statement : def.getStatements()) {
         statement.accept(statementVisitor, null);
       }
@@ -103,7 +120,7 @@ public class OneshotNameResolver {
         return null;
       }
 
-      ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(new LocalErrorReporter(def, myErrorReporter), myNameResolver, myParentScope, myContext, myResolveListener);
+      ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myParentScope, myContext);
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         for (Abstract.Argument argument : def.getArguments()) {
           if (argument instanceof Abstract.TypeArgument) {
@@ -133,7 +150,7 @@ public class OneshotNameResolver {
 
       Scope scope = new DataScope(myParentScope, myStaticNsProvider.forDefinition(def));
 
-      ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(new LocalErrorReporter(def, myErrorReporter), myNameResolver, scope, myContext, myResolveListener);
+      ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, myContext);
       try (Utils.CompleteContextSaver<String> saver = new Utils.CompleteContextSaver<>(myContext)) {
         for (Abstract.TypeArgument parameter : def.getParameters()) {
           parameter.getType().accept(exprVisitor, null);
@@ -175,7 +192,7 @@ public class OneshotNameResolver {
         return null;
       }
 
-      ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(new LocalErrorReporter(def, myErrorReporter), myNameResolver, myParentScope, myContext, myResolveListener);
+      ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myParentScope, myContext);
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         if (def.getPatterns() != null) {
           for (Abstract.PatternArgument patternArg : def.getPatterns()) {
@@ -199,16 +216,14 @@ public class OneshotNameResolver {
     @Override
     public Void visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
       Scope staticScope  = new StaticClassScope(myParentScope, myStaticNsProvider.forDefinition(def));
-      StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(myErrorReporter, myNameResolver, myStaticNsProvider, myDynamicNsProvider, staticScope, myContext);
-      stVisitor.setResolveListener(myResolveListener);
+      StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, staticScope, myFullName, myContext);
       for (Abstract.Statement statement : def.getStatements()) {
         if (statement instanceof Abstract.DefineStatement && Abstract.DefineStatement.StaticMod.DYNAMIC.equals(((Abstract.DefineStatement) statement).getStaticMod())) continue;  // FIXME[where]
         statement.accept(stVisitor, null);
       }
 
       Scope dynamicScope = new DynamicClassScope(myParentScope, myStaticNsProvider.forDefinition(def), myDynamicNsProvider.forClass(def));
-      StatementResolveNameVisitor dyVisitor = new StatementResolveNameVisitor(myErrorReporter, myNameResolver, myStaticNsProvider, myDynamicNsProvider, dynamicScope, myContext);
-      dyVisitor.setResolveListener(myResolveListener);
+      StatementResolveNameVisitor dyVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, dynamicScope, myFullName, myContext);
       for (Abstract.Statement statement : def.getStatements()) {
         if (statement instanceof Abstract.DefineStatement && Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod())) continue;  //  FIXME[where]
         statement.accept(dyVisitor, null);
@@ -217,20 +232,14 @@ public class OneshotNameResolver {
     }
   }
 
-  public static class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
-    private final ErrorReporter myErrorReporter;
-    private final NameResolver myNameResolver;
+  public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<Void, Void> {
     private final Scope myParentScope;
     private final List<String> myContext;
-    private final ResolveListener myResolveListener;
 
-    public ExpressionResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, Scope parentScope, List<String> context, ResolveListener resolveListener) {
-      assert resolveListener != null;
-      myErrorReporter = errorReporter;
-      myNameResolver = nameResolver;
+    public ExpressionResolveNameVisitor(Scope parentScope, List<String> context) {
+      assert myResolveListener != null;
       myParentScope = parentScope;
       myContext = context;
-      myResolveListener = resolveListener;
     }
 
     @Override
@@ -511,28 +520,19 @@ public class OneshotNameResolver {
     }
   }
 
-  public static class StatementResolveNameVisitor implements AbstractStatementVisitor<StatementResolveNameVisitor.Flag, Object> {
-    private final ErrorReporter myErrorReporter;
-    private final NameResolver myNameResolver;
+  public class StatementResolveNameVisitor implements AbstractStatementVisitor<Flag, Object> {
     private final StaticNamespaceProvider myStaticNsProvider;
     private final DynamicNamespaceProvider myDynamicNsProvider;
     private final List<String> myContext;
+    private final FullName myFullName;
     private Scope myScope;
-    private ResolveListener myResolveListener;
 
-    public StatementResolveNameVisitor(ErrorReporter errorReporter, NameResolver nameResolver, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Scope parentScope, List<String> context) {
-      myErrorReporter = errorReporter;
-      myNameResolver = nameResolver;
+    public StatementResolveNameVisitor(StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Scope parentScope, FullName fullName, List<String> context) {
       myStaticNsProvider = staticNsProvider;
       myDynamicNsProvider = dynamicNsProvider;
       myScope = parentScope;
+      myFullName = fullName;
       myContext = context;
-    }
-
-    public enum Flag { MUST_BE_STATIC, MUST_BE_DYNAMIC }
-
-    public void setResolveListener(ResolveListener resolveListener) {
-      myResolveListener = resolveListener;
     }
 
     @Override
@@ -547,9 +547,9 @@ public class OneshotNameResolver {
         myErrorReporter.report(new TypeCheckingError("Abstract definitions cannot be static", stat));
         return null;
       }
-      DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myErrorReporter, myNameResolver, myStaticNsProvider, myDynamicNsProvider, myScope, myContext);
-      visitor.setResolveListener(myResolveListener);
+      DefinitionResolveNameVisitor visitor = new DefinitionResolveNameVisitor(myScope, myFullName, myContext);
       stat.getDefinition().accept(visitor, stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC);
+      mySourceInfoProvider.registerDefinition(stat.getDefinition(), new FullName(myFullName, stat.getDefinition().getName()), myCurrentModuleID);
       return null;
     }
 
