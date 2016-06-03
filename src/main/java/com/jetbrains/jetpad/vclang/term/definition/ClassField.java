@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
@@ -49,6 +51,15 @@ public class ClassField extends Definition {
   @Override
   public FieldCallExpression getDefCall() {
     return FieldCall(this);
+  }
+
+  @Override
+  public ClassField substPolyParams(LevelSubstitution subst) {
+    if (!isPolymorphic()) {
+      return this;
+    }
+    return new ClassField(getResolvedName(), getPrecedence(), LevelSubstVisitor.subst(myType, subst), getThisClass(),
+            myThisParameter, getUniverse().subst(subst));
   }
 
   public void setBaseType(Expression type) {

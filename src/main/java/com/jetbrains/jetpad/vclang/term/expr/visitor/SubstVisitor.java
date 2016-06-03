@@ -87,7 +87,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
-  public Expression visitPi(PiExpression expr, Void params) {
+  public PiExpression visitPi(PiExpression expr, Void params) {
     DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), mySubstitution);
     PiExpression result = Pi(parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), mySubstitution);
@@ -152,9 +152,8 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
-  public Expression visitUniverse(UniverseExpression expr, Void params) {
-    //return expr.getUniverse() instanceof TypeUniverse && ((TypeUniverse) expr.getUniverse()).getLevel() != null ? Universe(((TypeUniverse) expr.getUniverse()).getLevel().getValue().accept(this, null)) : expr;
-    return ExpressionFactory.Universe(new TypeUniverse(expr.getUniverse().getPLevel().accept(this, params), expr.getUniverse().getHLevel().accept(this, params)));
+  public UniverseExpression visitUniverse(UniverseExpression expr, Void params) {
+    return Universe(new TypeUniverse(expr.getUniverse()));
   }
 
   @Override
@@ -163,7 +162,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   }
 
   @Override
-  public Expression visitTuple(TupleExpression expr, Void params) {
+  public TupleExpression visitTuple(TupleExpression expr, Void params) {
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, null));
@@ -199,19 +198,6 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
   @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
     return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getType().accept(this, null));
-  }
-
-  @Override
-  public Expression visitLevel(LevelExpression expr, Void params) {
-    LevelExpression result = expr;
-    for (Binding var : mySubstitution.getDomain()) {
-      LevelExpression substTo = expr.getConverter().convert(mySubstitution.get(var));
-      if (substTo == null) {
-        continue;
-      }
-      result = result.subst(var, substTo);
-    }
-    return result;
   }
 
   public LetClause visitLetClause(LetClause clause) {

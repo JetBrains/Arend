@@ -7,6 +7,8 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FunCall;
@@ -104,5 +106,15 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public FunCallExpression getDefCall() {
     return FunCall(this);
+  }
+
+  @Override
+  public FunctionDefinition substPolyParams(LevelSubstitution subst) {
+    if (!isPolymorphic() || myTypeHasErrors) {
+      return this;
+    }
+
+    return new FunctionDefinition(getResolvedName(), getPrecedence(), DependentLink.Helper.subst(myParameters, subst),
+            LevelSubstVisitor.subst(myResultType, subst), LevelSubstVisitor.subst(myElimTree, subst), getUniverse().subst(subst));
   }
 }

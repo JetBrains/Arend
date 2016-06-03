@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 
 public class UniverseExpression extends Expression {
-  private final TypeUniverse myUniverse;
+  private TypeUniverse myUniverse;
 
   public UniverseExpression(TypeUniverse universe) {
     myUniverse = universe;
@@ -13,6 +13,8 @@ public class UniverseExpression extends Expression {
   public TypeUniverse getUniverse() {
     return myUniverse;
   }
+
+  public void setUniverse(TypeUniverse universe) { myUniverse = universe; }
 
   @Override
   public UniverseExpression getType() {

@@ -2,8 +2,11 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,6 +101,14 @@ public interface DependentLink extends Binding {
       return link.subst(substitution, Integer.MAX_VALUE);
     }
 
+    public static DependentLink subst(DependentLink link, LevelSubstitution substitution) {
+      DependentLink newParams = DependentLink.Helper.clone(link);
+      for (DependentLink param = newParams; param.hasNext(); param = param.getNext()) {
+        param.getType().accept(new LevelSubstVisitor(substitution), null);
+      }
+      return newParams;
+    }
+
     public static <P> DependentLink accept(DependentLink link, Substitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
       link = DependentLink.Helper.subst(link, substitution);
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
@@ -109,6 +120,10 @@ public interface DependentLink extends Binding {
 
     public static <P> DependentLink accept(DependentLink link, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
       return accept(link, new Substitution(), visitor, params);
+    }
+
+    public static DependentLink clone(DependentLink link) {
+      return accept(link, new SubstVisitor(new Substitution()), null);
     }
   }
 }

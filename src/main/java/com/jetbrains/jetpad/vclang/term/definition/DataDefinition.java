@@ -5,10 +5,8 @@ import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
 
 import java.util.*;
@@ -115,5 +113,24 @@ public class DataDefinition extends Definition {
   @Override
   public DataCallExpression getDefCall() {
     return DataCall(this);
+  }
+
+  @Override
+  public DataDefinition substPolyParams(LevelSubstitution subst) {
+    if (!isPolymorphic()) {
+      return this;
+    }
+    DataDefinition newDef = new DataDefinition(getResolvedName(), getPrecedence(), getUniverse().subst(subst), DependentLink.Helper.subst(myParameters, subst));
+    for (Constructor constructor : getConstructors()) {
+      Constructor newConstructor = new Constructor(constructor.getResolvedName(), constructor.getPrecedence(),
+              constructor.getUniverse().subst(subst), DependentLink.Helper.subst(constructor.getParameters(), subst), newDef, constructor.getPatterns());
+      newDef.addConstructor(newConstructor);
+
+      Condition cond = newDef.getCondition(constructor);
+      if (cond != null) {
+        newDef.addCondition(new Condition(newConstructor, LevelSubstVisitor.subst(cond.getElimTree(), subst)));
+      }
+    }
+    return newDef;
   }
 }

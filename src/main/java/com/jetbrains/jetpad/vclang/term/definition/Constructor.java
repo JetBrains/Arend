@@ -4,10 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.term.pattern.Pattern;
@@ -162,5 +159,11 @@ public class Constructor extends Definition implements Function {
   @Override
   public ConCallExpression getDefCall() {
     return ConCall(this);
+  }
+
+  @Override
+  public Constructor substPolyParams(LevelSubstitution subst) {
+    return new Constructor(getResolvedName(), getPrecedence(),
+            getUniverse().subst(subst), DependentLink.Helper.subst(myParameters, subst), myDataType.substPolyParams(subst), myPatterns);
   }
 }

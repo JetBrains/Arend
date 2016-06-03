@@ -5,9 +5,11 @@ import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -103,6 +105,10 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     return getThisClass(parentDefinition, parentNamespace);
   }
 
+  private Binding getLevelVar(Abstract.TypeArgument typeArgument, Map<String, Binding> polyParams) {
+
+  }
+
   @Override
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, Void params) {
     String name = def.getName();
@@ -176,14 +182,41 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     */
 
+    Map<String, Binding> polyParams = new HashMap<>();
     // int numberOfArgs = index;
     int index = 0;
     for (Abstract.Argument argument : arguments) {
-      DependentLink param;
       if (argument instanceof Abstract.TypeArgument) {
-        CheckTypeVisitor.Result result = visitor.checkType(((Abstract.TypeArgument) argument).getType(), Universe());
+        Abstract.TypeArgument typeArgument = (Abstract.TypeArgument)argument;
+
+        if (typeArgument.getType() instanceof Abstract.DefCallExpression) {
+          String typeName = ((Abstract.DefCallExpression) typeArgument.getType()).getName();
+          if (Preprelude.isTypeOfLevel(typeName)) {
+            if (!(typeArgument instanceof Abstract.TelescopeArgument)) {
+              myErrorReporter.report(new TypeCheckingError("Parameter of type " + typeName + " must have name", def));
+              return typedDef;
+            }
+            Abstract.TelescopeArgument teleArgument = (Abstract.TelescopeArgument)typeArgument;
+            if (teleArgument.getNames().size() > 1 || polyParams.containsKey(typeName)) {
+              myErrorReporter.report(new TypeCheckingError("Function definition must have at most one polymorphic variable of type " + typeName, def));
+              return typedDef;
+            }
+            if (teleArgument.getExplicit()) {
+              myErrorReporter.report(new TypeCheckingError("Polymorphic variables must be implicit", def));
+              return typedDef;
+            }
+            Binding levelParam = new TypedBinding(((Abstract.TelescopeArgument) typeArgument).getNames().get(0), Preprelude.levelTypeByName(typeName));
+            polyParams.put(typeName, levelParam);
+            context.add(levelParam);
+            ++index;
+            continue;
+          }
+        }
+
+        CheckTypeVisitor.Result result = visitor.checkType(typeArgument.getType(), Universe());
         if (result == null) return typedDef;
 
+        DependentLink param;
         // boolean ok = true;
         if (argument instanceof Abstract.TelescopeArgument) {
           List<String> names = ((Abstract.TelescopeArgument) argument).getNames();
@@ -281,6 +314,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     }
     */
 
+    typedDef.setPolyParams(new ArrayList<>(polyParams.values()));
     typedDef.setParameters(list.getFirst());
     typedDef.setResultType(expectedType);
     typedDef.typeHasErrors(typedDef.getResultType() == null);

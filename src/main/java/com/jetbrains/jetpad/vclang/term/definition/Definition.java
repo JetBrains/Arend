@@ -3,16 +3,17 @@ package com.jetbrains.jetpad.vclang.term.definition;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
-import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Definition extends NamedBinding implements Referable {
-  protected TypedBinding myPLevelParam;
-  protected TypedBinding myHLevelParam;
+  protected List<Binding> myPolyParams = new ArrayList<>();
   private Abstract.Definition.Precedence myPrecedence;
   private TypeUniverse myUniverse;
   private boolean myHasErrors;
@@ -70,12 +71,13 @@ public abstract class Definition extends NamedBinding implements Referable {
     myUniverse = universe;
   }
 
-  public void setPolyParams(TypedBinding plev, TypedBinding hlev) {
-    myPLevelParam = plev;
-    myHLevelParam = hlev;
+  public void setPolyParams(List<Binding> params) {
+    myPolyParams = params;
   }
 
-  public boolean isPolymorphic() { return myPLevelParam != null && myHLevelParam != null; }
+  public boolean isPolymorphic() { return !myPolyParams.isEmpty(); }
+
+  public abstract Definition substPolyParams(LevelSubstitution subst);
 
   public boolean hasErrors() {
     return myHasErrors;

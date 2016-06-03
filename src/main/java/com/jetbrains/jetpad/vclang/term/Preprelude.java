@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
@@ -216,6 +217,19 @@ public class Preprelude extends Namespace {
       return expr;
     }
     return ConCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), AppExpression.DEFAULT);
+  }
+
+  public static boolean isTypeOfLevel(String typeName) {
+    return typeName.equals(LVL.getName()) || typeName.equals(CNAT.getName());
+  }
+
+  public static DefCallExpression levelTypeByName(String typeName) {
+    if (typeName.equals("Lvl")) {
+      return Lvl();
+    } else if (typeName.equals("CNat")) {
+      return CNat();
+    }
+    return null;
   }
 
   static class DefinitionBuilder {
