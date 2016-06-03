@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.oneshot.OneshotNameResolver;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModuleLoader;
@@ -15,11 +13,9 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.scope.SubScope;
+import com.jetbrains.jetpad.vclang.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
@@ -32,7 +28,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class ConsoleMain {
   public static void main(String[] args) {
@@ -160,8 +159,7 @@ public class ConsoleMain {
 
       @Override
       public void typecheckingFailed(Abstract.Definition definition) {
-        // FIXME[error] ModuleID from definition
-        //failedModules.add(toNamespaceMember(definition).getResolvedName().getModuleID());
+        failedModules.add(oneshotNameResolver.getSourceInfoProvider().moduleOf(definition));
         for (GeneralError error : errorReporter.getErrorList()) {
           System.err.println(errf.printError(error));
         }
@@ -169,14 +167,13 @@ public class ConsoleMain {
       }
     });
 
-// FIXME[error] report module status
-//    for (ModuleID moduleID : failedModules) {
-//      if (failedModules.contains(moduleID)) {
-//        System.out.println("[FAILED] " + moduleID.getModulePath());
-//      } else {
-//        System.out.println("[OK] " + moduleID.getModulePath());
-//      }
-//    }
+    for (ModuleID moduleID : loadedModules) {
+      StringBuilder builder = new StringBuilder();
+      builder.append("[").append(failedModules.contains(moduleID) ? "✗" : " ").append("]")
+             .append(" ").append(moduleID.getModulePath())
+             .append(" (").append(moduleID).append(")");
+      System.out.println(builder);
+    }
 
     for (GeneralError error : errorReporter.getErrorList()) {
       System.err.println(errf.printError(error));

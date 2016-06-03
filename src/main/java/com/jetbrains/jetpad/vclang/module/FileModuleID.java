@@ -53,6 +53,6 @@ public class FileModuleID implements SerializableModuleID {
 
   @Override
   public String toString() {
-    return FileOperations.getFile(new File("."), myModulePath, "{" + FileOperations.EXTENSION + "," + FileOperations.SERIALIZED_EXTENSION + "}").toString();
+    return FileOperations.getFile(new File("."), myModulePath, FileOperations.EXTENSION).toString();
   }
 }
