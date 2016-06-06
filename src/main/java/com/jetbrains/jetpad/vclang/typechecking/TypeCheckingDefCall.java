@@ -73,17 +73,14 @@ public class TypeCheckingDefCall {
       return applyThis(new CheckTypeVisitor.Result(typecheckedDefinition.getDefCall(), typecheckedDefinition.getTypeWithThis()), thisExpr, expr);
     }
 
-    Abstract.Expression left = expr.getExpression();
-    CheckTypeVisitor.Result result = null;
-    if (left != null) {
-      result = left.accept(myVisitor, null);
-      if (result == null) {
-        return null;
-      }
-    }
 
-    if (result == null) {
+    Abstract.Expression left = expr.getExpression();
+    if (left == null) {
       return getLocalVar(expr);
+    }
+    CheckTypeVisitor.Result result = left.accept(myVisitor, null);
+    if (result == null) {
+      return null;
     }
 
     Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
