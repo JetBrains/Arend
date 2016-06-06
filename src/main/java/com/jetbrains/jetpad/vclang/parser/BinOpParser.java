@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ResolveListener;
+import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 
 import java.util.List;
 

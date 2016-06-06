@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener;
+package com.jetbrains.jetpad.vclang.naming.oneshot;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;

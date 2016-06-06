@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.oneshot;
+package com.jetbrains.jetpad.vclang.naming.oneshot;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.naming.FullName;
@@ -8,11 +8,11 @@ import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OneshotSourceInfoProvider implements SourceInfoProvider {
+public class SimpleSourceInfoProvider implements SourceInfoProvider {
   private final Map<Abstract.Definition, ModuleID> modules = new HashMap<>();
   private final Map<Abstract.Definition, FullName> names = new HashMap<>();
 
-  void registerDefinition(Abstract.Definition def, FullName name, ModuleID module) {
+  public void registerDefinition(Abstract.Definition def, FullName name, ModuleID module) {
     modules.put(def, module);
     names.put(def, name);
   }

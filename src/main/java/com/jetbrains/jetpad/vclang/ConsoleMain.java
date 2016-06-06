@@ -13,14 +13,16 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.oneshot.OneshotNameResolver;
+import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
+import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckingOrdering;
-import com.jetbrains.jetpad.vclang.typechecking.nameresolver.listener.ConcreteResolveListener;
+import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
 import com.jetbrains.jetpad.vclang.typechecking.staticmodresolver.ConcreteStaticModListener;
 import org.apache.commons.cli.*;
 
@@ -84,7 +86,8 @@ public class ConsoleMain {
     final ListErrorReporter errorReporter = new ListErrorReporter();
     final NameResolver nameResolver = new NameResolver(moduleNsProvider, new SimpleStaticNamespaceProvider());
     final OneshotNameResolver oneshotNameResolver = new OneshotNameResolver(errorReporter, nameResolver, new ConcreteResolveListener(), new SimpleStaticNamespaceProvider(), new SimpleDynamicNamespaceProvider());
-    final ErrorFormatter errf = new ErrorFormatter(oneshotNameResolver.getSourceInfoProvider());
+    final OneshotSourceInfoCollector srcInfoCollector = new OneshotSourceInfoCollector();
+    final ErrorFormatter errf = new ErrorFormatter(srcInfoCollector.sourceInfoProvider);
     final List<ModuleID> loadedModules = new ArrayList<>();
     final List<Abstract.Definition> modulesToTypeCheck = new ArrayList<>();
     final BaseModuleLoader moduleLoader = new BaseModuleLoader(recompile) {
@@ -104,7 +107,8 @@ public class ConsoleMain {
           DefinitionResolveStaticModVisitor rsmVisitor = new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener());
           rsmVisitor.visitClass(abstractDefinition, true);
 
-          oneshotNameResolver.visitModule(module, abstractDefinition);
+          oneshotNameResolver.visitModule(abstractDefinition);
+          srcInfoCollector.visitModule(module, abstractDefinition);
 
           modulesToTypeCheck.add(abstractDefinition);
         }
@@ -159,7 +163,7 @@ public class ConsoleMain {
 
       @Override
       public void typecheckingFailed(Abstract.Definition definition) {
-        failedModules.add(oneshotNameResolver.getSourceInfoProvider().moduleOf(definition));
+        failedModules.add(srcInfoCollector.sourceInfoProvider.moduleOf(definition));
         for (GeneralError error : errorReporter.getErrorList()) {
           System.err.println(errf.printError(error));
         }

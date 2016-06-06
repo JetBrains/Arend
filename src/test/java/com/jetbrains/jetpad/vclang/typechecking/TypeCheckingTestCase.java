@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
@@ -10,15 +12,12 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
-import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
