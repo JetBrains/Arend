@@ -219,8 +219,12 @@ public class Preprelude extends Namespace {
     return ConCall(suc).addArgument(applyNumberOfSuc(expr, suc, num - 1), AppExpression.DEFAULT);
   }
 
-  public static boolean isTypeOfLevel(String typeName) {
-    return typeName.equals(LVL.getName()) || typeName.equals(CNAT.getName());
+  public static boolean isPolyParam(Abstract.TypeArgument arg) {
+    if (arg.getType() instanceof Abstract.DefCallExpression) {
+      String typeName = ((Abstract.DefCallExpression) arg.getType()).getName();
+      return typeName.equals(LVL.getName()) || typeName.equals(CNAT.getName());
+    }
+    return false;
   }
 
   public static DefCallExpression levelTypeByName(String typeName) {

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -163,6 +164,9 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public Constructor substPolyParams(LevelSubstitution subst) {
+    if (!myDataType.isPolymorphic()) {
+      return this;
+    }
     return new Constructor(getResolvedName(), getPrecedence(),
             getUniverse().subst(subst), DependentLink.Helper.subst(myParameters, subst), myDataType.substPolyParams(subst), myPatterns);
   }

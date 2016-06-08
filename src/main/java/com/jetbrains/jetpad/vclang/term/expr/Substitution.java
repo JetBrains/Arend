@@ -7,7 +7,7 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 
-public class Substitution implements ISubstitution {
+public class Substitution {
   private Map<Binding, Expression> mySubstExprs;
 
   public Substitution() {

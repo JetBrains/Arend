@@ -3,9 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
@@ -27,6 +25,11 @@ public class ListEquations implements Equations {
     void solveIn(ListEquations equations);
   }
 
+  public interface LevelEquation {
+    void subst(Binding binding, LevelExpression subst);
+    void solveIn(ListEquations equations);
+  }
+
   public static class CmpEquation implements Equation {
     public Expression expr1;
     public Expression expr2;
@@ -43,7 +46,7 @@ public class ListEquations implements Equations {
     @Override
     public TypeCheckingError abstractBinding(Binding binding) {
       if (expr1.findBinding(binding) || expr2.findBinding(binding)) {
-        return new SolveEquationsError(expr1, expr2, binding, sourceNode);
+        return new SolveEquationsError<>(expr1, expr2, binding, sourceNode);
       } else {
         return null;
       }
@@ -58,7 +61,34 @@ public class ListEquations implements Equations {
     @Override
     public void solveIn(ListEquations equations) {
       if (!CompareVisitor.compare(equations, cmp, expr1.normalize(NormalizeVisitor.Mode.NF), expr2.normalize(NormalizeVisitor.Mode.NF), sourceNode)) {
-        equations.myErrorReporter.report(new SolveEquationsError(expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, sourceNode));
+        equations.myErrorReporter.report(new SolveEquationsError<>(expr1.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr2.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, sourceNode));
+      }
+    }
+  }
+
+  public static class LevelCmpEquation implements LevelEquation {
+    public LevelExpression expr1;
+    public LevelExpression expr2;
+    public CMP cmp;
+    public Abstract.SourceNode sourceNode;
+
+    public LevelCmpEquation(LevelExpression expr1, LevelExpression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
+      this.expr1 = expr1;
+      this.expr2 = expr2;
+      this.cmp = cmp;
+      this.sourceNode = sourceNode;
+    }
+
+    @Override
+    public void subst(Binding binding, LevelExpression subst) {
+      expr1 = expr1.subst(binding, subst);
+      expr2 = expr2.subst(binding, subst);
+    }
+
+    @Override
+    public void solveIn(ListEquations equations) {
+      if (!LevelExpression.compare(expr1, expr2, cmp, equations)) {
+        equations.myErrorReporter.report(new SolveEquationsError<>(expr1, expr2, null, sourceNode));
       }
     }
   }
@@ -67,6 +97,11 @@ public class ListEquations implements Equations {
     TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding);
     Expression solve(ListEquations equations, InferenceBinding binding, Substitution substitution);
     void subst(Binding binding, Expression subst);
+  }
+
+  private interface LevelSolution {
+    LevelExpression solve(ListEquations equations, InferenceBinding binding, LevelSubstitution substitution);
+    void subst(Binding binding, LevelExpression subst);
   }
 
   private static class ExactSolution implements Solution {
@@ -79,7 +114,7 @@ public class ListEquations implements Equations {
     @Override
     public TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding) {
       if (expression.findBinding(binding)) {
-        return new SolveEquationsError(Reference(infBinding), expression, binding, infBinding.getSourceNode());
+        return new SolveEquationsError<>(Reference(infBinding), expression, binding, infBinding.getSourceNode());
       }
       return null;
     }
@@ -103,12 +138,12 @@ public class ListEquations implements Equations {
     public TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding) {
       for (Expression expr : geSet) {
         if (expr.findBinding(binding)) {
-          return new SolveEquationsError(Reference(infBinding), expr, binding, infBinding.getSourceNode());
+          return new SolveEquationsError<>(Reference(infBinding), expr, binding, infBinding.getSourceNode());
         }
       }
       for (Expression expr : leSet) {
         if (expr.findBinding(binding)) {
-          return new SolveEquationsError(Reference(infBinding), expr, binding, infBinding.getSourceNode());
+          return new SolveEquationsError<>(Reference(infBinding), expr, binding, infBinding.getSourceNode());
         }
       }
       return null;
@@ -169,9 +204,89 @@ public class ListEquations implements Equations {
     }
   }
 
+  private static class ExactLevelSolution implements LevelSolution {
+    public LevelExpression expression;
+
+    public ExactLevelSolution(LevelExpression expression) {
+      this.expression = expression;
+    }
+
+    @Override
+    public LevelExpression solve(ListEquations equations, InferenceBinding binding, LevelSubstitution substitution) {
+      return expression;
+    }
+
+    @Override
+    public void subst(Binding binding, LevelExpression subst) {
+      expression = expression.subst(binding, subst);
+    }
+  }
+
+  private static class EqSetLevelSolution implements LevelSolution {
+    public List<LevelExpression> geSet;
+    public List<LevelExpression> leSet;
+
+    @Override
+    public LevelExpression solve(ListEquations equations, InferenceBinding binding, LevelSubstitution substitution) {
+      if (geSet.isEmpty()) {
+        LevelExpression result = leSet.get(0).subst(substitution);
+        for (int i = 1; i < leSet.size(); i++) {
+          LevelExpression expr = leSet.get(i).subst(substitution);
+          if (!LevelExpression.compare(result, expr, CMP.LE, equations)) {
+            binding.reportErrorInfer(equations.getErrorReporter(), result, expr);
+            return null;
+          }
+        }
+        return result;
+      } else {
+        LevelExpression result = geSet.get(0);
+        if (geSet.size() > 1) {
+          for (int i = 1; i < geSet.size(); i++) {
+            LevelExpression max = result.max(geSet.get(i));
+            if (max != null) {
+              result = max;
+            } else {
+              LevelExpression result1 = result.subst(substitution);
+              LevelExpression expr = geSet.get(i).subst(substitution);
+              if (!LevelExpression.compare(result1, expr, CMP.GE, equations)) {
+                binding.reportErrorInfer(equations.getErrorReporter(), result1, expr);
+                return null;
+              }
+            }
+          }
+        }
+
+        result = result.subst(substitution);
+        if (!leSet.isEmpty()) {
+          for (LevelExpression expr : leSet) {
+            expr = expr.subst(substitution);
+            if (!LevelExpression.compare(result, expr, CMP.LE, equations)) {
+              binding.reportErrorInfer(equations.getErrorReporter(), result, expr);
+              return null;
+            }
+          }
+        }
+        return result;
+      }
+    }
+
+    @Override
+    public void subst(Binding binding, LevelExpression subst) {
+      for (int i = 0; i < geSet.size(); i++) {
+        geSet.set(i, geSet.get(i).subst(binding, subst));
+      }
+      for (int i = 0; i < leSet.size(); i++) {
+        leSet.set(i, leSet.get(i).subst(binding, subst));
+      }
+    }
+  }
+
   private final List<Equation> myEquations = new ArrayList<>();
   private final Map<InferenceBinding, ExactSolution> myExactSolutions = new LinkedHashMap<>();
   private final Map<InferenceBinding, EqSetSolution> myEqSolutions = new LinkedHashMap<>();
+  private final List<LevelEquation> myLevelEquations = new ArrayList<>();
+  private final Map<InferenceBinding, ExactLevelSolution> myExactLevelSolutions = new LinkedHashMap<>();
+  private final Map<InferenceBinding, EqSetLevelSolution> myEqLevelSolutions = new LinkedHashMap<>();
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
 
   public ErrorReporter getErrorReporter() {
@@ -184,10 +299,14 @@ public class ListEquations implements Equations {
       return true;
     }
     if (equations instanceof ListEquations) {
-      myEquations.addAll(((ListEquations) equations).myEquations);
-      addExactSolutions(((ListEquations) equations).myExactSolutions);
-      addEqSetSolutions(((ListEquations) equations).myEqSolutions);
-      ((ListEquations) equations).myErrorReporter.reportTo(myErrorReporter);
+      ListEquations lst_equations = (ListEquations)equations;
+      myEquations.addAll(lst_equations.myEquations);
+      myLevelEquations.addAll(lst_equations.myLevelEquations);
+      addExactSolutions(lst_equations.myExactSolutions);
+      addExactLevelSolutions(lst_equations.myExactLevelSolutions);
+      addEqSetSolutions(lst_equations.myEqSolutions);
+      addEqSetLevelSolutions(lst_equations.myEqLevelSolutions);
+      lst_equations.myErrorReporter.reportTo(myErrorReporter);
     } else {
       return false;
     }
@@ -216,32 +335,31 @@ public class ListEquations implements Equations {
     return true;
   }
 
+  @Override
+  public boolean add(LevelExpression expr1, LevelExpression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
+    Binding var1 = expr1.getUnitBinding();
+    Binding var2 = expr2.getUnitBinding();
+    boolean isInf1 = expr1.isBinding() && var1 instanceof InferenceBinding;
+    boolean isInf2 = expr2.isBinding() && var2 instanceof InferenceBinding;
+    if (isInf1 && isInf2 && var1 == var2) {
+      return true;
+    }
+
+    if (isInf1 && !isInf2) {
+      addSolution((InferenceBinding) var1, cmp, expr2);
+    } else
+    if (isInf2 && !isInf1) {
+      addSolution((InferenceBinding) var2, cmp.not(), expr1);
+    } else {
+      myLevelEquations.add(new LevelCmpEquation(expr1, expr2, cmp, sourceNode));
+    }
+
+    return true;
+  }
+
   private void addSolution(InferenceBinding binding, CMP cmp, Expression expr) {
     if (!StandardOrder.getInstance().isComparable(expr)) {
       cmp = CMP.EQ;
-    }
-
-    if (expr.toLevel() != null) {
-      if (expr.toLevel().isZero()) {
-        /* TODO
-        if (cmp == CMP.GE) {
-          return;
-        }
-        */
-        if (cmp == CMP.LE) {
-          cmp = CMP.EQ;
-        }
-      }
-      if (expr.toLevel().isInfinity()) {
-        /* TODO
-        if (cmp == CMP.LE) {
-          return;
-        }
-        */
-        if (cmp == CMP.GE) {
-          cmp = CMP.EQ;
-        }
-      }
     }
 
     if (cmp == CMP.EQ) {
@@ -250,6 +368,45 @@ public class ListEquations implements Equations {
       List<Expression> expressions = new ArrayList<>();
       expressions.add(expr);
       EqSetSolution sol = new EqSetSolution();
+      if (cmp == CMP.GE) {
+        sol.geSet = expressions;
+        sol.leSet = Collections.emptyList();
+      } else {
+        sol.geSet = Collections.emptyList();
+        sol.leSet = expressions;
+      }
+      addSolution(binding, sol);
+    }
+  }
+
+  private void addSolution(InferenceBinding binding, CMP cmp, LevelExpression expr) {
+    if (expr.isZero()) {
+      /* TODO
+      if (cmp == CMP.GE) {
+        return;
+      }
+      */
+      if (cmp == CMP.LE) {
+        cmp = CMP.EQ;
+      }
+    }
+    if (expr.isInfinity()) {
+      /* TODO
+      if (cmp == CMP.LE) {
+        return;
+      }
+      */
+      if (cmp == CMP.GE) {
+        cmp = CMP.EQ;
+      }
+    }
+
+    if (cmp == CMP.EQ) {
+      addSolution(binding, new ExactLevelSolution(expr));
+    } else {
+      List<LevelExpression> expressions = new ArrayList<>();
+      expressions.add(expr);
+      EqSetLevelSolution sol = new EqSetLevelSolution();
       if (cmp == CMP.GE) {
         sol.geSet = expressions;
         sol.leSet = Collections.emptyList();
@@ -283,6 +440,28 @@ public class ListEquations implements Equations {
     myExactSolutions.put(binding, sol2);
   }
 
+  private void addSolution(InferenceBinding binding, ExactLevelSolution sol2) {
+    ExactLevelSolution sol1 = myExactLevelSolutions.get(binding);
+    if (sol1 != null) {
+      LevelExpression expr1 = sol1.expression;
+      LevelExpression expr2 = sol2.expression;
+      if (!LevelExpression.compare(expr2, expr1, CMP.EQ, this)) {
+        binding.reportErrorInfer(myErrorReporter, expr2, expr1);
+      }
+      return;
+    }
+
+    EqSetLevelSolution sol1eq = myEqLevelSolutions.get(binding);
+    if (sol1eq != null) {
+      myEqLevelSolutions.remove(binding);
+      myExactLevelSolutions.put(binding, sol2);
+      mergeSolutions(sol2, sol1eq, binding);
+      return;
+    }
+
+    myExactLevelSolutions.put(binding, sol2);
+  }
+
   private void addSolution(InferenceBinding binding, EqSetSolution sol2) {
     ExactSolution sol1 = myExactSolutions.get(binding);
     if (sol1 != null) {
@@ -310,6 +489,33 @@ public class ListEquations implements Equations {
     myEqSolutions.put(binding, sol2);
   }
 
+  private void addSolution(InferenceBinding binding, EqSetLevelSolution sol2) {
+    ExactLevelSolution sol1 = myExactLevelSolutions.get(binding);
+    if (sol1 != null) {
+      mergeSolutions(sol1, sol2, binding);
+      return;
+    }
+
+    EqSetLevelSolution sol1eq = myEqLevelSolutions.get(binding);
+    if (sol1eq != null) {
+      if (!sol2.geSet.isEmpty()) {
+        if (sol1eq.geSet.isEmpty()) {
+          sol1eq.geSet = new ArrayList<>();
+        }
+        sol1eq.geSet.addAll(sol2.geSet);
+      }
+      if (!sol2.leSet.isEmpty()) {
+        if (sol1eq.leSet.isEmpty()) {
+          sol1eq.leSet = new ArrayList<>();
+        }
+        sol1eq.leSet.addAll(sol2.leSet);
+      }
+      return;
+    }
+
+    myEqLevelSolutions.put(binding, sol2);
+  }
+
   private void mergeSolutions(ExactSolution sol1, EqSetSolution sol2, InferenceBinding binding) {
     Expression expr1 = sol1.expression.normalize(NormalizeVisitor.Mode.NF);
     for (Expression expr : sol2.geSet) {
@@ -326,6 +532,20 @@ public class ListEquations implements Equations {
     }
   }
 
+  private void mergeSolutions(ExactLevelSolution sol1, EqSetLevelSolution sol2, InferenceBinding binding) {
+    LevelExpression expr1 = sol1.expression;
+    for (LevelExpression expr : sol2.geSet) {
+      if (!LevelExpression.compare(expr1, expr, CMP.GE, this)) {
+        binding.reportErrorInfer(myErrorReporter, expr1, expr);
+      }
+    }
+    for (LevelExpression expr : sol2.leSet) {
+      if (!LevelExpression.compare(expr1, expr, CMP.LE, this)) {
+        binding.reportErrorInfer(myErrorReporter, expr1, expr);
+      }
+    }
+  }
+
   private void addExactSolutions(Map<InferenceBinding, ExactSolution> solutions) {
     for (Map.Entry<InferenceBinding, ExactSolution> entry : solutions.entrySet()) {
       addSolution(entry.getKey(), entry.getValue());
@@ -334,6 +554,18 @@ public class ListEquations implements Equations {
 
   private void addEqSetSolutions(Map<InferenceBinding, EqSetSolution> solutions) {
     for (Map.Entry<InferenceBinding, EqSetSolution> entry : solutions.entrySet()) {
+      addSolution(entry.getKey(), entry.getValue());
+    }
+  }
+
+  private void addExactLevelSolutions(Map<InferenceBinding, ExactLevelSolution> solutions) {
+    for (Map.Entry<InferenceBinding, ExactLevelSolution> entry : solutions.entrySet()) {
+      addSolution(entry.getKey(), entry.getValue());
+    }
+  }
+
+  private void addEqSetLevelSolutions(Map<InferenceBinding, EqSetLevelSolution> solutions) {
+    for (Map.Entry<InferenceBinding, EqSetLevelSolution> entry : solutions.entrySet()) {
       addSolution(entry.getKey(), entry.getValue());
     }
   }
@@ -377,7 +609,7 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public Equations newInstance() {
+  public ListEquations newInstance() {
     return new ListEquations();
   }
 
@@ -417,6 +649,63 @@ public class ListEquations implements Equations {
             it.remove();
             subst = entry.getValue().solve(this, entry.getKey(), result);
             if (update(entry.getKey(), subst, result)) {
+              binding = entry.getKey();
+            }
+            break;
+          }
+        }
+      }
+
+      if (binding != null) {
+        result.subst(binding, subst);
+        result.add(binding, subst);
+        subst(binding, subst);
+      }
+    } while (was);
+
+    return result;
+  }
+
+  @Override
+  public LevelSubstitution getLevelVariables(Set<InferenceBinding> bindings, boolean onlyPreciseSolutions) {
+    LevelSubstitution result = new LevelSubstitution();
+    if (bindings.isEmpty() || myExactLevelSolutions.isEmpty() && (myEqLevelSolutions.isEmpty() || onlyPreciseSolutions)) {
+      return result;
+    }
+
+    boolean was;
+    do {
+      was = false;
+      InferenceBinding binding = null;
+      LevelExpression subst = null;
+      // TODO: First solve variables that are not levels, then level variables
+      for (Iterator<Map.Entry<InferenceBinding, ExactLevelSolution>> it = myExactLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
+        Map.Entry<InferenceBinding, ExactLevelSolution> entry = it.next();
+
+        if (bindings.remove(entry.getKey())) {
+          was = true;
+          it.remove();
+          subst = entry.getValue().solve(this, entry.getKey(), result);
+          if (subst.findBinding(entry.getKey())) {
+            entry.getKey().reportErrorInfer(myErrorReporter, subst);
+          } else {
+            binding = entry.getKey();
+          }
+          break;
+        }
+      }
+
+      if (!was && !onlyPreciseSolutions) {
+        for (Iterator<Map.Entry<InferenceBinding, EqSetLevelSolution>> it = myEqLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
+          Map.Entry<InferenceBinding, EqSetLevelSolution> entry = it.next();
+
+          if (bindings.remove(entry.getKey())) {
+            was = true;
+            it.remove();
+            subst = entry.getValue().solve(this, entry.getKey(), result);
+            if (subst.findBinding(entry.getKey())) {
+              entry.getKey().reportErrorInfer(myErrorReporter, subst);
+            } else {
               binding = entry.getKey();
             }
             break;
@@ -480,28 +769,69 @@ public class ListEquations implements Equations {
     }
   }
 
+  public void subst(Binding binding, LevelExpression subst) {
+    for (Iterator<Map.Entry<InferenceBinding, ExactLevelSolution>> it = myExactLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
+      Map.Entry<InferenceBinding, ExactLevelSolution> entry = it.next();
+      ExactLevelSolution solution = entry.getValue();
+      solution.subst(binding, subst);
+      Binding binding1 = solution.expression.getUnitBinding();
+      if (binding1 != null) {
+        if (binding1 instanceof InferenceBinding) {
+          it.remove();
+          if (binding1 != entry.getKey()) {
+            add(new LevelExpression(entry.getKey(), 0), solution.expression, CMP.EQ, entry.getKey().getSourceNode());
+          }
+        }
+      }
+    }
+
+    for (Map.Entry<InferenceBinding, EqSetLevelSolution> entry : myEqLevelSolutions.entrySet()) {
+      entry.getValue().subst(binding, subst);
+    }
+
+    for (int i = myLevelEquations.size() - 1; i >= 0; i--) {
+      LevelEquation equation = myLevelEquations.get(i);
+      myLevelEquations.remove(i);
+      equation.subst(binding, subst);
+      equation.solveIn(this);
+    }
+  }
+
   @Override
   public void reportErrors(ErrorReporter errorReporter) {
     myErrorReporter.reportTo(errorReporter);
     if (myErrorReporter.getErrorList().isEmpty()) {
-      if (!myEquations.isEmpty()) {
+      if (!myEquations.isEmpty() || !myLevelEquations.isEmpty()) {
         List<CmpEquation> equations = new ArrayList<>(myEquations.size());
         for (Equation equation : myEquations) {
           equations.add((CmpEquation) equation);
         }
-        errorReporter.report(new UnsolvedEquations(equations));
+
+        List<LevelCmpEquation> lev_equations = new ArrayList<>(myLevelEquations.size());
+        for (LevelEquation equation : myLevelEquations) {
+          lev_equations.add((LevelCmpEquation) equation);
+        }
+        errorReporter.report(new UnsolvedEquations(equations, lev_equations));
       }
 
-      if (!myExactSolutions.isEmpty() || !myEqSolutions.isEmpty()) {
-        List<InferenceBinding> bindings = new ArrayList<>(myExactSolutions.size() + myEqSolutions.size());
+      if (!myExactSolutions.isEmpty() || !myEqSolutions.isEmpty() || !myExactLevelSolutions.isEmpty() || !myEqLevelSolutions.isEmpty()) {
+        List<InferenceBinding> bindings = new ArrayList<>(myExactSolutions.size() + myEqSolutions.size() + myExactLevelSolutions.size() + myEqLevelSolutions.size());
         for (InferenceBinding binding : myExactSolutions.keySet()) {
           bindings.add(binding);
         }
         for (InferenceBinding binding : myEqSolutions.keySet()) {
           bindings.add(binding);
         }
+        for (InferenceBinding binding : myExactLevelSolutions.keySet()) {
+          bindings.add(binding);
+        }
+        for (InferenceBinding binding : myEqLevelSolutions.keySet()) {
+          bindings.add(binding);
+        }
         errorReporter.report(new UnsolvedBindings(bindings));
       }
+
+
     } else {
       myErrorReporter.getErrorList().clear();
     }

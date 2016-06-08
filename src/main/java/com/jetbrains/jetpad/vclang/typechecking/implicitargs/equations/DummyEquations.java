@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
@@ -29,6 +31,11 @@ public class DummyEquations implements Equations {
   }
 
   @Override
+  public boolean add(LevelExpression expr1, LevelExpression expr2, CMP cmp, Abstract.SourceNode sourceNode) {
+    return false;
+  }
+
+  @Override
   public void clear() {
 
   }
@@ -50,6 +57,11 @@ public class DummyEquations implements Equations {
 
   @Override
   public Substitution getInferenceVariables(Set<InferenceBinding> binding, boolean onlyPreciseSolutions) {
+    throw new Exception();
+  }
+
+  @Override
+  public LevelSubstitution getLevelVariables(Set<InferenceBinding> binding, boolean onlyPreciseSolutions) {
     throw new Exception();
   }
 

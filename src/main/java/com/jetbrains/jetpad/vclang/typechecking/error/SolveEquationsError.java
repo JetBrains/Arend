@@ -1,17 +1,18 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 
 import java.util.ArrayList;
 
-public class SolveEquationsError extends TypeCheckingError {
-  private final Expression myExpr1;
-  private final Expression myExpr2;
+public class SolveEquationsError<E extends PrettyPrintable> extends TypeCheckingError {
+  private final E myExpr1;
+  private final E myExpr2;
   private final Binding myBinding;
 
-  public SolveEquationsError(Expression expr1, Expression expr2, Binding binding, Abstract.SourceNode expression) {
+  public SolveEquationsError(E expr1, E expr2, Binding binding, Abstract.SourceNode expression) {
     super(null, expression);
     myExpr1 = expr1;
     myExpr2 = expr2;

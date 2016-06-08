@@ -1,12 +1,14 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.*;
 
-public class LevelExpression {
+public class LevelExpression implements PrettyPrintable {
   private int myConstant = 0;
   private Map<Binding, Integer> myNumSucsOfVars = new HashMap<>();
   private boolean myIsInfinity = true;
@@ -72,6 +74,14 @@ public class LevelExpression {
     return result; /**/
   }
 
+  public LevelExpression subst(LevelSubstitution subst) {
+    LevelExpression result = this;
+    for (Binding var : subst.getDomain()) {
+      result = result.subst(var, subst.get(var));
+    }
+    return result;
+  }
+
   public List<LevelExpression> toListOfMaxArgs() {
     if (isInfinity()) return Collections.singletonList(new LevelExpression());
     ArrayList<LevelExpression> list = new ArrayList<>();
@@ -94,12 +104,16 @@ public class LevelExpression {
     return isClosed() || (myNumSucsOfVars.size() == 1 && (myConstant == 0));
   }
 
+  public boolean isBinding() { return isUnit() && (!isClosed()) && getUnitSucs() == 0; }
+
   public int getUnitSucs() {
     if (isClosed() || !isUnit()) {
       return myConstant;
     }
     return myNumSucsOfVars.entrySet().iterator().next().getValue();
   }
+
+  public boolean findBinding(Binding binding) { return myNumSucsOfVars.containsKey(binding); }
 
   public Binding getUnitBinding() {
     if (myNumSucsOfVars.size() != 1) return null;
@@ -115,24 +129,36 @@ public class LevelExpression {
     return result;
   }
 
+  @Override
+  public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
+
+  }
+
   public enum CMP { LESS, GREATER, EQUAL, NOT_COMPARABLE }
 
-  /*
+  public static boolean compare(LevelExpression expr1, LevelExpression expr2, Equations.CMP cmp) {
+    return compare(expr1, expr2, cmp, DummyEquations.getInstance());
+  }
+
+  public static boolean compare(LevelExpression expr1, LevelExpression expr2, Equations.CMP cmp, Equations equations) {
+
+  }
+
   public CMP compare(LevelExpression other) {
-    if (Expression.compare(this, other, Equations.CMP.EQ)) {
+     if (compare(this, other, Equations.CMP.EQ)) {
       return CMP.EQUAL;
     }
 
-    if (Expression.compare(this, other, Equations.CMP.GE)) {
+    if (compare(this, other, Equations.CMP.GE)) {
       return CMP.GREATER;
     }
 
-    if (Expression.compare(this, other, Equations.CMP.LE)) {
+    if (compare(this, other, Equations.CMP.LE)) {
       return CMP.LESS;
     }
 
     return CMP.NOT_COMPARABLE;
-  } /**/
+  }
 
   public LevelExpression succ() {
     return subtract(-1);
