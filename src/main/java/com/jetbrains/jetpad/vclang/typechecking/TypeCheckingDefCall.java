@@ -4,11 +4,10 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
@@ -72,7 +71,7 @@ public class TypeCheckingDefCall {
           return null;
         }
       }
-      return applyThis(new CheckTypeVisitor.Result(member.definition.getDefCall(), member.definition.getTypeWithThis()), thisExpr, expr);
+      return applyThis(insertPolyVars(member.definition, expr), thisExpr, expr);
     }
 
     Abstract.Expression left = expr.getExpression();
@@ -189,6 +188,28 @@ public class TypeCheckingDefCall {
     return applyThis(result, thisExpr, expr);
   }
 
+  private CheckTypeVisitor.Result insertPolyVars(Definition definition, Abstract.SourceNode sourceNode) {
+    if (definition.isPolymorphic()) {
+      LevelSubstitution subst = new LevelSubstitution();
+
+      for (Binding polyVar : definition.getPolyParams()) {
+        InferenceBinding l = new LevelInferenceBinding(polyVar.getName(), polyVar.getType(), sourceNode);
+        subst.add(polyVar, new LevelExpression(l, 0));
+      }
+
+      Definition nonPolyDef = definition.substPolyParams(subst);
+      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(nonPolyDef.getDefCall(), nonPolyDef.getTypeWithThis());
+
+      for (Binding l : subst.getDomain()) {
+        result.addUnsolvedVariable((InferenceBinding)l);
+      }
+
+      return result;
+    }
+
+    return new CheckTypeVisitor.Result(definition.getDefCall(), definition.getTypeWithThis());
+  }
+
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result, Abstract.Expression expr) {
     if (classDefinition == definition.getThisClass()) {
       return result;
@@ -216,10 +237,6 @@ public class TypeCheckingDefCall {
       result.type = result.type.applyExpressions(Collections.singletonList(thisExpr));
     }
     return result;
-  }
-
-  private CheckTypeVisitor.Result setPolyVars(Definition def) {
-
   }
 
   public CheckTypeVisitor.Result getLocalVar(Abstract.DefCallExpression expr) {

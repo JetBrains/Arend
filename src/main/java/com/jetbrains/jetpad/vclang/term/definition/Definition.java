@@ -75,6 +75,10 @@ public abstract class Definition extends NamedBinding implements Referable {
     myPolyParams = params;
   }
 
+  public List<Binding> getPolyParams() {
+    return myPolyParams;
+  }
+
   public boolean isPolymorphic() { return !myPolyParams.isEmpty(); }
 
   public abstract Definition substPolyParams(LevelSubstitution subst);

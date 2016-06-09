@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -92,6 +93,17 @@ public class LevelExpression implements PrettyPrintable {
     return list;
   }
 
+  public Integer getNumSucs(Binding binding) {
+    if (myNumSucsOfVars.containsKey(binding)) {
+      return myNumSucsOfVars.get(binding);
+    }
+    return null;
+  }
+
+  public Set<Binding> getAllBindings() {
+    return myNumSucsOfVars.keySet();
+  }
+
   public boolean isZero() {
     return !myIsInfinity && myConstant == 0 && myNumSucsOfVars.isEmpty();
   }
@@ -141,7 +153,51 @@ public class LevelExpression implements PrettyPrintable {
   }
 
   public static boolean compare(LevelExpression expr1, LevelExpression expr2, Equations.CMP cmp, Equations equations) {
+    LevelExpression level1 = cmp == Equations.CMP.GE ? expr1 : expr2;
+    LevelExpression level2 = cmp == Equations.CMP.GE ? expr2 : expr1;
 
+    if (level1.isInfinity()) {
+      return (cmp != Equations.CMP.EQ || level2.isInfinity());
+    }
+
+    if (level2.isInfinity()) return false;
+
+    int leftSucs = level1.extractOuterSucs();
+    LevelExpression leftLevel = level1.subtract(leftSucs);
+    boolean leftContainsInferenceBnd = false;
+
+    for (Binding leftBnd : level1.getAllBindings()) {
+      if (leftBnd instanceof InferenceBinding) {
+        leftContainsInferenceBnd = true;
+        break;
+      }
+    }
+
+    for (LevelExpression rightMaxArg : level2.toListOfMaxArgs()) {
+      int rightSucs = rightMaxArg.getUnitSucs();
+
+      if (rightMaxArg.isClosed()) {
+        if (leftSucs >= rightSucs) {
+          continue;
+        }
+        if (!leftContainsInferenceBnd) {
+          return false;
+        }
+        equations.add(leftLevel, rightMaxArg, cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.GE, null);
+      } else if (leftLevel.findBinding(rightMaxArg.getUnitBinding())) {
+        if (leftLevel.getNumSucs(rightMaxArg.getUnitBinding()) + leftSucs < rightSucs) {
+          return false;
+        }
+      } else {
+        if (leftContainsInferenceBnd || (rightMaxArg.getUnitBinding() instanceof InferenceBinding)) {
+          equations.add(leftLevel, rightMaxArg.subtract(leftSucs), cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.GE, null);
+          continue;
+        }
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public CMP compare(LevelExpression other) {

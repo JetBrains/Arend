@@ -188,7 +188,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       InferenceBinding lh = new LevelInferenceBinding("lh", CNat(), expr);
       result.addUnsolvedVariable(lp);
       result.addUnsolvedVariable(lh);
-      expectedType1 = Universe(TypeUniverse.exprToPLevel(Reference(lp)), TypeUniverse.exprToHLevel(Reference(lh)));
+      expectedType1 = Universe(new LevelExpression(lp, 0), new LevelExpression(lh, 0));
     }
 
     if (CompareVisitor.compare(result.getEquations(), cmp, expectedType1, actualType, expr)) {
@@ -243,7 +243,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       result.setEquations(myArgsInference.newEquations());
     }
     if (!CompareVisitor.compare(result.getEquations(), Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
-      TypeCheckingError error = new SolveEquationsError(expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
+      TypeCheckingError error = new SolveEquationsError<>(expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
       expr.setWellTyped(myContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return false;
@@ -442,7 +442,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
   private LevelExpression typeCheckLevel(Abstract.Expression expr, Expression expectedType) {
     int num_sucs = 0;
     TypeCheckingError error = null;
-    LevelExpression.Converter conv = expectedType.toDefCall().getDefinition() == Preprelude.LVL ? new TypeUniverse.LvlConverter() : new TypeUniverse.CNatConverter();
 
     while (expr instanceof Abstract.AppExpression) {
       Abstract.AppExpression app = (Abstract.AppExpression) expr;
@@ -458,13 +457,13 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     if (error == null) {
       if (expr instanceof Abstract.NumericLiteral) {
         int val = ((Abstract.NumericLiteral) expr).getNumber();
-        return new LevelExpression(val + num_sucs, conv);
+        return new LevelExpression(val + num_sucs);
       }
       Result refResult = typeCheck(expr, expectedType);
       if (refResult != null) {
         ReferenceExpression ref = refResult.expression.toReference();
         if (ref != null) {
-          return new LevelExpression(ref.getBinding(), num_sucs, conv);
+          return new LevelExpression(ref.getBinding(), num_sucs);
         }
       }
     }

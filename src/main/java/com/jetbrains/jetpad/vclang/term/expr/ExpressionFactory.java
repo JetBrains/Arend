@@ -251,10 +251,8 @@ public class ExpressionFactory {
     return new UniverseExpression(new TypeUniverse(TypeUniverse.intToPLevel(plevel), hlevel));
   }
 
-
-
-  public static UniverseExpression Universe(Expression plevel, Expression hlevel) {
-    return new UniverseExpression(new TypeUniverse(TypeUniverse.exprToPLevel(plevel), TypeUniverse.exprToHLevel(hlevel)));
+  public static UniverseExpression Universe(LevelExpression plevel, LevelExpression hlevel) {
+    return new UniverseExpression(new TypeUniverse(plevel, hlevel));
   }
 
   public static UniverseExpression Universe(TypeUniverse universe) {
