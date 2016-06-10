@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.oneshot.visitor;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
@@ -181,19 +182,28 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
-    Scope staticScope  = new StaticClassScope(myParentScope, myStaticNsProvider.forDefinition(def));
-    StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, staticScope, myContext, myResolveListener);
-    for (Abstract.Statement statement : def.getStatements()) {
-      if (statement instanceof Abstract.DefineStatement && Abstract.DefineStatement.StaticMod.DYNAMIC.equals(((Abstract.DefineStatement) statement).getStaticMod())) continue;  // FIXME[where]
-      statement.accept(stVisitor, null);
+    try {
+      Namespace staticNamespace = myStaticNsProvider.forDefinition(def);
+
+      Scope staticScope = new StaticClassScope(myParentScope, staticNamespace);
+      StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, staticScope, myContext, myResolveListener);
+      for (Abstract.Statement statement : def.getStatements()) {
+        if (statement instanceof Abstract.DefineStatement && Abstract.DefineStatement.StaticMod.DYNAMIC.equals(((Abstract.DefineStatement) statement).getStaticMod()))
+          continue;  // FIXME[where]
+        statement.accept(stVisitor, null);
+      }
+
+      Scope dynamicScope = new DynamicClassScope(myParentScope, staticNamespace, myDynamicNsProvider.forClass(def));
+      StatementResolveNameVisitor dyVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, dynamicScope, myContext, myResolveListener);
+      for (Abstract.Statement statement : def.getStatements()) {
+        if (statement instanceof Abstract.DefineStatement && Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()))
+          continue;  //  FIXME[where]
+        statement.accept(dyVisitor, null);
+      }
+    } catch (Namespace.InvalidNamespaceException e) {
+      myErrorReporter.report(e.toError());
     }
 
-    Scope dynamicScope = new DynamicClassScope(myParentScope, myStaticNsProvider.forDefinition(def), myDynamicNsProvider.forClass(def));
-    StatementResolveNameVisitor dyVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, dynamicScope, myContext, myResolveListener);
-    for (Abstract.Statement statement : def.getStatements()) {
-      if (statement instanceof Abstract.DefineStatement && Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod())) continue;  //  FIXME[where]
-      statement.accept(dyVisitor, null);
-    }
     return null;
   }
 

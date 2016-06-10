@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.namespace;
 
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 import java.util.HashMap;
@@ -12,9 +14,15 @@ public class SimpleNamespace implements Namespace {
   public SimpleNamespace() {
   }
 
-  public void addDefinition(Referable def) {
-    if (myNames.put(def.getName(), def) != null) {
-      throw new IllegalStateException("Duplicate name"); // FIXME[error]
+  public void addDefinition(final Referable def) {
+    final Referable prev = myNames.put(def.getName(), def);
+    if (prev != null) {
+      throw new InvalidNamespaceException() {
+        @Override
+        public GeneralError toError() {
+          return new DuplicateDefinitionError(prev, def);
+        }
+      };
     }
   }
 
