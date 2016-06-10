@@ -28,4 +28,12 @@ public class LevelSubstitution {
       var.setValue(var.getValue().subst(binding, expr));
     }
   }
+
+  public LevelSubstitution compose(LevelSubstitution subst) {
+    LevelSubstitution result = new LevelSubstitution();
+    for (Binding binding : subst.getDomain()) {
+      result.add(binding, subst.get(binding).subst(this));
+    }
+    return result;
+  }
 }

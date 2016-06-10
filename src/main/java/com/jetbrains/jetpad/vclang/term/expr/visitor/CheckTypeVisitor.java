@@ -264,8 +264,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
 
         List<Expression> args = result.expression.getFunction().toConCall().getDataTypeArguments();
-        if (!compareExpressions(result, args.get(3), Apps(result.expression.getArguments().get(0), ConCall(Preprelude.LEFT)), expr) ||
-            !compareExpressions(result, args.get(4), Apps(result.expression.getArguments().get(0), ConCall(Preprelude.RIGHT)), expr)) {
+        if (!compareExpressions(result, args.get(1), Apps(result.expression.getArguments().get(0), ConCall(Preprelude.LEFT)), expr) ||
+            !compareExpressions(result, args.get(2), Apps(result.expression.getArguments().get(0), ConCall(Preprelude.RIGHT)), expr)) {
           return false;
         }
       }

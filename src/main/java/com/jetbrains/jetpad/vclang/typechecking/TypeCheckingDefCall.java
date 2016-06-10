@@ -197,8 +197,8 @@ public class TypeCheckingDefCall {
         subst.add(polyVar, new LevelExpression(l, 0));
       }
 
-      Definition nonPolyDef = definition.substPolyParams(subst);
-      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(nonPolyDef.getDefCall(), nonPolyDef.getTypeWithThis());
+      DefCallExpression defCall = definition.getDefCall(subst);
+      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, defCall.getDefinition().getTypeWithThis());
 
       for (Binding l : subst.getDomain()) {
         result.addUnsolvedVariable((InferenceBinding)l);

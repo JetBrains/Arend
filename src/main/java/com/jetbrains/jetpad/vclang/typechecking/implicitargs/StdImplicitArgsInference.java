@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -53,7 +54,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
       if (conCall != null && Prelude.isPathCon(conCall.getDefinition()) && result.expression.getArguments().size() <= 1) {
         Expression interval = DataCall(Preprelude.INTERVAL);
-        Expression lp, lh;
+        LevelExpression lp, lh;
+
+        lp = conCall.getPolyParamValueByType(Preprelude.LVL.getName());
+        lh = conCall.getPolyParamValueByType(Preprelude.CNAT.getName());
+
+        /*
         if (result.expression.getArguments().isEmpty()) {
           InferenceBinding inferenceBinding1 = new FunctionInferenceBinding("lp", Lvl(), 1, fun);
           InferenceBinding inferenceBinding2 = new FunctionInferenceBinding("lh", CNat(), 2, fun);
@@ -66,9 +72,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         } else {
           lp = result.expression.getArguments().get(0);
           lh = result.expression.getArguments().get(1);
-        }
+        } /**/
 
-        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", Universe(lp, lh), 3, fun);
+        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", Universe(lp, lh), 1, fun);
         result.addUnsolvedVariable(inferenceBinding);
         DependentLink lamParam = param("i", interval);
         Expression binding = Reference(inferenceBinding);
