@@ -65,20 +65,34 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       throw new UnsupportedOperationException();
     }
 
-    ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
-    if (moduleNamespace == null || moduleNamespace.getRegisteredClass() == null) {
-      myErrorReporter.report(new NotInScopeError(null, new ModulePath(stat.getModulePath()).toString()));  // FIXME: null? really?
-      return null;
+    final Referable referredClass;
+    if (stat.getModulePath() == null) {
+      if (stat.getPath().isEmpty()) {
+        myErrorReporter.report(new GeneralError("Structure error: empty namespace command", stat));  // FIXME[error]: report proper
+        return null;
+      }
+      referredClass = myNameResolver.resolveDefinition(myScope, stat.getPath());
+    } else {
+      ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
+      Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
+      if (moduleClass == null) {
+        myErrorReporter.report(new GeneralError("Module not found", stat));  // FIXME[error]: report proper
+        return null;
+      }
+      if (stat.getPath().isEmpty()) {
+        referredClass = moduleNamespace.getRegisteredClass();
+      } else {
+        referredClass = myNameResolver.resolveDefinition(myNameResolver.staticNamespaceFor(moduleClass), stat.getPath());
+      }
     }
 
-    Referable ref = stat.getPath().isEmpty() ? moduleNamespace.getRegisteredClass() : myNameResolver.resolveDefinition(myNameResolver.staticNamespaceFor(moduleNamespace.getRegisteredClass()), stat.getPath());
-    if (ref == null) {
-      myErrorReporter.report(new NotInScopeError(null, stat.getPath().toString()));  // FIXME: report proper error
+    if (referredClass == null) {
+      myErrorReporter.report(new GeneralError("Class not found", stat));  // FIXME[error]: report proper
       return null;
     }
 
     if (stat.getKind().equals(Abstract.NamespaceCommandStatement.Kind.OPEN)) {
-      myScope = new MergeScope(myScope, myNameResolver.staticNamespaceFor(ref));
+      myScope = new MergeScope(myScope, myNameResolver.staticNamespaceFor(referredClass));
     }
 
     return null;
