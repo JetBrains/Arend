@@ -281,21 +281,19 @@ public class ModuleDeserialization {
   }
 
   public LevelExpression readLevel(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    int convCode = stream.readInt();
-    LevelExpression.Converter conv = convCode == 0 ? new TypeUniverse.LvlConverter() : new TypeUniverse.CNatConverter();
     boolean isInfinity = stream.readBoolean();
     if (isInfinity) {
-      return new LevelExpression(conv);
+      return new LevelExpression();
     } else {
-      LevelExpression result = new LevelExpression(0, conv);
+      LevelExpression result = new LevelExpression(0);
       int numMaxArgs = stream.readInt();
       for (int i = 0; i < numMaxArgs; ++i) {
         int numSucs = stream.readInt();
         boolean isClosed = stream.readBoolean();
         if (isClosed) {
-          result = result.max(new LevelExpression(numSucs, conv));
+          result = result.max(new LevelExpression(numSucs));
         } else {
-          result = result.max(new LevelExpression(readBinding(stream, definitionMap), numSucs, conv));
+          result = result.max(new LevelExpression(readBinding(stream, definitionMap), numSucs));
         }
       }
       return result;
@@ -303,8 +301,8 @@ public class ModuleDeserialization {
   }
 
   public TypeUniverse readUniverse(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
-    LevelExpression plevel = readExpression(stream, definitionMap).toLevel();
-    LevelExpression hlevel = readExpression(stream, definitionMap).toLevel();
+    LevelExpression plevel = readLevel(stream, definitionMap);
+    LevelExpression hlevel = readLevel(stream, definitionMap);
     return new TypeUniverse(plevel, hlevel);
   }
 
@@ -483,9 +481,6 @@ public class ModuleDeserialization {
         Expression expr = readExpression(stream, definitionMap);
         Expression type = readExpression(stream, definitionMap);
         return new OfTypeExpression(expr, type);
-      }
-      case 17: {
-        return readLevel(stream, definitionMap);
       }
       default: {
         throw new IncorrectFormat();

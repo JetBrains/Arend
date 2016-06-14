@@ -1,9 +1,12 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -23,6 +26,11 @@ public class LevelExpression implements PrettyPrintable {
 
   public LevelExpression(Binding var, int numSucs) {
     myNumSucsOfVars.put(var, numSucs);
+    myIsInfinity = false;
+  }
+
+  public LevelExpression(Binding var) {
+    myNumSucsOfVars.put(var, 0);
     myIsInfinity = false;
   }
 
@@ -143,7 +151,37 @@ public class LevelExpression implements PrettyPrintable {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
+    toAbstract().accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
+  }
 
+  public Abstract.Expression toAbstract() {
+    Concrete.DefCallExpression suc = ConcreteExpressionFactory.cVar("suc");
+    List<Concrete.Expression> maxArgExprList = new ArrayList<>();
+
+    for (LevelExpression maxArg : toListOfMaxArgs()) {
+      if (maxArg.isClosed()) {
+        maxArgExprList.add(ConcreteExpressionFactory.cNum(maxArg.myConstant));
+      } else {
+        Concrete.Expression argExpr = ConcreteExpressionFactory.cVar(maxArg.getUnitBinding().getName());
+        for (int i = 0; i < maxArg.getUnitSucs(); ++i) {
+          argExpr = ConcreteExpressionFactory.cApps(suc, argExpr);
+        }
+        maxArgExprList.add(argExpr);
+      }
+    }
+
+    if (maxArgExprList.size() == 1) {
+      return maxArgExprList.get(0);
+    }
+
+    Concrete.DefCallExpression max = ConcreteExpressionFactory.cVar("max");
+    Concrete.Expression result = maxArgExprList.get(0);
+
+    for (int i = 1; i < maxArgExprList.size(); ++i) {
+      result = ConcreteExpressionFactory.cApps(max, maxArgExprList.get(i), result);
+    }
+
+    return result;
   }
 
   public enum CMP { LESS, GREATER, EQUAL, NOT_COMPARABLE }

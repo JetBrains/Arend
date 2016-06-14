@@ -52,9 +52,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     @Override
-    public void subst(Substitution substitution) {
+    public void subst(Substitution substitution, LevelSubstitution levelSubstitution) {
       expression = expression.subst(substitution);
       type = type.subst(substitution);
+      expression = expression.subst(levelSubstitution);
+      type = type.subst(levelSubstitution);
     }
   }
 
@@ -66,8 +68,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     @Override
-    public void subst(Substitution substitution) {
+    public void subst(Substitution substitution, LevelSubstitution levelSubstitution) {
       letClause = letClause.subst(substitution);
+      letClause = letClause.subst(levelSubstitution);
     }
   }
 
@@ -370,7 +373,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
             piLamSubst.add(piLink, Reference(link));
           } else {
-            if (argResult == null) {
+            // TODO: check if this line is reachable
+            /*if (argResult == null) {
               InferenceBinding pLvlInferenceBinding = new LambdaInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), argIndex, expr, true);
               InferenceBinding hLvlInferenceBinding = new LambdaInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), argIndex, expr, true);
               InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(Reference(pLvlInferenceBinding), Reference(hLvlInferenceBinding)), argIndex, expr, false);
@@ -379,7 +383,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
             }
             if (actualPiLink == null) {
               actualPiLink = link;
-            }
+            } /**/
           }
 
           argIndex++;

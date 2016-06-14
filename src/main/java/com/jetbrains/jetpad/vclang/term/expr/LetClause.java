@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 public class LetClause extends NamedBinding implements Function {
@@ -59,5 +60,14 @@ public class LetClause extends NamedBinding implements Function {
 
     DependentLink parameters = DependentLink.Helper.subst(myParameters, substitution);
     return new LetClause(getName(), parameters, myResultType.subst(substitution), myElimTree.subst(substitution));
+  }
+
+  public LetClause subst(LevelSubstitution substitution) {
+    if (substitution.getDomain().isEmpty()) {
+      return this;
+    }
+
+    DependentLink parameters = DependentLink.Helper.subst(myParameters, substitution);
+    return new LetClause(getName(), parameters, myResultType.subst(substitution), LevelSubstVisitor.subst(myElimTree, substitution));
   }
 }

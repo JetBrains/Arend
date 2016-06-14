@@ -260,7 +260,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     Integer pNum = getPNum(universe.getPLevel());
     Integer hNum = getHNum(universe.getHLevel());
     if (pNum != null && hNum != null) return myFactory.makeUniverse(pNum, hNum);
-    return myFactory.makeUniverse(universe.getPLevel().accept(this, null), universe.getHLevel().accept(this, null));
+    return myFactory.makeUniverse(universe.getPLevel().toAbstract(), universe.getHLevel().toAbstract());
   }
 
   @Override
@@ -329,11 +329,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   @Override
   public Abstract.Expression visitOfType(OfTypeExpression expr, Void params) {
     return expr.getExpression().accept(this, null);
-  }
-
-  @Override
-  public Abstract.Expression visitLevel(LevelExpression expr, Void params) {
-    return expr.getExpr().accept(this, null);
   }
 
   private List<Abstract.Clause> visitBranch(BranchElimTreeNode branchNode) {

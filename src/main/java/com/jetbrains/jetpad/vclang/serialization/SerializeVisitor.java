@@ -296,39 +296,6 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     return null;
   }
 
-  @Override
-  public Void visitLevel(LevelExpression expr, Void params) {
-    myStream.write(17);
-    try {
-      if (expr.getConverter() instanceof TypeUniverse.LvlConverter) {
-        myDataStream.writeInt(0);
-      } else if (expr.getConverter() instanceof TypeUniverse.CNatConverter) {
-        myDataStream.writeInt(1);
-      } else {
-        throw new IllegalStateException();
-      }
-      if (expr.isInfinity()) {
-        myDataStream.writeBoolean(true);
-      } else {
-        myDataStream.writeBoolean(false);
-        List<LevelExpression> maxArgs = expr.toListOfMaxArgs();
-        myDataStream.writeInt(maxArgs.size());
-        for (LevelExpression arg : maxArgs) {
-          myDataStream.writeInt(arg.getUnitSucs());
-          if (arg.isClosed()) {
-            myDataStream.writeBoolean(true);
-          } else {
-            myDataStream.writeBoolean(false);
-            writeBinding(arg.getUnitBinding());
-          }
-        }
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException();
-    }
-    return null;
-  }
-
   private void visitLetClause(LetClause clause) {
     try {
       myDataStream.writeUTF(clause.getName());

@@ -254,8 +254,6 @@ public abstract class Expression implements PrettyPrintable {
     return null;
   }
 
-  public LevelExpression toLevel() { return null; }
-
   public boolean isAnyUniverse() {
     return false;
   }

@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.naming.DefinitionResolvedName;
 import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.naming.Namespace;
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -14,7 +15,10 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
@@ -243,11 +247,16 @@ public class Preprelude extends Namespace {
       private final DataDefinition myDefinition;
       private final Namespace myNs;
 
-      Data(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
+      Data(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters, List<Binding> polyParams) {
         myParentNs = parentNs;
         myResolvedName = new DefinitionResolvedName(parentNs, name);
         myDefinition = new DataDefinition(myResolvedName, precedence, universe, parameters);
+        myDefinition.setPolyParams(polyParams);
         myNs = myParentNs.addDefinition(myDefinition).namespace;
+      }
+
+      Data(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
+        this(parentNs, name, precedence, universe, parameters, new ArrayList<Binding>());
       }
 
       DataDefinition definition() {
@@ -267,10 +276,15 @@ public class Preprelude extends Namespace {
       private final DefinitionResolvedName myResolvedName;
       private final FunctionDefinition myDefinition;
 
-      public Function(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+      public Function(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, List<Binding> polyParams) {
         myResolvedName = new DefinitionResolvedName(parentNs, name);
         myDefinition = new FunctionDefinition(myResolvedName, precedence, parameters, resultType, elimTree);
+        myDefinition.setPolyParams(polyParams);
         parentNs.addDefinition(myDefinition);
+      }
+
+      public Function(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+        this(parentNs, name, precedence, parameters, resultType, elimTree, new ArrayList<Binding>());
       }
 
       FunctionDefinition definition() {

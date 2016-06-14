@@ -36,8 +36,20 @@ public class ExpressionFactory {
     return new FunCallExpression(definition);
   }
 
+  public static FunCallExpression FunCall(FunctionDefinition definition, LevelSubstitution polySubst) {
+    FunCallExpression funCall = new FunCallExpression(definition);
+    funCall.applyLevelSubst(polySubst);
+    return funCall;
+  }
+
   public static DataCallExpression DataCall(DataDefinition definition) {
     return new DataCallExpression(definition);
+  }
+
+  public static DataCallExpression DataCall(DataDefinition definition, LevelSubstitution polySubst) {
+    DataCallExpression dataCall = new DataCallExpression(definition);
+    dataCall.applyLevelSubst(polySubst);
+    return dataCall;
   }
 
   public static FieldCallExpression FieldCall(ClassField definition) {

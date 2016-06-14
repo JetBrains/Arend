@@ -11,6 +11,16 @@ public class LevelSubstitution {
 
   public LevelSubstitution() {}
 
+  public LevelSubstitution(Binding lp, LevelExpression lp_expr, Binding lh, LevelExpression lh_expr) {
+    mySubstExprs.put(lp, lp_expr);
+    mySubstExprs.put(lh, lh_expr);
+  }
+
+  public LevelSubstitution(Binding lp, Binding lp_new, Binding lh, Binding lh_new) {
+    mySubstExprs.put(lp, new LevelExpression(lp_new));
+    mySubstExprs.put(lh, new LevelExpression(lh_new));
+  }
+
   public Set<Binding> getDomain() {
     return mySubstExprs.keySet();
   }

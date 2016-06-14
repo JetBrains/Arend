@@ -11,6 +11,8 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
+import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 
 import java.io.*;
@@ -223,9 +225,29 @@ public class ModuleSerialization {
     }
   }
 
+  public static void writeLevel(SerializeVisitor visitor, LevelExpression level) throws IOException {
+    DataOutputStream stream = visitor.getDataStream();
+    if (level.isInfinity()) {
+      stream.writeBoolean(true);
+    } else {
+      stream.writeBoolean(false);
+      List<LevelExpression> maxArgs = level.toListOfMaxArgs();
+      stream.writeInt(maxArgs.size());
+      for (LevelExpression arg : maxArgs) {
+        stream.writeInt(arg.getUnitSucs());
+        if (arg.isClosed()) {
+          stream.writeBoolean(true);
+        } else {
+          stream.writeBoolean(false);
+          visitor.visitReference(ExpressionFactory.Reference(arg.getUnitBinding()), null);
+        }
+      }
+    }
+  }
+
   public static void writeUniverse(SerializeVisitor visitor, TypeUniverse universe) throws IOException {
-    universe.getPLevel().accept(visitor, null);
-    universe.getHLevel().accept(visitor, null);
+    writeLevel(visitor, universe.getPLevel());
+    writeLevel(visitor, universe.getHLevel());
   }
 
   private static void writeString(SerializeVisitor visitor, String str) throws IOException {

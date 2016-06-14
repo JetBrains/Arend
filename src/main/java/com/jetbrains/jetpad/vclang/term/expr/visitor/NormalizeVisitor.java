@@ -285,8 +285,4 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return mode == Mode.NF ? new OfTypeExpression(expr.getExpression().accept(this, mode), expr.getType()) : expr.getExpression().accept(this, mode);
   }
 
-  @Override
-  public Expression visitLevel(LevelExpression expr, Mode mode) {
-    return mode == Mode.TOP ? null : expr;
-  }
 }

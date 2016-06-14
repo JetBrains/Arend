@@ -2,9 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -91,5 +89,10 @@ public class ClassDefinition extends Definition {
       type = Pi(getThisClass().getDefCall(), type);
     }
     return type;
+  }
+
+  @Override
+  public Definition substPolyParams(LevelSubstitution subst) {
+    return null;
   }
 }

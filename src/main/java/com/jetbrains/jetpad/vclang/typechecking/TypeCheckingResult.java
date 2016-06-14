@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -71,9 +72,10 @@ public abstract class TypeCheckingResult {
 
   public void update(boolean onlyPreciseSolutions) {
     if (!myEquations.isEmpty()) {
-      subst(myEquations.getInferenceVariables(myUnsolvedVariables, onlyPreciseSolutions));
+      subst(myEquations.getInferenceVariables(myUnsolvedVariables, onlyPreciseSolutions),
+              myEquations.getLevelVariables(myUnsolvedVariables, onlyPreciseSolutions));
     }
   }
 
-  public abstract void subst(Substitution substitution);
+  public abstract void subst(Substitution substitution, LevelSubstitution levelSubstitution);
 }

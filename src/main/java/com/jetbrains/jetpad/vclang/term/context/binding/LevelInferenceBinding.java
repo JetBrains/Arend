@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.context.binding;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
 import com.jetbrains.jetpad.vclang.typechecking.error.LevelInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
@@ -19,7 +20,17 @@ public class LevelInferenceBinding extends InferenceBinding {
   }
 
   @Override
+  public void reportErrorInfer(ErrorReporter errorReporter) {
+    errorReporter.report(new LevelInferenceError(mySourceNode));
+  }
+
+  @Override
   public void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates) {
+    errorReporter.report(new LevelInferenceError(mySourceNode));
+  }
+
+  @Override
+  public void reportErrorInfer(ErrorReporter errorReporter, LevelExpression... candidates) {
     errorReporter.report(new LevelInferenceError(mySourceNode));
   }
 

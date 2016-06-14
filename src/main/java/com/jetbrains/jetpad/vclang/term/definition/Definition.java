@@ -47,7 +47,11 @@ public abstract class Definition extends NamedBinding implements Referable {
 
   public abstract DefCallExpression getDefCall();
 
-  public abstract DefCallExpression getDefCall(LevelSubstitution subst);
+  public DefCallExpression getDefCall(LevelSubstitution subst) {
+    DefCallExpression defCall = getDefCall();
+    defCall.applyLevelSubst(subst);
+    return defCall;
+  }
 
   public ClassDefinition getThisClass() {
     return myThisClass;

@@ -87,7 +87,7 @@ public class TypeUniverse {
   public TypeUniverse subst(LevelSubstitution subst) {
     LevelExpression plevel = myPLevel;
     LevelExpression hlevel = myHLevel;
-    for (TypedBinding var : subst.getDomain()) {
+    for (Binding var : subst.getDomain()) {
       if (var.getType().toDefCall().getDefinition() == Preprelude.LVL) {
         plevel = plevel.subst(var, subst.get(var));
       } else if (var.getType().toDefCall().getDefinition() == Preprelude.CNAT) {

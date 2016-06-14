@@ -543,15 +543,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   }
 
   @Override
-  public Boolean visitLevel(LevelExpression expr, Expression params) {
-    ReferenceExpression ref1 = expr.toReference();
-    ReferenceExpression ref2 = expr.toReference();
-    if (ref1 == null && ref2 == null) return false;
-    if (!(ref1 != null && ref1.getBinding() instanceof InferenceBinding) && !(ref2 != null && ref2.getBinding() instanceof InferenceBinding)) return false;
-    return compare(ref1, ref2);
-  }
-
-  @Override
   public Boolean visitBranch(BranchElimTreeNode branchNode, ElimTreeNode node) {
     if (!(node instanceof BranchElimTreeNode))
       return false;
