@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.context;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,8 +76,8 @@ public class Utils {
     }
   }
 
-  public static Substitution matchParameters(DependentLink link, List<Expression> parameters) {
-    Substitution substs = new Substitution();
+  public static ExprSubstitution matchParameters(DependentLink link, List<Expression> parameters) {
+    ExprSubstitution substs = new ExprSubstitution();
     for (Expression parameter : parameters) {
       if (!link.hasNext()) {
         return null;

@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.*;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -26,7 +24,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return true;
     }
 
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     List<Expression> arguments = new ArrayList<>();
     List<EnumSet<AppExpression.Flag>> flags = new ArrayList<>();
     for (int i = 0; i < parameters.size(); i++) {

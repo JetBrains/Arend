@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
   }
 
   @Override
-  public Expression toExpression(Substitution subst) {
+  public Expression toExpression(ExprSubstitution subst) {
     List<Expression> params = new ArrayList<>();
     for (DependentLink link = myConstructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
       Expression param = subst.get(link);
@@ -61,7 +61,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
         List<? extends Expression> args = type.getArguments();
         type = type.getFunction();
         assert type.toDataCall() != null && type.toDataCall().getDefinition() == ((ConstructorPattern) patternArgument.getPattern()).getConstructor().getDataType();
-        Substitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(args));
+        ExprSubstitution subSubst = ((ConstructorPattern) patternArgument.getPattern()).getMatchedArguments(new ArrayList<>(args));
         for (Binding binding : subSubst.getDomain()) {
           subst.add(binding, subSubst.get(binding));
         }
@@ -79,7 +79,7 @@ public class ConstructorPattern extends Pattern implements Abstract.ConstructorP
     return Apps(ConCall(myConstructor, params), arguments);
   }
 
-  public Substitution getMatchedArguments(List<Expression> dataTypeArguments) {
+  public ExprSubstitution getMatchedArguments(List<Expression> dataTypeArguments) {
     return DependentLink.Helper.toSubstitution(myConstructor.getDataTypeParameters(), myConstructor.matchDataTypeArguments(dataTypeArguments));
   }
 

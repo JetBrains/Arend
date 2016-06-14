@@ -94,7 +94,9 @@ public class LevelExpression implements PrettyPrintable {
   public List<LevelExpression> toListOfMaxArgs() {
     if (isInfinity()) return Collections.singletonList(new LevelExpression());
     ArrayList<LevelExpression> list = new ArrayList<>();
-    list.add(new LevelExpression(myConstant));
+    if (myConstant != 0 || myNumSucsOfVars.isEmpty()) {
+      list.add(new LevelExpression(myConstant));
+    }
     for (Map.Entry<Binding, Integer> var : myNumSucsOfVars.entrySet()) {
       list.add(new LevelExpression(var.getKey(), var.getValue()));
     }

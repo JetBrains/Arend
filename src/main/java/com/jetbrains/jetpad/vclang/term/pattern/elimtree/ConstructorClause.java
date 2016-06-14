@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.ArrayList;
@@ -55,8 +55,8 @@ public class ConstructorClause implements Clause {
     return myParameters;
   }
 
-  public Substitution getSubst() {
-    Substitution result = new Substitution();
+  public ExprSubstitution getSubst() {
+    ExprSubstitution result = new ExprSubstitution();
 
     List<Expression> arguments = new ArrayList<>();
     for (DependentLink link = myParameters; link.hasNext(); link = link.getNext()) {

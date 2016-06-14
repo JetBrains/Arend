@@ -53,7 +53,7 @@ public class LetClause extends NamedBinding implements Function {
     return Function.Helper.getFunctionType(this);
   }
 
-  public LetClause subst(Substitution substitution) {
+  public LetClause subst(ExprSubstitution substitution) {
     if (substitution.getDomain().isEmpty()) {
       return this;
     }

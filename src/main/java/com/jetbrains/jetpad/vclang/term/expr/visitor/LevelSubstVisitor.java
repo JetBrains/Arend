@@ -1,14 +1,13 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.ConCall;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class LevelSubstVisitor extends BaseExpressionVisitor<Void, Void> implements ElimTreeNodeVisitor<Void, Void> {
   private LevelSubstitution myLevelSubst;
@@ -18,14 +17,14 @@ public class LevelSubstVisitor extends BaseExpressionVisitor<Void, Void> impleme
   }
 
   public static Expression subst(Expression expr, LevelSubstitution subst) {
-    SubstVisitor substVisitor = new SubstVisitor(new Substitution());
+    SubstVisitor substVisitor = new SubstVisitor(new ExprSubstitution());
     expr = expr.accept(substVisitor, null);
     expr.accept(new LevelSubstVisitor(subst), null);
     return expr;
   }
 
   public static ElimTreeNode subst(ElimTreeNode node, LevelSubstitution subst) {
-    SubstVisitor substVisitor = new SubstVisitor(new Substitution());
+    SubstVisitor substVisitor = new SubstVisitor(new ExprSubstitution());
     node = node.accept(substVisitor, null);
     node.accept(new LevelSubstVisitor(subst), null);
     return node;
@@ -56,6 +55,10 @@ public class LevelSubstVisitor extends BaseExpressionVisitor<Void, Void> impleme
 
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
+    if (expr.getBinding() instanceof InferenceBinding) {
+      //((InferenceBinding) expr.getBinding()).setType(subst(expr.getBinding().getType(), myLevelSubst));
+      expr.getBinding().getType().accept(this, null);
+    }
     return null;
   }
 
@@ -137,10 +140,18 @@ public class LevelSubstVisitor extends BaseExpressionVisitor<Void, Void> impleme
 
   @Override
   public Void visitBranch(BranchElimTreeNode branchNode, Void params) {
+    for (Binding binding : branchNode.getContextTail()) {
+      visitReference(Reference(binding), null);
+    }
+
     for (ConstructorClause clause : branchNode.getConstructorClauses()) {
       clause.getChild().accept(this, null);
     }
-    branchNode.getOtherwiseClause().getChild().accept(this, null);
+
+    if (branchNode.getOtherwiseClause() != null) {
+      branchNode.getOtherwiseClause().getChild().accept(this, null);
+    }
+
     return null;
   }
 

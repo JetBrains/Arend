@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Before;
@@ -95,7 +95,7 @@ public class DefinitionTest {
     assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
 
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     DependentLink link = typedDef.getParameters();
     substitution.add(link, Reference(A));
     link = link.getNext();

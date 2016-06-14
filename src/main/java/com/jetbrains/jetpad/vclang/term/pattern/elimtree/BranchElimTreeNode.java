@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -10,7 +9,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ToAbstractVisitor;
@@ -58,7 +57,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     dataTypeArguments = constructor.matchDataTypeArguments(new ArrayList<>(dataTypeArguments));
     DependentLink constructorArgs = DependentLink.Helper.subst(constructor.getParameters(), toSubstitution(constructor.getDataTypeParameters(), dataTypeArguments));
     if (names != null) {
-      constructorArgs = DependentLink.Helper.subst(constructorArgs, new Substitution());
+      constructorArgs = DependentLink.Helper.subst(constructorArgs, new ExprSubstitution());
       int i = 0;
       for (DependentLink link = constructorArgs; link.hasNext() && i < names.size(); link = link.getNext(), i++) {
         link.setName(names.get(i));
@@ -70,7 +69,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
       arguments.add(Reference(link));
     }
 
-    List<Binding> tailBindings = new Substitution(myReference, Apps(ConCall(constructor, new ArrayList<>(dataTypeArguments)), arguments)).extendBy(myContextTail);
+    List<Binding> tailBindings = new ExprSubstitution(myReference, Apps(ConCall(constructor, new ArrayList<>(dataTypeArguments)), arguments)).extendBy(myContextTail);
     ConstructorClause result = new ConstructorClause(constructor, constructorArgs, tailBindings, this);
     myClauses.put(constructor, result);
     return result;
@@ -105,7 +104,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
     return myOtherwiseClause;
   }
 
-  public ElimTreeNode matchUntilStuck(Substitution subst, boolean normalize) {
+  public ElimTreeNode matchUntilStuck(ExprSubstitution subst, boolean normalize) {
     Expression func = subst.get(myReference);
     if (normalize) {
       func = func.normalize(NormalizeVisitor.Mode.WHNF);

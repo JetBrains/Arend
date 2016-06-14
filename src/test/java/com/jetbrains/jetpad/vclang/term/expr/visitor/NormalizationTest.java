@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
+import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import org.junit.Test;
 
@@ -317,10 +318,10 @@ public class NormalizationTest {
 
   @Test
   public void testIsoleft() {
-    DependentLink lp = param("lp", Lvl());
-    DependentLink lh = param("lh", CNat());
-    DependentLink A = param("A", Universe(Reference(lp), Reference(lh)));
-    DependentLink B = param("B", Universe(Reference(lp), Reference(lh)));
+    Binding lp = new TypedBinding("lp", Lvl());
+    Binding lh = new TypedBinding("lh", CNat());
+    DependentLink A = param("A", Universe(new LevelExpression(lp), new LevelExpression(lh)));
+    DependentLink B = param("B", Universe(new LevelExpression(lp), new LevelExpression(lh)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
@@ -349,10 +350,10 @@ public class NormalizationTest {
 
   @Test
   public void testIsoRight() {
-    DependentLink lp = param("lp", Lvl());
-    DependentLink lh = param("lh", CNat());
-    DependentLink A = param("A", Universe(Reference(lp), Reference(lh)));
-    DependentLink B = param("B", Universe(Reference(lp), Reference(lh)));
+    Binding lp = new TypedBinding("lp", Lvl());
+    Binding lh = new TypedBinding("lh", CNat());
+    DependentLink A = param("A", Universe(new LevelExpression(lp), new LevelExpression(lh)));
+    DependentLink B = param("B", Universe(new LevelExpression(lp), new LevelExpression(lh)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));
@@ -381,10 +382,10 @@ public class NormalizationTest {
 
   @Test
   public void testCoeIso() {
-    DependentLink lp = param("lp", Lvl());
-    DependentLink lh = param("lh", CNat());
-    DependentLink A = param("A", Universe(Reference(lp), Reference(lh)));
-    DependentLink B = param("B", Universe(Reference(lp), Reference(lh)));
+    Binding lp = new TypedBinding("lp", Lvl());
+    Binding lh = new TypedBinding("lh", CNat());
+    DependentLink A = param("A", Universe(new LevelExpression(lp), new LevelExpression(lh)));
+    DependentLink B = param("B", Universe(new LevelExpression(lp), new LevelExpression(lh)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
     DependentLink g = param("g", Pi(param(Reference(B)), Reference(A)));
     DependentLink a = param("a", Reference(A));

@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public class EmptyElimTreeNode extends ElimTreeNode {
   }
 
   @Override
-  public ElimTreeNode matchUntilStuck(Substitution subst, boolean normalize) {
+  public ElimTreeNode matchUntilStuck(ExprSubstitution subst, boolean normalize) {
     return this;
   }
 

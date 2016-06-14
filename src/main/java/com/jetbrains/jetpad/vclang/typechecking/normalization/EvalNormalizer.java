@@ -20,7 +20,7 @@ public class EvalNormalizer implements Normalizer {
   public Expression normalize(LamExpression fun, List<? extends Expression> arguments, List<? extends EnumSet<AppExpression.Flag>> flags, NormalizeVisitor.Mode mode) {
     int i = 0;
     DependentLink link = fun.getParameters();
-    Substitution subst = new Substitution();
+    ExprSubstitution subst = new ExprSubstitution();
     while (link.hasNext() && i < arguments.size()) {
       subst.add(link, arguments.get(i++));
       link = link.getNext();
@@ -81,7 +81,7 @@ public class EvalNormalizer implements Normalizer {
       return null;
     }
 
-    Substitution subst = leaf.matchedToSubst(matchedArguments);
+    ExprSubstitution subst = leaf.matchedToSubst(matchedArguments);
     for (Expression argument : paramArgs) {
       subst.add(params, argument);
       params = params.getNext();

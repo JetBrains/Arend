@@ -19,9 +19,9 @@ import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helpe
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implements ElimTreeNodeVisitor<Void, ElimTreeNode> {
-  private final Substitution mySubstitution;
+  private final ExprSubstitution mySubstitution;
 
-  public SubstVisitor(Substitution substitution) {
+  public SubstVisitor(ExprSubstitution substitution) {
     mySubstitution = substitution;
   }
 

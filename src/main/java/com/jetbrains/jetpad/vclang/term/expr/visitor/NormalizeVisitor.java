@@ -134,7 +134,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     DependentLink excessiveParams;
     int numberOfRequiredArgs = func.getNumberOfRequiredArguments();
     if (numberOfRequiredArgs > args.size()) {
-      excessiveParams = DependentLink.Helper.subst(DependentLink.Helper.get(func.getParameters(), args.size()), new Substitution());
+      excessiveParams = DependentLink.Helper.subst(DependentLink.Helper.get(func.getParameters(), args.size()), new ExprSubstitution());
       List<Expression> requiredArgs1 = new ArrayList<>();
       for (DependentLink link = excessiveParams; link.hasNext(); link = link.getNext()) {
         requiredArgs1.add(Reference(link));
@@ -206,7 +206,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return null;
     }
     if (mode == Mode.HUMAN_NF) {
-      Substitution substitution = new Substitution();
+      ExprSubstitution substitution = new ExprSubstitution();
       return Lam(DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getBody().subst(substitution).accept(this, mode));
     }
     if (mode == Mode.NF) {
@@ -222,7 +222,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return null;
     }
     if (mode == Mode.HUMAN_NF || mode == Mode.NF) {
-      Substitution substitution = new Substitution();
+      ExprSubstitution substitution = new ExprSubstitution();
       return Pi(DependentLink.Helper.accept(expr.getParameters(), substitution, this, mode), expr.getCodomain().subst(substitution).accept(this, mode));
     } else {
       return expr;

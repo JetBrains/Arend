@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
-import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
 import java.util.Set;
@@ -20,7 +17,6 @@ public interface Equations {
   void abstractBinding(Binding binding);
   Equations newInstance();
   Substitution getInferenceVariables(Set<InferenceBinding> binding, boolean onlyPreciseSolutions);
-  LevelSubstitution getLevelVariables(Set<InferenceBinding> binding, boolean onlyPreciseSolutions);
   void reportErrors(ErrorReporter errorReporter);
 
   enum CMP {

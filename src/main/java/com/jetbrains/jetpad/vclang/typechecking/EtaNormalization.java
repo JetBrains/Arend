@@ -56,7 +56,7 @@ public class EtaNormalization {
       return body;
     }
 
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     DependentLink newParams = expression.getParameters().subst(substitution, params.size() - index);
     return new LamExpression(newParams, body.subst(substitution));
   }

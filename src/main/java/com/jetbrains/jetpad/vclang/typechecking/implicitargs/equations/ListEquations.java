@@ -95,7 +95,7 @@ public class ListEquations implements Equations {
 
   private interface Solution {
     TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding);
-    Expression solve(ListEquations equations, InferenceBinding binding, Substitution substitution);
+    Expression solve(ListEquations equations, InferenceBinding binding, ExprSubstitution substitution);
     void subst(Binding binding, Expression subst);
   }
 
@@ -120,7 +120,7 @@ public class ListEquations implements Equations {
     }
 
     @Override
-    public Expression solve(ListEquations equations, InferenceBinding binding, Substitution substitution) {
+    public Expression solve(ListEquations equations, InferenceBinding binding, ExprSubstitution substitution) {
       return expression;
     }
 
@@ -150,7 +150,7 @@ public class ListEquations implements Equations {
     }
 
     @Override
-    public Expression solve(ListEquations equations, InferenceBinding binding, Substitution substitution) {
+    public Expression solve(ListEquations equations, InferenceBinding binding, ExprSubstitution substitution) {
       if (geSet.isEmpty()) {
         Expression result = leSet.get(0).subst(substitution).normalize(NormalizeVisitor.Mode.NF);
         for (int i = 1; i < leSet.size(); i++) {
@@ -233,7 +233,7 @@ public class ListEquations implements Equations {
         for (int i = 1; i < leSet.size(); i++) {
           LevelExpression expr = leSet.get(i).subst(substitution);
           if (!LevelExpression.compare(result, expr, CMP.LE, equations)) {
-            binding.reportErrorInfer(equations.getErrorReporter(), result, expr);
+            binding.reportErrorLevelInfer(equations.getErrorReporter(), result, expr);
             return null;
           }
         }
@@ -249,7 +249,7 @@ public class ListEquations implements Equations {
               LevelExpression result1 = result.subst(substitution);
               LevelExpression expr = geSet.get(i).subst(substitution);
               if (!LevelExpression.compare(result1, expr, CMP.GE, equations)) {
-                binding.reportErrorInfer(equations.getErrorReporter(), result1, expr);
+                binding.reportErrorLevelInfer(equations.getErrorReporter(), result1, expr);
                 return null;
               }
             }
@@ -261,7 +261,7 @@ public class ListEquations implements Equations {
           for (LevelExpression expr : leSet) {
             expr = expr.subst(substitution);
             if (!LevelExpression.compare(result, expr, CMP.LE, equations)) {
-              binding.reportErrorInfer(equations.getErrorReporter(), result, expr);
+              binding.reportErrorLevelInfer(equations.getErrorReporter(), result, expr);
               return null;
             }
           }
@@ -446,7 +446,7 @@ public class ListEquations implements Equations {
       LevelExpression expr1 = sol1.expression;
       LevelExpression expr2 = sol2.expression;
       if (!LevelExpression.compare(expr2, expr1, CMP.EQ, this)) {
-        binding.reportErrorInfer(myErrorReporter, expr2, expr1);
+        binding.reportErrorLevelInfer(myErrorReporter, expr2, expr1);
       }
       return;
     }
@@ -536,12 +536,12 @@ public class ListEquations implements Equations {
     LevelExpression expr1 = sol1.expression;
     for (LevelExpression expr : sol2.geSet) {
       if (!LevelExpression.compare(expr1, expr, CMP.GE, this)) {
-        binding.reportErrorInfer(myErrorReporter, expr1, expr);
+        binding.reportErrorLevelInfer(myErrorReporter, expr1, expr);
       }
     }
     for (LevelExpression expr : sol2.leSet) {
       if (!LevelExpression.compare(expr1, expr, CMP.LE, this)) {
-        binding.reportErrorInfer(myErrorReporter, expr1, expr);
+        binding.reportErrorLevelInfer(myErrorReporter, expr1, expr);
       }
     }
   }
@@ -614,35 +614,17 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public Substitution getInferenceVariables(Set<InferenceBinding> bindings, boolean onlyPreciseSolutions) {
-    Substitution result = new Substitution();
-    if (bindings.isEmpty() || myExactSolutions.isEmpty() && (myEqSolutions.isEmpty() || onlyPreciseSolutions)) {
-      return result;
-    }
-
+  public InferVarsSubstitution getInferenceVariables(Set<InferenceBinding> bindings, boolean onlyPreciseSolutions) {
+    ExprSubstitution result = new ExprSubstitution();
     boolean was;
-    do {
-      was = false;
-      InferenceBinding binding = null;
-      Expression subst = null;
-      // TODO: First solve variables that are not levels, then level variables
-      for (Iterator<Map.Entry<InferenceBinding, ExactSolution>> it = myExactSolutions.entrySet().iterator(); it.hasNext(); ) {
-        Map.Entry<InferenceBinding, ExactSolution> entry = it.next();
-
-        if (bindings.remove(entry.getKey())) {
-          was = true;
-          it.remove();
-          subst = entry.getValue().solve(this, entry.getKey(), result);
-          if (update(entry.getKey(), subst, result)) {
-            binding = entry.getKey();
-          }
-          break;
-        }
-      }
-
-      if (!was && !onlyPreciseSolutions) {
-        for (Iterator<Map.Entry<InferenceBinding, EqSetSolution>> it = myEqSolutions.entrySet().iterator(); it.hasNext(); ) {
-          Map.Entry<InferenceBinding, EqSetSolution> entry = it.next();
+    if (bindings.isEmpty() || myExactSolutions.isEmpty() && (myEqSolutions.isEmpty() || onlyPreciseSolutions)) {
+      do {
+        was = false;
+        InferenceBinding binding = null;
+        Expression subst = null;
+        // TODO: First solve variables that are not levels, then level variables
+        for (Iterator<Map.Entry<InferenceBinding, ExactSolution>> it = myExactSolutions.entrySet().iterator(); it.hasNext(); ) {
+          Map.Entry<InferenceBinding, ExactSolution> entry = it.next();
 
           if (bindings.remove(entry.getKey())) {
             was = true;
@@ -654,76 +636,85 @@ public class ListEquations implements Equations {
             break;
           }
         }
-      }
 
-      if (binding != null) {
-        result.subst(binding, subst);
-        result.add(binding, subst);
-        subst(binding, subst);
-      }
-    } while (was);
+        if (!was && !onlyPreciseSolutions) {
+          for (Iterator<Map.Entry<InferenceBinding, EqSetSolution>> it = myEqSolutions.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<InferenceBinding, EqSetSolution> entry = it.next();
 
-    return result;
-  }
+            if (bindings.remove(entry.getKey())) {
+              was = true;
+              it.remove();
+              subst = entry.getValue().solve(this, entry.getKey(), result);
+              if (update(entry.getKey(), subst, result)) {
+                binding = entry.getKey();
+              }
+              break;
+            }
+          }
+        }
 
-  @Override
-  public LevelSubstitution getLevelVariables(Set<InferenceBinding> bindings, boolean onlyPreciseSolutions) {
-    LevelSubstitution result = new LevelSubstitution();
-    if (bindings.isEmpty() || myExactLevelSolutions.isEmpty() && (myEqLevelSolutions.isEmpty() || onlyPreciseSolutions)) {
-      return result;
+        if (binding != null) {
+          result.subst(binding, subst);
+          result.add(binding, subst);
+          subst(binding, subst);
+        }
+      } while (was);
     }
 
-    boolean was;
-    do {
-      was = false;
-      InferenceBinding binding = null;
-      LevelExpression subst = null;
-      // TODO: First solve variables that are not levels, then level variables
-      for (Iterator<Map.Entry<InferenceBinding, ExactLevelSolution>> it = myExactLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
-        Map.Entry<InferenceBinding, ExactLevelSolution> entry = it.next();
+    LevelSubstitution resultLevel = new LevelSubstitution();
 
-        if (bindings.remove(entry.getKey())) {
-          was = true;
-          it.remove();
-          subst = entry.getValue().solve(this, entry.getKey(), result);
-          if (subst.findBinding(entry.getKey())) {
-            entry.getKey().reportErrorInfer(myErrorReporter, subst);
-          } else {
-            binding = entry.getKey();
-          }
-          break;
-        }
-      }
-
-      if (!was && !onlyPreciseSolutions) {
-        for (Iterator<Map.Entry<InferenceBinding, EqSetLevelSolution>> it = myEqLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
-          Map.Entry<InferenceBinding, EqSetLevelSolution> entry = it.next();
+    if (bindings.isEmpty() || myExactLevelSolutions.isEmpty() && (myEqLevelSolutions.isEmpty() || onlyPreciseSolutions)) {
+      do {
+        was = false;
+        InferenceBinding binding = null;
+        LevelExpression subst = null;
+        // TODO: First solve variables that are not levels, then level variables
+        for (Iterator<Map.Entry<InferenceBinding, ExactLevelSolution>> it = myExactLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
+          Map.Entry<InferenceBinding, ExactLevelSolution> entry = it.next();
 
           if (bindings.remove(entry.getKey())) {
             was = true;
             it.remove();
-            subst = entry.getValue().solve(this, entry.getKey(), result);
+            subst = entry.getValue().solve(this, entry.getKey(), resultLevel);
             if (subst.findBinding(entry.getKey())) {
-              entry.getKey().reportErrorInfer(myErrorReporter, subst);
+              entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
             } else {
               binding = entry.getKey();
             }
             break;
           }
         }
-      }
 
-      if (binding != null) {
-        result.subst(binding, subst);
-        result.add(binding, subst);
-        subst(binding, subst);
-      }
-    } while (was);
+        if (!was && !onlyPreciseSolutions) {
+          for (Iterator<Map.Entry<InferenceBinding, EqSetLevelSolution>> it = myEqLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<InferenceBinding, EqSetLevelSolution> entry = it.next();
 
-    return result;
+            if (bindings.remove(entry.getKey())) {
+              was = true;
+              it.remove();
+              subst = entry.getValue().solve(this, entry.getKey(), resultLevel);
+              if (subst.findBinding(entry.getKey())) {
+                entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
+              } else {
+                binding = entry.getKey();
+              }
+              break;
+            }
+          }
+        }
+
+        if (binding != null) {
+          resultLevel.subst(binding, subst);
+          resultLevel.add(binding, subst);
+          subst(binding, subst);
+        }
+      } while (was);
+    }
+
+    return new InferVarsSubstitution(result, resultLevel);
   }
 
-  private boolean update(InferenceBinding binding, Expression subst, Substitution result) {
+  private boolean update(InferenceBinding binding, Expression subst, ExprSubstitution result) {
     if (subst != null) {
       if (subst.findBinding(binding)) {
         binding.reportErrorInfer(myErrorReporter, subst);

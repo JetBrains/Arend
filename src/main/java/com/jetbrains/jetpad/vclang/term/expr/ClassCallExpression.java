@@ -42,11 +42,11 @@ public class ClassCallExpression extends DefCallExpression {
 
   public TypeUniverse getUniverse() {
     if (myUniverse == null) {
-      Substitution substitution = null;
+      ExprSubstitution substitution = null;
       for (ClassField field : getDefinition().getFields()) {
         if (!myStatements.containsKey(field)) {
           if (substitution == null) {
-            substitution = new Substitution();
+            substitution = new ExprSubstitution();
             for (Map.Entry<ClassField, ImplementStatement> entry : myStatements.entrySet()) {
               if (entry.getValue().term != null) {
                 substitution.add(entry.getKey(), Lam(entry.getKey().getThisParameter(), entry.getValue().term));

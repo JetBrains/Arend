@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
 
 import java.util.List;
 
@@ -86,7 +86,7 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink subst(Substitution subst, int size) {
+  public DependentLink subst(ExprSubstitution subst, int size) {
     if (size == 1) {
       TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, getType(), EmptyDependentLink.getInstance());
       subst.add(this, new ReferenceExpression(result));

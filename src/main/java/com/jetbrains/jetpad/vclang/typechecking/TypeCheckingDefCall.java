@@ -194,14 +194,14 @@ public class TypeCheckingDefCall {
 
       for (Binding polyVar : definition.getPolyParams()) {
         InferenceBinding l = new LevelInferenceBinding(polyVar.getName(), polyVar.getType(), sourceNode);
-        subst.add(polyVar, new LevelExpression(l, 0));
+        subst.add(polyVar, new LevelExpression(l));
       }
 
       DefCallExpression defCall = definition.getDefCall(subst);
       CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, defCall.getDefinition().getTypeWithThis());
 
       for (Binding l : subst.getDomain()) {
-        result.addUnsolvedVariable((InferenceBinding)l);
+        result.addUnsolvedVariable((InferenceBinding)subst.get(l).getUnitBinding());
       }
 
       return result;

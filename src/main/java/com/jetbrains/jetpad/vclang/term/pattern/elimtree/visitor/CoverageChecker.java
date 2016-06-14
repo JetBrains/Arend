@@ -10,9 +10,9 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolean> {
+public class CoverageChecker implements ElimTreeNodeVisitor<ExprSubstitution, Boolean> {
   public interface CoverageCheckerMissingProcessor {
-    void process(Substitution argsSubst);
+    void process(ExprSubstitution argsSubst);
   }
 
   private final CoverageCheckerMissingProcessor myProcessor;
@@ -23,12 +23,12 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
     myResultType = resultType;
   }
 
-  public static boolean check(ElimTreeNode tree, Substitution argsSubst, CoverageCheckerMissingProcessor processor, Expression resultType) {
+  public static boolean check(ElimTreeNode tree, ExprSubstitution argsSubst, CoverageCheckerMissingProcessor processor, Expression resultType) {
     return tree.accept(new CoverageChecker(processor, resultType), argsSubst);
   }
 
   @Override
-  public Boolean visitBranch(BranchElimTreeNode branchNode, Substitution argsSubst) {
+  public Boolean visitBranch(BranchElimTreeNode branchNode, ExprSubstitution argsSubst) {
     Expression type = branchNode.getReference().getType().normalize(NormalizeVisitor.Mode.WHNF);
     List<? extends Expression> parameters = type.getArguments();
     DataCallExpression ftype = type.getFunction().toDataCall();
@@ -55,12 +55,12 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
   }
 
   @Override
-  public Boolean visitLeaf(LeafElimTreeNode leafNode, Substitution argsSubst) {
+  public Boolean visitLeaf(LeafElimTreeNode leafNode, ExprSubstitution argsSubst) {
     return true;
   }
 
   @Override
-  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, Substitution argsSubst) {
+  public Boolean visitEmpty(EmptyElimTreeNode emptyNode, ExprSubstitution argsSubst) {
     List<Binding> tailContext = new ArrayList<>();
     for (Binding binding : argsSubst.getDomain()) {
       ReferenceExpression ref = argsSubst.get(binding).toReference();
@@ -71,7 +71,7 @@ public class CoverageChecker implements ElimTreeNodeVisitor<Substitution, Boolea
     return checkEmptyContext(tailContext, argsSubst);
   }
 
-  public boolean checkEmptyContext(List<Binding> tailContext, Substitution argsSubst) {
+  public boolean checkEmptyContext(List<Binding> tailContext, ExprSubstitution argsSubst) {
     if (tailContext.isEmpty()) {
       myProcessor.process(argsSubst);
       return false;

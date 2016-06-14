@@ -189,8 +189,8 @@ public class Prelude extends Namespace {
     setTruncConParameter5.setNext(setTruncConParameter6);
     SET_TRUNC_PATH_CON = setTrunc.addConstructor("truncS", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(new LevelExpression(truncLp), new LevelExpression(truncLh)), setTruncConParameter1);
     Condition setTruncPathCond = new Condition(SET_TRUNC_PATH_CON, top(setTruncConParameter1, branch(setTruncConParameter6, tail(),
-        clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), FunCall(AT, new LevelSubstitution(atLp, truncLp, atLh, atLh)).addArgument(Reference(setTruncConParameter3), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
-        clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), FunCall(AT, new LevelSubstitution(atLp, truncLp, atLh, atLh)).addArgument(Reference(setTruncConParameter4), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
+        clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), FunCall(AT, new LevelSubstitution(atLp, truncLp, atLh, truncLh)).addArgument(Reference(setTruncConParameter3), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
+        clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), FunCall(AT, new LevelSubstitution(atLp, truncLp, atLh, truncLh)).addArgument(Reference(setTruncConParameter4), AppExpression.DEFAULT).addArgument(Reference(setTruncConParameter5), AppExpression.DEFAULT)),
         clause(branch(setTruncConParameter5, tail(setTruncConParameter6),
             clause(Preprelude.LEFT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter1)),
             clause(Preprelude.RIGHT, EmptyDependentLink.getInstance(), Reference(setTruncConParameter2))))

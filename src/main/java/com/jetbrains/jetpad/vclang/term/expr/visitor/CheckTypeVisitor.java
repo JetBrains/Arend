@@ -52,11 +52,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     @Override
-    public void subst(Substitution substitution, LevelSubstitution levelSubstitution) {
-      expression = expression.subst(substitution);
-      type = type.subst(substitution);
-      expression = expression.subst(levelSubstitution);
-      type = type.subst(levelSubstitution);
+    public void subst(Equations.InferVarsSubstitution substitution) {
+      expression = expression.subst(substitution.Subst);
+      type = type.subst(substitution.Subst);
+      expression = expression.subst(substitution.LevelSubst);
+      type = type.subst(substitution.LevelSubst);
     }
   }
 
@@ -68,9 +68,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     @Override
-    public void subst(Substitution substitution, LevelSubstitution levelSubstitution) {
-      letClause = letClause.subst(substitution);
-      letClause = letClause.subst(levelSubstitution);
+    public void subst(Equations.InferVarsSubstitution substitution) {
+      letClause = letClause.subst(substitution.Subst);
+      letClause = letClause.subst(substitution.LevelSubst);
     }
   }
 
@@ -320,7 +320,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     LinkList list = new LinkList();
     DependentLink actualPiLink = null;
     Result result = new Result(null, null);
-    Substitution piLamSubst = new Substitution();
+    ExprSubstitution piLamSubst = new ExprSubstitution();
     int piParamsIndex = 0;
     int argIndex = 1;
 
@@ -500,7 +500,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       result.addUnsolvedVariable(binding);
       return result;
     } else {
-      TypeCheckingError error = new ArgInferenceError(expression(), expr, null);
+      TypeCheckingError error = new ArgInferenceError(expression(), expr, null, new Expression[0], new LevelExpression[0]);
       expr.setWellTyped(myContext, Error(null, error));
       myErrorReporter.report(error);
       return null;
@@ -526,7 +526,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
         List<Expression> fields = new ArrayList<>(expr.getFields().size());
         Result tupleResult = new Result(Tuple(fields, expectedTypeSigma), expectedType);
-        Substitution substitution = new Substitution();
+        ExprSubstitution substitution = new ExprSubstitution();
         for (Abstract.Expression field : expr.getFields()) {
           Expression expType = sigmaParams.getType().subst(substitution);
           Result result = typeCheck(field, expType);
@@ -719,7 +719,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    Substitution substitution = new Substitution();
+    ExprSubstitution substitution = new ExprSubstitution();
     for (int i = 0; sigmaParams != fieldLink; sigmaParams = sigmaParams.getNext(), i++) {
       substitution.add(sigmaParams, Proj(exprResult.expression, i));
     }

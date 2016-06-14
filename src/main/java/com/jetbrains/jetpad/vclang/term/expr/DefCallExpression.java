@@ -40,7 +40,7 @@ public abstract class DefCallExpression extends Expression {
   }
 
   public void applyLevelSubst(LevelSubstitution subst) {
-    myPolyParamsSubst = subst.compose(myPolyParamsSubst);
+    myPolyParamsSubst.add(subst);
     myNonPolyDefinition = myDefinition.substPolyParams(myPolyParamsSubst);
   }
 

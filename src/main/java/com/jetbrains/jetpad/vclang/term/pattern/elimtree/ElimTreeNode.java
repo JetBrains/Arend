@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.pattern.elimtree;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.visitor.ElimTreeNodeVisitor;
@@ -26,16 +26,16 @@ public abstract class ElimTreeNode {
     return this == obj || obj instanceof ElimTreeNode && CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, this, (ElimTreeNode) obj);
   }
 
-  public ElimTreeNode subst(Substitution subst) {
+  public ElimTreeNode subst(ExprSubstitution subst) {
     if (subst.getDomain().isEmpty()) {
       return this;
     }
     return accept(new SubstVisitor(subst), null);
   }
 
-  public abstract ElimTreeNode matchUntilStuck(Substitution subst, boolean normalize);
+  public abstract ElimTreeNode matchUntilStuck(ExprSubstitution subst, boolean normalize);
 
-  public ElimTreeNode matchUntilStuck(Substitution subst) {
+  public ElimTreeNode matchUntilStuck(ExprSubstitution subst) {
     return matchUntilStuck(subst, true);
   }
 

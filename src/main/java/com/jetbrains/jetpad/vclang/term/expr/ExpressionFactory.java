@@ -309,7 +309,7 @@ public class ExpressionFactory {
     for (ConstructorClausePair pair : clauses) {
       if (pair.constructor != null) {
         ConstructorClause clause = result.addClause(pair.constructor, toNames(pair.parameters));
-        Substitution subst = clause.getSubst();
+        ExprSubstitution subst = clause.getSubst();
         assert size(pair.constructor.getParameters()) == size(pair.parameters);
         for (DependentLink linkFake = pair.parameters, linkTrue = clause.getParameters();
              linkFake.hasNext(); linkFake = linkFake.getNext(), linkTrue = linkTrue.getNext()) {

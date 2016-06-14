@@ -20,17 +20,12 @@ public class LevelInferenceBinding extends InferenceBinding {
   }
 
   @Override
-  public void reportErrorInfer(ErrorReporter errorReporter) {
-    errorReporter.report(new LevelInferenceError(mySourceNode));
-  }
-
-  @Override
   public void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates) {
     errorReporter.report(new LevelInferenceError(mySourceNode));
   }
 
   @Override
-  public void reportErrorInfer(ErrorReporter errorReporter, LevelExpression... candidates) {
+  public void reportErrorLevelInfer(ErrorReporter errorReporter, LevelExpression... candidates) {
     errorReporter.report(new LevelInferenceError(mySourceNode));
   }
 

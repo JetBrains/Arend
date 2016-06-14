@@ -97,6 +97,13 @@ public class TypeUniverse {
     return new TypeUniverse(plevel, hlevel);
   }
 
+  public static boolean compare(TypeUniverse uni1, TypeUniverse uni2, Equations.CMP cmp, Equations equations) {
+    if (uni1.getHLevel().isZero() || uni2.getHLevel().isZero()) {
+      return LevelExpression.compare(uni1.getHLevel(), uni2.getHLevel(), cmp, equations);
+    }
+    return LevelExpression.compare(uni1.getPLevel(), uni2.getPLevel(), cmp, equations) && LevelExpression.compare(uni1.getHLevel(), uni2.getHLevel(), cmp, equations);
+  }
+
   @Override
   public boolean equals(Object other) {
     if (!(other instanceof TypeUniverse)) return false;

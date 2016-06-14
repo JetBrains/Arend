@@ -44,7 +44,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<? extends Expression> args = expr.getArguments();
 
     DataCallExpression dataCall = fun.toDataCall();
-    if (!(args.size() == 5 && dataCall != null && Prelude.isPath(dataCall.getDefinition()))) {
+    if (!(args.size() == 3 && dataCall != null && Prelude.isPath(dataCall.getDefinition()))) {
       return null;
     }
     for (EnumSet<AppExpression.Flag> flag : expr.getFlags()) {
@@ -52,10 +52,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         return null;
       }
     }
-    LamExpression expr1 = args.get(2).toLam();
+    LamExpression expr1 = args.get(0).toLam();
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return myFactory.makeBinOp(args.get(3).accept(this, null), Prelude.PATH_INFIX, args.get(4).accept(this, null));
+        return myFactory.makeBinOp(args.get(1).accept(this, null), Prelude.PATH_INFIX, args.get(2).accept(this, null));
       }
     }
     return null;

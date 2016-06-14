@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -30,6 +29,7 @@ public class Constructor extends Definition implements Function {
     super(rn, precedence);
     myDataType = dataType;
     myParameters = EmptyDependentLink.getInstance();
+    setPolyParams(dataType.getPolyParams());
   }
 
   public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
@@ -38,6 +38,7 @@ public class Constructor extends Definition implements Function {
     myDataType = dataType;
     myParameters = parameters;
     myPatterns = patterns;
+    setPolyParams(dataType.getPolyParams());
   }
 
   public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType) {
@@ -110,11 +111,11 @@ public class Constructor extends Definition implements Function {
       }
       resultType = Apps(resultType, arguments, flags);
     } else {
-      Substitution subst = new Substitution();
+      ExprSubstitution subst = new ExprSubstitution();
       DependentLink dataTypeParams = myDataType.getParameters();
       List<Expression> arguments = new ArrayList<>(myPatterns.getPatterns().size());
       for (PatternArgument patternArg : myPatterns.getPatterns()) {
-        Substitution innerSubst = new Substitution();
+        ExprSubstitution innerSubst = new ExprSubstitution();
 
         if (patternArg.getPattern() instanceof ConstructorPattern) {
           List<? extends Expression> argDataTypeParams = dataTypeParams.getType().subst(subst).normalize(NormalizeVisitor.Mode.WHNF).getArguments();
@@ -147,7 +148,7 @@ public class Constructor extends Definition implements Function {
 
     DependentLink parameters = getDataTypeParameters();
     if (parameters.hasNext()) {
-      Substitution substitution = new Substitution();
+      ExprSubstitution substitution = new ExprSubstitution();
       parameters = DependentLink.Helper.subst(parameters, substitution);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);

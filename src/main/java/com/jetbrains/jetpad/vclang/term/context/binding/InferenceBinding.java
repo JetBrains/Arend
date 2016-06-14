@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 
+
 public abstract class InferenceBinding extends TypedBinding {
   public InferenceBinding(String name, Expression type) {
     super(name, type);
@@ -16,8 +17,7 @@ public abstract class InferenceBinding extends TypedBinding {
 
   public abstract Abstract.SourceNode getSourceNode();
 
-  public abstract void reportErrorInfer(ErrorReporter errorReporter);
   public abstract void reportErrorInfer(ErrorReporter errorReporter, Expression... candidates);
-  public abstract void reportErrorInfer(ErrorReporter errorReporter, LevelExpression... candidates);
+  public abstract void reportErrorLevelInfer(ErrorReporter errorReporter, LevelExpression... candidates);
   public abstract void reportErrorMismatch(ErrorReporter errorReporter, Expression expectedType, Expression actualType, Expression candidate);
 }

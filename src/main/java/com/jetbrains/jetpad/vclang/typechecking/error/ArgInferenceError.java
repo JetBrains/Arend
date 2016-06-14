@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.ArrayList;
@@ -11,21 +12,24 @@ import java.util.ArrayList;
 public class ArgInferenceError extends TypeCheckingError {
   private final PrettyPrintable myWhere;
   private final Expression[] myCandidates;
+  private final LevelExpression[] myLevelCandidates;
   private final Expression myExpected;
   private final Expression myActual;
 
-  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
+  public ArgInferenceError(ResolvedName resolvedName, String message, Abstract.SourceNode expression, PrettyPrintable where, Expression[] candidates, LevelExpression[] levelCandidates) {
     super(resolvedName, message, expression);
     myWhere = where;
     myCandidates = candidates;
+    myLevelCandidates = levelCandidates;
     myExpected = null;
     myActual = null;
   }
 
-  public ArgInferenceError(String message, Abstract.SourceNode expression, PrettyPrintable where, Expression... candidates) {
+  public ArgInferenceError(String message, Abstract.SourceNode expression, PrettyPrintable where, Expression[] candidates, LevelExpression[] levelCandidates) {
     super(message, expression);
     myWhere = where;
     myCandidates = candidates;
+    myLevelCandidates = levelCandidates;
     myExpected = null;
     myActual = null;
   }
@@ -37,6 +41,17 @@ public class ArgInferenceError extends TypeCheckingError {
     myCandidates[0] = candidate;
     myExpected = expected;
     myActual = actual;
+    myLevelCandidates = new LevelExpression[0];
+  }
+
+  public ArgInferenceError(String message, Expression expected, Expression actual, Abstract.SourceNode expression, PrettyPrintable where, LevelExpression candidate) {
+    super(message, expression);
+    myWhere = where;
+    myCandidates = new Expression[0];
+    myExpected = expected;
+    myActual = actual;
+    myLevelCandidates = new LevelExpression[1];
+    myLevelCandidates[0] = candidate;
   }
 
   public static String functionArg(int index) {
@@ -100,6 +115,13 @@ public class ArgInferenceError extends TypeCheckingError {
     if (myCandidates.length > 0) {
       builder.append("\nCandidates are:");
       for (Expression candidate : myCandidates) {
+        builder.append("\n");
+        PrettyPrintVisitor.printIndent(builder, PrettyPrintVisitor.INDENT / 2);
+        candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, PrettyPrintVisitor.INDENT / 2);
+      }
+    } else if (myLevelCandidates.length > 0) {
+      builder.append("\nCandidates are:");
+      for (LevelExpression candidate : myLevelCandidates) {
         builder.append("\n");
         PrettyPrintVisitor.printIndent(builder, PrettyPrintVisitor.INDENT / 2);
         candidate.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, PrettyPrintVisitor.INDENT / 2);

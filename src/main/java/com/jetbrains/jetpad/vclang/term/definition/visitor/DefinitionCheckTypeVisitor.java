@@ -264,7 +264,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     */
       } else {
         // if (splitArgs == null) {
-        myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
+        myErrorReporter.report(new ArgInferenceError(typedDef.getParentNamespace().getResolvedName(), typeOfFunctionArg(index + 1), argument, null, new Expression[0], new LevelExpression[0]));
         return typedDef;
     /*
     } else {
@@ -450,7 +450,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           plevel = plevel.max(argPLevel);
         }
       } else {
-        myErrorReporter.report(new ArgInferenceError(myNamespaceMember.getResolvedName(), typeOfFunctionArg(index + 1), argument, null));
+        myErrorReporter.report(new ArgInferenceError(myNamespaceMember.getResolvedName(), typeOfFunctionArg(index + 1), argument, null, new Expression[0], new LevelExpression[0]));
         return typedDef;
       }
     }
@@ -816,12 +816,12 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           DataCallExpression dataCall = type.toDataCall();
           if (dataCall != null) {
             DataDefinition typeDef = dataCall.getDefinition();
-            if (Prelude.isPath(typeDef) && exprs.size() >= 3) {
-              LamExpression lam = exprs.get(2).normalize(NormalizeVisitor.Mode.WHNF).toLam();
+            if (Prelude.isPath(typeDef) && exprs.size() >= 1) {
+              LamExpression lam = exprs.get(0).normalize(NormalizeVisitor.Mode.WHNF).toLam();
               if (lam != null) {
                 check = true;
                 type = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
-                exprs = exprs.subList(3, exprs.size());
+                exprs = exprs.subList(1, exprs.size());
               }
             }
           } else {

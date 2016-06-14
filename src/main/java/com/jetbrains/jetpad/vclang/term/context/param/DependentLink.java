@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term.context.param;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
@@ -18,19 +18,19 @@ public interface DependentLink extends Binding {
   DependentLink getNext();
   void setNext(DependentLink next);
   void setName(String name);
-  DependentLink subst(Substitution subst, int size);
+  DependentLink subst(ExprSubstitution subst, int size);
   DependentLink getNextTyped(List<String> names);
   boolean hasNext();
 
   class Helper {
-    public static void freeSubsts(DependentLink link, Substitution substitution) {
+    public static void freeSubsts(DependentLink link, ExprSubstitution substitution) {
       for (; link.hasNext(); link = link.getNext()) {
         substitution.getDomain().remove(link);
       }
     }
 
-    public static Substitution toSubstitution(DependentLink link, List<? extends Expression> expressions) {
-      Substitution result = new Substitution();
+    public static ExprSubstitution toSubstitution(DependentLink link, List<? extends Expression> expressions) {
+      ExprSubstitution result = new ExprSubstitution();
       for (Expression expression : expressions) {
         result.add(link, expression);
         link = link.getNext();
@@ -97,7 +97,7 @@ public interface DependentLink extends Binding {
       return result;
     }
 
-    public static DependentLink subst(DependentLink link, Substitution substitution) {
+    public static DependentLink subst(DependentLink link, ExprSubstitution substitution) {
       return link.subst(substitution, Integer.MAX_VALUE);
     }
 
@@ -109,7 +109,7 @@ public interface DependentLink extends Binding {
       return newParams;
     }
 
-    public static <P> DependentLink accept(DependentLink link, Substitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
+    public static <P> DependentLink accept(DependentLink link, ExprSubstitution substitution, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
       link = DependentLink.Helper.subst(link, substitution);
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
         link1 = link1.getNextTyped(null);
@@ -119,11 +119,11 @@ public interface DependentLink extends Binding {
     }
 
     public static <P> DependentLink accept(DependentLink link, ExpressionVisitor<? super P, ? extends Expression> visitor, P params) {
-      return accept(link, new Substitution(), visitor, params);
+      return accept(link, new ExprSubstitution(), visitor, params);
     }
 
     public static DependentLink clone(DependentLink link) {
-      return accept(link, new SubstVisitor(new Substitution()), null);
+      return accept(link, new SubstVisitor(new ExprSubstitution()), null);
     }
   }
 }

@@ -33,6 +33,10 @@ public class LevelSubstitution {
     mySubstExprs.put(binding, expr);
   }
 
+  public void add(LevelSubstitution subst) {
+    mySubstExprs.putAll(subst.mySubstExprs);
+  }
+
   public void subst(Binding binding, LevelExpression expr) {
     for (Map.Entry<Binding, LevelExpression> var : mySubstExprs.entrySet()) {
       var.setValue(var.getValue().subst(binding, expr));
