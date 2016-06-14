@@ -9,10 +9,7 @@ import com.jetbrains.jetpad.vclang.term.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.HasErrors;
-import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.error.*;
 
 import java.util.*;
 
@@ -49,13 +46,8 @@ public class TypeCheckingDefCall {
     Referable resolvedDefinition = expr.getReferent();
     if (resolvedDefinition != null) {
       final Definition typecheckedDefinition = myState.getTypechecked(resolvedDefinition);
-      if (typecheckedDefinition == null) {
-        assert false;
-        TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Internal error: definition '" + resolvedDefinition + "' is not available yet", expr);
-        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-        myVisitor.getErrorReporter().report(error);
-        return null;
-      }
+      if (typecheckedDefinition == null) throw new IllegalStateException("Internal error: definition " + resolvedDefinition + " was not typechecked");
+
       Expression thisExpr = null;
       if (typecheckedDefinition.getThisClass() != null) {
         if (myThisClass != null) {
@@ -82,18 +74,24 @@ public class TypeCheckingDefCall {
     if (result == null) {
       return null;
     }
+    String name = expr.getName();
 
     Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
-    ClassCallExpression classCall = type.toClassCall();
-    if (classCall != null) {
-      ClassDefinition classDefinition = classCall.getDefinition();
-      String name = expr.getName();
-      Definition definition = myState.getDynamicTypecheckedMember(classDefinition, name);
+    if (type.toClassCall() != null) {
+      ClassDefinition classDefinition = type.toClassCall().getDefinition();
+
+      Definition definition = classDefinition.getField(name);
       if (definition == null) {
-        TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot find dynamic definition '" + name + "' in class '" + classDefinition.getResolvedName() + "'", expr);
-        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-        myVisitor.getErrorReporter().report(error);
-        return null;
+        // TODO: resolve dynamic only
+        Referable member = classDefinition.getNamespace().resolveName(name);
+        if (member == null) {
+          MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
+          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+          myVisitor.getErrorReporter().report(error);
+          return null;
+        }
+        definition = myState.getTypechecked(member);
+        if (definition == null) throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
       }
       if (definition.getThisClass() == null) {
         TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Static definitions are not allowed in a non-static context", expr);
@@ -114,12 +112,12 @@ public class TypeCheckingDefCall {
       return applyThis(result, thisExpr, expr);
     }
 
+
     List<? extends Expression> arguments = result.expression.getArguments();
     Expression fun = result.expression.getFunction();
     DataCallExpression dataCall = fun.toDataCall();
     if (dataCall != null) {
       DataDefinition dataDefinition = dataCall.getDefinition();
-      String name = expr.getName();
       Constructor constructor = dataDefinition.getConstructor(name);
       if (constructor != null) {
         result.expression = ConCall(constructor, new ArrayList<>(arguments));
@@ -135,44 +133,56 @@ public class TypeCheckingDefCall {
       }
     }
 
-    Definition definition;
+    final Definition leftDefinition;
+    final Referable member;
     Expression thisExpr = null;
-    ClassCallExpression classCall1 = result.expression.toClassCall();
-    if (classCall1 != null) {
-      definition = classCall1.getDefinition();
-      ClassField parentField = classCall1.getDefinition().getParentField();
+    ClassCallExpression classCall = result.expression.toClassCall();
+    if (classCall != null) {
+      leftDefinition = classCall.getDefinition();
+      ClassField parentField = classCall.getDefinition().getParentField();
       if (parentField != null) {
-        ClassCallExpression.ImplementStatement statement = classCall1.getImplementStatements().get(parentField);
+        ClassCallExpression.ImplementStatement statement = classCall.getImplementStatements().get(parentField);
         if (statement != null) {
           thisExpr = statement.term;
         }
       }
-    } else
-    if (result.expression.toDefCall() != null) {
-      thisExpr = null;
-      definition = result.expression.toDefCall().getDefinition();
-    } else
-    if (result.expression.getFunction().toDefCall() != null && result.expression.getArguments().size() == 1) {
-      thisExpr = result.expression.getArguments().get(0);
-      definition = result.expression.getFunction().toDefCall().getDefinition();
+      // TODO: resolve static only
+      member = leftDefinition.getNamespace().resolveName(expr.getName());
+      if (member == null) {
+        MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, true, expr);
+        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+        myVisitor.getErrorReporter().report(error);
+        return null;
+      }
     } else {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected a definition", expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
-      myVisitor.getErrorReporter().report(error);
-      return null;
+      if (result.expression.toDefCall() != null) {
+        thisExpr = null;
+        leftDefinition = result.expression.toDefCall().getDefinition();
+      } else if (result.expression.getFunction().toDefCall() != null && result.expression.getArguments().size() == 1) {
+        thisExpr = result.expression.getArguments().get(0);
+        leftDefinition = result.expression.getFunction().toDefCall().getDefinition();
+      } else {
+        TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected a definition", expr);
+        expr.setWellTyped(myVisitor.getContext(), Error(result.expression, error));
+        myVisitor.getErrorReporter().report(error);
+        return null;
+      }
+
+      // TODO: static? dynamic? wtf?
+      member = leftDefinition.getNamespace().resolveName(name);
+      if (member == null) {
+        MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, expr);
+        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+        myVisitor.getErrorReporter().report(error);
+        return null;
+      }
     }
 
-    String name = expr.getName();
-    Definition member = myState.getTypecheckedMember(definition, name);
-    if (member == null) {
-      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Cannot find definition '" + name + "' in '" + definition.getResolvedName() + "'", expr);
-      expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-      myVisitor.getErrorReporter().report(error);
-      return null;
-    }
+    Definition definition = myState.getTypechecked(member);
+    if (definition == null) throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
 
-    result.expression = member.getDefCall();
-    result.type = member.getTypeWithThis();
+    result.expression = definition.getDefCall();
+    result.type = definition.getTypeWithThis();
     return applyThis(result, thisExpr, expr);
   }
 

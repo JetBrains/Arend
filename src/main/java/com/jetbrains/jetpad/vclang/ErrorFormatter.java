@@ -156,6 +156,8 @@ public class ErrorFormatter {
           ((ArgInferenceError) error).actual.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, text.length());
         }
       }
+    } else if (error instanceof MemberNotFoundError) {
+      builder.append(((MemberNotFoundError) error).name).append(" of ").append("some compiled definition called ").append(((MemberNotFoundError) error).targetDefinition.getName());
     } else if (error instanceof ModuleCycleError) {
       for (ModuleID moduleID : ((ModuleCycleError) error).cycle) {
         builder.append(moduleID.getModulePath()).append(" - ");

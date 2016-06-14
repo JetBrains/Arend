@@ -10,6 +10,8 @@ import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class NameResolver {
@@ -66,7 +68,11 @@ public class NameResolver {
       }
       return ref;
     }
-  };
+  }
+
+  public Referable resolveDefinition(final Scope curretScope, final String path) {
+    return resolveDefinition(curretScope, Arrays.asList(path.split("\\.")));
+  }
 
   public Referable resolveDefCall(final Scope curretScope, final Abstract.DefCallExpression defCall) {
     if (defCall.getReferent() != null) {

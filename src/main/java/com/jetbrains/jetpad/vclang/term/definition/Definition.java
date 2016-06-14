@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.NamedBinding;
@@ -70,6 +71,6 @@ public abstract class Definition extends NamedBinding implements Referable {
 
   // FIXME[scopes] HACK
   public Namespace getNamespace() {
-    return null;
+    return new EmptyNamespace();
   }
 }

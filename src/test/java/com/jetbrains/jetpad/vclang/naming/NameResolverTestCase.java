@@ -30,7 +30,7 @@ public class NameResolverTestCase {
   }
 
   public static Collection<? extends GeneralError> resolveNamesExpr(Concrete.Expression expression) {
-    return resolveNamesExpr(expression, new EmptyScope());
+    return resolveNamesExpr(expression, INITIAL_SCOPE);
   }
 
   public static Concrete.Expression resolveNamesExpr(String text, int errors, Scope parentScope) {

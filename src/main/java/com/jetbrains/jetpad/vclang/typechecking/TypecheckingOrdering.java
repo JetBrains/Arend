@@ -143,7 +143,7 @@ public class TypecheckingOrdering {
     return orderer.getResult();
   }
 
-  private static void typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+  private static TypecheckerState typecheck(Result result, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
     if (result instanceof OKResult) {
       TypecheckerState state = new TypecheckerState();
       for (Abstract.Definition def : ((OKResult) result).order) {
@@ -155,25 +155,27 @@ public class TypecheckingOrdering {
           typecheckedReporter.typecheckingSucceeded(def);
         }
       }
+      return state;
     } else if (result instanceof CycleResult) {
       errorReporter.report(new CycleError(((CycleResult) result).cycle));
+      return null;
     } else {
       throw new IllegalStateException();
     }
   }
-  public static void typecheck(Abstract.Definition definition, ErrorReporter errorReporter) {
-    typecheck(definition, errorReporter, new DummyTypecheckedReported());
+  public static TypecheckerState typecheck(Abstract.Definition definition, ErrorReporter errorReporter) {
+    return typecheck(definition, errorReporter, new DummyTypecheckedReported());
   }
 
-  public static void typecheck(Abstract.Definition definition, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
-    typecheck(order(definition), errorReporter, typecheckedReporter);
+  public static TypecheckerState typecheck(Abstract.Definition definition, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+    return typecheck(order(definition), errorReporter, typecheckedReporter);
   }
 
-  public static void typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter) {
-    typecheck(definitions, errorReporter, new DummyTypecheckedReported());
+  public static TypecheckerState typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter) {
+    return typecheck(definitions, errorReporter, new DummyTypecheckedReported());
   }
 
-  public static void typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
-    typecheck(order(definitions), errorReporter, typecheckedReporter);
+  public static TypecheckerState typecheck(List<Abstract.Definition> definitions, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter) {
+    return typecheck(order(definitions), errorReporter, typecheckedReporter);
   }
 }

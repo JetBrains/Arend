@@ -39,9 +39,4 @@ public class TypecheckerState {
     Referable resolved = ns.resolveName(name);
     return resolved != null ? getTypechecked(resolved) : null;
   }
-
-  public Definition getDynamicTypecheckedMember(ClassDefinition classDefinition, String name) {
-    ClassField field = classDefinition.getField(name);
-    return field != null ? field : getTypecheckedMember(classDefinition, name);  // TODO dynamic only?
-  }
 }
