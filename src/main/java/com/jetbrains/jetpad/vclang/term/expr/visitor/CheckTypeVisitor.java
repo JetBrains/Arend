@@ -97,6 +97,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       myErrorReporter = errorReporter;
     }
 
+    public Builder(List<Binding> localContext, ErrorReporter errorReporter) {
+      this(new TypecheckerState(), localContext, errorReporter);
+    }
+
     public Builder typeCheckingDefCall(TypeCheckingDefCall typeCheckingDefCall) {
       myTypeCheckingDefCall = typeCheckingDefCall;
       return this;
@@ -124,6 +128,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         visitor.myArgsInference = new StdImplicitArgsInference(definition, visitor);
       }
       return visitor;
+    }
+
+    @Deprecated
+    public CheckTypeVisitor build() {
+      return build(null);
     }
   }
 

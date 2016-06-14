@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesDef;
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesExpr;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -70,9 +73,9 @@ public class TypeCheckingTestCase {
   }
 
   public static Definition typeCheckDef(Concrete.Definition definition, int errors) {
+    TypecheckerState state = new TypecheckerState();
     ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(new HashMap<Abstract.Definition, Definition>(), errorReporter);
-    visitor.setNamespaceMember(Root.getModule(new NameModuleID("test")).namespace.getMember(definition.getName()));
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, errorReporter);
     Definition result = definition.accept(visitor, null);
     if (errors >= 0) {
       assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());

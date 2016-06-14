@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.parser;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
-import com.jetbrains.jetpad.vclang.module.Root;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
@@ -31,7 +30,6 @@ public class ParserTestCase {
   }
 
   public static Concrete.Expression parseExpr(String text, int errors) {
-    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
     Concrete.Expression result = new BuildVisitor(errorReporter).visitExpr(parse("test", errorReporter, text).expr());
     if (errors >= 0) {
@@ -51,7 +49,6 @@ public class ParserTestCase {
   }
 
   public static Concrete.Definition parseDef(String text, int errors) {
-    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
     Concrete.Definition definition = new BuildVisitor(errorReporter).visitDefinition(parse("test", errorReporter, text).definition());
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
@@ -63,7 +60,6 @@ public class ParserTestCase {
   }
 
   public static Concrete.ClassDefinition parseClass(String name, String text, int errors) {
-    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
     VcgrammarParser.StatementsContext tree = parse(name, errorReporter, text).statements();
     assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
