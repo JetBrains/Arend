@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.naming.oneshot.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;

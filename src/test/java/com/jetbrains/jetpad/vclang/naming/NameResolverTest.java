@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.module.Root;
+import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -23,8 +24,8 @@ public class NameResolverTest {
   @Test
   public void parserInfix() {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
-    Definition plus = new FunctionDefinition("+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition("+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);
@@ -38,8 +39,8 @@ public class NameResolverTest {
   @Test
   public void parserInfixError() {
     DependentLink parameters = param(true, vars("x", "y"), Nat());
-    Definition plus = new FunctionDefinition("+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
-    Definition mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.RIGHT_ASSOC, (byte) 6), parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition plus = new FunctionDefinition("+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
+    Definition mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.RIGHT_ASSOC, (byte) 6), EmptyNamespace.INSTANCE, parameters, Nat(), EmptyElimTreeNode.getInstance());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);

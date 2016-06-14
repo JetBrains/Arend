@@ -70,10 +70,6 @@ public class NameResolver {
     }
   }
 
-  public Referable resolveDefinition(final Scope curretScope, final String path) {
-    return resolveDefinition(curretScope, Arrays.asList(path.split("\\.")));
-  }
-
   public Referable resolveDefCall(final Scope curretScope, final Abstract.DefCallExpression defCall) {
     if (defCall.getReferent() != null) {
       return defCall.getReferent();
@@ -114,7 +110,7 @@ public class NameResolver {
 
   public Namespace staticNamespaceFor(Referable ref) {
     if (ref instanceof Definition) {
-      return ((Definition) ref).getNamespace();
+      return ((Definition) ref).getOwnNamespace();
     } else if (ref instanceof Abstract.Definition) {
       return myStaticNamespaceProvider.forDefinition((Abstract.Definition) ref);
     } else {

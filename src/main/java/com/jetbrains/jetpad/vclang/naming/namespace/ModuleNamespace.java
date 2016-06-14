@@ -56,7 +56,7 @@ public class ModuleNamespace implements Namespace {
   public void registerClass(ClassDefinition module) {
     if (myRegisteredClass != null) throw new IllegalStateException();
     //myRegisteredClass = module;
-    myClassNamespace = module.getNamespace();
+    myClassNamespace = module.getOwnNamespace();
     throw new NotImplementedException();
   }
 

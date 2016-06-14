@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
@@ -8,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -300,7 +300,7 @@ public class ClassesTest {
 
   @Test
   public void fieldCallTest() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract x : \\Type0\n" +
         "}\n" +
@@ -308,8 +308,8 @@ public class ClassesTest {
         "  \\abstract a : A\n" +
         "  \\abstract y : a.x\n" +
         "}");
-    ClassDefinition aClass = (ClassDefinition) member.namespace.getDefinition("A");
-    ClassDefinition bClass = (ClassDefinition) member.namespace.getDefinition("B");
+    ClassDefinition aClass = (ClassDefinition) result.getDefinition("A");
+    ClassDefinition bClass = (ClassDefinition) result.getDefinition("B");
     ClassField xField = aClass.getField("x");
     ClassField aField = bClass.getField("a");
     ClassField yField = bClass.getField("y");
@@ -327,7 +327,7 @@ public class ClassesTest {
 
   @Test
   public void funCallsTest() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\static \\function (+) (x y : Nat) => x\n" +
         "\\static \\class A {\n" +
         "  \\static \\function p => 0\n" +
@@ -341,37 +341,34 @@ public class ClassesTest {
         "    \\function k => h + (p + q)" +
         "  }\n" +
         "}");
-    Definition plus = member.namespace.getDefinition("+");
+    Definition plus = result.getDefinition("+");
 
-    NamespaceMember aMember = member.namespace.getMember("A");
-    ClassDefinition aClass = (ClassDefinition) aMember.definition;
+    ClassDefinition aClass = (ClassDefinition) result.getDefinition("A");
     assertTrue(aClass.getFields().isEmpty());
-    FunctionDefinition pFun = (FunctionDefinition) aMember.namespace.getDefinition("p");
+    FunctionDefinition pFun = (FunctionDefinition) result.getDefinition("A.p");
     assertEquals(Nat(), pFun.getType());
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Zero()), pFun.getElimTree());
-    FunctionDefinition qFun = (FunctionDefinition) aMember.namespace.getDefinition("q");
+    FunctionDefinition qFun = (FunctionDefinition) result.getDefinition("A.q");
     assertEquals(Pi(ClassCall(aClass), Nat()), qFun.getType());
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), qFun.getElimTree());
 
-    NamespaceMember bMember = aMember.namespace.getMember("B");
-    ClassDefinition bClass = (ClassDefinition) bMember.definition;
+    ClassDefinition bClass = (ClassDefinition) result.getDefinition("A.B");
     assertTrue(bClass.getFields().isEmpty());
-    FunctionDefinition fFun = (FunctionDefinition) bMember.namespace.getDefinition("f");
+    FunctionDefinition fFun = (FunctionDefinition) result.getDefinition("A.B.f");
     assertEquals(Nat(), fFun.getType());
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), fFun.getElimTree());
-    FunctionDefinition gFun = (FunctionDefinition) bMember.namespace.getDefinition("g");
+    FunctionDefinition gFun = (FunctionDefinition) result.getDefinition("A.B.g");
     assertEquals(Pi(ClassCall(bClass), Nat()), gFun.getType());
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
 
-    NamespaceMember cMember = aMember.namespace.getMember("C");
-    ClassDefinition cClass = (ClassDefinition) cMember.definition;
+    ClassDefinition cClass = (ClassDefinition) result.getDefinition("A.C");
     assertEquals(1, cClass.getFields().size());
     ClassField cParent = cClass.getField("\\parent");
     assertNotNull(cParent);
-    FunctionDefinition hFun = (FunctionDefinition) cMember.namespace.getDefinition("h");
+    FunctionDefinition hFun = (FunctionDefinition) result.getDefinition("A.C.h");
     assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType());
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), FunCall(pFun), Apps(FunCall(qFun), Reference(hFun.getParameters())))), hFun.getElimTree());
-    FunctionDefinition kFun = (FunctionDefinition) cMember.namespace.getDefinition("k");
+    FunctionDefinition kFun = (FunctionDefinition) result.getDefinition("A.C.k");
     assertEquals(Pi(ClassCall(cClass), Nat()), kFun.getType());
     Expression aRef = Apps(FieldCall(cParent), Reference(kFun.getParameters()));
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), Apps(FunCall(hFun), aRef), Apps(plus.getDefCall(), FunCall(pFun), Apps(FunCall(qFun), aRef)))), kFun.getElimTree());

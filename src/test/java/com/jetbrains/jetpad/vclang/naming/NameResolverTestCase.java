@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.naming.scope.SubScope;
 import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveStaticModVisitor;
 
 import java.util.ArrayList;
 import java.util.Collection;

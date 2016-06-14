@@ -33,10 +33,4 @@ public class TypecheckerState {
     }
     return res;
   }
-
-  public Definition getTypecheckedMember(Definition definition, String name) {
-    Namespace ns = definition.getNamespace();
-    Referable resolved = ns.resolveName(name);
-    return resolved != null ? getTypechecked(resolved) : null;
-  }
 }

@@ -69,8 +69,11 @@ public abstract class Definition extends NamedBinding implements Referable {
     return false;
   }
 
-  // FIXME[scopes] HACK
-  public Namespace getNamespace() {
-    return new EmptyNamespace();
+  public Namespace getOwnNamespace() {
+    return EmptyNamespace.INSTANCE;
+  }
+
+  public Namespace getInstanceNamespace() {
+    return EmptyNamespace.INSTANCE;
   }
 }

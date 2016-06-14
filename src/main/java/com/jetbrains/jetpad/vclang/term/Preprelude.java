@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -43,7 +44,7 @@ public class Preprelude extends SimpleNamespace {
   public static FunctionDefinition SUC_CNAT;
 
   static {
-    PRE_PRELUDE_CLASS = new ClassDefinition("Preprelude", PRE_PRELUDE);
+    PRE_PRELUDE_CLASS = new ClassDefinition("Preprelude", PRE_PRELUDE, EmptyNamespace.INSTANCE);
 
     /* Nat, zero, suc */
     DefinitionBuilder.Data nat = new DefinitionBuilder.Data(PRE_PRELUDE, "Nat", Abstract.Binding.DEFAULT_PRECEDENCE, null, EmptyDependentLink.getInstance());
@@ -217,7 +218,7 @@ public class Preprelude extends SimpleNamespace {
       private final FunctionDefinition myDefinition;
 
       public Function(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
-        myDefinition = new FunctionDefinition(name, precedence, parameters, resultType, elimTree);
+        myDefinition = new FunctionDefinition(name, precedence, EmptyNamespace.INSTANCE, parameters, resultType, elimTree);
         parentNs.addDefinition(myDefinition);
       }
 

@@ -138,7 +138,7 @@ public class ModuleSerialization {
     FUNCTION_CODE {
       @Override
       FunctionDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
-        return new FunctionDefinition(name, precedence);
+        return new FunctionDefinition(name, precedence, null);  // FIXME[serial]
       }
     },
     DATA_CODE {
@@ -150,7 +150,7 @@ public class ModuleSerialization {
     CLASS_CODE {
       @Override
       ClassDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
-        return new ClassDefinition(name, (com.jetbrains.jetpad.vclang.naming.namespace.Namespace) null);  // FIXME[serial]
+        return new ClassDefinition(name, null, null);  // FIXME[serial]
       }
     },
     CONSTRUCTOR_CODE {

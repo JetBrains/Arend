@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.Set;
 
 public class EmptyNamespace implements Namespace {
+  public static final EmptyNamespace INSTANCE = new EmptyNamespace();
+
   @Override
   public Set<String> getNames() {
     return Collections.emptySet();

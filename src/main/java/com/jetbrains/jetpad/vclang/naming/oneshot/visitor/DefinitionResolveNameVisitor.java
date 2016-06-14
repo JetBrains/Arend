@@ -188,7 +188,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       Scope staticScope = new StaticClassScope(myParentScope, staticNamespace);
       StatementResolveNameVisitor stVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, staticScope, myContext, myResolveListener);
       for (Abstract.Statement statement : def.getStatements()) {
-        if (statement instanceof Abstract.DefineStatement && Abstract.DefineStatement.StaticMod.DYNAMIC.equals(((Abstract.DefineStatement) statement).getStaticMod()))
+        if (statement instanceof Abstract.DefineStatement && !Abstract.DefineStatement.StaticMod.STATIC.equals(((Abstract.DefineStatement) statement).getStaticMod()))
           continue;  // FIXME[where]
         statement.accept(stVisitor, null);
       }

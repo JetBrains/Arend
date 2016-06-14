@@ -15,17 +15,19 @@ public class FunctionDefinition extends Definition implements Function {
   private Expression myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
-  private Namespace myNamespace;
+  private final Namespace myOwnNamespace;
 
-  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence) {
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace) {
     super(name, precedence);
+    myOwnNamespace = ownNamespace;
     myTypeHasErrors = true;
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
     super(name, precedence);
     assert parameters != null;
+    myOwnNamespace = ownNamespace;
     hasErrors(false);
     myParameters = parameters;
     myResultType = resultType;
@@ -33,9 +35,10 @@ public class FunctionDefinition extends Definition implements Function {
     myElimTree = elimTree;
   }
 
-  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, TypeUniverse universe) {
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, TypeUniverse universe) {
     super(name, precedence, universe);
     assert parameters != null;
+    myOwnNamespace = ownNamespace;
     hasErrors(false);
     myParameters = parameters;
     myResultType = resultType;
@@ -103,12 +106,7 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public Namespace getNamespace() {
-    return myNamespace;
-  }
-
-  public void setNamespace(Namespace namespace) {
-    if (myNamespace != null) throw new IllegalStateException();
-    myNamespace = namespace;
+  public Namespace getOwnNamespace() {
+    return myOwnNamespace;
   }
 }

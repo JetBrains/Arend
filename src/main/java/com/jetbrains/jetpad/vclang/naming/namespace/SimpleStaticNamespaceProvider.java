@@ -5,7 +5,12 @@ import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVis
 
 import java.util.Collection;
 
+import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.DYNAMIC;
+import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
+
 public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
+  public static final StaticNamespaceProvider INSTANCE = new SimpleStaticNamespaceProvider();
+
   public static SimpleNamespace forFunction(Abstract.FunctionDefinition def) {
     return forStatements(def.getStatements());
   }
@@ -27,7 +32,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     for (Abstract.Statement statement : statements) {
       if (!(statement instanceof Abstract.DefineStatement)) continue;
       Abstract.DefineStatement defst = (Abstract.DefineStatement) statement;
-      if (!Abstract.DefineStatement.StaticMod.DYNAMIC.equals(defst.getStaticMod())) {
+      if (STATIC.equals(defst.getStaticMod())) {
         ns.addDefinition(defst.getDefinition());
         if (defst.getDefinition() instanceof Abstract.DataDefinition) {
           ns.addAll(forData((Abstract.DataDefinition) defst.getDefinition()));  // constructors

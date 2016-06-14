@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
@@ -92,7 +94,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   public FunctionDefinition visitFunction(final Abstract.FunctionDefinition def, Void params) {
     String name = def.getName();
     Abstract.Definition.Arrow arrow = def.getArrow();
-    final FunctionDefinition typedDef = new FunctionDefinition(def.getName(), def.getPrecedence());
+    final FunctionDefinition typedDef = new FunctionDefinition(def.getName(), def.getPrecedence(), SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def));
     // TODO[scopes] Fill namespace
 
     /*
@@ -854,7 +856,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
-    ClassDefinition typedDef = new ClassDefinition(def.getName(), def);
+    ClassDefinition typedDef = new ClassDefinition(def.getName(), SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
     ClassDefinition thisClass = getThisClass(def);
     if (thisClass != null) {
       typedDef.addParentField(thisClass);

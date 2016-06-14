@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.*;
@@ -82,8 +83,7 @@ public class TypeCheckingDefCall {
 
       Definition definition = classDefinition.getField(name);
       if (definition == null) {
-        // TODO: resolve dynamic only
-        Referable member = classDefinition.getNamespace().resolveName(name);
+        Referable member = classDefinition.getInstanceNamespace().resolveName(name);
         if (member == null) {
           MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
           expr.setWellTyped(myVisitor.getContext(), Error(null, error));
@@ -146,8 +146,7 @@ public class TypeCheckingDefCall {
           thisExpr = statement.term;
         }
       }
-      // TODO: resolve static only
-      member = leftDefinition.getNamespace().resolveName(expr.getName());
+      member = leftDefinition.getOwnNamespace().resolveName(expr.getName());
       if (member == null) {
         MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, true, expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
@@ -168,8 +167,7 @@ public class TypeCheckingDefCall {
         return null;
       }
 
-      // TODO: static? dynamic? wtf?
-      member = leftDefinition.getNamespace().resolveName(name);
+      member = new MergeScope(leftDefinition.getOwnNamespace(), leftDefinition.getInstanceNamespace()).resolveName(name);
       if (member == null) {
         MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, leftDefinition, name, expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));

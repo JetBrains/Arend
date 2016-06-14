@@ -2,11 +2,16 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
@@ -110,8 +115,21 @@ public class TypeCheckingTestCase {
     }
 
     public Definition getDefinition(String path) {
-      Namespace ns = DEFAULT_STATIC_NS_PROVIDER.forDefinition(classDefinition);
-      return typecheckerState.getTypechecked(DEFAULT_NAME_RESOLVER.resolveDefinition(ns, path));
+      Referable ref = classDefinition;
+      for (String n : path.split("\\.")) {
+        Referable oldref = ref;
+
+        ref = DEFAULT_NAME_RESOLVER.staticNamespaceFor(oldref).resolveName(n);
+        if (ref != null) continue;
+
+        if (oldref instanceof Abstract.ClassDefinition) {
+          ref = SimpleDynamicNamespaceProvider.INSTANCE.forClass((Abstract.ClassDefinition) oldref).resolveName(n);
+        } else if (oldref instanceof ClassDefinition) {
+          ref = ((ClassDefinition) oldref).getInstanceNamespace().resolveName(n);
+        }
+        if (ref == null) return null;
+      }
+      return typecheckerState.getTypechecked(ref);
     }
   }
 

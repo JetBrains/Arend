@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -42,7 +43,7 @@ public class Prelude extends SimpleNamespace {
   public static Constructor SET_TRUNC_PATH_CON;
 
   static {
-    PRELUDE_CLASS = new ClassDefinition("Prelude", PRELUDE);
+    PRELUDE_CLASS = new ClassDefinition("Prelude", PRELUDE, EmptyNamespace.INSTANCE);
     Preprelude.setUniverses();
 
     /* Path */

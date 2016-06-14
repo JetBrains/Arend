@@ -15,26 +15,16 @@ import java.util.Map;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ClassDefinition extends Definition {
-  private final Namespace myNamespace;
+  private final Namespace myOwnNamespace;
+  private final Namespace myInstanceNamespace;
 
   private Map<String, ClassField> myFields = null;
 
-  public ClassDefinition(String name, Namespace namespace) {
+  public ClassDefinition(String name, Namespace ownNamespace, Namespace instanceNamespace) {
     super(name, Abstract.Binding.DEFAULT_PRECEDENCE);
     super.hasErrors(false);
-    myNamespace = namespace;
-  }
-
-  public ClassDefinition(String name, Abstract.ClassDefinition def) {
-    super(name, Abstract.Binding.DEFAULT_PRECEDENCE);
-    super.hasErrors(false);
-    myNamespace = new SimpleStaticNamespaceProvider().forDefinition(def);  // TODO: is this the right way?
-  }
-
-  public ClassDefinition(String name, Namespace namespace, TypeUniverse universe) {
-    super(name, Abstract.Binding.DEFAULT_PRECEDENCE, universe);
-    super.hasErrors(false);
-    myNamespace = namespace;
+    myOwnNamespace = ownNamespace;
+    myInstanceNamespace = instanceNamespace;
   }
 
   @Override
@@ -106,7 +96,12 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public Namespace getNamespace() {
-    return myNamespace;
+  public Namespace getOwnNamespace() {
+    return myOwnNamespace;
+  }
+
+  @Override
+  public Namespace getInstanceNamespace() {
+    return myInstanceNamespace;
   }
 }
