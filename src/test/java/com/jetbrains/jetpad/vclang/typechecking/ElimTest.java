@@ -1,8 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
@@ -200,13 +197,6 @@ public class ElimTest {
   @Test
   public void testSide() {
     typeCheckClass("\\static \\function test (n : Nat) <= suc (\\elim n | suc n => n | zero => 0)", 1);
-  }
-
-  @Test
-  public void testPrepreludeSuc() {
-    typeCheckClass(
-        "\\static \\function test' => ::Preprelude.suc\n"
-    );
   }
 
   @Test

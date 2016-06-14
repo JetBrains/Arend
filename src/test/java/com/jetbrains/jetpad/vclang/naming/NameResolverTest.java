@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.elimtree.EmptyElimTreeNode;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesDef;
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesExpr;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.compare;
 import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.cBinOp;
@@ -288,5 +289,12 @@ public class NameResolverTest {
   @Test
   public void dataConstructor() {
     resolveNamesClass("test", "\\data D | d \\function f => D.d");
+  }
+
+  @Test
+  public void testPrepreludeSuc() {
+    resolveNamesDef(
+        "\\static \\function test' => ::Preprelude.suc\n"
+    );
   }
 }
