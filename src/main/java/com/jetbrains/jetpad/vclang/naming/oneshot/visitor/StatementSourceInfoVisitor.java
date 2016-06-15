@@ -9,16 +9,15 @@ import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisit
 public class StatementSourceInfoVisitor implements AbstractStatementVisitor<FullName, Void> {
   private final SimpleSourceInfoProvider myProvider;
   private final ModuleID myModuleId;
-  private final DefinitionSourceInfoVisitor myDefVisitor;
 
   public StatementSourceInfoVisitor(SimpleSourceInfoProvider provider, ModuleID moduleId) {
     myProvider = provider;
     myModuleId = moduleId;
-    myDefVisitor = new DefinitionSourceInfoVisitor(provider, myModuleId);
   }
 
   @Override
   public Void visitDefine(Abstract.DefineStatement stat, FullName params) {
+    DefinitionSourceInfoVisitor myDefVisitor = new DefinitionSourceInfoVisitor(myProvider, myModuleId);
     Abstract.Definition def = stat.getDefinition();
     FullName defName = new FullName(params, def.getName());
     myProvider.registerDefinition(def, defName, myModuleId);
