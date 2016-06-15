@@ -76,7 +76,7 @@ public class StatementResolveNameVisitor implements AbstractStatementVisitor<Def
       ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(stat.getModulePath());
       Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
       if (moduleClass == null) {
-        myErrorReporter.report(new GeneralError("Module not found", stat));  // FIXME[error]: report proper
+        myErrorReporter.report(new GeneralError("Module not found: " + stat.getModulePath(), stat));  // FIXME[error]: report proper
         return null;
       }
       if (stat.getPath().isEmpty()) {

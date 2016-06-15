@@ -169,18 +169,17 @@ public class ErrorFormatter {
     return builder.toString();
   }
 
-  private String printCause(Abstract.SourceNode cause) {
-    String text = "In: ";
-    return text + PrettyPrintVisitor.prettyPrint(cause, text.length());
-  }
-
   private String printBody(GeneralError error) {
     StringBuilder builder = new StringBuilder();
     String data = printData(error);
     builder.append(data);
     if (error.getCause() != null) {
-      if (!data.isEmpty()) builder.append('\n');
-      builder.append(printCause(error.getCause()));
+      String text = "In: ";
+      String causeString = PrettyPrintVisitor.prettyPrint(error.getCause(), text.length());
+      if (causeString != null) {
+        if (!data.isEmpty()) builder.append('\n');
+        builder.append(text).append(causeString);
+      }
     }
     return builder.toString();
   }
