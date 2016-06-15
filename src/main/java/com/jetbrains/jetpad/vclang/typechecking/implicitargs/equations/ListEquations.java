@@ -614,23 +614,23 @@ public class ListEquations implements Equations {
   }
 
   @Override
-  public InferVarsSubstitution getInferenceVariables(Set<InferenceBinding> bindings, boolean onlyPreciseSolutions) {
-    ExprSubstitution result = new ExprSubstitution();
+  public Substitution getInferenceVariables(Set<InferenceBinding> bindings, boolean onlyPreciseSolutions) {
+    Substitution result = new Substitution();
     boolean was;
     if (bindings.isEmpty() || myExactSolutions.isEmpty() && (myEqSolutions.isEmpty() || onlyPreciseSolutions)) {
       do {
         was = false;
         InferenceBinding binding = null;
         Expression subst = null;
-        // TODO: First solve variables that are not levels, then level variables
+
         for (Iterator<Map.Entry<InferenceBinding, ExactSolution>> it = myExactSolutions.entrySet().iterator(); it.hasNext(); ) {
           Map.Entry<InferenceBinding, ExactSolution> entry = it.next();
 
           if (bindings.remove(entry.getKey())) {
             was = true;
             it.remove();
-            subst = entry.getValue().solve(this, entry.getKey(), result);
-            if (update(entry.getKey(), subst, result)) {
+            subst = entry.getValue().solve(this, entry.getKey(), result.ExprSubst);
+            if (update(entry.getKey(), subst, result.ExprSubst)) {
               binding = entry.getKey();
             }
             break;
@@ -644,8 +644,8 @@ public class ListEquations implements Equations {
             if (bindings.remove(entry.getKey())) {
               was = true;
               it.remove();
-              subst = entry.getValue().solve(this, entry.getKey(), result);
-              if (update(entry.getKey(), subst, result)) {
+              subst = entry.getValue().solve(this, entry.getKey(), result.ExprSubst);
+              if (update(entry.getKey(), subst, result.ExprSubst)) {
                 binding = entry.getKey();
               }
               break;
@@ -654,28 +654,26 @@ public class ListEquations implements Equations {
         }
 
         if (binding != null) {
-          result.subst(binding, subst);
-          result.add(binding, subst);
+          result.ExprSubst.subst(binding, subst);
+          result.ExprSubst.add(binding, subst);
           subst(binding, subst);
         }
       } while (was);
     }
-
-    LevelSubstitution resultLevel = new LevelSubstitution();
 
     if (bindings.isEmpty() || myExactLevelSolutions.isEmpty() && (myEqLevelSolutions.isEmpty() || onlyPreciseSolutions)) {
       do {
         was = false;
         InferenceBinding binding = null;
         LevelExpression subst = null;
-        // TODO: First solve variables that are not levels, then level variables
+
         for (Iterator<Map.Entry<InferenceBinding, ExactLevelSolution>> it = myExactLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
           Map.Entry<InferenceBinding, ExactLevelSolution> entry = it.next();
 
           if (bindings.remove(entry.getKey())) {
             was = true;
             it.remove();
-            subst = entry.getValue().solve(this, entry.getKey(), resultLevel);
+            subst = entry.getValue().solve(this, entry.getKey(), result.LevelSubst);
             if (subst.findBinding(entry.getKey())) {
               entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
             } else {
@@ -692,7 +690,7 @@ public class ListEquations implements Equations {
             if (bindings.remove(entry.getKey())) {
               was = true;
               it.remove();
-              subst = entry.getValue().solve(this, entry.getKey(), resultLevel);
+              subst = entry.getValue().solve(this, entry.getKey(), result.LevelSubst);
               if (subst.findBinding(entry.getKey())) {
                 entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
               } else {
@@ -704,14 +702,14 @@ public class ListEquations implements Equations {
         }
 
         if (binding != null) {
-          resultLevel.subst(binding, subst);
-          resultLevel.add(binding, subst);
+          result.LevelSubst.subst(binding, subst);
+          result.LevelSubst.add(binding, subst);
           subst(binding, subst);
         }
       } while (was);
     }
 
-    return new InferVarsSubstitution(result, resultLevel);
+    return result;
   }
 
   private boolean update(InferenceBinding binding, Expression subst, ExprSubstitution result) {

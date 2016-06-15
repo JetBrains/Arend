@@ -54,9 +54,12 @@ public abstract class Expression implements PrettyPrintable {
     return accept(new SubstVisitor(new ExprSubstitution(binding, substExpr)), null);
   }
 
-  public final Expression subst(Substitution subst) {
-    Expression result = subst.ExprSubst.getDomain().isEmpty() ? this : accept(new SubstVisitor(subst.ExprSubst), null);
-    return subst.LevelSubst.getDomain().isEmpty() ? result : LevelSubstVisitor.subst(result, subst.LevelSubst);
+  public final Expression subst(ExprSubstitution subst) {
+    return subst.getDomain().isEmpty() ? this : accept(new SubstVisitor(subst), null);
+  }
+
+  public final Expression subst(LevelSubstitution subst) {
+    return subst.getDomain().isEmpty() ? this : LevelSubstVisitor.subst(this, subst);
   }
 
   public final Expression normalize(NormalizeVisitor.Mode mode) {
@@ -141,7 +144,7 @@ public abstract class Expression implements PrettyPrintable {
       return this;
     }
 
-    Substitution subst = new Substitution();
+    ExprSubstitution subst = new ExprSubstitution();
     List<DependentLink> params = new ArrayList<>();
     Expression cod = getPiParameters(params, true, false);
     if (params.isEmpty()) {
@@ -150,7 +153,7 @@ public abstract class Expression implements PrettyPrintable {
     }
     int size = expressions.size() > params.size() ? params.size() : expressions.size();
     for (int i = 0; i < size; i++) {
-      subst.ExprSubst.add(params.get(i), expressions.get(i));
+      subst.add(params.get(i), expressions.get(i));
     }
 
     if (expressions.size() < params.size()) {

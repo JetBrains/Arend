@@ -21,6 +21,7 @@ public class Substitution {
 
   public Set<Binding> getDomain() {
     Set<Binding> result = new HashSet<>(ExprSubst.getDomain());
-    return (result).addAll(LevelSubst.getDomain());
+    result.addAll(LevelSubst.getDomain());
+    return result;
   }
 }

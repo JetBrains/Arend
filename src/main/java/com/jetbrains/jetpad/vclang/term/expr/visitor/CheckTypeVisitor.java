@@ -52,9 +52,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     @Override
-    public void subst(Equations.InferVarsSubstitution substitution) {
-      expression = expression.subst(substitution.Subst);
-      type = type.subst(substitution.Subst);
+    public void subst(Substitution substitution) {
+      expression = expression.subst(substitution.ExprSubst);
+      type = type.subst(substitution.ExprSubst);
       expression = expression.subst(substitution.LevelSubst);
       type = type.subst(substitution.LevelSubst);
     }
@@ -68,8 +68,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     @Override
-    public void subst(Equations.InferVarsSubstitution substitution) {
-      letClause = letClause.subst(substitution.Subst);
+    public void subst(Substitution substitution) {
+      letClause = letClause.subst(substitution.ExprSubst);
       letClause = letClause.subst(substitution.LevelSubst);
     }
   }
@@ -418,9 +418,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
           result.addUnsolvedVariable(bindingType);
           Substitution substitution = result.getSubstitution(false);
           if (!substitution.getDomain().isEmpty()) {
-            bodyResult.expression = bodyResult.expression.subst(substitution);
-            bodyResult.type = bodyResult.type.subst(substitution);
-            ((DependentLink) myContext.get(i)).setType(myContext.get(i).getType().subst(substitution));
+            bodyResult.expression = bodyResult.expression.subst(substitution.ExprSubst);
+            bodyResult.expression = bodyResult.expression.subst(substitution.LevelSubst);
+            bodyResult.type = bodyResult.type.subst(substitution.ExprSubst);
+            bodyResult.type = bodyResult.type.subst(substitution.LevelSubst);
+            ((DependentLink) myContext.get(i)).setType(myContext.get(i).getType().subst(substitution.ExprSubst));
+            ((DependentLink) myContext.get(i)).setType(myContext.get(i).getType().subst(substitution.LevelSubst));
           }
         }
       }

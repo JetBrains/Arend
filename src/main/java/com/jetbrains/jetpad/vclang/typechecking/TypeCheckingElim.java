@@ -125,8 +125,8 @@ public class TypeCheckingElim {
     }
 
     @Override
-    public void subst(Equations.InferVarsSubstitution substitution) {
-      elimTree = LevelSubstVisitor.subst(elimTree.subst(substitution.Subst), substitution.LevelSubst);
+    public void subst(Substitution substitution) {
+      elimTree = LevelSubstVisitor.subst(elimTree.subst(substitution.ExprSubst), substitution.LevelSubst);
     }
   }
 
