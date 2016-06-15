@@ -1,13 +1,14 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 import java.util.ArrayList;
 
 public class LevelInferenceError extends TypeCheckingError {
-  public LevelInferenceError(Abstract.SourceNode sourceNode) {
-    super("Cannot infer level of ", sourceNode);
+  public LevelInferenceError(LevelInferenceBinding levelVar, Abstract.SourceNode sourceNode) {
+    super("Cannot infer level " + levelVar + " of ", sourceNode);
   }
 
   @Override

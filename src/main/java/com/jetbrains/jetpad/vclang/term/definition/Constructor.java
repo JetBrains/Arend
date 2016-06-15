@@ -168,7 +168,14 @@ public class Constructor extends Definition implements Function {
     if (!myDataType.isPolymorphic()) {
       return this;
     }
-    return new Constructor(getResolvedName(), getPrecedence(),
-            getUniverse().subst(subst), DependentLink.Helper.subst(myParameters, subst), myDataType.substPolyParams(subst), myPatterns);
+    DataDefinition newDataType = myDataType.substPolyParams(subst);
+
+    for (Constructor cons : newDataType.getConstructors()) {
+      if (cons.getName().equals(getName())) {
+        return cons;
+      }
+    }
+
+    return null;
   }
 }

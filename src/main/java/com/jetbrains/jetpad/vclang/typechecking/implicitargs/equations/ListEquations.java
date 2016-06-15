@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
+import com.jetbrains.jetpad.vclang.term.context.binding.LevelInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -229,15 +230,15 @@ public class ListEquations implements Equations {
     @Override
     public LevelExpression solve(ListEquations equations, InferenceBinding binding, LevelSubstitution substitution) {
       if (geSet.isEmpty()) {
-        LevelExpression result = leSet.get(0).subst(substitution);
+        /*LevelExpression result = leSet.get(0).subst(substitution);
         for (int i = 1; i < leSet.size(); i++) {
           LevelExpression expr = leSet.get(i).subst(substitution);
           if (!LevelExpression.compare(result, expr, CMP.LE, equations)) {
             binding.reportErrorLevelInfer(equations.getErrorReporter(), result, expr);
             return null;
           }
-        }
-        return result;
+        } /**/
+        return new LevelExpression(0);
       } else {
         LevelExpression result = geSet.get(0);
         if (geSet.size() > 1) {
@@ -579,7 +580,7 @@ public class ListEquations implements Equations {
 
   @Override
   public boolean isEmpty() {
-    return myEquations.isEmpty() && myExactSolutions.isEmpty() && myEqSolutions.isEmpty() && myErrorReporter.getErrorList().isEmpty();
+    return false;//myEquations.isEmpty() && myExactSolutions.isEmpty() && myEqSolutions.isEmpty() && myErrorReporter.getErrorList().isEmpty();
   }
 
   @Override
@@ -617,7 +618,7 @@ public class ListEquations implements Equations {
   public Substitution getInferenceVariables(Set<InferenceBinding> bindings, boolean onlyPreciseSolutions) {
     Substitution result = new Substitution();
     boolean was;
-    if (bindings.isEmpty() || myExactSolutions.isEmpty() && (myEqSolutions.isEmpty() || onlyPreciseSolutions)) {
+    if (!bindings.isEmpty() && (!myExactSolutions.isEmpty() || (!myEqSolutions.isEmpty() && !onlyPreciseSolutions))) {
       do {
         was = false;
         InferenceBinding binding = null;
@@ -661,7 +662,7 @@ public class ListEquations implements Equations {
       } while (was);
     }
 
-    if (bindings.isEmpty() || myExactLevelSolutions.isEmpty() && (myEqLevelSolutions.isEmpty() || onlyPreciseSolutions)) {
+    if (!bindings.isEmpty() && (!myExactLevelSolutions.isEmpty() || (!onlyPreciseSolutions))) {
       do {
         was = false;
         InferenceBinding binding = null;
@@ -707,6 +708,18 @@ public class ListEquations implements Equations {
           subst(binding, subst);
         }
       } while (was);
+
+      if (!onlyPreciseSolutions && !bindings.isEmpty()) {
+        for (Iterator<InferenceBinding> binding_iter = bindings.iterator(); binding_iter.hasNext(); ) {
+          Binding binding = binding_iter.next();
+          if (binding instanceof LevelInferenceBinding && !myEqLevelSolutions.containsKey(binding)) {
+            result.LevelSubst.subst(binding, new LevelExpression(0));
+            result.LevelSubst.add(binding, new LevelExpression(0));
+            subst(binding, new LevelExpression(0));
+            binding_iter.remove();
+          }
+        }
+      }
     }
 
     return result;
