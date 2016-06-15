@@ -62,7 +62,7 @@ public abstract class BaseModuleLoader implements ModuleLoader {
   public Result load(ModuleID module) {
     Result loaded = myLoadedModules.get(module);
     if (loaded != null) {
-      return null;
+      return loaded;
     }
 
     int index = myLoadingModules.indexOf(module);

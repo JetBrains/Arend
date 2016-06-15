@@ -123,7 +123,7 @@ public class ConsoleMain {
     };
 
     ModuleDeserialization moduleDeserialization = new ModuleDeserialization();
-    moduleLoader.setSourceSupplier(new FileSourceSupplier(moduleLoader, errorReporter, sourceDir));
+    moduleLoader.setSourceSupplier(new FileSourceSupplier(errorReporter, sourceDir));
     moduleLoader.setOutputSupplier(new FileOutputSupplier(moduleDeserialization, outputDir, libDirs));
 
     if (cmdLine.getArgList().isEmpty()) {

@@ -31,6 +31,7 @@ public class DefCall {
 
   private void testType(Expression expected, TypeCheckingTestCase.TypeCheckClassResult result) {
     assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType());
+    assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
   private DependentLink getThis(TypeCheckingTestCase.TypeCheckClassResult result) {

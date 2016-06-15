@@ -10,7 +10,7 @@ import java.io.IOException;
 public class FileSource extends ParseSource {
   private final File myFile;
 
-  public FileSource(ModuleLoader moduleLoader, ErrorReporter errorReporter, FileModuleID module, File file) {
+  public FileSource(ErrorReporter errorReporter, FileModuleID module, File file) {
     super(errorReporter, module);
     myFile = file;
   }
