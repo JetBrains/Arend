@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
+import com.jetbrains.jetpad.vclang.naming.NamespaceUtil;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -115,21 +116,8 @@ public class TypeCheckingTestCase {
     }
 
     public Definition getDefinition(String path) {
-      Referable ref = classDefinition;
-      for (String n : path.split("\\.")) {
-        Referable oldref = ref;
-
-        ref = DEFAULT_NAME_RESOLVER.staticNamespaceFor(oldref).resolveName(n);
-        if (ref != null) continue;
-
-        if (oldref instanceof Abstract.ClassDefinition) {
-          ref = SimpleDynamicNamespaceProvider.INSTANCE.forClass((Abstract.ClassDefinition) oldref).resolveName(n);
-        } else if (oldref instanceof ClassDefinition) {
-          ref = ((ClassDefinition) oldref).getInstanceNamespace().resolveName(n);
-        }
-        if (ref == null) return null;
-      }
-      return typecheckerState.getTypechecked(ref);
+      Referable ref = NamespaceUtil.get(classDefinition, path);
+      return ref != null ? typecheckerState.getTypechecked(ref) : null;
     }
   }
 
