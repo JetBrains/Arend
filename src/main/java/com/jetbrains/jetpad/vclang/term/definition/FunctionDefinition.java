@@ -5,9 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.FunCallExpression;
-import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
@@ -109,12 +107,15 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public FunctionDefinition substPolyParams(LevelSubstitution subst) {
+  public FunctionDefinition substPolyParams(LevelSubstitution substitution) {
     if (!isPolymorphic() || myTypeHasErrors) {
       return this;
     }
 
-    return new FunctionDefinition(getResolvedName(), getPrecedence(), DependentLink.Helper.subst(myParameters, subst),
-            LevelSubstVisitor.subst(myResultType, subst), LevelSubstVisitor.subst(myElimTree, subst), getUniverse().subst(subst));
+    Substitution subst = new Substitution(new ExprSubstitution(), substitution);
+    DependentLink newParams = DependentLink.Helper.subst(myParameters, subst);
+
+    return new FunctionDefinition(getResolvedName(), getPrecedence(), newParams,
+            myResultType.subst(subst), myElimTree.subst(subst), getUniverse().subst(subst.LevelSubst));
   }
 }

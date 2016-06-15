@@ -116,19 +116,20 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public DataDefinition substPolyParams(LevelSubstitution subst) {
+  public DataDefinition substPolyParams(LevelSubstitution substitution) {
     if (!isPolymorphic()) {
       return this;
     }
-    DataDefinition newDef = new DataDefinition(getResolvedName(), getPrecedence(), getUniverse().subst(subst), DependentLink.Helper.subst(myParameters, subst));
+    Substitution subst = new Substitution(new ExprSubstitution(), substitution);
+    DataDefinition newDef = new DataDefinition(getResolvedName(), getPrecedence(), getUniverse().subst(subst.LevelSubst), DependentLink.Helper.subst(myParameters, subst));
     for (Constructor constructor : getConstructors()) {
       Constructor newConstructor = new Constructor(constructor.getResolvedName(), constructor.getPrecedence(),
-              constructor.getUniverse().subst(subst), DependentLink.Helper.subst(constructor.getParameters(), subst), newDef, constructor.getPatterns());
+              constructor.getUniverse().subst(subst.LevelSubst), DependentLink.Helper.subst(constructor.getParameters(), subst), newDef, constructor.getPatterns());
       newDef.addConstructor(newConstructor);
 
       Condition cond = newDef.getCondition(constructor);
       if (cond != null) {
-        newDef.addCondition(new Condition(newConstructor, LevelSubstVisitor.subst(cond.getElimTree(), subst)));
+        newDef.addCondition(new Condition(newConstructor, cond.getElimTree().subst(subst)));
       }
     }
     return newDef;

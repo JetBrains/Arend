@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
@@ -101,10 +102,10 @@ public interface DependentLink extends Binding {
       return link.subst(substitution, Integer.MAX_VALUE);
     }
 
-    public static DependentLink subst(DependentLink link, LevelSubstitution substitution) {
-      DependentLink newParams = DependentLink.Helper.clone(link);
+    public static DependentLink subst(DependentLink link, Substitution substitution) {
+      DependentLink newParams = subst(link, substitution.ExprSubst);
       for (DependentLink param = newParams; param.hasNext(); param = param.getNext()) {
-        param.getType().accept(new LevelSubstVisitor(substitution), null);
+        param.getType().accept(new LevelSubstVisitor(substitution.LevelSubst), null);
       }
       return newParams;
     }
