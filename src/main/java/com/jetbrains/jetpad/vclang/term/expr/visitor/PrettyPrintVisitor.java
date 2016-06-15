@@ -3,16 +3,21 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Name;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementPrettyPrintVisitor;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>, AbstractDefinitionVisitor<Void, Void> {
   private final StringBuilder myBuilder;
   private int myIndent;
   public static final int INDENT = 4;
+  public static final int MAX_LEN = 120;
+  public static final float SMALL_RATIO = (float) 0.1;
 
   public PrettyPrintVisitor(StringBuilder builder, int indent) {
     myBuilder = builder;
@@ -56,24 +61,45 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitApp(Abstract.AppExpression expr, Byte prec) {
+  public Void visitApp(final Abstract.AppExpression expr, Byte prec) {
     if (prec > Abstract.AppExpression.PREC) myBuilder.append('(');
 
-    expr.getFunction().accept(this, Abstract.AppExpression.PREC);
-    if (expr.getArgument().isExplicit()) {
-      myBuilder.append(' ');
-      if (expr.getArgument().isHidden()) {
-        myBuilder.append('_');
-      } else {
-        expr.getArgument().getExpression().accept(this, (byte) (Abstract.AppExpression.PREC + 1));
+    new BinOpLayout(){
+      @Override
+      void printLeft(PrettyPrintVisitor pp) {
+        expr.getFunction().accept(pp, Abstract.AppExpression.PREC);
       }
-    } else {
-      if (!expr.getArgument().isHidden()) {
-        myBuilder.append(" {");
-        expr.getArgument().getExpression().accept(this, Abstract.Expression.PREC);
-        myBuilder.append('}');
+
+      @Override
+      void printRight(PrettyPrintVisitor pp) {
+        if (expr.getArgument().isExplicit()) {
+          if (expr.getArgument().isHidden()) {
+            pp.myBuilder.append('_');
+          } else {
+            expr.getArgument().getExpression().accept(pp, (byte) (Abstract.AppExpression.PREC + 1));
+          }
+        } else {
+          if (!expr.getArgument().isHidden()) {
+            pp.myBuilder.append("{");
+            expr.getArgument().getExpression().accept(pp, Abstract.Expression.PREC);
+            pp.myBuilder.append('}');
+          }
+        }
       }
-    }
+
+      @Override
+      boolean printSpaceBefore() {
+        return false;
+      }
+
+      @Override
+      String getOpText() {
+        return "";
+      }
+    }.doPrettyPrint(this);
+
+
+
 
     if (prec > Abstract.AppExpression.PREC) myBuilder.append(')');
     return null;
@@ -97,10 +123,17 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   public void prettyPrintArguments(List<? extends Abstract.Argument> arguments) {
     if (arguments != null) {
-      for (Abstract.Argument argument : arguments) {
-        myBuilder.append(' ');
-        prettyPrintArgument(argument, Abstract.DefCallExpression.PREC);
-      }
+      new ListLayout<Abstract.Argument>(){
+        @Override
+        void printListElement(PrettyPrintVisitor ppv, Abstract.Argument argument) {
+          ppv.prettyPrintArgument(argument, Abstract.DefCallExpression.PREC);
+        }
+
+        @Override
+        String getSeparator() {
+          return " ";
+        }
+      }.doPrettyPrint(this, (List<Abstract.Argument>) arguments);
     } else {
       myBuilder.append("{!error}");
     }
@@ -137,35 +170,67 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitLam(Abstract.LamExpression expr, Byte prec) {
+  public Void visitLam(final Abstract.LamExpression expr, Byte prec) {
     if (prec > Abstract.LamExpression.PREC) myBuilder.append("(");
     myBuilder.append("\\lam ");
-    for (Abstract.Argument arg : expr.getArguments()) {
-      prettyPrintArgument(arg, Abstract.Expression.PREC);
-      myBuilder.append(" ");
-    }
-    myBuilder.append("=> ");
-    expr.getBody().accept(this, Abstract.LamExpression.PREC);
+
+    new BinOpLayout(){
+      @Override
+      void printLeft(PrettyPrintVisitor pp) {
+        pp.prettyPrintArguments(expr.getArguments());
+      }
+
+      @Override
+      void printRight(PrettyPrintVisitor pp) {
+        expr.getBody().accept(pp, Abstract.LamExpression.PREC);
+      }
+
+      @Override
+      String getOpText() {
+        return "=>";
+      }
+    }.doPrettyPrint(this);
+
     if (prec > Abstract.LamExpression.PREC) myBuilder.append(")");
     return null;
   }
 
   @Override
-  public Void visitPi(Abstract.PiExpression expr, Byte prec) {
+  public Void visitPi(final Abstract.PiExpression expr, Byte prec) {
     if (prec > Abstract.PiExpression.PREC) myBuilder.append('(');
-    byte domPrec = (byte) (expr.getArguments().size() > 1 ? Abstract.AppExpression.PREC + 1 : Abstract.PiExpression.PREC + 1);
-    if (expr.getArguments().size() == 1 && !(expr.getArguments().get(0) instanceof Abstract.TelescopeArgument)) {
-      expr.getArguments().get(0).getType().accept(this, (byte) (Abstract.PiExpression.PREC + 1));
-      myBuilder.append(' ');
-    } else {
-      myBuilder.append("\\Pi ");
-      for (Abstract.Argument argument : expr.getArguments()) {
-        prettyPrintArgument(argument, domPrec);
-        myBuilder.append(' ');
+
+    new BinOpLayout(){
+      @Override
+      void printLeft(PrettyPrintVisitor pp) {
+        byte domPrec = (byte) (expr.getArguments().size() > 1 ? Abstract.AppExpression.PREC + 1 : Abstract.PiExpression.PREC + 1);
+        if (expr.getArguments().size() == 1 && !(expr.getArguments().get(0) instanceof Abstract.TelescopeArgument)) {
+          expr.getArguments().get(0).getType().accept(pp, (byte) (Abstract.PiExpression.PREC + 1));
+          pp.myBuilder.append(' ');
+        } else {
+          pp.myBuilder.append("\\Pi ");
+          for (Abstract.Argument argument : expr.getArguments()) {
+            pp.prettyPrintArgument(argument, domPrec);
+            pp.myBuilder.append(' ');
+          }
+        }
       }
-    }
-    myBuilder.append("-> ");
-    expr.getCodomain().accept(this, Abstract.PiExpression.PREC);
+
+      @Override
+      void printRight(PrettyPrintVisitor ppv_right) {
+        expr.getCodomain().accept(ppv_right, Abstract.PiExpression.PREC);
+      }
+
+      @Override
+      String getOpText() {
+        return "->";
+      }
+
+      @Override
+      boolean printSpaceBefore() {
+        return false;
+      }
+    }.doPrettyPrint(this);
+
     if (prec > Abstract.PiExpression.PREC) myBuilder.append(')');
     return null;
   }
@@ -209,12 +274,19 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitTuple(Abstract.TupleExpression expr, Byte prec) {
     myBuilder.append('(');
-    for (int i = 0; i < expr.getFields().size(); ++i) {
-      expr.getFields().get(i).accept(this, Abstract.Expression.PREC);
-      if (i < expr.getFields().size() - 1) {
-        myBuilder.append(", ");
+
+    new ListLayout<Abstract.Expression>(){
+      @Override
+      void printListElement(PrettyPrintVisitor ppv, Abstract.Expression o) {
+        o.accept(ppv, Abstract.Expression.PREC);
       }
-    }
+
+      @Override
+      String getSeparator() {
+        return ",";
+      }
+    }.doPrettyPrint(this, (List<Abstract.Expression>) expr.getFields());
+
     myBuilder.append(')');
     return null;
   }
@@ -232,12 +304,38 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
-  public Void visitBinOp(Abstract.BinOpExpression expr, Byte prec) {
-    if (prec > expr.getResolvedBinOp().getPrecedence().priority) myBuilder.append('(');
-    expr.getLeft().accept(this, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.LEFT_ASSOC ? 0 : 1)));
-    myBuilder.append(' ').append(new Name(expr.getResolvedBinOp().getName()).getInfixName()).append(' ');
-    expr.getRight().accept(this, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.RIGHT_ASSOC ? 0 : 1)));
-    if (prec > expr.getResolvedBinOp().getPrecedence().priority) myBuilder.append(')');
+  public Void visitBinOp(final Abstract.BinOpExpression expr, final Byte prec) {
+    new BinOpLayout() {
+      @Override
+      void printLeft(PrettyPrintVisitor pp) {
+        if (prec > expr.getResolvedBinOp().getPrecedence().priority) pp.myBuilder.append('(');
+        expr.getLeft().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.LEFT_ASSOC ? 0 : 1)));
+      }
+
+      @Override
+      void printRight(PrettyPrintVisitor pp) {
+        expr.getRight().accept(pp, (byte) (expr.getResolvedBinOp().getPrecedence().priority + (expr.getResolvedBinOp().getPrecedence().associativity == Abstract.Binding.Associativity.RIGHT_ASSOC ? 0 : 1)));
+        if (prec > expr.getResolvedBinOp().getPrecedence().priority) pp.myBuilder.append(')');
+      }
+
+      @Override
+      String getOpText() {
+        return new Name(expr.getResolvedBinOp().getName()).getInfixName();
+      }
+
+      @Override
+      boolean increaseIndent(List<String> right_strings) {
+        Abstract.Expression r = expr.getRight();
+        if (r instanceof Abstract.BinOpExpression) {
+          Referable referable = ((Abstract.BinOpExpression) r).getResolvedBinOp();
+          if (referable!=null) {
+            if (prec <= referable.getPrecedence().priority) return false; // no bracket drawn
+          }
+        }
+        return super.increaseIndent(right_strings);
+      }
+    }.doPrettyPrint(this);
+
     return null;
   }
 
@@ -253,22 +351,43 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  public void prettyPrintClause(Abstract.Clause clause) {
+  public void prettyPrintClause(final Abstract.Clause clause) {
     if (clause == null) return;
 
     printIndent();
     myBuilder.append("| ");
-    for (int i = 0; i < clause.getPatterns().size(); i++) {
-      prettyPrintPattern(clause.getPatterns().get(i));
-      if (i != clause.getPatterns().size() - 1) {
-        myBuilder.append(", ");
+
+    if (clause.getArrow() != null && clause.getExpression() != null) {
+      new BinOpLayout(){
+        @Override
+        void printLeft(PrettyPrintVisitor pp) {
+          for (int i = 0; i < clause.getPatterns().size(); i++) {
+            pp.prettyPrintPattern(clause.getPatterns().get(i));
+            if (i != clause.getPatterns().size() - 1) {
+              pp.myBuilder.append(", ");
+            }
+          }
+        }
+
+        @Override
+        void printRight(PrettyPrintVisitor pp) {
+          clause.getExpression().accept(pp, Abstract.Expression.PREC);
+        }
+
+        @Override
+        String getOpText() {
+          return prettyArrow(clause.getArrow());
+        }
+      }.doPrettyPrint(this);
+    } else {
+      for (int i = 0; i < clause.getPatterns().size(); i++) {
+        prettyPrintPattern(clause.getPatterns().get(i));
+        if (i != clause.getPatterns().size() - 1) {
+          myBuilder.append(", ");
+        }
       }
     }
 
-    if (clause.getArrow() != null && clause.getExpression() != null) {
-      myBuilder.append(prettyArrow(clause.getArrow()));
-      clause.getExpression().accept(this, Abstract.Expression.PREC);
-    }
     myBuilder.append('\n');
   }
 
@@ -281,13 +400,18 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       if (i != expr.getExpressions().size() - 1)
         myBuilder.append(",");
     }
-    myBuilder.append('\n');
-    myIndent += INDENT;
-    for (Abstract.Clause clause : expr.getClauses()) {
-      prettyPrintClause(clause);
+
+    List<? extends Abstract.Clause> clauses = expr.getClauses();
+    if (!clauses.isEmpty()) {
+      myBuilder.append('\n');
+      myIndent += INDENT;
+      for (Abstract.Clause clause : clauses) {
+        prettyPrintClause(clause);
+      }
+
+      printIndent();
     }
 
-    printIndent();
     myBuilder.append(';');
     myIndent -= INDENT;
     if (prec > Abstract.ElimExpression.PREC) myBuilder.append(')');
@@ -350,7 +474,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
   }
 
-  public void prettyPrintLetClause(Abstract.LetClause letClause) {
+  public void prettyPrintLetClause(final Abstract.LetClause letClause) {
     myBuilder.append("| ").append(letClause.getName());
     for (Abstract.Argument arg : letClause.getArguments()) {
       myBuilder.append(" ");
@@ -358,12 +482,27 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
 
     if (letClause.getResultType()!=null) {
-      myBuilder.append(" : ");
-      letClause.getResultType().accept(this, Abstract.Expression.PREC);
-    }
+      new BinOpLayout() {
+        @Override
+        void printLeft(PrettyPrintVisitor pp) {
+          myBuilder.append(" : ");
+          letClause.getResultType().accept(pp, Abstract.Expression.PREC);
+        }
 
-    myBuilder.append(prettyArrow(letClause.getArrow()));
-    letClause.getTerm().accept(this, Abstract.LetExpression.PREC);
+        @Override
+        void printRight(PrettyPrintVisitor pp) {
+          letClause.getTerm().accept(pp, Abstract.LetExpression.PREC);
+        }
+
+        @Override
+        String getOpText() {
+          return prettyArrow(letClause.getArrow());
+        }
+      }.doPrettyPrint(this);
+    } else {
+      myBuilder.append(prettyArrow(letClause.getArrow()));
+      letClause.getTerm().accept(this, Abstract.LetExpression.PREC);
+    }
   }
 
   @Override
@@ -419,54 +558,106 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   private Void prettyPrintBinding (Abstract.Binding def) {
     Abstract.Definition.Precedence precedence = def.getPrecedence();
     if (precedence != null && !precedence.equals(Abstract.Binding.DEFAULT_PRECEDENCE)) {
-      myBuilder.append(" \\infix");
+      myBuilder.append("\\infix");
       if (precedence.associativity == Abstract.Binding.Associativity.LEFT_ASSOC) myBuilder.append('l');
       if (precedence.associativity == Abstract.Binding.Associativity.RIGHT_ASSOC) myBuilder.append('r');
       myBuilder.append(' ');
       myBuilder.append(precedence.priority);
+      myBuilder.append(' ');
     }
 
-    myBuilder.append(' ');
     myBuilder.append(new Name(def.getName()).getPrefixName());
     return null;
   }
 
   @Override
-  public Void visitFunction(Abstract.FunctionDefinition def, Void ignored) {
-    myBuilder.append("\\function");
+  public Void visitFunction(final Abstract.FunctionDefinition def, Void ignored) {
+    myBuilder.append("\\function\n");
+    printIndent();
     prettyPrintBinding(def);
-    prettyPrintArguments(def.getArguments());
+    myBuilder.append(" ");
 
-    Abstract.Expression resultType = def.getResultType();
-    if (resultType != null) {
-      myBuilder.append(" : ");
-      resultType.accept(new PrettyPrintVisitor(myBuilder, myIndent), Abstract.Expression.PREC);
-    }
-    if (!def.isAbstract()) {
-      myBuilder.append(def.getArrow() == Abstract.Definition.Arrow.RIGHT ? " => " : " <= ");
-      Abstract.Expression term = def.getTerm();
-      if (term != null) {
-        term.accept(new PrettyPrintVisitor(myBuilder, myIndent), Abstract.Expression.PREC);
-      } else {
-        myBuilder.append("{!error}");
+
+    final BinOpLayout l = new BinOpLayout(){
+      @Override
+      void printLeft(PrettyPrintVisitor pp) {
+        pp.prettyPrintArguments(def.getArguments());
       }
-    }
+
+      @Override
+      void printRight(PrettyPrintVisitor pp) {
+        def.getResultType().accept(pp, Abstract.Expression.PREC);
+      }
+
+      @Override
+      boolean printSpaceBefore() {
+        return def.getArguments().size() > 0;
+      }
+
+      @Override
+      String getOpText() {
+        return ":";
+      }
+    };
+
+    final BinOpLayout r = new BinOpLayout(){
+      @Override
+      String getOpText() {
+        return def.getArrow() == Abstract.Definition.Arrow.RIGHT ? "=>" : "<=";
+      }
+
+      @Override
+      void printRight(PrettyPrintVisitor pp) {
+        if (def.getTerm() != null) {
+          def.getTerm().accept(pp, Abstract.Expression.PREC);
+        } else {
+          pp.myBuilder.append("{!error}");
+        }
+      }
+
+      @Override
+      void printLeft(PrettyPrintVisitor pp) {
+        if (def.getResultType() != null) {
+          l.doPrettyPrint(pp);
+        } else {
+          l.printLeft(pp);
+        }
+      }
+
+      @Override
+      boolean printSpaceBefore() {
+        return def.getArguments().size() > 0 || def.getResultType() != null;
+      }
+
+      @Override
+      boolean increaseIndent(List<String> rhs_strings) {
+        return !(rhs_strings.size() > 0 && (spacesCount(rhs_strings.get(0)) > 0 || rhs_strings.get(0).isEmpty()));
+      }
+
+      @Override
+      boolean doHyphenation(int leftLen, int rightLen) {
+        if (def.getResultType() != null) return true;
+        return super.doHyphenation(leftLen, rightLen);
+      }
+    };
+
+    r.doPrettyPrint(this);
 
     Collection<? extends Abstract.Statement> statements = def.getStatements();
     if (!statements.isEmpty()) {
       myBuilder.append("\n");
       printIndent();
       myBuilder.append("\\where ");
-      myIndent += "\\where ".length();
+      myIndent += INDENT;
       boolean isFirst = true;
       for (Abstract.Statement statement : statements) {
         if (!isFirst)
           printIndent();
-        statement.accept(new StatementPrettyPrintVisitor(myBuilder, myIndent), null);
+        statement.accept(new StatementPrettyPrintVisitor(myBuilder, myIndent, null), null);
         myBuilder.append("\n");
         isFirst = false;
       }
-      myIndent -= "\\where ".length();
+      myIndent -= INDENT;
     }
     return null;
   }
@@ -500,7 +691,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitData(Abstract.DataDefinition def, Void ignored) {
-    myBuilder.append("\\data");
+    myBuilder.append("\\data ");
     prettyPrintBinding(def);
 
     List<? extends Abstract.TypeArgument> parameters = def.getParameters();
@@ -518,7 +709,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       myBuilder.append(" : ");
       universe.accept(this, null);
     }
-    ++myIndent;
+    myIndent += INDENT;
 
     for (Abstract.Constructor constructor : def.getConstructors()) {
       myBuilder.append('\n');
@@ -528,24 +719,23 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     }
     if (def.getConditions() != null) {
       myBuilder.append("\n\\with");
-      myIndent++;
       for (Abstract.Condition condition : def.getConditions()) {
         myBuilder.append('\n');
-        printIndent();
         printIndent();
         myBuilder.append("| ");
         prettyPrintCondition(condition);
       }
-      --myIndent;
     }
-    --myIndent;
+    myIndent -= INDENT;
     return null;
   }
 
   public void prettyPrintPatternArg(Abstract.PatternArgument patternArg) {
-    myBuilder.append(patternArg.isExplicit() ? "(" : "{");
-    prettyPrintPattern(patternArg.getPattern());
-    myBuilder.append(patternArg.isExplicit() ? ")" : "}");
+    Abstract.Pattern pat = patternArg.getPattern();
+    boolean isName = pat instanceof Abstract.NamePattern;
+    myBuilder.append(patternArg.isExplicit() ? (isName ? "" : "(") : "{");
+    prettyPrintPattern(pat);
+    myBuilder.append(patternArg.isExplicit() ? (isName ? "": ")") : "}");
   }
 
   public void prettyPrintPattern(Abstract.Pattern pattern) {
@@ -601,7 +791,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     Collection<? extends Abstract.Statement> statements = def.getStatements();
     if (statements != null) {
       ++myIndent;
-      StatementPrettyPrintVisitor visitor = new StatementPrettyPrintVisitor(myBuilder, myIndent);
+      StatementPrettyPrintVisitor visitor = new StatementPrettyPrintVisitor(myBuilder, myIndent, null);
       for (Abstract.Statement statement : statements) {
         myBuilder.append('\n');
         printIndent();
@@ -613,5 +803,135 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     printIndent();
     myBuilder.append("}");
     return null;
+  }
+
+  public static abstract class ListLayout<T>{
+    abstract void printListElement(PrettyPrintVisitor ppv, T t);
+
+    abstract String getSeparator();
+
+    public void doPrettyPrint(PrettyPrintVisitor ppv_default, List<T> l){
+      int rem = -1;
+      int indent = 0;
+      for (T t : l) {
+        StringBuilder sb = new StringBuilder();
+        PrettyPrintVisitor ppv = new PrettyPrintVisitor(sb, 0);
+        printListElement(ppv, t);
+
+        String[] strs = sb.toString().split("[\\r\\n]+");
+        int sz = strs.length;
+
+        if (rem != -1) {
+          String separator = getSeparator();
+          ppv_default.myBuilder.append(separator.trim());
+          if (rem + strs[0].length() + separator.length() > MAX_LEN) {
+            if (indent == 0) ppv_default.myIndent += INDENT;
+            indent = INDENT;
+            ppv_default.myBuilder.append('\n');
+            rem = 0;
+          } else {
+            ppv_default.myBuilder.append(' ');
+            rem++;
+          }
+        }
+
+        for (int i = 0; i < sz; i++) {
+          String s = strs[i];
+          if (rem == 0) ppv_default.printIndent();
+          ppv_default.myBuilder.append(s);
+          rem += s.trim().length();
+          if (i < sz - 1) {
+            ppv_default.myBuilder.append('\n');
+            rem = 0;
+          }
+        }
+      }
+      ppv_default.myIndent -= indent;
+    }
+  }
+
+  public static abstract class BinOpLayout {
+
+    abstract void printLeft(PrettyPrintVisitor pp);
+    abstract void printRight(PrettyPrintVisitor pp);
+    abstract String getOpText();
+    boolean printSpaceBefore() {return true;}
+    boolean printSpaceAfter() {return true;}
+
+    boolean doHyphenation(int leftLen, int rightLen) {
+      if (leftLen == 0) leftLen = 1; if (leftLen > MAX_LEN) leftLen = MAX_LEN;
+      if (rightLen == 0) rightLen = 1; if (rightLen > MAX_LEN) rightLen = MAX_LEN;
+      double ratio = rightLen / leftLen;
+      if (ratio > 1.0) ratio = 1/ratio;
+
+      int myMaxLen = (ratio > SMALL_RATIO) ? MAX_LEN : Math.round(MAX_LEN * (1 + SMALL_RATIO));
+
+      return (leftLen + rightLen + getOpText().trim().length() + 1 > myMaxLen);
+    }
+
+    boolean increaseIndent(List<String> rhs_strings) {
+      return !(rhs_strings.size() > 0 && spacesCount(rhs_strings.get(0)) > 0 || rhs_strings.size() > 1 && spacesCount(rhs_strings.get(1)) > 0);
+    }
+
+    public static int spacesCount(String s) {
+      int i = 0;
+      for (; i<s.length(); i++) if (s.charAt(i) != ' ') break;
+      return i;
+    }
+
+    public void doPrettyPrint(PrettyPrintVisitor ppv_default) {
+      StringBuilder lhs = new StringBuilder();
+      StringBuilder rhs = new StringBuilder();
+      PrettyPrintVisitor ppv_left = new PrettyPrintVisitor(lhs, 0);
+      PrettyPrintVisitor ppv_right = new PrettyPrintVisitor(rhs, 0);
+
+      //TODO: I don't like this implementation for it works quadratically wrt to the total number of binary operations
+      printLeft(ppv_left);
+      printRight(ppv_right);
+
+
+      List<String> lhs_strings = new ArrayList<>(); Collections.addAll(lhs_strings, lhs.toString().split("[\\r\\n]+"));
+      List<String> rhs_strings = new ArrayList<>(); Collections.addAll(rhs_strings, rhs.toString().split("[\\r\\n]+"));
+
+      int lhs_sz = lhs_strings.size();
+      int rhs_sz = rhs_strings.size();
+
+      int leftLen = lhs_sz == 0 ? 0 : lhs_strings.get(lhs_sz-1).trim().length();
+      int rightLen = rhs_sz == 0 ? 0 : rhs_strings.get(0).trim().length();
+
+      boolean hyph = doHyphenation(leftLen, rightLen) && !(rhs_sz > 0 && rhs_strings.get(0).isEmpty());
+
+      for (int i=0; i<lhs_sz; i++) {
+        String s = lhs_strings.get(i);
+        if (i>0) ppv_default.printIndent(); ppv_default.myBuilder.append(s);
+        if (i<lhs_sz-1) ppv_default.myBuilder.append('\n');
+      }
+
+      if (printSpaceBefore()) ppv_default.myBuilder.append(' ');
+      ppv_default.myBuilder.append(getOpText().trim());
+
+      if (hyph) {
+        ppv_default.myBuilder.append('\n');
+      } else {
+        if (printSpaceAfter()) ppv_default.myBuilder.append(' ');
+      }
+
+      boolean ii = increaseIndent(rhs_strings);
+
+      if (ii) ppv_default.myIndent+=INDENT;
+
+      for (int i=0; i<rhs_sz; i++) {
+        String s = rhs_strings.get(i);
+
+        if (i>0 || hyph) {
+          ppv_default.printIndent();
+        }
+
+        ppv_default.myBuilder.append(s);
+
+        if (i<rhs_strings.size()-1) ppv_default.myBuilder.append('\n');
+      }
+      if (ii) ppv_default.myIndent-=INDENT;
+    }
   }
 }
