@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
 import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.parser.ParserTestCase;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -10,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -23,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class DefCall {
-  private void test(Expression expected, NamespaceMember member) {
+    private void test(Expression expected, NamespaceMember member) {
     assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("test")).getElimTree()).getExpression());
   }
 
@@ -908,5 +912,27 @@ public class DefCall {
   @Test
   public void staticTest() {
     typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\function y : Nat => A.x");
+  }
+
+  @Test
+  public void resolvedConstructorTest() {
+      Concrete.ClassDefinition cd = ParserTestCase.parseClass("test",
+              "\\function \\infixr 1 ($) {lp : Lvl} {lh : CNat} {X Y : \\Type (lp,lh)} (f : X -> Y) (x : X) => f x" +
+                      "\\function \\infixr 8 o {lp : Lvl} {lh : CNat} {X Y Z : \\Type (lp,lh)} (g : Y -> Z) (f : X -> Y) (x : X) => g $ f x" +
+                      "\\function \\infix 2 (~) {lp : Lvl} {lh : CNat} {A B : \\Type (lp,lh)} (f : A -> B) (g : A -> B) <= \\Pi (x : A) -> f x = g x" +
+                      "\\function id {lp : Lvl} {lh : CNat} {X : \\Type (lp,lh)} (x : X) => x" +
+                      "\\function rinv {lp : Lvl} {lh : CNat} {A B : \\Type (lp,lh)} (f : A -> B) <= \\Sigma (g : B -> A) (f `o` g ~ id)" +
+                      "\\function linv {lp : Lvl} {lh : CNat} {A B : \\Type (lp,lh)} (f : A -> B) <= \\Sigma (g : B -> A) (g `o` f ~ id)" +
+                      "\\function isequiv {lp : Lvl} {lh : CNat} {A B : \\Type (lp,lh)} (f : A -> B) <= \\Sigma (linv f) (rinv f)" +
+                      "\\function idp {lp : Lvl} {lh : CNat} {A : \\Type (lp,lh)} {a : A} => path (\\lam _ => a)" +
+                      "\\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p ;" +
+                      "\\function qinv {lp : Lvl} {lh : CNat} {A B : \\Type (lp,lh)} (f : A -> B) <= \\Sigma (g : B -> A) (g `o` f ~ id) (f `o` g ~ id)" +
+                      "\\function qinv-to-equiv {lp : Lvl} {lh : CNat} {A B : \\Type (lp,lh)} (f : A -> B) (x : qinv f) : isequiv f =>  ((x.1, x.2), (x.1, x.3))" +
+                      "\\function inP-isequiv (P : \\Prop) : isequiv (TrP P).inP => qinv-to-equiv (TrP P).inP (inP-inv P, \\lam (p : P) => idp, \\lam (p : TrP P) => path (truncP (inP (inP-inv P p)) p))");
+      NameResolverTestCase.resolveNamesClass(cd, 0);
+      Concrete.DefineStatement lastDef =  (Concrete.DefineStatement) cd.getStatements().get(((ArrayList) cd.getStatements()).size() - 1);
+      ((Concrete.DefCallExpression) ((Concrete.AppExpression) ((Concrete.FunctionDefinition) lastDef.getDefinition()).getResultType()).getArgument().getExpression()).setResolvedDefinition(Prelude.PROP_TRUNC.getConstructor("inP"));
+
+      typeCheckClass(cd, 0);
   }
 }
