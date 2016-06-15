@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
@@ -54,7 +56,18 @@ public class ClassCallExpression extends DefCallExpression {
             }
           }
 
-          UniverseExpression expr = field.getBaseType().subst(substitution).getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+          Expression expr1 = field.getBaseType().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF);
+          UniverseExpression expr = null;
+          if (expr1.toOfType() != null) {
+            Expression expr2 = expr1.toOfType().getExpression().getType();
+            if (expr2 != null) {
+              expr = expr2.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+            }
+          }
+          if (expr == null) {
+            expr = expr1.getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+          }
+
           TypeUniverse fieldUniverse = expr != null ? expr.getUniverse() : field.getUniverse();
           if (myUniverse == null) {
             myUniverse = fieldUniverse;
