@@ -133,7 +133,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         String getSeparator() {
           return " ";
         }
-      }.doPrettyPrint(this, (List<Abstract.Argument>) arguments);
+      }.doPrettyPrint(this, arguments);
     } else {
       myBuilder.append("{!error}");
     }
@@ -285,7 +285,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
       String getSeparator() {
         return ",";
       }
-    }.doPrettyPrint(this, (List<Abstract.Expression>) expr.getFields());
+    }.doPrettyPrint(this, expr.getFields());
 
     myBuilder.append(')');
     return null;
@@ -636,8 +636,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
       @Override
       boolean doHyphenation(int leftLen, int rightLen) {
-        if (def.getResultType() != null) return true;
-        return super.doHyphenation(leftLen, rightLen);
+        return def.getResultType() != null || super.doHyphenation(leftLen, rightLen);
       }
     };
 
@@ -787,7 +786,18 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
-    myBuilder.append("\\class ").append(def.getName()).append(" {");
+    myBuilder.append("\\class ").append(def.getName());
+    if (!def.getSuperClasses().isEmpty()) {
+      myBuilder.append("\\extends ");
+      for (int i = 0; i < def.getSuperClasses().size(); i++) {
+        myBuilder.append(def.getSuperClassName(i));
+        if (i < def.getSuperClasses().size() - 1) {
+          myBuilder.append(", ");
+        }
+      }
+    }
+    myBuilder.append(" {");
+
     Collection<? extends Abstract.Statement> statements = def.getStatements();
     if (statements != null) {
       ++myIndent;
@@ -810,7 +820,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     abstract String getSeparator();
 
-    public void doPrettyPrint(PrettyPrintVisitor ppv_default, List<T> l){
+    public void doPrettyPrint(PrettyPrintVisitor ppvDefault, List<? extends T> l){
       int rem = -1;
       int indent = 0;
       for (T t : l) {
@@ -823,35 +833,34 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
         if (rem != -1) {
           String separator = getSeparator();
-          ppv_default.myBuilder.append(separator.trim());
+          ppvDefault.myBuilder.append(separator.trim());
           if (rem + strs[0].length() + separator.length() > MAX_LEN) {
-            if (indent == 0) ppv_default.myIndent += INDENT;
+            if (indent == 0) ppvDefault.myIndent += INDENT;
             indent = INDENT;
-            ppv_default.myBuilder.append('\n');
+            ppvDefault.myBuilder.append('\n');
             rem = 0;
           } else {
-            ppv_default.myBuilder.append(' ');
+            ppvDefault.myBuilder.append(' ');
             rem++;
           }
         }
 
         for (int i = 0; i < sz; i++) {
           String s = strs[i];
-          if (rem == 0) ppv_default.printIndent();
-          ppv_default.myBuilder.append(s);
+          if (rem == 0) ppvDefault.printIndent();
+          ppvDefault.myBuilder.append(s);
           rem += s.trim().length();
           if (i < sz - 1) {
-            ppv_default.myBuilder.append('\n');
+            ppvDefault.myBuilder.append('\n');
             rem = 0;
           }
         }
       }
-      ppv_default.myIndent -= indent;
+      ppvDefault.myIndent -= indent;
     }
   }
 
   public static abstract class BinOpLayout {
-
     abstract void printLeft(PrettyPrintVisitor pp);
     abstract void printRight(PrettyPrintVisitor pp);
     abstract String getOpText();

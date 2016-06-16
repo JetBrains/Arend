@@ -863,6 +863,25 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
     ClassDefinition typedDef = new ClassDefinition(myNamespaceMember.getResolvedName());
+    for (Referable referable : def.getSuperClasses()) {
+      ClassDefinition superClass = null;
+      if (referable instanceof ClassDefinition) {
+        superClass = (ClassDefinition) referable;
+      } else
+      if (referable instanceof Abstract.ClassDefinition) {
+        NamespaceMember member = NamespaceMember.toNamespaceMember(referable);
+        if (member != null && member.definition instanceof ClassDefinition) {
+          superClass = (ClassDefinition) member.definition;
+        }
+      }
+
+      if (superClass != null) {
+        typedDef.addSuperClass(superClass);
+      } else {
+        myErrorReporter.report(new TypeCheckingError("Expected a class", referable));
+      }
+    }
+
     ClassDefinition thisClass = getThisClass(def, myNamespaceMember.namespace);
     if (thisClass != null) {
       typedDef.addParentField(thisClass);

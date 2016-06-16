@@ -21,6 +21,11 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
+  public void classExtendsResolved(Abstract.ClassDefinition classDefinition, int index, Referable definition) {
+    ((Concrete.ClassDefinition) classDefinition).setSuperClass(index, definition);
+  }
+
+  @Override
   public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Referable binOp, Abstract.DefCallExpression var, Abstract.Expression right) {
     return ((Concrete.BinOpSequenceExpression) binOpExpr).makeBinOp(left, binOp, var, right);
   }

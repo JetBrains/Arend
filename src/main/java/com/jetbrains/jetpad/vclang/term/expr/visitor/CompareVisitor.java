@@ -215,7 +215,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitClassCall(ClassCallExpression expr1, Expression expr2) {
     ClassCallExpression classCall2 = expr2.toClassCall();
-    if (classCall2 == null || expr1.getDefinition() != classCall2.getDefinition()) return false;
+    if (classCall2 == null
+        || myCMP == Equations.CMP.EQ && expr1.getDefinition() != classCall2.getDefinition()
+        || myCMP == Equations.CMP.LE && !classCall2.getDefinition().isSubClassOf(expr1.getDefinition())
+        || myCMP == Equations.CMP.GE && !expr1.getDefinition().isSubClassOf(classCall2.getDefinition())) {
+      return false;
+    }
+
     Map<ClassField, ClassCallExpression.ImplementStatement> implStats1 = expr1.getImplementStatements();
     Map<ClassField, ClassCallExpression.ImplementStatement> implStats2 = classCall2.getImplementStatements();
     if (myCMP == Equations.CMP.EQ && implStats1.size() != implStats2.size() ||

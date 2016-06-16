@@ -6,15 +6,13 @@ import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ClassDefinition extends Definition {
-  private Map<String, ClassField> myFields = null;
+  private final Map<String, ClassField> myFields = new HashMap<>();
+  private Set<ClassDefinition> mySuperClasses = null;
 
   public ClassDefinition(ResolvedName rn) {
     super(rn, Abstract.Binding.DEFAULT_PRECEDENCE);
@@ -24,6 +22,29 @@ public class ClassDefinition extends Definition {
   public ClassDefinition(ResolvedName rn, TypeUniverse universe) {
     super(rn, Abstract.Definition.DEFAULT_PRECEDENCE, universe);
     super.hasErrors(false);
+  }
+
+  public boolean isSubClassOf(ClassDefinition classDefinition) {
+    if (this == classDefinition) {
+      return true;
+    }
+    if (mySuperClasses == null) {
+      return false;
+    }
+    for (ClassDefinition superClass : mySuperClasses) {
+      if (superClass.isSubClassOf(classDefinition)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public void addSuperClass(ClassDefinition superClass) {
+    myFields.putAll(superClass.myFields);
+    if (mySuperClasses == null) {
+      mySuperClasses = new HashSet<>();
+    }
+    mySuperClasses.add(superClass);
   }
 
   @Override
@@ -37,17 +58,14 @@ public class ClassDefinition extends Definition {
   }
 
   public ClassField getField(String name) {
-    return myFields == null ? null : myFields.get(name);
+    return myFields.get(name);
   }
 
   public Collection<ClassField> getFields() {
-    return myFields == null ? Collections.<ClassField>emptyList() : myFields.values();
+    return myFields.values();
   }
 
   public int getNumberOfVisibleFields() {
-    if (myFields == null) {
-      return 0;
-    }
     int result = myFields.size();
     if (getParentField() != null) {
       --result;
@@ -56,21 +74,16 @@ public class ClassDefinition extends Definition {
   }
 
   public void addField(ClassField field) {
-    if (myFields == null) {
-      myFields = new HashMap<>();
-    }
     myFields.put(field.getName(), field);
     field.setThisClass(this);
   }
 
   public ClassField removeField(String name) {
-    return myFields != null ? myFields.remove(name) : null;
+    return myFields.remove(name);
   }
 
   public void removeField(ClassField field) {
-    if (myFields != null) {
-      myFields.remove(field.getName());
-    }
+    myFields.remove(field.getName());
   }
 
   public ClassField getParentField() {

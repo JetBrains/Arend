@@ -214,6 +214,13 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   }
 
   private void visitClass(Abstract.ClassDefinition def, boolean isStatic, Namespace classNamespace) {
+    for (int i = 0; i < def.getSuperClasses().size(); i++) {
+      NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, def.getSuperClassName(i), true);
+      if (member != null) {
+        myResolveListener.classExtendsResolved(def, i, member.getResolvedDefinition());
+      }
+    }
+
     try (StatementResolveNameVisitor visitor = new StatementResolveNameVisitor(myErrorReporter, classNamespace, myNameResolver, myModuleResolver, myContext)) {
       visitor.setResolveListener(myResolveListener);
       for (Abstract.Statement statement : def.getStatements()) {

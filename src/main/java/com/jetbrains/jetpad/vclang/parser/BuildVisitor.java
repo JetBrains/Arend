@@ -124,7 +124,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Statement visitStatDef(StatDefContext ctx) {
+  public Concrete.DefineStatement visitStatDef(StatDefContext ctx) {
     if (ctx == null) return null;
     Concrete.Definition definition = visitDefinition(ctx.definition());
     if (definition == null) {
@@ -141,7 +141,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Statement visitStatCmd(StatCmdContext ctx) {
+  public Concrete.NamespaceCommandStatement visitStatCmd(StatCmdContext ctx) {
     if (ctx == null) return null;
     Abstract.NamespaceCommandStatement.Kind kind = (Abstract.NamespaceCommandStatement.Kind) visit(ctx.nsCmd());
 
@@ -175,7 +175,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Statement visitDefaultStatic(DefaultStaticContext ctx) {
+  public Concrete.DefaultStaticStatement visitDefaultStatic(DefaultStaticContext ctx) {
     return new Concrete.DefaultStaticStatement(tokenPosition(ctx.getStart()), ctx.defaultStaticMod() instanceof StaticDefaultStaticContext);
   }
 
@@ -448,7 +448,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (ctx == null || ctx.statement() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.statement());
     Abstract.ClassDefinition.Kind classKind = ctx.classKindMod() instanceof ClassClassModContext ? Abstract.ClassDefinition.Kind.Class : Abstract.ClassDefinition.Kind.Module;
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements, classKind);
+    List<String> names = new ArrayList<>(ctx.ID().size() - 1);
+    for (int i = 1; i < ctx.ID().size(); i++) {
+      names.add(ctx.ID().get(i).getText());
+    }
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().get(0).getText(), statements, classKind, names);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
