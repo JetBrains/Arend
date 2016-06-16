@@ -3,8 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking.nameresolver;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionResolveNameVisitor;
@@ -87,11 +85,13 @@ public class NameResolverTestCase {
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
   }
 
-  public static void resolveNamesClass(String name, String text, int errors) {
-    resolveNamesClass(parseClass(name, text), errors);
+  public static Concrete.ClassDefinition resolveNamesClass(String name, String text, int errors) {
+    Concrete.ClassDefinition classDef = parseClass(name, text);
+    resolveNamesClass(classDef, errors);
+    return classDef;
   }
 
-  public static void resolveNamesClass(String name, String text) {
-    resolveNamesClass(name, text, 0);
+  public static Concrete.ClassDefinition resolveNamesClass(String name, String text) {
+    return resolveNamesClass(name, text, 0);
   }
 }
