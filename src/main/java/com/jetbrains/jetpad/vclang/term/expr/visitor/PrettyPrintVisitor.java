@@ -121,12 +121,12 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  public void prettyPrintArguments(List<? extends Abstract.Argument> arguments) {
+  public void prettyPrintArguments(List<? extends Abstract.Argument> arguments, final byte prec) {
     if (arguments != null) {
       new ListLayout<Abstract.Argument>(){
         @Override
         void printListElement(PrettyPrintVisitor ppv, Abstract.Argument argument) {
-          ppv.prettyPrintArgument(argument, Abstract.DefCallExpression.PREC);
+          ppv.prettyPrintArgument(argument, prec);
         }
 
         @Override
@@ -177,7 +177,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        pp.prettyPrintArguments(expr.getArguments());
+        pp.prettyPrintArguments(expr.getArguments(), Abstract.Expression.PREC);
       }
 
       @Override
@@ -294,11 +294,10 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   @Override
   public Void visitSigma(Abstract.SigmaExpression expr, Byte prec) {
     if (prec > Abstract.SigmaExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\Sigma");
-    for (Abstract.Argument argument : expr.getArguments()) {
-      myBuilder.append(' ');
-      prettyPrintArgument(argument, (byte) (Abstract.AppExpression.PREC + 1));
-    }
+    myBuilder.append("\\Sigma ");
+
+    prettyPrintArguments(expr.getArguments(), (byte) (Abstract.AppExpression.PREC + 1));
+
     if (prec > Abstract.SigmaExpression.PREC) myBuilder.append(')');
     return null;
   }
@@ -581,7 +580,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     final BinOpLayout l = new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        pp.prettyPrintArguments(def.getArguments());
+        pp.prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
       }
 
       @Override
@@ -665,7 +664,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitAbstract(Abstract.AbstractDefinition def, Void params) {
     myBuilder.append("\\abstract");
     prettyPrintBinding(def);
-    prettyPrintArguments(def.getArguments());
+    prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -820,9 +819,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
     abstract String getSeparator();
 
-    public void doPrettyPrint(PrettyPrintVisitor ppvDefault, List<? extends T> l){
+    public void doPrettyPrint(PrettyPrintVisitor pp, List<? extends T> l){
       int rem = -1;
       int indent = 0;
+      boolean isMultLine = false;
+      boolean splitMultiLineArgs;
       for (T t : l) {
         StringBuilder sb = new StringBuilder();
         PrettyPrintVisitor ppv = new PrettyPrintVisitor(sb, 0);
@@ -831,32 +832,44 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
         String[] strs = sb.toString().split("[\\r\\n]+");
         int sz = strs.length;
 
+        splitMultiLineArgs = false;
+        if (sz > 1) {
+          //This heuristic enforces line break if both the present and the previous arguments were multi-line
+          if (isMultLine) {
+            splitMultiLineArgs = true;
+          }
+          isMultLine = true;
+        } else {
+          isMultLine = false;
+        }
+
         if (rem != -1) {
           String separator = getSeparator();
-          ppvDefault.myBuilder.append(separator.trim());
-          if (rem + strs[0].length() + separator.length() > MAX_LEN) {
-            if (indent == 0) ppvDefault.myIndent += INDENT;
+
+          pp.myBuilder.append(separator.trim());
+          if (rem + strs[0].length() + separator.length() > MAX_LEN || splitMultiLineArgs) {
+            if (indent == 0) pp.myIndent += INDENT;
             indent = INDENT;
-            ppvDefault.myBuilder.append('\n');
+            pp.myBuilder.append('\n');
             rem = 0;
           } else {
-            ppvDefault.myBuilder.append(' ');
+            pp.myBuilder.append(' ');
             rem++;
           }
         }
 
         for (int i = 0; i < sz; i++) {
           String s = strs[i];
-          if (rem == 0) ppvDefault.printIndent();
-          ppvDefault.myBuilder.append(s);
+          if (rem == 0) pp.printIndent();
+          pp.myBuilder.append(s);
           rem += s.trim().length();
           if (i < sz - 1) {
-            ppvDefault.myBuilder.append('\n');
+            pp.myBuilder.append('\n');
             rem = 0;
           }
         }
       }
-      ppvDefault.myIndent -= indent;
+      pp.myIndent -= indent;
     }
   }
 
