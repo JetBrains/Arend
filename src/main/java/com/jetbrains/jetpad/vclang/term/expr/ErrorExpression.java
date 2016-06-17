@@ -22,7 +22,7 @@ public class ErrorExpression extends Expression {
 
   @Override
   public Expression getType() {
-    return null;
+    return new ErrorExpression(myExpr != null ? myExpr.getType() : null, myError);
   }
 
   @Override

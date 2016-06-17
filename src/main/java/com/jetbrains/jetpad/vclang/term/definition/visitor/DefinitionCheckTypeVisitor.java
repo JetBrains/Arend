@@ -20,6 +20,7 @@ import com.jetbrains.jetpad.vclang.term.pattern.Utils.ProcessImplicitResult;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.PatternsToElimTreeConversion;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.NameDefinedError;
 import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
@@ -30,6 +31,7 @@ import static com.jetbrains.jetpad.vclang.naming.NamespaceMember.toNamespaceMemb
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
@@ -370,7 +372,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build();
     LevelExpression plevel = null;
-    ClassField typedDef = new ClassField(myNamespaceMember.getResolvedName(), def.getPrecedence(), null, thisClass, thisParameter);
+    ClassField typedDef = new ClassField(myNamespaceMember.getResolvedName(), def.getPrecedence(), Error(null, null), thisClass, thisParameter);
 
     int index = 0;
     LinkList list = new LinkList();
@@ -876,7 +878,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       }
 
       if (superClass != null) {
-        typedDef.addSuperClass(superClass);
+        boolean ok = true;
+        for (ClassField field : superClass.getFields()) {
+          ClassField oldField = typedDef.tryAddField(field);
+          if (oldField != null) {
+            myErrorReporter.report(new NameDefinedError(true, referable, oldField.getName(), null));
+            ok = false;
+          }
+        }
+        if (ok) {
+          typedDef.addSuperClass(superClass);
+        }
       } else {
         myErrorReporter.report(new TypeCheckingError("Expected a class", referable));
       }

@@ -40,7 +40,6 @@ public class ClassDefinition extends Definition {
   }
 
   public void addSuperClass(ClassDefinition superClass) {
-    myFields.putAll(superClass.myFields);
     if (mySuperClasses == null) {
       mySuperClasses = new HashSet<>();
     }
@@ -76,6 +75,18 @@ public class ClassDefinition extends Definition {
   public void addField(ClassField field) {
     myFields.put(field.getName(), field);
     field.setThisClass(this);
+  }
+
+  public ClassField tryAddField(ClassField field) {
+    ClassField oldField = myFields.get(field.getName());
+    if (oldField == field) {
+      return null;
+    }
+    if (oldField != null) {
+      return oldField;
+    }
+    myFields.put(field.getName(), field);
+    return null;
   }
 
   public ClassField removeField(String name) {

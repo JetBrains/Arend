@@ -217,8 +217,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     ClassCallExpression classCall2 = expr2.toClassCall();
     if (classCall2 == null
         || myCMP == Equations.CMP.EQ && expr1.getDefinition() != classCall2.getDefinition()
-        || myCMP == Equations.CMP.LE && !classCall2.getDefinition().isSubClassOf(expr1.getDefinition())
-        || myCMP == Equations.CMP.GE && !expr1.getDefinition().isSubClassOf(classCall2.getDefinition())) {
+        || myCMP == Equations.CMP.LE && !expr1.getDefinition().isSubClassOf(classCall2.getDefinition())
+        || myCMP == Equations.CMP.GE && !classCall2.getDefinition().isSubClassOf(expr1.getDefinition())) {
       return false;
     }
 

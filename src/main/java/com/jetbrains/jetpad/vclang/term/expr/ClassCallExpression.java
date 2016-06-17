@@ -46,6 +46,10 @@ public class ClassCallExpression extends DefCallExpression {
     if (myUniverse == null) {
       Substitution substitution = null;
       for (ClassField field : getDefinition().getFields()) {
+        if (field.hasErrors()) {
+          continue;
+        }
+
         if (!myStatements.containsKey(field)) {
           if (substitution == null) {
             substitution = new Substitution();

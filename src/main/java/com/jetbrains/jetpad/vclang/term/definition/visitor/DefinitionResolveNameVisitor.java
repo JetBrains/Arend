@@ -218,6 +218,9 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       NamespaceMember member = NameResolver.Helper.locateName(myNameResolver, def.getSuperClassName(i), true);
       if (member != null) {
         myResolveListener.classExtendsResolved(def, i, member.getResolvedDefinition());
+        for (NamespaceMember child : member.namespace.getMembers()) {
+          classNamespace.addMember(child);
+        }
       }
     }
 

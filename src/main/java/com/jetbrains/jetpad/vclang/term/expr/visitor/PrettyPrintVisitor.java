@@ -788,7 +788,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
     myBuilder.append("\\class ").append(def.getName());
     if (!def.getSuperClasses().isEmpty()) {
-      myBuilder.append("\\extends ");
+      myBuilder.append(" \\extends ");
       for (int i = 0; i < def.getSuperClasses().size(); i++) {
         myBuilder.append(def.getSuperClassName(i));
         if (i < def.getSuperClasses().size() - 1) {
