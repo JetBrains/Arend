@@ -11,7 +11,7 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class ClassDefinition extends Definition {
-  private final Map<String, ClassField> myFields = new HashMap<>();
+  private final Map<ClassField, String> myFields = new HashMap<>();
   private Set<ClassDefinition> mySuperClasses = null;
 
   public ClassDefinition(ResolvedName rn) {
@@ -57,11 +57,20 @@ public class ClassDefinition extends Definition {
   }
 
   public ClassField getField(String name) {
-    return myFields.get(name);
+    for (ClassField field : myFields.keySet()) {
+      if (field.getName().equals(name)) {
+        return field;
+      }
+    }
+    return null;
+  }
+
+  public String getFieldName(ClassField field) {
+    return myFields.get(field);
   }
 
   public Collection<ClassField> getFields() {
-    return myFields.values();
+    return myFields.keySet();
   }
 
   public int getNumberOfVisibleFields() {
@@ -73,28 +82,30 @@ public class ClassDefinition extends Definition {
   }
 
   public void addField(ClassField field) {
-    myFields.put(field.getName(), field);
+    ClassField oldField = getField(field.getName());
+    if (oldField != null) {
+      myFields.remove(oldField);
+    }
+    myFields.put(field, field.getName());
     field.setThisClass(this);
   }
 
   public ClassField tryAddField(ClassField field) {
-    ClassField oldField = myFields.get(field.getName());
+    ClassField oldField = getField(field.getName());
     if (oldField == field) {
       return null;
     }
     if (oldField != null) {
       return oldField;
     }
-    myFields.put(field.getName(), field);
+    myFields.put(field, field.getName());
     return null;
   }
 
   public ClassField removeField(String name) {
-    return myFields.remove(name);
-  }
-
-  public void removeField(ClassField field) {
-    myFields.remove(field.getName());
+    ClassField field = getField(name);
+    myFields.remove(field);
+    return field;
   }
 
   public ClassField getParentField() {

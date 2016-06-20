@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -366,7 +365,7 @@ public class ClassesTest {
     NamespaceMember cMember = aMember.namespace.getMember("C");
     ClassDefinition cClass = (ClassDefinition) cMember.definition;
     assertEquals(1, cClass.getFields().size());
-    ClassField cParent = cClass.getField("\\parent");
+    ClassField cParent = cClass.getParentField();
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) cMember.namespace.getDefinition("h");
     assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType());

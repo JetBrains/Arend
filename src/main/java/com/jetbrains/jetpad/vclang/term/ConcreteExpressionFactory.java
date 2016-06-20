@@ -20,10 +20,14 @@ public class ConcreteExpressionFactory {
     return new Concrete.DefCallExpression(POSITION, null, name == null ? "_" : name);
   }
 
-  public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition) {
-    Concrete.DefCallExpression result = new Concrete.DefCallExpression(POSITION, expr, definition.getName());
+  public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition, String name) {
+    Concrete.DefCallExpression result = new Concrete.DefCallExpression(POSITION, expr, name);
     result.setResolvedDefinition(definition);
     return result;
+  }
+
+  public static Concrete.DefCallExpression cDefCall(Concrete.Expression expr, Definition definition) {
+    return cDefCall(expr, definition, definition.getName());
   }
 
   public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ImplementStatement> definitions) {

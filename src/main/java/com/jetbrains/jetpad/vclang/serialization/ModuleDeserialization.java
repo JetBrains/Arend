@@ -155,7 +155,7 @@ public class ModuleDeserialization {
       }
       if (!createStubs) {
         result.put(i, rn.getName().equals("\\parent") ?
-            ((ClassDefinition) rn.getParent().toDefinition()).getField("\\parent") : rn.toDefinition());
+            ((ClassDefinition) rn.getParent().toDefinition()).getParentField() : rn.toDefinition());
       }
     }
 
