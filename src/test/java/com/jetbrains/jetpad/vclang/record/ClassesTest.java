@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.record;
 
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
@@ -8,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -327,7 +329,7 @@ public class ClassesTest {
 
   @Test
   public void funCallsTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\function (+) (x y : Nat) => x\n" +
         "\\static \\class A {\n" +
         "  \\static \\function p => 0\n" +
@@ -341,7 +343,7 @@ public class ClassesTest {
         "    \\function k => h + (p + q)" +
         "  }\n" +
         "}");
-    Definition plus = result.getDefinition("+");
+    FunctionDefinition plus = (FunctionDefinition) result.getDefinition("+");
 
     ClassDefinition aClass = (ClassDefinition) result.getDefinition("A");
     assertTrue(aClass.getFields().isEmpty());
@@ -359,7 +361,7 @@ public class ClassesTest {
     assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, FunCall(pFun)), fFun.getElimTree());
     FunctionDefinition gFun = (FunctionDefinition) result.getDefinition("A.B.g");
     assertEquals(Pi(ClassCall(bClass), Nat()), gFun.getType());
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(fFun), FunCall(pFun))), gFun.getElimTree());
 
     ClassDefinition cClass = (ClassDefinition) result.getDefinition("A.C");
     assertEquals(1, cClass.getFields().size());
@@ -367,11 +369,11 @@ public class ClassesTest {
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) result.getDefinition("A.C.h");
     assertEquals(Pi(ClassCall(aClass), Nat()), hFun.getType());
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), FunCall(pFun), Apps(FunCall(qFun), Reference(hFun.getParameters())))), hFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), Reference(hFun.getParameters())))), hFun.getElimTree());
     FunctionDefinition kFun = (FunctionDefinition) result.getDefinition("A.C.k");
     assertEquals(Pi(ClassCall(cClass), Nat()), kFun.getType());
     Expression aRef = Apps(FieldCall(cParent), Reference(kFun.getParameters()));
-    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(plus.getDefCall(), Apps(FunCall(hFun), aRef), Apps(plus.getDefCall(), FunCall(pFun), Apps(FunCall(qFun), aRef)))), kFun.getElimTree());
+    assertEquals(leaf(Abstract.Definition.Arrow.RIGHT, Apps(FunCall(plus), Apps(FunCall(hFun), aRef), Apps(FunCall(plus), FunCall(pFun), Apps(FunCall(qFun), aRef)))), kFun.getElimTree());
   }
 
   @Test

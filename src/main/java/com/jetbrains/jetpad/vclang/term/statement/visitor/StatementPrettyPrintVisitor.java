@@ -7,19 +7,22 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Void, Void> {
   private final StringBuilder myBuilder;
   private int myIndent;
+  private Abstract.DefineStatement.StaticMod myDefaultStaticMod;
 
-  public StatementPrettyPrintVisitor(StringBuilder builder, int indent) {
+  public StatementPrettyPrintVisitor(StringBuilder builder, int indent, Abstract.DefineStatement.StaticMod defaultStaticMod) {
     myBuilder = builder;
     myIndent = indent;
+    myDefaultStaticMod = defaultStaticMod;
   }
 
   @Override
   public Void visitDefine(Abstract.DefineStatement stat, Void params) {
-    if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC) {
-      myBuilder.append("\\static ");
-    } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.DYNAMIC) {
-      myBuilder.append("\\dynamic ");
-    }
+    if (stat.getStaticMod() != myDefaultStaticMod)
+      if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.STATIC) {
+        myBuilder.append("\\static ");
+      } else if (stat.getStaticMod() == Abstract.DefineStatement.StaticMod.DYNAMIC) {
+        myBuilder.append("\\dynamic ");
+      }
     stat.getDefinition().accept(new PrettyPrintVisitor(myBuilder, myIndent), null);
     return null;
   }
@@ -70,8 +73,10 @@ public class StatementPrettyPrintVisitor implements AbstractStatementVisitor<Voi
   public Void visitDefaultStaticCommand(Abstract.DefaultStaticStatement stat, Void params) {
     if (stat.isStatic()) {
       myBuilder.append("\\allstatic");
+      myDefaultStaticMod = Abstract.DefineStatement.StaticMod.STATIC;
     } else {
       myBuilder.append("\\alldynamic");
+      myDefaultStaticMod = Abstract.DefineStatement.StaticMod.DYNAMIC;
     }
     return null;
   }

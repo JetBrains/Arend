@@ -15,6 +15,10 @@ public class SimpleNamespace implements Namespace {
   public SimpleNamespace() {
   }
 
+  public SimpleNamespace(SimpleNamespace other) {
+    myNames.putAll(other.myNames);
+  }
+
   public SimpleNamespace(Abstract.Definition def) {
     this();
     addDefinition(def);
@@ -22,7 +26,7 @@ public class SimpleNamespace implements Namespace {
 
   public void addDefinition(final Referable def) {
     final Referable prev = myNames.put(def.getName(), def);
-    if (prev != null) {
+    if (prev != null && prev != def) {
       throw new InvalidNamespaceException() {
         @Override
         public GeneralError toError() {

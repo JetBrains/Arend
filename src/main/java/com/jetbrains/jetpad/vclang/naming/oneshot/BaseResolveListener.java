@@ -20,6 +20,11 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
+  public void classExtendsResolved(Abstract.ClassDefinition classDefinition, int index, Referable definition) {
+
+  }
+
+  @Override
   public Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Referable definition, Abstract.DefCallExpression var, Abstract.Expression right) {
     return null;
   }

@@ -308,6 +308,8 @@ public final class Abstract {
     enum Kind { Module, Class }
 
     Kind getKind();
+    Collection<? extends Referable> getSuperClasses();
+    String getSuperClassName(int index);
     Collection<? extends Statement> getStatements();
     ModuleID getModuleID();
   }

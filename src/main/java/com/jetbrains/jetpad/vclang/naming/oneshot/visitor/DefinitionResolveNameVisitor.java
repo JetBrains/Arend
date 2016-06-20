@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.oneshot.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -9,9 +10,11 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<Boolean, Void> {
@@ -182,6 +185,13 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
+    for (int i = 0; i < def.getSuperClasses().size(); i++) {
+      Referable sup = myNameResolver.resolveDefinition(myParentScope, Collections.singletonList(def.getSuperClassName(i)));
+      if (sup != null) {
+        myResolveListener.classExtendsResolved(def, i, sup);
+      }
+    }
+
     try {
       Namespace staticNamespace = myStaticNsProvider.forDefinition(def);
 

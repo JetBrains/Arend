@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
-import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -16,40 +16,40 @@ import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.type
 import static org.junit.Assert.assertEquals;
 
 public class GetTypeTest {
-  private static void testType(Expression expected, TypeCheckingTestCase.TypeCheckClassResult result) {
+  private static void testType(Expression expected, TypeCheckClassResult result) {
     assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType());
     assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
   @Test
   public void constructorTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => cons 0 nil");
-    testType(Apps(result.getDefinition("List").getDefCall(), Nat()), result);
+    TypeCheckClassResult result = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => cons 0 nil");
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("List")), Nat()), result);
   }
 
   @Test
   public void nilConstructorTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => (List Nat).nil");
-    testType(Apps(result.getDefinition("List").getDefCall(), Nat()), result);
+    TypeCheckClassResult result = typeCheckClass("\\static \\data List (A : \\Type0) | nil | cons A (List A) \\static \\function test => (List Nat).nil");
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("List")), Nat()), result);
   }
 
   @Test
   public void classExtTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
+    TypeCheckClassResult result = typeCheckClass("\\static \\class Test { \\abstract A : \\Type0 \\abstract a : A } \\static \\function test => Test { A => Nat }");
     assertEquals(Universe(1), result.getDefinition("Test").getType());
-    assertEquals(Universe(0), result.getDefinition("test").getType());
+    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), result.getDefinition("test").getType());
     testType(Universe(TypeUniverse.SetOfLevel(0)), result);
   }
 
   @Test
   public void lambdaTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass("\\static \\function test => \\lam (f : Nat -> Nat) => f 0");
+    TypeCheckClassResult result = typeCheckClass("\\static \\function test => \\lam (f : Nat -> Nat) => f 0");
     testType(Pi(Pi(Nat(), Nat()), Nat()), result);
   }
 
   @Test
   public void lambdaTest2() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass("\\function test => \\lam (A : \\Type0) (x : A) => x");
+    TypeCheckClassResult result = typeCheckClass("\\function test => \\lam (A : \\Type0) (x : A) => x");
     DependentLink A = param("A", Universe(0));
     Expression expectedType = Pi(params(A, param("x", Reference(A))), Reference(A));
     testType(expectedType, result);
@@ -57,23 +57,25 @@ public class GetTypeTest {
 
   @Test
   public void fieldAccTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
-    DependentLink p = param("p", Pi(Nat(), result.getDefinition("C").getDefCall()));
+    TypeCheckClassResult result = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
+    DependentLink p = param("p", Pi(Nat(), ClassCall((ClassDefinition) result.getDefinition("C"))));
     Expression type = FunCall(Prelude.PATH_INFIX)
       .addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
+      .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Zero(), AppExpression.DEFAULT)
-      .addArgument(Apps(result.getDefinition("C.x").getDefCall(), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
+      .addArgument(Apps(FieldCall((ClassField) result.getDefinition("C.x")), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), result.getDefinition("test").getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void tupleTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
+    TypeCheckClassResult result = typeCheckClass("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    testType(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class)).addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))), result);
+    testType(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX).addArgument(ZeroLvl(), EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(Fin(Suc(Zero())), EnumSet.noneOf(AppExpression.Flag.class))
+        .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))),
+        result);
   }
 
   @Test
@@ -87,20 +89,20 @@ public class GetTypeTest {
 
   @Test
   public void patternConstructor1() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\data C (n : Nat) | C (zero) => c1 | C (suc n) => c2 Nat");
     DataDefinition data = (DataDefinition) result.getDefinition("C");
-    assertEquals(Apps(data.getDefCall(), Zero()), data.getConstructor("c1").getType());
+    assertEquals(Apps(DataCall(data), Zero()), data.getConstructor("c1").getType());
     DependentLink params = data.getConstructor("c2").getDataTypeParameters();
     assertEquals(
-        Pi(params, Pi(param(Nat()), Apps(data.getDefCall(), Suc(Reference(params))))),
+        Pi(params, Pi(param(Nat()), Apps(DataCall(data), Suc(Reference(params))))),
         data.getConstructor("c2").getType()
     );
   }
 
   @Test
   public void patternConstructor2() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\data Vec \\Type0 Nat | Vec A zero => Nil | Vec A (suc n) => Cons A (Vec A n)" +
         "\\static \\data D (n : Nat) (Vec Nat n) | D zero _ => dzero | D (suc n) _ => done");
     DataDefinition vec = (DataDefinition) result.getDefinition("Vec");
@@ -123,7 +125,7 @@ public class GetTypeTest {
 
   @Test
   public void patternConstructor3() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D | d \\Type0\n" +
         "\\static \\data C D | C (d A) => c A");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
@@ -137,7 +139,7 @@ public class GetTypeTest {
 
   @Test
   public void patternConstructorDep() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\data Box (n : Nat) | box\n" +
         "\\static \\data D (n : Nat) (Box n) | D (zero) _ => d");
     DataDefinition d = (DataDefinition) result.getDefinition("D");

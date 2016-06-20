@@ -8,6 +8,8 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -1009,11 +1011,22 @@ public final class Concrete {
     private final List<Statement> myFields;
     private final Kind myKind;
     private ModuleID myModule;
+    private List<String> myNames;
+    private List<Referable> mySuperClasses;
 
-    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind) {
+    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind, List<String> names) {
       super(position, name, DEFAULT_PRECEDENCE);
+      myNames = names;
+      mySuperClasses = new ArrayList<>(names.size());
+      for (int i = 0; i < names.size(); i++) {
+        mySuperClasses.add(null);
+      }
       myFields = fields;
       myKind = kind;
+    }
+
+    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind) {
+      this(position, name, fields, kind, Collections.<String>emptyList());
     }
 
     public void setModuleID(ModuleID moduleID) {
@@ -1027,6 +1040,20 @@ public final class Concrete {
 
     @Override
     public Kind getKind() { return myKind; }
+
+    @Override
+    public Collection<? extends Referable> getSuperClasses() {
+      return mySuperClasses;
+    }
+
+    public void setSuperClass(int index, Referable superClass) {
+      mySuperClasses.set(index, superClass);
+    }
+
+    @Override
+    public String getSuperClassName(int index) {
+      return myNames.get(index);
+    }
 
     @Override
     public ModuleID getModuleID() {

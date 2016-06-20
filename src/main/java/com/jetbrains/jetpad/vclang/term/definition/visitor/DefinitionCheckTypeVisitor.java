@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
@@ -360,7 +361,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     context.add(thisParameter);
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build(def);
     LevelExpression plevel = null;
-    ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), null, thisClass, thisParameter);
+    ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), Error(null, null), thisClass, thisParameter);
 
     int index = 0;
     LinkList list = new LinkList();
@@ -857,6 +858,43 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
     ClassDefinition typedDef = new ClassDefinition(def.getName(), SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
+
+    int index = 0;
+    for (Referable referable : def.getSuperClasses()) {
+      if (referable == null) {
+        myErrorReporter.report(new TypeCheckingError("Could not find class '" + def.getSuperClassName(index) + "'", def));
+        continue;
+      }
+
+      ClassDefinition superClass = null;
+      if (referable instanceof ClassDefinition) {
+        superClass = (ClassDefinition) referable;
+      } else  {
+        Definition typecheckedSuper = myState.getTypechecked(referable);
+        if (typecheckedSuper instanceof ClassDefinition) {
+          superClass = (ClassDefinition) typecheckedSuper;
+        }
+      }
+
+      if (superClass != null) {
+        boolean ok = true;
+        for (ClassField field : superClass.getFields()) {
+          ClassField oldField = typedDef.tryAddField(field);
+          if (oldField != null) {
+            myErrorReporter.report(new TypeCheckingError("Duplicate field", null));  // FIXME[error] report proper
+            ok = false;
+          }
+        }
+        if (ok) {
+          typedDef.addSuperClass(superClass);
+        }
+      } else {
+        myErrorReporter.report(new TypeCheckingError("Expected a class", referable));
+      }
+
+      index++;
+    }
+
     ClassDefinition thisClass = getThisClass(def);
     if (thisClass != null) {
       typedDef.addParentField(thisClass);

@@ -99,7 +99,7 @@ public class TypeCheckingDefCall {
         myVisitor.getErrorReporter().report(error);
         return null;
       }
-      if (definition.getThisClass() != classDefinition) {
+      if (!classDefinition.isSubClassOf(definition.getThisClass())) {
         TypeCheckingError error = new TypeMismatchError(myParentDefinition, definition.getThisClass().getDefCall(), type, left);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));
         myVisitor.getErrorReporter().report(error);
@@ -185,7 +185,7 @@ public class TypeCheckingDefCall {
   }
 
   private Expression findParent(ClassDefinition classDefinition, Definition definition, Expression result, Abstract.Expression expr) {
-    if (classDefinition == definition.getThisClass()) {
+    if (classDefinition.isSubClassOf(definition.getThisClass())) {
       return result;
     }
     ClassField parentField = classDefinition.getParentField();

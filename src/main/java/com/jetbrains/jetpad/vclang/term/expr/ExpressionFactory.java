@@ -65,10 +65,6 @@ public class ExpressionFactory {
     return ConCall(definition, Arrays.asList(parameters));
   }
 
-  public static Expression BinOp(Expression left, Definition binOp, Expression right) {
-    return Apps(binOp.getDefCall(), left, right);
-  }
-
   public static DataCallExpression Interval() {
     return DataCall(Preprelude.INTERVAL);
   }

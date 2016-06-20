@@ -2,13 +2,11 @@ package com.jetbrains.jetpad.vclang.record;
 
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
 
 import java.util.List;
@@ -18,6 +16,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class RecordsTest {
   @Test
@@ -159,7 +158,7 @@ public class RecordsTest {
 
   @Test
   public void recordUniverseTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
     assertEquals(TypeUniverse.SetOfLevel(0), result.getDefinition("Point").getUniverse());
@@ -168,7 +167,7 @@ public class RecordsTest {
 
   @Test
   public void recordUniverseTest2() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
     assertEquals(TypeUniverse.SetOfLevel(0), result.getDefinition("Point").getUniverse());
@@ -177,7 +176,7 @@ public class RecordsTest {
 
   @Test
   public void recordUniverseTest3() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
     assertEquals(new TypeUniverse(4, TypeUniverse.NOT_TRUNCATED), result.getDefinition("Point").getUniverse());
@@ -186,7 +185,7 @@ public class RecordsTest {
 
   @Test
   public void recordConstructorsTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract x : Nat\n" +
         "  \\data Foo | foo (x = 0)\n" +
@@ -234,7 +233,7 @@ public class RecordsTest {
 
     assertEquals(1, domArguments.get(3).getArguments().size());
     assertEquals(Reference(testFun.getParameters()), domArguments.get(3).getArguments().get(0));
-    assertEquals(result.getDefinition("A.x").getDefCall(), domArguments.get(3).getFunction());
+    assertEquals(FieldCall((ClassField) result.getDefinition("A.x")), domArguments.get(3).getFunction());
 
     ConCallExpression domArg2 = domArguments.get(4).toConCall();
     assertNotNull(domArg2);
@@ -243,7 +242,7 @@ public class RecordsTest {
 
   @Test
   public void recordConstructorsParametersTest() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
       "\\static \\class A {\n" +
       "  \\abstract x : Nat\n" +
       "  \\data Foo (p : x = x) | foo (p = p)\n" +
@@ -252,7 +251,7 @@ public class RecordsTest {
       "\\static \\function test (q : A) => q.y");
     FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
     Expression resultType = testFun.getResultType();
-    Expression xCall = result.getDefinition("A.x").getDefCall();
+    Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"));
     PiExpression resultTypePi = resultType.toPi();
     assertNotNull(resultTypePi);
     Expression function = resultTypePi.getParameters().getType().normalize(NormalizeVisitor.Mode.NF);
@@ -296,13 +295,14 @@ public class RecordsTest {
 
     LamExpression arg0 = arguments.get(2).toLam();
     assertNotNull(arg0);
-    assertEquals(Foo.getDefCall(), arg0.getBody().getFunction());
+    assertEquals(DataCall(Foo), arg0.getBody().getFunction());
     assertEquals(Reference(testFun.getParameters()), arg0.getBody().getArguments().get(0));
     Expression parameterFunction = arg0.getBody().getArguments().get(1);
     List<? extends Expression> parameterArguments = parameterFunction.getArguments();
     parameterFunction = parameterFunction.getFunction();
     assertEquals(1, parameterArguments.size());
-    assertEquals(ConCall(Prelude.PATH_CON), parameterFunction);
+    assertNotNull(parameterFunction.toConCall());
+    assertTrue(Prelude.isPathCon(parameterFunction.toConCall().getDefinition()));
     LamExpression paramArg0 = parameterArguments.get(0).toLam();
     assertNotNull(paramArg0);
     assertEquals(xCall, paramArg0.getBody().getFunction());

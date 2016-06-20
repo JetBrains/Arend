@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.*;
 import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -84,8 +83,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           return null;
         }
 
-        Expression expr1 = Apps(argResult.expression, ConCall(Preprelude.LEFT));
-        Expression expr2 = Apps(argResult.expression, ConCall(Preprelude.RIGHT));
+        Expression expr1 = Apps(argResult.expression, Left());
+        Expression expr2 = Apps(argResult.expression, Right());
         result.expression
             .addArgument(expr1, EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(expr2, EnumSet.noneOf(AppExpression.Flag.class))
@@ -160,14 +159,16 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(result.expression.getArguments());
             args1.addAll(args.subList(result.expression.getArguments().size(), args.size()));
             args = conCall.getDefinition().matchDataTypeArguments(args1);
-            if (!conCall.getDataTypeArguments().isEmpty()) {
-              args = args.subList(conCall.getDataTypeArguments().size(), args.size());
+            if (args != null) {
+              if (!conCall.getDataTypeArguments().isEmpty()) {
+                args = args.subList(conCall.getDataTypeArguments().size(), args.size());
+              }
+              if (!args.isEmpty()) {
+                result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
+                result.type = result.type.applyExpressions(args);
+              }
+              return inferArg(result, arg, true, fun);
             }
-            if (!args.isEmpty()) {
-              result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
-              result.type = result.type.applyExpressions(args);
-            }
-            return inferArg(result, arg, true, fun);
           }
         }
       }

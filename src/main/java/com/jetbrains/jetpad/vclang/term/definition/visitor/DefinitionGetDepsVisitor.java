@@ -141,6 +141,13 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
 
   @Override
   public Set<Referable> visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
-    return visitStatements(def, def.getStatements(), isStatic);
+    Set<Referable> result = new HashSet<>();
+    for (Referable referable : def.getSuperClasses()) {
+      if (referable != null) {
+        result.add(referable);
+      }
+    }
+    result.addAll(visitStatements(def, def.getStatements(), isStatic));
+    return result;
   }
 }

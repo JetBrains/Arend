@@ -280,8 +280,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
         }
 
         List<? extends Expression> args = result.expression.getFunction().toConCall().getDataTypeArguments();
-        if (!compareExpressions(result, args.get(3), Apps(result.expression.getArguments().get(0), ConCall(Preprelude.LEFT)), expr) ||
-            !compareExpressions(result, args.get(4), Apps(result.expression.getArguments().get(0), ConCall(Preprelude.RIGHT)), expr)) {
+        if (!compareExpressions(result, args.get(3), Apps(result.expression.getArguments().get(0), Left()), expr) ||
+            !compareExpressions(result, args.get(4), Apps(result.expression.getArguments().get(0), Right()), expr)) {
           return false;
         }
       }
@@ -780,7 +780,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       baseClass.addField(field.classField);
       if (result1 == null) {
         for (i++; i < fields.size(); i++) {
-          typeCheck(fields.get(i).term, fields.get(i).classField.getBaseType().subst(field.classField.getThisParameter(), thisExpr));
+          typeCheck(fields.get(i).term, fields.get(i).classField.getBaseType().subst(fields.get(i).classField.getThisParameter(), thisExpr));
           baseClass.addField(fields.get(i).classField);
         }
         return null;

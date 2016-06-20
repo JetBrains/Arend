@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming.namespace;
 
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 import java.util.Collection;
 
@@ -11,8 +13,21 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
   public static final DynamicNamespaceProvider INSTANCE = new SimpleDynamicNamespaceProvider();
 
   @Override
-  public Namespace forClass(Abstract.ClassDefinition classDefinition) {
-    return forStatements(classDefinition.getStatements());
+  public SimpleNamespace forClass(final Abstract.ClassDefinition classDefinition) {
+    SimpleNamespace myNamespace = forStatements(classDefinition.getStatements());
+    for (final Referable sup : classDefinition.getSuperClasses()) {
+      if (sup instanceof Abstract.ClassDefinition) {
+        myNamespace.addAll(forClass((Abstract.ClassDefinition) sup));
+      } else {
+        throw new Namespace.InvalidNamespaceException() {  // FIXME[error] report proper
+          @Override
+          public GeneralError toError() {
+            return new GeneralError("Superclass " + sup.getName() + " must be a class definition", classDefinition);
+          }
+        };
+      }
+    }
+    return myNamespace;
   }
 
   private static SimpleNamespace forData(Abstract.DataDefinition def) {

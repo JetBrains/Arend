@@ -95,10 +95,23 @@ public class Constructor extends Definition implements Function {
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
     assert !hasErrors() && !myDataType.hasErrors();
-    return myPatterns == null ? arguments : ((Pattern.MatchOKResult) myPatterns.match(arguments)).expressions;
+    if (myPatterns == null) {
+      return arguments;
+    } else {
+      Pattern.MatchResult result = myPatterns.match(arguments);
+      if (result instanceof Pattern.MatchOKResult) {
+        return ((Pattern.MatchOKResult) result).expressions;
+      } else {
+        return null;
+      }
+    }
   }
 
   public Expression getDataTypeExpression() {
+    return getDataTypeExpression(null);
+  }
+
+  public Expression getDataTypeExpression(Substitution substitution) {
     assert !hasErrors() && !myDataType.hasErrors();
 
     Expression resultType = DataCall(myDataType);
@@ -112,6 +125,7 @@ public class Constructor extends Definition implements Function {
       resultType = Apps(resultType, arguments, flags);
     } else {
       Substitution subst = new Substitution();
+
       DependentLink dataTypeParams = myDataType.getParameters();
       List<Expression> arguments = new ArrayList<>(myPatterns.getPatterns().size());
       for (PatternArgument patternArg : myPatterns.getPatterns()) {
@@ -123,6 +137,9 @@ public class Constructor extends Definition implements Function {
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
         }
 
+        if (substitution != null) {
+          innerSubst.add(substitution);
+        }
         Expression expr = patternArg.getPattern().toExpression(innerSubst);
 
         subst.add(dataTypeParams, expr);

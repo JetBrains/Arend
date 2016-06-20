@@ -54,7 +54,7 @@ public class NormalizationTest {
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
-        clause(Preprelude.SUC, xPlusMinusOne, Suc(BinOp(Reference(xPlusMinusOne), plus, Reference(yPlus))))));
+        clause(Preprelude.SUC, xPlusMinusOne, Suc(Apps(FunCall(plus), Reference(xPlusMinusOne), Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
 
     DependentLink xMul = param("x", Nat());
@@ -63,7 +63,7 @@ public class NormalizationTest {
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
-        clause(Preprelude.SUC, xMulMinusOne, BinOp(Reference(yMul), plus, BinOp(Reference(xMulMinusOne), mul, Reference(yMul))))
+        clause(Preprelude.SUC, xMulMinusOne, Apps(FunCall(plus), Reference(yMul), Apps(FunCall(mul), Reference(xMulMinusOne), Reference(yMul))))
     ));
     mul.setElimTree(mulElimTree);
 
@@ -72,7 +72,7 @@ public class NormalizationTest {
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
-        clause(Preprelude.SUC, xFacMinusOne, BinOp(Suc(Reference(xFacMinusOne)), mul, Apps(FunCall(fac), Reference(xFacMinusOne))))
+        clause(Preprelude.SUC, xFacMinusOne, Apps(FunCall(mul), Suc(Reference(xFacMinusOne)), Apps(FunCall(fac), Reference(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
 
@@ -169,42 +169,42 @@ public class NormalizationTest {
   @Test
   public void normalizePlus0a3() {
     // normalize (plus 0 3) = 3
-    Expression expr = BinOp(Zero(), plus, Suc(Suc(Suc(Zero()))));
+    Expression expr = Apps(FunCall(plus), Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizePlus3a0() {
     // normalize (plus 3 0) = 3
-    Expression expr = BinOp(Suc(Suc(Suc(Zero()))), plus, Zero());
+    Expression expr = Apps(FunCall(plus), Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizePlus3a3() {
     // normalize (plus 3 3) = 6
-    Expression expr = BinOp(Suc(Suc(Suc(Zero()))), plus, Suc(Suc(Suc(Zero()))));
+    Expression expr = Apps(FunCall(plus), Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul3a0() {
     // normalize (mul 3 0) = 0
-    Expression expr = BinOp(Suc(Suc(Suc(Zero()))), mul, Zero());
+    Expression expr = Apps(FunCall(mul), Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul0a3() {
     // normalize (mul 0 3) = 0
-    Expression expr = BinOp(Zero(), mul, Suc(Suc(Suc(Zero()))));
+    Expression expr = Apps(FunCall(mul), Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeMul3a3() {
     // normalize (mul 3 3) = 9
-    Expression expr = BinOp(Suc(Suc(Suc(Zero()))), mul, Suc(Suc(Suc(Zero()))));
+    Expression expr = Apps(FunCall(mul), Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero()))))))))), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -337,7 +337,7 @@ public class NormalizationTest {
             .addArgument(Reference(A), AppExpression.DEFAULT).addArgument(Reference(B), AppExpression.DEFAULT)
             .addArgument(Reference(f), AppExpression.DEFAULT).addArgument(Reference(g), AppExpression.DEFAULT)
             .addArgument(Reference(linv), AppExpression.DEFAULT).addArgument(Reference(rinv), AppExpression.DEFAULT)
-            .addArgument(ConCall(Preprelude.LEFT), AppExpression.DEFAULT);
+            .addArgument(Left(), AppExpression.DEFAULT);
     assertEquals(Reference(A), iso_expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -369,7 +369,7 @@ public class NormalizationTest {
             .addArgument(Reference(A), AppExpression.DEFAULT).addArgument(Reference(B), AppExpression.DEFAULT)
             .addArgument(Reference(f), AppExpression.DEFAULT).addArgument(Reference(g), AppExpression.DEFAULT)
             .addArgument(Reference(linv), AppExpression.DEFAULT).addArgument(Reference(rinv), AppExpression.DEFAULT)
-            .addArgument(ConCall(Preprelude.RIGHT), AppExpression.DEFAULT);
+            .addArgument(Right(), AppExpression.DEFAULT);
     assertEquals(Reference(B), iso_expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -409,7 +409,7 @@ public class NormalizationTest {
             .addArgument(Reference(lh), EnumSet.noneOf(AppExpression.Flag.class))
         .addArgument(Lam(k, iso_expr), AppExpression.DEFAULT)
         .addArgument(Reference(aleft), AppExpression.DEFAULT)
-        .addArgument(ConCall(Preprelude.RIGHT), AppExpression.DEFAULT);
+        .addArgument(Right(), AppExpression.DEFAULT);
     assertEquals(Apps(Reference(f), Reference(aleft)), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -431,8 +431,8 @@ public class NormalizationTest {
       .addArgument(Reference(B), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)), AppExpression.DEFAULT);
     DependentLink rinv = param("rinv", Pi(b, rinvType));
-    DependentLink aleft = param("aleft", A.subst(k, ConCall(Preprelude.RIGHT)));
-    Expression expr = Apps(FunCall(Prelude.COERCE), Lam(k, Apps(FunCall(Prelude.ISO), Apps(DataCall(Prelude.PATH), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), ConCall(Preprelude.RIGHT));
+    DependentLink aleft = param("aleft", A.subst(k, Right()));
+    Expression expr = Apps(FunCall(Prelude.COERCE), Lam(k, Apps(FunCall(Prelude.ISO), Apps(DataCall(Prelude.PATH), Lam(i, DataCall(Preprelude.INTERVAL)), Reference(k), Reference(k)), Reference(B), Reference(f), Reference(g), Reference(linv), Reference(rinv), Reference(k))), Reference(aleft), Right());
     assertEquals(expr, expr.normalize(NormalizeVisitor.Mode.NF));
   }
 

@@ -1,63 +1,68 @@
 package com.jetbrains.jetpad.vclang.typechecking.constructions;
 
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.*;
+import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor.Mode.WHNF;
-import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckExpr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class DefCall {
-  private void test(Expression expected, TypeCheckingTestCase.TypeCheckClassResult result) {
+  private void test(Expression expected, TypeCheckClassResult result) {
     assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression());
   }
 
-  private void testFI(Expression expected, TypeCheckingTestCase.TypeCheckClassResult result) {
+  private void testFI(Expression expected, TypeCheckClassResult result) {
     assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("Test.test")).getElimTree()).getExpression());
   }
 
-  private void testType(Expression expected, TypeCheckingTestCase.TypeCheckClassResult result) {
+  private void testType(Expression expected, TypeCheckClassResult result) {
     assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType());
     assertEquals(expected, ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("test")).getElimTree()).getExpression().getType());
   }
 
-  private DependentLink getThis(TypeCheckingTestCase.TypeCheckClassResult result) {
+  private DependentLink getThis(TypeCheckClassResult result) {
     FunctionDefinition function = (FunctionDefinition) result.getDefinition("test");
     return function.getParameters();
   }
 
-  private Expression getThisFI(TypeCheckingTestCase.TypeCheckClassResult result) {
+  private Expression getThisFI(TypeCheckClassResult result) {
     FunctionDefinition function = (FunctionDefinition) result.getDefinition("Test.test");
-    return Apps(((ClassDefinition) result.getDefinition("Test")).getParentField().getDefCall(), Reference(function.getParameters()));
+    return Apps(FieldCall(((ClassDefinition) result.getDefinition("Test")).getParentField()), Reference(function.getParameters()));
   }
 
   @Test
   public void funStatic() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\function f => 0\n" +
         "\\static \\function test => f");
-    test(result.getDefinition("f").getDefCall(), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("f")), result);
   }
 
   @Test
   public void funDynamic() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\function f => 0\n" +
         "\\function test => f");
-    test(Apps(result.getDefinition("f").getDefCall(), Reference(getThis(result))), result);
+    test(Apps(FunCall((FunctionDefinition) result.getDefinition("f")), Reference(getThis(result))), result);
   }
 
   @Test
@@ -67,7 +72,7 @@ public class DefCall {
         "\\class Test {\n" +
         "  \\function test => f\n" +
         "}");
-    testFI(Apps(result.getDefinition("f").getDefCall(), getThisFI(result)), result);
+    testFI(Apps(FunCall((FunctionDefinition) result.getDefinition("f")), getThisFI(result)), result);
   }
 
   @Test
@@ -86,7 +91,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.f");
-    test(result.getDefinition("A.B.f").getDefCall(), result);
+    test(FunCall((FunctionDefinition) result.getDefinition("A.B.f")), result);
   }
 
   @Test
@@ -98,7 +103,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.f");
-    test(Apps(result.getDefinition("A.B.f").getDefCall(), Reference(getThis(result))), result);
+    test(Apps(FunCall((FunctionDefinition) result.getDefinition("A.B.f")), Reference(getThis(result))), result);
   }
 
   @Test
@@ -108,7 +113,7 @@ public class DefCall {
         "  \\function f => 0\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.f");
-    test(Apps(result.getDefinition("E.f").getDefCall(), Reference(getThis(result))), result);
+    test(Apps(FunCall((FunctionDefinition) result.getDefinition("E.f")), Reference(getThis(result))), result);
   }
 
   @Test
@@ -127,7 +132,7 @@ public class DefCall {
         "  \\function f => 0\n" +
         "}\n" +
         "\\function test (e : E) => e.f");
-    test(Apps(result.getDefinition("E.f").getDefCall(), Reference(getThis(result).getNext())), result);
+    test(Apps(FunCall((FunctionDefinition) result.getDefinition("E.f")), Reference(getThis(result).getNext())), result);
   }
 
   @Test
@@ -141,7 +146,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.f");
-    test(Apps(result.getDefinition("E.A.B.f").getDefCall(), Reference(getThis(result))), result);
+    test(Apps(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f")), Reference(getThis(result))), result);
   }
 
   @Test
@@ -155,7 +160,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) (b : e.A.B) => b.f");
-    test(Apps(result.getDefinition("E.A.B.f").getDefCall(), Reference(getThis(result).getNext())), result);
+    test(Apps(FunCall((FunctionDefinition) result.getDefinition("E.A.B.f")), Reference(getThis(result).getNext())), result);
   }
 
   @Test
@@ -189,7 +194,7 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D | c\n" +
         "\\static \\function test => c");
-    test(result.getDefinition("c").getDefCall(), result);
+    test(ConCall((Constructor) result.getDefinition("c")), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -198,7 +203,7 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D | c\n" +
         "\\static \\function test => D.c");
-    test(result.getDefinition("c").getDefCall(), result);
+    test(ConCall((Constructor) result.getDefinition("c")), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -207,8 +212,8 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\static \\function test => (D 0 (\\lam _ => 1)).c");
-    test(Apps(result.getDefinition("c").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(WHNF), result);
-    testType(Apps(result.getDefinition("D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(ConCall((Constructor) result.getDefinition("c"), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -217,8 +222,8 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\static \\function test => (D 0).c {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("c").getDefCall(), Zero()).normalize(WHNF), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("c"), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -227,8 +232,8 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\static \\function test => D.c {0} {\\lam _ => 1}");
-    test(Apps(result.getDefinition("c").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("c")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -237,7 +242,7 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D | c\n" +
         "\\function test => c");
-    test(Apps(result.getDefinition("c").getDefCall(), Reference(getThis(result))).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -248,7 +253,7 @@ public class DefCall {
         "\\class Test {\n" +
         "  \\function test => c\n" +
         "}");
-    testFI(Apps(result.getDefinition("c").getDefCall(), getThisFI(result)).normalize(WHNF), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), getThisFI(result)), result);
   }
 
   @Test
@@ -256,7 +261,7 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D | c\n" +
         "\\function test => D.c");
-    test(Apps(result.getDefinition("c").getDefCall(), Reference(getThis(result))).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -267,7 +272,7 @@ public class DefCall {
         "\\class Test {\n" +
         "  \\function test => D.c\n" +
         "}");
-    testFI(Apps(result.getDefinition("c").getDefCall(), getThisFI(result)).normalize(WHNF), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), getThisFI(result)), result);
   }
 
   @Test
@@ -275,8 +280,8 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0 (\\lam _ => 1)).c");
-    test(Apps(result.getDefinition("c").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(WHNF), result);
-    testType(Apps(result.getDefinition("D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -287,7 +292,7 @@ public class DefCall {
         "\\class Test {\n" +
         "  \\function test => (D 0 (\\lam _ => 1)).c\n" +
         "}");
-    testFI(Apps(result.getDefinition("c").getDefCall(), getThisFI(result), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(WHNF), result);
+    testFI(ConCall((Constructor) result.getDefinition("c"), getThisFI(result), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
   }
 
   @Test
@@ -295,8 +300,8 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0).c {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("c").getDefCall(), Reference(getThis(result)), Zero()).normalize(WHNF), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result)), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -307,7 +312,7 @@ public class DefCall {
         "\\class Test {\n" +
         "  \\function test => (D 0).c {\\lam _ => 1}\n" +
         "}");
-    testFI(Apps(Apps(result.getDefinition("c").getDefCall(), getThisFI(result), Zero()).normalize(WHNF), Lam(param(Nat()), Suc(Zero()))), result);
+    testFI(Apps(ConCall((Constructor) result.getDefinition("c"), getThisFI(result), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
   }
 
   @Test
@@ -315,8 +320,8 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => D.c {0} {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("c").getDefCall(), Reference(getThis(result))).normalize(WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("c"), Reference(getThis(result))), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("c"), result.getDefinition("D.c"));
   }
 
@@ -327,7 +332,7 @@ public class DefCall {
         "\\class Test {\n" +
         "  \\function test => D.c {0} {\\lam _ => 1}\n" +
         "}");
-    testFI(Apps(Apps(result.getDefinition("c").getDefCall(), getThisFI(result)).normalize(WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testFI(Apps(ConCall((Constructor) result.getDefinition("c"), getThisFI(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
   }
 
   @Test
@@ -353,7 +358,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.c");
-    test(result.getDefinition("A.B.c").getDefCall(), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c")), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -366,7 +371,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.D.c");
-    test(result.getDefinition("A.B.c").getDefCall(), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c")), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -379,8 +384,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test => (A.B.D 0 (\\lam _ => 1)).c");
-    test(Apps(result.getDefinition("A.B.c").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(WHNF), result);
-    testType(Apps(result.getDefinition("A.B.D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -393,8 +398,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test => (A.B.D 0).c {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("A.B.c").getDefCall(), Zero()).normalize(WHNF), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("A.B.D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("A.B.c"), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -407,8 +412,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.D.c {0} {\\lam _ => 1}");
-    test(Apps(result.getDefinition("A.B.c").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("A.B.D").getDefCall(), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("A.B.c")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -421,7 +426,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.c");
-    test(Apps(result.getDefinition("A.B.c").getDefCall(), Reference(getThis(result))).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -434,7 +439,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.D.c");
-    test(Apps(result.getDefinition("A.B.c").getDefCall(), Reference(getThis(result))).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -447,8 +452,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\function test => (A.B.D 0 (\\lam _ => 1)).c");
-    test(Apps(result.getDefinition("A.B.c").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(WHNF), result);
-    testType(Apps(result.getDefinition("A.B.D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -461,8 +466,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\function test => (A.B.D 0).c {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("A.B.c").getDefCall(), Reference(getThis(result)), Zero()).normalize(WHNF), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("A.B.D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result)), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -475,8 +480,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.D.c {0} {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("A.B.c").getDefCall(), Reference(getThis(result))).normalize(WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("A.B.D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("A.B.c"), Reference(getThis(result))), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("A.B.c"), result.getDefinition("A.B.D.c"));
   }
 
@@ -487,7 +492,7 @@ public class DefCall {
         "  \\data D | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.c");
-    test(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result))).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -498,7 +503,7 @@ public class DefCall {
         "  \\data D | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.D.c");
-    test(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result))).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -509,8 +514,8 @@ public class DefCall {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => (e.D 0 (\\lam _ => 1)).c");
-    test(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(WHNF), result);
-    testType(Apps(result.getDefinition("E.D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -521,8 +526,8 @@ public class DefCall {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => (e.D 0).c {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result)), Zero()).normalize(WHNF), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("E.D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result)), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -533,8 +538,8 @@ public class DefCall {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.D.c {0} {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result))).normalize(WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("E.D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result))), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -563,7 +568,7 @@ public class DefCall {
         "  \\data D | c\n" +
         "}\n" +
         "\\function test (e : E) => e.c");
-    test(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result).getNext())).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext())), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -574,7 +579,7 @@ public class DefCall {
         "  \\data D | c\n" +
         "}\n" +
         "\\function test (e : E) => e.D.c");
-    test(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result).getNext())).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext())), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -585,8 +590,8 @@ public class DefCall {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\function test (e : E) => (e.D 0 (\\lam _ => 1)).c");
-    test(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(WHNF), result);
-    testType(Apps(result.getDefinition("E.D").getDefCall(), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -597,8 +602,8 @@ public class DefCall {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\function test (e : E) => (e.D 0).c {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result).getNext()), Zero()).normalize(WHNF), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("E.D").getDefCall(), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext()), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -609,8 +614,8 @@ public class DefCall {
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
         "\\function test (e : E) => e.D.c {0} {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("E.c").getDefCall(), Reference(getThis(result).getNext())).normalize(WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("E.D").getDefCall(), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("E.c"), Reference(getThis(result).getNext())), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.D")), Reference(getThis(result).getNext()), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("E.c"), result.getDefinition("E.D.c"));
   }
 
@@ -625,7 +630,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.c");
-    test(Apps(result.getDefinition("E.A.B.c").getDefCall(), Reference(getThis(result))).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result))), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -640,7 +645,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.D.c");
-    test(Apps(result.getDefinition("E.A.B.c").getDefCall(), Reference(getThis(result))).normalize(WHNF), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result))), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -655,8 +660,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => (e.A.B.D 0 (\\lam _ => 1)).c");
-    test(Apps(result.getDefinition("E.A.B.c").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))).normalize(WHNF), result);
-    testType(Apps(result.getDefinition("E.A.B.D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -671,8 +676,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => (e.A.B.D 0).c {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("E.A.B.c").getDefCall(), Reference(getThis(result)), Zero()).normalize(WHNF), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("E.A.B.D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result)), Zero()), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -687,8 +692,8 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.D.c {0} {\\lam _ => 1}");
-    test(Apps(Apps(result.getDefinition("E.A.B.c").getDefCall(), Reference(getThis(result))).normalize(WHNF), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
-    testType(Apps(result.getDefinition("E.A.B.D").getDefCall(), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    test(Apps(ConCall((Constructor) result.getDefinition("E.A.B.c"), Reference(getThis(result))), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
+    testType(Apps(DataCall((DataDefinition) result.getDefinition("E.A.B.D")), Reference(getThis(result)), Zero(), Lam(param(Nat()), Suc(Zero()))), result);
     assertEquals(result.getDefinition("E.A.B.c"), result.getDefinition("E.A.B.D.c"));
   }
 
@@ -749,7 +754,7 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\static \\class C {}\n" +
         "\\static \\function test => C");
-    test(result.getDefinition("C").getDefCall(), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("C")), result);
   }
 
   @Test
@@ -757,7 +762,7 @@ public class DefCall {
     TypeCheckClassResult result = typeCheckClass(
         "\\class C {}\n" +
         "\\function test => C");
-    test(result.getDefinition("C").getDefCall().applyThis(Reference(getThis(result))), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("C")).applyThis(Reference(getThis(result))), result);
   }
 
   @Test
@@ -767,7 +772,7 @@ public class DefCall {
         "\\class Test {\n" +
         "  \\function test => C\n" +
         "}");
-    testFI(result.getDefinition("C").getDefCall().applyThis(getThisFI(result)), result);
+    testFI(ClassCall((ClassDefinition) result.getDefinition("C")).applyThis(getThisFI(result)), result);
   }
 
   @Test
@@ -786,7 +791,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test => A.B.C");
-    test(result.getDefinition("A.B.C").getDefCall(), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("A.B.C")), result);
   }
 
   @Test
@@ -798,7 +803,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\function test => A.B.C");
-    test(result.getDefinition("A.B.C").getDefCall().applyThis(Reference(getThis(result))), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("A.B.C")).applyThis(Reference(getThis(result))), result);
   }
 
   @Test
@@ -808,7 +813,7 @@ public class DefCall {
         "  \\class C {}\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.C");
-    test(result.getDefinition("E.C").getDefCall().applyThis(Reference(getThis(result))), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("E.C")).applyThis(Reference(getThis(result))), result);
   }
 
   @Test
@@ -827,7 +832,7 @@ public class DefCall {
         "  \\class C {}\n" +
         "}\n" +
         "\\function test (e : E) => e.C");
-    test(result.getDefinition("E.C").getDefCall().applyThis(Reference(getThis(result).getNext())), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("E.C")).applyThis(Reference(getThis(result).getNext())), result);
   }
 
   @Test
@@ -841,7 +846,7 @@ public class DefCall {
         "  }\n" +
         "}\n" +
         "\\static \\function test (e : E) => e.A.B.C");
-    test(result.getDefinition("E.A.B.C").getDefCall().applyThis(Reference(getThis(result))), result);
+    test(ClassCall((ClassDefinition) result.getDefinition("E.A.B.C")).applyThis(Reference(getThis(result))), result);
   }
 
   @Test
@@ -907,5 +912,15 @@ public class DefCall {
   @Test
   public void staticTest() {
     typeCheckClass("\\static \\class A { \\static \\function x => 0 } \\static \\function y : Nat => A.x");
+  }
+
+  @Test
+  public void resolvedConstructorTest() {
+      Concrete.ClassDefinition cd = resolveNamesClass("test",
+          "\\static \\function isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
+          "\\static \\function inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
+      Concrete.DefineStatement lastDef = (Concrete.DefineStatement) cd.getStatements().get(((ArrayList) cd.getStatements()).size() - 1);
+      ((Concrete.DefCallExpression) ((Concrete.AppExpression) ((Concrete.FunctionDefinition) lastDef.getDefinition()).getTerm()).getArgument().getExpression()).setResolvedDefinition(Prelude.PROP_TRUNC.getConstructor("inP"));
+      typeCheckClass(cd, 0);
   }
 }

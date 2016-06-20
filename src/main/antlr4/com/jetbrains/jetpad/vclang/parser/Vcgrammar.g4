@@ -2,9 +2,9 @@ grammar Vcgrammar;
 
 statements : statement*;
 
-statement : staticMod definition                              # statDef
-          | nsCmd nsCmdRoot fieldAcc* ('(' name (',' name)* ')')?  # statCmd
-          | defaultStaticMod                                  # defaultStatic
+statement : staticMod definition                                  # statDef
+          | nsCmd nsCmdRoot fieldAcc* ('(' name (',' name)* ')')? # statCmd
+          | defaultStaticMod                                      # defaultStatic
           ;
 
 nsCmdRoot : modulePath | name;
@@ -12,8 +12,8 @@ nsCmdRoot : modulePath | name;
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
             | '\\abstract' precedence name tele* ':' expr                                 # defAbstract
             // | '\\override' name ('\\as' name)? tele* typeTermOpt where?                   # defOverride
-            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef? # defData
-            | classKindMod ID '{' statement* '}'                                          # defClass
+            | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?    # defData
+            | classKindMod ID ('\\extends' ID (',' ID)*)? '{' statement* '}'              # defClass
             ;
 
 conditionDef : '\\with' '|'? condition ('|' condition)*;

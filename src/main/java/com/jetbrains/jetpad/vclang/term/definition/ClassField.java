@@ -17,7 +17,7 @@ public class ClassField extends Definition {
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
-    hasErrors(type == null);
+    hasErrors(type == null || type.toError() != null);
   }
 
   public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, TypeUniverse universe) {
@@ -25,7 +25,7 @@ public class ClassField extends Definition {
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
-    hasErrors(type == null);
+    hasErrors(type == null || type.toError() != null);
   }
 
   public DependentLink getThisParameter() {
