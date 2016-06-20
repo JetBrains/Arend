@@ -865,7 +865,13 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
   @Override
   public ClassDefinition visitClass(Abstract.ClassDefinition def, Void params) {
     ClassDefinition typedDef = new ClassDefinition(myNamespaceMember.getResolvedName());
+    int index = 0;
     for (Referable referable : def.getSuperClasses()) {
+      if (referable == null) {
+        myErrorReporter.report(new TypeCheckingError("Could not find class '" + def.getSuperClassName(index) + "'", def));
+        continue;
+      }
+
       ClassDefinition superClass = null;
       if (referable instanceof ClassDefinition) {
         superClass = (ClassDefinition) referable;
@@ -892,6 +898,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       } else {
         myErrorReporter.report(new TypeCheckingError("Expected a class", referable));
       }
+
+      index++;
     }
 
     ClassDefinition thisClass = getThisClass(def, myNamespaceMember.namespace);

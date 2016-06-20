@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.record;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.resolveNamesClass;
 
 public class ExtensionsTest {
   @Test
@@ -77,6 +78,46 @@ public class ExtensionsTest {
   }
 
   @Test
+  public void nameClashError() {
+    resolveNamesClass("test",
+        "\\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\class B \\extends A {\n" +
+        "  \\abstract x : Nat\n" +
+        "}", 1);
+  }
+
+  @Test
+  public void nameClashError2() {
+    resolveNamesClass("test",
+        "\\class A {\n" +
+        "  \\abstract x : Nat\n" +
+        "}\n" +
+        "\\class B \\extends A {\n" +
+        "  \\abstract y : Nat\n" +
+        "}\n" +
+        "\\class C \\extends B {\n" +
+        "  \\abstract x : Nat -> Nat\n" +
+        "}", 1);
+  }
+
+  @Test
+  public void nameClashError3() {
+    resolveNamesClass("test",
+        "\\static \\class A {\n" +
+        "  \\abstract A : \\Set0\n" +
+        "}\n" +
+        "\\static \\class B \\extends A {\n" +
+        "  \\abstract a : A\n" +
+        "}\n" +
+        "\\class C \\extends A {\n" +
+        "  \\abstract a : A\n" +
+        "}\n" +
+        "\\class D \\extends B, C {}", 1);
+  }
+
+  @Test
   public void multiple() {
     typeCheckClass(
         "\\static \\class A {\n" +
@@ -96,17 +137,7 @@ public class ExtensionsTest {
   }
 
   @Test
-  public void multipleError() {
-    typeCheckClass(
-        "\\static \\class A {\n" +
-        "  \\abstract A : \\Set0\n" +
-        "}\n" +
-        "\\static \\class B \\extends A {\n" +
-        "  \\abstract a : A\n" +
-        "}\n" +
-        "\\class C \\extends A {\n" +
-        "  \\abstract a : A\n" +
-        "}\n" +
-        "\\class D \\extends B, C {}", 1);
+  public void internalInheritance() {
+    typeCheckClass("\\class A { \\class B \\extends A { } }", 1);
   }
 }

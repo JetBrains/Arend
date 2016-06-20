@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.ResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.StatementResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.NameDefinedError;
 import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.CompositeNameResolver;
 import com.jetbrains.jetpad.vclang.typechecking.nameresolver.MultiNameResolver;
@@ -219,7 +220,10 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       if (member != null) {
         myResolveListener.classExtendsResolved(def, i, member.getResolvedDefinition());
         for (NamespaceMember child : member.namespace.getMembers()) {
-          classNamespace.addMember(child);
+          NamespaceMember oldMember = classNamespace.addMember(child);
+          if (oldMember != null && oldMember != child) {
+            myErrorReporter.report(new NameDefinedError(true, def, child.namespace.getName(), myNamespace.getResolvedName()));
+          }
         }
       }
     }
