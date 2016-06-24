@@ -443,6 +443,46 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
+  private static class RenamingOrIDs {}
+
+  private static class IdPair {
+    String from;
+    String to;
+  }
+
+  private static class Renaming extends RenamingOrIDs {
+    List<IdPair> idPairs;
+  }
+
+  private static class IDs extends RenamingOrIDs {
+    List<String> ids;
+  }
+
+  @Override
+  public Renaming visitRoiRenaming(RoiRenamingContext ctx) {
+    if (ctx == null) return null;
+    Renaming renaming = new Renaming();
+    renaming.idPairs = new ArrayList<>(ctx.ID().size() / 2);
+    for (int i = 0; i + 1 < ctx.ID().size(); i += 2) {
+      IdPair idPair = new IdPair();
+      idPair.from = ctx.ID().get(i).getText();
+      idPair.to = ctx.ID().get(i + 1).getText();
+      renaming.idPairs.add(idPair);
+    }
+    return renaming;
+  }
+
+  @Override
+  public IDs visitRoiIDs(RoiIDsContext ctx) {
+    if (ctx == null) return null;
+    IDs ids = new IDs();
+    ids.ids = new ArrayList<>(ctx.ID().size());
+    for (TerminalNode node : ctx.ID()) {
+      ids.ids.add(node.getText());
+    }
+    return ids;
+  }
+
   @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.statement() == null) return null;
