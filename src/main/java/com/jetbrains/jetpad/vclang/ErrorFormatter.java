@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.ListEquations;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ErrorFormatter {
@@ -187,6 +188,14 @@ public class ErrorFormatter {
   public String printError(GeneralError error) {
     String body = printBody(error);
     return printHeader(error) + ": " + error.getMessage() + (body.isEmpty() ? "" : '\n' + indented(body));
+  }
+
+  public String printErrors(Collection<? extends GeneralError> errors) {
+    StringBuilder builder = new StringBuilder();
+    for (GeneralError error : errors) {
+      builder.append(printError(error)).append('\n');
+    }
+    return builder.toString();
   }
 
 

@@ -6,10 +6,10 @@ public interface SourceInfoProvider {
   String nameFor(Abstract.Definition definition);
   ModuleID moduleOf(Abstract.Definition definition);
 
-  class Null implements SourceInfoProvider {
+  class Trivial implements SourceInfoProvider {
     @Override
     public String nameFor(Abstract.Definition definition) {
-      return null;
+      return definition.getName();
     }
 
     @Override
@@ -17,4 +17,5 @@ public interface SourceInfoProvider {
       return null;
     }
   }
+  public static final SourceInfoProvider TRIVIAL = new Trivial();
 }
