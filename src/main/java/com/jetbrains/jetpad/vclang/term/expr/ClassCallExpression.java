@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Lam;
@@ -17,7 +18,7 @@ public class ClassCallExpression extends DefCallExpression {
 
   public ClassCallExpression(ClassDefinition definition) {
     super(definition);
-    myStatements = Collections.emptyMap();
+    myStatements = new HashMap<>();
     myUniverse = definition.getUniverse();
   }
 

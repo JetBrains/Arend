@@ -1,8 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
-import com.jetbrains.jetpad.vclang.module.NameModuleID;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -18,6 +17,7 @@ import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.LetClause;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -32,8 +32,6 @@ import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.type
 import static org.junit.Assert.assertEquals;
 
 public class NormalizationTest {
-  NameModuleID testModuleID = new NameModuleID("test");
-  Namespace testNS = new Namespace(testModuleID);
   // \function (+) (x y : Nat) : Nat <= elim x | zero => y | suc x' => suc (x' + y)
   private final FunctionDefinition plus;
   // \function (*) (x y : Nat) : Nat <= elim x | zero => zero | suc x' => y + x' * y
@@ -51,55 +49,51 @@ public class NormalizationTest {
   public NormalizationTest() {
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
-    plus = new FunctionDefinition(testNS.getChild("+").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), params(xPlus, yPlus), Nat(), null);
+    plus = new FunctionDefinition("+", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 6), EmptyNamespace.INSTANCE, params(xPlus, yPlus), Nat(), null);
 
     DependentLink xPlusMinusOne = param("x'", Nat());
     ElimTreeNode plusElimTree = top(xPlus, branch(xPlus, tail(yPlus),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Reference(yPlus)),
         clause(Preprelude.SUC, xPlusMinusOne, Suc(Apps(FunCall(plus), Reference(xPlusMinusOne), Reference(yPlus))))));
     plus.setElimTree(plusElimTree);
-    testNS.addDefinition(plus);
 
     DependentLink xMul = param("x", Nat());
     DependentLink yMul = param("y", Nat());
-    mul = new FunctionDefinition(testNS.getChild("*").getResolvedName(), new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), params(xMul, yMul), Nat(), null);
+    mul = new FunctionDefinition("*", new Abstract.Definition.Precedence(Abstract.Binding.Associativity.LEFT_ASSOC, (byte) 7), EmptyNamespace.INSTANCE, params(xMul, yMul), Nat(), null);
     DependentLink xMulMinusOne = param("x'", Nat());
     ElimTreeNode mulElimTree = top(xMul, branch(xMul, tail(yMul),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Zero()),
         clause(Preprelude.SUC, xMulMinusOne, Apps(FunCall(plus), Reference(yMul), Apps(FunCall(mul), Reference(xMulMinusOne), Reference(yMul))))
     ));
     mul.setElimTree(mulElimTree);
-    testNS.addDefinition(mul);
 
     DependentLink xFac = param("x", Nat());
-    fac = new FunctionDefinition(testNS.getChild("fac").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, xFac, Nat(), null);
+    fac = new FunctionDefinition("fac", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyNamespace.INSTANCE, xFac, Nat(), null);
     DependentLink xFacMinusOne = param("x'", Nat());
     ElimTreeNode facElimTree = top(xFac, branch(xFac, tail(),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Suc(Zero())),
         clause(Preprelude.SUC, xFacMinusOne, Apps(FunCall(mul), Suc(Reference(xFacMinusOne)), Apps(FunCall(fac), Reference(xFacMinusOne))))
     ));
     fac.setElimTree(facElimTree);
-    testNS.addDefinition(fac);
 
     DependentLink zNElim = param("z", Nat());
     DependentLink sNElim = param("s", Pi(param(Nat()), Pi(param(Nat()), Nat())));
     DependentLink xNElim = param("x", Nat());
-    nelim = new FunctionDefinition(testNS.getChild("nelim").getResolvedName(), Abstract.Binding.DEFAULT_PRECEDENCE, params(zNElim, sNElim, xNElim), Nat(), null);
+    nelim = new FunctionDefinition("nelim", Abstract.Binding.DEFAULT_PRECEDENCE, EmptyNamespace.INSTANCE, params(zNElim, sNElim, xNElim), Nat(), null);
     DependentLink xNElimMinusOne = param("x'", Nat());
     ElimTreeNode nelimElimTree = top(zNElim, branch(xNElim, tail(),
         clause(Preprelude.ZERO, EmptyDependentLink.getInstance(), Reference(zNElim)),
         clause(Preprelude.SUC, xNElimMinusOne, Apps(Reference(sNElim), Reference(xNElimMinusOne), Apps(FunCall(nelim), Reference(zNElim), Reference(sNElim), Reference(xNElimMinusOne))))
     ));
     nelim.setElimTree(nelimElimTree);
-    testNS.addDefinition(nelim);
   }
 
   private void initializeBDList() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\static \\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (BD-list A) A\n" +
         "  \\with | snoc (cons x xs) x => cons x (snoc xs x) | snoc nil x => cons x nil\n"
     );
-    bdList = (DataDefinition) member.namespace.getDefinition("BD-list");
+    bdList = (DataDefinition) result.getDefinition("BD-list");
     bdNil = bdList.getConstructor("nil");
     bdCons = bdList.getConstructor("cons");
     bdSnoc = bdList.getConstructor("snoc");
@@ -266,10 +260,10 @@ public class NormalizationTest {
   @Test
   public void normalizeElimAnyConstructor() {
     DependentLink var0 = param("var0", Universe(0));
-    NamespaceMember member = typeCheckClass(
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
         "\\static \\data D | d Nat\n" +
         "\\static \\function test (x : D) : Nat <= \\elim x | _! => 0");
-    FunctionDefinition test = (FunctionDefinition) member.namespace.getMember("test").definition;
+    FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     assertEquals(Apps(FunCall(test), Reference(var0)), Apps(FunCall(test), Reference(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 

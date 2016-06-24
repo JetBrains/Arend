@@ -4,14 +4,17 @@ import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Namespace {
   final private ResolvedName myResolvedName;
   private Map<String, NamespaceMember> myMembers;
 
   private Namespace(String name, Namespace parent) {
-    myResolvedName = new DefinitionResolvedName(parent, name);
+    myResolvedName = new DefinitionResolvedName(parent.getResolvedName(), name);
   }
 
   public Namespace(ModuleID moduleID) {
@@ -43,11 +46,6 @@ public class Namespace {
     }
 
     return addChild(new Namespace(name, this)).namespace;
-  }
-
-  public Namespace findChild(String name) {
-    NamespaceMember member = getMember(name);
-    return member == null ? null : member.namespace;
   }
 
   public NamespaceMember addChild(Namespace child) {

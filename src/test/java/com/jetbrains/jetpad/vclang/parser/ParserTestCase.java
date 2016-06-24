@@ -1,13 +1,11 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
-import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.antlr.v4.runtime.*;
 
 import java.util.List;
@@ -25,14 +23,13 @@ public class ParserTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new ModuleResolvedName(new NameModuleID(name)), new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(new NameModuleID(name), new Concrete.Position(line, pos), msg));
       }
     });
     return parser;
   }
 
   public static Concrete.Expression parseExpr(String text, int errors) {
-    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
     Concrete.Expression result = new BuildVisitor(errorReporter).visitExpr(parse("test", errorReporter, text).expr());
     if (errors >= 0) {
@@ -52,7 +49,6 @@ public class ParserTestCase {
   }
 
   public static Concrete.Definition parseDef(String text, int errors) {
-    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
     Concrete.Definition definition = new BuildVisitor(errorReporter).visitDefinition(parse("test", errorReporter, text).definition());
     assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
@@ -64,7 +60,6 @@ public class ParserTestCase {
   }
 
   public static Concrete.ClassDefinition parseClass(String name, String text, int errors) {
-    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
     VcgrammarParser.StatementsContext tree = parse(name, errorReporter, text).statements();
     assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());

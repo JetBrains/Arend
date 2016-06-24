@@ -1,22 +1,27 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.NameModuleID;
-import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
+import com.jetbrains.jetpad.vclang.naming.NamespaceUtil;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.*;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
-import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -69,9 +74,9 @@ public class TypeCheckingTestCase {
   }
 
   public static Definition typeCheckDef(Concrete.Definition definition, int errors) {
+    TypecheckerState state = new TypecheckerState();
     ListErrorReporter errorReporter = new ListErrorReporter();
-    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(errorReporter);
-    visitor.setNamespaceMember(Root.getModule(new NameModuleID("test")).namespace.getMember(definition.getName()));
+    DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, errorReporter);
     Definition result = definition.accept(visitor, null);
     if (errors >= 0) {
       assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
@@ -89,32 +94,56 @@ public class TypeCheckingTestCase {
     return typeCheckDef(text, 0);
   }
 
-  public static NamespaceMember typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
+  public static TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
-    TypecheckingOrdering.typecheck(classDefinition, errorReporter);
+    TypecheckerState state = TypecheckingOrdering.typecheck(classDefinition, errorReporter);
     if (errors >= 0) {
       assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
     } else {
       assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
     }
-    return Root.getModule(new NameModuleID(classDefinition.getName()));
+    return state;
   }
 
-  public static NamespaceMember typeCheckClass(String name, String text, int errors) {
+
+  public static class TypeCheckClassResult {
+    public final TypecheckerState typecheckerState;
+    public final Concrete.ClassDefinition classDefinition;
+
+    public TypeCheckClassResult(TypecheckerState typecheckerState, Concrete.ClassDefinition classDefinition) {
+      this.typecheckerState = typecheckerState;
+      this.classDefinition = classDefinition;
+    }
+
+    public Definition getDefinition(String path) {
+      Referable ref = NamespaceUtil.get(classDefinition, path);
+      return ref != null ? typecheckerState.getTypechecked(ref) : null;
+    }
+  }
+
+  public static TypeCheckClassResult typeCheckClass(String name, String text, int nameErrors, int tcErrors) {
+    Concrete.ClassDefinition classDefinition = parseClass(name, text);
+    resolveNamesClass(classDefinition, nameErrors);
+    TypecheckerState state = typeCheckClass(classDefinition, tcErrors);
+    return new TypeCheckClassResult(state, classDefinition);
+  }
+
+  public static TypeCheckClassResult typeCheckClass(String name, String text, int tcErrors) {
     Concrete.ClassDefinition classDefinition = parseClass(name, text);
     resolveNamesClass(classDefinition, 0);
-    return typeCheckClass(classDefinition, errors);
+    TypecheckerState state = typeCheckClass(classDefinition, tcErrors);
+    return new TypeCheckClassResult(state, classDefinition);
   }
 
-  public static NamespaceMember typeCheckClass(String name, String text) {
-    return typeCheckClass(name, text, 0);
+  public static TypeCheckClassResult typeCheckClass(String name, String text) {
+    return typeCheckClass(name, text, 0, 0);
   }
 
-  public static NamespaceMember typeCheckClass(String text) {
-    return typeCheckClass("test", text, 0);
+  public static TypeCheckClassResult typeCheckClass(String text) {
+    return typeCheckClass("test", text, 0, 0);
   }
 
-  public static NamespaceMember typeCheckClass(String text, int errors) {
-    return typeCheckClass("test", text, errors);
+  public static TypeCheckClassResult typeCheckClass(String text, int tcErrors) {
+    return typeCheckClass("test", text, tcErrors);
   }
 }

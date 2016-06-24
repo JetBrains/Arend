@@ -4,15 +4,13 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
 public class LevelInferenceError extends TypeCheckingError {
-  public LevelInferenceError(Abstract.SourceNode sourceNode) {
-    super("Cannot infer level of ", sourceNode);
+  public LevelInferenceError(Abstract.Definition definition, Abstract.SourceNode sourceNode) {
+    super(definition, "Cannot infer level of '" + PrettyPrintVisitor.prettyPrint(sourceNode, 0) + "'", sourceNode);
+    // FIXME[format]
   }
 
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append(printHeader()).append(getMessage());
-    new PrettyPrintVisitor(builder, 0).prettyPrint(getCause(), Abstract.Expression.PREC);
-    return builder.toString();
+  @Deprecated
+  public LevelInferenceError(Abstract.SourceNode sourceNode) {
+    super("Cannot infer level of '" + PrettyPrintVisitor.prettyPrint(sourceNode, 0) + "'", sourceNode);
   }
 }

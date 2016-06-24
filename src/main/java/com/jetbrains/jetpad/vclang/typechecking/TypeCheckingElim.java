@@ -36,9 +36,11 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 
 public class TypeCheckingElim {
+  private final Abstract.Definition myParentDefinition;
   private final CheckTypeVisitor myVisitor;
 
-  public TypeCheckingElim(CheckTypeVisitor visitor) {
+  public TypeCheckingElim(Abstract.Definition definition, CheckTypeVisitor visitor) {
+    myParentDefinition = definition;
     myVisitor = visitor;
   }
 
@@ -395,13 +397,13 @@ public class TypeCheckingElim {
       }
 
       if (constructor == null) {
-        error = new NotInScopeError(pattern, constructorPattern.getConstructorName());
+        error = new NotInScopeError(myParentDefinition, pattern, constructorPattern.getConstructorName());  // TODO: refer by reference
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }
 
       if (constructor.hasErrors()) {
-        error = new HasErrors(constructor.getName(), pattern);
+        error = new HasErrors(myParentDefinition, constructor.getName(), pattern);
         myVisitor.getErrorReporter().report(error);
         return new ExpandPatternErrorResult(error);
       }

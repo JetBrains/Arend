@@ -24,6 +24,11 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     myIndent = indent;
   }
 
+  public static String prettyPrint(Abstract.SourceNode node, int indent) {
+    StringBuilder builder = new StringBuilder();
+    return new PrettyPrintVisitor(builder, indent).prettyPrint(node, Abstract.Expression.PREC) ? builder.toString() : null;
+  }
+
   public boolean prettyPrint(Abstract.SourceNode node, byte prec) {
     if (node instanceof Abstract.Expression) {
       ((Abstract.Expression) node).accept(this, prec);

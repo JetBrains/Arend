@@ -137,36 +137,36 @@ public class ModuleSerialization {
   public enum DefinitionCodes {
     FUNCTION_CODE {
       @Override
-      FunctionDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new FunctionDefinition(rn, precedence);
+      FunctionDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new FunctionDefinition(name, precedence, null);  // FIXME[serial]
       }
     },
     DATA_CODE {
       @Override
-      DataDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new DataDefinition(rn, precedence);
+      DataDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new DataDefinition(name, precedence);
       }
     },
     CLASS_CODE {
       @Override
-      ClassDefinition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new ClassDefinition(rn);
+      ClassDefinition toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new ClassDefinition(name, null, null);  // FIXME[serial]
       }
     },
     CONSTRUCTOR_CODE {
       @Override
-      Constructor toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new Constructor(rn, precedence, null);
+      Constructor toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new Constructor(name, precedence, null);
       }
     },
     CLASS_FIELD_CODE {
       @Override
-      ClassField toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-        return new ClassField(rn, precedence, null, null, null);
+      ClassField toDefinition(String name, Abstract.Definition.Precedence precedence) {
+        return new ClassField(name, precedence, null, null, null);
       }
     };
 
-    abstract Definition toDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence);
+    abstract Definition toDefinition(String name, Abstract.Definition.Precedence precedence);
 
     public static DefinitionCodes getDefinitionCode(Definition definition) {
       if (definition instanceof FunctionDefinition) return FUNCTION_CODE;
@@ -200,7 +200,7 @@ public class ModuleSerialization {
   private static int serializeFunctionDefinition(SerializeVisitor visitor, FunctionDefinition definition) throws IOException {
     int errors = definition.hasErrors() ? 1 : 0;
 
-    serializeNamespace(visitor, definition.getStaticNamespace());
+    //serializeNamespace(visitor, definition.getNamespace());
 
     visitor.getDataStream().writeBoolean(definition.typeHasErrors());
     if (!definition.typeHasErrors()) {
