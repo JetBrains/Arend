@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.naming.namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +56,7 @@ public class ModuleNamespace implements Namespace {
     if (myRegisteredClass != null) throw new IllegalStateException();
     //myRegisteredClass = module;
     myClassNamespace = module.getOwnNamespace();
-    throw new NotImplementedException();
+    throw new UnsupportedOperationException();
   }
 
   public Abstract.ClassDefinition getRegisteredClass() {

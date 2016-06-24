@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class DefinitionResolvedName extends ResolvedName {
   private final String myName;
@@ -16,7 +15,7 @@ public class DefinitionResolvedName extends ResolvedName {
   @Override
   public NamespaceMember toNamespaceMember() {
     // FIXME[serial]
-    throw new NotImplementedException();
+    throw new UnsupportedOperationException();
   }
 
   @Override
