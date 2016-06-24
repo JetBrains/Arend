@@ -35,6 +35,20 @@ public class ExtensionsTest {
   }
 
   @Test
+  public void badFieldTypeError() {
+    typeCheckClass(
+        "\\class A {\n" +
+            "  \\abstract A : \\Set0\n" +
+            "  \\abstract a : A\n" +
+            "}\n" +
+            "\\class B \\extends A {\n" +
+            "  \\abstract a' : A\n" +
+            "  \\abstract p : undefined_variable = a'\n" +
+            "}\n" +
+            "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
+  }
+
+  @Test
   public void newError() {
     typeCheckClass(
         "\\class A {\n" +
@@ -79,18 +93,18 @@ public class ExtensionsTest {
 
   @Test
   public void nameClashError() {
-    resolveNamesClass("test",
+    typeCheckClass("test",
         "\\class A {\n" +
         "  \\abstract x : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
         "  \\abstract x : Nat\n" +
-        "}", 1);
+        "}", 1, 1);
   }
 
   @Test
   public void nameClashError2() {
-    resolveNamesClass("test",
+    typeCheckClass("test",
         "\\class A {\n" +
         "  \\abstract x : Nat\n" +
         "}\n" +
@@ -99,12 +113,12 @@ public class ExtensionsTest {
         "}\n" +
         "\\class C \\extends B {\n" +
         "  \\abstract x : Nat -> Nat\n" +
-        "}", 1);
+        "}", 1, 1);
   }
 
   @Test
   public void nameClashError3() {
-    resolveNamesClass("test",
+    typeCheckClass("test",
         "\\static \\class A {\n" +
         "  \\abstract A : \\Set0\n" +
         "}\n" +
@@ -114,7 +128,7 @@ public class ExtensionsTest {
         "\\class C \\extends A {\n" +
         "  \\abstract a : A\n" +
         "}\n" +
-        "\\class D \\extends B, C {}", 1);
+        "\\class D \\extends B, C {}", 1, 1);
   }
 
   @Test
@@ -138,6 +152,6 @@ public class ExtensionsTest {
 
   @Test
   public void internalInheritance() {
-    typeCheckClass("\\class A { \\class B \\extends A { } }", 1);
+    typeCheckClass("\\class A { \\static \\class B \\extends A { } }");
   }
 }

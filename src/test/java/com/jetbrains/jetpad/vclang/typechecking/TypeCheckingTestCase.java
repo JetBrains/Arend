@@ -121,22 +121,29 @@ public class TypeCheckingTestCase {
     }
   }
 
-  public static TypeCheckClassResult typeCheckClass(String name, String text, int errors) {
+  public static TypeCheckClassResult typeCheckClass(String name, String text, int nameErrors, int tcErrors) {
+    Concrete.ClassDefinition classDefinition = parseClass(name, text);
+    resolveNamesClass(classDefinition, nameErrors);
+    TypecheckerState state = typeCheckClass(classDefinition, tcErrors);
+    return new TypeCheckClassResult(state, classDefinition);
+  }
+
+  public static TypeCheckClassResult typeCheckClass(String name, String text, int tcErrors) {
     Concrete.ClassDefinition classDefinition = parseClass(name, text);
     resolveNamesClass(classDefinition, 0);
-    TypecheckerState state = typeCheckClass(classDefinition, errors);
+    TypecheckerState state = typeCheckClass(classDefinition, tcErrors);
     return new TypeCheckClassResult(state, classDefinition);
   }
 
   public static TypeCheckClassResult typeCheckClass(String name, String text) {
-    return typeCheckClass(name, text, 0);
+    return typeCheckClass(name, text, 0, 0);
   }
 
   public static TypeCheckClassResult typeCheckClass(String text) {
-    return typeCheckClass("test", text, 0);
+    return typeCheckClass("test", text, 0, 0);
   }
 
-  public static TypeCheckClassResult typeCheckClass(String text, int errors) {
-    return typeCheckClass("test", text, errors);
+  public static TypeCheckClassResult typeCheckClass(String text, int tcErrors) {
+    return typeCheckClass("test", text, tcErrors);
   }
 }
