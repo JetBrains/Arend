@@ -39,20 +39,18 @@ public class ErrorFormatter {
         ModuleID module = mySrc.moduleOf(def);
         builder.append(' ').append(module != null ? module : "<Unknown module>");
 
+        if (error.getCause() instanceof Concrete.SourceNode) {
+          Concrete.Position pos = ((Concrete.SourceNode) error.getCause()).getPosition();
+          builder.append(':').append(pos.line).append(':').append(pos.column);
+        }
+
         String name = mySrc.nameFor(def);
         if (name == null && def.getName() != null) {
           name = "???." + def.getName();
         }
 
         if (name != null) {
-          builder.append('(').append(name).append(')');
-        }
-
-        if (module != null) {
-          if (error.getCause() instanceof Concrete.SourceNode) {
-            Concrete.Position pos = ((Concrete.SourceNode) error.getCause()).getPosition();
-            builder.append(':').append(pos.line).append(':').append(pos.column);
-          }
+          builder.append(" (").append(name).append(")");
         }
       }
     } else if (error instanceof ModuleLoadingError) {
