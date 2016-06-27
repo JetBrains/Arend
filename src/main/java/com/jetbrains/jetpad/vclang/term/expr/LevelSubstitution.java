@@ -45,8 +45,18 @@ public class LevelSubstitution {
 
   public LevelSubstitution compose(LevelSubstitution subst) {
     LevelSubstitution result = new LevelSubstitution();
+    result.add(this);
     for (Binding binding : subst.getDomain()) {
-      result.add(binding, subst.get(binding).subst(this));
+      boolean foundInExprs = false;
+      for (Map.Entry<Binding, LevelExpression> substExpr : mySubstExprs.entrySet()) {
+        if (substExpr.getValue().findBinding(binding)) {
+          result.add(substExpr.getKey(), substExpr.getValue().subst(subst));
+          foundInExprs = true;
+        }
+      }
+      if (!foundInExprs) {
+        result.add(binding, subst.get(binding));
+      }
     }
     return result;
   }

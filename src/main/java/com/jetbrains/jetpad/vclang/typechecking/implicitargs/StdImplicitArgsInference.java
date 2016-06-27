@@ -54,8 +54,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         Expression interval = DataCall(Preprelude.INTERVAL);
         LevelExpression lp, lh;
 
-        lp = conCall.getPolyParamValueByType(Preprelude.LVL.getName());
-        lh = conCall.getPolyParamValueByType(Preprelude.CNAT.getName());
+        lp = conCall.getPolyParamValueByType(Preprelude.LVL.getResolvedName().getFullName());
+        lh = conCall.getPolyParamValueByType(Preprelude.CNAT.getResolvedName().getFullName());
 
         /*
         if (result.expression.getArguments().isEmpty()) {

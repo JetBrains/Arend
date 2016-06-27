@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
@@ -26,13 +28,9 @@ public abstract class DefCallExpression extends Expression {
     return myNonPolyDefinition;
   }
 
-  public LevelSubstitution getPolyParamsSubst() {
-    return myPolyParamsSubst;
-  }
-
   public LevelExpression getPolyParamValueByType(String typeName) {
     for (Binding var : myPolyParamsSubst.getDomain()) {
-      if (var.getType().toDefCall().getDefinition().getResolvedName().getName().equals(typeName)) {
+      if (var.getType().toDefCall().getDefinition().getResolvedName().getFullName().equals(typeName)) {
         return myPolyParamsSubst.get(var);
       }
     }
@@ -40,13 +38,18 @@ public abstract class DefCallExpression extends Expression {
   }
 
   public void applyLevelSubst(LevelSubstitution subst) {
-    myPolyParamsSubst.add(subst);
+    myPolyParamsSubst = myPolyParamsSubst.compose(subst);
     myNonPolyDefinition = myDefinition.substPolyParams(myPolyParamsSubst);
   }
 
+  public static boolean compare(DefCallExpression defCall1, DefCallExpression defCall2, Equations.CMP cmp, Equations equations) {
+    return defCall1.myDefinition == defCall2.myDefinition &&
+            CompareVisitor.compare(equations, cmp, defCall1.myNonPolyDefinition.getType(), defCall2.myNonPolyDefinition.getType(), null);
+  } /**/
+
   @Override
   public Expression getType() {
-    return myDefinition.getType();
+    return myNonPolyDefinition.getType();
   }
 
   @Override

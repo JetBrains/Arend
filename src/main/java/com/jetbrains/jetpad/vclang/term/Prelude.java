@@ -205,7 +205,7 @@ public class Prelude extends Namespace {
   }
 
   public static boolean isPathCon(Definition definition) {
-    return PATH_CON == definition;
+    return PATH_CON.getResolvedName().equals(definition.getResolvedName());
   }
 
   public static boolean isPath(Definition definition) {

@@ -14,10 +14,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.LetClause;
-import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 import org.junit.Test;
 
@@ -382,8 +379,8 @@ public class NormalizationTest {
 
   @Test
   public void testCoeIso() {
-    Binding lp = new TypedBinding("lp", Lvl());
-    Binding lh = new TypedBinding("lh", CNat());
+    Binding lp = Prelude.PATH.getPolyParamByType(Preprelude.LVL); //new TypedBinding("lp", Lvl());
+    Binding lh = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
     DependentLink A = param("A", Universe(new LevelExpression(lp), new LevelExpression(lh)));
     DependentLink B = param("B", Universe(new LevelExpression(lp), new LevelExpression(lh)));
     DependentLink f = param("f", Pi(param(Reference(A)), Reference(B)));
@@ -391,29 +388,21 @@ public class NormalizationTest {
     DependentLink a = param("a", Reference(A));
     DependentLink b = param("b", Reference(B));
     DependentLink k = param("k", DataCall(Preprelude.INTERVAL));
-    Expression linvType = FunCall(Prelude.PATH_INFIX)
-            .addArgument(Reference(lp), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Reference(lh), EnumSet.noneOf(AppExpression.Flag.class))
+    Expression linvType = FunCall(Prelude.PATH_INFIX, new LevelSubstitution(lp, lp, lh, lh))
             .addArgument(Reference(A), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Apps(Reference(g), Apps(Reference(f), Reference(a)), Reference(a)), AppExpression.DEFAULT);
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX)
-            .addArgument(Reference(lp), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Reference(lh), EnumSet.noneOf(AppExpression.Flag.class))
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, new LevelSubstitution(lp, lp, lh, lh))
             .addArgument(Reference(B), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Apps(Reference(f), Apps(Reference(g), Reference(b)), Reference(b)), AppExpression.DEFAULT);
     DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = param("aleft", Reference(A));
-    Expression iso_expr = FunCall(Prelude.ISO)
-            .addArgument(Reference(lp), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Reference(lh), EnumSet.noneOf(AppExpression.Flag.class))
+    Expression iso_expr = FunCall(Prelude.ISO, new LevelSubstitution(lp, lp, lh, lh))
             .addArgument(Reference(A), AppExpression.DEFAULT).addArgument(Reference(B), AppExpression.DEFAULT)
             .addArgument(Reference(f), AppExpression.DEFAULT).addArgument(Reference(g), AppExpression.DEFAULT)
             .addArgument(Reference(linv), AppExpression.DEFAULT).addArgument(Reference(rinv), AppExpression.DEFAULT)
             .addArgument(Reference(k), AppExpression.DEFAULT);
-    Expression expr = FunCall(Prelude.COERCE)
-            .addArgument(Reference(lp), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Reference(lh), EnumSet.noneOf(AppExpression.Flag.class))
+    Expression expr = FunCall(Prelude.COERCE, new LevelSubstitution(lp, lp, lh, lh))
         .addArgument(Lam(k, iso_expr), AppExpression.DEFAULT)
         .addArgument(Reference(aleft), AppExpression.DEFAULT)
         .addArgument(ConCall(Preprelude.RIGHT), AppExpression.DEFAULT);

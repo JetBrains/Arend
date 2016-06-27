@@ -153,7 +153,14 @@ public class LevelExpression implements PrettyPrintable {
 
   @Override
   public void prettyPrint(StringBuilder builder, List<String> names, byte prec, int indent) {
-    toAbstract().accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
+    toAbstract().accept(new PrettyPrintVisitor(builder, names, indent), prec);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
+    return builder.toString();
   }
 
   public Abstract.Expression toAbstract() {
