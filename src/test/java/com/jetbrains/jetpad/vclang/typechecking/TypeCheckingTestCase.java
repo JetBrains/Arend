@@ -2,15 +2,9 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.NamespaceUtil;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.DefinitionCheckTypeVisitor;
@@ -78,10 +72,11 @@ public class TypeCheckingTestCase {
     ListErrorReporter errorReporter = new ListErrorReporter();
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, errorReporter);
     Definition result = definition.accept(visitor, null);
+
     if (errors >= 0) {
-      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+      assertEquals(ERROR_FORMATTER.printErrors(errorReporter.getErrorList()), errors, errorReporter.getErrorList().size());
     } else {
-      assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+      assertFalse(ERROR_FORMATTER.printErrors(errorReporter.getErrorList()), errorReporter.getErrorList().isEmpty());
     }
     return result;
   }
@@ -98,9 +93,9 @@ public class TypeCheckingTestCase {
     ListErrorReporter errorReporter = new ListErrorReporter();
     TypecheckerState state = TypecheckingOrdering.typecheck(classDefinition, errorReporter);
     if (errors >= 0) {
-      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+      assertEquals(ERROR_FORMATTER.printErrors(errorReporter.getErrorList()), errors, errorReporter.getErrorList().size());
     } else {
-      assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+      assertFalse(ERROR_FORMATTER.printErrors(errorReporter.getErrorList()), errorReporter.getErrorList().isEmpty());
     }
     return state;
   }

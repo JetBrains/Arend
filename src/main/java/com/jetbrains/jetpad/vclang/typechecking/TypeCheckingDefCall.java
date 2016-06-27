@@ -223,7 +223,7 @@ public class TypeCheckingDefCall {
       }
     }
 
-    TypeCheckingError error = new NotInScopeError(myParentDefinition, name);
+    TypeCheckingError error = new NotInScopeError(myParentDefinition, expr, name);
     expr.setWellTyped(myVisitor.getContext(), Error(null, error));
     myVisitor.getErrorReporter().report(error);
     return null;

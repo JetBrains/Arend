@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.ListEquations;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ErrorFormatter {
@@ -38,20 +39,18 @@ public class ErrorFormatter {
         ModuleID module = mySrc.moduleOf(def);
         builder.append(' ').append(module != null ? module : "<Unknown module>");
 
+        if (error.getCause() instanceof Concrete.SourceNode) {
+          Concrete.Position pos = ((Concrete.SourceNode) error.getCause()).getPosition();
+          builder.append(':').append(pos.line).append(':').append(pos.column);
+        }
+
         String name = mySrc.nameFor(def);
         if (name == null && def.getName() != null) {
           name = "???." + def.getName();
         }
 
         if (name != null) {
-          builder.append('(').append(name).append(')');
-        }
-
-        if (module != null) {
-          if (error.getCause() instanceof Concrete.SourceNode) {
-            Concrete.Position pos = ((Concrete.SourceNode) error.getCause()).getPosition();
-            builder.append(':').append(pos.line).append(':').append(pos.column);
-          }
+          builder.append(" (").append(name).append(")");
         }
       }
     } else if (error instanceof ModuleLoadingError) {
@@ -187,6 +186,14 @@ public class ErrorFormatter {
   public String printError(GeneralError error) {
     String body = printBody(error);
     return printHeader(error) + ": " + error.getMessage() + (body.isEmpty() ? "" : '\n' + indented(body));
+  }
+
+  public String printErrors(Collection<? extends GeneralError> errors) {
+    StringBuilder builder = new StringBuilder();
+    for (GeneralError error : errors) {
+      builder.append(printError(error)).append('\n');
+    }
+    return builder.toString();
   }
 
 
