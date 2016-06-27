@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.LevelSubstVisitor;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -93,6 +95,15 @@ public class ClassDefinition extends Definition {
 
   @Override
   public Definition substPolyParams(LevelSubstitution subst) {
-    return null;
+    TypeUniverse newUniverse = getUniverse() == null ? null : getUniverse().subst(subst);
+    ClassDefinition newClass = new ClassDefinition(getResolvedName(), newUniverse);
+
+    for (ClassField field : myFields.values()) {
+      newClass.addField(new ClassField(field.getResolvedName(), field.getPrecedence(),
+              LevelSubstVisitor.subst(field.getType(), subst), newClass,
+              field.getThisParameter(), newUniverse));
+    }
+
+    return newClass;
   }
 }

@@ -65,16 +65,16 @@ public class Prelude extends Namespace {
     PATH_CON = path.addConstructor("path", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(new LevelExpression(PathLp), new LevelExpression(PathLh)), pathParameter);
 
     /* = */
-    Binding pathInfixLp = new TypedBinding("lp", Lvl());
-    Binding pathInfixLh = new TypedBinding("lh", CNat());
-    DependentLink pathInfixParameter1 = param(false, "A", Universe(new LevelExpression(pathInfixLp), new LevelExpression(pathInfixLh)));
+    // Binding pathInfixLp = new TypedBinding("lp", Lvl());
+    // Binding pathInfixLh = new TypedBinding("lh", CNat());
+    DependentLink pathInfixParameter1 = param(false, "A", Universe(new LevelExpression(PathLp), new LevelExpression(PathLh)));
     DependentLink pathInfixParameter2 = param(true, vars("a", "a'"), Reference(pathInfixParameter1));
     pathInfixParameter1.setNext(pathInfixParameter2);
-    Expression pathInfixTerm = DataCall(PATH, new LevelSubstitution(PathLp, pathInfixLp, PathLh, pathInfixLh))
+    Expression pathInfixTerm = DataCall(PATH, new LevelSubstitution(PathLp, PathLp, PathLh, PathLh))
         .addArgument(Lam(param("_", Interval()), Reference(pathInfixParameter1)), AppExpression.DEFAULT)
         .addArgument(Reference(pathInfixParameter2), AppExpression.DEFAULT)
         .addArgument(Reference(pathInfixParameter2.getNext()), AppExpression.DEFAULT);
-    PATH_INFIX = new Preprelude.DefinitionBuilder.Function(PRELUDE, "=", new Abstract.Binding.Precedence(Abstract.Binding.Associativity.NON_ASSOC, (byte) 0), pathInfixParameter1, Universe(new LevelExpression(pathInfixLp), new LevelExpression(pathInfixLh)), top(pathInfixParameter1, leaf(pathInfixTerm)), Arrays.asList(pathInfixLp, pathInfixLh)).definition();
+    PATH_INFIX = new Preprelude.DefinitionBuilder.Function(PRELUDE, "=", new Abstract.Binding.Precedence(Abstract.Binding.Associativity.NON_ASSOC, (byte) 0), pathInfixParameter1, Universe(new LevelExpression(PathLp), new LevelExpression(PathLh)), top(pathInfixParameter1, leaf(pathInfixTerm)), Arrays.asList(PathLp, PathLh)).definition();
 
     /* @ */
     Binding atLp = new TypedBinding("lp", Lvl());
@@ -118,12 +118,12 @@ public class Prelude extends Namespace {
     DependentLink isoParameter3 = param("g", Pi(param(Reference(isoParameter1.getNext())), Reference(isoParameter1)));
     DependentLink piParamA = param("a", Reference(isoParameter1));
     DependentLink piParamB = param("b", Reference(isoParameter1.getNext()));
-    Expression isoParameters4type = FunCall(PATH_INFIX, new LevelSubstitution(pathInfixLp, isoLp, pathInfixLh, isoLh))
+    Expression isoParameters4type = FunCall(PATH_INFIX, new LevelSubstitution(PathLp, isoLp, PathLh, isoLh))
         .addArgument(Reference(isoParameter1), EnumSet.of(AppExpression.Flag.VISIBLE))
         .addArgument(Apps(Reference(isoParameter3), Apps(Reference(isoParameter2), Reference(piParamA))), AppExpression.DEFAULT)
         .addArgument(Reference(piParamA), AppExpression.DEFAULT);
     DependentLink isoParameter4 = param("linv", Pi(piParamA, isoParameters4type));
-    Expression isoParameters5type = FunCall(PATH_INFIX, new LevelSubstitution(pathInfixLp, isoLp, pathInfixLh, isoLh))
+    Expression isoParameters5type = FunCall(PATH_INFIX, new LevelSubstitution(PathLp, isoLp, PathLh, isoLh))
         .addArgument(Reference(isoParameter1.getNext()), EnumSet.of(AppExpression.Flag.VISIBLE))
         .addArgument(Apps(Reference(isoParameter2), Apps(Reference(isoParameter3), Reference(piParamB))), AppExpression.DEFAULT)
         .addArgument(Reference(piParamB), AppExpression.DEFAULT);
@@ -172,7 +172,7 @@ public class Prelude extends Namespace {
     Expression setTruncConParameterType = DataCall(SET_TRUNC, new LevelSubstitution(truncLp, truncLp, truncLh, truncLh));
     DependentLink setTruncConParameter1 = param("a", Apps(DataCall(SET_TRUNC), setTruncConParameterType));
     DependentLink setTruncConParameter2 = param("a'", Apps(DataCall(SET_TRUNC), setTruncConParameterType));
-    Expression setTruncConParameter3type = FunCall(PATH_INFIX, new LevelSubstitution(pathInfixLp, new LevelExpression(truncLp), pathInfixLh, new LevelExpression(0)))
+    Expression setTruncConParameter3type = FunCall(PATH_INFIX, new LevelSubstitution(PathLp, new LevelExpression(truncLp), PathLh, new LevelExpression(0)))
         .addArgument(setTruncConParameterType, EnumSet.noneOf(AppExpression.Flag.class))
         .addArgument(Reference(setTruncConParameter1), AppExpression.DEFAULT)
         .addArgument(Reference(setTruncConParameter2), AppExpression.DEFAULT);

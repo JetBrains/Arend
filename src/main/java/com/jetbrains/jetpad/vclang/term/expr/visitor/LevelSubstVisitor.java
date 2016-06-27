@@ -32,15 +32,21 @@ public class LevelSubstVisitor extends BaseExpressionVisitor<Void, Void> impleme
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Void params) {
+    expr.applyLevelSubst(myLevelSubst);
     return null;
   }
 
-  @Override
+  /*@Override
   public Void visitConCall(ConCallExpression expr, Void params) {
     if (expr.getDataTypeArguments().isEmpty()) return null;
     for (Expression parameter : expr.getDataTypeArguments()) {
       parameter.accept(this, null);
     }
+    return null;
+  } /**/
+
+  @Override
+  public Void visitClassCall(ClassCallExpression expr, Void params) {
     return null;
   }
 
