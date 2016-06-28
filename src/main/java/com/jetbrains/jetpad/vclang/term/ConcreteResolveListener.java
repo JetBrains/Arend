@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.naming.oneshot.ResolveListener;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 public class ConcreteResolveListener implements ResolveListener {
@@ -22,8 +20,13 @@ public class ConcreteResolveListener implements ResolveListener {
   }
 
   @Override
-  public void classExtendsResolved(Abstract.ClassDefinition classDefinition, int index, Referable definition) {
-    ((Concrete.ClassDefinition) classDefinition).setSuperClass(index, definition);
+  public void superClassResolved(Abstract.SuperClass superClass, Referable definition) {
+    ((Concrete.SuperClass) superClass).setReferent(definition);
+  }
+
+  @Override
+  public void idPairFirstResolved(Abstract.IdPair idPair, Referable definition) {
+    ((Concrete.IdPair) idPair).setFirstReferent(definition);
   }
 
   @Override

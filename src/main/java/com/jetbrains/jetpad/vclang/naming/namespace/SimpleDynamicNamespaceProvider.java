@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 import java.util.Collection;
 
-import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.DYNAMIC;
 import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
 
 public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider {
@@ -15,14 +14,28 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
   @Override
   public SimpleNamespace forClass(final Abstract.ClassDefinition classDefinition) {
     SimpleNamespace myNamespace = forStatements(classDefinition.getStatements());
-    for (final Referable sup : classDefinition.getSuperClasses()) {
-      if (sup instanceof Abstract.ClassDefinition) {
-        myNamespace.addAll(forClass((Abstract.ClassDefinition) sup));
+    for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
+      if (superClass.getReferent() instanceof Abstract.ClassDefinition) {
+        SimpleNamespace namespace = forClass((Abstract.ClassDefinition) superClass.getReferent());
+        if (superClass.getIdPairs() == null || superClass.getIdPairs().isEmpty()) {
+          myNamespace.addAll(namespace);
+        } else {
+          for (Referable referable : namespace.getValues()) {
+            String name = referable.getName();
+            for (Abstract.IdPair idPair : superClass.getIdPairs()) {
+              if (referable.equals(idPair.getFirstReferent())) {
+                name = idPair.getSecondName();
+                break;
+              }
+            }
+            myNamespace.addDefinition(name, referable);
+          }
+        }
       } else {
         throw new Namespace.InvalidNamespaceException() {  // FIXME[error] report proper
           @Override
           public GeneralError toError() {
-            return new GeneralError("Superclass " + sup.getName() + " must be a class definition", classDefinition);
+            return new GeneralError("Superclass " + superClass.getName() + " must be a class definition", classDefinition);
           }
         };
       }

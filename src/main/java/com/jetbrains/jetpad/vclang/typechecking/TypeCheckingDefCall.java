@@ -12,7 +12,10 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
@@ -47,7 +50,9 @@ public class TypeCheckingDefCall {
     Referable resolvedDefinition = expr.getReferent();
     if (resolvedDefinition != null) {
       final Definition typecheckedDefinition = myState.getTypechecked(resolvedDefinition);
-      if (typecheckedDefinition == null) throw new IllegalStateException("Internal error: definition " + resolvedDefinition + " was not typechecked");
+      if (typecheckedDefinition == null) {
+        throw new IllegalStateException("Internal error: definition " + resolvedDefinition + " was not typechecked");
+      }
 
       Expression thisExpr = null;
       if (typecheckedDefinition.getThisClass() != null) {

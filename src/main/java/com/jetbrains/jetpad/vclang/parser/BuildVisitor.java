@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -443,56 +443,29 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
-  private static class RenamingOrIDs {}
-
-  private static class IdPair {
-    String from;
-    String to;
-  }
-
-  private static class Renaming extends RenamingOrIDs {
-    List<IdPair> idPairs;
-  }
-
-  private static class IDs extends RenamingOrIDs {
-    List<String> ids;
-  }
-
-  @Override
-  public Renaming visitRoiRenaming(RoiRenamingContext ctx) {
-    if (ctx == null) return null;
-    Renaming renaming = new Renaming();
-    renaming.idPairs = new ArrayList<>(ctx.ID().size() / 2);
-    for (int i = 0; i + 1 < ctx.ID().size(); i += 2) {
-      IdPair idPair = new IdPair();
-      idPair.from = ctx.ID().get(i).getText();
-      idPair.to = ctx.ID().get(i + 1).getText();
-      renaming.idPairs.add(idPair);
-    }
-    return renaming;
-  }
-
-  @Override
-  public IDs visitRoiIDs(RoiIDsContext ctx) {
-    if (ctx == null) return null;
-    IDs ids = new IDs();
-    ids.ids = new ArrayList<>(ctx.ID().size());
-    for (TerminalNode node : ctx.ID()) {
-      ids.ids.add(node.getText());
-    }
-    return ids;
-  }
-
   @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.statement() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.statement());
     Abstract.ClassDefinition.Kind classKind = ctx.classKindMod() instanceof ClassClassModContext ? Abstract.ClassDefinition.Kind.Class : Abstract.ClassDefinition.Kind.Module;
-    List<String> names = new ArrayList<>(ctx.ID().size() - 1);
-    for (int i = 1; i < ctx.ID().size(); i++) {
-      names.add(ctx.ID().get(i).getText());
+    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.renamingOrIDs().size());
+    for (int i = 0; i < ctx.renamingOrIDs().size(); i++) {
+      if (ctx.renamingOrIDs().get(i) instanceof RoiRenamingContext) {
+        RoiRenamingContext renamingContext = (RoiRenamingContext) ctx.renamingOrIDs().get(i);
+        List<Concrete.IdPair> idPairs = new ArrayList<>(renamingContext.ID().size() / 2);
+        for (int j = 0; j < renamingContext.ID().size(); j += 2) {
+          idPairs.add(new Concrete.IdPair(tokenPosition(renamingContext.ID().get(j).getSymbol()), renamingContext.ID().get(j).getText(), renamingContext.ID().get(j + 1).getText()));
+        }
+        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), idPairs));
+      } else
+      if (ctx.renamingOrIDs().get(i) instanceof RoiIDsContext) {
+        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), Collections.<Concrete.IdPair>emptyList()));
+        for (TerminalNode node : ((RoiIDsContext) ctx.renamingOrIDs().get(i)).ID()) {
+          superClasses.add(new Concrete.SuperClass(tokenPosition(node.getSymbol()), node.getText(), Collections.<Concrete.IdPair>emptyList()));
+        }
+      }
     }
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().get(0).getText(), statements, classKind, names);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().get(0).getText(), statements, classKind, superClasses);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);

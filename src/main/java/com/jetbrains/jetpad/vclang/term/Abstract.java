@@ -304,12 +304,23 @@ public final class Abstract {
     Expression getUniverse();
   }
 
+  public interface IdPair extends SourceNode {
+    String getFirstName();
+    Referable getFirstReferent();
+    String getSecondName();
+  }
+
+  public interface SuperClass extends SourceNode {
+    String getName();
+    Referable getReferent();
+    Collection<? extends IdPair> getIdPairs();
+  }
+
   public interface ClassDefinition extends Definition {
     enum Kind { Module, Class }
 
     Kind getKind();
-    Collection<? extends Referable> getSuperClasses();
-    String getSuperClassName(int index);
+    Collection<? extends SuperClass> getSuperClasses();
     Collection<? extends Statement> getStatements();
     ModuleID getModuleID();
   }

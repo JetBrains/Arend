@@ -20,7 +20,12 @@ public class BaseResolveListener implements ResolveListener {
   }
 
   @Override
-  public void classExtendsResolved(Abstract.ClassDefinition classDefinition, int index, Referable definition) {
+  public void superClassResolved(Abstract.SuperClass superClass, Referable definition) {
+
+  }
+
+  @Override
+  public void idPairFirstResolved(Abstract.IdPair idPair, Referable definition) {
 
   }
 
