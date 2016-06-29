@@ -1,14 +1,17 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.*;
 
@@ -52,10 +55,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       ConCallExpression conCall = result.expression.getFunction().toConCall();
       if (conCall != null && Prelude.isPathCon(conCall.getDefinition()) && result.expression.getArguments().size() <= 1) {
         Expression interval = DataCall(Preprelude.INTERVAL);
-        LevelExpression lp, lh;
+        List<DependentLink> pathParams = new ArrayList<>();
 
-        lp = conCall.getPolyParamValueByType(Preprelude.LVL.getResolvedName().getFullName());
-        lh = conCall.getPolyParamValueByType(Preprelude.CNAT.getResolvedName().getFullName());
+        conCall.getType().getPiParameters(pathParams, false, false);
+        //lp = conCall.getPolyParamValueByType(Preprelude.LVL.getResolvedName().getFullName());
+        //lh = conCall.getPolyParamValueByType(Preprelude.CNAT.getResolvedName().getFullName());
 
         /*
         if (result.expression.getArguments().isEmpty()) {
@@ -72,7 +76,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           lh = result.expression.getArguments().get(1);
         } /**/
 
-        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", Universe(lp, lh), 1, fun);
+        // TODO: fix levels
+        InferenceBinding inferenceBinding = new FunctionInferenceBinding("A", pathParams.get(0).getType().toPi().getCodomain(), 1, fun);
         result.addUnsolvedVariable(inferenceBinding);
         DependentLink lamParam = param("i", interval);
         Expression binding = Reference(inferenceBinding);
@@ -157,6 +162,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           Expression expectedTypeNorm = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
           List<? extends Expression> args = expectedTypeNorm.getArguments();
           if (expectedTypeNorm.getFunction().toDataCall() != null) {
+            DataCallExpression dataCall = expectedTypeNorm.getFunction().toDataCall();
             List<Expression> args1 = new ArrayList<>(args.size());
             args1.addAll(result.expression.getArguments());
             args1.addAll(args.subList(result.expression.getArguments().size(), args.size()));
@@ -168,6 +174,17 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
               result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
               result.type = result.type.applyExpressions(args);
             }
+            if (dataCall.isPolymorphic()) {
+              //conCall.applyLevelSubst(dataCall.getPolyParamsSubst());
+              //result.type.toDataCall().applyLevelSubst(dataCall.getPolyParamsSubst());
+              LevelSubstitution levels = conCall.getPolyParamsSubst();
+              for (Binding binding : levels.getDomain()) {
+                LevelExpression expectedLevel = dataCall.getPolyParamsSubst().get(binding);
+                if (expectedLevel != null) {
+                  result.getEquations().add(levels.get(binding), expectedLevel, Equations.CMP.EQ, fun);
+                }
+              }
+            }/**/
             return inferArg(result, arg, true, fun);
           }
         }

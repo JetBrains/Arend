@@ -46,6 +46,8 @@ public class LevelExpression implements PrettyPrintable {
     myIsInfinity = level.myIsInfinity;
   }
 
+  // TODO: more clever max s.t. max(suc x, 1) => suc x
+
   public LevelExpression max(LevelExpression other) {
     if (other.isInfinity()) return new LevelExpression(other);
     if (isInfinity()) return new LevelExpression(this);
@@ -144,7 +146,9 @@ public class LevelExpression implements PrettyPrintable {
 
   public LevelExpression subtract(int val) {
     LevelExpression result = new LevelExpression(this);
-    result.myConstant = Math.max(myConstant - val, 0);
+    if (isClosed() || myConstant != 0) {
+      result.myConstant = Math.max(myConstant - val, 0);
+    }
     for (Map.Entry<Binding, Integer> var : result.myNumSucsOfVars.entrySet()) {
       var.setValue(Math.max(var.getValue() - val, 0));
     }
@@ -164,6 +168,10 @@ public class LevelExpression implements PrettyPrintable {
   }
 
   public Abstract.Expression toAbstract() {
+    if (isInfinity()) {
+      return ConcreteExpressionFactory.cVar("inf");
+    }
+
     Concrete.DefCallExpression suc = ConcreteExpressionFactory.cVar("suc");
     List<Concrete.Expression> maxArgExprList = new ArrayList<>();
 
@@ -199,26 +207,42 @@ public class LevelExpression implements PrettyPrintable {
     return compare(expr1, expr2, cmp, DummyEquations.getInstance());
   }
 
+  private boolean containsInferVar() {
+    for (Binding bnd : getAllBindings()) {
+      if (bnd instanceof InferenceBinding) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public static boolean compare(LevelExpression expr1, LevelExpression expr2, Equations.CMP cmp, Equations equations) {
     LevelExpression level1 = cmp == Equations.CMP.GE ? expr1 : expr2;
     LevelExpression level2 = cmp == Equations.CMP.GE ? expr2 : expr1;
+    boolean leftContainsInferenceBnd = level1.containsInferVar();
+    boolean rightContainsInferenceBnd = level2.containsInferVar();
 
     if (level1.isInfinity()) {
-      return (cmp != Equations.CMP.EQ || level2.isInfinity());
+      if (cmp != Equations.CMP.EQ || level2.isInfinity()) {
+        return true;
+      }
+      if (rightContainsInferenceBnd) {
+        equations.add(level2.subtract(level2.extractOuterSucs()), level1, Equations.CMP.EQ, null);
+        return true;
+      }
+      return false;
     }
 
-    if (level2.isInfinity()) return false;
+    if (level2.isInfinity()) {
+      if (leftContainsInferenceBnd) {
+        equations.add(level1, level2.subtract(level2.extractOuterSucs()), cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.GE, null);
+        return true;
+      }
+      return false;
+    }
 
     int leftSucs = level1.extractOuterSucs();
     LevelExpression leftLevel = level1.subtract(leftSucs);
-    boolean leftContainsInferenceBnd = false;
-
-    for (Binding leftBnd : level1.getAllBindings()) {
-      if (leftBnd instanceof InferenceBinding) {
-        leftContainsInferenceBnd = true;
-        break;
-      }
-    }
 
     for (LevelExpression rightMaxArg : level2.toListOfMaxArgs()) {
       int rightSucs = rightMaxArg.getUnitSucs();
@@ -261,6 +285,11 @@ public class LevelExpression implements PrettyPrintable {
     }
 
     return CMP.NOT_COMPARABLE;
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    return other instanceof LevelExpression && compare((LevelExpression)other) == CMP.EQUAL;
   }
 
   public LevelExpression succ() {

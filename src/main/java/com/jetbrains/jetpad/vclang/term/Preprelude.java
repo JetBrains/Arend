@@ -240,6 +240,10 @@ public class Preprelude extends Namespace {
     return null;
   }
 
+  public static boolean equalLevelTypes(Definition type1, Definition type2) {
+    return type1.getResolvedName().getFullName().equals(type2.getResolvedName().getFullName());
+  }
+
   static class DefinitionBuilder {
     static class Data {
       private final Namespace myParentNs;
@@ -278,7 +282,8 @@ public class Preprelude extends Namespace {
 
       public Function(Namespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, List<Binding> polyParams) {
         myResolvedName = new DefinitionResolvedName(parentNs, name);
-        myDefinition = new FunctionDefinition(myResolvedName, precedence, parameters, resultType, elimTree);
+        TypeUniverse universe = resultType.toUniverse() != null ? resultType.toUniverse().getUniverse() : resultType.getType().toUniverse().getUniverse();
+        myDefinition = new FunctionDefinition(myResolvedName, precedence, parameters, resultType, elimTree, universe);
         myDefinition.setPolyParams(polyParams);
         parentNs.addDefinition(myDefinition);
       }

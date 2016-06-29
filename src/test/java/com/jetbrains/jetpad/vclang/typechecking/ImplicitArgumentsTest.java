@@ -1,10 +1,13 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
@@ -285,6 +288,7 @@ public class ImplicitArgumentsTest {
 
   @Test
   public void untypedLambdaError1() {
+    Definition def =Prelude.PATH;
     // f : (A : \Type0) (a : A) -> Nat |- \x1 x2. f x2 x1
     DependentLink A = param("A", Universe(0));
     Expression type = Pi(params(A, param("a", Reference(A))), Nat());

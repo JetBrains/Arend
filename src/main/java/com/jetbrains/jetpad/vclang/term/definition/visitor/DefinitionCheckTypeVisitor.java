@@ -212,6 +212,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
             return typedDef;
           }
           context.add(levelParam);
+          polyParams.put(((Abstract.DefCallExpression)typeArgument.getType()).getName(), levelParam);
           ++index;
           continue;
         }

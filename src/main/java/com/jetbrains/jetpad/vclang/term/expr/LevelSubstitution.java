@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 
 import java.util.HashMap;
@@ -47,6 +48,10 @@ public class LevelSubstitution {
     LevelSubstitution result = new LevelSubstitution();
     result.add(this);
     for (Binding binding : subst.getDomain()) {
+      if (mySubstExprs.containsKey(binding)) {
+        result.add(binding, subst.get(binding));
+        continue;
+      }
       boolean foundInExprs = false;
       for (Map.Entry<Binding, LevelExpression> substExpr : mySubstExprs.entrySet()) {
         if (substExpr.getValue().findBinding(binding)) {
@@ -55,7 +60,16 @@ public class LevelSubstitution {
         }
       }
       if (!foundInExprs) {
-        result.add(binding, subst.get(binding));
+        boolean exists = false;
+        for (Binding myBinding : getDomain()) {
+          if (Preprelude.equalLevelTypes(myBinding.getType().toDataCall().getDefinition(), binding.getType().toDefCall().getDefinition())) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists) {
+          result.add(binding, subst.get(binding));
+        }
       }
     }
     return result;

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.*;
@@ -48,7 +49,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
       if (expr2 == null) return null;
       parameters.add(expr2);
     }
-    return ConCall(expr.getDefinition(), parameters);
+    return (ConCallExpression) ConCall((Constructor)expr.getPolyDefinition(), parameters).applyLevelSubst(expr.getPolyParamsSubst());
   }
 
   @Override

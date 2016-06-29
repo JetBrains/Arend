@@ -36,9 +36,9 @@ public abstract class ElimTreeNode {
   }
 
   public ElimTreeNode subst(Substitution subst) {
-    if (subst.getDomain().isEmpty()) {
-      return this;
-    }
+  //  if (subst.getDomain().isEmpty()) {
+   //   return this;
+   // }
     ElimTreeNode result = accept(new SubstVisitor(subst.ExprSubst), null);
     return LevelSubstVisitor.subst(result, subst.LevelSubst);
   }

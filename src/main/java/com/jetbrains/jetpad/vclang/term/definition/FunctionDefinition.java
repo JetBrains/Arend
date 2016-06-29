@@ -116,6 +116,6 @@ public class FunctionDefinition extends Definition implements Function {
     DependentLink newParams = DependentLink.Helper.subst(myParameters, subst);
 
     return new FunctionDefinition(getResolvedName(), getPrecedence(), newParams,
-            myResultType.subst(subst), myElimTree.subst(subst), getUniverse().subst(subst.LevelSubst));
+            myResultType.subst(subst), myElimTree /* .subst(subst) /**/, getUniverse().subst(subst.LevelSubst));
   }
 }

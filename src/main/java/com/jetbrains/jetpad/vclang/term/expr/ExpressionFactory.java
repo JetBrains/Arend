@@ -36,21 +36,23 @@ public class ExpressionFactory {
     return new FunCallExpression(definition);
   }
 
+  /*
   public static FunCallExpression FunCall(FunctionDefinition definition, LevelSubstitution polySubst) {
     FunCallExpression funCall = new FunCallExpression(definition);
     funCall.applyLevelSubst(polySubst);
     return funCall;
-  }
+  } /**/
 
   public static DataCallExpression DataCall(DataDefinition definition) {
     return new DataCallExpression(definition);
   }
 
+  /*
   public static DataCallExpression DataCall(DataDefinition definition, LevelSubstitution polySubst) {
     DataCallExpression dataCall = new DataCallExpression(definition);
     dataCall.applyLevelSubst(polySubst);
     return dataCall;
-  }
+  } /**/
 
   public static FieldCallExpression FieldCall(ClassField definition) {
     return new FieldCallExpression(definition);
@@ -63,6 +65,13 @@ public class ExpressionFactory {
   public static ClassCallExpression ClassCall(ClassDefinition definition, Map<ClassField, ClassCallExpression.ImplementStatement> statements) {
     return new ClassCallExpression(definition, statements);
   }
+
+  /*
+  public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters, LevelSubstitution subst) {
+    ConCallExpression conCall = new ConCallExpression(definition, parameters);
+    conCall.applyLevelSubst(subst);
+    return conCall;
+  } /**/
 
   public static ConCallExpression ConCall(Constructor definition, List<Expression> parameters) {
     return new ConCallExpression(definition, parameters);
@@ -225,10 +234,6 @@ public class ExpressionFactory {
 
   public static ConCallExpression ZeroLvl() { return ConCall(Preprelude.ZERO_LVL); }
 
-  public static FunCallExpression MaxLvl() { return FunCall(Preprelude.MAX_LVL); }
-
-  public static Expression MaxLvl(Expression expr1, Expression expr2) { return Apps(MaxLvl(), expr1, expr2); }
-
   public static Expression MaxNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_NAT), expr1, expr2); }
 
   public static DataCallExpression CNat() {
@@ -237,15 +242,7 @@ public class ExpressionFactory {
 
   public static Expression Fin(Expression expr) { return Apps(ConCall(Preprelude.FIN), expr); }
 
-  public static ConCallExpression Inf() {
-    return ConCall(Preprelude.INF);
-  }
-
   public static Expression SucCNat(Expression expr) { return Apps(FunCall(Preprelude.SUC_CNAT), expr); }
-
-  public static Expression PredCNat(Expression expr) { return Apps(FunCall(Preprelude.PRED_CNAT), expr); }
-
-  public static Expression MaxCNat(Expression expr1, Expression expr2) { return Apps(FunCall(Preprelude.MAX_CNAT), expr1, expr2); }
 
   public static UniverseExpression Universe() {
     return new UniverseExpression(new TypeUniverse(TypeUniverse.ANY_LEVEL, TypeUniverse.ANY_LEVEL));

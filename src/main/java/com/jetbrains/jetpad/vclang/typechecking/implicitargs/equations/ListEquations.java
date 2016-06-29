@@ -631,6 +631,10 @@ public class ListEquations implements Equations {
             was = true;
             it.remove();
             subst = entry.getValue().solve(this, entry.getKey(), result.ExprSubst);
+            if (subst == null) {
+              entry.getKey().reportErrorLevelInfer(myErrorReporter);
+              break;
+            }
             if (update(entry.getKey(), subst, result.ExprSubst)) {
               binding = entry.getKey();
             }
@@ -646,6 +650,10 @@ public class ListEquations implements Equations {
               was = true;
               it.remove();
               subst = entry.getValue().solve(this, entry.getKey(), result.ExprSubst);
+              if (subst == null) {
+                entry.getKey().reportErrorLevelInfer(myErrorReporter);
+                break;
+              }
               if (update(entry.getKey(), subst, result.ExprSubst)) {
                 binding = entry.getKey();
               }
@@ -675,6 +683,10 @@ public class ListEquations implements Equations {
             was = true;
             it.remove();
             subst = entry.getValue().solve(this, entry.getKey(), result.LevelSubst);
+            if (subst == null) {
+              entry.getKey().reportErrorLevelInfer(myErrorReporter);
+              break;
+            }
             if (subst.findBinding(entry.getKey())) {
               entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
             } else {
@@ -692,6 +704,10 @@ public class ListEquations implements Equations {
               was = true;
               it.remove();
               subst = entry.getValue().solve(this, entry.getKey(), result.LevelSubst);
+              if (subst == null) {
+                entry.getKey().reportErrorLevelInfer(myErrorReporter);
+                break;
+              }
               if (subst.findBinding(entry.getKey())) {
                 entry.getKey().reportErrorLevelInfer(myErrorReporter, subst);
               } else {

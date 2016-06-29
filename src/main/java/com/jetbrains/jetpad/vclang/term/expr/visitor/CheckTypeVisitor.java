@@ -373,11 +373,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
             piLamSubst.add(piLink, Reference(link));
           } else {
-            // TODO: check if this line is reachable
-            /*if (argResult == null) {
+            if (argResult == null) {
               InferenceBinding pLvlInferenceBinding = new LambdaInferenceBinding("plvl-of-" + name, DataCall(Preprelude.LVL), argIndex, expr, true);
               InferenceBinding hLvlInferenceBinding = new LambdaInferenceBinding("hlvl-of-" + name, DataCall(Preprelude.CNAT), argIndex, expr, true);
-              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(Reference(pLvlInferenceBinding), Reference(hLvlInferenceBinding)), argIndex, expr, false);
+              InferenceBinding inferenceBinding = new LambdaInferenceBinding("type-of-" + name, Universe(new LevelExpression(pLvlInferenceBinding), new LevelExpression(hLvlInferenceBinding)), argIndex, expr, false);
               link.setType(Reference(inferenceBinding));
               bindingTypes.put(link, inferenceBinding);
             }

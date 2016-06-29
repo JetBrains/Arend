@@ -37,7 +37,7 @@ public class ConCallExpression extends DefCallExpression {
 
   @Override
   public Expression getType() {
-    return getDefinition().getType().applyExpressions(myDataTypeArguments);
+    return super.getType().applyExpressions(myDataTypeArguments);
   }
 
   @Override
