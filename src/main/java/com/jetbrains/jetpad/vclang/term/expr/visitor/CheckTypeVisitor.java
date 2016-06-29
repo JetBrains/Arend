@@ -758,6 +758,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     List<ImplementStatement> fields = new ArrayList<>(statements.size());
     for (Abstract.ImplementStatement statement : statements) {
       String name = statement.getName();
+      // TODO: do not remove fields, create new class instead
       ClassField field = baseClass.removeField(name);
       if (field == null) {
         TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Class '" + baseClass.getName() + "' does not have field '" + name + "'", statement);

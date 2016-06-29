@@ -8,7 +8,7 @@ public class DuplicateDefinitionError extends GeneralError {
   public final Referable definition2;
 
   public DuplicateDefinitionError(Referable definition1, Referable definition2) {
-    super("Duplicate definition name", definition2);
+    super("Duplicate definition name '" + definition1.getName() + "'", definition2);
     this.definition1 = definition1;
     this.definition2 = definition2;
   }

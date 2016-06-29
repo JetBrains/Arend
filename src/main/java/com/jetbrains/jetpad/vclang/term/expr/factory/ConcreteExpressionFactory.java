@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.expr.factory;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
@@ -23,6 +24,11 @@ public class ConcreteExpressionFactory implements AbstractExpressionFactory {
   @Override
   public Abstract.Expression makeDefCall(Abstract.Expression expr, Definition definition) {
     return cDefCall((Concrete.Expression) expr, definition);
+  }
+
+  @Override
+  public Abstract.Expression makeFieldCall(Abstract.Expression expr, ClassDefinition classDef, ClassField field) {
+    return cDefCall((Concrete.Expression) expr, field, classDef.getFieldName(field));
   }
 
   @Override

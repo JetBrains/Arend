@@ -122,4 +122,13 @@ public class TypeCheckingTest {
         "\\static \\function\n" +
         "foo (A : \\1-Type0) (B : A -> \\Type0) (a a' : A) (p : a = a') => transport B p");
   }
+
+  @Test
+  public void definitionsWithErrors() {
+    typeCheckClass(
+        "\\class C {\n" +
+        "  \\abstract A : X\n" +
+        "  \\abstract a : (\\lam (x : Nat) => Nat) A\n" +
+        "}", 1);
+  }
 }

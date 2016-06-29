@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -24,8 +25,12 @@ public class SimpleNamespace implements Namespace {
     addDefinition(def);
   }
 
-  public void addDefinition(final Referable def) {
-    final Referable prev = myNames.put(def.getName(), def);
+  public void addDefinition(Referable def) {
+    addDefinition(def.getName(), def);
+  }
+
+  public void addDefinition(String name, final Referable def) {
+    final Referable prev = myNames.put(name, def);
     if (prev != null && prev != def) {
       throw new InvalidNamespaceException() {
         @Override
@@ -37,14 +42,18 @@ public class SimpleNamespace implements Namespace {
   }
 
   public void addAll(SimpleNamespace other) {
-    for (Referable definition : other.myNames.values()) {
-      addDefinition(definition);
+    for (Map.Entry<String, Referable> entry : other.myNames.entrySet()) {
+      addDefinition(entry.getKey(), entry.getValue());
     }
   }
 
   @Override
   public Set<String> getNames() {
     return myNames.keySet();
+  }
+
+  Collection<Referable> getValues() {
+    return myNames.values();
   }
 
   @Override

@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -15,7 +14,7 @@ public class ClassDefinition extends Definition {
   private final Namespace myOwnNamespace;
   private final Namespace myInstanceNamespace;
 
-  private final Map<String, ClassField> myFields = new HashMap<>();
+  private final Map<ClassField, String> myFields = new HashMap<>();
   private Set<ClassDefinition> mySuperClasses = null;
 
   public ClassDefinition(String name, Namespace ownNamespace, Namespace instanceNamespace) {
@@ -58,11 +57,24 @@ public class ClassDefinition extends Definition {
   }
 
   public ClassField getField(String name) {
-    return myFields.get(name);
+    for (ClassField field : myFields.keySet()) {
+      if (field.getName().equals(name)) {
+        return field;
+      }
+    }
+    return null;
+  }
+
+  public String getFieldName(ClassField field) {
+    return myFields.get(field);
   }
 
   public Collection<ClassField> getFields() {
-    return myFields.values();
+    return myFields.keySet();
+  }
+
+  public Set<Map.Entry<ClassField, String>> getFieldsMap() {
+    return myFields.entrySet();
   }
 
   public int getNumberOfVisibleFields() {
@@ -74,28 +86,34 @@ public class ClassDefinition extends Definition {
   }
 
   public void addField(ClassField field) {
-    myFields.put(field.getName(), field);
+    addField(field, field.getName());
+  }
+
+  public void addField(ClassField field, String name) {
+    ClassField oldField = getField(name);
+    if (oldField != null) {
+      myFields.remove(oldField);
+    }
+    myFields.put(field, name);
     field.setThisClass(this);
   }
 
-  public ClassField tryAddField(ClassField field) {
-    ClassField oldField = myFields.get(field.getName());
+  public ClassField tryAddField(ClassField field, String name) {
+    ClassField oldField = getField(name);
     if (oldField == field) {
       return null;
     }
     if (oldField != null) {
       return oldField;
     }
-    myFields.put(field.getName(), field);
+    myFields.put(field, name);
     return null;
   }
 
   public ClassField removeField(String name) {
-    return myFields.remove(name);
-  }
-
-  public void removeField(ClassField field) {
-    myFields.remove(field.getName());
+    ClassField field = getField(name);
+    myFields.remove(field);
+    return field;
   }
 
   public ClassField getParentField() {

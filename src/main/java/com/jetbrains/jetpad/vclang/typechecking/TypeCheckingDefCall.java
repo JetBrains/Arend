@@ -12,7 +12,10 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
@@ -47,7 +50,9 @@ public class TypeCheckingDefCall {
     Referable resolvedDefinition = expr.getReferent();
     if (resolvedDefinition != null) {
       final Definition typecheckedDefinition = myState.getTypechecked(resolvedDefinition);
-      if (typecheckedDefinition == null) throw new IllegalStateException("Internal error: definition " + resolvedDefinition + " was not typechecked");
+      if (typecheckedDefinition == null) {
+        throw new IllegalStateException("Internal error: definition " + resolvedDefinition + " was not typechecked");
+      }
 
       Expression thisExpr = null;
       if (typecheckedDefinition.getThisClass() != null) {
@@ -81,18 +86,19 @@ public class TypeCheckingDefCall {
     if (type.toClassCall() != null) {
       ClassDefinition classDefinition = type.toClassCall().getDefinition();
 
-      Definition definition = classDefinition.getField(name);
-      if (definition == null) {
-        Referable member = classDefinition.getInstanceNamespace().resolveName(name);
-        if (member == null) {
-          MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-          myVisitor.getErrorReporter().report(error);
-          return null;
-        }
-        definition = myState.getTypechecked(member);
-        if (definition == null) throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+      Definition definition;
+      Referable member = classDefinition.getInstanceNamespace().resolveName(name);
+      if (member == null) {
+        MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
+        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+        myVisitor.getErrorReporter().report(error);
+        return null;
       }
+      definition = myState.getTypechecked(member);
+      if (definition == null) {
+        throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+      }
+
       if (definition.getThisClass() == null) {
         TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Static definitions are not allowed in a non-static context", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));

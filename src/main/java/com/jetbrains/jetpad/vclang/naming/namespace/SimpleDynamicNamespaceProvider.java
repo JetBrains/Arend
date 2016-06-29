@@ -21,14 +21,28 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     if (ns != null) return ns;
 
     ns = forStatements(classDefinition.getStatements());
-    for (final Referable sup : classDefinition.getSuperClasses()) {
-      if (sup instanceof Abstract.ClassDefinition) {
-        ns.addAll(forClass((Abstract.ClassDefinition) sup));
+    for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
+      if (superClass.getReferent() instanceof Abstract.ClassDefinition) {
+        SimpleNamespace namespace = forClass((Abstract.ClassDefinition) superClass.getReferent());
+        if (superClass.getIdPairs() == null || superClass.getIdPairs().isEmpty()) {
+          ns.addAll(namespace);
+        } else {
+          for (Referable referable : namespace.getValues()) {
+            String name = referable.getName();
+            for (Abstract.IdPair idPair : superClass.getIdPairs()) {
+              if (referable.equals(idPair.getFirstReferent())) {
+                name = idPair.getSecondName();
+                break;
+              }
+            }
+            ns.addDefinition(name, referable);
+          }
+        }
       } else {
         throw new Namespace.InvalidNamespaceException() {  // FIXME[error] report proper
           @Override
           public GeneralError toError() {
-            return new GeneralError("Superclass " + sup.getName() + " must be a class definition", classDefinition);
+            return new GeneralError("Superclass " + superClass.getName() + " must be a class definition", classDefinition);
           }
         };
       }

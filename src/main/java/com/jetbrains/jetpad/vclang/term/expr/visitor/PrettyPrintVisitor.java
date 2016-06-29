@@ -667,7 +667,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
 
   @Override
   public Void visitAbstract(Abstract.AbstractDefinition def, Void params) {
-    myBuilder.append("\\abstract");
+    myBuilder.append("\\abstract ");
     prettyPrintBinding(def);
     prettyPrintArguments(def.getArguments(), Abstract.DefCallExpression.PREC);
 
@@ -788,19 +788,70 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
-  @Override
-  public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
-    myBuilder.append("\\class ").append(def.getName());
-    if (!def.getSuperClasses().isEmpty()) {
-      myBuilder.append(" \\extends ");
-      for (int i = 0; i < def.getSuperClasses().size(); i++) {
-        myBuilder.append(def.getSuperClassName(i));
-        if (i < def.getSuperClasses().size() - 1) {
+  private class ListWrapper {
+    List<String> list;
+
+    void print() {
+      for (int i = 0; i < list.size(); i++) {
+        myBuilder.append(list.get(i));
+        if (i < list.size() - 1) {
           myBuilder.append(", ");
         }
       }
     }
-    myBuilder.append(" {");
+  }
+
+  @Override
+  public Void visitClass(Abstract.ClassDefinition def, Void ignored) {
+    myBuilder.append("\\class ").append(def.getName());
+    if (!def.getSuperClasses().isEmpty()) {
+      List<Object> superClasses = new ArrayList<>(def.getSuperClasses().size());
+      for (Abstract.SuperClass superClass : def.getSuperClasses()) {
+        if (superClass.getIdPairs() == null || superClass.getIdPairs().isEmpty()) {
+          if (superClasses.isEmpty() || !(superClasses.get(superClasses.size() - 1) instanceof ListWrapper)) {
+            ListWrapper wrapper = new ListWrapper();
+            wrapper.list = new ArrayList<>(3);
+            wrapper.list.add(superClass.getName());
+            superClasses.add(wrapper);
+          } else {
+            ((ListWrapper) superClasses.get(superClasses.size() - 1)).list.add(superClass.getName());
+          }
+        } else {
+          superClasses.add(superClass);
+        }
+      }
+
+      if (superClasses.size() == 1 && superClasses.get(0) instanceof ListWrapper) {
+        myBuilder.append(" \\extends ");
+        ((ListWrapper) superClasses.get(0)).print();
+        myBuilder.append(" {");
+      } else {
+        myBuilder.append('\n');
+        ++myIndent;
+        for (Object superClass : superClasses) {
+          printIndent();
+          myBuilder.append("\\extends ");
+          if (superClass instanceof ListWrapper) {
+            ((ListWrapper) superClass).print();
+          } else {
+            Abstract.SuperClass aSuperClass = (Abstract.SuperClass) superClass;
+            myBuilder.append(aSuperClass.getName()).append(" \\renaming ");
+            int i = 0;
+            for (Abstract.IdPair idPair : aSuperClass.getIdPairs()) {
+              myBuilder.append(idPair.getFirstName()).append(" \\to ").append(idPair.getSecondName());
+              if (++i < aSuperClass.getIdPairs().size()) {
+                myBuilder.append("; ");
+              }
+            }
+          }
+        }
+        --myIndent;
+        printIndent();
+        myBuilder.append("{");
+      }
+    } else {
+      myBuilder.append(" {");
+    }
 
     Collection<? extends Abstract.Statement> statements = def.getStatements();
     if (statements != null) {

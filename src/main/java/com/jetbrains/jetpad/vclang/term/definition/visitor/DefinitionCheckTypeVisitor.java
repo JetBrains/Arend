@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleStaticNamespaceProvider;
@@ -31,6 +30,7 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.size;
 import static com.jetbrains.jetpad.vclang.term.context.param.DependentLink.Helper.toContext;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Error;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.processImplicit;
 import static com.jetbrains.jetpad.vclang.term.pattern.Utils.toPatterns;
 import static com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError.typeOfFunctionArg;
@@ -46,8 +46,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   public static void typeCheck(TypecheckerState state, Abstract.Definition definition, ErrorReporter errorReporter) {
     if (state.getTypechecked(definition) == null) {
-      DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, errorReporter);
-      Definition result = definition.accept(visitor, null);
+      definition.accept(new DefinitionCheckTypeVisitor(state, errorReporter), null);
     }
   }
 
@@ -97,6 +96,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     String name = def.getName();
     Abstract.Definition.Arrow arrow = def.getArrow();
     final FunctionDefinition typedDef = new FunctionDefinition(def.getName(), def.getPrecedence(), SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def));
+    myState.record(def, typedDef);
     // TODO[scopes] Fill namespace
 
     /*
@@ -276,9 +276,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     typedDef.setResultType(expectedType);
     typedDef.typeHasErrors(typedDef.getResultType() == null);
 
-    myState.record(def, typedDef);
     Abstract.Expression term = def.getTerm();
-
     if (term != null) {
       if (term instanceof Abstract.ElimExpression) {
         context.subList(context.size() - size(list.getFirst()), context.size()).clear();
@@ -363,6 +361,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(thisClass, Reference(thisParameter)).build(def);
     LevelExpression plevel = null;
     ClassField typedDef = new ClassField(def.getName(), def.getPrecedence(), Error(null, null), thisClass, thisParameter);
+    myState.record(def, typedDef);
 
     int index = 0;
     LinkList list = new LinkList();
@@ -418,7 +417,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     typedDef.setBaseType(list.isEmpty() ? typedResultType : Pi(list.getFirst(), typedResultType));
     typedDef.setUniverse(new TypeUniverse(plevel, resultTypeUniverse.getHLevel()));
     typedDef.setThisClass(thisClass);
-    myState.record(def, typedDef);
     return typedDef;
   }
 
@@ -861,18 +859,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     try {
       ClassDefinition typedDef = new ClassDefinition(def.getName(), SimpleStaticNamespaceProvider.INSTANCE.forDefinition(def), SimpleDynamicNamespaceProvider.INSTANCE.forClass(def));
 
-      int index = 0;
-      for (Referable referable : def.getSuperClasses()) {
-        if (referable == null) {
-          myErrorReporter.report(new TypeCheckingError("Could not find class '" + def.getSuperClassName(index) + "'", def));
+      for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
+        if (aSuperClass.getReferent() == null) {
+          myErrorReporter.report(new TypeCheckingError("Could not find class '" + aSuperClass.getName() + "'", def));
           continue;
         }
 
         ClassDefinition superClass = null;
-        if (referable instanceof ClassDefinition) {
-          superClass = (ClassDefinition) referable;
+        if (aSuperClass.getReferent() instanceof ClassDefinition) {
+          superClass = (ClassDefinition) aSuperClass.getReferent();
         } else {
-          Definition typecheckedSuper = myState.getTypechecked(referable);
+          Definition typecheckedSuper = myState.getTypechecked(aSuperClass.getReferent());
           if (typecheckedSuper instanceof ClassDefinition) {
             superClass = (ClassDefinition) typecheckedSuper;
           }
@@ -880,10 +877,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         if (superClass != null) {
           boolean ok = true;
-          for (ClassField field : superClass.getFields()) {
-            ClassField oldField = typedDef.tryAddField(field);
+          for (Map.Entry<ClassField, String> entry : superClass.getFieldsMap()) {
+            String name = entry.getValue();
+            for (Abstract.IdPair idPair : aSuperClass.getIdPairs()) {
+              if (name.equals(idPair.getFirstName())) {
+                name = idPair.getSecondName();
+                break;
+              }
+            }
+
+            ClassField oldField = typedDef.tryAddField(entry.getKey(), name);
             if (oldField != null) {
-              myErrorReporter.report(new TypeCheckingError("Duplicate field", null));  // FIXME[error] report proper
+              myErrorReporter.report(new TypeCheckingError("Duplicate field '" + name + "'", null));  // FIXME[error] report proper
               ok = false;
             }
           }
@@ -891,10 +896,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
             typedDef.addSuperClass(superClass);
           }
         } else {
-          myErrorReporter.report(new TypeCheckingError("Expected a class", referable));
+          myErrorReporter.report(new TypeCheckingError("Expected a class", aSuperClass.getReferent()));
         }
-
-        index++;
       }
 
       ClassDefinition thisClass = getThisClass(def);

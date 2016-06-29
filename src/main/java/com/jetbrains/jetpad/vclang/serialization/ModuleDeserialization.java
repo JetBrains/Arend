@@ -155,7 +155,7 @@ public class ModuleDeserialization {
       }
       if (!createStubs) {
         result.put(i, rn.getName().equals("\\parent") ?
-            ((ClassDefinition) rn.getParent().toDefinition()).getField("\\parent") : rn.toDefinition());
+            ((ClassDefinition) rn.getParent().toDefinition()).getParentField() : rn.toDefinition());
       }
     }
 
@@ -269,8 +269,9 @@ public class ModuleDeserialization {
 
     int numFields = stream.readInt();
     for (int i = 0; i < numFields; i++) {
+      String name = stream.readUTF();
       ClassField field = (ClassField) definitionMap.get(stream.readInt());
-      definition.addField(field);
+      definition.addField(field, name);
       field.setThisParameter(readParameters(stream, definitionMap));
       field.hasErrors(stream.readBoolean());
 

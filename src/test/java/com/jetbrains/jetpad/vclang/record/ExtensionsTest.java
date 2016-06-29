@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.record;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 
 public class ExtensionsTest {
   @Test
@@ -38,14 +37,14 @@ public class ExtensionsTest {
   public void badFieldTypeError() {
     typeCheckClass(
         "\\class A {\n" +
-            "  \\abstract A : \\Set0\n" +
-            "  \\abstract a : A\n" +
-            "}\n" +
-            "\\class B \\extends A {\n" +
-            "  \\abstract a' : A\n" +
-            "  \\abstract p : undefined_variable = a'\n" +
-            "}\n" +
-            "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
+        "  \\abstract A : \\Set0\n" +
+        "  \\abstract a : A\n" +
+        "}\n" +
+        "\\class B \\extends A {\n" +
+        "  \\abstract a' : A\n" +
+        "  \\abstract p : undefined_variable = a'\n" +
+        "}\n" +
+        "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
   }
 
   @Test

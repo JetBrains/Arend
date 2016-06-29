@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.naming.oneshot.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -12,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -185,10 +185,24 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
 
   @Override
   public Void visitClass(Abstract.ClassDefinition def, Boolean isStatic) {
-    for (int i = 0; i < def.getSuperClasses().size(); i++) {
-      Referable sup = myNameResolver.resolveDefinition(myParentScope, Collections.singletonList(def.getSuperClassName(i)));
+    for (Abstract.SuperClass superClass : def.getSuperClasses()) {
+      Referable sup = myNameResolver.resolveDefinition(myParentScope, Collections.singletonList(superClass.getName()));
       if (sup != null) {
-        myResolveListener.classExtendsResolved(def, i, sup);
+        if (sup instanceof Abstract.ClassDefinition) {
+          myResolveListener.superClassResolved(superClass, sup);
+          Namespace supNamespace = myDynamicNsProvider.forClass((Abstract.ClassDefinition) sup);
+
+          if (superClass.getIdPairs() != null) {
+            for (Abstract.IdPair idPair : superClass.getIdPairs()) {
+              Referable pair1 = supNamespace.resolveName(idPair.getFirstName());
+              if (pair1 != null) {
+                myResolveListener.idPairFirstResolved(idPair, pair1);
+              }
+            }
+          }
+        } else {
+          myErrorReporter.report(new TypeCheckingError("Expected a class", sup));
+        }
       }
     }
 
@@ -217,5 +231,5 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
   }
 
 
-  public static enum Flag { MUST_BE_STATIC, MUST_BE_DYNAMIC }
+  public enum Flag { MUST_BE_STATIC, MUST_BE_DYNAMIC }
 }
