@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class ModuleSerialization {
   public static final byte[] SIGNATURE = {'v', 'c', (byte) 0xb1, 0x0b};
@@ -184,7 +185,9 @@ public class ModuleSerialization {
     writeUniverse(visitor, definition.getUniverse());
 
     visitor.getDataStream().writeInt(definition.getFields().size());
-    for (ClassField field : definition.getFields()) {
+    for (Map.Entry<ClassField, String> entry : definition.getFieldsMap()) {
+      ClassField field = entry.getKey();
+      visitor.getDataStream().writeUTF(entry.getValue());
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(field.getResolvedName()));
       writeParameters(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());

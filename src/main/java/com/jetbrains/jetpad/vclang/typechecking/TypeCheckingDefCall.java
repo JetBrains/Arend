@@ -86,18 +86,19 @@ public class TypeCheckingDefCall {
     if (type.toClassCall() != null) {
       ClassDefinition classDefinition = type.toClassCall().getDefinition();
 
-      Definition definition = classDefinition.getField(name);
-      if (definition == null) {
-        Referable member = classDefinition.getInstanceNamespace().resolveName(name);
-        if (member == null) {
-          MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
-          expr.setWellTyped(myVisitor.getContext(), Error(null, error));
-          myVisitor.getErrorReporter().report(error);
-          return null;
-        }
-        definition = myState.getTypechecked(member);
-        if (definition == null) throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+      Definition definition;
+      Referable member = classDefinition.getInstanceNamespace().resolveName(name);
+      if (member == null) {
+        MemberNotFoundError error = new MemberNotFoundError(myParentDefinition, classDefinition, name, false, expr);
+        expr.setWellTyped(myVisitor.getContext(), Error(null, error));
+        myVisitor.getErrorReporter().report(error);
+        return null;
       }
+      definition = myState.getTypechecked(member);
+      if (definition == null) {
+        throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+      }
+
       if (definition.getThisClass() == null) {
         TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Static definitions are not allowed in a non-static context", expr);
         expr.setWellTyped(myVisitor.getContext(), Error(null, error));

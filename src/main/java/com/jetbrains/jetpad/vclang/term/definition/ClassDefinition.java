@@ -73,6 +73,10 @@ public class ClassDefinition extends Definition {
     return myFields.keySet();
   }
 
+  public Set<Map.Entry<ClassField, String>> getFieldsMap() {
+    return myFields.entrySet();
+  }
+
   public int getNumberOfVisibleFields() {
     int result = myFields.size();
     if (getParentField() != null) {
@@ -82,23 +86,27 @@ public class ClassDefinition extends Definition {
   }
 
   public void addField(ClassField field) {
-    ClassField oldField = getField(field.getName());
+    addField(field, field.getName());
+  }
+
+  public void addField(ClassField field, String name) {
+    ClassField oldField = getField(name);
     if (oldField != null) {
       myFields.remove(oldField);
     }
-    myFields.put(field, field.getName());
+    myFields.put(field, name);
     field.setThisClass(this);
   }
 
-  public ClassField tryAddField(ClassField field) {
-    ClassField oldField = getField(field.getName());
+  public ClassField tryAddField(ClassField field, String name) {
+    ClassField oldField = getField(name);
     if (oldField == field) {
       return null;
     }
     if (oldField != null) {
       return oldField;
     }
-    myFields.put(field, field.getName());
+    myFields.put(field, name);
     return null;
   }
 

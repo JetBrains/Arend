@@ -42,8 +42,8 @@ public class SimpleNamespace implements Namespace {
   }
 
   public void addAll(SimpleNamespace other) {
-    for (Referable definition : other.myNames.values()) {
-      addDefinition(definition);
+    for (Map.Entry<String, Referable> entry : other.myNames.entrySet()) {
+      addDefinition(entry.getKey(), entry.getValue());
     }
   }
 

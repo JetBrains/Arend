@@ -877,10 +877,18 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         if (superClass != null) {
           boolean ok = true;
-          for (ClassField field : superClass.getFields()) {
-            ClassField oldField = typedDef.tryAddField(field);
+          for (Map.Entry<ClassField, String> entry : superClass.getFieldsMap()) {
+            String name = entry.getValue();
+            for (Abstract.IdPair idPair : aSuperClass.getIdPairs()) {
+              if (name.equals(idPair.getFirstName())) {
+                name = idPair.getSecondName();
+                break;
+              }
+            }
+
+            ClassField oldField = typedDef.tryAddField(entry.getKey(), name);
             if (oldField != null) {
-              myErrorReporter.report(new TypeCheckingError("Duplicate field", null));  // FIXME[error] report proper
+              myErrorReporter.report(new TypeCheckingError("Duplicate field '" + name + "'", null));  // FIXME[error] report proper
               ok = false;
             }
           }
