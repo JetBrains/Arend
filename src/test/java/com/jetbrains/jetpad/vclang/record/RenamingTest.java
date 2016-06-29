@@ -62,6 +62,16 @@ public class RenamingTest {
   }
 
   @Test
+  public void renamingUnknown() {
+    resolveNamesClass("test",
+        "\\static \\class B {\n" +
+        "  \\abstract A : \\Set0\n" +
+        "  \\abstract a : A\n" +
+        "}\n" +
+        "\\static \\class C \\extends B \\renaming X \\to X' {}", 1);
+  }
+
+  @Test
   public void nameClashError() {
     resolveNamesClass("test",
         "\\static \\class B {\n" +

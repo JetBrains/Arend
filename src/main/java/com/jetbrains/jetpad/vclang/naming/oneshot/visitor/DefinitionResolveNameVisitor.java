@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.Utils;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import java.util.ArrayList;
@@ -197,15 +198,19 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
               Referable pair1 = supNamespace.resolveName(idPair.getFirstName());
               if (pair1 != null) {
                 myResolveListener.idPairFirstResolved(idPair, pair1);
+              } else {
+                myErrorReporter.report(new NotInScopeError(def, idPair, idPair.getFirstName()));
               }
             }
           }
 
           if (superClass.getHidings() != null) {
             for (Abstract.Identifier identifier : superClass.getHidings()) {
-              Referable pair1 = supNamespace.resolveName(identifier.getName());
-              if (pair1 != null) {
-                myResolveListener.identifierResolved(identifier, pair1);
+              Referable ref = supNamespace.resolveName(identifier.getName());
+              if (ref != null) {
+                myResolveListener.identifierResolved(identifier, ref);
+              } else {
+                myErrorReporter.report(new NotInScopeError(def, identifier, identifier.getName()));
               }
             }
           }

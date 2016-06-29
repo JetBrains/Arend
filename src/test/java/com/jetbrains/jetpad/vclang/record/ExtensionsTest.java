@@ -153,4 +153,16 @@ public class ExtensionsTest {
   public void internalInheritance() {
     typeCheckClass("\\class A { \\static \\class B \\extends A { } }");
   }
+
+  @Test
+  public void recursiveExtendsError() {
+    typeCheckClass("\\class A \\extends A {}", 1);
+  }
+
+  @Test
+  public void mutualRecursiveExtendsError() {
+    typeCheckClass(
+        "\\class A \\extends B {}\n" +
+        "\\class B \\extends A {}", 1);
+  }
 }
