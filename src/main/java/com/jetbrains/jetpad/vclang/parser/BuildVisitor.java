@@ -444,27 +444,61 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public List<Concrete.IdPair> visitSuperClassRenaming(SuperClassRenamingContext ctx) {
+    if (ctx == null) return null;
+    List<Concrete.IdPair> idPairs = new ArrayList<>(ctx.ID().size() / 2);
+    for (int j = 0; j < ctx.ID().size(); j += 2) {
+      idPairs.add(new Concrete.IdPair(tokenPosition(ctx.ID().get(j).getSymbol()), ctx.ID().get(j).getText(), ctx.ID().get(j + 1).getText()));
+    }
+    return idPairs;
+  }
+
+  @Override
+  public List<Concrete.Identifier> visitSuperClassHiding(SuperClassHidingContext ctx) {
+    if (ctx == null) return null;
+    List<Concrete.Identifier> result = new ArrayList<>(ctx.ID().size());
+    for (TerminalNode node : ctx.ID()) {
+      result.add(new Concrete.Identifier(tokenPosition(node.getSymbol()), node.getText()));
+    }
+    return result;
+  }
+
+  @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.statement() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.statement());
     Abstract.ClassDefinition.Kind classKind = ctx.classKindMod() instanceof ClassClassModContext ? Abstract.ClassDefinition.Kind.Class : Abstract.ClassDefinition.Kind.Module;
-    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.renamingOrIDs().size());
-    for (int i = 0; i < ctx.renamingOrIDs().size(); i++) {
-      if (ctx.renamingOrIDs().get(i) instanceof RoiRenamingContext) {
-        RoiRenamingContext renamingContext = (RoiRenamingContext) ctx.renamingOrIDs().get(i);
-        List<Concrete.IdPair> idPairs = new ArrayList<>(renamingContext.ID().size() / 2);
-        for (int j = 0; j < renamingContext.ID().size(); j += 2) {
-          idPairs.add(new Concrete.IdPair(tokenPosition(renamingContext.ID().get(j).getSymbol()), renamingContext.ID().get(j).getText(), renamingContext.ID().get(j + 1).getText()));
+    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.extendsOpts().size());
+    for (int i = 0; i < ctx.extendsOpts().size(); i++) {
+      if (ctx.extendsOpts().get(i) instanceof ExtendsSuperClassOptsContext) {
+        ExtendsSuperClassOptsContext supCtx = (ExtendsSuperClassOptsContext) ctx.extendsOpts().get(i);
+        List<Concrete.IdPair> renamings = new ArrayList<>();
+        List<Concrete.Identifier> hidings = new ArrayList<>();
+        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), renamings, hidings));
+
+        for (SuperClassOptsContext optsCtx : supCtx.superClassOpts()) {
+          if (optsCtx instanceof SuperClassRenamingContext) {
+            List<Concrete.IdPair> renamings1 = visitSuperClassRenaming((SuperClassRenamingContext) optsCtx);
+            if (renamings1 != null) {
+              renamings.addAll(renamings1);
+            }
+          } else
+          if (optsCtx instanceof SuperClassHidingContext) {
+            List<Concrete.Identifier> hidings1 = visitSuperClassHiding((SuperClassHidingContext) optsCtx);
+            if (hidings1 != null) {
+              hidings.addAll(hidings1);
+            }
+          }
         }
-        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), idPairs));
       } else
-      if (ctx.renamingOrIDs().get(i) instanceof RoiIDsContext) {
-        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), Collections.<Concrete.IdPair>emptyList()));
-        for (TerminalNode node : ((RoiIDsContext) ctx.renamingOrIDs().get(i)).ID()) {
-          superClasses.add(new Concrete.SuperClass(tokenPosition(node.getSymbol()), node.getText(), Collections.<Concrete.IdPair>emptyList()));
+      if (ctx.extendsOpts().get(i) instanceof ExtendsIDsContext) {
+        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
+        for (TerminalNode node : ((ExtendsIDsContext) ctx.extendsOpts().get(i)).ID()) {
+          superClasses.add(new Concrete.SuperClass(tokenPosition(node.getSymbol()), node.getText(), Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
         }
       }
     }
+
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().get(0).getText(), statements, classKind, superClasses);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {

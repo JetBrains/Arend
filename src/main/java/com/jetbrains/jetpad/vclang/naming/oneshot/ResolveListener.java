@@ -9,6 +9,7 @@ public interface ResolveListener {
   void nsCmdResolved(Abstract.NamespaceCommandStatement nsCmdStatement, Referable definition);
   void superClassResolved(Abstract.SuperClass superClass, Referable definition);
   void idPairFirstResolved(Abstract.IdPair idPair, Referable definition);
+  void identifierResolved(Abstract.Identifier identifier, Referable definition);
 
   Abstract.BinOpExpression makeBinOp(Abstract.BinOpSequenceExpression binOpExpr, Abstract.Expression left, Referable binOp, Abstract.DefCallExpression var, Abstract.Expression right);
   Abstract.Expression makeError(Abstract.BinOpSequenceExpression binOpExpr, Abstract.SourceNode node);

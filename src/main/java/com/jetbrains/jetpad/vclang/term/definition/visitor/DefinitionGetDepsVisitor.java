@@ -146,10 +146,17 @@ public class DefinitionGetDepsVisitor implements AbstractDefinitionVisitor<Boole
       if (superClass.getReferent() != null) {
         result.add(superClass.getReferent());
       }
-      if (superClass.getIdPairs() != null) {
-        for (Abstract.IdPair idPair : superClass.getIdPairs()) {
+      if (superClass.getRenamings() != null) {
+        for (Abstract.IdPair idPair : superClass.getRenamings()) {
           if (idPair.getFirstReferent() != null) {
             result.add(idPair.getFirstReferent());
+          }
+        }
+      }
+      if (superClass.getHidings() != null) {
+        for (Abstract.Identifier identifier : superClass.getHidings()) {
+          if (identifier.getReferent() != null) {
+            result.add(identifier.getReferent());
           }
         }
       }

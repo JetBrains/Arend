@@ -192,11 +192,20 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
           myResolveListener.superClassResolved(superClass, sup);
           Namespace supNamespace = myDynamicNsProvider.forClass((Abstract.ClassDefinition) sup);
 
-          if (superClass.getIdPairs() != null) {
-            for (Abstract.IdPair idPair : superClass.getIdPairs()) {
+          if (superClass.getRenamings() != null) {
+            for (Abstract.IdPair idPair : superClass.getRenamings()) {
               Referable pair1 = supNamespace.resolveName(idPair.getFirstName());
               if (pair1 != null) {
                 myResolveListener.idPairFirstResolved(idPair, pair1);
+              }
+            }
+          }
+
+          if (superClass.getHidings() != null) {
+            for (Abstract.Identifier identifier : superClass.getHidings()) {
+              Referable pair1 = supNamespace.resolveName(identifier.getName());
+              if (pair1 != null) {
+                myResolveListener.identifierResolved(identifier, pair1);
               }
             }
           }

@@ -879,7 +879,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           boolean ok = true;
           for (Map.Entry<ClassField, String> entry : superClass.getFieldsMap()) {
             String name = entry.getValue();
-            for (Abstract.IdPair idPair : aSuperClass.getIdPairs()) {
+            for (Abstract.IdPair idPair : aSuperClass.getRenamings()) {
               if (name.equals(idPair.getFirstName())) {
                 name = idPair.getSecondName();
                 break;

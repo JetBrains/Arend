@@ -24,19 +24,26 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
       if (superClass.getReferent() instanceof Abstract.ClassDefinition) {
         SimpleNamespace namespace = forClass((Abstract.ClassDefinition) superClass.getReferent());
-        if (superClass.getIdPairs() == null || superClass.getIdPairs().isEmpty()) {
-          ns.addAll(namespace);
-        } else {
-          for (Referable referable : namespace.getValues()) {
-            String name = referable.getName();
-            for (Abstract.IdPair idPair : superClass.getIdPairs()) {
+        loop:
+        for (Map.Entry<String, Referable> entry : namespace.getEntrySet()) {
+          String name = entry.getKey();
+          Referable referable = entry.getValue();
+          if (superClass.getRenamings() != null) {
+            for (Abstract.IdPair idPair : superClass.getRenamings()) {
               if (referable.equals(idPair.getFirstReferent())) {
                 name = idPair.getSecondName();
                 break;
               }
             }
-            ns.addDefinition(name, referable);
           }
+          if (superClass.getHidings() != null) {
+            for (Abstract.Identifier identifier : superClass.getHidings()) {
+              if (referable.equals(identifier.getReferent())) {
+                continue loop;
+              }
+            }
+          }
+          ns.addDefinition(name, referable);
         }
       } else {
         throw new Namespace.InvalidNamespaceException() {  // FIXME[error] report proper

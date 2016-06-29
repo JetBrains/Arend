@@ -310,10 +310,16 @@ public final class Abstract {
     String getSecondName();
   }
 
+  public interface Identifier extends SourceNode {
+    String getName();
+    Referable getReferent();
+  }
+
   public interface SuperClass extends SourceNode {
     String getName();
     Referable getReferent();
-    Collection<? extends IdPair> getIdPairs();
+    Collection<? extends IdPair> getRenamings();
+    Collection<? extends Identifier> getHidings();
   }
 
   public interface ClassDefinition extends Definition {

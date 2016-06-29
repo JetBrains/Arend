@@ -1037,15 +1037,41 @@ public final class Concrete {
     }
   }
 
-  public static class SuperClass extends SourceNode implements Abstract.SuperClass {
-    private String myName;
-    private final List<IdPair> myIdPairs;
+  public static class Identifier extends SourceNode implements Abstract.Identifier {
+    private final String myName;
     private Referable myReferent;
 
-    public SuperClass(Position position, String name, List<IdPair> idPairs) {
+    public Identifier(Position position, String name) {
       super(position);
       myName = name;
-      myIdPairs = idPairs;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
+    public Referable getReferent() {
+      return myReferent;
+    }
+
+    public void setReferent(Referable referent) {
+      myReferent = referent;
+    }
+  }
+
+  public static class SuperClass extends SourceNode implements Abstract.SuperClass {
+    private Referable myReferent;
+    private final String myName;
+    private final List<IdPair> myRenamings;
+    private final List<Identifier> myHidings;
+
+    public SuperClass(Position position, String name, List<IdPair> renamings, List<Identifier> hidings) {
+      super(position);
+      myName = name;
+      myRenamings = renamings;
+      myHidings = hidings;
     }
 
     @Override
@@ -1063,8 +1089,13 @@ public final class Concrete {
     }
 
     @Override
-    public Collection<IdPair> getIdPairs() {
-      return myIdPairs;
+    public Collection<IdPair> getRenamings() {
+      return myRenamings;
+    }
+
+    @Override
+    public Collection<Identifier> getHidings() {
+      return myHidings;
     }
   }
 
