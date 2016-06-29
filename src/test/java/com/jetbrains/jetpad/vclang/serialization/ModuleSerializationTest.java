@@ -52,7 +52,7 @@ public class ModuleSerializationTest {
     assertTrue(result.namespaceMember.definition instanceof ClassDefinition);
     assertEquals(0, result.errorsNumber);
     assertEquals(((FunctionDefinition) member.namespace.getDefinition("f")).getElimTree(), ((FunctionDefinition) result.namespaceMember.namespace.getDefinition("f")).getElimTree());
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -82,7 +82,7 @@ public class ModuleSerializationTest {
     argsBinding.put(oldFunc.getParameters(), newFunc.getParameters());
     argsBinding.put(oldFunc.getParameters().getNext(), newFunc.getParameters().getNext());
     assertTrue(CompareVisitor.compare(argsBinding, DummyEquations.getInstance(), Equations.CMP.EQ, oldFunc.getElimTree(), newFunc.getElimTree()));
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -105,7 +105,7 @@ public class ModuleSerializationTest {
     assertEquals(member.namespace.getMembers().size(), result.namespaceMember.definition.getResolvedName().toNamespace().getMembers().size());
     assertEquals(member.definition.getResolvedName().toNamespace().getMembers().size(), result.namespaceMember.namespace.getMembers().size());
     assertEquals(member.namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType());
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -128,7 +128,7 @@ public class ModuleSerializationTest {
     assertEquals(member.namespace.getMembers().size(), result.namespaceMember.definition.getResolvedName().toNamespace().getMembers().size());
     assertEquals(member.definition.getResolvedName().toNamespace().getMembers().size(), result.namespaceMember.namespace.getMembers().size());
     assertEquals(member.namespace.getDefinition("D").getType(), result.namespaceMember.namespace.getDefinition("D").getType());
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     DataDefinition newDef = (DataDefinition) result.namespaceMember.namespace.getDefinition("D");
     Constructor con0 = newDef.getConstructor("con0");
     assertTrue(con0.getPatterns() != null);
@@ -170,7 +170,7 @@ public class ModuleSerializationTest {
     Definition definition = result.namespaceMember.namespace.getDefinition("f");
     assertNotNull(definition);
     assertEquals(1, member.namespace.getMembers().size());
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test

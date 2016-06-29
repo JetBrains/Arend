@@ -10,8 +10,7 @@ import org.antlr.v4.runtime.*;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 
 public class ParserTestCase {
   public static VcgrammarParser parse(final String name, final ErrorReporter errorReporter, String text) {
@@ -32,11 +31,7 @@ public class ParserTestCase {
   public static Concrete.Expression parseExpr(String text, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     Concrete.Expression result = new BuildVisitor(errorReporter).visitExpr(parse("test", errorReporter, text).expr());
-    if (errors >= 0) {
-      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
-    } else {
-      assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().size() > 0);
-    }
+    assertErrorListSize(errorReporter.getErrorList(), errors);
     return result;
   }
 
@@ -51,7 +46,7 @@ public class ParserTestCase {
   public static Concrete.Definition parseDef(String text, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     Concrete.Definition definition = new BuildVisitor(errorReporter).visitDefinition(parse("test", errorReporter, text).definition());
-    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), errors);
     return definition;
   }
 
@@ -62,7 +57,7 @@ public class ParserTestCase {
   public static Concrete.ClassDefinition parseClass(String name, String text, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     VcgrammarParser.StatementsContext tree = parse(name, errorReporter, text).statements();
-    assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+    assertErrorListSize(errorReporter.getErrorList(), 0);
     List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, name, statements, Abstract.ClassDefinition.Kind.Module);
     for (Concrete.Statement statement : statements) {
@@ -71,7 +66,7 @@ public class ParserTestCase {
       }
     }
     classDefinition.setModuleID(new NameModuleID(name));
-    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), errors);
     // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
     return classDefinition;
   }

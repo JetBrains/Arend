@@ -17,6 +17,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 import static org.junit.Assert.*;
 
 public class ImplicitArgumentsTest {
@@ -62,7 +63,7 @@ public class ImplicitArgumentsTest {
 
     ListErrorReporter errorReporter = new ListErrorReporter();
     typeCheckExpr(context, "f 0", null, errorReporter);
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
   }
 
@@ -187,7 +188,7 @@ public class ImplicitArgumentsTest {
 
     ListErrorReporter errorReporter = new ListErrorReporter();
     typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), errorReporter);
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
   }
 

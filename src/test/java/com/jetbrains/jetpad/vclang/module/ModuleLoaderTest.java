@@ -17,7 +17,9 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.module.ModulePath.moduleName;
 import static com.jetbrains.jetpad.vclang.naming.NamespaceUtil.get;
-import static org.junit.Assert.*;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ModuleLoaderTest {
   private ListErrorReporter errorReporter;
@@ -45,7 +47,7 @@ public class ModuleLoaderTest {
     for (ModuleID module : loadedModules) {
       moduleLoader.save(module);
     }
-    assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
 
     initializeModuleLoader();
     moduleLoader.setOutputSupplier(outputSupplier);
@@ -88,7 +90,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
-    assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -98,7 +100,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
-    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -108,7 +110,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
-    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
   }
 
   @Test
@@ -119,7 +121,7 @@ public class ModuleLoaderTest {
     moduleLoader.setSourceSupplier(sourceSupplier);
     ModuleLoader.Result result = moduleLoader.load(moduleLoader.locateModule(moduleName("B")));
     TypecheckingOrdering.typecheck(result.abstractDefinition, errorReporter);
-    assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
+    assertErrorList(errorReporter.getErrorList(), 1);
   }
 
   @Test
@@ -128,7 +130,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
-    assertEquals(errorReporter.getErrorList().toString(), 2, errorReporter.getErrorList().size());
+    assertErrorList(errorReporter.getErrorList(), 2);
   }
 
   @Test
@@ -139,12 +141,12 @@ public class ModuleLoaderTest {
     ModuleID moduleID = moduleLoader.locateModule(moduleName("A"));
     assertNotNull(moduleID);
     ModuleLoader.Result result = moduleLoader.load(moduleID);
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorList(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     Abstract.ClassDefinition module = result.abstractDefinition;
     assertNotNull(module);
     TypecheckerState state = TypecheckingOrdering.typecheck(module, errorReporter);
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorList(errorReporter.getErrorList(), 0);
     assertNotNull(state);
     assertTrue(state.getTypechecked(module) instanceof ClassDefinition);
     assertTrue(state.getTypechecked(get(module, "C")) instanceof ClassDefinition);
@@ -160,9 +162,9 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     ModuleLoader.Result result = moduleLoader.load(moduleLoader.locateModule(moduleName("A")));
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorList(errorReporter.getErrorList(), 0);
     TypecheckingOrdering.typecheck(result.abstractDefinition, errorReporter);
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorList(errorReporter.getErrorList(), 0);
   }
 
   @Test
@@ -172,7 +174,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     TypecheckingOrdering.typecheck(moduleLoader.load(moduleLoader.locateModule(moduleName("B"))).abstractDefinition, errorReporter);
-    assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
+    assertErrorList(errorReporter.getErrorList(), 1);
   }
 
   @Test
@@ -182,7 +184,7 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     TypecheckingOrdering.typecheck(moduleLoader.load(moduleLoader.locateModule(moduleName("B"))).abstractDefinition, errorReporter);
-    assertEquals(errorReporter.getErrorList().toString(), 1, errorReporter.getErrorList().size());
+    assertErrorList(errorReporter.getErrorList(), 1);
   }
 
   private void assertLoaded(String... path) {
@@ -200,7 +202,7 @@ public class ModuleLoaderTest {
     setupSources();
 
     moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
-    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertLoaded("All");
     assertLoaded("A");
     assertLoaded("B");
@@ -214,7 +216,7 @@ public class ModuleLoaderTest {
 
     sourceSupplier.touch(moduleName("B"));
     moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
-    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertNotLoaded("All");
     assertLoaded("A");
     assertNotLoaded("B");
@@ -229,7 +231,7 @@ public class ModuleLoaderTest {
 
     sourceSupplier.touch(moduleName("B", "C", "D"));
     moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
-    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertNotLoaded("All");
     assertLoaded("A");
     assertLoaded("B");
@@ -246,7 +248,7 @@ public class ModuleLoaderTest {
     moduleLoader.load(moduleLoader.locateModule(moduleName("B")));
     moduleLoader.load(moduleLoader.locateModule(moduleName("B", "C", "G")));
     moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
-    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertLoaded("All");
     assertLoaded("A");
     assertLoaded("B");
@@ -262,7 +264,7 @@ public class ModuleLoaderTest {
 
     outputSupplier.remove(moduleName("B"));
     moduleLoader.load(moduleLoader.locateModule(moduleName("All")));
-    assertTrue(errorReporter.getErrorList().isEmpty());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertNotLoaded("All");
     assertLoaded("A");
     assertLoaded("B", "C", "D");
@@ -277,6 +279,6 @@ public class ModuleLoaderTest {
 
     moduleLoader.setSourceSupplier(sourceSupplier);
     TypecheckingOrdering.typecheck(moduleLoader.load(moduleLoader.locateModule(moduleName("B"))).abstractDefinition, errorReporter);
-    assertNotNull(errorReporter.getErrorList().toString());
+    assertErrorListNotEmpty(errorReporter.getErrorList());
   }
 }

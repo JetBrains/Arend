@@ -16,6 +16,7 @@ import java.util.EnumSet;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListIsEmpty;
 import static org.junit.Assert.*;
 
 public class DefinitionTest {
@@ -31,7 +32,7 @@ public class DefinitionTest {
   public void function() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f : Nat => 0");
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
   }
 
@@ -39,7 +40,7 @@ public class DefinitionTest {
   public void functionUntyped() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Nat(), typedDef.getType());
   }
@@ -48,7 +49,7 @@ public class DefinitionTest {
   public void functionWithArgs() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), typedDef.getType());
   }
@@ -77,7 +78,7 @@ public class DefinitionTest {
     parameters2.append(param(Apps(Reference(I), Reference(a), Reference(parameters2.getFirst()))));
 
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
@@ -122,7 +123,7 @@ public class DefinitionTest {
     parameters2.append(param(Reference(parameters2.getFirst())));
 
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(A, Universe(6, 7)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
@@ -148,7 +149,7 @@ public class DefinitionTest {
 
     Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
     CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Apps(DataCall(def), Nat()), result.type);
   }
@@ -171,7 +172,7 @@ public class DefinitionTest {
     localContext.add(new TypedBinding("f", Pi(Apps(DataCall(def), Pi(Nat(), Nat())), Nat())));
 
     CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Nat(), result.type);
   }
@@ -192,7 +193,7 @@ public class DefinitionTest {
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DataCall(def), Nat())), Pi(Nat(), Nat()))));
 
     CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }

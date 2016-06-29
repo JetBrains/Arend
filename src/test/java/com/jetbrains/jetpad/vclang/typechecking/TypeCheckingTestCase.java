@@ -16,8 +16,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.*;
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.parseClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 
 public class TypeCheckingTestCase {
   public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, ErrorReporter errorReporter) {
@@ -31,11 +30,7 @@ public class TypeCheckingTestCase {
   public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     CheckTypeVisitor.Result result = typeCheckExpr(context, expression, expectedType, errorReporter);
-    if (errors >= 0) {
-      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
-    } else {
-      assertFalse(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
-    }
+    assertErrorListSize(errorReporter.getErrorList(), errors);
     return result;
   }
 
@@ -72,12 +67,7 @@ public class TypeCheckingTestCase {
     ListErrorReporter errorReporter = new ListErrorReporter();
     DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(state, errorReporter);
     Definition result = definition.accept(visitor, null);
-
-    if (errors >= 0) {
-      assertEquals(ERROR_FORMATTER.printErrors(errorReporter.getErrorList()), errors, errorReporter.getErrorList().size());
-    } else {
-      assertFalse(ERROR_FORMATTER.printErrors(errorReporter.getErrorList()), errorReporter.getErrorList().isEmpty());
-    }
+    assertErrorListSize(errorReporter.getErrorList(), errors);
     return result;
   }
 
@@ -92,11 +82,7 @@ public class TypeCheckingTestCase {
   public static TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
     ListErrorReporter errorReporter = new ListErrorReporter();
     TypecheckerState state = TypecheckingOrdering.typecheck(classDefinition, errorReporter);
-    if (errors >= 0) {
-      assertEquals(ERROR_FORMATTER.printErrors(errorReporter.getErrorList()), errors, errorReporter.getErrorList().size());
-    } else {
-      assertFalse(ERROR_FORMATTER.printErrors(errorReporter.getErrorList()), errorReporter.getErrorList().isEmpty());
-    }
+    assertErrorListSize(errorReporter.getErrorList(), errors);
     return state;
   }
 
