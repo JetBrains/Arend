@@ -4,12 +4,15 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.visitor.AbstractDefinitionVisitor;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.DYNAMIC;
 import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
 
 public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   public static final StaticNamespaceProvider INSTANCE = new SimpleStaticNamespaceProvider();
+
+  private final Map<Abstract.Definition, Namespace> cache = new HashMap<>();
 
   public static SimpleNamespace forFunction(Abstract.FunctionDefinition def) {
     return forStatements(def.getStatements());
@@ -44,7 +47,12 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
 
   @Override
   public Namespace forDefinition(Abstract.Definition definition) {
-    return definition.accept(DefinitionGetNamespaceVisitor.INSTANCE, null);
+    Namespace ns = cache.get(definition);
+    if (ns != null) return ns;
+
+    ns = definition.accept(DefinitionGetNamespaceVisitor.INSTANCE, null);
+    cache.put(definition, ns);
+    return ns;
   }
 
   private static class DefinitionGetNamespaceVisitor implements AbstractDefinitionVisitor<Void, Namespace> {

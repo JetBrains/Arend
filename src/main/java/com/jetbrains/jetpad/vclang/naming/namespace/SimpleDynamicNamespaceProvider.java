@@ -5,19 +5,25 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.DYNAMIC;
 import static com.jetbrains.jetpad.vclang.term.Abstract.DefineStatement.StaticMod.STATIC;
 
 public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider {
   public static final DynamicNamespaceProvider INSTANCE = new SimpleDynamicNamespaceProvider();
 
+  private final Map<Abstract.ClassDefinition, SimpleNamespace> classCache = new HashMap<>();
+
   @Override
   public SimpleNamespace forClass(final Abstract.ClassDefinition classDefinition) {
-    SimpleNamespace myNamespace = forStatements(classDefinition.getStatements());
+    SimpleNamespace ns = classCache.get(classDefinition);
+    if (ns != null) return ns;
+
+    ns = forStatements(classDefinition.getStatements());
     for (final Referable sup : classDefinition.getSuperClasses()) {
       if (sup instanceof Abstract.ClassDefinition) {
-        myNamespace.addAll(forClass((Abstract.ClassDefinition) sup));
+        ns.addAll(forClass((Abstract.ClassDefinition) sup));
       } else {
         throw new Namespace.InvalidNamespaceException() {  // FIXME[error] report proper
           @Override
@@ -27,7 +33,8 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
         };
       }
     }
-    return myNamespace;
+    classCache.put(classDefinition, ns);
+    return ns;
   }
 
   private static SimpleNamespace forData(Abstract.DataDefinition def) {
