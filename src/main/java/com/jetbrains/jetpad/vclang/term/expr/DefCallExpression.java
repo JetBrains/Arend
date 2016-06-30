@@ -6,6 +6,8 @@ import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
+import java.util.HashSet;
+
 public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
   private Definition myNonPolyDefinition;
@@ -49,7 +51,7 @@ public abstract class DefCallExpression extends Expression {
   }
 
   public DefCallExpression applyLevelSubst(LevelSubstitution subst) {
-    myPolyParamsSubst = myPolyParamsSubst.compose(subst);
+    myPolyParamsSubst = myPolyParamsSubst.compose(subst, new HashSet<>(myDefinition.getPolyParams()));
     myNonPolyDefinition = myDefinition.substPolyParams(myPolyParamsSubst);
     return this;
   }

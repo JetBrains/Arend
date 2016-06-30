@@ -37,7 +37,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> implem
 
   @Override
   public DefCallExpression visitDefCall(DefCallExpression expr, Void params) {
-    return expr;
+    return expr.getPolyDefinition().getDefCall(expr.getPolyParamsSubst());
   }
 
   @Override

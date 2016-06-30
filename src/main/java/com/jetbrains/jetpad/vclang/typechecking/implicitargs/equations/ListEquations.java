@@ -718,6 +718,19 @@ public class ListEquations implements Equations {
           }
         }
 
+        if (!was && !onlyPreciseSolutions) {
+          for (Iterator<InferenceBinding> binding_iter = bindings.iterator(); binding_iter.hasNext(); ) {
+            Binding bnd = binding_iter.next();
+            if (bnd instanceof LevelInferenceBinding) { // && !myEqLevelSolutions.containsKey(bnd) && !my) {
+              subst = new LevelExpression(0);
+              binding_iter.remove();
+              binding = (InferenceBinding) bnd;
+              was = true;
+              break;
+            }
+          }
+        }
+
         if (binding != null) {
           result.LevelSubst.subst(binding, subst);
           result.LevelSubst.add(binding, subst);
@@ -725,6 +738,7 @@ public class ListEquations implements Equations {
         }
       } while (was);
 
+      /*
       if (!onlyPreciseSolutions && !bindings.isEmpty()) {
         for (Iterator<InferenceBinding> binding_iter = bindings.iterator(); binding_iter.hasNext(); ) {
           Binding binding = binding_iter.next();
@@ -735,7 +749,7 @@ public class ListEquations implements Equations {
             binding_iter.remove();
           }
         }
-      }
+      } /**/
     }
 
     return result;

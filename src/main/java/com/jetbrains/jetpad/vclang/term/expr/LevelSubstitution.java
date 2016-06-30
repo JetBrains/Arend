@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,7 +45,17 @@ public class LevelSubstitution {
     }
   }
 
-  public LevelSubstitution compose(LevelSubstitution subst) {
+  public LevelSubstitution filter(List<Binding> params) {
+    LevelSubstitution result = new LevelSubstitution();
+    for (Binding param : params) {
+      if (mySubstExprs.containsKey(param)) {
+        result.add(param, mySubstExprs.get(param));
+      }
+    }
+    return result;
+  }
+
+  public LevelSubstitution compose(LevelSubstitution subst, Set<Binding> params) {
     LevelSubstitution result = new LevelSubstitution();
     result.add(this);
     for (Binding binding : subst.getDomain()) {
@@ -67,7 +78,7 @@ public class LevelSubstitution {
             break;
           }
         }
-        if (!exists) {
+        if (!exists && params.contains(binding)) {
           result.add(binding, subst.get(binding));
         }
       }
