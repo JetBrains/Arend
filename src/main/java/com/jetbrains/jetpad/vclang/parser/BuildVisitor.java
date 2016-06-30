@@ -509,6 +509,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public Concrete.ImplementDefinition visitDefImplement(DefImplementContext ctx) {
+    if (ctx == null) return null;
+    Concrete.Expression expression = visitExpr(ctx.expr());
+    return expression == null ? null : new Concrete.ImplementDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), expression);
+  }
+
+  @Override
   public Concrete.InferHoleExpression visitUnknown(UnknownContext ctx) {
     if (ctx == null) return null;
     return new Concrete.InferHoleExpression(tokenPosition(ctx.getStart()));

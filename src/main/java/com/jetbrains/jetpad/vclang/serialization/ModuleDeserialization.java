@@ -270,8 +270,12 @@ public class ModuleDeserialization {
     int numFields = stream.readInt();
     for (int i = 0; i < numFields; i++) {
       String name = stream.readUTF();
+      Expression implementation = null;
+      if (stream.readBoolean()) {
+        implementation = readExpression(stream, definitionMap);
+      }
       ClassField field = (ClassField) definitionMap.get(stream.readInt());
-      definition.addField(field, name);
+      definition.addField(field, name, implementation);
       field.setThisParameter(readParameters(stream, definitionMap));
       field.hasErrors(stream.readBoolean());
 

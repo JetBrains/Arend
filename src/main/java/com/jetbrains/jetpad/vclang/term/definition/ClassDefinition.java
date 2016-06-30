@@ -14,8 +14,18 @@ public class ClassDefinition extends Definition {
   private final Namespace myOwnNamespace;
   private final Namespace myInstanceNamespace;
 
-  private final Map<ClassField, String> myFields = new HashMap<>();
+  private final Map<ClassField, FieldImplementation> myFields = new HashMap<>();
   private Set<ClassDefinition> mySuperClasses = null;
+
+  public class FieldImplementation {
+    public String name;
+    public Expression implementation;
+
+    public FieldImplementation(String name, Expression implementation) {
+      this.name = name;
+      this.implementation = implementation;
+    }
+  }
 
   public ClassDefinition(String name, Namespace ownNamespace, Namespace instanceNamespace) {
     super(name, Abstract.Binding.DEFAULT_PRECEDENCE);
@@ -66,14 +76,18 @@ public class ClassDefinition extends Definition {
   }
 
   public String getFieldName(ClassField field) {
-    return myFields.get(field);
+    return myFields.get(field).name;
+  }
+
+  public void setFieldImpl(ClassField field, Expression implementation) {
+    myFields.get(field).implementation = implementation;
   }
 
   public Collection<ClassField> getFields() {
     return myFields.keySet();
   }
 
-  public Set<Map.Entry<ClassField, String>> getFieldsMap() {
+  public Set<Map.Entry<ClassField, FieldImplementation>> getFieldsMap() {
     return myFields.entrySet();
   }
 
@@ -86,15 +100,15 @@ public class ClassDefinition extends Definition {
   }
 
   public void addField(ClassField field) {
-    addField(field, field.getName());
+    addField(field, field.getName(), null);
   }
 
-  public void addField(ClassField field, String name) {
+  public void addField(ClassField field, String name, Expression implementation) {
     ClassField oldField = getField(name);
     if (oldField != null) {
       myFields.remove(oldField);
     }
-    myFields.put(field, name);
+    myFields.put(field, new FieldImplementation(name, implementation));
     field.setThisClass(this);
   }
 
@@ -106,7 +120,7 @@ public class ClassDefinition extends Definition {
     if (oldField != null) {
       return oldField;
     }
-    myFields.put(field, name);
+    myFields.put(field, new FieldImplementation(name, null));
     return null;
   }
 

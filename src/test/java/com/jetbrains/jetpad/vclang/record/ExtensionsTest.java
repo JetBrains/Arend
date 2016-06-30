@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.record;
 
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 
 public class ExtensionsTest {
@@ -161,8 +162,10 @@ public class ExtensionsTest {
 
   @Test
   public void mutualRecursiveExtendsError() {
-    typeCheckClass(
+    resolveNamesClass("test",
         "\\class A \\extends B {}\n" +
         "\\class B \\extends A {}", 1);
   }
+
+  // TODO: Add tests on the universe of a class
 }

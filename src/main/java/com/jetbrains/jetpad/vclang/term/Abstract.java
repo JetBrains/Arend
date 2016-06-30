@@ -290,6 +290,11 @@ public final class Abstract {
     Expression getResultType();
   }
 
+  public interface ImplementDefinition extends Definition {
+    Referable getImplemented();
+    Expression getExpression();
+  }
+
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
     boolean isOverridden();

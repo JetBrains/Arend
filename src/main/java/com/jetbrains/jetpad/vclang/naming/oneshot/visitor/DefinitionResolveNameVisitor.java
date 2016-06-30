@@ -244,6 +244,35 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     return null;
   }
 
+  @Override
+  public Void visitImplement(Abstract.ImplementDefinition def, Boolean params) {
+    if (myResolveListener == null) {
+      return null;
+    }
+
+    Abstract.Definition parentDef = def.getParentStatement().getDefinition();
+    Referable referable = null;
+    if (parentDef instanceof Abstract.ClassDefinition && ((Abstract.ClassDefinition) parentDef).getSuperClasses() != null) {
+      for (Abstract.SuperClass superClass : ((Abstract.ClassDefinition) parentDef).getSuperClasses()) {
+        if (superClass.getReferent() instanceof Abstract.ClassDefinition) {
+          Namespace supNamespace = myDynamicNsProvider.forClass((Abstract.ClassDefinition) superClass.getReferent());
+          referable = supNamespace.resolveName(def.getName());
+          if (referable != null) {
+            break;
+          }
+        }
+      }
+    }
+
+    if (referable == null) {
+      myErrorReporter.report(new NotInScopeError(parentDef, def, def.getName()));
+    } else {
+      myResolveListener.implementResolved(def, referable);
+    }
+
+    def.getExpression().accept(new ExpressionResolveNameVisitor(myParentScope, myContext, myNameResolver, myErrorReporter, myResolveListener), null);
+    return null;
+  }
 
   public enum Flag { MUST_BE_STATIC, MUST_BE_DYNAMIC }
 }

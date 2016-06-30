@@ -881,6 +881,35 @@ public final class Concrete {
     }
   }
 
+  public static class ImplementDefinition extends Definition implements Abstract.ImplementDefinition {
+    private Referable myImplemented;
+    private final Expression myExpression;
+
+    public ImplementDefinition(Position position, String name, Expression expression) {
+      super(position, name, Abstract.Binding.DEFAULT_PRECEDENCE);
+      myExpression = expression;
+    }
+
+    @Override
+    public Referable getImplemented() {
+      return myImplemented;
+    }
+
+    public void setImplemented(Referable implemented) {
+      myImplemented = implemented;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitImplement(this, params);
+    }
+  }
+
   public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
     private final Abstract.Definition.Arrow myArrow;
     private final boolean myOverridden;

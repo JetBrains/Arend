@@ -903,6 +903,13 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
     return null;
   }
 
+  @Override
+  public Void visitImplement(Abstract.ImplementDefinition def, Void params) {
+    myBuilder.append("\\implement ").append(def.getName()).append(" => ");
+    def.getExpression().accept(this, null);
+    return null;
+  }
+
   public static abstract class ListLayout<T>{
     abstract void printListElement(PrettyPrintVisitor ppv, T t);
 

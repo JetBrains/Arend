@@ -185,9 +185,14 @@ public class ModuleSerialization {
     writeUniverse(visitor, definition.getUniverse());
 
     visitor.getDataStream().writeInt(definition.getFields().size());
-    for (Map.Entry<ClassField, String> entry : definition.getFieldsMap()) {
+    for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : definition.getFieldsMap()) {
       ClassField field = entry.getKey();
-      visitor.getDataStream().writeUTF(entry.getValue());
+      visitor.getDataStream().writeUTF(entry.getValue().name);
+      visitor.getDataStream().writeBoolean(entry.getValue().implementation != null);
+      if (entry.getValue().implementation != null) {
+        entry.getValue().implementation.accept(visitor, null);
+      }
+
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(field.getResolvedName()));
       writeParameters(visitor, field.getThisParameter());
       visitor.getDataStream().writeBoolean(field.hasErrors());
