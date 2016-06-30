@@ -201,7 +201,7 @@ public class Prelude extends Namespace {
   }
 
   public static boolean isAt(Definition definition) {
-    return AT == definition;
+    return AT.getResolvedName().getFullName().equals(definition.getResolvedName().getFullName());
   }
 
   public static boolean isPathCon(Definition definition) {
