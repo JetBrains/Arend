@@ -147,7 +147,7 @@ public class Prelude extends Namespace {
     DependentLink truncParameter = param("A", Universe(new LevelExpression(truncLp), new LevelExpression(truncLh)));
     Preprelude.DefinitionBuilder.Data propTrunc = new Preprelude.DefinitionBuilder.Data(PRELUDE, "TrP", Abstract.Binding.DEFAULT_PRECEDENCE, TypeUniverse.PROP, truncParameter, Arrays.asList(truncLp, truncLh));
     PROP_TRUNC = propTrunc.definition();
-    propTrunc.addConstructor("inP", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(new LevelExpression(truncLp), new LevelExpression(truncLh)), param("inP", Reference(truncParameter)));
+    propTrunc.addConstructor("inP", Abstract.Binding.DEFAULT_PRECEDENCE, new TypeUniverse(new LevelExpression(truncLp), new LevelExpression(truncLh)), param("a", Reference(truncParameter)));
 
     /* truncP */
     Expression propTruncConParameterType = DataCall(PROP_TRUNC) // .applyLevelSubst(new LevelSubstitution(truncLp, truncLp, truncLh, truncLh))

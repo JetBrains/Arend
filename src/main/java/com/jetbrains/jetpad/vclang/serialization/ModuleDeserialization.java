@@ -180,6 +180,14 @@ public class ModuleDeserialization {
       definition.setThisClass((ClassDefinition) definitionMap.get(stream.readInt()));
     definition.hasErrors(stream.readBoolean());
 
+    List<Binding> polyParams = new ArrayList<>(stream.readInt());
+
+    for (int i = 0; i < polyParams.size(); ++i) {
+      polyParams.set(i, readBinding(stream, definitionMap));
+    }
+
+    definition.setPolyParams(polyParams);
+
     if (definition instanceof FunctionDefinition) {
       deserializeFunctionDefinition(stream, definitionMap, (FunctionDefinition) definition);
     } else if (definition instanceof DataDefinition) {
@@ -375,6 +383,18 @@ public class ModuleDeserialization {
     return result.getFirst();
   }
 
+  public LevelSubstitution readSubstitution(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
+    int num_vars = stream.readInt();
+    LevelSubstitution subst = new LevelSubstitution();
+
+    for (int i = 0; i < num_vars; ++i) {
+      Binding var = readBinding(stream, definitionMap);
+      subst.add(var, readLevel(stream, definitionMap));
+    }
+
+    return subst;
+  }
+
   public Expression readExpression(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
     int code = stream.read();
     switch (code) {
@@ -397,10 +417,13 @@ public class ModuleDeserialization {
         return new AppExpression(function, arguments, flags);
       }
       case 2: {
-        return definitionMap.get(stream.readInt()).getDefCall();
+        Definition definition = definitionMap.get(stream.readInt());
+        LevelSubstitution polySubst = readSubstitution(stream, definitionMap);
+        return definition.getDefCall(polySubst);
       }
       case 3: {
         Definition definition = definitionMap.get(stream.readInt());
+        LevelSubstitution polySubst = readSubstitution(stream, definitionMap);
         int size = stream.readInt();
         if (!(definition instanceof Constructor)) {
           throw new IncorrectFormat();
@@ -410,10 +433,11 @@ public class ModuleDeserialization {
         for (int i = 0; i < size; ++i) {
           parameters.add(readExpression(stream, definitionMap));
         }
-        return ConCall((Constructor) definition, parameters);
+        return ConCall((Constructor) definition, parameters).applyLevelSubst(polySubst);
       }
       case 4: {
         Definition definition = definitionMap.get(stream.readInt());
+        LevelSubstitution polySubst = readSubstitution(stream, definitionMap);
         if (!(definition instanceof ClassDefinition)) {
           throw new IncorrectFormat();
         }
@@ -428,7 +452,7 @@ public class ModuleDeserialization {
           Expression term = stream.readBoolean() ? readExpression(stream, definitionMap) : null;
           statements.put((ClassField) field, new ClassCallExpression.ImplementStatement(type, term));
         }
-        return ClassCall((ClassDefinition) definition, statements);
+        return ClassCall((ClassDefinition) definition, statements).applyLevelSubst(polySubst);
       }
       case 5: {
         return Reference(readBinding(stream, definitionMap));

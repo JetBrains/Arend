@@ -29,7 +29,9 @@ public class Constructor extends Definition implements Function {
     super(rn, precedence);
     myDataType = dataType;
     myParameters = EmptyDependentLink.getInstance();
-    setPolyParams(dataType.getPolyParams());
+    if (dataType != null) {
+      setPolyParams(dataType.getPolyParams());
+    }
   }
 
   public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
@@ -38,7 +40,9 @@ public class Constructor extends Definition implements Function {
     myDataType = dataType;
     myParameters = parameters;
     myPatterns = patterns;
-    setPolyParams(dataType.getPolyParams());
+    if (dataType != null) {
+      setPolyParams(dataType.getPolyParams());
+    }
   }
 
   public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType) {
@@ -86,6 +90,7 @@ public class Constructor extends Definition implements Function {
 
   public void setDataType(DataDefinition dataType) {
     myDataType = dataType;
+    setPolyParams(dataType.getPolyParams());
   }
 
   public DependentLink getDataTypeParameters() {

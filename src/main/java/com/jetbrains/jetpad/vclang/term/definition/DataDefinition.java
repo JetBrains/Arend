@@ -129,7 +129,7 @@ public class DataDefinition extends Definition {
 
       Condition cond = newDef.getCondition(constructor);
       if (cond != null) {
-        newDef.addCondition(new Condition(newConstructor, cond.getElimTree().subst(subst)));
+        newDef.addCondition(new Condition(newConstructor, cond.getElimTree() /*.subst(subst) /**/));
       }
     }
     return newDef;

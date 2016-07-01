@@ -68,7 +68,8 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitDefCall(DefCallExpression expr, Void params) {
     myStream.write(2);
     try {
-      myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName()));
+      myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getPolyDefinition().getResolvedName()));
+      ModuleSerialization.serializeSubstitution(this, expr.getPolyParamsSubst());
     } catch (IOException e) {
       throw new IllegalStateException();
     }
@@ -81,6 +82,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName());
     try {
       myDataStream.writeInt(index);
+      ModuleSerialization.serializeSubstitution(this, expr.getPolyParamsSubst());
       myDataStream.writeInt(expr.getDataTypeArguments().size());
     } catch (IOException e) {
       throw new IllegalStateException();
@@ -97,6 +99,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
     int index = myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName());
     try {
       myDataStream.writeInt(index);
+      ModuleSerialization.serializeSubstitution(this, expr.getPolyParamsSubst());
       myDataStream.writeInt(expr.getImplementStatements().size());
       for (Map.Entry<ClassField, ClassCallExpression.ImplementStatement> elem : expr.getImplementStatements().entrySet()) {
         myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(elem.getKey().getResolvedName()));

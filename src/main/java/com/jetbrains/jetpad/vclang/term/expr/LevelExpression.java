@@ -105,11 +105,20 @@ public class LevelExpression implements PrettyPrintable {
     return list;
   }
 
+  public int getNumOfMaxArgs() {
+    if (myConstant == 0) return Math.max(myNumSucsOfVars.size(), 1);
+    return myNumSucsOfVars.size() + 1;
+  }
+
   public Integer getNumSucs(Binding binding) {
     if (myNumSucsOfVars.containsKey(binding)) {
       return myNumSucsOfVars.get(binding);
     }
     return null;
+  }
+
+  public int getConstant() {
+    return myConstant;
   }
 
   public Set<Binding> getAllBindings() {
@@ -239,6 +248,36 @@ public class LevelExpression implements PrettyPrintable {
         return true;
       }
       return false;
+    }
+
+    if (cmp == Equations.CMP.EQ) {
+      boolean equal = true;
+      if (level1.getNumOfMaxArgs() != level2.getNumOfMaxArgs()) {
+        equal = false;
+      } else {
+        for (LevelExpression rightMaxArg : level2.toListOfMaxArgs()) {
+          if (rightMaxArg.isClosed()) {
+            if (level1.getConstant() != rightMaxArg.getUnitSucs()) {
+              equal = false;
+              break;
+            }
+          } else if (!level1.findBinding(rightMaxArg.getUnitBinding()) || level1.getNumSucs(rightMaxArg.getUnitBinding()) != rightMaxArg.getUnitSucs()) {
+            equal = false;
+            break;
+          }
+        }
+      }
+      if (equal) {
+        return true;
+      }
+      if (!rightContainsInferenceBnd && !leftContainsInferenceBnd) {
+        return false;
+      }
+
+      int externalSucs = Math.min(level1.extractOuterSucs(), level2.extractOuterSucs());
+
+      equations.add(level1.subtract(externalSucs), level2.subtract(externalSucs), Equations.CMP.EQ, null);
+      return true;
     }
 
     int leftSucs = level1.extractOuterSucs();

@@ -13,6 +13,10 @@ public class LevelSubstitution {
 
   public LevelSubstitution() {}
 
+  public LevelSubstitution(Binding l, LevelExpression expr) {
+    mySubstExprs.put(l, expr);
+  }
+
   public LevelSubstitution(Binding lp, LevelExpression lp_expr, Binding lh, LevelExpression lh_expr) {
     mySubstExprs.put(lp, lp_expr);
     mySubstExprs.put(lh, lh_expr);

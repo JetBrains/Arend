@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.term.context.param.UntypedDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.PatternArgument;
 
 import java.io.*;
@@ -87,6 +88,12 @@ public class ModuleSerialization {
     if (definition.getThisClass() != null)
       visitor.getDataStream().writeInt(visitor.getDefinitionsIndices().getDefNameIndex(definition.getThisClass().getResolvedName()));
     visitor.getDataStream().writeBoolean(definition.hasErrors());
+
+    visitor.getDataStream().writeInt(definition.getPolyParams().size());
+    for (Binding polyVar : definition.getPolyParams()) {
+      visitor.addBinding(polyVar);
+      visitor.visitReference(ExpressionFactory.Reference(polyVar), null);
+    }
 
     if (definition instanceof FunctionDefinition) {
       return serializeFunctionDefinition(visitor, (FunctionDefinition) definition);
@@ -215,6 +222,15 @@ public class ModuleSerialization {
     }
 
     return errors;
+  }
+
+  public static void serializeSubstitution(SerializeVisitor visitor, LevelSubstitution subst) throws IOException {
+    visitor.getDataStream().writeInt(subst.getDomain().size());
+
+    for (Binding binding : subst.getDomain()) {
+      visitor.visitReference(ExpressionFactory.Reference(binding), null);
+      writeLevel(visitor, subst.get(binding));
+    }
   }
 
   public static void writeDefinition(DataOutputStream stream, Definition definition) throws IOException {

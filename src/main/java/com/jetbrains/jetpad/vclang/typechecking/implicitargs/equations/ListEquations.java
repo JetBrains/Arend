@@ -22,7 +22,7 @@ import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Reference;
 public class ListEquations implements Equations {
   public interface Equation {
     TypeCheckingError abstractBinding(Binding binding);
-    void subst(Binding binding, Expression subst);
+    void subst(Substitution subst);
     void solveIn(ListEquations equations);
   }
 
@@ -54,9 +54,9 @@ public class ListEquations implements Equations {
     }
 
     @Override
-    public void subst(Binding binding, Expression subst) {
-      expr1 = expr1.subst(binding, subst);
-      expr2 = expr2.subst(binding, subst);
+    public void subst(Substitution subst) {
+      expr1 = expr1.subst(subst);
+      expr2 = expr2.subst(subst);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class ListEquations implements Equations {
   private interface Solution {
     TypeCheckingError abstractBinding(InferenceBinding infBinding, Binding binding);
     Expression solve(ListEquations equations, InferenceBinding binding, ExprSubstitution substitution);
-    void subst(Binding binding, Expression subst);
+    void subst(Substitution substitution);
   }
 
   private interface LevelSolution {
@@ -126,8 +126,8 @@ public class ListEquations implements Equations {
     }
 
     @Override
-    public void subst(Binding binding, Expression subst) {
-      expression = expression.subst(binding, subst);
+    public void subst(Substitution subst) {
+      expression = expression.subst(subst);
     }
   }
 
@@ -195,12 +195,12 @@ public class ListEquations implements Equations {
     }
 
     @Override
-    public void subst(Binding binding, Expression subst) {
+    public void subst(Substitution subst) {
       for (int i = 0; i < geSet.size(); i++) {
-        geSet.set(i, geSet.get(i).subst(binding, subst));
+        geSet.set(i, geSet.get(i).subst(subst));
       }
       for (int i = 0; i < leSet.size(); i++) {
-        leSet.set(i, leSet.get(i).subst(binding, subst));
+        leSet.set(i, leSet.get(i).subst(subst));
       }
     }
   }
@@ -665,7 +665,7 @@ public class ListEquations implements Equations {
         if (binding != null) {
           result.ExprSubst.subst(binding, subst);
           result.ExprSubst.add(binding, subst);
-          subst(binding, subst);
+          subst(new Substitution(new ExprSubstitution(binding, subst), new LevelSubstitution()));
         }
       } while (was);
     }
@@ -735,6 +735,7 @@ public class ListEquations implements Equations {
           result.LevelSubst.subst(binding, subst);
           result.LevelSubst.add(binding, subst);
           subst(binding, subst);
+          subst(new Substitution(new ExprSubstitution(), new LevelSubstitution(binding, subst)));
         }
       } while (was);
 
@@ -772,11 +773,11 @@ public class ListEquations implements Equations {
     return false;
   }
 
-  public void subst(Binding binding, Expression subst) {
+  public void subst(Substitution subst) {
     for (Iterator<Map.Entry<InferenceBinding, ExactSolution>> it = myExactSolutions.entrySet().iterator(); it.hasNext(); ) {
       Map.Entry<InferenceBinding, ExactSolution> entry = it.next();
       ExactSolution solution = entry.getValue();
-      solution.subst(binding, subst);
+      solution.subst(subst);
       ReferenceExpression expr = solution.expression.normalize(NormalizeVisitor.Mode.NF).toReference();
       if (expr != null) {
         Binding binding1 = expr.getBinding();
@@ -790,13 +791,13 @@ public class ListEquations implements Equations {
     }
 
     for (Map.Entry<InferenceBinding, EqSetSolution> entry : myEqSolutions.entrySet()) {
-      entry.getValue().subst(binding, subst);
+      entry.getValue().subst(subst);
     }
 
     for (int i = myEquations.size() - 1; i >= 0; i--) {
       Equation equation = myEquations.get(i);
       myEquations.remove(i);
-      equation.subst(binding, subst);
+      equation.subst(subst);
       equation.solveIn(this);
     }
   }

@@ -12,6 +12,7 @@ public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
   private Definition myNonPolyDefinition;
   private LevelSubstitution myPolyParamsSubst;
+  private boolean mySubstDefUptodate = true;
 
   public DefCallExpression(Definition definition) {
     myDefinition = definition;
@@ -21,7 +22,7 @@ public abstract class DefCallExpression extends Expression {
 
   public DefCallExpression(Definition definition, LevelSubstitution subst) {
     myDefinition = definition;
-    myNonPolyDefinition = definition.substPolyParams(subst);
+    mySubstDefUptodate = false;
     myPolyParamsSubst = subst;
   }
 
@@ -34,6 +35,10 @@ public abstract class DefCallExpression extends Expression {
   public Definition getPolyDefinition() { return myDefinition; }
 
   public Definition getDefinition() {
+    if (!mySubstDefUptodate) {
+      myNonPolyDefinition = myDefinition.substPolyParams(myPolyParamsSubst);
+      mySubstDefUptodate = true;
+    }
     return myNonPolyDefinition;
   }
 
@@ -52,7 +57,7 @@ public abstract class DefCallExpression extends Expression {
 
   public DefCallExpression applyLevelSubst(LevelSubstitution subst) {
     myPolyParamsSubst = myPolyParamsSubst.compose(subst, new HashSet<>(myDefinition.getPolyParams()));
-    myNonPolyDefinition = myDefinition.substPolyParams(myPolyParamsSubst);
+    mySubstDefUptodate = false;
     return this;
   }
 

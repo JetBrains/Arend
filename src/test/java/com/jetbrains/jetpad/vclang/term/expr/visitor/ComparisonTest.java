@@ -8,10 +8,11 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.expr.LetClause;
+import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
+
+import java.util.EnumSet;
 
 import static com.jetbrains.jetpad.vclang.term.expr.Expression.compare;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -198,7 +199,11 @@ public class ComparisonTest {
 
   @Test
   public void etaLam() {
-    Expression type = Pi(param(Nat()), Apps(Prelude.PATH.getDefCall(), ZeroLvl(), Fin(Suc(Zero())), Lam(param("i", Preprelude.INTERVAL.getDefCall()), Nat()), Zero(), Zero()));
+    Binding pathLp = Prelude.PATH.getPolyParamByType(Preprelude.LVL);
+    Binding pathLh = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
+    Expression type = Pi(param(Nat()), Prelude.PATH.getDefCall(new LevelSubstitution(pathLp, new LevelExpression(0), pathLh, new LevelExpression(1)))
+            .addArgument(Lam(param(Preprelude.INTERVAL.getDefCall()), Nat()), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Zero(), AppExpression.DEFAULT).addArgument(Zero(), AppExpression.DEFAULT));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
     assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
@@ -209,7 +214,11 @@ public class ComparisonTest {
   @Test
   public void etaPath() {
     DependentLink x = param("x", Nat());
-    Expression type = Apps(Prelude.PATH.getDefCall(), ZeroLvl(), Fin(Suc(Zero())), Lam(param(Preprelude.INTERVAL.getDefCall()), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
+    Binding pathLp = Prelude.PATH.getPolyParamByType(Preprelude.LVL);
+    Binding pathLh = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
+    Expression type = Prelude.PATH.getDefCall(new LevelSubstitution(pathLp, new LevelExpression(0), pathLh, new LevelExpression(1)))
+            .addArgument(Lam(param(Preprelude.INTERVAL.getDefCall()), Pi(param(Nat()), Nat())), EnumSet.noneOf(AppExpression.Flag.class))
+            .addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT).addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT);
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
     assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
