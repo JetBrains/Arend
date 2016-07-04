@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.ErrorFormatter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.namespace.*;
@@ -8,13 +7,16 @@ import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.DefinitionResolveNameV
 import com.jetbrains.jetpad.vclang.naming.oneshot.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.naming.scope.SubScope;
-import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteResolveListener;
+import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.Preprelude;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 import static com.jetbrains.jetpad.vclang.parser.ParserTestCase.*;
-import static org.junit.Assert.assertEquals;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 
 public class NameResolverTestCase {
   public static final ModuleNamespaceProvider DEFAULT_MODULE_NS_PROVIDER = new SimpleModuleNamespaceProvider();
@@ -22,8 +24,6 @@ public class NameResolverTestCase {
   public static final DynamicNamespaceProvider DEFAULT_DYNAMIC_NS_PROVIDER = new SimpleDynamicNamespaceProvider();
   public static final NameResolver DEFAULT_NAME_RESOLVER = new NameResolver(DEFAULT_MODULE_NS_PROVIDER, DEFAULT_STATIC_NS_PROVIDER);
   public static final Scope INITIAL_SCOPE = new SubScope(Preprelude.PRE_PRELUDE, Prelude.PRELUDE);
-
-  public static final ErrorFormatter ERROR_FORMATTER = new ErrorFormatter(SourceInfoProvider.TRIVIAL);
 
   public static Collection<? extends GeneralError> resolveNamesExpr(Concrete.Expression expression, Scope parentScope) {
     ListErrorReporter errorReporter = new ListErrorReporter();
@@ -38,14 +38,14 @@ public class NameResolverTestCase {
   public static Concrete.Expression resolveNamesExpr(String text, int errors, Scope parentScope) {
     Concrete.Expression result = parseExpr(text);
     Collection<? extends GeneralError> errorList = resolveNamesExpr(result, parentScope);
-    assertEquals(ERROR_FORMATTER.printErrors(errorList), errors, errorList.size());
+    assertErrorListSize(errorList, errors);
     return result;
   }
 
   public static Concrete.Expression resolveNamesExpr(String text, int errors) {
     Concrete.Expression result = parseExpr(text);
     Collection<? extends GeneralError> errorList = resolveNamesExpr(result);
-    assertEquals(errorList.toString(), errors, errorList.size());
+    assertErrorListSize(errorList, errors);
     return result;
   }
 
@@ -67,7 +67,7 @@ public class NameResolverTestCase {
 
   public static void resolveNamesDef(Concrete.Definition definition, int errors) {
     Collection<? extends GeneralError> errorList = resolveNamesDef(definition);
-    assertEquals(errorList.toString(), errors, errorList.size());
+    assertErrorListSize(errorList, errors);
   }
 
   public static Concrete.Definition resolveNamesDef(String text, int errors) {
