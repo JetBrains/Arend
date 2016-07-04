@@ -56,7 +56,9 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     }
 
     for (Map.Entry<String, Referable> entry : forStatements(classDefinition.getStatements()).getEntrySet()) {
-      ns.addDefinition(entry.getKey(), entry.getValue(), entry.getValue() instanceof Abstract.ImplementDefinition);
+      if (!(entry.getValue() instanceof Abstract.ImplementDefinition)) {
+        ns.addDefinition(entry.getKey(), entry.getValue());
+      }
     }
 
     classCache.put(classDefinition, ns);

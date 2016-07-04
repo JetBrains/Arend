@@ -168,12 +168,13 @@ public class ImplementTest {
         "  \\abstract a : A\n" +
         "}\n" +
         "\\class B \\extends A \\renaming A \\to A', a \\to a' {\n" +
-        "  \\implement A' => Nat\n" +
+        "  \\implement A => Nat\n" +
         "}\n" +
         "\\class C \\extends B {" +
         "  \\implement a' => 0\n" +
         "}\n" +
-        "\\function f (c : C) : c.a' = 0 => path (\\lam _ => 0)");
+        "\\function f (c : C) : c.a' = 0 => path (\\lam _ => 0)\n" +
+        "\\function g => f (\\new C)");
   }
 
   @Test
@@ -187,6 +188,20 @@ public class ImplementTest {
         "  \\implement A => Nat\n" +
         "}\n" +
         "\\function f => \\new B { a => 0 }");
+  }
+
+  @Test
+  public void implementHidden2() {
+    resolveNamesClass("test",
+        "\\class A {\n" +
+        "  \\abstract A : \\Set0\n" +
+        "  \\abstract a : A\n" +
+        "}\n" +
+        "\\class B \\extends A \\hiding A {}\n" +
+        "\\class C \\extends B {\n" +
+        "  \\implement A => Nat\n" +
+        "}\n" +
+        "\\function f => \\new C { a => 0 }", 1);
   }
 
   // TODO: Add tests on the universe of a class

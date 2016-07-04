@@ -29,12 +29,8 @@ public class SimpleNamespace implements Namespace {
   }
 
   public void addDefinition(String name, final Referable def) {
-    addDefinition(name, def, false);
-  }
-
-  public void addDefinition(String name, final Referable def, boolean rewrite) {
     final Referable prev = myNames.put(name, def);
-    if (!rewrite && prev != null && prev != def) {
+    if (prev != null && prev != def) {
       throw new InvalidNamespaceException() {
         @Override
         public GeneralError toError() {
