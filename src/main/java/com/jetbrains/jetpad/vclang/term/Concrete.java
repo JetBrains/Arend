@@ -16,10 +16,12 @@ public final class Concrete {
   private Concrete() {}
 
   public static class Position {
-    public int line;
-    public int column;
+    public final ModuleID module;
+    public final int line;
+    public final int column;
 
-    public Position(int line, int column) {
+    public Position(ModuleID module, int line, int column) {
+      this.module = module;
       this.line = line;
       this.column = column + 1;
     }
