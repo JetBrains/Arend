@@ -183,7 +183,9 @@ public class TypeCheckingDefCall {
     }
 
     Definition definition = myState.getTypechecked(member);
-    if (definition == null) throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+    if (definition == null) {
+      throw new IllegalStateException("Internal error: definition " + member + " was not typechecked");
+    }
 
     result.expression = definition.getDefCall();
     result.type = definition.getTypeWithThis();

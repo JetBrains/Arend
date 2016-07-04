@@ -250,7 +250,7 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       return null;
     }
 
-    Abstract.Definition parentDef = def.getParentStatement().getDefinition();
+    Abstract.Definition parentDef = def.getParentStatement().getParentDefinition();
     Referable referable = null;
     if (parentDef instanceof Abstract.ClassDefinition && ((Abstract.ClassDefinition) parentDef).getSuperClasses() != null) {
       for (Abstract.SuperClass superClass : ((Abstract.ClassDefinition) parentDef).getSuperClasses()) {

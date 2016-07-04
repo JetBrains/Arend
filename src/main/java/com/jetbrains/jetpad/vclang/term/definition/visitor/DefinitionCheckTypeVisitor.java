@@ -851,6 +851,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         } else
         if (definition instanceof Abstract.ImplementDefinition) {
           ClassField field = (ClassField) myState.getTypechecked(((Abstract.ImplementDefinition) definition).getImplemented());
+          myState.record(definition, field);
           DependentLink thisParameter = param("\\this", ClassCall(classDefinition));
           List<Binding> context = new ArrayList<>();
           context.add(thisParameter);
@@ -925,10 +926,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
   @Override
   public Definition visitImplement(Abstract.ImplementDefinition def, Void params) {
-    throw new IllegalStateException();
-  }
-
-  public Definition visitImplement(Abstract.ImplementDefinition def, ClassDefinition classDef) {
     throw new IllegalStateException();
   }
 }

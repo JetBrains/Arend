@@ -20,7 +20,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     SimpleNamespace ns = classCache.get(classDefinition);
     if (ns != null) return ns;
 
-    ns = forStatements(classDefinition.getStatements());
+    ns = new SimpleNamespace();
     for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
       if (superClass.getReferent() instanceof Abstract.ClassDefinition) {
         SimpleNamespace namespace = forClass((Abstract.ClassDefinition) superClass.getReferent());
@@ -54,6 +54,11 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
         };
       }
     }
+
+    for (Map.Entry<String, Referable> entry : forStatements(classDefinition.getStatements()).getEntrySet()) {
+      ns.addDefinition(entry.getKey(), entry.getValue(), entry.getValue() instanceof Abstract.ImplementDefinition);
+    }
+
     classCache.put(classDefinition, ns);
     return ns;
   }
