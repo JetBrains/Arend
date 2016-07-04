@@ -856,9 +856,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
           List<Binding> context = new ArrayList<>();
           context.add(thisParameter);
           CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(field.getThisClass(), Reference(field.getThisParameter())).build(classDef);
-          CheckTypeVisitor.Result result = ((Abstract.ImplementDefinition) definition).getExpression().accept(visitor, field.getBaseType());
+          CheckTypeVisitor.Result result = ((Abstract.ImplementDefinition) definition).getExpression().accept(visitor, field.getBaseType().subst(field.getThisParameter(), Reference(thisParameter)));
           if (result != null) {
-            classDefinition.setFieldImpl(field, result.expression);
+            classDefinition.setFieldImpl(field, thisParameter, result.expression);
           }
         }
       }

@@ -204,5 +204,17 @@ public class ImplementTest {
         "\\function f => \\new C { a => 0 }", 1);
   }
 
+  @Test
+  public void anonymousExtensionError() {
+    resolveNamesClass("test",
+        "\\class A {\n" +
+        "  \\abstract a : Nat\n" +
+        "}\n" +
+        "\\class B \\extends A {\n" +
+        "  \\implement a => 0" +
+        "}\n" +
+        "\\function f => \\new C { a => 1 }", 1);
+  }
+
   // TODO: Add tests on the universe of a class
 }

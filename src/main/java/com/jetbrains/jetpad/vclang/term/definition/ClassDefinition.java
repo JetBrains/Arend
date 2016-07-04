@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
@@ -17,12 +18,14 @@ public class ClassDefinition extends Definition {
   private final Map<ClassField, FieldImplementation> myFields = new HashMap<>();
   private Set<ClassDefinition> mySuperClasses = null;
 
-  public class FieldImplementation {
+  public static class FieldImplementation {
     public String name;
+    public DependentLink thisParameter;
     public Expression implementation;
 
-    public FieldImplementation(String name, Expression implementation) {
+    public FieldImplementation(String name, DependentLink thisParameter, Expression implementation) {
       this.name = name;
+      this.thisParameter = thisParameter;
       this.implementation = implementation;
     }
   }
@@ -79,8 +82,14 @@ public class ClassDefinition extends Definition {
     return myFields.get(field).name;
   }
 
-  public void setFieldImpl(ClassField field, Expression implementation) {
-    myFields.get(field).implementation = implementation;
+  public FieldImplementation getFieldImpl(ClassField field) {
+    return myFields.get(field);
+  }
+
+  public void setFieldImpl(ClassField field, DependentLink thisParameter, Expression implementation) {
+    FieldImplementation impl = myFields.get(field);
+    impl.thisParameter = thisParameter;
+    impl.implementation = implementation;
   }
 
   public Collection<ClassField> getFields() {
@@ -100,15 +109,15 @@ public class ClassDefinition extends Definition {
   }
 
   public void addField(ClassField field) {
-    addField(field, field.getName(), null);
+    addField(field, field.getName(), null, null);
   }
 
-  public void addField(ClassField field, String name, Expression implementation) {
+  public void addField(ClassField field, String name, DependentLink thisParameter, Expression implementation) {
     ClassField oldField = getField(name);
     if (oldField != null) {
       myFields.remove(oldField);
     }
-    myFields.put(field, new FieldImplementation(name, implementation));
+    myFields.put(field, new FieldImplementation(name, thisParameter, implementation));
     field.setThisClass(this);
   }
 
@@ -120,7 +129,7 @@ public class ClassDefinition extends Definition {
     if (oldField != null) {
       return oldField;
     }
-    myFields.put(field, new FieldImplementation(name, null));
+    myFields.put(field, new FieldImplementation(name, null, null));
     return null;
   }
 

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.expr.visitor;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.*;
@@ -80,12 +81,23 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return FieldCall((ClassField) defCallExpr.getDefinition());
       }
 
-      ClassCallExpression classCall = expr.getArguments().get(0).normalize(Mode.WHNF).getType().normalize(Mode.WHNF).toClassCall();
+      Expression thisExpr = expr.getArguments().get(0).normalize(Mode.WHNF);
+      ClassCallExpression classCall = thisExpr.getType().normalize(Mode.WHNF).toClassCall();
       if (classCall != null) {
         ClassCallExpression.ImplementStatement elem = classCall.getImplementStatements().get(defCallExpr.getDefinition());
-        if (elem != null && elem.term != null) {
+        Expression impl = null;
+        if (elem != null) {
+          impl = elem.term;
+        }
+        if (impl == null) {
+          ClassDefinition.FieldImplementation fieldImpl = classCall.getDefinition().getFieldImpl((ClassField) defCallExpr.getDefinition());
+          if (fieldImpl.implementation != null) {
+            impl = fieldImpl.implementation.subst(fieldImpl.thisParameter, thisExpr);
+          }
+        }
+        if (impl != null) {
           List<? extends EnumSet<AppExpression.Flag>> flags = expr.toApp().getFlags();
-          Expression result = Apps(elem.term, expr.getArguments().subList(1, expr.getArguments().size()), flags.subList(1, flags.size()));
+          Expression result = Apps(impl, expr.getArguments().subList(1, expr.getArguments().size()), flags.subList(1, flags.size()));
           return mode == Mode.TOP ? result : result.accept(this, mode);
         }
       }

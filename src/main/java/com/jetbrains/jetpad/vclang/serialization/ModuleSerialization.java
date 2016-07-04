@@ -190,6 +190,7 @@ public class ModuleSerialization {
       visitor.getDataStream().writeUTF(entry.getValue().name);
       visitor.getDataStream().writeBoolean(entry.getValue().implementation != null);
       if (entry.getValue().implementation != null) {
+        writeParameters(visitor, entry.getValue().thisParameter);
         entry.getValue().implementation.accept(visitor, null);
       }
 
