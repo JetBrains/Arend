@@ -1,12 +1,18 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.definition.Definition;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class ConcreteExpressionFactory {
-  public static final Concrete.Position POSITION = new Concrete.Position(0, 0);
+  private static final ModuleID MODULE_ID = new ModuleID() {
+    @Override public ModulePath getModulePath() { return ModulePath.moduleName(toString()); }
+    @Override public String toString() { return "$transient$"; }
+  };
+  public static final Concrete.Position POSITION = new Concrete.Position(MODULE_ID, 0, 0);
 
   public static Concrete.LamExpression cLam(List<Concrete.Argument> arguments, Concrete.Expression body) {
     return new Concrete.LamExpression(POSITION, arguments, body);

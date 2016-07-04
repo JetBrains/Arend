@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.parser;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.antlr.v4.runtime.Token;
@@ -13,9 +14,11 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
+  private final ModuleID myModule;
   private final ErrorReporter myErrorReporter;
 
-  public BuildVisitor(ErrorReporter errorReporter) {
+  public BuildVisitor(ModuleID module, ErrorReporter errorReporter) {
+    myModule = module;
     myErrorReporter = errorReporter;
   }
 
@@ -966,7 +969,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.LetExpression(tokenPosition(ctx.getStart()), clauses, expr);
   }
 
-  private static Concrete.Position tokenPosition(Token token) {
-    return new Concrete.Position(token.getLine(), token.getCharPositionInLine());
+  private Concrete.Position tokenPosition(Token token) {
+    return new Concrete.Position(myModule, token.getLine(), token.getCharPositionInLine());
   }
 }

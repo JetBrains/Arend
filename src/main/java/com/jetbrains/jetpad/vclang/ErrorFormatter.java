@@ -1,13 +1,11 @@
 package com.jetbrains.jetpad.vclang;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
-import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingError;
-import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -33,37 +31,20 @@ public class ErrorFormatter {
   private String printHeader(GeneralError error) {
     StringBuilder builder = new StringBuilder();
     builder.append(printLevel(error));
-    if (error instanceof TypeCheckingError) {
-      Abstract.Definition def = ((TypeCheckingError) error).getDefinition();
-      if (def != null) {
-        ModuleID module = mySrc.moduleOf(def);
-        builder.append(' ').append(module != null ? module : "<Unknown module>");
 
-        if (error.getCause() instanceof Concrete.SourceNode) {
-          Concrete.Position pos = ((Concrete.SourceNode) error.getCause()).getPosition();
-          builder.append(':').append(pos.line).append(':').append(pos.column);
-        }
+    final Concrete.SourceNode concreteCause;
+    if (error.getCause() instanceof Concrete.SourceNode) {
+      concreteCause = (Concrete.SourceNode) error.getCause();
+    } else if (error instanceof TypeCheckingError && ((TypeCheckingError) error).getDefinition() instanceof Concrete.SourceNode) {
+      concreteCause = (Concrete.SourceNode) ((TypeCheckingError) error).getDefinition();
+    } else {
+      concreteCause = null;
+    }
 
-        String name = mySrc.nameFor(def);
-        if (name == null && def.getName() != null) {
-          name = "???." + def.getName();
-        }
-
-        if (name != null) {
-          builder.append(" (").append(name).append(")");
-        }
-      }
-    } else if (error instanceof ModuleLoadingError) {
-      builder.append(' ');
-      if (((ModuleLoadingError) error).module == null) {
-        builder.append("<Unknown module>");
-      } else {
-        builder.append(((ModuleLoadingError) error).module.getModulePath().toString());
-      }
-      if (error instanceof ParserError && ((ParserError) error).position != null) {
-        builder.append(':').append(((ParserError) error).position.line);
-        builder.append(':').append(((ParserError) error).position.column);
-      }
+    if (concreteCause != null) {
+      Concrete.Position pos = concreteCause.getPosition();
+      builder.append(' ').append(pos.module != null ? pos.module : "<Unknown module>");
+      builder.append(':').append(pos.line).append(':').append(pos.column);
     }
     return builder.toString();
   }
@@ -172,12 +153,31 @@ public class ErrorFormatter {
     StringBuilder builder = new StringBuilder();
     String data = printData(error);
     builder.append(data);
+
     if (error.getCause() != null) {
       String text = "In: ";
       String causeString = PrettyPrintVisitor.prettyPrint(error.getCause(), text.length());
       if (causeString != null) {
         if (!data.isEmpty()) builder.append('\n');
         builder.append(text).append(causeString);
+      }
+    }
+
+    if (error instanceof TypeCheckingError) {
+      Abstract.Definition def = ((TypeCheckingError) error).getDefinition();
+      if (def != null) {
+        builder.append('\n').append("While typechecking: ");
+
+        String name = mySrc.nameFor(def);
+        if (name == null && def.getName() != null) {
+          name = "???." + def.getName();
+        }
+
+        if (name != null) {
+          ModuleID module = mySrc.moduleOf(def);
+          builder.append(' ').append(module != null ? module : "<Unknown module>");
+          builder.append("::").append(name);
+        }
       }
     }
     return builder.toString();

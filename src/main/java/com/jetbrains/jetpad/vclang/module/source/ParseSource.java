@@ -51,7 +51,7 @@ public abstract class ParseSource implements Source {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(myModule, new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(myModule, new Concrete.Position(myModule, line, pos), msg));
       }
     });
 
@@ -60,7 +60,7 @@ public abstract class ParseSource implements Source {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(myModule, new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(myModule, new Concrete.Position(myModule, line, pos), msg));
       }
     });
 
@@ -69,8 +69,8 @@ public abstract class ParseSource implements Source {
       return new ModuleLoader.Result(null, null, true, countingErrorReporter.getErrorsNumber());
     }
 
-    List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(0, 0), myModule.getModulePath().getName(), statements, Abstract.ClassDefinition.Kind.Module);
+    List<Concrete.Statement> statements = new BuildVisitor(myModule, errorReporter).visitStatements(tree);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(new Concrete.Position(myModule, 0, 0), myModule.getModulePath().getName(), statements, Abstract.ClassDefinition.Kind.Module);
     classDefinition.setModuleID(myModule);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
