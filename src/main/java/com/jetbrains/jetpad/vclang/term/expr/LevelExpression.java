@@ -251,6 +251,9 @@ public class LevelExpression implements PrettyPrintable {
     }
 
     if (cmp == Equations.CMP.EQ) {
+      if (level1.isClosed() && level2.isClosed()) {
+        return level1.getConstant() == level2.getConstant();
+      }
       boolean equal = true;
       if (level1.getNumOfMaxArgs() != level2.getNumOfMaxArgs()) {
         equal = false;
@@ -267,10 +270,10 @@ public class LevelExpression implements PrettyPrintable {
           }
         }
       }
-      if (equal) {
-        return true;
-      }
-      if (!rightContainsInferenceBnd && !leftContainsInferenceBnd) {
+      //if (equal) {
+      //  return true;
+     // }
+      if (!equal && !rightContainsInferenceBnd && !leftContainsInferenceBnd) {
         return false;
       }
 
@@ -287,20 +290,20 @@ public class LevelExpression implements PrettyPrintable {
       int rightSucs = rightMaxArg.getUnitSucs();
 
       if (rightMaxArg.isClosed()) {
-        if (leftSucs >= rightSucs) {
+        if (leftLevel.isClosed() && leftSucs >= rightSucs) {
           continue;
         }
         if (!leftContainsInferenceBnd) {
           return false;
         }
-        equations.add(leftLevel, rightMaxArg, cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.GE, null);
+        equations.add(leftLevel, rightMaxArg.subtract(leftSucs), Equations.CMP.GE, null);
       } else if (leftLevel.findBinding(rightMaxArg.getUnitBinding())) {
         if (leftLevel.getNumSucs(rightMaxArg.getUnitBinding()) + leftSucs < rightSucs) {
           return false;
         }
       } else {
         if (leftContainsInferenceBnd || (rightMaxArg.getUnitBinding() instanceof InferenceBinding)) {
-          equations.add(leftLevel, rightMaxArg.subtract(leftSucs), cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.GE, null);
+          equations.add(leftLevel, rightMaxArg.subtract(leftSucs), Equations.CMP.GE, null);
           continue;
         }
         return false;

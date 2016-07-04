@@ -43,9 +43,9 @@ public class ExprSubstitution {
     }
   }
 
-  public void subst(Binding binding, Expression expression) {
+  public void subst(Substitution subst) {
     for (Map.Entry<Binding, Expression> entry : mySubstExprs.entrySet()) {
-      entry.setValue(entry.getValue().subst(binding, expression));
+      entry.setValue(entry.getValue().subst(subst));
     }
   }
 

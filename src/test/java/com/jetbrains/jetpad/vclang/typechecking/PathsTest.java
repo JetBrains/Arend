@@ -30,9 +30,7 @@ public class PathsTest {
     DependentLink A = param(false, "A", Universe(0));
     A.setNext(param("a", Reference(A)));
     DependentLink C = param((String) null, DataCall(Preprelude.INTERVAL));
-    Binding lpPath = Prelude.PATH.getPolyParamByType(Preprelude.LVL);
-    Binding lhPath = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
-    LevelSubstitution levelSubst = new LevelSubstitution(lpPath, new LevelExpression(0), lhPath, new LevelExpression());
+    LevelSubstitution levelSubst = new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression());
     Expression pathCall = ConCall(Prelude.PATH_CON).applyLevelSubst(levelSubst)
             .addArgument(Lam(C, Reference(A)), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Reference(A.getNext()), EnumSet.noneOf(AppExpression.Flag.class))

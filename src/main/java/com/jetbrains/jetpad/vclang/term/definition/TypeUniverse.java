@@ -99,6 +99,8 @@ public class TypeUniverse {
 
   public static boolean compare(TypeUniverse uni1, TypeUniverse uni2, Equations.CMP cmp, Equations equations) {
     if (uni1.getHLevel().isZero() || uni2.getHLevel().isZero()) {
+      LevelExpression.compare(uni1.getPLevel(), new LevelExpression(0), Equations.CMP.GE, equations);
+      LevelExpression.compare(uni2.getPLevel(), new LevelExpression(0), Equations.CMP.GE, equations);
       return LevelExpression.compare(uni1.getHLevel(), uni2.getHLevel(), cmp, equations);
     }
     return LevelExpression.compare(uni1.getPLevel(), uni2.getPLevel(), cmp, equations) && LevelExpression.compare(uni1.getHLevel(), uni2.getHLevel(), cmp, equations);

@@ -112,7 +112,7 @@ public class FunctionDefinition extends Definition implements Function {
       return this;
     }
 
-    Substitution subst = new Substitution(new ExprSubstitution(), substitution);
+    Substitution subst = new Substitution(substitution);
     DependentLink newParams = DependentLink.Helper.subst(myParameters, subst);
 
     return new FunctionDefinition(getResolvedName(), getPrecedence(), newParams,

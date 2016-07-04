@@ -67,7 +67,7 @@ public class LetClause extends NamedBinding implements Function {
       return this;
     }
 
-    Substitution subst = new Substitution(new ExprSubstitution(), substitution);
+    Substitution subst = new Substitution(substitution);
     DependentLink parameters = DependentLink.Helper.subst(myParameters, subst);
     return new LetClause(getName(), parameters, myResultType.subst(subst), myElimTree.subst(subst));
   }

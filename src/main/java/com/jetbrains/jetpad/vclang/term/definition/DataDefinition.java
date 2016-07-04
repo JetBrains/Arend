@@ -120,7 +120,7 @@ public class DataDefinition extends Definition {
     if (!isPolymorphic()) {
       return this;
     }
-    Substitution subst = new Substitution(new ExprSubstitution(), substitution);
+    Substitution subst = new Substitution(substitution);
     DataDefinition newDef = new DataDefinition(getResolvedName(), getPrecedence(), getUniverse().subst(subst.LevelSubst), DependentLink.Helper.subst(myParameters, subst));
     for (Constructor constructor : getConstructors()) {
       Constructor newConstructor = new Constructor(constructor.getResolvedName(), constructor.getPrecedence(),

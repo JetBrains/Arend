@@ -6,12 +6,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Substitution {
-  public ExprSubstitution ExprSubst;
-  public LevelSubstitution LevelSubst;
+  public ExprSubstitution ExprSubst = new ExprSubstitution();
+  public LevelSubstitution LevelSubst = new LevelSubstitution();
 
   public Substitution() {
-    ExprSubst = new ExprSubstitution();
-    LevelSubst = new LevelSubstitution();
+  }
+
+  public Substitution(ExprSubstitution subst) {
+    ExprSubst = subst;
+  }
+
+  public Substitution(LevelSubstitution subst) {
+    LevelSubst = subst;
   }
 
   public Substitution(ExprSubstitution subst, LevelSubstitution levelSubst) {

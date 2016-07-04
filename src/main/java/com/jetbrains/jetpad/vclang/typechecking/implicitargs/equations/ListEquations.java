@@ -663,9 +663,9 @@ public class ListEquations implements Equations {
         }
 
         if (binding != null) {
-          result.ExprSubst.subst(binding, subst);
+          result.ExprSubst.subst(new Substitution(new ExprSubstitution(binding, subst)));
           result.ExprSubst.add(binding, subst);
-          subst(new Substitution(new ExprSubstitution(binding, subst), new LevelSubstitution()));
+          subst(new Substitution(new ExprSubstitution(binding, subst)));
         }
       } while (was);
     }
@@ -718,7 +718,7 @@ public class ListEquations implements Equations {
           }
         }
 
-        if (!was && !onlyPreciseSolutions) {
+         /*if (!was && !onlyPreciseSolutions) {
           for (Iterator<InferenceBinding> binding_iter = bindings.iterator(); binding_iter.hasNext(); ) {
             Binding bnd = binding_iter.next();
             if (bnd instanceof LevelInferenceBinding) { // && !myEqLevelSolutions.containsKey(bnd) && !my) {
@@ -729,13 +729,14 @@ public class ListEquations implements Equations {
               break;
             }
           }
-        }
+        } /**/
 
         if (binding != null) {
           result.LevelSubst.subst(binding, subst);
+          result.ExprSubst.subst(new Substitution(new LevelSubstitution(binding, subst)));
           result.LevelSubst.add(binding, subst);
           subst(binding, subst);
-          subst(new Substitution(new ExprSubstitution(), new LevelSubstitution(binding, subst)));
+          subst(new Substitution(new LevelSubstitution(binding, subst)));
         }
       } while (was);
 

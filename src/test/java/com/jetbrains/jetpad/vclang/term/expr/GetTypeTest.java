@@ -60,9 +60,7 @@ public class GetTypeTest {
   public void fieldAccTest() {
     NamespaceMember member = typeCheckClass("\\static \\class C { \\abstract x : Nat \\function f (p : 0 = x) => p } \\static \\function test (p : Nat -> C) => (p 0).f");
     DependentLink p = param("p", Pi(Nat(), member.namespace.getDefinition("C").getDefCall()));
-    Binding pathLp = Prelude.PATH.getPolyParamByType(Preprelude.LVL);
-    Binding pathLh = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
-    Expression type = FunCall(Prelude.PATH_INFIX).applyLevelSubst(new LevelSubstitution(pathLp, new LevelExpression(0), pathLh, new LevelExpression(1)))
+    Expression type = FunCall(Prelude.PATH_INFIX).applyLevelSubst(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1)))
       .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class))
       .addArgument(Zero(), AppExpression.DEFAULT)
       .addArgument(Apps(member.namespace.getMember("C").namespace.getDefinition("x").getDefCall(), Apps(Reference(p), Zero())), AppExpression.DEFAULT);
@@ -73,9 +71,7 @@ public class GetTypeTest {
   public void tupleTest() {
     Definition def = typeCheckDef("\\function test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = param(true, vars("x", "y"), Nat());
-    Binding pathLp = Prelude.PATH.getPolyParamByType(Preprelude.LVL);
-    Binding pathLh = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
-    assertEquals(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX).applyLevelSubst(new LevelSubstitution(pathLp, new LevelExpression(0), pathLh, new LevelExpression(1)))
+    assertEquals(Sigma(params(xy, param(Apps(FunCall(Prelude.PATH_INFIX).applyLevelSubst(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1)))
             .addArgument(Nat(), EnumSet.noneOf(AppExpression.Flag.class)), Reference(xy), Reference(xy.getNext()))))), ((LeafElimTreeNode)((FunctionDefinition) def).getElimTree()).getExpression().getType());
   }
 

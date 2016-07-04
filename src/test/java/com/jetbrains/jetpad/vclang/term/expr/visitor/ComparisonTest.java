@@ -199,9 +199,7 @@ public class ComparisonTest {
 
   @Test
   public void etaLam() {
-    Binding pathLp = Prelude.PATH.getPolyParamByType(Preprelude.LVL);
-    Binding pathLh = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
-    Expression type = Pi(param(Nat()), Prelude.PATH.getDefCall(new LevelSubstitution(pathLp, new LevelExpression(0), pathLh, new LevelExpression(1)))
+    Expression type = Pi(param(Nat()), Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1)))
             .addArgument(Lam(param(Preprelude.INTERVAL.getDefCall()), Nat()), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Zero(), AppExpression.DEFAULT).addArgument(Zero(), AppExpression.DEFAULT));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
@@ -214,9 +212,7 @@ public class ComparisonTest {
   @Test
   public void etaPath() {
     DependentLink x = param("x", Nat());
-    Binding pathLp = Prelude.PATH.getPolyParamByType(Preprelude.LVL);
-    Binding pathLh = Prelude.PATH.getPolyParamByType(Preprelude.CNAT);
-    Expression type = Prelude.PATH.getDefCall(new LevelSubstitution(pathLp, new LevelExpression(0), pathLh, new LevelExpression(1)))
+    Expression type = Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1)))
             .addArgument(Lam(param(Preprelude.INTERVAL.getDefCall()), Pi(param(Nat()), Nat())), EnumSet.noneOf(AppExpression.Flag.class))
             .addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT).addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT);
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
