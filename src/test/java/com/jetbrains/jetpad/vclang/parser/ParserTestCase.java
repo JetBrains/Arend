@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
 import org.antlr.v4.runtime.*;
 
@@ -18,7 +19,11 @@ public class ParserTestCase {
   private static final ModuleID MODULE_ID = new ModuleID() {
     @Override
     public ModulePath getModulePath() {
-      return ModulePath.moduleName("$ParserTestCase$");
+      return ModulePath.moduleName(toString());
+    }
+    @Override
+    public String toString() {
+      return "$ParserTestCase$";
     }
   };
 
@@ -68,7 +73,7 @@ public class ParserTestCase {
     VcgrammarParser.StatementsContext tree = parse(name, errorReporter, text).statements();
     assertErrorListSize(errorReporter.getErrorList(), 0);
     List<Concrete.Statement> statements = new BuildVisitor(MODULE_ID, errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, name, statements, Abstract.ClassDefinition.Kind.Module);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, statements, Abstract.ClassDefinition.Kind.Module);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
