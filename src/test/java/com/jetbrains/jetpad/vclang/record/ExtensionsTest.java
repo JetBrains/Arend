@@ -92,7 +92,7 @@ public class ExtensionsTest {
 
   @Test
   public void nameClashError() {
-    typeCheckClass("test",
+    typeCheckClass(
         "\\class A {\n" +
         "  \\abstract x : Nat\n" +
         "}\n" +
@@ -103,7 +103,7 @@ public class ExtensionsTest {
 
   @Test
   public void nameClashError2() {
-    typeCheckClass("test",
+    typeCheckClass(
         "\\class A {\n" +
         "  \\abstract x : Nat\n" +
         "}\n" +
@@ -117,7 +117,7 @@ public class ExtensionsTest {
 
   @Test
   public void nameClashError3() {
-    typeCheckClass("test",
+    typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract A : \\Set0\n" +
         "}\n" +
