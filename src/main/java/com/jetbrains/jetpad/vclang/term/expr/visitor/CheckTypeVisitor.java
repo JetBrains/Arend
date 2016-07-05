@@ -445,14 +445,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     return checkResult(expectedType, new Result(universe, new UniverseExpression(universe.getUniverse().succ())), expr);
   }
 
-  private LevelExpression typeCheckLevel(Abstract.Expression expr, Expression expectedType) {
+  private LevelExpression typeCheckLevelAtom(Abstract.Expression expr, Expression expectedType) {
     int num_sucs = 0;
     TypeCheckingError error = null;
 
     while (expr instanceof Abstract.AppExpression) {
       Abstract.AppExpression app = (Abstract.AppExpression) expr;
       Abstract.Expression suc = app.getFunction();
-      if (!(suc instanceof Abstract.DefCallExpression) || !((Abstract.DefCallExpression) suc).getName().equals("suc")) {
+      if (!(suc instanceof Abstract.AppExpression) && (!(suc instanceof Abstract.DefCallExpression) || !((Abstract.DefCallExpression) suc).getName().equals("suc"))) {
         error = new TypeCheckingError("Expression " + suc + " is invalid, 'suc' expected", expr);
         break;
       }
@@ -475,6 +475,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     }
 
     return null;
+  }
+
+  private LevelExpression typeCheckLevel(Abstract.Expression expr, Expression expectedType) {
+    LevelExpression result = new LevelExpression(0);
+    List<Abstract.ArgumentExpression> args = new ArrayList<>();
+    Abstract.Expression max = Abstract.getFunction(expr, args) ;
+
+    if (max instanceof Abstract.DefCallExpression && ((Abstract.DefCallExpression) max).getName().equals("max")) {
+      for (int i = 0; i < args.size(); ++i) {
+        result = result.max(typeCheckLevelAtom(args.get(i).getExpression(), expectedType));
+      }
+      return result;
+    }
+    return typeCheckLevelAtom(expr, expectedType);
   }
 
   @Override

@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.expr.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.SubstVisitor;
 
 import java.util.List;
 
@@ -64,7 +65,7 @@ public class TypedDependentLink implements DependentLink {
   @Override
   public DependentLink subst(ExprSubstitution subst, int size) {
     if (size > 0) {
-      TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.subst(subst), EmptyDependentLink.getInstance());
+      TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.accept(new SubstVisitor(subst), null), EmptyDependentLink.getInstance());
       subst.add(this, new ReferenceExpression(result));
       result.myNext = myNext.subst(subst, size - 1);
       return result;

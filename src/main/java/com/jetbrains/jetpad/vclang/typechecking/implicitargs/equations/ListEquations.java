@@ -230,15 +230,16 @@ public class ListEquations implements Equations {
     @Override
     public LevelExpression solve(ListEquations equations, InferenceBinding binding, LevelSubstitution substitution) {
       if (geSet.isEmpty()) {
-        /*LevelExpression result = leSet.get(0).subst(substitution);
+        LevelExpression result = leSet.get(0).subst(substitution);
         for (int i = 1; i < leSet.size(); i++) {
           LevelExpression expr = leSet.get(i).subst(substitution);
           if (!LevelExpression.compare(result, expr, CMP.LE, equations)) {
             binding.reportErrorLevelInfer(equations.getErrorReporter(), result, expr);
             return null;
           }
-        } /**/
-        return new LevelExpression(0);
+        }
+        return result;/**/
+      //  return new LevelExpression(0);
       } else {
         LevelExpression result = geSet.get(0);
         if (geSet.size() > 1) {
@@ -381,12 +382,12 @@ public class ListEquations implements Equations {
   }
 
   private void addSolution(InferenceBinding binding, CMP cmp, LevelExpression expr) {
-    if (expr.isZero()) {
+    /*if (expr.isZero()) {
       /* TODO
       if (cmp == CMP.GE) {
         return;
       }
-      */
+      *
       if (cmp == CMP.LE) {
         cmp = CMP.EQ;
       }
@@ -396,11 +397,11 @@ public class ListEquations implements Equations {
       if (cmp == CMP.LE) {
         return;
       }
-      */
+      *
       if (cmp == CMP.GE) {
         cmp = CMP.EQ;
       }
-    }
+    } /**/
 
     if (cmp == CMP.EQ) {
       addSolution(binding, new ExactLevelSolution(expr));

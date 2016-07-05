@@ -212,7 +212,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
             return typedDef;
           }
           context.add(levelParam);
-          polyParams.put(((Abstract.DefCallExpression)typeArgument.getType()).getName(), levelParam);
+          //polyParams.put(((Abstract.DefCallExpression)typeArgument.getType()).getName(), levelParam);
           ++index;
           continue;
         }
@@ -498,7 +498,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), TypeUniverse.PROP, null);
+    LevelExpression inferredHLevel = def.getConstructors().size() > 1 ? TypeUniverse.SET.getHLevel() : TypeUniverse.PROP.getHLevel();
+    LevelExpression inferredPLevel = TypeUniverse.intToPLevel(0);
+    TypeUniverse inferredUniverse = new TypeUniverse(inferredPLevel, inferredHLevel);
+    TypeUniverse userUniverse = null;
+    DataDefinition dataDefinition = new DataDefinition(myNamespaceMember.getResolvedName(), def.getPrecedence(), inferredUniverse, null);
     dataDefinition.hasErrors(true);
     try (Utils.ContextSaver ignore = new Utils.ContextSaver(visitor.getContext())) {
       for (Abstract.TypeArgument parameter : parameters) {
@@ -525,17 +529,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         list.append(param);
         context.addAll(toContext(param));
       }
-    }
 
-    TypeUniverse userUniverse = null;
-    if (def.getUniverse() != null) {
-      CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
+      if (def.getUniverse() != null) {
+        CheckTypeVisitor.Result result = visitor.checkType(def.getUniverse(), Universe());
 
-      if (result == null || result.expression.toUniverse() == null) {
-        String msg = "Specified type " + def.getUniverse().accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), Abstract.Expression.PREC) + " of '" + def.getName() + "' is not a universe";
-        myErrorReporter.report(new TypeCheckingError(msg, def.getUniverse()));
-      } else {
-        userUniverse = result.expression.toUniverse().getUniverse();
+        if (result == null || result.expression.toUniverse() == null) {
+          String msg = "Specified type " + def.getUniverse().accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), Abstract.Expression.PREC) + " of '" + def.getName() + "' is not a universe";
+          myErrorReporter.report(new TypeCheckingError(msg, def.getUniverse()));
+        } else {
+          userUniverse = result.expression.toUniverse().getUniverse();
+        }
       }
     }
 
@@ -546,9 +549,6 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     dataDefinition.setThisClass(thisClass);
     myNamespaceMember.definition = dataDefinition;
 
-    LevelExpression inferredHLevel = def.getConstructors().size() > 1 ? TypeUniverse.SET.getHLevel() : TypeUniverse.PROP.getHLevel();
-    LevelExpression inferredPLevel = TypeUniverse.intToPLevel(0);
-    TypeUniverse inferredUniverse = new TypeUniverse(inferredPLevel, inferredHLevel);
     for (Abstract.Constructor constructor : def.getConstructors()) {
       Constructor typedConstructor = visitConstructor(constructor, dataDefinition, visitor);
       if (typedConstructor == null) {

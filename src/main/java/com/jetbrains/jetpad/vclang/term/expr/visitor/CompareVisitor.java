@@ -152,8 +152,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       return false;
     }
 
-    Equations.CMP cmp = myCMP;
-    myCMP = Equations.CMP.EQ;
+    //Equations.CMP cmp = myCMP;
+    //myCMP = Equations.CMP.EQ;
     if (!compare(fun1, fun2)) {
       return false;
     }
@@ -161,7 +161,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
     int i = 0;
     if (fun1.toDataCall() != null && fun2.toDataCall() != null) {
       if (args1.isEmpty()) {
-        myCMP = cmp;
+      //  myCMP = cmp;
         return true;
       }
       if (fun1.toDataCall().getDefinition().getThisClass() != null) {
@@ -169,11 +169,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
           return false;
         }
         if (++i >= args1.size()) {
-          myCMP = cmp;
+        //  myCMP = cmp;
           return true;
         }
       }
 
+      /*
       Expression type1 = args1.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
       if (type1.toDataCall() != null && type1.toDataCall().getDefinition() == Preprelude.LVL) {
         Expression type2 = args2.get(i).getType().normalize(NormalizeVisitor.Mode.NF);
@@ -192,7 +193,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
             }
           }
         }
-      }
+      }/**/
     }
 
     for (; i < args1.size(); i++) {
@@ -201,7 +202,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
       }
     }
 
-    myCMP = cmp;
+    //myCMP = cmp;
     return true;
   }
 

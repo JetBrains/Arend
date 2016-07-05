@@ -232,18 +232,18 @@ public class LevelExpression implements PrettyPrintable {
     boolean rightContainsInferenceBnd = level2.containsInferVar();
 
     if (level1.isInfinity()) {
-      if (cmp != Equations.CMP.EQ || level2.isInfinity()) {
+      if (rightContainsInferenceBnd) {
+        equations.add(level2.subtract(level2.extractOuterSucs()), level1, cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.LE, null);
         return true;
       }
-      if (rightContainsInferenceBnd) {
-        equations.add(level2.subtract(level2.extractOuterSucs()), level1, Equations.CMP.EQ, null);
+      if (cmp != Equations.CMP.EQ || level2.isInfinity()) {
         return true;
       }
       return false;
     }
 
     if (level2.isInfinity()) {
-      if (leftContainsInferenceBnd) {
+      if (leftContainsInferenceBnd && !(equations instanceof DummyEquations)) {
         equations.add(level1, level2.subtract(level2.extractOuterSucs()), cmp == Equations.CMP.EQ ? Equations.CMP.EQ : Equations.CMP.GE, null);
         return true;
       }
@@ -273,8 +273,8 @@ public class LevelExpression implements PrettyPrintable {
       //if (equal) {
       //  return true;
      // }
-      if (!equal && !rightContainsInferenceBnd && !leftContainsInferenceBnd) {
-        return false;
+      if ((!rightContainsInferenceBnd && !leftContainsInferenceBnd) || (equations instanceof DummyEquations)) {
+        return equal;
       }
 
       int externalSucs = Math.min(level1.extractOuterSucs(), level2.extractOuterSucs());
@@ -288,22 +288,23 @@ public class LevelExpression implements PrettyPrintable {
 
     for (LevelExpression rightMaxArg : level2.toListOfMaxArgs()) {
       int rightSucs = rightMaxArg.getUnitSucs();
+      int sucsToRemove = Math.min(leftSucs, rightSucs);
 
       if (rightMaxArg.isClosed()) {
         if (leftLevel.isClosed() && leftSucs >= rightSucs) {
           continue;
         }
-        if (!leftContainsInferenceBnd) {
+        if (!leftContainsInferenceBnd || (equations instanceof DummyEquations)) {
           return false;
         }
-        equations.add(leftLevel, rightMaxArg.subtract(leftSucs), Equations.CMP.GE, null);
+        equations.add(level1.subtract(sucsToRemove), rightMaxArg.subtract(sucsToRemove), Equations.CMP.GE, null);
       } else if (leftLevel.findBinding(rightMaxArg.getUnitBinding())) {
         if (leftLevel.getNumSucs(rightMaxArg.getUnitBinding()) + leftSucs < rightSucs) {
           return false;
         }
       } else {
-        if (leftContainsInferenceBnd || (rightMaxArg.getUnitBinding() instanceof InferenceBinding)) {
-          equations.add(leftLevel, rightMaxArg.subtract(leftSucs), Equations.CMP.GE, null);
+        if ((leftContainsInferenceBnd || (rightMaxArg.getUnitBinding() instanceof InferenceBinding)) && !(equations instanceof DummyEquations)) {
+          equations.add(level1.subtract(sucsToRemove), rightMaxArg.subtract(sucsToRemove), Equations.CMP.GE, null);
           continue;
         }
         return false;
