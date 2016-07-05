@@ -51,7 +51,12 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
     }
     final FunctionScope scope = new FunctionScope(myParentScope, myStaticNsProvider.forDefinition(def));
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, myContext, myNameResolver, myErrorReporter, myResolveListener);
+    StatementResolveNameVisitor statementVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, scope, myContext, myResolveListener);
+    for (Abstract.Statement statement : def.getStatements()) {
+      statement.accept(statementVisitor, null);
+    }
+
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(statementVisitor.getCurrentScope(), myContext, myNameResolver, myErrorReporter, myResolveListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Abstract.Argument argument : def.getArguments()) {
         if (argument instanceof Abstract.TypeArgument) {
@@ -74,11 +79,6 @@ public class DefinitionResolveNameVisitor implements AbstractDefinitionVisitor<B
       if (term != null) {
         term.accept(exprVisitor, null);
       }
-    }
-
-    StatementResolveNameVisitor statementVisitor = new StatementResolveNameVisitor(myStaticNsProvider, myDynamicNsProvider, myNameResolver, myErrorReporter, scope, myContext, myResolveListener);
-    for (Abstract.Statement statement : def.getStatements()) {
-      statement.accept(statementVisitor, null);
     }
 
     return null;
