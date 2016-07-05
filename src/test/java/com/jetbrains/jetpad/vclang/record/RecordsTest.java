@@ -62,7 +62,7 @@ public class RecordsTest {
         "}\n" +
         "\\static \\function B => A {\n" +
         "  f => \\lam n => c n n\n" +
-        "}", 1);
+        "}", 1, 1);
   }
 
   /*
@@ -139,7 +139,7 @@ public class RecordsTest {
         "\\static \\function test => Point {\n" +
         "  | x => y\n" +
         "  | y => x\n" +
-        "}", 2);
+        "}", 2, 2);
   }
 
   @Test

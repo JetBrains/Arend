@@ -32,7 +32,7 @@ public class NameResolverTest {
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
-    Concrete.Expression result = resolveNamesExpr("0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)", namespace);
+    Concrete.Expression result = resolveNamesExpr(namespace, "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
     assertNotNull(result);
     assertTrue(compare(cBinOp(cBinOp(cNum(0), plus, cBinOp(cNum(1), mul, cNum(2))), plus, cBinOp(cBinOp(cNum(3), mul, cBinOp(cNum(4), mul, cNum(5))), mul, cBinOp(cNum(6), plus, cNum(7)))), result));
   }
@@ -47,7 +47,7 @@ public class NameResolverTest {
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
-    resolveNamesExpr("11 + 2 * 3", 1, namespace);
+    resolveNamesExpr(namespace, "11 + 2 * 3", 1);
   }
 
   @Test

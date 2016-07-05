@@ -50,8 +50,7 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
         if (ref != null) {
           myResolveListener.nameResolved(expr, ref);
         } else if (expression == null) {
-          // TODO: uncomment when patterns add to context
-          //myErrorReporter.report(new NotInScopeError(expr, expr.getName()));
+          myErrorReporter.report(new NotInScopeError(expr, expr.getName()));
         }
       }
     }

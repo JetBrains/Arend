@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static org.junit.Assert.*;
@@ -113,7 +114,7 @@ public class ClassesTest {
 
   @Test
   public void dynamicDoubleInnerFunctionCall011() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\static \\class A {\n" +
         "  \\function g => 0\n" +
         "  \\static \\class B {\n" +
@@ -139,7 +140,7 @@ public class ClassesTest {
 
   @Test
   public void dynamicDoubleInnerFunctionCall001() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\static \\class A {\n" +
         "  \\function g => 0\n" +
         "  \\static \\class B {\n" +
@@ -165,7 +166,7 @@ public class ClassesTest {
 
   @Test
   public void dynamicDoubleInnerFunctionCall010() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\static \\class A {\n" +
         "  \\function g => 0\n" +
         "  \\static \\class B {\n" +
@@ -191,7 +192,7 @@ public class ClassesTest {
 
   @Test
   public void dynamicDoubleInnerFunctionCall000() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\static \\class A {\n" +
         "  \\function g => 0\n" +
         "  \\static \\class B {\n" +

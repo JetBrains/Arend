@@ -5,17 +5,17 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
+import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Constructor;
+import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
-import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
@@ -77,7 +77,7 @@ public class DefCall {
 
   @Test
   public void funDynamicError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\function f => 0\n" +
         "\\static \\function test => f", 1);
   }
@@ -337,14 +337,14 @@ public class DefCall {
 
   @Test
   public void conDynamicError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\data D | c\n" +
         "\\static \\function test => c", 1);
   }
 
   @Test
   public void dataDynamicError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\data D | c\n" +
         "\\static \\function test => D.c", 1);
   }
@@ -777,7 +777,7 @@ public class DefCall {
 
   @Test
   public void classDynamicError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class C {}\n" +
         "\\static \\function test => C", 1);
   }

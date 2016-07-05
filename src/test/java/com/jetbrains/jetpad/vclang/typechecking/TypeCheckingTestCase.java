@@ -39,7 +39,7 @@ public class TypeCheckingTestCase {
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, ErrorReporter errorReporter) {
-    return typeCheckExpr(context, resolveNamesExpr(text), expectedType, errorReporter);
+    return typeCheckExpr(context, resolveNamesExpr(context, text), expectedType, errorReporter);
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType, ErrorReporter errorReporter) {
@@ -47,7 +47,7 @@ public class TypeCheckingTestCase {
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, int errors) {
-    return typeCheckExpr(context, resolveNamesExpr(text), expectedType, errors);
+    return typeCheckExpr(context, resolveNamesExpr(context, text), expectedType, errors);
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType, int errors) {
@@ -55,7 +55,7 @@ public class TypeCheckingTestCase {
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType) {
-    return typeCheckExpr(context, resolveNamesExpr(text), expectedType, 0);
+    return typeCheckExpr(context, resolveNamesExpr(context, text), expectedType, 0);
   }
 
   public static CheckTypeVisitor.Result typeCheckExpr(String text, Expression expectedType) {

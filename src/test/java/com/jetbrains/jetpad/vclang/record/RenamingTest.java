@@ -51,7 +51,7 @@ public class RenamingTest {
 
   @Test
   public void renamingError() {
-    typeCheckClass(
+    resolveNamesClass(
         "\\class B {\n" +
         "  \\abstract A : \\Set0\n" +
         "  \\abstract a : A\n" +

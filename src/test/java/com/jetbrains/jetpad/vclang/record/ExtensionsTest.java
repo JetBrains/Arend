@@ -44,7 +44,7 @@ public class ExtensionsTest {
         "  \\abstract a' : A\n" +
         "  \\abstract p : undefined_variable = a'\n" +
         "}\n" +
-        "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
+        "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1, 1);
   }
 
   @Test
