@@ -16,7 +16,7 @@ public class HidingTest {
         "\\class B \\extends A \\hiding a {\n" +
         "  \\abstract a' : A\n" +
         "  \\abstract p : a = a'\n" +
-        "}", 1);
+        "}", 1, 1);
   }
 
   @Test
@@ -75,7 +75,7 @@ public class HidingTest {
         "}\n" +
         "\\static \\class C \\extends B \\hiding A {\n" +
         "  \\abstract a' : A\n" +
-        "}", 1);
+        "}", 1, 1);
   }
 
   @Test

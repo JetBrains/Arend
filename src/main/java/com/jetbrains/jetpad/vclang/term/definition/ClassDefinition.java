@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
 
 import java.util.*;
@@ -27,6 +28,10 @@ public class ClassDefinition extends Definition {
       this.name = name;
       this.thisParameter = thisParameter;
       this.implementation = implementation;
+    }
+
+    public boolean isImplemented() {
+      return implementation != null;
     }
   }
 
@@ -57,6 +62,27 @@ public class ClassDefinition extends Definition {
       mySuperClasses = new HashSet<>();
     }
     mySuperClasses.add(superClass);
+  }
+
+  public Substitution getImplementedFields() {
+    Substitution result = new Substitution();
+    for (Map.Entry<ClassField, FieldImplementation> entry : myFields.entrySet()) {
+      if (entry.getValue().isImplemented()) {
+        result.add(entry.getKey(), Lam(entry.getValue().thisParameter, entry.getValue().implementation));
+      }
+    }
+    return result;
+  }
+
+  public void updateUniverse() {
+    TypeUniverse universe = TypeUniverse.PROP;
+    Substitution substitution = getImplementedFields();
+    for (Map.Entry<ClassField, FieldImplementation> entry : myFields.entrySet()) {
+      if (!entry.getKey().hasErrors() && !entry.getValue().isImplemented()) {
+        universe = entry.getKey().updateUniverse(universe, substitution);
+      }
+    }
+    setUniverse(universe);
   }
 
   @Override

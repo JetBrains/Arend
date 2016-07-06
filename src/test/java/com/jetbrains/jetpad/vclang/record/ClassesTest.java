@@ -496,7 +496,7 @@ public class ClassesTest {
         "  }\n" +
         "  \\abstract x : Nat\n" +
         "}\n" +
-        "\\static \\function y (a : A) : \\Prop => a.B.C");
+        "\\static \\function y (a : A) : \\Set0 => a.B.C");
   }
 
   @Test
@@ -510,7 +510,7 @@ public class ClassesTest {
         "  }\n" +
         "  \\abstract x : Nat\n" +
         "}\n" +
-        "\\static \\function y (a : A) : \\Prop => a.B");
+        "\\static \\function y (a : A) : \\Set0 => a.B");
   }
 
   @Test

@@ -4,6 +4,9 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.FieldCallExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Substitution;
+import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
+import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.Pi;
@@ -26,6 +29,25 @@ public class ClassField extends Definition {
     myType = type;
     setThisClass(thisClass);
     hasErrors(type == null || type.toError() != null);
+  }
+
+  public TypeUniverse updateUniverse(TypeUniverse universe, Substitution substitution) {
+    Expression expr1 = myType.subst(substitution).normalize(NormalizeVisitor.Mode.WHNF);
+    UniverseExpression expr = null;
+    if (expr1.toOfType() != null) {
+      Expression expr2 = expr1.toOfType().getExpression().getType();
+      if (expr2 != null) {
+        expr = expr2.normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+      }
+    }
+    if (expr == null) {
+      expr = expr1.getType().normalize(NormalizeVisitor.Mode.WHNF).toUniverse();
+    }
+
+    TypeUniverse fieldUniverse = expr != null ? expr.getUniverse() : getUniverse();
+    universe = universe.max(fieldUniverse);
+    assert expr != null;
+    return universe;
   }
 
   public DependentLink getThisParameter() {

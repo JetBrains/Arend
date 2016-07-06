@@ -91,7 +91,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         }
         if (impl == null) {
           ClassDefinition.FieldImplementation fieldImpl = classCall.getDefinition().getFieldImpl((ClassField) defCallExpr.getDefinition());
-          if (fieldImpl.implementation != null) {
+          if (fieldImpl.isImplemented()) {
             impl = fieldImpl.implementation.subst(fieldImpl.thisParameter, thisExpr);
           }
         }

@@ -837,21 +837,21 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
           if (memberDefinition instanceof ClassField) {
             ClassField field = (ClassField) memberDefinition;
-            TypeUniverse oldUniverse = classDefinition.getUniverse();
-            TypeUniverse newUniverse = field.getUniverse();
+            // TypeUniverse oldUniverse = classDefinition.getUniverse();
+            // TypeUniverse newUniverse = field.getUniverse();
             //Universe.CompareResult cmp = oldUniverse.compare(newUniverse);
            // if (cmp == null) {
            //   String error = "UniverseOld " + newUniverse + " of abstract definition '" + field.getName() + "' is not compatible with universe " + oldUniverse + " of previous abstract definitions";
            //   myErrorReporter.report(new TypeCheckingError(myNamespaceMember.getResolvedName(), error, definition));
            // } else {
-              classDefinition.setUniverse(new TypeUniverse(oldUniverse.getPLevel().max(newUniverse.getPLevel()), oldUniverse.getHLevel().max(newUniverse.getHLevel())));
+              // classDefinition.setUniverse(new TypeUniverse(oldUniverse.getPLevel().max(newUniverse.getPLevel()), oldUniverse.getHLevel().max(newUniverse.getHLevel())));
               classDefinition.addField(field);
            // }
           }
         } else
         if (definition instanceof Abstract.ImplementDefinition) {
           ClassField field = (ClassField) myState.getTypechecked(((Abstract.ImplementDefinition) definition).getImplemented());
-          if (classDefinition.getFieldImpl(field).implementation != null) {
+          if (classDefinition.getFieldImpl(field).isImplemented()) {
             myErrorReporter.report(new TypeCheckingError("Field '" + field.getName() + "' is already implemented", definition));
           }
 
@@ -884,9 +884,9 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         if (aSuperClass.getReferent() instanceof ClassDefinition) {
           superClass = (ClassDefinition) aSuperClass.getReferent();
         } else {
-          Definition typecheckedSuper = myState.getTypechecked(aSuperClass.getReferent());
-          if (typecheckedSuper instanceof ClassDefinition) {
-            superClass = (ClassDefinition) typecheckedSuper;
+          Definition typeCheckedSuper = myState.getTypechecked(aSuperClass.getReferent());
+          if (typeCheckedSuper instanceof ClassDefinition) {
+            superClass = (ClassDefinition) typeCheckedSuper;
           }
         }
 
@@ -910,8 +910,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               ok = false;
             } else {
               ClassDefinition.FieldImplementation impl = oldFieldEntry.getValue();
-              if (impl.implementation == null || entry.getValue().implementation == null || impl.implementation.equals(entry.getValue().implementation.subst(entry.getValue().thisParameter, Reference(impl.thisParameter)))) {
-                typedDef.addExistingField(entry.getKey(), new ClassDefinition.FieldImplementation(name, impl.implementation == null ? entry.getValue().thisParameter : impl.thisParameter, impl.implementation == null ? entry.getValue().implementation : impl.implementation));
+              if (!impl.isImplemented() || !entry.getValue().isImplemented() || impl.implementation.equals(entry.getValue().implementation.subst(entry.getValue().thisParameter, Reference(impl.thisParameter)))) {
+                typedDef.addExistingField(entry.getKey(), new ClassDefinition.FieldImplementation(name, impl.isImplemented() ? impl.thisParameter : entry.getValue().thisParameter , impl.isImplemented() ? impl.implementation : entry.getValue().implementation ));
               } else {
                 myErrorReporter.report(new TypeCheckingError("Implementations of '" + name + "' differ", aSuperClass.getReferent()));
               }
@@ -930,6 +930,7 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         typedDef.addParentField(thisClass);
       }
       typeCheckStatements(typedDef, def);
+      typedDef.updateUniverse();
       myState.record(def, typedDef);
       return typedDef;
     } catch (Namespace.InvalidNamespaceException e) {

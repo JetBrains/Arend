@@ -762,7 +762,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (fieldEntry == null) {
         myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Class '" + baseClass.getName() + "' does not have field '" + name + "'", statement));
       } else
-      if (fieldEntry.getValue().implementation != null) {
+      if (fieldEntry.getValue().isImplemented()) {
         myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + fieldEntry.getValue().name + "' is already implemented", statement));
       } else {
         boolean ok = true;
@@ -822,7 +822,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
 
     int fieldsNumber = 0;
     for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : classCallExpr.getDefinition().getFieldsMap()) {
-      if (entry.getValue().implementation == null) {
+      if (!entry.getValue().isImplemented()) {
         fieldsNumber++;
       }
     }

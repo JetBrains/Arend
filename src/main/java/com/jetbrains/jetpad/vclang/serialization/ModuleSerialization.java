@@ -188,8 +188,8 @@ public class ModuleSerialization {
     for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : definition.getFieldsMap()) {
       ClassField field = entry.getKey();
       visitor.getDataStream().writeUTF(entry.getValue().name);
-      visitor.getDataStream().writeBoolean(entry.getValue().implementation != null);
-      if (entry.getValue().implementation != null) {
+      visitor.getDataStream().writeBoolean(entry.getValue().isImplemented());
+      if (entry.getValue().isImplemented()) {
         writeParameters(visitor, entry.getValue().thisParameter);
         entry.getValue().implementation.accept(visitor, null);
       }

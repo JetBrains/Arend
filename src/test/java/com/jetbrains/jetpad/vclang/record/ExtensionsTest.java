@@ -1,9 +1,12 @@
 package com.jetbrains.jetpad.vclang.record;
 
+import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
+import static org.junit.Assert.assertEquals;
 
 public class ExtensionsTest {
   @Test
@@ -167,5 +170,15 @@ public class ExtensionsTest {
         "\\class B \\extends A {}", 1);
   }
 
-  // TODO: Add tests on the universe of a class
+  @Test
+  public void universe() {
+    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract A : \\Set0\n" +
+        "  \\abstract a : A\n" +
+        "}\n" +
+        "\\static \\class B \\extends A {}");
+    assertEquals(new TypeUniverse(1, 1), result.getDefinition("A").getUniverse());
+    assertEquals(new TypeUniverse(1, 1), result.getDefinition("B").getUniverse());
+  }
 }
