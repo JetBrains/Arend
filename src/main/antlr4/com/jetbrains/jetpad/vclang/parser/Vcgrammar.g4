@@ -12,13 +12,18 @@ nsCmdRoot : modulePath | name;
 definition  : '\\function' precedence name tele* (':' expr)? arrow expr where?            # defFunction
             | '\\abstract' precedence name tele* ':' expr                                 # defAbstract
             // | '\\override' name ('\\as' name)? tele* typeTermOpt where?                   # defOverride
+            | '\\implement' ID '=>' expr                                                  # defImplement
             | '\\data' precedence name tele* (':' expr)? constructorDef* conditionDef?    # defData
-            | classKindMod ID ('\\extends' ID renamingOrIDs)* '{' statement* '}'          # defClass
+            | classKindMod ID ('\\extends' ID extendsOpts)* '{' statement* '}'            # defClass
             ;
 
-renamingOrIDs : '\\renaming' (ID '\\to' ID) (';' ID '\\to' ID)*                           # roiRenaming
-              | (',' ID)*                                                                 # roiIDs
-              ;
+extendsOpts : superClassOpts*   # extendsSuperClassOpts
+            | (',' ID)*         # extendsIDs
+            ;
+
+superClassOpts : '\\renaming' (ID '\\to' ID) (',' ID '\\to' ID)*  # superClassRenaming
+               | '\\hiding' ID (',' ID)*                          # superClassHiding
+               ;
 
 conditionDef : '\\with' '|'? condition ('|' condition)*;
 

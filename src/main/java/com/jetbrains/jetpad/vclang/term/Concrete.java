@@ -883,6 +883,35 @@ public final class Concrete {
     }
   }
 
+  public static class ImplementDefinition extends Definition implements Abstract.ImplementDefinition {
+    private Referable myImplemented;
+    private final Expression myExpression;
+
+    public ImplementDefinition(Position position, String name, Expression expression) {
+      super(position, name, Abstract.Binding.DEFAULT_PRECEDENCE);
+      myExpression = expression;
+    }
+
+    @Override
+    public Referable getImplemented() {
+      return myImplemented;
+    }
+
+    public void setImplemented(Referable implemented) {
+      myImplemented = implemented;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitImplement(this, params);
+    }
+  }
+
   public static class FunctionDefinition extends SignatureDefinition implements Abstract.FunctionDefinition {
     private final Abstract.Definition.Arrow myArrow;
     private final boolean myOverridden;
@@ -1039,15 +1068,41 @@ public final class Concrete {
     }
   }
 
-  public static class SuperClass extends SourceNode implements Abstract.SuperClass {
-    private String myName;
-    private final List<IdPair> myIdPairs;
+  public static class Identifier extends SourceNode implements Abstract.Identifier {
+    private final String myName;
     private Referable myReferent;
 
-    public SuperClass(Position position, String name, List<IdPair> idPairs) {
+    public Identifier(Position position, String name) {
       super(position);
       myName = name;
-      myIdPairs = idPairs;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
+    public Referable getReferent() {
+      return myReferent;
+    }
+
+    public void setReferent(Referable referent) {
+      myReferent = referent;
+    }
+  }
+
+  public static class SuperClass extends SourceNode implements Abstract.SuperClass {
+    private Referable myReferent;
+    private final String myName;
+    private final List<IdPair> myRenamings;
+    private final List<Identifier> myHidings;
+
+    public SuperClass(Position position, String name, List<IdPair> renamings, List<Identifier> hidings) {
+      super(position);
+      myName = name;
+      myRenamings = renamings;
+      myHidings = hidings;
     }
 
     @Override
@@ -1065,8 +1120,13 @@ public final class Concrete {
     }
 
     @Override
-    public Collection<IdPair> getIdPairs() {
-      return myIdPairs;
+    public Collection<IdPair> getRenamings() {
+      return myRenamings;
+    }
+
+    @Override
+    public Collection<Identifier> getHidings() {
+      return myHidings;
     }
   }
 

@@ -824,16 +824,15 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
     return processedPatterns;
   }
 
-  private void typeCheckStatements(ClassDefinition classDefinition, Collection<? extends Abstract.Statement> statements) {
-    for (Abstract.Statement statement : statements) {
+  private void typeCheckStatements(ClassDefinition classDefinition, Abstract.ClassDefinition classDef) {
+    for (Abstract.Statement statement : classDef.getStatements()) {
       if (statement instanceof Abstract.DefineStatement) {
         Abstract.Definition definition = ((Abstract.DefineStatement) statement).getDefinition();
         if (definition instanceof Abstract.AbstractDefinition) {
           Definition memberDefinition = myState.getTypechecked(definition);
 
           if (memberDefinition == null) {
-            DefinitionCheckTypeVisitor visitor = new DefinitionCheckTypeVisitor(myState, myErrorReporter);
-            memberDefinition = visitor.visitAbstract((Abstract.AbstractDefinition) definition, classDefinition);
+            memberDefinition = visitAbstract((Abstract.AbstractDefinition) definition, classDefinition);
           }
 
           if (memberDefinition instanceof ClassField) {
@@ -848,6 +847,22 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               classDefinition.setUniverse(new TypeUniverse(oldUniverse.getPLevel().max(newUniverse.getPLevel()), oldUniverse.getHLevel().max(newUniverse.getHLevel())));
               classDefinition.addField(field);
            // }
+          }
+        } else
+        if (definition instanceof Abstract.ImplementDefinition) {
+          ClassField field = (ClassField) myState.getTypechecked(((Abstract.ImplementDefinition) definition).getImplemented());
+          if (classDefinition.getFieldImpl(field).implementation != null) {
+            myErrorReporter.report(new TypeCheckingError("Field '" + field.getName() + "' is already implemented", definition));
+          }
+
+          myState.record(definition, field);
+          DependentLink thisParameter = param("\\this", ClassCall(classDefinition));
+          List<Binding> context = new ArrayList<>();
+          context.add(thisParameter);
+          CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(classDefinition, Reference(thisParameter)).build(classDef);
+          CheckTypeVisitor.Result result = visitor.checkType(((Abstract.ImplementDefinition) definition).getExpression(), field.getBaseType().subst(field.getThisParameter(), Reference(thisParameter)));
+          if (result != null) {
+            classDefinition.setFieldImpl(field, thisParameter, result.expression);
           }
         }
       }
@@ -877,19 +892,29 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
 
         if (superClass != null) {
           boolean ok = true;
-          for (Map.Entry<ClassField, String> entry : superClass.getFieldsMap()) {
-            String name = entry.getValue();
-            for (Abstract.IdPair idPair : aSuperClass.getIdPairs()) {
+          for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : superClass.getFieldsMap()) {
+            String name = entry.getValue().name;
+            for (Abstract.IdPair idPair : aSuperClass.getRenamings()) {
               if (name.equals(idPair.getFirstName())) {
                 name = idPair.getSecondName();
                 break;
               }
             }
 
-            ClassField oldField = typedDef.tryAddField(entry.getKey(), name);
-            if (oldField != null) {
+            Map.Entry<ClassField, ClassDefinition.FieldImplementation> oldFieldEntry = typedDef.getFieldEntry(name);
+            if (oldFieldEntry == null) {
+              typedDef.addExistingField(entry.getKey(), new ClassDefinition.FieldImplementation(name, entry.getValue().thisParameter, entry.getValue().implementation));
+            } else
+            if (oldFieldEntry.getKey() != entry.getKey()) {
               myErrorReporter.report(new TypeCheckingError("Duplicate field '" + name + "'", null));  // FIXME[error] report proper
               ok = false;
+            } else {
+              ClassDefinition.FieldImplementation impl = oldFieldEntry.getValue();
+              if (impl.implementation == null || entry.getValue().implementation == null || impl.implementation.equals(entry.getValue().implementation.subst(entry.getValue().thisParameter, Reference(impl.thisParameter)))) {
+                typedDef.addExistingField(entry.getKey(), new ClassDefinition.FieldImplementation(name, impl.implementation == null ? entry.getValue().thisParameter : impl.thisParameter, impl.implementation == null ? entry.getValue().implementation : impl.implementation));
+              } else {
+                myErrorReporter.report(new TypeCheckingError("Implementations of '" + name + "' differ", aSuperClass.getReferent()));
+              }
             }
           }
           if (ok) {
@@ -904,12 +929,17 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       if (thisClass != null) {
         typedDef.addParentField(thisClass);
       }
-      typeCheckStatements(typedDef, def.getStatements());
+      typeCheckStatements(typedDef, def);
       myState.record(def, typedDef);
       return typedDef;
     } catch (Namespace.InvalidNamespaceException e) {
       myErrorReporter.report(e.toError());
     }
     return null;
+  }
+
+  @Override
+  public Definition visitImplement(Abstract.ImplementDefinition def, Void params) {
+    throw new IllegalStateException();
   }
 }

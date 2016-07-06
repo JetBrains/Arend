@@ -82,5 +82,10 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     public Namespace visitClass(Abstract.ClassDefinition def, Void params) {
       return forClass(def);
     }
+
+    @Override
+    public Namespace visitImplement(Abstract.ImplementDefinition def, Void params) {
+      return new EmptyNamespace();
+    }
   }
 }

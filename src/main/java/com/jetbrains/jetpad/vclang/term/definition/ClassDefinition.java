@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.definition;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.UniverseExpression;
@@ -14,8 +15,20 @@ public class ClassDefinition extends Definition {
   private final Namespace myOwnNamespace;
   private final Namespace myInstanceNamespace;
 
-  private final Map<ClassField, String> myFields = new HashMap<>();
+  private final Map<ClassField, FieldImplementation> myFields = new HashMap<>();
   private Set<ClassDefinition> mySuperClasses = null;
+
+  public static class FieldImplementation {
+    public String name;
+    public DependentLink thisParameter;
+    public Expression implementation;
+
+    public FieldImplementation(String name, DependentLink thisParameter, Expression implementation) {
+      this.name = name;
+      this.thisParameter = thisParameter;
+      this.implementation = implementation;
+    }
+  }
 
   public ClassDefinition(String name, Namespace ownNamespace, Namespace instanceNamespace) {
     super(name, Abstract.Binding.DEFAULT_PRECEDENCE);
@@ -56,24 +69,39 @@ public class ClassDefinition extends Definition {
     return ClassCall(this, new HashMap<ClassField, ClassCallExpression.ImplementStatement>());
   }
 
-  public ClassField getField(String name) {
-    for (ClassField field : myFields.keySet()) {
-      if (field.getName().equals(name)) {
-        return field;
+  public Map.Entry<ClassField, FieldImplementation> getFieldEntry(String name) {
+    for (Map.Entry<ClassField, FieldImplementation> entry : myFields.entrySet()) {
+      if (entry.getValue().name.equals(name)) {
+        return entry;
       }
     }
     return null;
   }
 
+  public ClassField getField(String name) {
+    Map.Entry<ClassField, FieldImplementation> entry = getFieldEntry(name);
+    return entry == null ? null : entry.getKey();
+  }
+
   public String getFieldName(ClassField field) {
+    return myFields.get(field).name;
+  }
+
+  public FieldImplementation getFieldImpl(ClassField field) {
     return myFields.get(field);
+  }
+
+  public void setFieldImpl(ClassField field, DependentLink thisParameter, Expression implementation) {
+    FieldImplementation impl = myFields.get(field);
+    impl.thisParameter = thisParameter;
+    impl.implementation = implementation;
   }
 
   public Collection<ClassField> getFields() {
     return myFields.keySet();
   }
 
-  public Set<Map.Entry<ClassField, String>> getFieldsMap() {
+  public Set<Map.Entry<ClassField, FieldImplementation>> getFieldsMap() {
     return myFields.entrySet();
   }
 
@@ -86,28 +114,22 @@ public class ClassDefinition extends Definition {
   }
 
   public void addField(ClassField field) {
-    addField(field, field.getName());
+    addField(field, field.getName(), null, null);
   }
 
-  public void addField(ClassField field, String name) {
-    ClassField oldField = getField(name);
-    if (oldField != null) {
-      myFields.remove(oldField);
+  public void addField(ClassField field, String name, DependentLink thisParameter, Expression implementation) {
+    if (name.equals("\\parent")) {
+      ClassField oldField = getField(name);
+      if (oldField != null) {
+        myFields.remove(oldField);
+      }
     }
-    myFields.put(field, name);
+    myFields.put(field, new FieldImplementation(name, thisParameter, implementation));
     field.setThisClass(this);
   }
 
-  public ClassField tryAddField(ClassField field, String name) {
-    ClassField oldField = getField(name);
-    if (oldField == field) {
-      return null;
-    }
-    if (oldField != null) {
-      return oldField;
-    }
-    myFields.put(field, name);
-    return null;
+  public void addExistingField(ClassField field, FieldImplementation impl) {
+    myFields.put(field, impl);
   }
 
   public ClassField removeField(String name) {

@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.naming.error.DuplicateDefinitionError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.definition.Referable;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -52,8 +51,8 @@ public class SimpleNamespace implements Namespace {
     return myNames.keySet();
   }
 
-  Collection<Referable> getValues() {
-    return myNames.values();
+  Set<Map.Entry<String, Referable>> getEntrySet() {
+    return myNames.entrySet();
   }
 
   @Override
