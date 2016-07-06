@@ -258,7 +258,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       result.setEquations(myArgsInference.newEquations());
     }
     if (!CompareVisitor.compare(result.getEquations(), Equations.CMP.EQ, expected.normalize(NormalizeVisitor.Mode.NF), actual.normalize(NormalizeVisitor.Mode.NF), expr)) {
-      TypeCheckingError error = new SolveEquationsError(expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
+      TypeCheckingError error = new SolveEquationsError(myParentDefinition, expected.normalize(NormalizeVisitor.Mode.HUMAN_NF), actual.normalize(NormalizeVisitor.Mode.HUMAN_NF), null, expr);
       expr.setWellTyped(myContext, Error(result.expression, error));
       myErrorReporter.report(error);
       return false;
@@ -765,9 +765,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       if (fieldEntry.getValue().implementation != null) {
         myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + fieldEntry.getValue().name + "' is already implemented", statement));
       } else {
-        // TODO: do not remove fields, create new class instead
-        baseClass.removeField(name);
-        fields.add(new ImplementStatement(fieldEntry.getKey(), statement.getExpression()));
+        boolean ok = true;
+        for (ImplementStatement implementStatement : fields) {
+          if (implementStatement.classField.getName().equals(name)) {
+            myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + name + "' is already implemented", statement));
+            ok = false;
+          }
+        }
+        if (ok) {
+          fields.add(new ImplementStatement(fieldEntry.getKey(), statement.getExpression()));
+        }
       }
     }
 
@@ -781,11 +788,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       ImplementStatement field = fields.get(i);
       Expression thisExpr = New(ClassCall(baseClass, typeCheckedStatements));
       Result result1 = typeCheck(field.term, field.classField.getBaseType().subst(field.classField.getThisParameter(), thisExpr));
-      baseClass.addField(field.classField);
       if (result1 == null) {
         for (i++; i < fields.size(); i++) {
           typeCheck(fields.get(i).term, fields.get(i).classField.getBaseType().subst(fields.get(i).classField.getThisParameter(), thisExpr));
-          baseClass.addField(fields.get(i).classField);
         }
         return null;
       }
