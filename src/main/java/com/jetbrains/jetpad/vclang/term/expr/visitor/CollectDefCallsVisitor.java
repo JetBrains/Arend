@@ -18,6 +18,12 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, S
   }
 
   @Override
+  public Set<Referable> visitAppLevel(Abstract.ApplyLevelExpression expr, Void params) {
+    expr.getFunction().accept(this, null);
+    return myDependencies;
+  }
+
+  @Override
   public Set<Referable> visitDefCall(Abstract.DefCallExpression expr, Void ignore) {
     if (expr.getReferent() != null) {
       myDependencies.add(expr.getReferent());

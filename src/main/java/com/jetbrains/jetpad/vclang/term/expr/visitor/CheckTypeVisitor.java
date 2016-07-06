@@ -25,6 +25,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInferen
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+import sun.util.logging.PlatformLogger;
 
 import java.util.*;
 
@@ -283,6 +284,43 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
     return checkResultImplicit(expectedType, result, expr);
+  }
+
+  @Override
+  public Result visitAppLevel(Abstract.ApplyLevelExpression expr, Expression expectedType) {
+    Result result = typeCheck(expr.getFunction(), expectedType);
+    if (result == null) {
+      return null;
+    }
+
+    DefCallExpression defCall = result.expression.getFunction().toDefCall();
+    if (defCall == null) {
+      TypeCheckingError error = new TypeCheckingError("Level can only be assigned to a definition", expr);
+      expr.setWellTyped(myContext, Error(result.expression, error));
+      myErrorReporter.report(error);
+      return null;
+    }
+
+    LevelExpression level = typeCheckLevel(expr.getLevel(), null);
+    if (level == null) {
+      return null;
+    }
+
+    List<Binding> polyParams = defCall.getPolyDefinition().getPolyParams();
+
+    for (Binding param : polyParams) {
+      LevelExpression value = defCall.getPolyParamsSubst().get(param);
+      if (value == null) {
+        assert false;
+        return null;
+      }
+      if (value.isBinding() && value.getUnitBinding() instanceof LevelInferenceBinding) {
+        result.getEquations().add(new LevelExpression(value.getUnitBinding()), level, Equations.CMP.EQ, expr);
+        return result;
+      }
+    }
+
+    return result;
   }
 
   @Override

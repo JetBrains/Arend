@@ -87,14 +87,14 @@ public class TypeCheckingTest {
 
    @Test
   public void testPMap1Error() {
-    typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : ((=) {sucLvl zeroLvl} {inf} {B} (f a) (f a'))" +
-            " => path {zeroLvl} {inf} (\\lam i => f (p @ i))", 1);
+    typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : ((=) [suc zero] [inf] {B} (f a) (f a'))" +
+            " => path [zero] [inf] (\\lam i => f (p @ i))", 1);
   }
 
   @Test
   public void testTransport1() {
     typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B ((@) {sucLvl zeroLvl} {inf} {\\lam _ => A} {a} {a'} p i)) b right");
+        "coe (\\lam i => B ((@) {\\lam _ => A} {a} {a'} p i)) b right");
   }
 
   @Test

@@ -97,6 +97,15 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Byte, Void>
   }
 
   @Override
+  public Void visitAppLevel(Abstract.ApplyLevelExpression expr, Byte prec) {
+    expr.getFunction().accept(this, Abstract.ApplyLevelExpression.PREC);
+    myBuilder.append("[");
+    expr.getLevel().accept(this, Abstract.Expression.PREC);
+    myBuilder.append("]");
+    return null;
+  }
+
+  @Override
   public Void visitDefCall(Abstract.DefCallExpression expr, Byte prec) {
     if (expr.getExpression() != null) {
       expr.getExpression().accept(this, prec);

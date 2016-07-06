@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.context.binding.FunctionInferenceBinding
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.term.definition.Definition;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
@@ -118,6 +119,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       myVisitor.getErrorReporter().report(error);
       return null;
     }
+
 
     CheckTypeVisitor.Result argResult = myVisitor.typeCheck(arg, actualType.getParameters().getType());
     if (argResult == null) {

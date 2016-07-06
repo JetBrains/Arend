@@ -805,6 +805,7 @@ public class ListEquations implements Equations {
   }
 
   public void subst(Binding binding, LevelExpression subst) {
+    ListEquations newEquations = new ListEquations();
     for (Iterator<Map.Entry<InferenceBinding, ExactLevelSolution>> it = myExactLevelSolutions.entrySet().iterator(); it.hasNext(); ) {
       Map.Entry<InferenceBinding, ExactLevelSolution> entry = it.next();
       ExactLevelSolution solution = entry.getValue();
@@ -814,11 +815,12 @@ public class ListEquations implements Equations {
         if (binding1 instanceof InferenceBinding) {
           it.remove();
           if (binding1 != entry.getKey()) {
-            add(new LevelExpression(entry.getKey(), 0), solution.expression, CMP.EQ, entry.getKey().getSourceNode());
+            newEquations.add(new LevelExpression(entry.getKey(), 0), solution.expression, CMP.EQ, entry.getKey().getSourceNode());
           }
         }
       }
     }
+    add(newEquations);
 
     for (Map.Entry<InferenceBinding, EqSetLevelSolution> entry : myEqLevelSolutions.entrySet()) {
       entry.getValue().subst(binding, subst);
