@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
+import com.jetbrains.jetpad.vclang.parser.ParserError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
@@ -32,17 +33,18 @@ public class ErrorFormatter {
     StringBuilder builder = new StringBuilder();
     builder.append(printLevel(error));
 
-    final Concrete.SourceNode concreteCause;
+    final Concrete.Position pos;
     if (error.getCause() instanceof Concrete.SourceNode) {
-      concreteCause = (Concrete.SourceNode) error.getCause();
+      pos = ((Concrete.SourceNode) error.getCause()).getPosition();
+    } else if (error instanceof ParserError) {
+      pos = ((ParserError) error).position;
     } else if (error instanceof TypeCheckingError && ((TypeCheckingError) error).getDefinition() instanceof Concrete.SourceNode) {
-      concreteCause = (Concrete.SourceNode) ((TypeCheckingError) error).getDefinition();
+      pos = ((Concrete.SourceNode) ((TypeCheckingError) error).getDefinition()).getPosition();
     } else {
-      concreteCause = null;
+      pos = null;
     }
 
-    if (concreteCause != null) {
-      Concrete.Position pos = concreteCause.getPosition();
+    if (pos != null) {
       builder.append(' ').append(pos.module != null ? pos.module : "<Unknown module>");
       builder.append(':').append(pos.line).append(':').append(pos.column);
     }
