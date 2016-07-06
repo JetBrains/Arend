@@ -69,13 +69,18 @@ public class ClassDefinition extends Definition {
     return ClassCall(this, new HashMap<ClassField, ClassCallExpression.ImplementStatement>());
   }
 
-  public ClassField getField(String name) {
-    for (ClassField field : myFields.keySet()) {
-      if (field.getName().equals(name)) {
-        return field;
+  public Map.Entry<ClassField, FieldImplementation> getFieldEntry(String name) {
+    for (Map.Entry<ClassField, FieldImplementation> entry : myFields.entrySet()) {
+      if (entry.getValue().name.equals(name)) {
+        return entry;
       }
     }
     return null;
+  }
+
+  public ClassField getField(String name) {
+    Map.Entry<ClassField, FieldImplementation> entry = getFieldEntry(name);
+    return entry == null ? null : entry.getKey();
   }
 
   public String getFieldName(ClassField field) {
@@ -113,24 +118,18 @@ public class ClassDefinition extends Definition {
   }
 
   public void addField(ClassField field, String name, DependentLink thisParameter, Expression implementation) {
-    ClassField oldField = getField(name);
-    if (oldField != null) {
-      myFields.remove(oldField);
+    if (name.equals("\\parent")) {
+      ClassField oldField = getField(name);
+      if (oldField != null) {
+        myFields.remove(oldField);
+      }
     }
     myFields.put(field, new FieldImplementation(name, thisParameter, implementation));
     field.setThisClass(this);
   }
 
-  public ClassField tryAddField(ClassField field, String name) {
-    ClassField oldField = getField(name);
-    if (oldField == field) {
-      return null;
-    }
-    if (oldField != null) {
-      return oldField;
-    }
-    myFields.put(field, new FieldImplementation(name, null, null));
-    return null;
+  public void addExistingField(ClassField field, FieldImplementation impl) {
+    myFields.put(field, impl);
   }
 
   public ClassField removeField(String name) {

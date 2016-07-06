@@ -851,12 +851,16 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         } else
         if (definition instanceof Abstract.ImplementDefinition) {
           ClassField field = (ClassField) myState.getTypechecked(((Abstract.ImplementDefinition) definition).getImplemented());
+          if (classDefinition.getFieldImpl(field).implementation != null) {
+            myErrorReporter.report(new TypeCheckingError("Field '" + field.getName() + "' is already implemented", definition));
+          }
+
           myState.record(definition, field);
           DependentLink thisParameter = param("\\this", ClassCall(classDefinition));
           List<Binding> context = new ArrayList<>();
           context.add(thisParameter);
-          CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(field.getThisClass(), Reference(field.getThisParameter())).build(classDef);
-          CheckTypeVisitor.Result result = ((Abstract.ImplementDefinition) definition).getExpression().accept(visitor, field.getBaseType().subst(field.getThisParameter(), Reference(thisParameter)));
+          CheckTypeVisitor visitor = new CheckTypeVisitor.Builder(myState, context, myErrorReporter).thisClass(classDefinition, Reference(thisParameter)).build(classDef);
+          CheckTypeVisitor.Result result = visitor.checkType(((Abstract.ImplementDefinition) definition).getExpression(), field.getBaseType().subst(field.getThisParameter(), Reference(thisParameter)));
           if (result != null) {
             classDefinition.setFieldImpl(field, thisParameter, result.expression);
           }
@@ -897,10 +901,20 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
               }
             }
 
-            ClassField oldField = typedDef.tryAddField(entry.getKey(), name);
-            if (oldField != null) {
+            Map.Entry<ClassField, ClassDefinition.FieldImplementation> oldFieldEntry = typedDef.getFieldEntry(name);
+            if (oldFieldEntry == null) {
+              typedDef.addExistingField(entry.getKey(), new ClassDefinition.FieldImplementation(name, entry.getValue().thisParameter, entry.getValue().implementation));
+            } else
+            if (oldFieldEntry.getKey() != entry.getKey()) {
               myErrorReporter.report(new TypeCheckingError("Duplicate field '" + name + "'", null));  // FIXME[error] report proper
               ok = false;
+            } else {
+              ClassDefinition.FieldImplementation impl = oldFieldEntry.getValue();
+              if (impl.implementation == null || entry.getValue().implementation == null || impl.implementation.equals(entry.getValue().implementation.subst(entry.getValue().thisParameter, Reference(impl.thisParameter)))) {
+                typedDef.addExistingField(entry.getKey(), new ClassDefinition.FieldImplementation(name, impl.implementation == null ? entry.getValue().thisParameter : impl.thisParameter, impl.implementation == null ? entry.getValue().implementation : impl.implementation));
+              } else {
+                myErrorReporter.report(new TypeCheckingError("Implementations of '" + name + "' differ", aSuperClass.getReferent()));
+              }
             }
           }
           if (ok) {

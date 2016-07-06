@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -21,7 +22,6 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingElim;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingResult;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.*;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -758,13 +758,16 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
     List<ImplementStatement> fields = new ArrayList<>(statements.size());
     for (Abstract.ImplementStatement statement : statements) {
       String name = statement.getName();
-      // TODO: do not remove fields, create new class instead
-      ClassField field = baseClass.removeField(name);
-      if (field == null) {
-        TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Class '" + baseClass.getName() + "' does not have field '" + name + "'", statement);
-        myErrorReporter.report(error);
+      Map.Entry<ClassField, ClassDefinition.FieldImplementation> fieldEntry = baseClass.getFieldEntry(name);
+      if (fieldEntry == null) {
+        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Class '" + baseClass.getName() + "' does not have field '" + name + "'", statement));
+      } else
+      if (fieldEntry.getValue().implementation != null) {
+        myErrorReporter.report(new TypeCheckingError(myParentDefinition, "Field '" + fieldEntry.getValue().name + "' is already implemented", statement));
       } else {
-        fields.add(new ImplementStatement(field, statement.getExpression()));
+        // TODO: do not remove fields, create new class instead
+        baseClass.removeField(name);
+        fields.add(new ImplementStatement(fieldEntry.getKey(), statement.getExpression()));
       }
     }
 
@@ -812,7 +815,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    if (classCallExpr.getImplementStatements().size() == classCallExpr.getDefinition().getFields().size()) {
+    int fieldsNumber = 0;
+    for (Map.Entry<ClassField, ClassDefinition.FieldImplementation> entry : classCallExpr.getDefinition().getFieldsMap()) {
+      if (entry.getValue().implementation == null) {
+        fieldsNumber++;
+      }
+    }
+
+    if (classCallExpr.getImplementStatements().size() == fieldsNumber) {
       exprResult.expression = New(normExpr);
       exprResult.type = normExpr;
       return checkResult(expectedType, exprResult, expr);

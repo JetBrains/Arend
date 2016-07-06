@@ -79,6 +79,20 @@ public class ImplementTest {
   }
 
   @Test
+  public void implementImplementedError() {
+    typeCheckClass(
+        "\\static \\class A {\n" +
+        "  \\abstract a : Nat\n" +
+        "}\n" +
+        "\\static \\class B \\extends A {\n" +
+        "  \\implement a => 0\n" +
+        "}\n" +
+        "\\static \\class C \\extends B {\n" +
+        "  \\implement a => 0\n" +
+        "}", 1);
+  }
+
+  @Test
   public void implementNew() {
     typeCheckClass(
         "\\static \\class A {\n" +
@@ -122,7 +136,7 @@ public class ImplementTest {
         "  \\abstract p : b = c\n" +
         "  \\abstract f : \\Pi (q : 0 = 0 -> \\Set0) -> q p -> Nat\n" +
         "}\n" +
-        "\\function f => \\new D { a => 1 | p => path (\\lam _ => 0) }");
+        "\\function f => \\new D { a => 1 | p => path (\\lam _ => 0) | f => \\lam _ _ => 0 }");
   }
 
   @Test
@@ -134,10 +148,10 @@ public class ImplementTest {
         "  \\abstract c : Nat\n" +
         "}\n" +
         "\\static \\class B \\extends A {\n" +
-        "  \\implement b => 0\n" +
+        "  \\implement b => a\n" +
         "}\n" +
         "\\static \\class C \\extends A {\n" +
-        "  \\implement b => 0\n" +
+        "  \\implement b => a\n" +
         "}\n" +
         "\\static \\class D \\extends B, C {\n" +
         "  \\implement a => 1\n" +
@@ -202,18 +216,6 @@ public class ImplementTest {
         "  \\implement A => Nat\n" +
         "}\n" +
         "\\function f => \\new C { a => 0 }", 1);
-  }
-
-  @Test
-  public void anonymousExtensionError() {
-    resolveNamesClass("test",
-        "\\class A {\n" +
-        "  \\abstract a : Nat\n" +
-        "}\n" +
-        "\\class B \\extends A {\n" +
-        "  \\implement a => 0" +
-        "}\n" +
-        "\\function f => \\new C { a => 1 }", 1);
   }
 
   // TODO: Add tests on the universe of a class
