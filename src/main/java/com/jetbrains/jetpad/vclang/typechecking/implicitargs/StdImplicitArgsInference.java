@@ -15,8 +15,11 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 
 public class StdImplicitArgsInference extends BaseImplicitArgsInference {
-  public StdImplicitArgsInference(CheckTypeVisitor visitor) {
+  private Abstract.Definition myParentDefinition;
+
+  public StdImplicitArgsInference(Abstract.Definition definition, CheckTypeVisitor visitor) {
     super(visitor);
+    myParentDefinition = definition;
   }
 
   protected boolean fixImplicitArgs(CheckTypeVisitor.Result result, List<DependentLink> parameters, Abstract.Expression expr) {
@@ -103,7 +106,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     PiExpression actualType = result.type.toPi();
     if (actualType == null) {
-      TypeCheckingError error = new TypeMismatchError(new StringPrettyPrintable("A pi type"), result.type, fun);
+      TypeCheckingError error = new TypeMismatchError(myParentDefinition, new StringPrettyPrintable("A pi type"), result.type, fun);
       fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -115,7 +118,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (actualType.getParameters().isExplicit() != isExplicit) {
-      TypeCheckingError error = new TypeCheckingError("Expected an " + (actualType.getParameters().isExplicit() ? "explicit" : "implicit") + " argument", arg);
+      TypeCheckingError error = new TypeCheckingError(myParentDefinition, "Expected an " + (actualType.getParameters().isExplicit() ? "explicit" : "implicit") + " argument", arg);
       arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;
@@ -197,7 +200,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     List<DependentLink> expectedParams = new ArrayList<>(actualParams.size());
     Expression expectedType1 = expectedType.getPiParameters(expectedParams, true, true);
     if (expectedParams.size() > actualParams.size()) {
-      TypeCheckingError error = new TypeMismatchError(expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
+      TypeCheckingError error = new TypeMismatchError(myParentDefinition, expectedType.normalize(NormalizeVisitor.Mode.HUMAN_NF), result.type.normalize(NormalizeVisitor.Mode.HUMAN_NF), expr);
       expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
       myVisitor.getErrorReporter().report(error);
       return null;

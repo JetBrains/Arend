@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
+import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -16,16 +15,19 @@ public class FunctionDefinition extends Definition implements Function {
   private Expression myResultType;
   private ElimTreeNode myElimTree;
   private boolean myTypeHasErrors;
+  private final Namespace myOwnNamespace;
 
-  public FunctionDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence) {
-    super(rn, precedence);
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace) {
+    super(name, precedence);
+    myOwnNamespace = ownNamespace;
     myTypeHasErrors = true;
     myParameters = EmptyDependentLink.getInstance();
   }
 
-  public FunctionDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
-    super(rn, precedence);
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree) {
+    super(name, precedence);
     assert parameters != null;
+    myOwnNamespace = ownNamespace;
     hasErrors(false);
     myParameters = parameters;
     myResultType = resultType;
@@ -33,18 +35,15 @@ public class FunctionDefinition extends Definition implements Function {
     myElimTree = elimTree;
   }
 
-  public FunctionDefinition(ResolvedName rn, Abstract.Definition.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, TypeUniverse universe) {
-    super(rn, precedence, universe);
+  public FunctionDefinition(String name, Abstract.Definition.Precedence precedence, Namespace ownNamespace, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, TypeUniverse universe) {
+    super(name, precedence, universe);
     assert parameters != null;
+    myOwnNamespace = ownNamespace;
     hasErrors(false);
     myParameters = parameters;
     myResultType = resultType;
     myTypeHasErrors = false;
     myElimTree = elimTree;
-  }
-
-  public Namespace getStaticNamespace() {
-    return getParentNamespace().getChild(getName());
   }
 
   @Override
@@ -104,5 +103,10 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public FunCallExpression getDefCall() {
     return FunCall(this);
+  }
+
+  @Override
+  public Namespace getOwnNamespace() {
+    return myOwnNamespace;
   }
 }

@@ -2,10 +2,10 @@ package com.jetbrains.jetpad.vclang.serialization;
 
 import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.SerializableModuleID;
+import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -39,7 +39,7 @@ public class DefNamesIndices {
       if (moduleID.equals(curModuleID)) {
         ModuleSerialization.serializeResolvedName(stream, rn);
         if (rn.getName().equals("\\parent")) {
-          ModuleSerialization.writeDefinition(stream, ((ClassDefinition) rn.getParent().toDefinition()).getField("\\parent"));
+          ModuleSerialization.writeDefinition(stream, ((ClassDefinition) rn.getParent().toDefinition()).getParentField());
         } else {
           ModuleSerialization.writeDefinition(stream, rn.toDefinition());
         }

@@ -110,7 +110,7 @@ public class ModuleDeserialization {
     if (dryRun)
       return null;
 
-    Definition definition = code.toDefinition(rn, precedence);
+    Definition definition = null; // code.toDefinition(rn, precedence);  // FIXME[serial]
     if (rn.getName().equals("\\parent"))
       ((ClassDefinition) rn.getParent().toDefinition()).addField((ClassField) definition);
     else {
@@ -155,7 +155,7 @@ public class ModuleDeserialization {
       }
       if (!createStubs) {
         result.put(i, rn.getName().equals("\\parent") ?
-            ((ClassDefinition) rn.getParent().toDefinition()).getField("\\parent") : rn.toDefinition());
+            ((ClassDefinition) rn.getParent().toDefinition()).getParentField() : rn.toDefinition());
       }
     }
 
@@ -169,9 +169,9 @@ public class ModuleDeserialization {
     readHeader(stream, moduleID);
     int errorsNumber = stream.readInt();
     Map<Integer, Definition> definitionMap = readDefIndices(stream, false, moduleID);
-    Definition moduleRoot = definitionMap.get(0);
+    ClassDefinition moduleRoot = (ClassDefinition) definitionMap.get(0);
     deserializeDefinition(stream, definitionMap);
-    return new ModuleLoader.Result(new NamespaceMember(moduleRoot.getResolvedName().toNamespace(), null, moduleRoot), false, errorsNumber);
+    return new ModuleLoader.Result(null, moduleRoot, false, errorsNumber);
   }
 
   private Definition deserializeDefinition(DataInputStream stream, Map<Integer, Definition> definitionMap) throws IOException {
@@ -223,8 +223,9 @@ public class ModuleDeserialization {
         constructor.setParameters(readParameters(stream, definitionMap));
       }
 
-      definition.addConstructor(constructor);
-      definition.getParentNamespace().addDefinition(constructor);
+      // FIXME[serial]
+//      definition.addConstructor(constructor);
+//      definition.getParentNamespace().addDefinition(constructor);
     }
 
     int conditionsNumber = stream.readInt();
@@ -256,7 +257,8 @@ public class ModuleDeserialization {
       if (stream.readBoolean()) {
         deserializeDefinition(stream, definitionMap);
       } else {
-        parent.getResolvedName().toNamespace().addMember(definitionMap.get(stream.readInt()).getResolvedName().toNamespaceMember());
+        // FIXME[serial]
+        //parent.getResolvedName().toNamespace().addMember(definitionMap.get(stream.readInt()).getResolvedName().toNamespaceMember());
       }
     }
   }
@@ -267,8 +269,9 @@ public class ModuleDeserialization {
 
     int numFields = stream.readInt();
     for (int i = 0; i < numFields; i++) {
+      String name = stream.readUTF();
       ClassField field = (ClassField) definitionMap.get(stream.readInt());
-      definition.addField(field);
+      definition.addField(field, name);
       field.setThisParameter(readParameters(stream, definitionMap));
       field.hasErrors(stream.readBoolean());
 
@@ -446,7 +449,7 @@ public class ModuleDeserialization {
         return new UniverseExpression(readUniverse(stream, definitionMap));
       }
       case 9: {
-        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(new ModuleResolvedName(myModuleID), "Deserialization error", null));
+        return Error(stream.readBoolean() ? readExpression(stream, definitionMap) : null, new TypeCheckingError(myModuleID + " deserialization error"));  // FIXME[error] bad error
       }
       case 10: {
         int size = stream.readInt();

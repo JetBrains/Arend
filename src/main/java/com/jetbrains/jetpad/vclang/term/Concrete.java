@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -17,10 +16,12 @@ public final class Concrete {
   private Concrete() {}
 
   public static class Position {
-    public int line;
-    public int column;
+    public final ModuleID module;
+    public final int line;
+    public final int column;
 
-    public Position(int line, int column) {
+    public Position(ModuleID module, int line, int column) {
+      this.module = module;
       this.line = line;
       this.column = column + 1;
     }
@@ -1007,26 +1008,83 @@ public final class Concrete {
     }
   }
 
+  public static class IdPair extends SourceNode implements Abstract.IdPair {
+    private final String myFirstName;
+    private Referable myFirstReferent;
+    private final String mySecondName;
+
+    public IdPair(Position position, String firstName, String secondName) {
+      super(position);
+      myFirstName = firstName;
+      mySecondName = secondName;
+    }
+
+    @Override
+    public String getFirstName() {
+      return myFirstName;
+    }
+
+    @Override
+    public Referable getFirstReferent() {
+      return myFirstReferent;
+    }
+
+    public void setFirstReferent(Referable referent) {
+      myFirstReferent = referent;
+    }
+
+    @Override
+    public String getSecondName() {
+      return mySecondName;
+    }
+  }
+
+  public static class SuperClass extends SourceNode implements Abstract.SuperClass {
+    private String myName;
+    private final List<IdPair> myIdPairs;
+    private Referable myReferent;
+
+    public SuperClass(Position position, String name, List<IdPair> idPairs) {
+      super(position);
+      myName = name;
+      myIdPairs = idPairs;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
+    public Referable getReferent() {
+      return myReferent;
+    }
+
+    public void setReferent(Referable referent) {
+      myReferent = referent;
+    }
+
+    @Override
+    public Collection<IdPair> getIdPairs() {
+      return myIdPairs;
+    }
+  }
+
   public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
     private final List<Statement> myFields;
     private final Kind myKind;
+    private final List<SuperClass> mySuperClasses;
     private ModuleID myModule;
-    private List<String> myNames;
-    private List<Referable> mySuperClasses;
 
-    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind, List<String> names) {
+    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind, List<SuperClass> superClasses) {
       super(position, name, DEFAULT_PRECEDENCE);
-      myNames = names;
-      mySuperClasses = new ArrayList<>(names.size());
-      for (int i = 0; i < names.size(); i++) {
-        mySuperClasses.add(null);
-      }
+      mySuperClasses = superClasses;
       myFields = fields;
       myKind = kind;
     }
 
     public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind) {
-      this(position, name, fields, kind, Collections.<String>emptyList());
+      this(position, name, fields, kind, Collections.<SuperClass>emptyList());
     }
 
     public void setModuleID(ModuleID moduleID) {
@@ -1042,17 +1100,8 @@ public final class Concrete {
     public Kind getKind() { return myKind; }
 
     @Override
-    public Collection<? extends Referable> getSuperClasses() {
+    public Collection<SuperClass> getSuperClasses() {
       return mySuperClasses;
-    }
-
-    public void setSuperClass(int index, Referable superClass) {
-      mySuperClasses.set(index, superClass);
-    }
-
-    @Override
-    public String getSuperClassName(int index) {
-      return myNames.get(index);
     }
 
     @Override

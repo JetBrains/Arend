@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.LeafElimTreeNode;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
@@ -46,11 +47,11 @@ public class DataIndicesTest {
 
   @Test
   public void constructorTypeTest() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\data NatVec (n : Nat)\n" +
         "  | NatVec zero => nil\n" +
         "  | NatVec (suc n) => cons Nat (NatVec n)");
-    DataDefinition data = (DataDefinition) member.namespace.getDefinition("NatVec");
+    DataDefinition data = (DataDefinition) result.getDefinition("NatVec");
     assertEquals(Apps(DataCall(data), Zero()), data.getConstructor("nil").getType());
     DependentLink param = param(false, "n", Nat());
     param.setNext(params(param((String) null, Nat()), param((String) null, Apps(DataCall(data), Reference(param)))));
@@ -59,11 +60,11 @@ public class DataIndicesTest {
 
   @Test
   public void toAbstractTest() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\data Fin (n : Nat)\n" +
         "  | Fin (suc n) => fzero\n" +
         "  | Fin (suc n) => fsuc (Fin n)\n" +
         "\\static \\function f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
-    assertEquals("(Fin (suc (suc n))).fsuc ((Fin (suc n)).fsuc x)", ((LeafElimTreeNode) ((FunctionDefinition) member.namespace.getDefinition("f")).getElimTree()).getExpression().normalize(NormalizeVisitor.Mode.NF).toString());
+    assertEquals("(Fin (suc (suc n))).fsuc ((Fin (suc n)).fsuc x)", ((LeafElimTreeNode) ((FunctionDefinition) result.getDefinition("f")).getElimTree()).getExpression().normalize(NormalizeVisitor.Mode.NF).toString());
   }
 }

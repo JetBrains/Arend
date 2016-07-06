@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -8,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.ArgInferenceError;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -17,6 +17,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 import static org.junit.Assert.*;
 
 public class ImplicitArgumentsTest {
@@ -62,7 +63,7 @@ public class ImplicitArgumentsTest {
 
     ListErrorReporter errorReporter = new ListErrorReporter();
     typeCheckExpr(context, "f 0", null, errorReporter);
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
   }
 
@@ -187,7 +188,7 @@ public class ImplicitArgumentsTest {
 
     ListErrorReporter errorReporter = new ListErrorReporter();
     typeCheckExpr(context, "f 0", Pi(Nat(), Pi(Nat(), Nat())), errorReporter);
-    assertEquals(1, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 1);
     assertTrue(errorReporter.getErrorList().iterator().next() instanceof ArgInferenceError);
   }
 

@@ -1,10 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.module.ModuleID;
-import com.jetbrains.jetpad.vclang.module.NameModuleID;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.naming.Namespace;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.LinkList;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
@@ -13,11 +10,9 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
 import com.jetbrains.jetpad.vclang.term.expr.Substitution;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,6 +24,8 @@ import static com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckDef;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListIsEmpty;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 import static org.junit.Assert.*;
 
 public class DefinitionTest {
@@ -44,7 +41,7 @@ public class DefinitionTest {
   public void function() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f : Nat => 0");
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
   }
 
@@ -52,7 +49,7 @@ public class DefinitionTest {
   public void functionUntyped() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Nat(), typedDef.getType());
   }
@@ -61,7 +58,7 @@ public class DefinitionTest {
   public void functionWithArgs() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), typedDef.getType());
   }
@@ -90,7 +87,7 @@ public class DefinitionTest {
     parameters2.append(param(Apps(Reference(I), Reference(a), Reference(parameters2.getFirst()))));
 
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(parameters.getFirst(), Universe(0)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
@@ -135,7 +132,7 @@ public class DefinitionTest {
     parameters2.append(param(Reference(parameters2.getFirst())));
 
     assertNotNull(typedDef);
-    assertEquals(0, errorReporter.getErrorList().size());
+    assertErrorListIsEmpty(errorReporter.getErrorList());
     assertFalse(typedDef.hasErrors());
     assertEquals(Pi(A, Universe(6, 7)), typedDef.getType());
     assertEquals(2, typedDef.getConstructors().size());
@@ -146,64 +143,43 @@ public class DefinitionTest {
 
   @Test
   public void constructor() {
-    // \data D (A : \Type0) = con (B : \Type1) A B |- con Nat zero zero : D Nat
-    DependentLink A = param("A", Universe(0));
-    DependentLink B = param("B", Universe(1));
+    DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con (B : \\Type1) A B");
 
-    ModuleID moduleID = new NameModuleID("test");
-    Namespace namespace = new Namespace(moduleID);
-    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(1, TypeUniverse.NOT_TRUNCATED), A);
-    namespace.addDefinition(def);
-    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(1, TypeUniverse.NOT_TRUNCATED), params(B, param(Reference(A)), param(Reference(B))), def);
-    def.addConstructor(con);
-
+    Constructor con = def.getConstructor("con");
     Concrete.Expression expr = cApps(cDefCall(null, con), cNat(), cZero(), cZero());
+
     CheckTypeVisitor.Result result = new CheckTypeVisitor.Builder(new ArrayList<Binding>(), errorReporter).build().checkType(expr, null);
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Apps(DataCall(def), Nat()), result.type);
   }
 
   @Test
   public void constructorInfer() {
-    // \data D (A : \Type0) = con (B : \Type1) A B, f : D (Nat -> Nat) -> Nat |- f (con Nat (\lam x => x) zero) : Nat
-    DependentLink A = param("A", Universe(0));
-    DependentLink B = param("B", Universe(1));
+    DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con (B : \\Type1) A B");
 
-    ModuleID moduleID = new NameModuleID("test");
-    Namespace namespace = new Namespace(moduleID);
-    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(1, TypeUniverse.NOT_TRUNCATED), A);
-    namespace.addDefinition(def);
-    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, new TypeUniverse(1, TypeUniverse.NOT_TRUNCATED), params(B, param(Reference(A)), param(Reference(B))), def);
-    def.addConstructor(con);
-
+    Constructor con = def.getConstructor("con");
     Concrete.Expression expr = cApps(cVar("f"), cApps(cDefCall(null, con), cNat(), cLam("x", cVar("x")), cZero()));
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Apps(DataCall(def), Pi(Nat(), Nat())), Nat())));
 
     CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Nat(), result.type);
   }
 
   @Test
   public void constructorConst() {
-    // \data D (A : \Type0) = con A, f : (Nat -> D Nat) -> Nat -> Nat |- f con : Nat -> Nat
-    DependentLink A = param("A", Universe(0));
-    ModuleID moduleID = new NameModuleID("test");
-    Namespace namespace = new Namespace(moduleID);
-    DataDefinition def = new DataDefinition(namespace.getChild("D").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.SetOfLevel(0), A);
-    namespace.addDefinition(def);
-    Constructor con = new Constructor(namespace.getChild("D").getChild("con").getResolvedName(), Abstract.Definition.DEFAULT_PRECEDENCE, TypeUniverse.SetOfLevel(0), param(Reference(A)), def);
-    def.addConstructor(con);
+    DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\Type0) | con A");
 
+    Constructor con = def.getConstructor("con");
     Concrete.Expression expr = cApps(cVar("f"), cDefCall(null, con));
     List<Binding> localContext = new ArrayList<>(1);
     localContext.add(new TypedBinding("f", Pi(Pi(Nat(), Apps(DataCall(def), Nat())), Pi(Nat(), Nat()))));
 
     CheckTypeVisitor.Result result = expr.accept(new CheckTypeVisitor.Builder(localContext, errorReporter).build(), null);
-    assertEquals(errorReporter.getErrorList().toString(), 0, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), 0);
     assertNotNull(result);
     assertEquals(Pi(Nat(), Nat()), result.type);
   }

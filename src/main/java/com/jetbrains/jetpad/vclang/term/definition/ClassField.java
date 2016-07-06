@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.expr.Expression;
@@ -13,16 +12,16 @@ public class ClassField extends Definition {
   private DependentLink myThisParameter;
   private Expression myType;
 
-  public ClassField(ResolvedName rn, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
-    super(rn, precedence);
+  public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter) {
+    super(name, precedence);
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
     hasErrors(type == null || type.toError() != null);
   }
 
-  public ClassField(ResolvedName rn, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, TypeUniverse universe) {
-    super(rn, precedence, universe);
+  public ClassField(String name, Abstract.Definition.Precedence precedence, Expression type, ClassDefinition thisClass, DependentLink thisParameter, TypeUniverse universe) {
+    super(name, precedence, universe);
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);

@@ -1,21 +1,19 @@
 package com.jetbrains.jetpad.vclang.record;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.definition.*;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.TypeCheckClassResult;
 import org.junit.Test;
 
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.naming.NameResolverTestCase.resolveNamesClass;
 import static com.jetbrains.jetpad.vclang.term.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.typeCheckClass;
-import static com.jetbrains.jetpad.vclang.typechecking.nameresolver.NameResolverTestCase.resolveNamesClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class RecordsTest {
   @Test
@@ -64,7 +62,7 @@ public class RecordsTest {
         "}\n" +
         "\\static \\function B => A {\n" +
         "  f => \\lam n => c n n\n" +
-        "}", 1);
+        "}", 1, 1);
   }
 
   /*
@@ -133,7 +131,7 @@ public class RecordsTest {
 
   @Test
   public void mutualRecursionTestError() {
-    typeCheckClass("test",
+    typeCheckClass(
         "\\static \\class Point {\n" +
         "  \\abstract x : Nat\n" +
         "  \\abstract y : Nat\n" +
@@ -141,7 +139,7 @@ public class RecordsTest {
         "\\static \\function test => Point {\n" +
         "  | x => y\n" +
         "  | y => x\n" +
-        "}", 2);
+        "}", 2, 2);
   }
 
   @Test
@@ -157,41 +155,41 @@ public class RecordsTest {
 
   @Test
   public void recordUniverseTest() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 }");
-    assertEquals(TypeUniverse.SetOfLevel(0), member.namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), member.namespace.getDefinition("C").getType());
+    assertEquals(TypeUniverse.SetOfLevel(0), result.getDefinition("Point").getUniverse());
+    assertEquals(Universe(TypeUniverse.SetOfLevel(0)), result.getDefinition("C").getType());
   }
 
   @Test
   public void recordUniverseTest2() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\class Point { \\abstract x : Nat \\abstract y : Nat }\n" +
         "\\static \\function C => Point { x => 0 | y => 1 }");
-    assertEquals(TypeUniverse.SetOfLevel(0), member.namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(TypeUniverse.PROP), member.namespace.getDefinition("C").getType());
+    assertEquals(TypeUniverse.SetOfLevel(0), result.getDefinition("Point").getUniverse());
+    assertEquals(Universe(TypeUniverse.PROP), result.getDefinition("C").getType());
   }
 
   @Test
   public void recordUniverseTest3() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\class Point { \\abstract x : \\Type3 \\abstract y : \\Type1 }\n" +
         "\\static \\function C => Point { x => Nat }");
-    assertEquals(new TypeUniverse(4, TypeUniverse.NOT_TRUNCATED), member.namespace.getDefinition("Point").getUniverse());
-    assertEquals(Universe(new TypeUniverse(2, TypeUniverse.NOT_TRUNCATED)), member.namespace.getDefinition("C").getType());
+    assertEquals(new TypeUniverse(4, TypeUniverse.NOT_TRUNCATED), result.getDefinition("Point").getUniverse());
+    assertEquals(Universe(new TypeUniverse(2, TypeUniverse.NOT_TRUNCATED)), result.getDefinition("C").getType());
   }
 
   @Test
   public void recordConstructorsTest() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
         "\\static \\class A {\n" +
         "  \\abstract x : Nat\n" +
         "  \\data Foo | foo (x = 0)\n" +
         "  \\function y : foo = foo => path (\\lam _ => foo)\n" +
         "}\n" +
         "\\static \\function test (p : A) => p.y");
-    FunctionDefinition testFun = (FunctionDefinition) member.namespace.getDefinition("test");
+    FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
     Expression resultType = testFun.getResultType();
     Expression function = resultType.normalize(NormalizeVisitor.Mode.WHNF);
     List<? extends Expression> arguments = function.getArguments();
@@ -199,7 +197,7 @@ public class RecordsTest {
     assertEquals(5, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 
-    DataDefinition Foo = (DataDefinition) member.namespace.findChild("A").getDefinition("Foo");
+    DataDefinition Foo = (DataDefinition) result.getDefinition("A.Foo");
     Constructor foo = Foo.getConstructor("foo");
 
     ConCallExpression arg2 = arguments.get(4).toConCall();
@@ -232,7 +230,7 @@ public class RecordsTest {
 
     assertEquals(1, domArguments.get(3).getArguments().size());
     assertEquals(Reference(testFun.getParameters()), domArguments.get(3).getArguments().get(0));
-    assertEquals(FieldCall((ClassField) member.namespace.findChild("A").getDefinition("x")), domArguments.get(3).getFunction());
+    assertEquals(FieldCall((ClassField) result.getDefinition("A.x")), domArguments.get(3).getFunction());
 
     ConCallExpression domArg2 = domArguments.get(4).toConCall();
     assertNotNull(domArg2);
@@ -241,16 +239,16 @@ public class RecordsTest {
 
   @Test
   public void recordConstructorsParametersTest() {
-    NamespaceMember member = typeCheckClass(
+    TypeCheckClassResult result = typeCheckClass(
       "\\static \\class A {\n" +
       "  \\abstract x : Nat\n" +
       "  \\data Foo (p : x = x) | foo (p = p)\n" +
       "  \\function y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
       "}\n" +
       "\\static \\function test (q : A) => q.y");
-    FunctionDefinition testFun = (FunctionDefinition) member.namespace.getDefinition("test");
+    FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
     Expression resultType = testFun.getResultType();
-    Expression xCall = FieldCall((ClassField) member.namespace.findChild("A").getDefinition("x"));
+    Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"));
     PiExpression resultTypePi = resultType.toPi();
     assertNotNull(resultTypePi);
     Expression function = resultTypePi.getParameters().getType().normalize(NormalizeVisitor.Mode.NF);
@@ -259,7 +257,7 @@ public class RecordsTest {
     assertEquals(5, arguments.size());
     assertEquals(DataCall(Prelude.PATH), function);
 
-    DataDefinition Foo = (DataDefinition) member.namespace.findChild("A").getDefinition("Foo");
+    DataDefinition Foo = (DataDefinition) result.getDefinition("A.Foo");
     Constructor foo = Foo.getConstructor("foo");
 
     ConCallExpression arg2Fun = arguments.get(4).getFunction().toConCall();
