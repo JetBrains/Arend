@@ -226,8 +226,8 @@ public class LevelExpression implements PrettyPrintable {
   }
 
   public static boolean compare(LevelExpression expr1, LevelExpression expr2, Equations.CMP cmp, Equations equations) {
-    LevelExpression level1 = cmp == Equations.CMP.GE ? expr1 : expr2;
-    LevelExpression level2 = cmp == Equations.CMP.GE ? expr2 : expr1;
+    LevelExpression level1 = cmp == Equations.CMP.GE ? new LevelExpression(expr1) : new LevelExpression(expr2);
+    LevelExpression level2 = cmp == Equations.CMP.GE ? new LevelExpression(expr2) : new LevelExpression(expr1);
     boolean leftContainsInferenceBnd = level1.containsInferVar();
     boolean rightContainsInferenceBnd = level2.containsInferVar();
 
@@ -248,6 +248,25 @@ public class LevelExpression implements PrettyPrintable {
         return true;
       }
       return false;
+    }
+
+    if (level1.isClosed() == level2.isClosed() && level1.myConstant >= level2.myConstant) {
+      if (cmp != Equations.CMP.EQ || level1.myConstant == level2.myConstant) {
+        level1.myConstant = 0;
+        level2.myConstant = 0;
+      }
+    }
+
+    for (Map.Entry<Binding, Integer> leftVar : level1.myNumSucsOfVars.entrySet()) {
+      if (level2.myNumSucsOfVars.containsKey(leftVar.getKey())) {
+        int rightSucs = level2.myNumSucsOfVars.get(leftVar.getKey());
+        if (leftVar.getValue() >= rightSucs) {
+          if (cmp != Equations.CMP.EQ || leftVar.getValue() == rightSucs) {
+            level1.myNumSucsOfVars.remove(leftVar.getKey());
+            level2.myNumSucsOfVars.remove(leftVar.getKey());
+          }
+        }
+      }
     }
 
     if (cmp == Equations.CMP.EQ) {

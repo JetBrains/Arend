@@ -488,7 +488,8 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
       visitor.setThisClass(thisClass, Reference(thisParam));
     }
 
-    LevelExpression inferredHLevel = def.getConstructors().size() > 1 ? TypeUniverse.SET.getHLevel() : TypeUniverse.PROP.getHLevel();
+    LevelExpression inferredHLevel = (def.getConditions() != null && def.getConditions().size() > 0) ? new LevelExpression() :
+            def.getConstructors().size() > 1 ? TypeUniverse.SET.getHLevel() : TypeUniverse.PROP.getHLevel();
     LevelExpression inferredPLevel = TypeUniverse.intToPLevel(0);
     TypeUniverse inferredUniverse = new TypeUniverse(inferredPLevel, inferredHLevel);
     TypeUniverse userUniverse = null;
@@ -564,11 +565,11 @@ public class DefinitionCheckTypeVisitor implements AbstractDefinitionVisitor<Voi
         dataDefinition.setUniverse(userUniverse);
       }
     } else {
-      if (def.getConditions() != null && !def.getConditions().isEmpty()) {
-        dataDefinition.setUniverse(new TypeUniverse(inferredUniverse.getPLevel(), TypeUniverse.intToHLevel(TypeUniverse.NOT_TRUNCATED)));
-      } else {
+    //  if (def.getConditions() != null && !def.getConditions().isEmpty()) {
+     //   dataDefinition.setUniverse(new TypeUniverse(inferredUniverse.getPLevel(), TypeUniverse.intToHLevel(TypeUniverse.NOT_TRUNCATED)));
+     // } else {
         dataDefinition.setUniverse(inferredUniverse);
-      }
+     // }
     }
 
     context.clear();

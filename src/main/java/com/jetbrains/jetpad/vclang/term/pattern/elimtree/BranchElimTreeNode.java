@@ -181,7 +181,7 @@ public class BranchElimTreeNode extends ElimTreeNode {
       }
     }
 
-    ConstructorClause clause = myClauses.get(conFunc.getPolyDefinition());
+    ConstructorClause clause = myClauses.get(conFunc.getDefinition());
     if (clause == null) {
       return myOtherwiseClause == null ? null : myOtherwiseClause.getChild().match(expressions);
     }

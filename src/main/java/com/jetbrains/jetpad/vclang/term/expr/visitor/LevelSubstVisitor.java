@@ -32,7 +32,7 @@ public class LevelSubstVisitor extends BaseExpressionVisitor<Void, Void> impleme
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Void params) {
-    if (!expr.getPolyDefinition().hasErrors() && expr.isPolymorphic()) {
+    if (!expr.getDefinition().hasErrors() && expr.isPolymorphic()) {
       expr.applyLevelSubst(myLevelSubst);
     }
     return null;

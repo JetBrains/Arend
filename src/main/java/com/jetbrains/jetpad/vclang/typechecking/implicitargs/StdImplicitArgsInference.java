@@ -178,19 +178,25 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
                 result.expression = Apps(result.expression, args, Collections.nCopies(args.size(), EnumSet.noneOf(AppExpression.Flag.class)));
                 result.type = result.type.applyExpressions(args);
               }
-              if (dataCall.isPolymorphic()) {
-                //conCall.applyLevelSubst(dataCall.getPolyParamsSubst());
-                //result.type.toDataCall().applyLevelSubst(dataCall.getPolyParamsSubst());
-                LevelSubstitution levels = conCall.getPolyParamsSubst();
-                for (Binding binding : levels.getDomain()) {
-                  LevelExpression expectedLevel = dataCall.getPolyParamsSubst().get(binding);
-                  if (expectedLevel != null) {
-                    result.getEquations().add(levels.get(binding), expectedLevel, Equations.CMP.EQ, fun);
-                  }
+          /*  if (dataCall.isPolymorphic()) {
+              if (result.getEquations() instanceof DummyEquations) {
+                result.setEquations(newEquations());
+              }
+              //conCall.applyLevelSubst(dataCall.getPolyParamsSubst());
+              //result.type.toDataCall().applyLevelSubst(dataCall.getPolyParamsSubst());
+              LevelSubstitution levels = conCall.getPolyParamsSubst();
+              for (Binding binding : levels.getDomain()) {
+                LevelExpression expectedLevel = dataCall.getPolyParamsSubst().get(binding);
+                if (expectedLevel != null) {
+                  result.getEquations().add(levels.get(binding), expectedLevel, Equations.CMP.EQ, fun);
+               //   if (expectedLevel.isBinding() && expectedLevel.getUnitBinding() instanceof InferenceBinding) {
+               //     result.addUnsolvedVariable((InferenceBinding) expectedLevel.getUnitBinding());
+               //   }
                 }
-              }/**/
-              return inferArg(result, arg, true, fun);
+              }
+            }/**/
             }
+            return inferArg(result, arg, true, fun);
           }
         }
       }

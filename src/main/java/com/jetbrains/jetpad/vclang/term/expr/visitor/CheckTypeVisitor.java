@@ -26,7 +26,6 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInferen
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
-import sun.util.logging.PlatformLogger;
 
 import java.util.*;
 
@@ -322,7 +321,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<Expression, C
       return null;
     }
 
-    List<Binding> polyParams = defCall.getPolyDefinition().getPolyParams();
+    List<Binding> polyParams = defCall.getDefinition().getPolyParams();
 
     for (Binding param : polyParams) {
       LevelExpression value = defCall.getPolyParamsSubst().get(param);

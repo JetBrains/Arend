@@ -201,7 +201,7 @@ public class TypeCheckingDefCall {
       }
 
       DefCallExpression defCall = definition.getDefCall(subst);
-      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, defCall.getPolyDefinition().getTypeWithThis().subst(subst));
+      CheckTypeVisitor.Result result = new CheckTypeVisitor.Result(defCall, defCall.getDefinition().getTypeWithThis().subst(subst));
 
       for (Binding l : subst.getDomain()) {
         result.addUnsolvedVariable((InferenceBinding)subst.get(l).getUnitBinding());

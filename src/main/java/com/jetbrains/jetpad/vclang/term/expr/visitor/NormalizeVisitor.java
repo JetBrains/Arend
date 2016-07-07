@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
-import com.jetbrains.jetpad.vclang.term.definition.Constructor;
 import com.jetbrains.jetpad.vclang.term.definition.Function;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.typechecking.normalization.Normalizer;
@@ -108,7 +107,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return visitConstructorCall(expr, mode);
     }
     if (defCallExpr.getDefinition() instanceof Function) {
-      return visitFunctionCall((Function) defCallExpr.getPolyDefinition(), expr, mode).subst(defCallExpr.getPolyParamsSubst());
+      return visitFunctionCall((Function) defCallExpr.getDefinition(), expr, mode).subst(defCallExpr.getPolyParamsSubst());
     }
 
     return mode == Mode.TOP ? null : applyDefCall(expr, mode);
@@ -127,7 +126,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (int i = 0; i < take; i++) {
         parameters.add(args.get(i));
       }
-      conCallExpression = (ConCallExpression)ConCall((Constructor)conCallExpression.getPolyDefinition(), parameters).applyLevelSubst(conCallExpression.getPolyParamsSubst());
+      conCallExpression = (ConCallExpression)ConCall(conCallExpression.getDefinition(), parameters).applyLevelSubst(conCallExpression.getPolyParamsSubst());
       int size = args.size();
       args = args.subList(take, size);
       if (!args.isEmpty()) {
@@ -137,7 +136,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
-    return visitFunctionCall((Function)conCallExpression.getPolyDefinition(), expr, mode).subst(conCallExpression.getPolyParamsSubst());
+    return visitFunctionCall(conCallExpression.getDefinition(), expr, mode).subst(conCallExpression.getPolyParamsSubst());
   }
 
   private Expression visitFunctionCall(Function func, Expression expr, Mode mode) {

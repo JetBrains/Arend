@@ -10,19 +10,19 @@ import java.util.HashSet;
 
 public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
-  private Definition myNonPolyDefinition;
+  //private Definition myNonPolyDefinition;
   private LevelSubstitution myPolyParamsSubst;
-  private boolean mySubstDefUptodate = true;
+  //private boolean mySubstDefUptodate = true;
 
   public DefCallExpression(Definition definition) {
     myDefinition = definition;
-    myNonPolyDefinition = definition;
+    //myNonPolyDefinition = definition;
     myPolyParamsSubst = new LevelSubstitution();
   }
 
   public DefCallExpression(Definition definition, LevelSubstitution subst) {
     myDefinition = definition;
-    mySubstDefUptodate = false;
+  //  mySubstDefUptodate = false;
     myPolyParamsSubst = subst;
   }
 
@@ -32,15 +32,15 @@ public abstract class DefCallExpression extends Expression {
 
   public abstract Expression applyThis(Expression thisExpr);
 
-  public Definition getPolyDefinition() { return myDefinition; }
+  public Definition getDefinition() { return myDefinition; }
 
-  public Definition getDefinition() {
+/*  public Definition getDefinition() {
     if (!mySubstDefUptodate) {
       myNonPolyDefinition = myDefinition.substPolyParams(myPolyParamsSubst);
       mySubstDefUptodate = true;
     }
     return myNonPolyDefinition;
-  }
+  } /**/
 
   /*public LevelExpression getPolyParamValueByType(String typeName) {
     for (Binding var : myPolyParamsSubst.getDomain()) {
@@ -57,7 +57,7 @@ public abstract class DefCallExpression extends Expression {
 
   public DefCallExpression applyLevelSubst(LevelSubstitution subst) {
     myPolyParamsSubst = myPolyParamsSubst.compose(subst, new HashSet<>(myDefinition.getPolyParams()));
-    mySubstDefUptodate = false;
+    //mySubstDefUptodate = false;
     return this;
   }
 
@@ -68,7 +68,7 @@ public abstract class DefCallExpression extends Expression {
 
   @Override
   public Expression getType() {
-    return myNonPolyDefinition.getType(); //myDefinition.getType().subst(myPolyParamsSubst);
+    return myDefinition.getType().subst(myPolyParamsSubst);
   }
 
   @Override
