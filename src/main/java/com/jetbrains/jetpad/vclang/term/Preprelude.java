@@ -231,7 +231,7 @@ public class Preprelude extends SimpleNamespace {
   }
 
   public static boolean equalLevelTypes(Definition type1, Definition type2) {
-    return type1.getResolvedName().getFullName().equals(type2.getResolvedName().getFullName());
+    return type1.getName().equals(type2.getName()); // TODO [def compare]
   }
 
   static class DefinitionBuilder {
@@ -244,6 +244,7 @@ public class Preprelude extends SimpleNamespace {
         myParentNs = parentNs;
         myDefinition = new DataDefinition(name, precedence, universe, parameters);
         myDefinition.setPolyParams(polyParams);
+        myParentNs.addDefinition(myDefinition);
       }
 
       Data(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, TypeUniverse universe, DependentLink parameters) {
@@ -267,8 +268,7 @@ public class Preprelude extends SimpleNamespace {
       private final FunctionDefinition myDefinition;
 
       public Function(SimpleNamespace parentNs, String name, Abstract.Binding.Precedence precedence, DependentLink parameters, Expression resultType, ElimTreeNode elimTree, List<Binding> polyParams) {
-        myDefinition = new FunctionDefinition(name, precedence, EmptyNamespace.INSTANCE, parameters, resultType, elimTree);
-        myDefinition.setUniverse(resultType.toUniverse() != null ? resultType.toUniverse().getUniverse() : resultType.getType().toUniverse().getUniverse());
+        myDefinition = new FunctionDefinition(name, precedence, EmptyNamespace.INSTANCE, parameters, resultType, elimTree, resultType.toUniverse() != null ? resultType.toUniverse().getUniverse() : resultType.getType().toUniverse().getUniverse());
         myDefinition.setPolyParams(polyParams);
         parentNs.addDefinition(myDefinition);
       }

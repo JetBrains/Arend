@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Preprelude;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
@@ -209,8 +208,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> i
   @Override
   public Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
     DefCallExpression defCall2 = expr2.toDefCall();
-    if (defCall2 == null || !expr1.getDefinition().getResolvedName().getFullName().equals(defCall2.getDefinition().getResolvedName().getFullName())) return false;
-    return TypeUniverse.compare(expr1.getDefinition().getUniverse(), defCall2.getDefinition().getUniverse(), myCMP, myEquations);
+    return defCall2 != null && expr1.getDefinition().getName().equals(defCall2.getDefinition().getName()) && TypeUniverse.compare(expr1.getDefinition().getUniverse(), defCall2.getDefinition().getUniverse(), myCMP, myEquations); // TODO [def compare]
   }
 
   @Override
