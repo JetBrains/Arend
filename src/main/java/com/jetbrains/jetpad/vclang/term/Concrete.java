@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.statement.visitor.AbstractStatementVisitor;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,10 +16,12 @@ public final class Concrete {
   private Concrete() {}
 
   public static class Position {
-    public int line;
-    public int column;
+    public final ModuleID module;
+    public final int line;
+    public final int column;
 
-    public Position(int line, int column) {
+    public Position(ModuleID module, int line, int column) {
+      this.module = module;
       this.line = line;
       this.column = column + 1;
     }
@@ -54,7 +56,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), Abstract.Expression.PREC);
+      accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
       return builder.toString();
     }
 
@@ -872,7 +874,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
+      accept(new PrettyPrintVisitor(builder, 0), null);
       return builder.toString();
     }
   }
@@ -904,6 +906,35 @@ public final class Concrete {
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitAbstract(this, params);
+    }
+  }
+
+  public static class ImplementDefinition extends Definition implements Abstract.ImplementDefinition {
+    private Referable myImplemented;
+    private final Expression myExpression;
+
+    public ImplementDefinition(Position position, String name, Expression expression) {
+      super(position, name, Abstract.Binding.DEFAULT_PRECEDENCE);
+      myExpression = expression;
+    }
+
+    @Override
+    public Referable getImplemented() {
+      return myImplemented;
+    }
+
+    public void setImplemented(Referable implemented) {
+      myImplemented = implemented;
+    }
+
+    @Override
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    @Override
+    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitImplement(this, params);
     }
   }
 
@@ -1032,15 +1063,114 @@ public final class Concrete {
     }
   }
 
+  public static class IdPair extends SourceNode implements Abstract.IdPair {
+    private final String myFirstName;
+    private Referable myFirstReferent;
+    private final String mySecondName;
+
+    public IdPair(Position position, String firstName, String secondName) {
+      super(position);
+      myFirstName = firstName;
+      mySecondName = secondName;
+    }
+
+    @Override
+    public String getFirstName() {
+      return myFirstName;
+    }
+
+    @Override
+    public Referable getFirstReferent() {
+      return myFirstReferent;
+    }
+
+    public void setFirstReferent(Referable referent) {
+      myFirstReferent = referent;
+    }
+
+    @Override
+    public String getSecondName() {
+      return mySecondName;
+    }
+  }
+
+  public static class Identifier extends SourceNode implements Abstract.Identifier {
+    private final String myName;
+    private Referable myReferent;
+
+    public Identifier(Position position, String name) {
+      super(position);
+      myName = name;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
+    public Referable getReferent() {
+      return myReferent;
+    }
+
+    public void setReferent(Referable referent) {
+      myReferent = referent;
+    }
+  }
+
+  public static class SuperClass extends SourceNode implements Abstract.SuperClass {
+    private Referable myReferent;
+    private final String myName;
+    private final List<IdPair> myRenamings;
+    private final List<Identifier> myHidings;
+
+    public SuperClass(Position position, String name, List<IdPair> renamings, List<Identifier> hidings) {
+      super(position);
+      myName = name;
+      myRenamings = renamings;
+      myHidings = hidings;
+    }
+
+    @Override
+    public String getName() {
+      return myName;
+    }
+
+    @Override
+    public Referable getReferent() {
+      return myReferent;
+    }
+
+    public void setReferent(Referable referent) {
+      myReferent = referent;
+    }
+
+    @Override
+    public Collection<IdPair> getRenamings() {
+      return myRenamings;
+    }
+
+    @Override
+    public Collection<Identifier> getHidings() {
+      return myHidings;
+    }
+  }
+
   public static class ClassDefinition extends Definition implements Abstract.ClassDefinition {
     private final List<Statement> myFields;
     private final Kind myKind;
+    private final List<SuperClass> mySuperClasses;
     private ModuleID myModule;
 
-    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind) {
+    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind, List<SuperClass> superClasses) {
       super(position, name, DEFAULT_PRECEDENCE);
+      mySuperClasses = superClasses;
       myFields = fields;
       myKind = kind;
+    }
+
+    public ClassDefinition(Position position, String name, List<Statement> fields, Kind kind) {
+      this(position, name, fields, kind, Collections.<SuperClass>emptyList());
     }
 
     public void setModuleID(ModuleID moduleID) {
@@ -1054,6 +1184,11 @@ public final class Concrete {
 
     @Override
     public Kind getKind() { return myKind; }
+
+    @Override
+    public Collection<SuperClass> getSuperClasses() {
+      return mySuperClasses;
+    }
 
     @Override
     public ModuleID getModuleID() {

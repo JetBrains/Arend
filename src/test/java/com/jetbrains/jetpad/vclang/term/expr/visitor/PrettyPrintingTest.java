@@ -66,7 +66,7 @@ public class PrettyPrintingTest {
     arguments.add(cTele(cvars("X"), cUniverse(0)));
     arguments.add(cTele(cvars("x"), cVar("X")));
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(ConcreteExpressionFactory.POSITION, "f", Abstract.Binding.DEFAULT_PRECEDENCE, arguments, cVar("X"), Abstract.Definition.Arrow.RIGHT, cLam("X", cLam("x", cVar("x"))), false, null, Collections.<Concrete.Statement>emptyList());
-    def.accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), 0), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), 0), null);
   }
 
   @Test
@@ -93,13 +93,13 @@ public class PrettyPrintingTest {
   public void prettyPrintingPatternDataDef() {
     Concrete.Definition def = parseDef("\\data LE (n m : Nat) | LE (zero) m => LE-zero | LE (suc n) (suc m) => LE-suc (LE n m)");
     assertNotNull(def);
-    def.accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), Abstract.Expression.PREC), null);
   }
 
   @Test
   public void prettyPrintingDataWithConditions() {
     Concrete.Definition def = parseDef("\\data Z | neg Nat | pos Nat \\with | pos zero => neg zero");
     assertNotNull(def);
-    def.accept(new PrettyPrintVisitor(new StringBuilder(), new ArrayList<String>(), Abstract.Expression.PREC), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), Abstract.Expression.PREC), null);
   }
 }

@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -13,9 +14,11 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.parser.VcgrammarParser.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
+  private final ModuleID myModule;
   private final ErrorReporter myErrorReporter;
 
-  public BuildVisitor(ErrorReporter errorReporter) {
+  public BuildVisitor(ModuleID module, ErrorReporter errorReporter) {
+    myModule = module;
     myErrorReporter = errorReporter;
   }
 
@@ -124,7 +127,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Statement visitStatDef(StatDefContext ctx) {
+  public Concrete.DefineStatement visitStatDef(StatDefContext ctx) {
     if (ctx == null) return null;
     Concrete.Definition definition = visitDefinition(ctx.definition());
     if (definition == null) {
@@ -141,7 +144,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Statement visitStatCmd(StatCmdContext ctx) {
+  public Concrete.NamespaceCommandStatement visitStatCmd(StatCmdContext ctx) {
     if (ctx == null) return null;
     Abstract.NamespaceCommandStatement.Kind kind = (Abstract.NamespaceCommandStatement.Kind) visit(ctx.nsCmd());
 
@@ -175,7 +178,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Statement visitDefaultStatic(DefaultStaticContext ctx) {
+  public Concrete.DefaultStaticStatement visitDefaultStatic(DefaultStaticContext ctx) {
     return new Concrete.DefaultStaticStatement(tokenPosition(ctx.getStart()), ctx.defaultStaticMod() instanceof StaticDefaultStaticContext);
   }
 
@@ -444,17 +447,75 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public List<Concrete.IdPair> visitSuperClassRenaming(SuperClassRenamingContext ctx) {
+    if (ctx == null) return null;
+    List<Concrete.IdPair> idPairs = new ArrayList<>(ctx.ID().size() / 2);
+    for (int j = 0; j < ctx.ID().size(); j += 2) {
+      idPairs.add(new Concrete.IdPair(tokenPosition(ctx.ID().get(j).getSymbol()), ctx.ID().get(j).getText(), ctx.ID().get(j + 1).getText()));
+    }
+    return idPairs;
+  }
+
+  @Override
+  public List<Concrete.Identifier> visitSuperClassHiding(SuperClassHidingContext ctx) {
+    if (ctx == null) return null;
+    List<Concrete.Identifier> result = new ArrayList<>(ctx.ID().size());
+    for (TerminalNode node : ctx.ID()) {
+      result.add(new Concrete.Identifier(tokenPosition(node.getSymbol()), node.getText()));
+    }
+    return result;
+  }
+
+  @Override
   public Concrete.ClassDefinition visitDefClass(DefClassContext ctx) {
     if (ctx == null || ctx.statement() == null) return null;
     List<Concrete.Statement> statements = visitStatementList(ctx.statement());
     Abstract.ClassDefinition.Kind classKind = ctx.classKindMod() instanceof ClassClassModContext ? Abstract.ClassDefinition.Kind.Class : Abstract.ClassDefinition.Kind.Module;
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), statements, classKind);
+    List<Concrete.SuperClass> superClasses = new ArrayList<>(ctx.extendsOpts().size());
+    for (int i = 0; i < ctx.extendsOpts().size(); i++) {
+      if (ctx.extendsOpts().get(i) instanceof ExtendsSuperClassOptsContext) {
+        ExtendsSuperClassOptsContext supCtx = (ExtendsSuperClassOptsContext) ctx.extendsOpts().get(i);
+        List<Concrete.IdPair> renamings = new ArrayList<>();
+        List<Concrete.Identifier> hidings = new ArrayList<>();
+        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), renamings, hidings));
+
+        for (SuperClassOptsContext optsCtx : supCtx.superClassOpts()) {
+          if (optsCtx instanceof SuperClassRenamingContext) {
+            List<Concrete.IdPair> renamings1 = visitSuperClassRenaming((SuperClassRenamingContext) optsCtx);
+            if (renamings1 != null) {
+              renamings.addAll(renamings1);
+            }
+          } else
+          if (optsCtx instanceof SuperClassHidingContext) {
+            List<Concrete.Identifier> hidings1 = visitSuperClassHiding((SuperClassHidingContext) optsCtx);
+            if (hidings1 != null) {
+              hidings.addAll(hidings1);
+            }
+          }
+        }
+      } else
+      if (ctx.extendsOpts().get(i) instanceof ExtendsIDsContext) {
+        superClasses.add(new Concrete.SuperClass(tokenPosition(ctx.ID().get(i + 1).getSymbol()), ctx.ID().get(i + 1).getText(), Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
+        for (TerminalNode node : ((ExtendsIDsContext) ctx.extendsOpts().get(i)).ID()) {
+          superClasses.add(new Concrete.SuperClass(tokenPosition(node.getSymbol()), node.getText(), Collections.<Concrete.IdPair>emptyList(), Collections.<Concrete.Identifier>emptyList()));
+        }
+      }
+    }
+
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(tokenPosition(ctx.getStart()), ctx.ID().get(0).getText(), statements, classKind, superClasses);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
       }
     }
     return classDefinition;
+  }
+
+  @Override
+  public Concrete.ImplementDefinition visitDefImplement(DefImplementContext ctx) {
+    if (ctx == null) return null;
+    Concrete.Expression expression = visitExpr(ctx.expr());
+    return expression == null ? null : new Concrete.ImplementDefinition(tokenPosition(ctx.getStart()), ctx.ID().getText(), expression);
   }
 
   @Override
@@ -913,7 +974,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.LetExpression(tokenPosition(ctx.getStart()), clauses, expr);
   }
 
-  private static Concrete.Position tokenPosition(Token token) {
-    return new Concrete.Position(token.getLine(), token.getCharPositionInLine());
+  private Concrete.Position tokenPosition(Token token) {
+    return new Concrete.Position(myModule, token.getLine(), token.getCharPositionInLine());
   }
 }

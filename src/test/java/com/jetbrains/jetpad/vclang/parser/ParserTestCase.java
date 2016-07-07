@@ -1,21 +1,32 @@
 package com.jetbrains.jetpad.vclang.parser;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.module.ModuleID;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.NameModuleID;
-import com.jetbrains.jetpad.vclang.module.Root;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.AbstractCompareVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import org.antlr.v4.runtime.*;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static com.jetbrains.jetpad.vclang.util.TestUtil.assertErrorListSize;
 
 public class ParserTestCase {
+  private static final ModuleID MODULE_ID = new ModuleID() {
+    @Override
+    public ModulePath getModulePath() {
+      return ModulePath.moduleName(toString());
+    }
+    @Override
+    public String toString() {
+      return "$ParserTestCase$";
+    }
+  };
+
   public static VcgrammarParser parse(final String name, final ErrorReporter errorReporter, String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
     VcgrammarLexer lexer = new VcgrammarLexer(input);
@@ -25,21 +36,16 @@ public class ParserTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new ModuleResolvedName(new NameModuleID(name)), new Concrete.Position(line, pos), msg));
+        errorReporter.report(new ParserError(new NameModuleID(name), new Concrete.Position(MODULE_ID, line, pos), msg));
       }
     });
     return parser;
   }
 
   public static Concrete.Expression parseExpr(String text, int errors) {
-    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
-    Concrete.Expression result = new BuildVisitor(errorReporter).visitExpr(parse("test", errorReporter, text).expr());
-    if (errors >= 0) {
-      assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
-    } else {
-      assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().size() > 0);
-    }
+    Concrete.Expression result = new BuildVisitor(MODULE_ID, errorReporter).visitExpr(parse("test", errorReporter, text).expr());
+    assertErrorListSize(errorReporter.getErrorList(), errors);
     return result;
   }
 
@@ -52,10 +58,9 @@ public class ParserTestCase {
   }
 
   public static Concrete.Definition parseDef(String text, int errors) {
-    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
-    Concrete.Definition definition = new BuildVisitor(errorReporter).visitDefinition(parse("test", errorReporter, text).definition());
-    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    Concrete.Definition definition = new BuildVisitor(MODULE_ID, errorReporter).visitDefinition(parse("test", errorReporter, text).definition());
+    assertErrorListSize(errorReporter.getErrorList(), errors);
     return definition;
   }
 
@@ -64,19 +69,18 @@ public class ParserTestCase {
   }
 
   public static Concrete.ClassDefinition parseClass(String name, String text, int errors) {
-    Root.initialize();
     ListErrorReporter errorReporter = new ListErrorReporter();
     VcgrammarParser.StatementsContext tree = parse(name, errorReporter, text).statements();
-    assertTrue(errorReporter.getErrorList().toString(), errorReporter.getErrorList().isEmpty());
-    List<Concrete.Statement> statements = new BuildVisitor(errorReporter).visitStatements(tree);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(null, name, statements, Abstract.ClassDefinition.Kind.Module);
+    assertErrorListSize(errorReporter.getErrorList(), 0);
+    List<Concrete.Statement> statements = new BuildVisitor(MODULE_ID, errorReporter).visitStatements(tree);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, statements, Abstract.ClassDefinition.Kind.Module);
     for (Concrete.Statement statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
         ((Concrete.DefineStatement) statement).setParentDefinition(classDefinition);
       }
     }
     classDefinition.setModuleID(new NameModuleID(name));
-    assertEquals(errorReporter.getErrorList().toString(), errors, errorReporter.getErrorList().size());
+    assertErrorListSize(errorReporter.getErrorList(), errors);
     // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
     return classDefinition;
   }

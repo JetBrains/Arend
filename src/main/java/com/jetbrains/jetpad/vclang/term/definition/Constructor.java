@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.definition;
 
-import com.jetbrains.jetpad.vclang.naming.ResolvedName;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
@@ -25,8 +24,8 @@ public class Constructor extends Definition implements Function {
   private DependentLink myParameters;
   private Patterns myPatterns;
 
-  public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
-    super(rn, precedence);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, DataDefinition dataType) {
+    super(name, precedence);
     myDataType = dataType;
     myParameters = EmptyDependentLink.getInstance();
     if (dataType != null) {
@@ -34,8 +33,8 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
-    super(rn, precedence, universe);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType, Patterns patterns) {
+    super(name, precedence, universe);
     hasErrors(false);
     myDataType = dataType;
     myParameters = parameters;
@@ -45,8 +44,8 @@ public class Constructor extends Definition implements Function {
     }
   }
 
-  public Constructor(ResolvedName rn, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType) {
-    this(rn, precedence, universe, parameters, dataType, null);
+  public Constructor(String name, Abstract.Definition.Precedence precedence, TypeUniverse universe, DependentLink parameters, DataDefinition dataType) {
+    this(name, precedence, universe, parameters, dataType, null);
   }
 
   public Patterns getPatterns() {
@@ -100,10 +99,23 @@ public class Constructor extends Definition implements Function {
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
     assert !hasErrors() && !myDataType.hasErrors();
-    return myPatterns == null ? arguments : ((Pattern.MatchOKResult) myPatterns.match(arguments)).expressions;
+    if (myPatterns == null) {
+      return arguments;
+    } else {
+      Pattern.MatchResult result = myPatterns.match(arguments);
+      if (result instanceof Pattern.MatchOKResult) {
+        return ((Pattern.MatchOKResult) result).expressions;
+      } else {
+        return null;
+      }
+    }
   }
 
   public Expression getDataTypeExpression() {
+    return getDataTypeExpression(null);
+  }
+
+  public Expression getDataTypeExpression(ExprSubstitution substitution) {
     assert !hasErrors() && !myDataType.hasErrors();
 
     Expression resultType = DataCall(myDataType);
@@ -117,6 +129,7 @@ public class Constructor extends Definition implements Function {
       resultType = Apps(resultType, arguments, flags);
     } else {
       ExprSubstitution subst = new ExprSubstitution();
+
       DependentLink dataTypeParams = myDataType.getParameters();
       List<Expression> arguments = new ArrayList<>(myPatterns.getPatterns().size());
       for (PatternArgument patternArg : myPatterns.getPatterns()) {
@@ -128,6 +141,9 @@ public class Constructor extends Definition implements Function {
           innerSubst = ((ConstructorPattern) patternArg.getPattern()).getMatchedArguments(new ArrayList<>(argDataTypeParams));
         }
 
+        if (substitution != null) {
+          innerSubst.add(substitution);
+        }
         Expression expr = patternArg.getPattern().toExpression(innerSubst);
 
         subst.add(dataTypeParams, expr);

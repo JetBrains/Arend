@@ -1,36 +1,31 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.naming.NamespaceMember;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase.*;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class TypeCheckingTest {
   @Test
   public void typeCheckDefinition() {
-    NamespaceMember member = typeCheckClass(
+    typeCheckClass(
         "\\static \\function x : Nat => zero\n" +
         "\\static \\function y : Nat => x");
-    assertEquals(2, member.namespace.getMembers().size());
   }
 
   @Test
   public void typeCheckDefType() {
-    NamespaceMember member = typeCheckClass(
+    typeCheckClass(
         "\\static \\function x : \\Type0 => Nat\n" +
         "\\static \\function y : x => zero");
-    assertEquals(2, member.namespace.getMembers().size());
   }
 
   @Test
   public void typeCheckInfixDef() {
-    NamespaceMember member = typeCheckClass(
+    typeCheckClass(
         "\\static \\function (+) : Nat -> Nat -> Nat => \\lam x y => x\n" +
         "\\static \\function (*) : Nat -> Nat => \\lam x => x + zero");
-    assertEquals(2, member.namespace.getMembers().size());
   }
 
   @Test
@@ -126,5 +121,14 @@ public class TypeCheckingTest {
         "\n" +
         "\\static \\function\n" +
         "foo (A : \\1-Type0) (B : A -> \\Type0) (a a' : A) (p : a = a') => transport B p");
+  }
+
+  @Test
+  public void definitionsWithErrors() {
+    typeCheckClass(
+        "\\class C {\n" +
+        "  \\abstract A : X\n" +
+        "  \\abstract a : (\\lam (x : Nat) => Nat) A\n" +
+        "}", 1, 1);
   }
 }

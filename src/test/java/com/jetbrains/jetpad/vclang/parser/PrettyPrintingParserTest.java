@@ -23,16 +23,16 @@ public class PrettyPrintingParserTest {
   private void testExpr(Abstract.Expression expected, Expression expr) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     List<String> context = new ArrayList<>();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory());
+    ToAbstractVisitor visitor = new ToAbstractVisitor(new ConcreteExpressionFactory(), context);
     visitor.setFlags(EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS, ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
-    expr.accept(visitor, null).accept(new PrettyPrintVisitor(builder, context, 0), Abstract.Expression.PREC);
+    expr.accept(visitor, null).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
     Concrete.Expression result = parseExpr(builder.toString());
     assertEquals(expected, result);
   }
 
   private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    def.accept(new PrettyPrintVisitor(builder, new ArrayList<String>(), 0), null);
+    def.accept(new PrettyPrintVisitor(builder, 0), null);
 
     Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) parseDef(builder.toString());
     assertEquals(expected.getArguments().size(), result.getArguments().size());

@@ -296,6 +296,11 @@ public final class Abstract {
     Expression getResultType();
   }
 
+  public interface ImplementDefinition extends Definition {
+    Referable getImplemented();
+    Expression getExpression();
+  }
+
   public interface FunctionDefinition extends Definition, Function {
     boolean isAbstract();
     boolean isOverridden();
@@ -310,10 +315,29 @@ public final class Abstract {
     Expression getUniverse();
   }
 
+  public interface IdPair extends SourceNode {
+    String getFirstName();
+    Referable getFirstReferent();
+    String getSecondName();
+  }
+
+  public interface Identifier extends SourceNode {
+    String getName();
+    Referable getReferent();
+  }
+
+  public interface SuperClass extends SourceNode {
+    String getName();
+    Referable getReferent();
+    Collection<? extends IdPair> getRenamings();
+    Collection<? extends Identifier> getHidings();
+  }
+
   public interface ClassDefinition extends Definition {
     enum Kind { Module, Class }
 
     Kind getKind();
+    Collection<? extends SuperClass> getSuperClasses();
     Collection<? extends Statement> getStatements();
     ModuleID getModuleID();
   }

@@ -199,9 +199,8 @@ public class ComparisonTest {
 
   @Test
   public void etaLam() {
-    Expression type = Pi(param(Nat()), Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1)))
-            .addArgument(Lam(param(Preprelude.INTERVAL.getDefCall()), Nat()), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Zero(), AppExpression.DEFAULT).addArgument(Zero(), AppExpression.DEFAULT));
+    Expression type = Pi(param(Nat()), Apps(Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1))),
+            Lam(param("i", DataCall(Preprelude.INTERVAL)), Nat()), Zero(), Zero()));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(param(type), type));
     assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));
@@ -212,9 +211,8 @@ public class ComparisonTest {
   @Test
   public void etaPath() {
     DependentLink x = param("x", Nat());
-    Expression type = Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1)))
-            .addArgument(Lam(param(Preprelude.INTERVAL.getDefCall()), Pi(param(Nat()), Nat())), EnumSet.noneOf(AppExpression.Flag.class))
-            .addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT).addArgument(Lam(x, Reference(x)), AppExpression.DEFAULT);
+    Expression type = Apps(Prelude.PATH.getDefCall(new LevelSubstitution(Prelude.LP, new LevelExpression(0), Prelude.LH, new LevelExpression(1))),
+            Lam(param("i", DataCall(Preprelude.INTERVAL)), Pi(param(Nat()), Nat())), Lam(x, Reference(x)), Lam(x, Reference(x)));
     CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(param(type), type));
     assertNotNull(result1);
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(param(type), type));

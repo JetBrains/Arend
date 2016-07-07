@@ -1,28 +1,21 @@
 package com.jetbrains.jetpad.vclang.typechecking.error;
 
+import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 
 import java.util.List;
 
 public class UnsolvedBindings extends TypeCheckingError {
-  private final List<InferenceBinding> myBindings;
+  public final List<InferenceBinding> bindings;
 
-  public UnsolvedBindings(List<InferenceBinding> bindings) {
-    super("Internal error: some meta variables were not solved", bindings.get(0).getSourceNode());
-    myBindings = bindings;
+  public UnsolvedBindings(Abstract.Definition definition, List<InferenceBinding> bindings) {
+    super(definition, "Internal error: some meta variables were not solved", bindings.get(0).getSourceNode());
+    this.bindings = bindings;
   }
 
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append(printHeader()).append(getMessage());
-    for (InferenceBinding binding : myBindings) {
-      builder.append("\n\t").append(binding);
-      if (binding.getSourceNode() instanceof Concrete.SourceNode) {
-        builder.append(" at ").append(((Concrete.SourceNode) binding.getSourceNode()).getPosition());
-      }
-    }
-    return builder.toString();
+  @Deprecated
+  public UnsolvedBindings(List<InferenceBinding> bindings) {
+    this(null, bindings);
   }
 }

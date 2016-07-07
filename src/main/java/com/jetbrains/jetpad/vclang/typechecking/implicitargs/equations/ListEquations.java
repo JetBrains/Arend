@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
@@ -11,8 +13,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.SolveEquationsError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.UnsolvedBindings;
 import com.jetbrains.jetpad.vclang.typechecking.error.UnsolvedEquations;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.reporter.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.exprorder.StandardOrder;
 
 import java.util.*;
@@ -628,7 +628,7 @@ public class ListEquations implements Equations {
         for (Iterator<Map.Entry<InferenceBinding, ExactSolution>> it = myExactSolutions.entrySet().iterator(); it.hasNext(); ) {
           Map.Entry<InferenceBinding, ExactSolution> entry = it.next();
 
-          if (bindings.remove(entry.getKey())) {
+          if (bindings.contains(entry.getKey())) {
             was = true;
             it.remove();
             subst = entry.getValue().solve(this, entry.getKey(), result.ExprSubst);
@@ -638,6 +638,7 @@ public class ListEquations implements Equations {
             }
             if (update(entry.getKey(), subst, result.ExprSubst)) {
               binding = entry.getKey();
+              bindings.remove(binding);
             }
             break;
           }
@@ -647,7 +648,7 @@ public class ListEquations implements Equations {
           for (Iterator<Map.Entry<InferenceBinding, EqSetSolution>> it = myEqSolutions.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<InferenceBinding, EqSetSolution> entry = it.next();
 
-            if (bindings.remove(entry.getKey())) {
+            if (bindings.contains(entry.getKey())) {
               was = true;
               it.remove();
               subst = entry.getValue().solve(this, entry.getKey(), result.ExprSubst);
@@ -657,6 +658,7 @@ public class ListEquations implements Equations {
               }
               if (update(entry.getKey(), subst, result.ExprSubst)) {
                 binding = entry.getKey();
+                bindings.remove(binding);
               }
               break;
             }

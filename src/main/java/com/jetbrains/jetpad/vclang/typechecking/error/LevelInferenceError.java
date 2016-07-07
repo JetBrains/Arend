@@ -4,18 +4,14 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.LevelInferenceBinding;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.PrettyPrintVisitor;
 
-import java.util.ArrayList;
-
 public class LevelInferenceError extends TypeCheckingError {
-  public LevelInferenceError(LevelInferenceBinding levelVar, Abstract.SourceNode sourceNode) {
-    super("Cannot infer level " + levelVar + " of ", sourceNode);
+  public LevelInferenceError(LevelInferenceBinding levelVar, Abstract.Definition definition, Abstract.SourceNode sourceNode) {
+    super(definition, "Cannot infer level " + levelVar + " of '" + PrettyPrintVisitor.prettyPrint(sourceNode, 0) + "'", sourceNode);
+    // FIXME[format]
   }
 
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append(printHeader()).append(getMessage());
-    new PrettyPrintVisitor(builder, new ArrayList<String>(), 0).prettyPrint(getCause(), Abstract.Expression.PREC);
-    return builder.toString();
+  @Deprecated
+  public LevelInferenceError(LevelInferenceBinding levelVar, Abstract.SourceNode sourceNode) {
+    super("Cannot infer level " + levelVar + " of '" + PrettyPrintVisitor.prettyPrint(sourceNode, 0) + "'", sourceNode);
   }
 }
