@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr.visitor;
 
+import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
@@ -57,6 +58,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
 
   @Override
   public ReferenceExpression visitReference(ReferenceExpression expr, Void params) {
+    assert !(expr.getBinding() instanceof InferenceBinding);
     return expr;
   }
 

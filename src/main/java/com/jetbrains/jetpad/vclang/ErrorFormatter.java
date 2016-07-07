@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleID;
 import com.jetbrains.jetpad.vclang.module.error.ModuleCycleError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.context.binding.InferenceBinding;
@@ -50,21 +51,28 @@ public class ErrorFormatter {
     return builder.toString();
   }
 
+  private void printEquation(StringBuilder builder, PrettyPrintable expr1, PrettyPrintable expr2) {
+    expr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
+    builder.append(" = ");
+    expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
+  }
+
   private String printData(GeneralError error) {
     StringBuilder builder = new StringBuilder();
 
     if (error instanceof UnsolvedEquations) {
+      boolean first = true;
       for (ListEquations.CmpEquation equation : ((UnsolvedEquations) error).equations) {
-        builder.append('\n'); // TODO: ???
-        equation.expr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
-        builder.append(" = ");
-        equation.expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
+        if (!first) builder.append('\n');
+        printEquation(builder, equation.expr1, equation.expr2);
+        first = false;
       }
+
+      first = true;
       for (ListEquations.LevelCmpEquation equation : ((UnsolvedEquations) error).levelEquations) {
-        builder.append('\n');
-        equation.expr1.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0);
-        builder.append(" = ");
-        equation.expr2.prettyPrint(builder, new ArrayList<String>(), Abstract.Expression.PREC, 0); // TODO: ??? PrettyPrintVisitor.INDENT / 2
+        if (!first) builder.append('\n');
+        printEquation(builder, equation.expr1, equation.expr2);
+        first = false;
       }
     } else if (error instanceof GoalError) {
       boolean printContext = !((GoalError) error).context.isEmpty();
