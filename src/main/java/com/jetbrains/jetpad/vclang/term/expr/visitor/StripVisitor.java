@@ -34,7 +34,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression>, ElimTr
     for (Expression arg : expr.getDataTypeArguments()) {
       args.add(arg.accept(this, null));
     }
-    return (ConCallExpression) (new ConCallExpression((Constructor)expr.getPolyDefinition(), args).applyLevelSubst(expr.getPolyParamsSubst()));
+    return (ConCallExpression) (new ConCallExpression((Constructor)expr.getDefinition(), args).applyLevelSubst(expr.getPolyParamsSubst()));
   }
 
   @Override

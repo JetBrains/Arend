@@ -15,6 +15,12 @@ public class Truncations {
   }
 
   @Test
+  public void truncPEval() {
+    typeCheckClass("\\static \\function inP-inv (P : \\Prop) (p : TrP P) : P <= \\elim p | inP p => p\n" +
+            "\\static \\function trunc-eval (P : \\Prop) (p : TrP P) : (Path (\\lam _ => TrP P) ((TrP P).inP (inP-inv P p)) p) => path ((TrP P).truncP ((TrP P).inP (inP-inv P p)) p)");
+  }
+
+  @Test
   public void setTruncationTests() {
     typeCheckClass(
         "\\static \\data TrS' (A : \\Type0)\n" +

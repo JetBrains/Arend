@@ -35,6 +35,7 @@ public class ConCallExpression extends DefCallExpression {
     return super.getType().applyExpressions(myDataTypeArguments);
   }
 
+
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitConCall(this, params);

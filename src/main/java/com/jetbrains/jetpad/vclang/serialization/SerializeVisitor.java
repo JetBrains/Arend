@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.term.definition.ClassField;
 import com.jetbrains.jetpad.vclang.term.definition.Constructor;
-import com.jetbrains.jetpad.vclang.term.definition.TypeUniverse;
 import com.jetbrains.jetpad.vclang.term.expr.*;
 import com.jetbrains.jetpad.vclang.term.expr.visitor.BaseExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.pattern.*;
@@ -18,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implements ElimTreeNodeVisitor<Void, Void> {
@@ -68,7 +66,7 @@ public class SerializeVisitor extends BaseExpressionVisitor<Void, Void> implemen
   public Void visitDefCall(DefCallExpression expr, Void params) {
     myStream.write(2);
     try {
-      myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getPolyDefinition().getResolvedName()));
+      myDataStream.writeInt(myDefNamesIndices.getDefNameIndex(expr.getDefinition().getResolvedName()));
       ModuleSerialization.serializeSubstitution(this, expr.getPolyParamsSubst());
     } catch (IOException e) {
       throw new IllegalStateException();

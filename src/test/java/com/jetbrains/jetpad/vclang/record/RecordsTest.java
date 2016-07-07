@@ -195,7 +195,7 @@ public class RecordsTest {
     List<? extends Expression> arguments = function.getArguments();
     function = function.getFunction();
     assertEquals(3, arguments.size());
-    assertEquals(Prelude.PATH, function.toDefCall().getPolyDefinition());
+    assertEquals(Prelude.PATH, function.toDefCall().getDefinition());
 
     DataDefinition Foo = (DataDefinition) result.getDefinition("A.Foo");
     Constructor foo = Foo.getConstructor("foo");
@@ -220,7 +220,7 @@ public class RecordsTest {
     List<? extends Expression> domArguments = domFunction.getArguments();
     domFunction = domFunction.getFunction();
     assertEquals(3, domArguments.size());
-    assertEquals(Prelude.PATH, domFunction.toDefCall().getPolyDefinition());
+    assertEquals(Prelude.PATH, domFunction.toDefCall().getDefinition());
 
     LamExpression domArg0 = domArguments.get(0).toLam();
     assertNotNull(domArg0);
@@ -255,7 +255,7 @@ public class RecordsTest {
     List<? extends Expression> arguments = function.getArguments();
     function = function.getFunction();
     assertEquals(3, arguments.size());
-    assertEquals(Prelude.PATH, function.toDefCall().getPolyDefinition());
+    assertEquals(Prelude.PATH, function.toDefCall().getDefinition());
 
     DataDefinition Foo = (DataDefinition) result.getDefinition("A.Foo");
     Constructor foo = Foo.getConstructor("foo");
@@ -298,7 +298,7 @@ public class RecordsTest {
     List<? extends Expression> parameterArguments = parameterFunction.getArguments();
     parameterFunction = parameterFunction.getFunction();
     assertEquals(1, parameterArguments.size());
-    assertEquals(Prelude.PATH_CON, parameterFunction.toDefCall().getPolyDefinition());
+    assertEquals(Prelude.PATH_CON, parameterFunction.toDefCall().getDefinition());
     LamExpression paramArg0 = parameterArguments.get(0).toLam();
     assertNotNull(paramArg0);
     assertEquals(xCall, paramArg0.getBody().getFunction());
