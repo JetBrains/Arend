@@ -9,7 +9,10 @@ import com.jetbrains.jetpad.vclang.term.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.term.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.term.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.term.definition.*;
-import com.jetbrains.jetpad.vclang.term.expr.*;
+import com.jetbrains.jetpad.vclang.term.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.term.expr.Expression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelExpression;
+import com.jetbrains.jetpad.vclang.term.expr.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.pattern.elimtree.ElimTreeNode;
 
 import java.util.Arrays;
@@ -203,30 +206,30 @@ public class Prelude extends SimpleNamespace {
   }
 
   public static boolean isAt(Definition definition) {
-    return AT.getResolvedName().getFullName().equals(definition.getResolvedName().getFullName());
+    return AT.getName().equals(definition.getName()); // TODO [def compare]
   }
 
   public static boolean isPathCon(Definition definition) {
-    return PATH_CON.getResolvedName().getFullName().equals(definition.getResolvedName().getFullName());
+    return PATH_CON.getName().equals(definition.getName()); // TODO [def compare]
   }
 
   public static boolean isPath(Definition definition) {
-    return PATH.getResolvedName().getFullName().equals(definition.getResolvedName().getFullName());
+    return PATH.getName().equals(definition.getName()); // TODO [def compare]
   }
 
   public static boolean isIso(Definition definition) {
-    return ISO.getResolvedName().getFullName().equals(definition.getResolvedName().getFullName());
+    return ISO.getName().equals(definition.getName()); // TODO [def compare]
   }
 
   public static boolean isCoe(Definition definition) {
-    return COERCE.getResolvedName().getFullName().equals(definition.getResolvedName().getFullName());
+    return COERCE.getName().equals(definition.getName()); // TODO [def compare]
   }
 
   public static boolean isTruncP(Definition definition) {
-    return PROP_TRUNC_PATH_CON.getResolvedName().getFullName().equals(definition.getResolvedName().getFullName());
+    return PROP_TRUNC_PATH_CON.getName().equals(definition.getName()); // TODO [def compare]
   }
 
   public static boolean isTruncS(Definition definition) {
-    return SET_TRUNC_PATH_CON.getResolvedName().getFullName().equals(definition.getResolvedName().getFullName());
+    return SET_TRUNC_PATH_CON.getName().equals(definition.getName()); // TODO [def compare]
   }
 }

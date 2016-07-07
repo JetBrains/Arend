@@ -81,7 +81,7 @@ public abstract class Definition extends NamedBinding implements Referable {
 
   public Binding getPolyParamByType(Definition typeDef) {
     for (Binding binding : myPolyParams) {
-      if (binding.getType().toDefCall().getDefinition().getResolvedName().getFullName().equals(typeDef.getResolvedName().getFullName())) {
+      if (binding.getType().toDefCall().getDefinition().getName().equals(typeDef.getName())) { // TODO [def compare]
         return binding;
       }
     }
